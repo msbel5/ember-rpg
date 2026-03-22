@@ -488,7 +488,7 @@ Next:
 
 ## 13. Next Steps
 
-1. **Review this GDD** — Mami feedback
+1. **Review this GDD** — feedback
 2. **Write spell database** (50 spells, JSON)
 3. **Write item database** (weapons, armor, potions)
 4. **Write monster bestiary** (20 creatures, stats)
@@ -497,10 +497,3 @@ Next:
 ---
 
 **End of GDD v0.1**
-
-Mami, bu taslak. Feedback ver:
-- Kural sistemi yeterince basit/açık mı?
-- AI agent görevleri net mi?
-- Eksik bir şey var mı?
-
-Onayından sonra spell/item/monster DB'lerini yazıp Phase 2'ye geçerim.
