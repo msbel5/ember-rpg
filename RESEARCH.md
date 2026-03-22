@@ -474,5 +474,3 @@ Godot Client → HTTP POST → FastAPI Backend → AI Agent (if needed) → Resp
 ---
 
 **Status:** Research phase complete, ready for deep GDD v0.2 writing.
-
-Mami, bu daha iyi mi? Beklemek mantıklı — sistem su geçirmez olmalı.
