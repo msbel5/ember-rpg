@@ -36,6 +36,8 @@ class Character:
         inventory: List of item IDs
         equipment: Dictionary of slot -> item_id
         conditions: List of active conditions (poisoned, stunned, etc.)
+        xp: Current experience points
+        level: Character level (1-20)
     """
     
     # Identity
@@ -58,6 +60,10 @@ class Character:
     # Resources
     spell_points: int = 0
     max_spell_points: int = 0
+    
+    # Progression
+    xp: int = 0
+    level: int = 1
     
     # Skills (skill_name -> proficiency level: 0/2/4/6)
     skills: Dict[str, int] = field(default_factory=dict)
@@ -216,6 +222,8 @@ class Character:
             'initiative_bonus': self.initiative_bonus,
             'spell_points': self.spell_points,
             'max_spell_points': self.max_spell_points,
+            'xp': self.xp,
+            'level': self.level,
             'skills': self.skills,
             'gold': self.gold,
             'inventory': self.inventory,
