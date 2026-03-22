@@ -64,16 +64,16 @@ VALID_TRANSITIONS: Dict[SceneType, set] = {
     },
 }
 
-# Fallback narrative templates per event type (Turkish)
+# Fallback narrative templates per event type (English)
 NARRATIVE_TEMPLATES = {
     EventType.ENCOUNTER: "{description}",
     EventType.DISCOVERY: "{description}",
     EventType.DIALOGUE: "{description}",
-    EventType.COMBAT_START: "Silahlar çekildi! {description}",
-    EventType.COMBAT_END: "Çeliğin çarpışması yatışıyor. {description}",
+    EventType.COMBAT_START: "Weapons are drawn! {description}",
+    EventType.COMBAT_END: "The clash of steel fades. {description}",
     EventType.REST: "{description}",
-    EventType.LEVEL_UP: "İçinizde güçlü bir his kabarıyor. {description}",
-    EventType.ITEM_FOUND: "Gözünüze bir şey çarpıyor — {description}",
+    EventType.LEVEL_UP: "A surge of power flows through you. {description}",
+    EventType.ITEM_FOUND: "Something catches your eye — {description}",
 }
 
 

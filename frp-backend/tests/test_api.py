@@ -217,7 +217,7 @@ class TestGameEngine:
         session = self.engine.new_session("Aria")
         result = self.engine.process_action(session, "xyzzy plugh")
         assert result.narrative
-        assert "anlayamadım" in result.narrative
+        assert "not sure" in result.narrative
 
     def test_turn_advances_on_action(self):
         session = self.engine.new_session("Aria")
@@ -250,4 +250,4 @@ class TestGameEngine:
         enemy = Character(name="Goblin", hp=10, max_hp=10)
         self.engine._start_combat(session, [enemy])
         result = self.engine.process_action(session, "dinlenmek istiyorum")
-        assert "savaşın ortasında" in result.narrative.lower()
+        assert "cannot rest" in result.narrative.lower()

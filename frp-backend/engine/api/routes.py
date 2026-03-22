@@ -36,7 +36,7 @@ def new_session(req: NewSessionRequest):
     dm = DMAIAgent()
     opening_event = DMEvent(
         type=EventType.DISCOVERY,
-        description=f"{req.player_name} macerasına başlıyor.",
+        description=f"{req.player_name} begins their adventure.",
     )
     narrative = dm.narrate(opening_event, session.dm_context)
 

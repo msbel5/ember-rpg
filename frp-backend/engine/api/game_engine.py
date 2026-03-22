@@ -39,11 +39,11 @@ class ActionResult:
     level_up: Optional[object] = None
 
 
-# Default opening scenes by starting location
+# Default opening scenes (location, opening description)
 _OPENING_SCENES = [
-    ("Taş Köprü Meyhanesi", "Alçak tavanlı, tütün kokulu meyhanede oturuyorsunuz. Kor ateş yanıyor ocakta. Kapı gıcırdadı — birisi girdi."),
-    ("Orman Yolu", "Sisi kesen sabah güneşinde ilerliyorsunuz. Ağaç dalları üzerinizde kavuşuyor. Uzaktan bir kurt uluması geliyor."),
-    ("Liman Kasabası", "Tuzlu deniz havası burnunuzu doluyor. Iskelede balıkçılar ağ topluyor. Bir gemide Kuzey Krallığı bayrağı dalgalanıyor."),
+    ("Stone Bridge Tavern", "Low rafters, the smell of pipe smoke. A fire crackles in the hearth. The door creaks open — someone has arrived."),
+    ("Forest Road", "Morning mist parts as you push forward. Branches arch overhead. A wolf howls somewhere in the distance."),
+    ("Harbor Town", "Salt air fills your lungs. Fishermen haul nets at the dock. A northern-flag ship sways in the harbor."),
 ]
 
 
@@ -57,7 +57,7 @@ class GameEngine:
     Usage:
         engine = GameEngine()
         session = engine.new_session("Aria", "warrior")
-        result = engine.process_action(session, "ejderhaya saldırıyorum")
+        result = engine.process_action(session, "attack the goblin")
     """
 
     def __init__(self, llm: Optional[Callable[[str], str]] = None):
@@ -65,7 +65,7 @@ class GameEngine:
         Initialize game engine.
 
         Args:
-            llm: Optional LLM backend callable(prompt) -> str
+            llm: Optional LLM backend callable(prompt) -> str.
                  If None, template-based narration is used.
         """
         self.parser = ActionParser()
@@ -85,24 +85,23 @@ class GameEngine:
         Args:
             player_name: Player character name
             player_class: Starting class (warrior/rogue/mage/priest)
-            location: Starting location (random if None)
+            location: Starting location name (random if None)
 
         Returns:
             Initialized GameSession
         """
-        # Default stats by class
         class_stats = {
-            "warrior": {"MIG": 16, "AGI": 12, "END": 14, "MND": 8, "INS": 10, "PRE": 10},
+            "warrior": {"MIG": 16, "AGI": 12, "END": 14, "MND": 8,  "INS": 10, "PRE": 10},
             "rogue":   {"MIG": 10, "AGI": 16, "END": 10, "MND": 10, "INS": 14, "PRE": 12},
             "mage":    {"MIG": 8,  "AGI": 12, "END": 10, "MND": 16, "INS": 14, "PRE": 10},
             "priest":  {"MIG": 10, "AGI": 10, "END": 12, "MND": 14, "INS": 16, "PRE": 12},
         }
         class_hp = {"warrior": 20, "rogue": 16, "mage": 12, "priest": 16}
-        class_sp = {"warrior": 0, "rogue": 0, "mage": 16, "priest": 12}
+        class_sp = {"warrior": 0,  "rogue": 0,  "mage": 16, "priest": 12}
 
         stats = class_stats.get(player_class.lower(), class_stats["warrior"])
-        hp = class_hp.get(player_class.lower(), 16)
-        sp = class_sp.get(player_class.lower(), 0)
+        hp    = class_hp.get(player_class.lower(), 16)
+        sp    = class_sp.get(player_class.lower(), 0)
 
         player = Character(
             name=player_name,
@@ -124,19 +123,14 @@ class GameEngine:
             party=[player],
         )
 
-        session = GameSession(player=player, dm_context=dm_context)
-        return session
+        return GameSession(player=player, dm_context=dm_context)
 
-    def process_action(
-        self,
-        session: GameSession,
-        input_text: str,
-    ) -> ActionResult:
+    def process_action(self, session: GameSession, input_text: str) -> ActionResult:
         """
         Process a player's natural language action.
 
         Args:
-            session: Current game session (mutated)
+            session: Current game session (mutated in-place)
             input_text: Player's raw text input
 
         Returns:
@@ -147,17 +141,16 @@ class GameEngine:
 
         action = self.parser.parse(input_text)
 
-        # Route to handler by intent
         handlers = {
-            ActionIntent.ATTACK: self._handle_attack,
+            ActionIntent.ATTACK:     self._handle_attack,
             ActionIntent.CAST_SPELL: self._handle_spell,
-            ActionIntent.USE_ITEM: self._handle_use_item,
-            ActionIntent.EXAMINE: self._handle_examine,
-            ActionIntent.TALK: self._handle_talk,
-            ActionIntent.REST: self._handle_rest,
-            ActionIntent.MOVE: self._handle_move,
-            ActionIntent.OPEN: self._handle_open,
-            ActionIntent.UNKNOWN: self._handle_unknown,
+            ActionIntent.USE_ITEM:   self._handle_use_item,
+            ActionIntent.EXAMINE:    self._handle_examine,
+            ActionIntent.TALK:       self._handle_talk,
+            ActionIntent.REST:       self._handle_rest,
+            ActionIntent.MOVE:       self._handle_move,
+            ActionIntent.OPEN:       self._handle_open,
+            ActionIntent.UNKNOWN:    self._handle_unknown,
         }
 
         handler = handlers.get(action.intent, self._handle_unknown)
@@ -167,37 +160,30 @@ class GameEngine:
 
     def _handle_attack(self, session: GameSession, action: ParsedAction) -> ActionResult:
         if not session.in_combat():
-            # Spawn a random enemy encounter
             enemy = self._spawn_enemy(session.player.level)
             self._start_combat(session, [enemy])
 
         combat = session.combat
-        # Find target by name or pick first living enemy
         target_idx = self._find_target(combat, action.target, exclude=session.player.name)
 
         if target_idx is None:
             return ActionResult(
-                narrative="Saldıracak hedef bulunamadı.",
+                narrative="No valid target found.",
                 scene_type=session.dm_context.scene_type,
             )
 
-        # Ensure player's turn (simplified: player always goes first via initiative_bonus)
         result = combat.attack(target_idx)
         state_changes = {}
 
-        if result.get("hit"):
-            desc = (
-                f"{session.player.name} saldırıyor — isabet! "
-                f"{result.get('damage', 0)} hasar."
-            )
-        elif result.get("crit"):
-            desc = f"KRİTİK! {session.player.name} yıkıcı bir darbe indiriyor!"
+        if result.get("crit"):
+            desc = f"CRITICAL! {session.player.name} lands a devastating blow — {result.get('damage', 0)} damage!"
         elif result.get("fumble"):
-            desc = f"Tutarsız hareket — {session.player.name} tutunuyor!"
+            desc = f"{session.player.name} stumbles — the attack goes wide!"
+        elif result.get("hit"):
+            desc = f"{session.player.name} strikes — hit! {result.get('damage', 0)} damage."
         else:
-            desc = f"{session.player.name} saldırıyor ama kaçırıyor."
+            desc = f"{session.player.name} swings but misses."
 
-        # Check combat end
         combat_state = self._combat_state(combat)
         xp_result = None
 
@@ -231,11 +217,10 @@ class GameEngine:
     def _handle_spell(self, session: GameSession, action: ParsedAction) -> ActionResult:
         if session.player.spell_points <= 0:
             return ActionResult(
-                narrative="Büyü gücün tükenmiş. Dinlenmen gerekiyor.",
+                narrative="Your spell points are exhausted. You need to rest.",
                 scene_type=session.dm_context.scene_type,
             )
 
-        # Default: magic missile (placeholder until spell selection is implemented)
         from engine.core.spell import Spell, TargetType
         from engine.core.effect import DamageEffect
         spell = Spell(
@@ -254,16 +239,16 @@ class GameEngine:
         target_idx = self._find_target(combat, action.target, exclude=session.player.name)
         if target_idx is None:
             return ActionResult(
-                narrative="Büyü için hedef bulunamadı.",
+                narrative="No valid target for the spell.",
                 scene_type=session.dm_context.scene_type,
             )
 
         result = combat.cast_spell(spell, target_idx)
 
         if "error" in result:
-            desc = f"Büyü başarısız: {result['error']}"
+            desc = f"Spell failed: {result['error']}"
         else:
-            desc = f"{session.player.name} büyü fırlatıyor — {spell.name}!"
+            desc = f"{session.player.name} unleashes {spell.name}!"
 
         event = DMEvent(type=EventType.ENCOUNTER, description=desc)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
@@ -277,38 +262,31 @@ class GameEngine:
 
     def _handle_examine(self, session: GameSession, action: ParsedAction) -> ActionResult:
         target = action.target or session.dm_context.location
-        desc = f"'{target}' inceliyor musunuz? Dikkatle bakıyorsunuz..."
+        desc = f"{session.player.name} examines '{target}' carefully."
         event = DMEvent(type=EventType.DISCOVERY, description=desc)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
-        return ActionResult(
-            narrative=narrative,
-            scene_type=session.dm_context.scene_type,
-        )
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_talk(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        target = action.target or "yabancı biri"
-        desc = f"{session.player.name}, {target} ile konuşmak istiyor."
+        target = action.target or "a stranger"
+        desc = f"{session.player.name} approaches {target} to speak."
         event = DMEvent(type=EventType.DIALOGUE, description=desc)
         self.dm.transition(session.dm_context, SceneType.DIALOGUE)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
-        return ActionResult(
-            narrative=narrative,
-            scene_type=session.dm_context.scene_type,
-        )
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_rest(self, session: GameSession, action: ParsedAction) -> ActionResult:
         if session.in_combat():
             return ActionResult(
-                narrative="Savaşın ortasında dinlenemezsin!",
+                narrative="You cannot rest in the middle of a fight!",
                 scene_type=session.dm_context.scene_type,
             )
 
-        # Restore HP and spell points
         heal = max(1, session.player.max_hp // 4)
         session.player.hp = min(session.player.hp + heal, session.player.max_hp)
         session.player.spell_points = session.player.max_spell_points
 
-        desc = f"{session.player.name} kısa bir mola veriyor. {heal} HP kazandı."
+        desc = f"{session.player.name} takes a short rest and recovers {heal} HP."
         event = DMEvent(type=EventType.REST, description=desc)
         self.dm.transition(session.dm_context, SceneType.REST)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
@@ -321,60 +299,48 @@ class GameEngine:
         )
 
     def _handle_move(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        dest = action.target or "ileri"
+        dest = action.target or "forward"
         session.dm_context.location = dest
-        desc = f"{session.player.name} {dest} doğru ilerliyor."
+        desc = f"{session.player.name} moves toward {dest}."
         event = DMEvent(type=EventType.DISCOVERY, description=desc)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
-        return ActionResult(
-            narrative=narrative,
-            scene_type=session.dm_context.scene_type,
-        )
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_open(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        target = action.target or "kapı"
-        desc = f"{session.player.name} {target}ı açmaya çalışıyor."
+        target = action.target or "the door"
+        desc = f"{session.player.name} tries to open {target}."
         event = DMEvent(type=EventType.DISCOVERY, description=desc)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
-        return ActionResult(
-            narrative=narrative,
-            scene_type=session.dm_context.scene_type,
-        )
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_use_item(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        desc = f"{session.player.name} bir eşya kullanmaya çalışıyor."
+        desc = f"{session.player.name} reaches for an item."
         event = DMEvent(type=EventType.DISCOVERY, description=desc)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
-        return ActionResult(
-            narrative=narrative,
-            scene_type=session.dm_context.scene_type,
-        )
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_unknown(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        desc = f"'{action.raw_input}' — tam olarak ne yapmak istediğini anlayamadım."
+        desc = f"'{action.raw_input}' — I'm not sure what you're trying to do."
         event = DMEvent(type=EventType.DISCOVERY, description=desc)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
-        return ActionResult(
-            narrative=narrative,
-            scene_type=session.dm_context.scene_type,
-        )
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     # --- Helpers ---
 
     def _spawn_enemy(self, player_level: int) -> Character:
         """Spawn a level-appropriate enemy."""
         enemies = [
-            Character(name="Goblin", hp=8, max_hp=8,
-                      stats={"MIG": 8, "AGI": 14, "END": 8, "MND": 6, "INS": 8, "PRE": 6}),
-            Character(name="Orc", hp=15, max_hp=15,
-                      stats={"MIG": 14, "AGI": 8, "END": 12, "MND": 6, "INS": 8, "PRE": 6}),
+            Character(name="Goblin",   hp=8,  max_hp=8,
+                      stats={"MIG": 8,  "AGI": 14, "END": 8,  "MND": 6, "INS": 8, "PRE": 6}),
+            Character(name="Orc",      hp=15, max_hp=15,
+                      stats={"MIG": 14, "AGI": 8,  "END": 12, "MND": 6, "INS": 8, "PRE": 6}),
             Character(name="Skeleton", hp=10, max_hp=10,
                       stats={"MIG": 10, "AGI": 10, "END": 10, "MND": 4, "INS": 6, "PRE": 4}),
         ]
         return random.choice(enemies)
 
-    def _start_combat(self, session: GameSession, enemies: List[Character]):
-        """Initialize combat with enemies."""
+    def _start_combat(self, session: GameSession, enemies: List[Character]) -> None:
+        """Initialize a combat encounter."""
         combatants = [session.player] + enemies
         session.combat = CombatManager(combatants, seed=random.randint(0, 9999))
         session.combat.start_turn()
@@ -386,7 +352,7 @@ class GameEngine:
         target_name: Optional[str],
         exclude: str,
     ) -> Optional[int]:
-        """Find target combatant index by name or first living non-player."""
+        """Find target combatant index by name, or first living non-player."""
         if target_name:
             for i, c in enumerate(combat.combatants):
                 if (target_name.lower() in c.name.lower()
@@ -394,7 +360,6 @@ class GameEngine:
                         and c.name != exclude):
                     return i
 
-        # Fallback: first living non-player combatant
         for i, c in enumerate(combat.combatants):
             if c.name != exclude and not c.is_dead:
                 return i

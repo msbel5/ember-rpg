@@ -205,45 +205,45 @@ class StoryArc:
 # --- Campaign Templates ---
 
 _KILL_QUESTS = [
-    ("Goblin Sorunu", "Köylüler goblin saldırılarından şikayet ediyor.", "goblin", 3),
-    ("Kemik Yığını", "Mezarlıkta iskeletler yürüyor.", "skeleton", 5),
-    ("Kurt Avı", "Kuzey ormanında dev kurtlar var.", "wolf", 2),
+    ("Goblin Problem", "Villagers are reporting goblin raids near the road.", "goblin", 3),
+    ("Bone Pile", "The dead are walking in the old cemetery.", "skeleton", 5),
+    ("Wolf Hunt", "A pack of dire wolves prowls the northern forest.", "wolf", 2),
 ]
 
 _FETCH_QUESTS = [
-    ("Kayıp Mektup", "Tüccarın mektupları eşkıyalar çalmış.", "mektup", 1),
-    ("İksir Malzemeleri", "Simyacının otlarını bulun.", "ot", 4),
-    ("Kutsal Kalıntı", "Tapınak rahibinin kutsal eşyası kaybolmuş.", "kalıntı", 1),
+    ("Lost Letter", "Bandits stole a merchant's important correspondence.", "letter", 1),
+    ("Alchemist's Herbs", "The alchemist needs rare herbs from the forest.", "herb", 4),
+    ("Sacred Relic", "A temple relic has gone missing — retrieve it.", "relic", 1),
 ]
 
 _WORLD_EVENTS = [
     WorldEvent(
         event_type=EventType.AMBUSH,
-        title="Pusuda Eşkıyalar",
-        description="Yolun kenarından üç eşkıya fırladı!",
-        options=["Savaş", "Kaç", "Pazarlık et"],
-        outcomes={0: "Cesaretiniz onları bozguna uğrattı.", 1: "Kaçmayı başardınız.", 2: "10 altın ödeyerek geçtiniz."},
+        title="Roadside Ambush",
+        description="Three bandits leap from the shadows!",
+        options=["Fight", "Flee", "Negotiate"],
+        outcomes={0: "Your courage sends them running.", 1: "You escape into the dark.", 2: "You pay 10 gold to pass."},
     ),
     WorldEvent(
         event_type=EventType.DISCOVERY,
-        title="Gizli Geçit",
-        description="Duvarın arkasında gizli bir geçit buldunuz.",
-        options=["Gir", "Geç"],
-        outcomes={0: "İçeride eski bir hazine sandığı var: 25 altın!", 1: "Geçip devam ettiniz."},
+        title="Hidden Passage",
+        description="You find a concealed passage behind the wall.",
+        options=["Enter", "Pass by"],
+        outcomes={0: "Inside: an old chest with 25 gold!", 1: "You move on."},
     ),
     WorldEvent(
         event_type=EventType.WEATHER,
-        title="Fırtına",
-        description="Beklenmedik bir fırtına bastırıyor.",
-        options=["Sığın", "Devam et"],
-        outcomes={0: "Yakın bir mağaraya sığındınız.", 1: "Islak ve yorgun ilerlediniz. -5 HP."},
+        title="Sudden Storm",
+        description="A storm rolls in without warning.",
+        options=["Take shelter", "Push through"],
+        outcomes={0: "You find a nearby cave and wait it out.", 1: "You press on, soaked and weary. -5 HP."},
     ),
     WorldEvent(
         event_type=EventType.TRAP,
-        title="Tuzak!",
-        description="Zeminde gizli bir tuzak devreye girdi!",
-        options=["Çabuk atla", "Zar at (AGI)"],
-        outcomes={0: "Atlamayı başardınız!", 1: "Çarptınız. -8 HP."},
+        title="Trapped!",
+        description="A hidden pressure plate triggers beneath your foot!",
+        options=["Jump clear", "Roll AGI"],
+        outcomes={0: "You leap aside just in time!", 1: "The mechanism catches you. -8 HP."},
     ),
 ]
 
@@ -267,7 +267,7 @@ class CampaignGenerator:
         self,
         title: Optional[str] = None,
         num_quests: int = 3,
-        location: str = "Bilinmeyen Topraklar",
+        location: str = "Unknown Lands",
     ) -> StoryArc:
         """
         Generate a story arc with mixed quest types.
@@ -285,14 +285,14 @@ class CampaignGenerator:
 
         if title is None:
             title = self.rng.choice([
-                "Karanlık Orman", "Unutulmuş Kule", "Kayıp Hazine",
-                "İkiyüzlünün Mirası", "Yıkık Tapınak", "Kuzeyden Tehdit",
+                "Dark Forest", "Forgotten Tower", "Lost Treasure",
+                "The Deceiver's Legacy", "Ruined Temple", "Threat from the North",
             ])
 
         premise = self.rng.choice([
-            f"{location} bölgesinde tehlikeli gelişmeler yaşanıyor. Birinin harekete geçmesi lazım.",
-            f"Eski bir kehanet {location}'da gerçekleşmek üzere.",
-            f"Bir yabancı, {location}'dan yardım istemek için şehre geldi.",
+            f"Dangerous events are unfolding in {location}. Someone must act.",
+            f"An old prophecy is about to come true in {location}.",
+            f"A stranger has arrived from {location} seeking help.",
         ])
 
         # Generate quests
@@ -336,8 +336,8 @@ class CampaignGenerator:
                 title=title,
                 description=desc,
                 quest_type=QuestType.KILL,
-                giver="Köy Lideri",
-                objectives=[QuestObjective(f"{count} {target} öldür", target, count)],
+                giver="Village Elder",
+                objectives=[QuestObjective(f"Kill {count} {target}s", target, count)],
                 rewards={"gold": 50 * idx, "xp": 100 * idx},
                 location=loc,
                 difficulty=idx,
@@ -353,8 +353,8 @@ class CampaignGenerator:
                 title=title,
                 description=desc,
                 quest_type=QuestType.FETCH,
-                giver="Tüccar",
-                objectives=[QuestObjective(f"{count} {item} bul", item, count)],
+                giver="Merchant",
+                objectives=[QuestObjective(f"Find {count} {item}(s)", item, count)],
                 rewards={"gold": 40 * idx, "xp": 80 * idx},
                 location=loc,
                 difficulty=max(1, idx - 1),
@@ -365,11 +365,11 @@ class CampaignGenerator:
         def make_explore(idx, loc):
             return Quest(
                 id=f"q_{idx:03d}_explore",
-                title="Keşif Görevi",
-                description=f"{loc} bölgesini keşfedin ve rapor edin.",
+                title="Exploration Mission",
+                description=f"Scout the {loc} area and report back.",
                 quest_type=QuestType.EXPLORE,
-                giver="Lonca Yöneticisi",
-                objectives=[QuestObjective(f"{loc} haritasını çıkar", loc, 1)],
+                giver="Guild Master",
+                objectives=[QuestObjective(f"Map the {loc} area", loc, 1)],
                 rewards={"gold": 30 * idx, "xp": 60 * idx},
                 location=loc,
                 difficulty=1,
@@ -380,11 +380,11 @@ class CampaignGenerator:
         def make_dialogue(idx, loc):
             return Quest(
                 id=f"q_{idx:03d}_talk",
-                title="Bilge'nin Sırrı",
-                description="Köyün yaşlı bilgesi bir şeyler biliyor.",
+                title="The Elder's Secret",
+                description="The village elder knows something. Find out what.",
                 quest_type=QuestType.DIALOGUE,
-                giver="Köy Halkı",
-                objectives=[QuestObjective("Bilge ile konuş", "Bilge", 1)],
+                giver="Villagers",
+                objectives=[QuestObjective("Speak with the Elder", "Elder", 1)],
                 rewards={"gold": 20, "xp": 50 * idx},
                 location=loc,
                 difficulty=1,

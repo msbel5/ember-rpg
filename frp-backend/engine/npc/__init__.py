@@ -78,8 +78,8 @@ class DialogueLine:
 class DialogueNode:
     """A dialogue tree node with NPC line and player options."""
     npc_line: str
-    options: List[str] = field(default_factory=list)  # Player choices
-    next_nodes: Dict[int, str] = field(default_factory=dict)  # option_idx → node_key
+    options: List[str] = field(default_factory=list)
+    next_nodes: Dict[int, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -111,11 +111,11 @@ class NPC:
     def greet(self) -> str:
         """Return disposition-appropriate greeting."""
         greetings = {
-            Disposition.HOSTILE: f"{self.name} sizi tehditkâr bir bakışla süzüyor. 'Ne istiyorsun?'",
-            Disposition.UNFRIENDLY: f"{self.name} soğuk bir bakış atıyor. 'Evet?'",
-            Disposition.NEUTRAL: f"{self.name} sizi karşılıyor. 'Nasıl yardımcı olabilirim?'",
-            Disposition.FRIENDLY: f"{self.name} sıcak bir gülümsemeyle karşılıyor. 'Hoş geldiniz!'",
-            Disposition.ALLIED: f"{self.name} mutlulukla karşılıyor. 'Arkadaşım! Sizi görmeye sevindim!'",
+            Disposition.HOSTILE:    f"{self.name} eyes you with contempt. 'What do you want?'",
+            Disposition.UNFRIENDLY: f"{self.name} gives you a cold look. 'Yes?'",
+            Disposition.NEUTRAL:    f"{self.name} meets your gaze. 'How can I help you?'",
+            Disposition.FRIENDLY:   f"{self.name} smiles warmly. 'Welcome, traveler!'",
+            Disposition.ALLIED:     f"{self.name} greets you with delight. 'My friend! Good to see you!'",
         }
         return greetings[self.disposition]
 
@@ -125,48 +125,41 @@ class NPC:
         Uses keyword matching + disposition for template-based response.
         """
         lower = player_input.lower()
-        mem = self.memory
 
-        # Hostile NPCs don't cooperate
         if self.disposition == Disposition.HOSTILE:
-            return f"{self.name} homurdanıyor. 'Seninle konuşacak bir şeyim yok.'"
+            return f"{self.name} growls. 'I have nothing to say to you.'"
 
-        # Trade / buy
-        if any(w in lower for w in ["satın", "buy", "trade", "al", "sat"]):
+        if any(w in lower for w in ["buy", "trade", "sell", "purchase", "satın", "al", "sat"]):
             if self.inventory:
                 items = ", ".join(self.inventory[:3])
-                return f"{self.name}: 'Şu an elimde bunlar var: {items}.'"
-            return f"{self.name}: 'Üzgünüm, şu an satacak bir şeyim yok.'"
+                return f"{self.name}: 'I have these available: {items}.'"
+            return f"{self.name}: 'Sorry, I have nothing to sell right now.'"
 
-        # Quest
-        if any(w in lower for w in ["görev", "quest", "iş", "yardım", "help"]):
+        if any(w in lower for w in ["quest", "job", "task", "help", "görev", "iş", "yardım"]):
             if self.quest:
                 return f"{self.name}: '{self.quest}'"
-            return f"{self.name}: 'Sana verebileceğim bir görev yok şu an.'"
+            return f"{self.name}: 'I have no work for you at the moment.'"
 
-        # Information / ask
-        if any(w in lower for w in ["nerede", "where", "who", "kim", "ne", "nasıl", "how"]):
-            return f"{self.name} düşünüyor... 'O konuda pek bilgim yok, ama belki başka biri yardımcı olabilir.'"
+        if any(w in lower for w in ["where", "who", "what", "how", "nerede", "kim", "ne", "nasıl"]):
+            return f"{self.name} thinks for a moment... 'I don't know much about that, but perhaps someone else can help.'"
 
-        # Reputation-based response
-        if mem.reputation > 50:
-            return f"{self.name} güvenle: 'Sizin için her zaman buradayım.'"
-        if mem.reputation < -30:
-            return f"{self.name} temkinli: 'Dikkatli olun, güvenmiyorum size.'"
+        if self.memory.reputation > 50:
+            return f"{self.name} says warmly, 'I'm always here for you, friend.'"
+        if self.memory.reputation < -30:
+            return f"{self.name} says warily, 'Careful now. I don't fully trust you.'"
 
-        # Personality fallback
         return f"{self.name}: '{self._personality_line()}'"
 
     def _personality_line(self) -> str:
         lines_by_role = {
-            NPCRole.MERCHANT: "En iyi fiyatı size veriyorum, and kelimeme güvenin.",
-            NPCRole.GUARD: "Burası koruma altında. Sorun çıkarmayın.",
-            NPCRole.INNKEEPER: "Yorgun görünüyorsunuz. Bir oda ayırtayım mı?",
-            NPCRole.QUEST_GIVER: "Aslında... belki bana yardım edebilirsiniz.",
-            NPCRole.VILLAIN: "Sizi durdurabilecek hiçbir şey yok.",
-            NPCRole.ALLY: "Yanınızdayım ne olursa olsun.",
-            NPCRole.COMMONER: "Zor günler bunlar.",
-            NPCRole.MONSTER: "GRRRRR...",
+            NPCRole.MERCHANT:    "Best prices in town — you have my word.",
+            NPCRole.GUARD:       "This area is under watch. Don't cause trouble.",
+            NPCRole.INNKEEPER:   "You look weary. Shall I prepare a room?",
+            NPCRole.QUEST_GIVER: "Actually... perhaps you could help me with something.",
+            NPCRole.VILLAIN:     "Nothing can stop what is coming.",
+            NPCRole.ALLY:        "I'm with you, whatever happens.",
+            NPCRole.COMMONER:    "These are hard times.",
+            NPCRole.MONSTER:     "GRRRR...",
         }
         return lines_by_role.get(self.role, "...")
 
@@ -177,14 +170,14 @@ class NPC:
         """
         history = "\n".join(f"- {e}" for e in self.memory.events[-3:])
         return (
-            f"You are {self.name}, a {self.role.value} in a fantasy RPG.\n"
+            f"You are {self.name}, a {self.role.value} in a dark fantasy RPG.\n"
             f"Personality: {self.personality}\n"
             f"Disposition toward player: {self.disposition.value}\n"
             f"Reputation: {self.memory.reputation}/100\n"
             f"Recent interactions:\n{history or '(none)'}\n\n"
             f"Player says: \"{player_input}\"\n"
-            f"Respond in character, 1-3 sentences, in Turkish. "
-            f"Stay true to personality and disposition."
+            f"Respond in character, 1-3 sentences, in English. "
+            f"Stay true to your personality and disposition."
         )
 
 
@@ -192,13 +185,13 @@ class NPCManager:
     """
     Manages a collection of NPCs for a game session.
 
-    Handles NPC spawning, lookup, and interaction routing.
+    Handles NPC registration, lookup, and interaction routing.
 
     Usage:
         manager = NPCManager()
         manager.add_npc(NPC(name="Barkeep", role=NPCRole.INNKEEPER))
         npc = manager.find("barkeep")
-        response = manager.interact(npc, "Bir oda var mı?")
+        response = manager.interact(npc, "Do you have a room?")
     """
 
     def __init__(self, llm: Optional[Callable[[str], str]] = None):
@@ -212,10 +205,8 @@ class NPCManager:
     def find(self, name: str) -> Optional[NPC]:
         """Find NPC by name (case-insensitive, partial match)."""
         name_lower = name.lower()
-        # Exact match
         if name_lower in self.npcs:
             return self.npcs[name_lower]
-        # Partial match
         for key, npc in self.npcs.items():
             if name_lower in key:
                 return npc
@@ -240,11 +231,9 @@ class NPCManager:
         """
         backend = llm or self.llm
 
-        # Mark as met
         if not npc.memory.has_met_player:
             npc.memory.has_met_player = True
 
-        # Record event
         npc.memory.add_event(f"Player: {player_input[:60]}")
 
         if backend:
@@ -260,7 +249,7 @@ class NPCManager:
         """Spawn a set of default NPCs for a location type."""
         spawned = []
 
-        if "meyhane" in location.lower() or "inn" in location.lower() or "kasaba" in location.lower():
+        if any(w in location.lower() for w in ["tavern", "inn", "town", "meyhane", "kasaba"]):
             innkeeper = NPC(
                 name="Barkeep",
                 role=NPCRole.INNKEEPER,
@@ -268,7 +257,7 @@ class NPCManager:
                 personality="Friendly but cautious, knows local gossip.",
                 location=location,
                 inventory=["Cheap Room (5g)", "Ale (1g)", "Stew (2g)"],
-                quest="Kellerin altında fareler var, temizler misin? 50 altın ödüllü.",
+                quest="There are rats in my cellar. Clear them out and I'll pay you 50 gold.",
             )
             self.add_npc(innkeeper)
             spawned.append(innkeeper)
