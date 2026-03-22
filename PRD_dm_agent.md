@@ -1,63 +1,61 @@
-# PRD: AI DM Agent (Module 6)
-**Project:** Ember RPG — FRP AI Game  
-**Module:** Phase 2, Module 6  
+# PRD: DM Agent
+**Project:** Ember RPG  
+**Phase:** 2 — Module 6  
+**Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-23  
-**Status:** Planning → Implementation
+**Status:** Implemented  
 
 ---
 
-## 1. Overview
+## 1. Purpose
 
-**Purpose:** Implement AI Dungeon Master agent that generates narrative responses, manages game state, and drives story events.
-
-**Scope:**
-- DM context management (party state, current scene, history)
-- Narrative event generation (encounter, exploration, dialogue triggers)
-- Action resolution narration (combat results → story text)
-- Scene state machine (exploration, combat, dialogue, rest)
-- LLM prompt builder (structured prompts for any LLM backend)
-
-**Out of Scope:**
-- Actual LLM API calls (pluggable backend, tested with mock)
-- NPC Agent (Module 7)
-- Map generation (Module 8)
+The DM Agent is the narrative engine of Ember RPG. It translates raw mechanical game events (combat hits, discoveries, level-ups) into immersive prose that players read as story. It maintains scene context, tracks narrative history, manages scene-type transitions, and provides a pluggable LLM backend with a template fallback for offline use.
 
 ---
 
-## 2. Requirements
+## 2. Scope
 
-### FR1: DM Context
-- Track: scene_type, party, location, turn, history (last N events)
-- `DMContext` dataclass
+**In scope:**
+- Converting `DMEvent` objects into narrative text
+- Tracking scene type (exploration, combat, dialogue, rest, cutscene)
+- Maintaining a capped event history (last N events) for LLM context
+- Building structured prompts for LLM backends
+- Template-based fallback narration (no LLM required)
+- Scene-type transition validation
 
-### FR2: Scene State Machine
-- States: EXPLORATION, COMBAT, DIALOGUE, REST, TRANSITION
-- Valid transitions between states
-
-### FR3: Prompt Builder
-- Given DMContext + trigger event → structured prompt string
-- Prompt includes: party state, scene, recent history, instruction
-
-### FR4: Event System
-- `DMEvent`: type, description, data dict
-- Event types: ENCOUNTER, DISCOVERY, DIALOGUE, COMBAT_START, COMBAT_END, REST, LEVEL_UP, ITEM_FOUND
-
-### FR5: Narrative Hook
-- `DMAIAgent.narrate(event, context)` → prompt string
-- Pluggable LLM backend (mock for tests)
+**Out of scope:**
+- Parsing player natural language input (→ ActionParser)
+- Combat resolution mechanics (→ CombatManager)
+- Persistent storage of narrative logs (→ future Campaign Archive)
+- Multiplayer narrative synchronization
 
 ---
 
-## 3. Data Model
+## 3. Functional Requirements
+
+**FR-01:** The DM Agent must narrate any `DMEvent` and return a non-empty string.
+
+**FR-02:** When an LLM callable is provided, the DM Agent must call it with a structured prompt and return its response verbatim.
+
+**FR-03:** When no LLM is provided, the DM Agent must use per-event-type template strings to generate narrative.
+
+**FR-04:** `DMContext` must maintain a history list capped at `max_history` entries (default 10).
+
+**FR-05:** `DMContext` must support scene-type transitions and reject invalid transitions (e.g., COMBAT → CUTSCENE) according to `VALID_TRANSITIONS`.
+
+**FR-06:** `DMContext.advance_turn()` must increment the turn counter by 1 on each call.
+
+**FR-07:** `DMContext.party_summary()` must return a string listing each party member's name, HP, and level.
+
+**FR-08:** The LLM prompt must include: scene type, location, last 3 history entries, and the triggering event description.
+
+**FR-09:** `DMAIAgent` must be stateless — all state lives in `DMContext`, not in the agent itself.
+
+---
+
+## 4. Data Structures
 
 ```python
-class SceneType(Enum):
-    EXPLORATION = "exploration"
-    COMBAT = "combat"
-    DIALOGUE = "dialogue"
-    REST = "rest"
-    TRANSITION = "transition"
-
 class EventType(Enum):
     ENCOUNTER = "encounter"
     DISCOVERY = "discovery"
@@ -68,73 +66,110 @@ class EventType(Enum):
     LEVEL_UP = "level_up"
     ITEM_FOUND = "item_found"
 
+class SceneType(Enum):
+    EXPLORATION = "exploration"
+    COMBAT = "combat"
+    DIALOGUE = "dialogue"
+    REST = "rest"
+    CUTSCENE = "cutscene"
+
 @dataclass
 class DMEvent:
     type: EventType
-    description: str
-    data: dict = field(default_factory=dict)
+    description: str          # Raw mechanical description
+    data: dict = {}           # Optional structured payload
 
 @dataclass
 class DMContext:
     scene_type: SceneType
     location: str
     party: List[Character]
-    history: List[DMEvent]
+    history: List[DMEvent] = []
     turn: int = 0
     max_history: int = 10
 
 class DMAIAgent:
-    def build_prompt(self, event: DMEvent, context: DMContext) -> str: ...
-    def narrate(self, event: DMEvent, context: DMContext, llm=None) -> str: ...
-    def transition(self, context: DMContext, new_scene: SceneType) -> bool: ...
+    def narrate(event: DMEvent, context: DMContext, llm=None) -> str
+    def transition(context: DMContext, new_scene: SceneType) -> bool
+    def build_prompt(event: DMEvent, context: DMContext) -> str
+    def party_summary(context: DMContext) -> str
 ```
 
 ---
 
-## 4. Scene Transitions (valid)
+## 5. Public API
 
-```
-EXPLORATION → COMBAT, DIALOGUE, REST, TRANSITION
-COMBAT → EXPLORATION, TRANSITION
-DIALOGUE → EXPLORATION, COMBAT
-REST → EXPLORATION
-TRANSITION → EXPLORATION, COMBAT, DIALOGUE, REST
-```
+### `DMAIAgent.narrate(event, context, llm=None) -> str`
+- **Pre:** `event` is a valid `DMEvent`, `context` is a valid `DMContext`
+- **Post:** Returns a non-empty narrative string; appends event to context.history
+- **Behavior:** If `llm` provided → `llm(build_prompt(event, context))`; else → template format
 
----
+### `DMAIAgent.transition(context, new_scene) -> bool`
+- **Pre:** `new_scene` is a `SceneType`
+- **Post:** If transition is valid, updates `context.scene_type`; returns True. If invalid, returns False without mutation.
 
-## 5. Test Cases
+### `DMAIAgent.build_prompt(event, context) -> str`
+- **Post:** Returns a multi-line string with scene, location, history, and event description
 
-### TC1: DMContext creation
-- Create context with party, location, scene
-- History starts empty, turn = 0
+### `DMContext.advance_turn() -> None`
+- **Post:** `context.turn` incremented by 1
 
-### TC2: Add events to history
-- add_event trims to max_history
-- Most recent events preserved
-
-### TC3: Prompt building
-- build_prompt returns non-empty string
-- Contains party names, location, event description
-
-### TC4: Scene transitions (valid)
-- EXPLORATION → COMBAT: OK
-- COMBAT → EXPLORATION: OK
-
-### TC5: Scene transitions (invalid)
-- REST → COMBAT: raises ValueError
-
-### TC6: Narrate with mock LLM
-- narrate() calls LLM with prompt
-- Returns LLM response string
-
-### TC7: Narrate without LLM (fallback)
-- narrate() without LLM returns template narrative
+### `DMContext.party_summary() -> str`
+- **Post:** Returns comma-separated "Name HP/MaxHP Lv.N" entries
 
 ---
 
-## 6. Implementation Plan
-1. Write tests (TDD)
-2. Write dm_agent.py
-3. Run + verify 95%+ coverage
-4. Commit + push
+## 6. Acceptance Criteria
+
+**AC-01 [FR-01]:** Given any valid `DMEvent`, `narrate()` returns a string with `len > 0`.
+
+**AC-02 [FR-02]:** Given a mock LLM callable that returns "LLM output", `narrate()` returns exactly "LLM output".
+
+**AC-03 [FR-03]:** Given no LLM, `narrate()` returns a string that contains the event's description text.
+
+**AC-04 [FR-04]:** Given 15 consecutive events added to a `DMContext` with `max_history=10`, `len(context.history) == 10`.
+
+**AC-05 [FR-05]:** Given `scene_type=EXPLORATION`, `transition(COMBAT)` returns True and updates scene. `transition(CUTSCENE)` from EXPLORATION returns False.
+
+**AC-06 [FR-06]:** Given initial `turn=0`, after calling `advance_turn()` three times, `turn == 3`.
+
+**AC-07 [FR-07]:** Given a party of two characters (Aria HP 20/20 Lv1, Kael HP 12/12 Lv2), `party_summary()` contains both names with their HP and level.
+
+**AC-08 [FR-08]:** `build_prompt()` output contains the location string and event description.
+
+**AC-09 [FR-09]:** Two `DMAIAgent` instances created independently share no state; each call to `narrate()` is idempotent given the same context.
+
+---
+
+## 7. Performance Requirements
+
+- `narrate()` without LLM: < 1ms
+- `build_prompt()`: < 1ms
+
+---
+
+## 8. Error Handling
+
+- `narrate()` with `None` event: raises `TypeError`
+- `transition()` to invalid SceneType value: raises `ValueError`
+- Empty `party` in `party_summary()`: returns empty string `""`
+
+---
+
+## 9. Integration Points
+
+- **Upstream:** `CombatManager` (generates ENCOUNTER/COMBAT_END events), `ProgressionSystem` (generates LEVEL_UP events), `GameEngine` (generates all event types)
+- **Downstream:** LLM backend (OpenAI, Ollama, or mock); `ActionResponse` in API layer
+
+---
+
+## 10. Test Coverage Target
+
+- Minimum: **95%** line coverage on `dm_agent.py`
+- Must test: all 8 EventType templates, LLM path, non-LLM path, history trimming, all valid/invalid transitions
+
+---
+
+## Changelog
+
+- 2026-03-23: Initial version (post-implementation, retroactively documented to standard)

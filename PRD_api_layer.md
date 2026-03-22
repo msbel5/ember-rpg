@@ -1,266 +1,200 @@
-# PRD: Phase 3 — API Layer (FastAPI)
-**Project:** Ember RPG — FRP AI Game  
+# PRD: API Layer (FastAPI)
+**Project:** Ember RPG  
 **Phase:** 3  
+**Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-23  
-**Status:** Design → Implementation
+**Status:** Implemented  
 
 ---
 
-## 1. The Vision
+## 1. Purpose
 
-Kullanıcı sadece şunu yapar:
-```
-POST /game/action
-{ "input": "kapıyı açıyorum" }
-```
-
-Ve şunu alır:
-```json
-{
-  "narrative": "Ağır meşe kapı gıcırdayarak açılır. İçeride soluk bir ışık titreşiyor...",
-  "state": { "scene": "exploration", "hp": 28, "location": "Karanlık Kule" }
-}
-```
-
-Bütün mekanik (zar, AC, spell point) arka planda. Kullanıcı sadece hikayeyi yaşar.
+The API Layer exposes all game engine functionality as an HTTP REST API. It bridges the gap between player natural language ("ejderhaya saldırıyorum") and the backend game systems (combat, narrative, progression). A session-based design allows multiple concurrent players. Auto-generated OpenAPI docs (`/docs`) enable frontend integration without manual documentation.
 
 ---
 
-## 2. Architecture
+## 2. Scope
 
-```
-HTTP Client (Godot / Web / Telegram)
-        ↓
-   FastAPI Layer
-        ↓
-  ActionParser          ← "ejderhaya saldırıyorum" → {intent: ATTACK, target: "ejderha"}
-        ↓
-  GameEngine            ← Tüm sistemleri orkestre eder
-    ├── CombatManager   ← combat resolution
-    ├── ProgressionSystem ← XP, level-up
-    └── DMAIAgent       ← narrative generation
-        ↓
-  Response Builder      ← narrative + state + events
-```
+**In scope:**
+- ActionParser: natural language → structured intent (Turkish + English)
+- GameSession: per-player state container (UUID-keyed)
+- GameEngine: orchestrates Phase 2 systems per action intent
+- FastAPI routes: session CRUD + action endpoint
+- Pydantic request/response models
+- In-memory session store (MVP)
 
----
-
-## 3. Modules
-
-### 3.1 ActionParser
-Natural language → structured intent
-
-```python
-class ActionIntent(Enum):
-    ATTACK = "attack"
-    CAST_SPELL = "cast_spell"
-    USE_ITEM = "use_item"
-    MOVE = "move"
-    TALK = "talk"
-    EXAMINE = "examine"
-    REST = "rest"
-    OPEN = "open"
-    UNKNOWN = "unknown"
-
-@dataclass
-class ParsedAction:
-    intent: ActionIntent
-    target: Optional[str]       # "ejderha", "kapı", "tüccar"
-    action_detail: Optional[str] # "kılıçla", "ateş büyüsüyle"
-    raw_input: str
-
-class ActionParser:
-    INTENT_KEYWORDS = {
-        ActionIntent.ATTACK: ["saldır", "vur", "attack", "strike", "hit", "öldür", "kill"],
-        ActionIntent.CAST_SPELL: ["büyü", "spell", "cast", "magic", "ateş", "şimşek"],
-        ActionIntent.USE_ITEM: ["kullan", "iç", "use", "drink", "eat", "open bag"],
-        ActionIntent.TALK: ["konuş", "söyle", "talk", "say", "ask", "sor", "pazarlık"],
-        ActionIntent.EXAMINE: ["bak", "incele", "look", "examine", "search", "ara"],
-        ActionIntent.REST: ["dinlen", "rest", "camp", "kamp", "uy", "sleep"],
-        ActionIntent.OPEN: ["aç", "open", "unlock", "kır", "break"],
-        ActionIntent.MOVE: ["git", "yürü", "go", "move", "run", "kaç", "flee"],
-    }
-    
-    def parse(self, text: str) -> ParsedAction: ...
-```
-
-### 3.2 GameSession
-Per-player game state (in-memory for MVP, Redis later)
-
-```python
-@dataclass
-class GameSession:
-    session_id: str
-    player: Character
-    dm_context: DMContext
-    combat: Optional[CombatManager]
-    created_at: datetime
-    last_action: datetime
-```
-
-### 3.3 GameEngine
-Orchestrates all Phase 2 systems
-
-```python
-class GameEngine:
-    def process_action(self, session: GameSession, action: ParsedAction) -> ActionResult: ...
-    def start_combat(self, session: GameSession, enemies: List[Character]) -> ActionResult: ...
-    def end_combat(self, session: GameSession) -> ActionResult: ...
-
-@dataclass  
-class ActionResult:
-    narrative: str          # DM-generated story text
-    events: List[DMEvent]   # What happened mechanically
-    state_changes: dict     # HP changes, items, level-ups
-    scene_type: SceneType
-    combat_state: Optional[dict]  # If in combat
-```
-
-### 3.4 FastAPI Routes
-
-```
-POST /session/new          → Create new game session
-GET  /session/{id}         → Get session state
-POST /session/{id}/action  → Submit player action → narrative response
-GET  /session/{id}/state   → Full game state (party HP, scene, location)
-POST /session/{id}/combat/start → Initiate combat
-GET  /session/{id}/combat/state → Combat status
-DELETE /session/{id}       → End session
-```
+**Out of scope:**
+- Authentication / authorization (→ future Multiplayer phase)
+- Persistent session storage (→ Database phase)
+- WebSocket for real-time updates (→ Multiplayer phase)
+- Rate limiting (→ Production Ops phase)
+- NPC interaction endpoint (→ Phase 5 API extension)
+- Map endpoint (→ Phase 4 API extension)
 
 ---
 
-## 4. ActionParser Design
+## 3. Functional Requirements
 
-### Keyword Matching (MVP)
-Turkish + English bilingual support.
+**FR-01:** `ActionParser.parse(text)` detects one of 8 intents (ATTACK, CAST_SPELL, USE_ITEM, MOVE, TALK, EXAMINE, REST, OPEN) or UNKNOWN. Supports Turkish and English.
 
-### Fallback
-Unrecognized → `UNKNOWN` intent → DM narrates "Tam olarak ne yapmak istiyorsun?"
+**FR-02:** `ActionParser` uses priority-ordered keyword matching; more specific intents are checked before generic ones to avoid false matches.
 
-### Target Extraction
-Basit: input'tan keyword çıkar, active entities ile eşleştir.
-"ejderhaya saldır" → target="ejderha" → match with combat.combatants
+**FR-03:** `ActionParser` extracts a target noun from input, stripping Turkish case suffixes.
 
----
+**FR-04:** `GameEngine.new_session()` creates a session with a UUID, initializes Character with class-appropriate stats, and sets scene to EXPLORATION.
 
-## 5. Test Cases
+**FR-05:** `GameEngine.process_action()` routes each intent to a handler, advances the turn counter, and returns an `ActionResult` with narrative and state.
 
-### TC1: ActionParser — Attack Intent
-```python
-parser = ActionParser()
-result = parser.parse("ejderhaya saldırıyorum")
-assert result.intent == ActionIntent.ATTACK
-assert "ejderha" in result.target
-```
+**FR-06:** `POST /game/session/new` returns session_id, narrative, player state, scene, and location.
 
-### TC2: ActionParser — Turkish + English
-```python
-assert parser.parse("attack the goblin").intent == ActionIntent.ATTACK
-assert parser.parse("orka saldır").intent == ActionIntent.ATTACK
-```
+**FR-07:** `POST /game/session/{id}/action` accepts `{"input": str}`, returns narrative + player state + optional combat state.
 
-### TC3: ActionParser — Spell Intent
-```python
-result = parser.parse("ateş büyüsü atıyorum")
-assert result.intent == ActionIntent.CAST_SPELL
-```
+**FR-08:** `GET /game/session/{id}` returns full session state.
 
-### TC4: ActionParser — Unknown Intent
-```python
-result = parser.parse("xyzzy plugh")
-assert result.intent == ActionIntent.UNKNOWN
-```
+**FR-09:** `DELETE /game/session/{id}` removes session; subsequent GET returns 404.
 
-### TC5: GameSession Creation
-```python
-engine = GameEngine()
-session = engine.new_session(player_name="Aria")
-assert session.session_id is not None
-assert session.player.name == "Aria"
-assert session.dm_context.scene_type == SceneType.EXPLORATION
-```
+**FR-10:** REST action restores HP (max_hp//4) and spell_points to max when not in combat.
 
-### TC6: Full Action Loop (no LLM)
-```python
-session = engine.new_session("Aria")
-result = engine.process_action(session, ParsedAction(
-    intent=ActionIntent.EXAMINE, target="oda", raw_input="odayı inceliyorum"
-))
-assert isinstance(result.narrative, str)
-assert len(result.narrative) > 0
-```
+**FR-11:** REST action during active combat returns a refusal narrative without healing.
 
-### TC7: Combat Flow
-```python
-session = engine.new_session("Aria")
-engine.start_combat(session, enemies=[Character(name="Goblin", hp=10, max_hp=10)])
+**FR-12:** When no LLM is configured, `GameEngine` uses template-based `DMAIAgent.narrate()` for all narratives.
 
-attack_action = ParsedAction(intent=ActionIntent.ATTACK, target="goblin", raw_input="goblina saldır")
-result = engine.process_action(session, attack_action)
-
-assert result.combat_state is not None
-```
+**FR-13:** When an LLM callable is injected into `GameEngine`, it is passed to `DMAIAgent.narrate()` for every action.
 
 ---
 
-## 6. FastAPI Endpoint Design
+## 4. Data Structures
 
 ```python
-# Request/Response models (Pydantic)
-
-class ActionRequest(BaseModel):
-    input: str              # "ejderhaya saldırıyorum"
-    session_id: str
-
-class ActionResponse(BaseModel):
-    narrative: str          # "Kılıcın ejderhanın pulunu sıyırır..."
-    scene: str             # "combat"
-    hp: int
-    max_hp: int
-    spell_points: int
-    level: int
-    events: List[dict]     # Mechanical events list
-    combat: Optional[dict] # Combat state if active
-
+# Request models (Pydantic)
 class NewSessionRequest(BaseModel):
     player_name: str
-    player_class: str = "warrior"
-    
+    player_class: str = "warrior"    # warrior|rogue|mage|priest
+    location: Optional[str] = None
+
+class ActionRequest(BaseModel):
+    input: str                        # Raw player text
+
+# Response models (Pydantic)
 class NewSessionResponse(BaseModel):
     session_id: str
-    narrative: str  # Opening scene narration
+    narrative: str
     player: dict
+    scene: str
+    location: str
+
+class ActionResponse(BaseModel):
+    narrative: str
+    scene: str
+    player: dict
+    combat: Optional[dict]
+    state_changes: dict
+    level_up: Optional[dict]
+
+class SessionStateResponse(BaseModel):
+    session_id: str
+    scene: str
+    location: str
+    player: dict
+    in_combat: bool
+    turn: int
 ```
 
 ---
 
-## 7. Implementation Order
+## 5. Public API
 
-1. `engine/api/action_parser.py` (ActionParser, ParsedAction, ActionIntent)
-2. `engine/api/game_session.py` (GameSession dataclass)
-3. `engine/api/game_engine.py` (GameEngine orchestrator)
-4. `engine/api/models.py` (Pydantic request/response models)
-5. `engine/api/routes.py` (FastAPI router)
-6. `main.py` (FastAPI app entry point)
-7. Tests for each module
-8. Integration test (full request → response flow)
+### Routes
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Health check — returns name + version + status |
+| `POST` | `/game/session/new` | Create new game session |
+| `GET` | `/game/session/{id}` | Get session state |
+| `POST` | `/game/session/{id}/action` | Submit player action |
+| `DELETE` | `/game/session/{id}` | End session |
+
+### `GameEngine.new_session(player_name, player_class, location=None) -> GameSession`
+- Default stats per class: warrior (MIG 16), mage (MND 16), rogue (AGI 16), priest (INS 16)
+- Random opening location if none provided
+
+### `GameEngine.process_action(session, input_text) -> ActionResult`
+- Always advances `session.dm_context.turn`
+- Routes to handler: attack, spell, talk, rest, move, examine, open, use_item, unknown
+- Returns `ActionResult(narrative, events, state_changes, scene_type, combat_state, level_up)`
 
 ---
 
-## 8. Dependencies
+## 6. Acceptance Criteria
 
-```toml
-fastapi>=0.110.0
-uvicorn>=0.27.0
-pydantic>=2.0.0
-```
+**AC-01 [FR-01]:** `parser.parse("attack the goblin").intent == ActionIntent.ATTACK`
+
+**AC-02 [FR-01]:** `parser.parse("ejderhaya saldırıyorum").intent == ActionIntent.ATTACK`
+
+**AC-03 [FR-01]:** `parser.parse("büyü atıyorum").intent == ActionIntent.CAST_SPELL`
+
+**AC-04 [FR-01]:** `parser.parse("heal the warrior").intent == ActionIntent.CAST_SPELL`
+
+**AC-05 [FR-01]:** `parser.parse("xyzzy plugh").intent == ActionIntent.UNKNOWN`
+
+**AC-06 [FR-02]:** `parser.parse("dinlenmek istiyorum").intent == ActionIntent.REST` (not EXAMINE despite "dinle" in EXAMINE keywords)
+
+**AC-07 [FR-03]:** `parser.parse("gobline saldırıyorum").target` is not None.
+
+**AC-08 [FR-04]:** `engine.new_session("Aria", "mage").player.max_spell_points > 0`
+
+**AC-09 [FR-04]:** `engine.new_session("Aria").dm_context.scene_type == SceneType.EXPLORATION`
+
+**AC-10 [FR-05]:** After `process_action(session, "incele")`, `session.dm_context.turn == 1`
+
+**AC-11 [FR-06]:** `POST /game/session/new` → 200, body contains "session_id", "narrative", "player"
+
+**AC-12 [FR-07]:** `POST /game/session/{id}/action {"input":"odayı incele"}` → 200, body contains "narrative"
+
+**AC-13 [FR-08]:** `GET /game/session/{id}` → 200, body contains "session_id", "in_combat", "turn"
+
+**AC-14 [FR-09]:** After `DELETE /game/session/{id}`, `GET /game/session/{id}` → 404
+
+**AC-15 [FR-10]:** After rest action with player at 5 HP (max 20), `session.player.hp > 5`
+
+**AC-16 [FR-11]:** Rest action during active combat → narrative contains refusal; HP unchanged
+
+**AC-17 [FR-13]:** `GameEngine(llm=mock_fn).process_action(session, "incele")` → narrative == mock_fn return value
 
 ---
 
-## 9. Success Metrics
-- [ ] ActionParser: 90%+ correct intent on test phrases
-- [ ] Full action loop < 100ms (without LLM)  
-- [ ] 95%+ test coverage
-- [ ] OpenAPI docs auto-generated (/docs)
-- [ ] Session create → action → narrative works end-to-end
+## 7. Performance Requirements
+
+- `ActionParser.parse()`: < 1ms
+- `process_action()` (no LLM, no combat): < 10ms
+- `POST /game/session/{id}/action`: < 100ms end-to-end (no LLM)
+
+---
+
+## 8. Error Handling
+
+- `GET/POST/DELETE` on unknown session_id → 404 `{"detail": "Session not found"}`
+- `ActionParser.parse("")` → returns `ParsedAction(intent=UNKNOWN, raw_input="")`
+- Attack with no valid target → returns narrative "no target found" (no exception)
+- Spell with 0 spell_points → returns narrative "spell points exhausted" (no exception)
+
+---
+
+## 9. Integration Points
+
+- **Upstream:** All Phase 2 engine modules (Character, Combat, Magic, Progression, DM Agent)
+- **Downstream:** Frontend (Godot / Web) sends ActionRequest, displays ActionResponse.narrative
+- **Peer:** NPC Agent (`_handle_talk`), Map Generator (future map endpoint)
+
+---
+
+## 10. Test Coverage Target
+
+- Minimum: **90%** across `engine/api/` and `main.py`
+- Must test: all 8 ActionParser intents (TR+EN), all route endpoints (TestClient), LLM mock path, rest in/out of combat, session lifecycle
+
+---
+
+## Changelog
+
+- 2026-03-23: Rewritten to PRD standard (post-implementation)
