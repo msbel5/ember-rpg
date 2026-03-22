@@ -1,0 +1,187 @@
+{
+  "spells": [
+    {
+      "name": "Magic Missile",
+      "cost": 2,
+      "range": 120,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 1,
+      "description": "Three glowing darts of magical force strike your target unerringly.",
+      "effects": [
+        {"type": "damage", "amount": "3d4+3", "damage_type": "force"}
+      ]
+    },
+    {
+      "name": "Cure Wounds",
+      "cost": 2,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 1,
+      "description": "You touch a creature, channeling positive energy to heal wounds.",
+      "effects": [
+        {"type": "heal", "amount": "2d8+2"}
+      ]
+    },
+    {
+      "name": "Shield",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 1,
+      "description": "An invisible barrier of magical force appears, protecting you.",
+      "effects": [
+        {"type": "buff", "stat": "END", "bonus": 4, "duration": 10}
+      ]
+    },
+    {
+      "name": "Fireball",
+      "cost": 5,
+      "range": 60,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 3,
+      "description": "A bright streak flashes to a point you choose within range and explodes in a roar of flame.",
+      "effects": [
+        {"type": "damage", "amount": "8d6", "damage_type": "fire"}
+      ]
+    },
+    {
+      "name": "Lightning Bolt",
+      "cost": 4,
+      "range": 100,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 3,
+      "description": "A stroke of lightning forming a line lashes out from you in a direction you choose.",
+      "effects": [
+        {"type": "damage", "amount": "8d6", "damage_type": "lightning"}
+      ]
+    },
+    {
+      "name": "Cure Serious Wounds",
+      "cost": 4,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 3,
+      "description": "You channel powerful healing energy into a creature you touch.",
+      "effects": [
+        {"type": "heal", "amount": "4d8+4"}
+      ]
+    },
+    {
+      "name": "Haste",
+      "cost": 4,
+      "range": 30,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 3,
+      "description": "You speed up an ally's movements and reactions.",
+      "effects": [
+        {"type": "buff", "stat": "AGI", "bonus": 6, "duration": 10}
+      ]
+    },
+    {
+      "name": "Shocking Grasp",
+      "cost": 2,
+      "range": 5,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 1,
+      "description": "Lightning springs from your hand to deliver a shock to a creature you try to touch.",
+      "effects": [
+        {"type": "damage", "amount": "3d8", "damage_type": "lightning"}
+      ]
+    },
+    {
+      "name": "Ice Storm",
+      "cost": 6,
+      "range": 90,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 4,
+      "description": "A hail of rock-hard ice pounds to the ground in a cylinder.",
+      "effects": [
+        {"type": "damage", "amount": "4d8", "damage_type": "cold"},
+        {"type": "damage", "amount": "4d6", "damage_type": "bludgeoning"}
+      ]
+    },
+    {
+      "name": "Stoneskin",
+      "cost": 5,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 4,
+      "description": "Until the spell ends, one willing creature you touch has resistance to nonmagical damage.",
+      "effects": [
+        {"type": "buff", "stat": "END", "bonus": 8, "duration": 60}
+      ]
+    },
+    {
+      "name": "Mass Cure Wounds",
+      "cost": 7,
+      "range": 30,
+      "target_type": "area",
+      "school": "abjuration",
+      "level": 5,
+      "description": "A wave of healing energy washes out from a point of your choice.",
+      "effects": [
+        {"type": "heal", "amount": "5d8+5"}
+      ]
+    },
+    {
+      "name": "Cone of Cold",
+      "cost": 7,
+      "range": 60,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 5,
+      "description": "A blast of cold air erupts from your hands.",
+      "effects": [
+        {"type": "damage", "amount": "8d8", "damage_type": "cold"}
+      ]
+    },
+    {
+      "name": "Flame Strike",
+      "cost": 7,
+      "range": 60,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 5,
+      "description": "A vertical column of divine fire roars down from the heavens.",
+      "effects": [
+        {"type": "damage", "amount": "4d6", "damage_type": "fire"},
+        {"type": "damage", "amount": "4d6", "damage_type": "radiant"}
+      ]
+    },
+    {
+      "name": "Bless",
+      "cost": 2,
+      "range": 30,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 1,
+      "description": "You bless up to three creatures of your choice within range.",
+      "effects": [
+        {"type": "buff", "stat": "MIG", "bonus": 2, "duration": 10},
+        {"type": "buff", "stat": "INS", "bonus": 2, "duration": 10}
+      ]
+    },
+    {
+      "name": "Hold Person",
+      "cost": 3,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 2,
+      "description": "You paralyze a humanoid you can see within range.",
+      "effects": [
+        {"type": "buff", "stat": "AGI", "bonus": -10, "duration": 5}
+      ]
+    }
+  ]
+}

@@ -304,6 +304,41 @@ class CombatManager:
         if not self.combat_ended:
             self.start_turn()
     
+    def cast_spell(self, spell: 'Spell', target_index: Optional[int] = None) -> Dict:
+        """
+        Cast a spell during combat.
+        
+        Args:
+            spell: Spell to cast
+            target_index: Index of target combatant (for single-target spells)
+        
+        Returns:
+            Spell casting result
+        """
+        from engine.core.spell import TargetType
+        
+        caster = self.active_combatant
+        
+        # Check AP
+        if caster.ap < 2:
+            return {"error": "Insufficient AP (casting costs 2 AP)"}
+        
+        # Get target
+        target = None
+        if spell.target_type == TargetType.SINGLE:
+            if target_index is None:
+                return {"error": "Single-target spell requires target"}
+            target = self.combatants[target_index].character
+        
+        # Cast spell
+        try:
+            result = spell.cast(caster.character, target)
+            caster.ap -= 2  # Deduct AP after successful cast
+            self._log_event("spell_cast", result)
+            return result
+        except ValueError as e:
+            return {"error": str(e)}
+    
     def _check_combat_end(self):
         """Check if combat has ended (one side eliminated)."""
         alive = [c for c in self.combatants if not c.is_dead]
