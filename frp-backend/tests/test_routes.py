@@ -108,7 +108,55 @@ class TestSessionEndpoints:
         resp = client.post("/game/session/new", json={
             "player_name": "Aria",
             "player_class": "warrior",
-            "location": "Karanlık Kule"
+            "location": "Dark Tower"
         })
         assert resp.status_code == 200
-        assert resp.json()["location"] == "Karanlık Kule"
+        assert resp.json()["location"] == "Dark Tower"
+
+
+class TestMapEndpoint:
+
+    def _new_session(self, location="Dark Keep"):
+        resp = client.post("/game/session/new", json={
+            "player_name": "Scout",
+            "player_class": "rogue",
+            "location": location,
+        })
+        assert resp.status_code == 200
+        return resp.json()["session_id"]
+
+    def test_get_map_dungeon(self):
+        sid = self._new_session("Dark Dungeon")
+        resp = client.get(f"/game/session/{sid}/map")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["session_id"] == sid
+        assert "map" in data
+        assert "tiles" in data["map"]
+
+    def test_get_map_town(self):
+        sid = self._new_session("Harbor Town")
+        resp = client.get(f"/game/session/{sid}/map")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "map" in data
+        assert data["map"]["metadata"]["map_type"] in ("dungeon", "town")
+
+    def test_get_map_seeded(self):
+        sid = self._new_session("Forest Road")
+        resp1 = client.get(f"/game/session/{sid}/map?seed=42")
+        resp2 = client.get(f"/game/session/{sid}/map?seed=42")
+        assert resp1.status_code == 200
+        assert resp1.json()["map"]["width"] == resp2.json()["map"]["width"]
+
+    def test_get_map_nonexistent_session(self):
+        resp = client.get("/game/session/no-such-id/map")
+        assert resp.status_code == 404
+
+    def test_map_has_required_fields(self):
+        sid = self._new_session()
+        resp = client.get(f"/game/session/{sid}/map")
+        m = resp.json()["map"]
+        assert "width" in m
+        assert "height" in m
+        assert "tiles" in m

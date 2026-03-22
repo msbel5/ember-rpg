@@ -3,7 +3,7 @@ Ember RPG - API Layer
 FastAPI routes
 """
 from fastapi import APIRouter, HTTPException
-from typing import Dict
+from typing import Dict, Optional
 
 from engine.api.game_engine import GameEngine
 from engine.api.game_session import GameSession
@@ -90,6 +90,38 @@ def end_session(session_id: str):
     _get_session(session_id)
     del _sessions[session_id]
     return {"message": "Session ended."}
+
+
+@router.get("/session/{session_id}/map")
+def get_map(session_id: str, seed: Optional[int] = None):
+    """
+    Get the procedurally generated tile map for the current session location.
+
+    Query params:
+        seed (int, optional): RNG seed for deterministic generation (default: session-based)
+
+    Returns:
+        Map data including tile grid, rooms, and metadata.
+    """
+    session = _get_session(session_id)
+    from engine.map import DungeonGenerator, TownGenerator
+
+    map_seed = seed if seed is not None else abs(hash(session.session_id)) % (2**31)
+    location = session.dm_context.location.lower()
+
+    # Choose map type based on location name heuristics
+    if any(w in location for w in ["town", "tavern", "village", "harbor", "city", "inn", "market"]):
+        generator = TownGenerator(seed=map_seed)
+        map_data = generator.generate(width=40, height=40)
+    else:
+        generator = DungeonGenerator(seed=map_seed)
+        map_data = generator.generate(width=40, height=40)
+
+    return {
+        "session_id": session_id,
+        "location": session.dm_context.location,
+        "map": map_data.to_dict(),
+    }
 
 
 def _get_session(session_id: str) -> GameSession:
