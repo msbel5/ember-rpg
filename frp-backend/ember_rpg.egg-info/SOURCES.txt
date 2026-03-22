@@ -1,0 +1,9 @@
+pyproject.toml
+ember_rpg.egg-info/PKG-INFO
+ember_rpg.egg-info/SOURCES.txt
+ember_rpg.egg-info/dependency_links.txt
+ember_rpg.egg-info/top_level.txt
+engine/__init__.py
+engine/core/__init__.py
+engine/core/character.py
+tests/test_character.py

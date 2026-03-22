@@ -1,0 +1,11 @@
+# Ember RPG Backend - Requirements
+
+# Core
+python>=3.11
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Type checking
+mypy>=1.5.0

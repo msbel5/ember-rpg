@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: ember-rpg
+Version: 0.1.0
+Summary: Ember RPG - AI-powered fantasy RPG game engine
+Requires-Python: >=3.11
