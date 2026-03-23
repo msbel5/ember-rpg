@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from engine.core.character import Character
 from engine.core.item import Item, ItemType
+from engine.core.enemy_ai import EnemyAI, CombatAction
 import random
 
 
@@ -359,6 +360,36 @@ class CombatManager:
             "data": data
         })
     
+    def enemy_turn(self, ai: Optional['EnemyAI'] = None) -> Dict:
+        """
+        Process the current combatant's turn using EnemyAI (if it's an enemy).
+
+        Args:
+            ai: EnemyAI instance (creates default if None)
+
+        Returns:
+            Result dictionary from the chosen action
+        """
+        if ai is None:
+            ai = EnemyAI()
+
+        enemy = self.active_combatant
+        action: CombatAction = ai.choose_action(enemy, self)
+
+        if action.action_type == "flee":
+            enemy.is_dead = True  # Mark as fled/removed from combat
+            self._log_event("flee", {"combatant": enemy.name})
+            self._check_combat_end()
+            return {"action": "flee", "combatant": enemy.name}
+
+        if action.action_type in ("attack", "special") and action.target_index is not None:
+            result = self.attack(action.target_index)
+            if action.action_type == "special" and action.special_move:
+                result["special_move"] = action.special_move
+            return result
+
+        return {"action": "wait", "combatant": enemy.name}
+
     def get_summary(self) -> Dict:
         """
         Get combat summary.

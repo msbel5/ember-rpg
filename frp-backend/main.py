@@ -4,6 +4,7 @@ Ember RPG - FastAPI Application Entry Point
 from fastapi import FastAPI
 from engine.api.routes import router
 from engine.api.save_routes import router as save_router
+from engine.api.shop_routes import router as shop_router
 
 app = FastAPI(
     title="Ember RPG API",
@@ -13,6 +14,7 @@ app = FastAPI(
 
 app.include_router(router, prefix="/game")
 app.include_router(save_router, prefix="/game")
+app.include_router(shop_router, prefix="/game")
 
 
 @app.get("/")

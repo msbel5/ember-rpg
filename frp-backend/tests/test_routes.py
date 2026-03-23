@@ -160,3 +160,52 @@ class TestMapEndpoint:
         assert "width" in m
         assert "height" in m
         assert "tiles" in m
+
+
+# ---------------------------------------------------------------------------
+# Save route error path coverage
+# ---------------------------------------------------------------------------
+
+class TestSaveRouteErrors:
+    """Cover error paths in save_routes.py."""
+
+    def setup_method(self):
+        self.client = TestClient(app)
+
+    def test_save_nonexistent_session(self):
+        resp = self.client.post("/game/session/does-not-exist/save", json={"player_id": "p1"})
+        assert resp.status_code == 404
+
+    def test_get_save_not_found(self):
+        resp = self.client.get("/game/saves/file/nonexistent-save-id")
+        assert resp.status_code == 404
+
+    def test_delete_save_not_found(self):
+        resp = self.client.delete("/game/saves/nonexistent-save-id")
+        assert resp.status_code == 404
+
+    def test_load_session_not_found(self):
+        resp = self.client.post("/game/session/load/nonexistent-save-id")
+        assert resp.status_code == 404
+
+    def test_save_and_list_saves(self):
+        # Create a session
+        s = self.client.post("/game/session/new", json={"player_name": "SaveTest", "player_class": "warrior"})
+        sid = s.json()["session_id"]
+        # Save it
+        r = self.client.post(f"/game/session/{sid}/save", json={"player_id": "player_save_test"})
+        assert r.status_code == 200
+        save_id = r.json()["save_id"]
+        # List saves
+        lst = self.client.get("/game/saves/player_save_test")
+        assert lst.status_code == 200
+        assert any(sv["save_id"] == save_id for sv in lst.json())
+        # Get specific save
+        g = self.client.get(f"/game/saves/file/{save_id}")
+        assert g.status_code == 200
+        # Load session
+        load = self.client.post(f"/game/session/load/{save_id}")
+        assert load.status_code == 200
+        # Delete save
+        d = self.client.delete(f"/game/saves/{save_id}")
+        assert d.status_code == 200

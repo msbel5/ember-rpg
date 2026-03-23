@@ -37,6 +37,7 @@ class ActionResult:
     scene_type: SceneType = SceneType.EXPLORATION
     combat_state: Optional[dict] = None
     level_up: Optional[object] = None
+    loot_dropped: list = field(default_factory=list)
 
 
 # Default opening scenes (location, opening description)
@@ -299,7 +300,7 @@ class GameEngine:
         )
 
     def _handle_move(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        dest = action.target or "forward"
+        dest = action.direction or action.target or "forward"
         session.dm_context.location = dest
         desc = f"{session.player.name} moves toward {dest}."
         event = DMEvent(type=EventType.DISCOVERY, description=desc)

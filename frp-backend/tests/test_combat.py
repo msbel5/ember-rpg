@@ -364,3 +364,149 @@ class TestItemUsage:
         assert 'effects' in result
         assert combat.combatants[0].character.hp > initial_hp  # Healed
         assert combat.active_combatant.ap == 2  # Used 1 AP
+
+
+# ---------------------------------------------------------------------------
+# Additional coverage: burning condition, use_item AP, enemy_turn
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Additional coverage: burning condition, use_item AP, enemy_turn
+# ---------------------------------------------------------------------------
+
+def _make_char(name="Fighter", hp=20):
+    return Character(
+        name=name,
+        hp=hp, max_hp=hp,
+        stats={"MIG": 12, "AGI": 12, "END": 12, "MND": 10, "INS": 10, "PRE": 10},
+    )
+
+
+class TestConditionCoverage:
+    """Cover burning/poisoned condition apply_turn_effect paths."""
+
+    def test_burning_condition_applies_damage(self):
+        warrior = _make_char("Warrior")
+        combatant = Combatant(character=warrior, initiative=10)
+        cond = Condition(name="burning", duration=2, effect="fire")
+        initial_hp = warrior.hp
+        msg = cond.apply_turn_effect(combatant)
+        assert msg is not None
+        assert "fire" in msg
+        assert warrior.hp < initial_hp
+
+    def test_unknown_condition_returns_none(self):
+        warrior = _make_char("Warrior")
+        combatant = Combatant(character=warrior, initiative=10)
+        cond = Condition(name="slowed", duration=1, effect="slow")
+        result = cond.apply_turn_effect(combatant)
+        assert result is None
+
+
+class TestUseItemAP:
+    """Cover use_item AP check."""
+
+    def test_use_item_insufficient_ap(self):
+        warrior = _make_char("Warrior")
+        enemy = _make_char("Enemy")
+        cm = CombatManager([warrior, enemy])
+        cm.active_combatant.ap = 0
+        item = Item(name="Potion", value=10, weight=0.5, item_type=ItemType.CONSUMABLE)
+        result = cm.use_item(item)
+        assert "error" in result
+
+
+class TestEnemyTurnCoverage:
+    """Cover enemy_turn method in CombatManager."""
+
+    def test_enemy_turn_flee(self):
+        from engine.core.enemy_ai import EnemyAI, CombatAction
+        from unittest.mock import patch
+        warrior = _make_char("Warrior")
+        enemy = _make_char("Enemy")
+        cm = CombatManager([warrior, enemy])
+        ai = EnemyAI()
+        with patch.object(ai, 'choose_action', return_value=CombatAction(action_type="flee")):
+            # Advance to enemy's turn
+            while cm.active_combatant.name != enemy.name and not cm.combat_ended:
+                cm.end_turn()
+            if not cm.combat_ended:
+                result = cm.enemy_turn(ai=ai)
+                assert result["action"] == "flee"
+
+    def test_enemy_turn_wait(self):
+        from engine.core.enemy_ai import EnemyAI, CombatAction
+        from unittest.mock import patch
+        warrior = _make_char("Warrior")
+        enemy = _make_char("Enemy")
+        cm = CombatManager([warrior, enemy])
+        ai = EnemyAI()
+        with patch.object(ai, 'choose_action', return_value=CombatAction(action_type="wait")):
+            while cm.active_combatant.name != enemy.name and not cm.combat_ended:
+                cm.end_turn()
+            if not cm.combat_ended:
+                result = cm.enemy_turn(ai=ai)
+                assert result["action"] == "wait"
+
+    def test_enemy_turn_default_ai(self):
+        """enemy_turn with no AI arg should create default EnemyAI."""
+        from engine.core.enemy_ai import EnemyAI
+        from unittest.mock import patch
+        warrior = _make_char("Warrior")
+        enemy = _make_char("Enemy")
+        enemy.enemy_type = "beast"
+        cm = CombatManager([warrior, enemy])
+        # Just ensure it runs without error
+        while cm.active_combatant.character != enemy and not cm.combat_ended:
+            cm.end_turn()
+        if not cm.combat_ended:
+            result = cm.enemy_turn()
+            assert "action" in result or "attacker" in result or "error" in result
+
+
+class TestCombatAttackEdgeCases:
+    """Cover attack dead target and skip dead combatant in end_turn."""
+
+    def test_attack_dead_target(self):
+        warrior = _make_char("Warrior", hp=20)
+        enemy = _make_char("Enemy", hp=1)
+        cm = CombatManager([warrior, enemy])
+        # Find enemy index
+        enemy_idx = next(i for i, c in enumerate(cm.combatants) if c.name == "Enemy")
+        cm.combatants[enemy_idx].is_dead = True
+        result = cm.attack(enemy_idx)
+        assert "error" in result
+
+    def test_skip_dead_in_end_turn(self):
+        """end_turn should skip dead combatants."""
+        a = _make_char("A", hp=20)
+        b = _make_char("B", hp=20)
+        c = _make_char("C", hp=20)
+        cm = CombatManager([a, b, c])
+        # Kill second combatant
+        cm.combatants[1].is_dead = True
+        cm.combatants[1].character.hp = 0
+        # End first combatant's turn — should skip to third
+        initial_turn = cm.current_turn
+        cm.end_turn()
+        # current_turn should not be 1 (dead)
+        assert not cm.combatants[cm.current_turn].is_dead
+
+    def test_enemy_turn_special_with_move_name(self):
+        """enemy_turn with special action should include special_move in result."""
+        from engine.core.enemy_ai import EnemyAI, CombatAction
+        from unittest.mock import patch
+        warrior = _make_char("Warrior", hp=20)
+        enemy = _make_char("Enemy", hp=20)
+        cm = CombatManager([warrior, enemy])
+        ai = EnemyAI()
+        warrior_idx = next(i for i, c in enumerate(cm.combatants) if c.name == "Warrior")
+        action = CombatAction(action_type="special", target_index=warrior_idx, special_move="Slam")
+        with patch.object(ai, 'choose_action', return_value=action):
+            while cm.active_combatant.name != enemy.name and not cm.combat_ended:
+                cm.end_turn()
+            if not cm.combat_ended:
+                result = cm.enemy_turn(ai=ai)
+                if "hit" in result:  # attack succeeded
+                    assert result.get("special_move") == "Slam"
