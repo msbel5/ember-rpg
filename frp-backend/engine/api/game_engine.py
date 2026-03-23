@@ -267,11 +267,13 @@ class GameEngine:
         location = session.dm_context.location or "the area"
         desc = (
             f"{session.player.name} surveys their surroundings in {location}. "
-            f"They take in the sights, sounds, and atmosphere of the place."
+            f"Current location: {location}. "
+            f"They take in the sights, sounds, and atmosphere of {location} specifically."
         )
         event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
             "player_name": session.player.name,
             "location": location,
+            "current_location": location,
             "action": "look around",
         })
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
@@ -291,7 +293,12 @@ class GameEngine:
 
     def _handle_talk(self, session: GameSession, action: ParsedAction) -> ActionResult:
         target = action.target or "a stranger"
-        desc = f"{session.player.name} approaches {target} to speak."
+        location = session.dm_context.location or "the area"
+        desc = (
+            f"{session.player.name} initiates a conversation with {target} in {location}. "
+            f"This is a social interaction — {session.player.name} speaks directly to {target}, "
+            f"waiting for a reply and engaging in dialogue."
+        )
         event = DMEvent(type=EventType.DIALOGUE, description=desc)
         self.dm.transition(session.dm_context, SceneType.DIALOGUE)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)

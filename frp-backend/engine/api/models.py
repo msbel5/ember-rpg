@@ -55,3 +55,6 @@ class SessionStateResponse(BaseModel):
     player: dict
     in_combat: bool
     turn: int
+    hp: Optional[int] = None
+    max_hp: Optional[int] = None
+    level: Optional[int] = None

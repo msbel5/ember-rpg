@@ -18,6 +18,7 @@ router = APIRouter()
 
 # Wire LLM to GameEngine — narrative uses claude-haiku-4.5 via Copilot API
 def _make_llm_callable():
+    import re
     from engine.llm import get_llm_router, MODEL_FAST
     llm_router = get_llm_router()
 
@@ -30,13 +31,16 @@ def _make_llm_callable():
                         "You are the Dungeon Master for Ember RPG, a dark fantasy tabletop RPG. "
                         "Generate immersive, atmospheric narrative in 1-3 sentences. "
                         "Use second person ('You see...', 'Before you...'). "
-                        "Never break the fourth wall or mention game mechanics directly."
+                        "Never break the fourth wall or mention game mechanics directly. "
+                        "Always stay consistent with the player's current location as provided in the context."
                     ),
                 },
                 {"role": "user", "content": prompt},
             ],
             model=MODEL_FAST,
         )
+        if result:
+            result = re.sub(r'^#+\s+[^\n]*\n+', '', result, flags=re.MULTILINE).strip()
         return result  # None → GameEngine falls back to template
 
     return _llm
@@ -122,7 +126,7 @@ def new_session(req: NewSessionRequest):
         type=EventType.DISCOVERY,
         description=f"{req.player_name} begins their adventure.",
     )
-    narrative = dm.narrate(opening_event, session.dm_context)
+    narrative = dm.narrate(opening_event, session.dm_context, llm=_make_llm_callable())
 
     return NewSessionResponse(
         session_id=session.session_id,
@@ -138,6 +142,11 @@ def get_session(session_id: str):
     """Get current session state."""
     session = _get_session(session_id)
     state = session.to_dict()
+    # Flatten player stats to top level for easy client access
+    player = state.get("player", {})
+    state["hp"] = player.get("hp")
+    state["max_hp"] = player.get("max_hp")
+    state["level"] = player.get("level")
     return SessionStateResponse(**state)
 
 
