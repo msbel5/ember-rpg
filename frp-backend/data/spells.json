@@ -9,19 +9,26 @@
       "level": 1,
       "description": "Three glowing darts of magical force strike your target unerringly.",
       "effects": [
-        {"type": "damage", "amount": "3d4+3", "damage_type": "force"}
+        {
+          "type": "damage",
+          "amount": "3d4+3",
+          "damage_type": "force"
+        }
       ]
     },
     {
       "name": "Cure Wounds",
       "cost": 2,
-      "range": 5,
-      "target_type": "single",
+      "range": 0,
+      "target_type": "self",
       "school": "abjuration",
       "level": 1,
-      "description": "You touch a creature, channeling positive energy to heal wounds.",
+      "description": "A wave of healing energy washes over you, mending wounds.",
       "effects": [
-        {"type": "heal", "amount": "2d8+2"}
+        {
+          "type": "heal",
+          "amount": "1d8+3"
+        }
       ]
     },
     {
@@ -31,45 +38,65 @@
       "target_type": "self",
       "school": "abjuration",
       "level": 1,
-      "description": "An invisible barrier of magical force appears, protecting you.",
+      "description": "An invisible barrier of magical force appears and protects you.",
       "effects": [
-        {"type": "buff", "stat": "END", "bonus": 4, "duration": 10}
+        {
+          "type": "buff",
+          "stat": "armor_class",
+          "amount": 5,
+          "duration": 1
+        }
       ]
     },
     {
       "name": "Fireball",
       "cost": 5,
-      "range": 60,
-      "target_type": "single",
+      "range": 150,
+      "target_type": "area",
       "school": "evocation",
       "level": 3,
-      "description": "A bright streak flashes to a point you choose within range and explodes in a roar of flame.",
+      "description": "A bright streak of flame erupts into a 20-foot radius explosion.",
       "effects": [
-        {"type": "damage", "amount": "8d6", "damage_type": "fire"}
+        {
+          "type": "damage",
+          "amount": "8d6",
+          "damage_type": "fire",
+          "save": "dexterity",
+          "save_dc": 14
+        }
       ]
     },
     {
       "name": "Lightning Bolt",
-      "cost": 4,
+      "cost": 5,
       "range": 100,
-      "target_type": "single",
+      "target_type": "cone",
       "school": "evocation",
       "level": 3,
-      "description": "A stroke of lightning forming a line lashes out from you in a direction you choose.",
+      "description": "A stroke of lightning forming a line 100 feet long and 5 feet wide blasts out.",
       "effects": [
-        {"type": "damage", "amount": "8d6", "damage_type": "lightning"}
+        {
+          "type": "damage",
+          "amount": "8d6",
+          "damage_type": "lightning",
+          "save": "dexterity",
+          "save_dc": 14
+        }
       ]
     },
     {
       "name": "Cure Serious Wounds",
       "cost": 4,
-      "range": 5,
-      "target_type": "single",
+      "range": 0,
+      "target_type": "self",
       "school": "abjuration",
       "level": 3,
-      "description": "You channel powerful healing energy into a creature you touch.",
+      "description": "Powerful healing magic knits flesh and bone.",
       "effects": [
-        {"type": "heal", "amount": "4d8+4"}
+        {
+          "type": "heal",
+          "amount": "3d8+6"
+        }
       ]
     },
     {
@@ -79,70 +106,101 @@
       "target_type": "single",
       "school": "transmutation",
       "level": 3,
-      "description": "You speed up an ally's movements and reactions.",
+      "description": "The target moves and acts with supernatural speed.",
       "effects": [
-        {"type": "buff", "stat": "AGI", "bonus": 6, "duration": 10}
+        {
+          "type": "status",
+          "status": "hasted",
+          "duration": 3
+        }
       ]
     },
     {
       "name": "Shocking Grasp",
-      "cost": 2,
+      "cost": 1,
       "range": 5,
       "target_type": "single",
       "school": "evocation",
       "level": 1,
-      "description": "Lightning springs from your hand to deliver a shock to a creature you try to touch.",
+      "description": "Lightning springs from your hand to deliver a shock.",
       "effects": [
-        {"type": "damage", "amount": "3d8", "damage_type": "lightning"}
+        {
+          "type": "damage",
+          "amount": "1d8",
+          "damage_type": "lightning"
+        }
       ]
     },
     {
       "name": "Ice Storm",
       "cost": 6,
-      "range": 90,
+      "range": 300,
       "target_type": "area",
       "school": "evocation",
       "level": 4,
-      "description": "A hail of rock-hard ice pounds to the ground in a cylinder.",
+      "description": "Pounding hail hammers a 20-foot radius area and makes it difficult terrain.",
       "effects": [
-        {"type": "damage", "amount": "4d8", "damage_type": "cold"},
-        {"type": "damage", "amount": "4d6", "damage_type": "bludgeoning"}
+        {
+          "type": "damage",
+          "amount": "2d8",
+          "damage_type": "bludgeoning"
+        },
+        {
+          "type": "damage",
+          "amount": "4d6",
+          "damage_type": "cold"
+        }
       ]
     },
     {
       "name": "Stoneskin",
       "cost": 5,
-      "range": 5,
-      "target_type": "single",
+      "range": 0,
+      "target_type": "self",
       "school": "abjuration",
       "level": 4,
-      "description": "Until the spell ends, one willing creature you touch has resistance to nonmagical damage.",
+      "description": "Your flesh becomes as hard as stone. Resistance to nonmagical weapons.",
       "effects": [
-        {"type": "buff", "stat": "END", "bonus": 8, "duration": 60}
+        {
+          "type": "buff",
+          "stat": "damage_resistance",
+          "value": "physical",
+          "duration": 5
+        }
       ]
     },
     {
       "name": "Mass Cure Wounds",
       "cost": 7,
-      "range": 30,
+      "range": 60,
       "target_type": "area",
       "school": "abjuration",
       "level": 5,
-      "description": "A wave of healing energy washes out from a point of your choice.",
+      "description": "A wave of healing energy washes over up to 6 creatures in range.",
       "effects": [
-        {"type": "heal", "amount": "5d8+5"}
+        {
+          "type": "heal",
+          "amount": "3d8+5",
+          "targets": 6
+        }
       ]
     },
     {
       "name": "Cone of Cold",
       "cost": 7,
       "range": 60,
-      "target_type": "area",
+      "target_type": "cone",
       "school": "evocation",
       "level": 5,
-      "description": "A blast of cold air erupts from your hands.",
+      "description": "A blast of cold air erupts from your hands in a 60-foot cone.",
       "effects": [
-        {"type": "damage", "amount": "8d8", "damage_type": "cold"}
+        {
+          "type": "damage",
+          "amount": "8d8",
+          "damage_type": "cold",
+          "save": "constitution",
+          "save_dc": 16
+        }
       ]
     },
     {
@@ -154,8 +212,16 @@
       "level": 5,
       "description": "A vertical column of divine fire roars down from the heavens.",
       "effects": [
-        {"type": "damage", "amount": "4d6", "damage_type": "fire"},
-        {"type": "damage", "amount": "4d6", "damage_type": "radiant"}
+        {
+          "type": "damage",
+          "amount": "4d6",
+          "damage_type": "fire"
+        },
+        {
+          "type": "damage",
+          "amount": "4d6",
+          "damage_type": "radiant"
+        }
       ]
     },
     {
@@ -165,10 +231,14 @@
       "target_type": "single",
       "school": "transmutation",
       "level": 1,
-      "description": "You bless up to three creatures of your choice within range.",
+      "description": "Divine favor aids the target's attacks and saving throws.",
       "effects": [
-        {"type": "buff", "stat": "MIG", "bonus": 2, "duration": 10},
-        {"type": "buff", "stat": "INS", "bonus": 2, "duration": 10}
+        {
+          "type": "buff",
+          "stat": "attack_bonus",
+          "amount": 2,
+          "duration": 5
+        }
       ]
     },
     {
@@ -178,9 +248,711 @@
       "target_type": "single",
       "school": "necromancy",
       "level": 2,
-      "description": "You paralyze a humanoid you can see within range.",
+      "description": "The target is paralyzed and incapacitated.",
       "effects": [
-        {"type": "buff", "stat": "AGI", "bonus": -10, "duration": 5}
+        {
+          "type": "status",
+          "status": "held",
+          "duration": 2,
+          "save": "wisdom",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Burning Hands",
+      "cost": 2,
+      "range": 15,
+      "target_type": "cone",
+      "school": "evocation",
+      "level": 1,
+      "description": "A thin sheet of flames shoots forth from your outstretched fingertips.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d6",
+          "damage_type": "fire",
+          "save": "dexterity",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Acid Splash",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 1,
+      "description": "You hurl a bubble of acid at one creature. On a hit, deals acid damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "acid"
+        }
+      ]
+    },
+    {
+      "name": "Ray of Frost",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 1,
+      "description": "A frigid beam of blue-white light streaks toward a creature, slowing it.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d8",
+          "damage_type": "cold"
+        },
+        {
+          "type": "status",
+          "status": "slowed",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Darkness",
+      "cost": 2,
+      "range": 60,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 2,
+      "description": "Magical darkness spreads from a point you choose, blocking all light.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "blinded",
+          "duration": 3,
+          "area_effect": true
+        }
+      ]
+    },
+    {
+      "name": "Invisibility",
+      "cost": 3,
+      "range": 0,
+      "target_type": "self",
+      "school": "illusion",
+      "level": 2,
+      "description": "You turn invisible until you attack or cast a spell.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "invisible",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Mirror Image",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "illusion",
+      "level": 2,
+      "description": "Three illusory duplicates of yourself appear, confusing attackers.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasion_images",
+          "amount": 3,
+          "duration": 4
+        }
+      ]
+    },
+    {
+      "name": "Scorching Ray",
+      "cost": 3,
+      "range": 120,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 2,
+      "description": "You hurl three rays of fire at a target. Each ray deals fire damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d6",
+          "damage_type": "fire",
+          "hits": 3
+        }
+      ]
+    },
+    {
+      "name": "Web",
+      "cost": 2,
+      "range": 60,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 2,
+      "description": "Thick sticky webbing fills a 20-foot cube, restraining those who fail to escape.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "restrained",
+          "duration": 3,
+          "save": "dexterity",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Dispel Magic",
+      "cost": 3,
+      "range": 120,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 3,
+      "description": "Choose any creature, object, or magical effect. Any spell of 3rd level or lower ends.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "dispel",
+          "max_level": 3
+        }
+      ]
+    },
+    {
+      "name": "Counterspell",
+      "cost": 3,
+      "range": 60,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 3,
+      "description": "You interrupt a creature in the process of casting a spell.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "counterspell",
+          "reaction": true
+        }
+      ]
+    },
+    {
+      "name": "Fly",
+      "cost": 3,
+      "range": 0,
+      "target_type": "self",
+      "school": "transmutation",
+      "level": 3,
+      "description": "You gain a flying speed of 60 feet for the duration.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "fly_speed",
+          "amount": 60,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Slow",
+      "cost": 4,
+      "range": 120,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 3,
+      "description": "Time seems to stop for up to 6 creatures. They move and act at half speed.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "slowed",
+          "duration": 4,
+          "save": "wisdom",
+          "save_dc": 14,
+          "max_targets": 6
+        }
+      ]
+    },
+    {
+      "name": "Fear",
+      "cost": 4,
+      "range": 30,
+      "target_type": "cone",
+      "school": "illusion",
+      "level": 3,
+      "description": "A phantasmal image of each creature's worst fears fills their mind.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "frightened",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 14
+        }
+      ]
+    },
+    {
+      "name": "Animate Dead",
+      "cost": 4,
+      "range": 10,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 3,
+      "description": "This spell creates an undead servant from a pile of bones or a corpse.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "skeleton",
+          "count": 1,
+          "duration": 24
+        }
+      ]
+    },
+    {
+      "name": "Vampiric Touch",
+      "cost": 4,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 3,
+      "description": "Your touch deals necrotic damage and heals you for half the damage dealt.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d6",
+          "damage_type": "necrotic",
+          "lifesteal": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Wall of Fire",
+      "cost": 6,
+      "range": 120,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 4,
+      "description": "A wall of fire blazes into existence on a solid surface.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "5d8",
+          "damage_type": "fire",
+          "duration": 4,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Polymorph",
+      "cost": 6,
+      "range": 60,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 4,
+      "description": "This spell transforms a creature into a new form.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "polymorphed",
+          "duration": 5,
+          "save": "wisdom",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Greater Invisibility",
+      "cost": 5,
+      "range": 0,
+      "target_type": "self",
+      "school": "illusion",
+      "level": 4,
+      "description": "You turn invisible and remain so even when you attack or cast spells.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "invisible",
+          "duration": 4,
+          "breaks_on_attack": false
+        }
+      ]
+    },
+    {
+      "name": "Banishment",
+      "cost": 5,
+      "range": 60,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 4,
+      "description": "You attempt to send one creature to another plane of existence.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "banish",
+          "duration": 3,
+          "save": "charisma",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Blight",
+      "cost": 5,
+      "range": 30,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 4,
+      "description": "Necromantic energy washes over a creature, draining moisture and vitality.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "8d8",
+          "damage_type": "necrotic",
+          "save": "constitution",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Telekinesis",
+      "cost": 5,
+      "range": 60,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 5,
+      "description": "You gain the ability to move or manipulate creatures or objects with your mind.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "move_object",
+          "max_weight": 500,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Hold Monster",
+      "cost": 6,
+      "range": 90,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 5,
+      "description": "Choose a creature you can see. It must make a Wisdom saving throw or be paralyzed.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "held",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Dominate Person",
+      "cost": 7,
+      "range": 60,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 5,
+      "description": "You attempt to beguile a humanoid. It must make a Wisdom save or become charmed.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "dominated",
+          "duration": 5,
+          "save": "wisdom",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Cloudkill",
+      "cost": 7,
+      "range": 120,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 5,
+      "description": "A cloud of sickly yellow-green fog rolls out from a point you choose.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "5d8",
+          "damage_type": "poison",
+          "duration": 5,
+          "save": "constitution",
+          "save_dc": 16,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Mage Armor",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 1,
+      "description": "A protective magical force surrounds you, making you harder to hit.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "armor_class",
+          "amount": 3,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Thunderwave",
+      "cost": 2,
+      "range": 15,
+      "target_type": "cone",
+      "school": "evocation",
+      "level": 1,
+      "description": "A wave of thunderous force sweeps out, dealing damage and knocking back enemies.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d8",
+          "damage_type": "thunder",
+          "save": "constitution",
+          "save_dc": 12
+        },
+        {
+          "type": "status",
+          "status": "knockback",
+          "distance": 10
+        }
+      ]
+    },
+    {
+      "name": "Detect Magic",
+      "cost": 1,
+      "range": 30,
+      "target_type": "area",
+      "school": "divination",
+      "level": 1,
+      "description": "You sense the presence of magic within 30 feet. You can see a faint aura.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "detect_magic",
+          "duration": 10
+        }
+      ]
+    },
+    {
+      "name": "Charm Person",
+      "cost": 2,
+      "range": 30,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 1,
+      "description": "You attempt to charm a humanoid you can see. They regard you as a friendly acquaintance.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "charmed",
+          "duration": 5,
+          "save": "wisdom",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Sleep",
+      "cost": 2,
+      "range": 90,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 1,
+      "description": "This spell sends creatures into a magical slumber. Lowest HP targets sleep first.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "sleeping",
+          "duration": 3,
+          "hp_budget": "5d8"
+        }
+      ]
+    },
+    {
+      "name": "Poison Spray",
+      "cost": 1,
+      "range": 10,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 1,
+      "description": "You extend your hand toward a creature and project a puff of noxious gas.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d12",
+          "damage_type": "poison",
+          "save": "constitution",
+          "save_dc": 11
+        }
+      ]
+    },
+    {
+      "name": "False Life",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "necromancy",
+      "level": 1,
+      "description": "Bolstering yourself with dark magic, you gain temporary hit points.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "temp_hp",
+          "amount": "1d4+4",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Misty Step",
+      "cost": 2,
+      "range": 30,
+      "target_type": "self",
+      "school": "conjuration",
+      "level": 2,
+      "description": "Briefly surrounded by silvery mist, you teleport up to 30 feet to a visible spot.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "teleport",
+          "distance": 30
+        }
+      ]
+    },
+    {
+      "name": "Shatter",
+      "cost": 3,
+      "range": 60,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 2,
+      "description": "A sudden loud ringing noise, painfully intense, erupts from a point you choose.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d8",
+          "damage_type": "thunder",
+          "save": "constitution",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Spiritual Weapon",
+      "cost": 3,
+      "range": 60,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 2,
+      "description": "You create a floating spectral weapon that attacks for you each round.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "spiritual_weapon",
+          "damage": "1d8+3",
+          "damage_type": "force",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Acid Arrow",
+      "cost": 3,
+      "range": 90,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 2,
+      "description": "A shimmering green arrow streaks toward a target. On hit, deals acid damage now and next round.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d4",
+          "damage_type": "acid"
+        },
+        {
+          "type": "damage",
+          "amount": "2d4",
+          "damage_type": "acid",
+          "duration": 1,
+          "delayed": true
+        }
+      ]
+    },
+    {
+      "name": "Blindness",
+      "cost": 2,
+      "range": 30,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 2,
+      "description": "You attempt to blind a creature. It makes a Constitution save or is blinded.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "blinded",
+          "duration": 3,
+          "save": "constitution",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Confusion",
+      "cost": 5,
+      "range": 90,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 4,
+      "description": "This spell assaults and twists creatures' minds, spawning delusions and provoking uncontrolled actions.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "confused",
+          "duration": 4,
+          "save": "wisdom",
+          "save_dc": 15,
+          "radius": 10
+        }
+      ]
+    },
+    {
+      "name": "Raise Dead",
+      "cost": 8,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 5,
+      "description": "You return a dead creature you touch to life, provided it has been dead no longer than 10 days.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "resurrect",
+          "hp_restored": 1
+        }
+      ]
+    },
+    {
+      "name": "Chain Lightning",
+      "cost": 9,
+      "range": 150,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 5,
+      "description": "Lightning leaps from target to target, chaining to up to 3 additional creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "10d8",
+          "damage_type": "lightning",
+          "save": "dexterity",
+          "save_dc": 17,
+          "chain_targets": 3,
+          "chain_damage": "5d8"
+        }
       ]
     }
   ]
