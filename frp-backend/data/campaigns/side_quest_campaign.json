@@ -1,0 +1,210 @@
+{
+  "id": "side_quest_campaign",
+  "title": "The Hollow Peaks: Secrets of the Ancients",
+  "description": "A standalone adventure for seasoned explorers. Deep in the Hollow Peaks mountain range lies a forgotten dwarven hold, sealed for centuries. Strange lights have been spotted from the peaks, and a merchant's journal speaks of a treasure vault guarded by elemental wards and ancient puzzles. Glory — and danger — await those bold enough to seek the truth.",
+  "recommended_level": 5,
+  "max_cr": 8,
+  "min_cr": 3,
+  "acts": [
+    {
+      "id": "act_1",
+      "name": "The Road to the Peaks",
+      "description": "The journey to the Hollow Peaks is treacherous. Trolls and bears have claimed the wilderness roads, and a ruined waystation holds clues to the dwarven hold's entry. Exploration and survival are the key themes here.",
+      "encounters": [
+        {
+          "id": "enc_1_1",
+          "name": "Troll Under the Bridge",
+          "description": "A troll has claimed the only bridge across the Gorge River. Negotiate, trick, or fight your way past.",
+          "monsters": ["troll"],
+          "difficulty": "hard",
+          "exploration_note": "Search the troll's pile of bones — something valuable may be hidden there."
+        },
+        {
+          "id": "enc_1_2",
+          "name": "Grizzly Bear Territory",
+          "description": "A grizzly bear and her cubs block the narrow pass. Avoid or pacify — or fight if necessary.",
+          "monsters": ["grizzly_bear"],
+          "difficulty": "medium",
+          "exploration_note": "Bears mark their territory. Finding the markings can let you navigate around them."
+        },
+        {
+          "id": "enc_1_3",
+          "name": "Ogre Camp at the Waystation",
+          "description": "An ogre family has occupied the waystation. The merchant's journal is inside — you'll need to deal with them.",
+          "monsters": ["ogre", "ogre"],
+          "difficulty": "hard",
+          "exploration_note": "The journal is hidden under a loose floorboard — search the northwest room."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_1_1",
+          "description": "Cross the Gorge River bridge",
+          "type": "interact",
+          "target": "gorge_bridge",
+          "required_count": 1
+        },
+        {
+          "id": "obj_1_2",
+          "description": "Clear or bypass the ogre camp and recover the merchant's journal",
+          "type": "collect",
+          "target": "the_lost_chronicle",
+          "required_count": 1
+        },
+        {
+          "id": "obj_1_3",
+          "description": "Locate the hidden entrance to the Hollow Peaks hold",
+          "type": "explore",
+          "target": "hollow_peaks_entrance",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "troll_heart", "quantity": 1},
+        {"item_id": "grizzly_pelt", "quantity": 1},
+        {"item_id": "potion_of_strength", "quantity": 2},
+        {"item_id": "war_hammer", "quantity": 1},
+        {"item_id": "gold_coin", "quantity": 80}
+      ]
+    },
+    {
+      "id": "act_2",
+      "name": "The Elemental Wards",
+      "description": "Inside the dwarven hold, ancient elemental wards still function — earth, fire, air, and water guardians patrol the halls. Solving their puzzle locks is the only way to progress deeper. Combat and cunning both have their place.",
+      "encounters": [
+        {
+          "id": "enc_2_1",
+          "name": "The Fire Ward Chamber",
+          "description": "A fire elemental emerges when the fire rune is disturbed. Use the water rune to nullify it — or overpower it directly.",
+          "monsters": ["fire_elemental"],
+          "difficulty": "hard",
+          "puzzle_hint": "The chamber has four water urns. Pour them in order: North, East, South, West. The fire elemental weakens at each step."
+        },
+        {
+          "id": "enc_2_2",
+          "name": "The Earth Ward Corridor",
+          "description": "Earth elementals animate from the walls if the correct stone tiles are not pressed in sequence. One wrong step means a fight.",
+          "monsters": ["earth_elemental", "earth_elemental"],
+          "difficulty": "hard",
+          "puzzle_hint": "The tile pattern matches the constellation carved on the ceiling. Look up before you step."
+        },
+        {
+          "id": "enc_2_3",
+          "name": "The Dual Ward Guardian",
+          "description": "An air and water elemental patrol the vault antechamber together. They cannot be separated — both must be defeated.",
+          "monsters": ["air_elemental", "water_elemental"],
+          "difficulty": "very_hard",
+          "puzzle_hint": "Each elemental is powered by a crystal. Destroy the crystals first to weaken them before engaging directly."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_2_1",
+          "description": "Overcome the Fire Ward Chamber",
+          "type": "kill",
+          "target": "fire_elemental",
+          "required_count": 1
+        },
+        {
+          "id": "obj_2_2",
+          "description": "Navigate the Earth Ward Corridor",
+          "type": "kill",
+          "target": "earth_elemental",
+          "required_count": 2
+        },
+        {
+          "id": "obj_2_3",
+          "description": "Defeat the dual ward guardians",
+          "type": "kill",
+          "target": "air_elemental",
+          "required_count": 1
+        },
+        {
+          "id": "obj_2_4",
+          "description": "Solve the ancient vault door puzzle",
+          "type": "interact",
+          "target": "vault_door",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "ember_shard", "quantity": 2},
+        {"item_id": "tidal_crystal", "quantity": 1},
+        {"item_id": "storm_crystal", "quantity": 1},
+        {"item_id": "stone_shard", "quantity": 2},
+        {"item_id": "scroll_of_shield", "quantity": 2},
+        {"item_id": "potion_of_agility", "quantity": 2}
+      ]
+    },
+    {
+      "id": "act_3",
+      "name": "The Vault of the Ancestors",
+      "description": "The vault itself is guarded by the most powerful wards: a wraith of the dwarven king, a beholder construct, and — in the deepest chamber — an ancient secret. Explorers who solve the final puzzle unlock the vault's legendary treasure.",
+      "encounters": [
+        {
+          "id": "enc_3_1",
+          "name": "The Wraith of King Durnvar",
+          "description": "The undead spirit of the last dwarven king, Durnvar, protects the vault entrance. He cannot be reasoned with — only defeated.",
+          "monsters": ["wraith"],
+          "difficulty": "very_hard",
+          "exploration_note": "The dwarven runes on the walls describe how Durnvar fell — they may reveal a weakness."
+        },
+        {
+          "id": "enc_3_2",
+          "name": "The Beholder Construct",
+          "description": "An ancient dwarven beholder-construct — a mechanical anti-magic sentinel — guards the inner vault. Its eye rays trigger on movement.",
+          "monsters": ["beholder"],
+          "difficulty": "boss",
+          "puzzle_hint": "The construct has a control panel behind it. Reach it without triggering the eye rays by crawling through the low maintenance tunnels on the sides."
+        },
+        {
+          "id": "enc_3_3",
+          "name": "The Final Puzzle: The Dwarven Codex",
+          "description": "The vault's innermost chamber holds no monsters — only a great puzzle lock. Solve the Dwarven Codex to claim the treasure.",
+          "monsters": [],
+          "difficulty": "none",
+          "puzzle_hint": "The Codex uses dwarven numerology: 1=stone, 2=fire, 3=water, 4=air. The sequence is carved on the sarcophagus lid."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_3_1",
+          "description": "Defeat the Wraith of King Durnvar",
+          "type": "kill",
+          "target": "wraith",
+          "required_count": 1
+        },
+        {
+          "id": "obj_3_2",
+          "description": "Neutralize the beholder construct",
+          "type": "kill",
+          "target": "beholder",
+          "required_count": 1
+        },
+        {
+          "id": "obj_3_3",
+          "description": "Solve the Dwarven Codex",
+          "type": "interact",
+          "target": "dwarven_codex",
+          "required_count": 1
+        },
+        {
+          "id": "obj_3_4",
+          "description": "Claim the treasure of the Hollow Peaks hold",
+          "type": "collect",
+          "target": "ancient_key",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "shield_of_the_ancients", "quantity": 1},
+        {"item_id": "mithral_longsword", "quantity": 1},
+        {"item_id": "crown_of_the_conqueror", "quantity": 1},
+        {"item_id": "granite_rune", "quantity": 3},
+        {"item_id": "ancient_gold_coin", "quantity": 50},
+        {"item_id": "gold_coin", "quantity": 500},
+        {"item_id": "shattered_amulet", "quantity": 1}
+      ]
+    }
+  ]
+}

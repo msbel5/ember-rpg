@@ -1,0 +1,160 @@
+{
+  "id": "tutorial_campaign",
+  "title": "Ember Awakening: A Hero's First Steps",
+  "description": "An introductory campaign designed for new adventurers. Learn the fundamentals of combat, magic, and inventory management as you help the village of Ashvale deal with a growing threat.",
+  "recommended_level": 1,
+  "max_cr": 2,
+  "min_cr": 0.125,
+  "acts": [
+    {
+      "id": "act_1",
+      "name": "The Troubled Village",
+      "description": "You arrive in Ashvale to find its inhabitants living in fear. Wolves and goblins have been raiding the outskirts. The village elder asks for your help — this is your first test of combat.",
+      "encounters": [
+        {
+          "id": "enc_1_1",
+          "name": "Wolf Pack at the Farm",
+          "description": "Three wolves circle the farmer's barn. Defeat them to learn basic melee combat.",
+          "monsters": ["wolf", "wolf", "wolf"],
+          "difficulty": "easy",
+          "tutorial_hint": "Use your basic attack action. Remember to check your HP after each hit!"
+        },
+        {
+          "id": "enc_1_2",
+          "name": "Goblin Scouts",
+          "description": "A small goblin scouting party spotted near the mill. Introduces flanking and positioning.",
+          "monsters": ["goblin", "goblin"],
+          "difficulty": "easy",
+          "tutorial_hint": "Goblins are cunning. Use the environment to your advantage — positioning matters."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_1_1",
+          "description": "Defeat the wolves at the farm",
+          "type": "kill",
+          "target": "wolf",
+          "required_count": 3
+        },
+        {
+          "id": "obj_1_2",
+          "description": "Drive off the goblin scouts",
+          "type": "kill",
+          "target": "goblin",
+          "required_count": 2
+        }
+      ],
+      "rewards": [
+        {"item_id": "iron_shortsword", "quantity": 1},
+        {"item_id": "potion_of_healing", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 10},
+        {"item_id": "silver_coin", "quantity": 5}
+      ]
+    },
+    {
+      "id": "act_2",
+      "name": "The Forbidden Cellar",
+      "description": "The elder reveals an old cellar beneath the inn is infested with undead. You must clear it out — and in doing so, learn how magic spells can turn the tide of battle.",
+      "encounters": [
+        {
+          "id": "enc_2_1",
+          "name": "Skeleton Guardians",
+          "description": "Skeletons patrol the cellar entrance. Your first encounter with undead — blunt weapons and holy spells work best.",
+          "monsters": ["skeleton", "skeleton"],
+          "difficulty": "easy",
+          "tutorial_hint": "Try using a scroll or spell! Skeletons are vulnerable to bludgeoning damage."
+        },
+        {
+          "id": "enc_2_2",
+          "name": "The Risen Dead",
+          "description": "Deeper in the cellar, zombies shamble toward you. Learn about slow enemies and area-of-effect spells.",
+          "monsters": ["zombie", "zombie", "skeleton_archer"],
+          "difficulty": "medium",
+          "tutorial_hint": "The skeleton archer attacks from range. Close the distance or use a scroll of fireball!"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_2_1",
+          "description": "Clear the cellar of undead",
+          "type": "kill",
+          "target": "skeleton",
+          "required_count": 2
+        },
+        {
+          "id": "obj_2_2",
+          "description": "Defeat the undead in the deep cellar",
+          "type": "kill",
+          "target": "zombie",
+          "required_count": 2
+        },
+        {
+          "id": "obj_2_3",
+          "description": "Recover the stolen village relic from the cellar chest",
+          "type": "collect",
+          "target": "ancient_key",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "scroll_of_fireball", "quantity": 1},
+        {"item_id": "scroll_of_healing_word", "quantity": 1},
+        {"item_id": "padded_armor", "quantity": 1},
+        {"item_id": "gold_coin", "quantity": 15}
+      ]
+    },
+    {
+      "id": "act_3",
+      "name": "The Goblin Ringleader",
+      "description": "With the cellar cleared, a goblin boss reveals himself as the architect behind the raids. Confront him and his gang — and learn how to manage your inventory mid-battle.",
+      "encounters": [
+        {
+          "id": "enc_3_1",
+          "name": "Goblin Ambush on the Road",
+          "description": "Goblins strike from the treeline. A chance to practice using potions and consumables during combat.",
+          "monsters": ["goblin", "goblin", "goblin"],
+          "difficulty": "medium",
+          "tutorial_hint": "You can use items during your turn! Try using a potion of healing when below 50% HP."
+        },
+        {
+          "id": "enc_3_2",
+          "name": "Boss: Grixnok the Goblin Boss",
+          "description": "Grixnok and two bodyguards make their last stand. Apply everything you've learned.",
+          "monsters": ["goblin_boss", "goblin", "goblin"],
+          "difficulty": "hard",
+          "tutorial_hint": "Target the boss last or first — your choice! But don't ignore the minions entirely."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_3_1",
+          "description": "Survive the goblin ambush",
+          "type": "kill",
+          "target": "goblin",
+          "required_count": 3
+        },
+        {
+          "id": "obj_3_2",
+          "description": "Defeat Grixnok the Goblin Boss",
+          "type": "kill",
+          "target": "goblin_boss",
+          "required_count": 1
+        },
+        {
+          "id": "obj_3_3",
+          "description": "Recover the stolen goods for the village",
+          "type": "collect",
+          "target": "stolen_goods",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "longsword", "quantity": 1},
+        {"item_id": "leather_helmet", "quantity": 1},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "goblin_crown", "quantity": 1},
+        {"item_id": "gold_coin", "quantity": 30}
+      ]
+    }
+  ]
+}

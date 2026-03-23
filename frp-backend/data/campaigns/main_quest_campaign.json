@@ -1,0 +1,329 @@
+{
+  "id": "main_quest_campaign",
+  "title": "Ember's Edge: The Darkening of Aldenmoor",
+  "description": "A full story arc spanning five acts. A corrupted dragon egg has been stolen from the vault of the Archmage Valdris, and dark forces are converging to use it in a ritual that would shatter the boundary between the mortal realm and the Abyss. Only a band of bold adventurers can stop the demon lord Zytharax from crossing over.",
+  "recommended_level": 5,
+  "max_cr": 13,
+  "min_cr": 1,
+  "acts": [
+    {
+      "id": "act_1",
+      "name": "Shadows Over Aldenmoor",
+      "description": "The city of Aldenmoor is gripped by fear. Bandits and wolves patrol the roads, and rumours speak of the Archmage's vault being breached. Investigate the city outskirts and uncover the first threads of the conspiracy.",
+      "encounters": [
+        {
+          "id": "enc_1_1",
+          "name": "Bandit Toll on the King's Road",
+          "description": "Armed bandits demand tribute. Defeating them reveals a note bearing the symbol of a demon cult.",
+          "monsters": ["bandit", "bandit", "bandit"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "enc_1_2",
+          "name": "Captain Malgrave's Crew",
+          "description": "The bandit captain guards a hidden camp containing stolen documents.",
+          "monsters": ["bandit_captain", "bandit", "bandit", "bandit"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_1_3",
+          "name": "Wolves of the Darkwood",
+          "description": "Unusually aggressive wolves — corrupted by residual demonic energy — attack at night.",
+          "monsters": ["dire_wolf", "dire_wolf", "wolf"],
+          "difficulty": "medium"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_1_1",
+          "description": "Clear the bandit toll on the King's Road",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 3
+        },
+        {
+          "id": "obj_1_2",
+          "description": "Defeat Captain Malgrave and recover the stolen documents",
+          "type": "kill",
+          "target": "bandit_captain",
+          "required_count": 1
+        },
+        {
+          "id": "obj_1_3",
+          "description": "Retrieve the wanted poster from the camp",
+          "type": "collect",
+          "target": "wanted_poster",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "longsword", "quantity": 1},
+        {"item_id": "chain_shirt", "quantity": 1},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "captain_scimitar", "quantity": 1},
+        {"item_id": "gold_coin", "quantity": 50}
+      ]
+    },
+    {
+      "id": "act_2",
+      "name": "The Archmage's Tower",
+      "description": "The documents lead to Archmage Valdris's tower, now overrun with elementals and the undead, bound to protect the secret of what was stolen. Ascend the tower, defeat the guardians, and uncover the truth about the dragon egg.",
+      "encounters": [
+        {
+          "id": "enc_2_1",
+          "name": "Elemental Guardians of the Gate",
+          "description": "Fire and earth elementals patrol the tower entrance, bound by the Archmage's ward.",
+          "monsters": ["fire_elemental", "earth_elemental"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_2_2",
+          "name": "Undead Scholars",
+          "description": "The Archmage's apprentices, animated as wights, guard the library floor.",
+          "monsters": ["wight", "wight", "skeleton_archer"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_2_3",
+          "name": "The Archmage's Last Stand",
+          "description": "Valdris himself, now possessed by a demonic fragment, attacks the party at the summit. A powerful spellcaster encounter.",
+          "monsters": ["archmage"],
+          "difficulty": "very_hard"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_2_1",
+          "description": "Defeat the elemental guardians",
+          "type": "kill",
+          "target": "fire_elemental",
+          "required_count": 1
+        },
+        {
+          "id": "obj_2_2",
+          "description": "Clear the library floor",
+          "type": "kill",
+          "target": "wight",
+          "required_count": 2
+        },
+        {
+          "id": "obj_2_3",
+          "description": "Confront and defeat the possessed Archmage",
+          "type": "kill",
+          "target": "archmage",
+          "required_count": 1
+        },
+        {
+          "id": "obj_2_4",
+          "description": "Recover the Archmage's spellbook",
+          "type": "collect",
+          "target": "spellbook_archmage",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "staff_of_fire", "quantity": 1},
+        {"item_id": "scroll_of_lightning_bolt", "quantity": 2},
+        {"item_id": "scroll_of_haste", "quantity": 1},
+        {"item_id": "ring_of_protection", "quantity": 1},
+        {"item_id": "gold_coin", "quantity": 100}
+      ]
+    },
+    {
+      "id": "act_3",
+      "name": "The Spider Queen's Labyrinth",
+      "description": "A dark elf cultist has fled into the caverns beneath Aldenmoor, where phase spiders and the undead serve as guardians. The party must navigate the labyrinth and recover the crimson seal — one of three keys to the demon ritual.",
+      "encounters": [
+        {
+          "id": "enc_3_1",
+          "name": "Spider Ambush in the Dark",
+          "description": "Giant and phase spiders spring from the cavern walls.",
+          "monsters": ["giant_spider", "giant_spider", "phase_spider"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_3_2",
+          "name": "Plague Zombies of the Old Crypt",
+          "description": "An old dwarven crypt beneath the labyrinth, filled with plague zombies.",
+          "monsters": ["plague_zombie", "plague_zombie", "zombie"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "enc_3_3",
+          "name": "The Medusa Gatekeeper",
+          "description": "A medusa guards the final chamber, petrifying those who meet her gaze. Use mirrors and clever tactics.",
+          "monsters": ["medusa"],
+          "difficulty": "very_hard"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_3_1",
+          "description": "Navigate through the spider caverns",
+          "type": "kill",
+          "target": "phase_spider",
+          "required_count": 1
+        },
+        {
+          "id": "obj_3_2",
+          "description": "Clear the plague crypt",
+          "type": "kill",
+          "target": "plague_zombie",
+          "required_count": 2
+        },
+        {
+          "id": "obj_3_3",
+          "description": "Defeat the Medusa Gatekeeper",
+          "type": "kill",
+          "target": "medusa",
+          "required_count": 1
+        },
+        {
+          "id": "obj_3_4",
+          "description": "Recover the Crimson Seal",
+          "type": "collect",
+          "target": "crimson_seal",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "phase_spider_silk", "quantity": 2},
+        {"item_id": "breastplate", "quantity": 1},
+        {"item_id": "amulet_of_health", "quantity": 1},
+        {"item_id": "potion_of_greater_healing", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 150}
+      ]
+    },
+    {
+      "id": "act_4",
+      "name": "The Dragon's Lair",
+      "description": "The corrupted dragon egg is being held in the lair of a young dragon, manipulated by the cult. The party must confront the dragon, recover the egg, and face a giant-guarded mountain pass to reach the ritual site.",
+      "encounters": [
+        {
+          "id": "enc_4_1",
+          "name": "Frost Giant Sentinels",
+          "description": "Frost giants block the mountain pass, bound to the cult by dark contracts.",
+          "monsters": ["frost_giant", "frost_giant"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_4_2",
+          "name": "Stone Giant Boulder Trap",
+          "description": "Stone giants trigger an avalanche; defeat them to prevent the passage from being sealed.",
+          "monsters": ["stone_giant"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_4_3",
+          "name": "The Young Dragon Kharyx",
+          "description": "The young dragon Kharyx, mind-twisted by the cult's corruption, attacks on sight. A major boss fight.",
+          "monsters": ["young_dragon"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_4_1",
+          "description": "Clear the mountain pass of frost giant sentinels",
+          "type": "kill",
+          "target": "frost_giant",
+          "required_count": 2
+        },
+        {
+          "id": "obj_4_2",
+          "description": "Defeat the stone giant blocking the pass",
+          "type": "kill",
+          "target": "stone_giant",
+          "required_count": 1
+        },
+        {
+          "id": "obj_4_3",
+          "description": "Defeat the young dragon Kharyx",
+          "type": "kill",
+          "target": "young_dragon",
+          "required_count": 1
+        },
+        {
+          "id": "obj_4_4",
+          "description": "Recover the dragon egg",
+          "type": "collect",
+          "target": "dragon_egg",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "dragonscale_armor", "quantity": 1},
+        {"item_id": "flametounge_blade", "quantity": 1},
+        {"item_id": "dragon_scale", "quantity": 3},
+        {"item_id": "ruby_gem", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 300}
+      ]
+    },
+    {
+      "id": "act_5",
+      "name": "The Abyssal Gate",
+      "description": "The final confrontation. The demon lord Zytharax is nearly through the Abyssal Gate, powered by the stolen rituals. The party faces vampire spawn, a mind flayer controller, and finally the demon lord himself. The fate of Aldenmoor — and the world — hangs in the balance.",
+      "encounters": [
+        {
+          "id": "enc_5_1",
+          "name": "Vampire Spawn Honour Guard",
+          "description": "Vampire spawn guard the ritual chamber entrance, feeding on captured villagers.",
+          "monsters": ["vampire_spawn", "vampire_spawn", "vampire_spawn"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_5_2",
+          "name": "The Mind Flayer Ritualist",
+          "description": "A mind flayer orchestrates the final ritual, using psionic attacks to incapacitate party members.",
+          "monsters": ["mind_flayer"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_5_3",
+          "name": "Zytharax, Demon Lord of the Abyss",
+          "description": "The demon lord emerges, partially manifested through the gate. A legendary final boss encounter.",
+          "monsters": ["demon_lord"],
+          "difficulty": "legendary"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_5_1",
+          "description": "Defeat the vampire spawn honour guard",
+          "type": "kill",
+          "target": "vampire_spawn",
+          "required_count": 3
+        },
+        {
+          "id": "obj_5_2",
+          "description": "Destroy the mind flayer ritualist",
+          "type": "kill",
+          "target": "mind_flayer",
+          "required_count": 1
+        },
+        {
+          "id": "obj_5_3",
+          "description": "Destroy the Abyssal Gate",
+          "type": "interact",
+          "target": "abyssal_gate",
+          "required_count": 1
+        },
+        {
+          "id": "obj_5_4",
+          "description": "Defeat the demon lord Zytharax",
+          "type": "kill",
+          "target": "demon_lord",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "staff_of_the_archmage", "quantity": 1},
+        {"item_id": "vorpal_sword", "quantity": 1},
+        {"item_id": "boots_of_speed", "quantity": 1},
+        {"item_id": "the_lost_chronicle", "quantity": 1},
+        {"item_id": "legendary_hoard", "quantity": 1},
+        {"item_id": "gold_coin", "quantity": 1000}
+      ]
+    }
+  ]
+}
