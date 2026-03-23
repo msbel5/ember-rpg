@@ -66,11 +66,24 @@ func _on_scene_entered(data) -> void:
 	GameState.update_from_response(data)
 
 func _on_entity_clicked(entity_id: String, entity_data: Dictionary) -> void:
-	var name = entity_data.get("name", "Unknown")
+	var entity_name = entity_data.get("name", "Unknown")
 	var actions = entity_data.get("context_actions", [])
-	_append_narrative("[color=yellow]%s[/color] — %s" % [name, ", ".join(actions)])
-	# Auto-examine on click
-	_submit_action("examine %s" % name.to_lower())
+	if actions.is_empty():
+		_submit_action("examine %s" % entity_name.to_lower())
+		return
+	# Show context menu popup
+	var popup = PopupMenu.new()
+	popup.name = "EntityContextMenu"
+	for i in range(actions.size()):
+		popup.add_item(actions[i].capitalize(), i)
+	add_child(popup)
+	popup.id_pressed.connect(func(id: int):
+		var action_name = actions[id]
+		_submit_action("%s %s" % [action_name, entity_name.to_lower()])
+		popup.queue_free()
+	)
+	popup.popup_on_parent(Rect2i(get_viewport().get_mouse_position(), Vector2i(120, 0)))
+	popup.popup_hide.connect(popup.queue_free)
 
 func _on_tile_clicked(tx: int, ty: int) -> void:
 	_submit_action("move to %d,%d" % [tx, ty])

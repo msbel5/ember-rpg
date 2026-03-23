@@ -112,16 +112,20 @@ func get_display_location() -> String:
 	return location.replace("_", " ").capitalize()
 
 func _clean_narrative(text: String) -> String:
-	# Remove markdown headers
+	# Remove markdown headers and clean technical names
 	var lines = text.split("\n")
 	var cleaned: Array[String] = []
 	for line in lines:
 		var trimmed = line.strip_edges()
 		if trimmed.begins_with("# "):
-			continue  # Skip markdown headers
+			continue
 		if trimmed.begins_with("## "):
 			continue
 		if trimmed.is_empty():
 			continue
+		# Replace technical location names with display names
+		trimmed = trimmed.replace("harbor_town", "Harbor Town")
+		trimmed = trimmed.replace("forest_road", "Forest Road")
+		trimmed = trimmed.replace("dark_dungeon", "Dark Dungeon")
 		cleaned.append(trimmed)
 	return "\n".join(cleaned)
