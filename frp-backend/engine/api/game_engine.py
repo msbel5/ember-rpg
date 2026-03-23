@@ -147,6 +147,7 @@ class GameEngine:
             ActionIntent.CAST_SPELL: self._handle_spell,
             ActionIntent.USE_ITEM:   self._handle_use_item,
             ActionIntent.EXAMINE:    self._handle_examine,
+            ActionIntent.LOOK:       self._handle_look,
             ActionIntent.TALK:       self._handle_talk,
             ActionIntent.REST:       self._handle_rest,
             ActionIntent.MOVE:       self._handle_move,
@@ -261,10 +262,30 @@ class GameEngine:
             combat_state=self._combat_state(combat),
         )
 
+    def _handle_look(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Handle 'look around', 'look', 'observe' — scene description at current location."""
+        location = session.dm_context.location or "the area"
+        desc = (
+            f"{session.player.name} surveys their surroundings in {location}. "
+            f"They take in the sights, sounds, and atmosphere of the place."
+        )
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name,
+            "location": location,
+            "action": "look around",
+        })
+        narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+
     def _handle_examine(self, session: GameSession, action: ParsedAction) -> ActionResult:
         target = action.target or session.dm_context.location
-        desc = f"{session.player.name} examines '{target}' carefully."
-        event = DMEvent(type=EventType.DISCOVERY, description=desc)
+        desc = f"{session.player.name} examines {target} closely, looking for details."
+        event = DMEvent(type=EventType.DISCOVERY, description=desc, data={
+            "player_name": session.player.name,
+            "location": session.dm_context.location,
+            "action": f"examine {target}",
+            "target": target,
+        })
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
@@ -300,10 +321,17 @@ class GameEngine:
         )
 
     def _handle_move(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        dest = action.direction or action.target or "forward"
+        dest = action.direction or action.target or action.action_detail or "forward"
+        # Clean direction strings like "to the tavern" -> "the tavern"
+        if dest and dest.startswith("to "):
+            dest = dest[3:]
         session.dm_context.location = dest
         desc = f"{session.player.name} moves toward {dest}."
-        event = DMEvent(type=EventType.DISCOVERY, description=desc)
+        event = DMEvent(type=EventType.DISCOVERY, description=desc, data={
+            "player_name": session.player.name,
+            "location": dest,
+            "action": f"move to {dest}",
+        })
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 

@@ -44,6 +44,14 @@
       "level_range": [
         1,
         5
+      ],
+      "shop_inventory": [
+        "potion_of_healing",
+        "potion_of_greater_healing",
+        "potion_of_superior_healing",
+        "potion_of_strength",
+        "leather_helmet",
+        "iron_helmet"
       ]
     },
     {
@@ -90,6 +98,14 @@
       "level_range": [
         2,
         8
+      ],
+      "shop_inventory": [
+        "iron_shortsword",
+        "longsword",
+        "greatsword",
+        "silver_longsword",
+        "flametongue_blade",
+        "vorpal_sword"
       ]
     },
     {
@@ -136,6 +152,14 @@
       "level_range": [
         1,
         10
+      ],
+      "shop_inventory": [
+        "potion_of_healing",
+        "potion_of_greater_healing",
+        "potion_of_superior_healing",
+        "potion_of_strength",
+        "potion_of_agility",
+        "potion_of_endurance"
       ]
     },
     {
@@ -182,6 +206,13 @@
       "level_range": [
         5,
         15
+      ],
+      "shop_inventory": [
+        "iron_shortsword",
+        "longsword",
+        "greatsword",
+        "potion_of_healing",
+        "potion_of_greater_healing"
       ]
     },
     {
@@ -785,7 +816,7 @@
     {
       "id": "misc_blacksmith",
       "name": "Forge-Arm Nikos",
-      "role": "commoner",
+      "role": "blacksmith",
       "personality": [
         "passionate",
         "proud",
@@ -826,6 +857,15 @@
       "level_range": [
         1,
         8
+      ],
+      "shop_inventory": [
+        "iron_shortsword",
+        "longsword",
+        "greatsword",
+        "silver_longsword",
+        "leather_helmet",
+        "iron_helmet",
+        "greathelm"
       ]
     },
     {

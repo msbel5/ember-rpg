@@ -43,8 +43,66 @@ def _make_llm_callable():
 
 engine = GameEngine(llm=_make_llm_callable())
 
-# In-memory session store (replace with Redis in production)
+# In-memory session store
 _sessions: Dict[str, GameSession] = {}
+
+# Save manager for persistence across restarts
+from engine.save import SaveManager as _SaveManager
+_save_manager = _SaveManager()
+
+
+def _autosave_session(session: GameSession) -> None:
+    """Autosave session to disk after every action."""
+    try:
+        state = session.to_dict()
+        _save_manager.save(
+            player_id=session.player.name,
+            session_data={"session_id": session.session_id, **state}
+        )
+    except Exception:
+        pass  # autosave is best-effort
+
+
+def _try_restore_session(session_id: str) -> Optional[GameSession]:
+    """
+    Try to restore a session from disk after a restart.
+    Returns None if not found or corrupt.
+    """
+    try:
+        # Find any save with matching session_id
+        from pathlib import Path
+        saves_dir = Path("saves")
+        if not saves_dir.exists():
+            return None
+        for f in saves_dir.glob("*.json"):
+            import json
+            try:
+                data = json.loads(f.read_text())
+                if data.get("session_data", {}).get("session_id") == session_id:
+                    sd = data["session_data"]
+                    # Reconstruct minimal session
+                    from engine.core.character import Character
+                    from engine.core.dm_agent import DMContext, SceneType
+                    player = Character(
+                        name=sd["player"]["name"],
+                        hp=sd["player"]["hp"],
+                        max_hp=sd["player"]["max_hp"],
+                        spell_points=sd["player"].get("spell_points", 0),
+                        max_spell_points=sd["player"].get("max_spell_points", 0),
+                        level=sd["player"]["level"],
+                        xp=sd["player"].get("xp", 0),
+                    )
+                    dm_ctx = DMContext(
+                        scene_type=SceneType(sd.get("scene", "exploration")),
+                        location=sd.get("location", "unknown"),
+                    )
+                    session = GameSession(player=player, dm_context=dm_ctx, session_id=session_id)
+                    return session
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return None
 
 
 @router.post("/session/new", response_model=NewSessionResponse)
@@ -100,6 +158,7 @@ def take_action(session_id: str, req: ActionRequest):
             "hp_increase": lu.hp_increase,
         }
 
+    _autosave_session(session)
     return ActionResponse(
         narrative=result.narrative,
         scene=result.scene_type.value,
@@ -153,7 +212,12 @@ def get_map(session_id: str, seed: Optional[int] = None):
 def _get_session(session_id: str) -> GameSession:
     session = _sessions.get(session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        # Try to restore from disk (handles restart scenario)
+        session = _try_restore_session(session_id)
+        if session:
+            _sessions[session_id] = session
+        else:
+            raise HTTPException(status_code=404, detail="Session not found")
     return session
 
 
