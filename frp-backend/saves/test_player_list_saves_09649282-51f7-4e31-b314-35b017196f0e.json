@@ -1,0 +1,25 @@
+{
+  "save_id": "09649282-51f7-4e31-b314-35b017196f0e",
+  "player_id": "test_player_list_saves",
+  "session_data": {
+    "session_id": "4c61c229-df27-4bf7-8615-9a3de108c5ab",
+    "scene": "exploration",
+    "location": "dungeon",
+    "player": {
+      "name": "ListTest",
+      "level": 1,
+      "hp": 12,
+      "max_hp": 12,
+      "spell_points": 16,
+      "max_spell_points": 16,
+      "xp": 0,
+      "classes": {
+        "mage": 1
+      }
+    },
+    "in_combat": false,
+    "turn": 0
+  },
+  "timestamp": "2026-03-23T16:04:33.414012",
+  "schema_version": "1.0"
+}

@@ -1,0 +1,185 @@
+{
+  "campaigns": [
+    {
+      "id": "tutorial_forgotten_crypt",
+      "name": "The Forgotten Crypt",
+      "description": "A beginner-friendly adventure that teaches the fundamentals of exploration, combat, and magic. An ancient crypt lies hidden beneath the old mill — strange sounds have been reported at night.",
+      "difficulty": "beginner",
+      "estimated_sessions": 2,
+      "quests": [
+        {
+          "id": "tfc_q1_find_entrance",
+          "title": "Find the Hidden Entrance",
+          "description": "Locals speak of an old crypt beneath the abandoned mill. Search the area and find the entrance before nightfall.",
+          "objectives": [
+            "Search the mill ruins for a hidden entrance",
+            "Clear the rubble blocking the crypt door"
+          ],
+          "recommended_level": 1,
+          "enemy_ids": ["goblin"],
+          "rewards": {"xp": 200, "gold": 20, "items": ["potion_of_healing"]},
+          "next_quest": "tfc_q2_clear_first_room"
+        },
+        {
+          "id": "tfc_q2_clear_first_room",
+          "title": "The Restless Dead",
+          "description": "The first chamber of the crypt is overrun with animated skeletons and a wandering zombie. Clear the room to proceed deeper.",
+          "objectives": [
+            "Defeat 3 skeletons in the entry chamber",
+            "Destroy the zombie blocking the inner door"
+          ],
+          "recommended_level": 1,
+          "enemy_ids": ["skeleton", "zombie"],
+          "rewards": {"xp": 400, "gold": 30, "items": ["potion_of_healing", "torch"]},
+          "next_quest": "tfc_q3_mini_boss"
+        },
+        {
+          "id": "tfc_q3_mini_boss",
+          "title": "The Crypt Warden",
+          "description": "Deep in the crypt awaits a goblin shaman who has been using dark rituals to reanimate the dead. Defeat the shaman and seal the crypt.",
+          "objectives": [
+            "Defeat the goblin shaman Crypt Warden",
+            "Smash the dark altar to stop future reanimations"
+          ],
+          "recommended_level": 2,
+          "enemy_ids": ["goblin_shaman"],
+          "rewards": {"xp": 600, "gold": 60, "items": ["potion_of_healing", "scroll_of_light", "silver_dagger"]},
+          "next_quest": null
+        }
+      ]
+    },
+    {
+      "id": "main_shadow_of_the_lich",
+      "name": "The Shadow of the Lich",
+      "description": "An ancient lich has awakened from centuries of slumber. As its undead armies spread across the land, the players must locate and destroy the phylactery shards before the lich achieves godhood. A grand, multi-session campaign for experienced adventurers.",
+      "difficulty": "advanced",
+      "estimated_sessions": 8,
+      "quests": [
+        {
+          "id": "sotl_q1_prologue",
+          "title": "Whispers from the Grave",
+          "description": "Reports of mass graves emptying and villagers going missing have reached the capital. Investigate the Ashwood Village and uncover the source of the undead rising.",
+          "objectives": [
+            "Travel to Ashwood Village and speak with the village elder",
+            "Investigate the graveyard for signs of dark magic",
+            "Defeat the undead patrol guarding the old mausoleum"
+          ],
+          "recommended_level": 1,
+          "enemy_ids": ["skeleton", "zombie", "ghoul"],
+          "rewards": {"xp": 500, "gold": 50, "items": ["potion_of_healing", "map_of_ashwood"]},
+          "next_quest": "sotl_q2_the_first_shard"
+        },
+        {
+          "id": "sotl_q2_the_first_shard",
+          "title": "Shards of the Soul",
+          "description": "The elder reveals an ancient legend: the Lich Malachar shattered his phylactery into five shards and hid them across the realm. Find the first shard said to be buried in the Thornwood Dungeon.",
+          "objectives": [
+            "Navigate through Thornwood Dungeon to the inner vault",
+            "Defeat the dungeon guardian — a spectral knight",
+            "Retrieve the first phylactery shard"
+          ],
+          "recommended_level": 5,
+          "enemy_ids": ["skeleton_knight", "wraith", "shadow"],
+          "rewards": {"xp": 1500, "gold": 200, "items": ["phylactery_shard_1", "ring_of_protection", "potion_of_greater_healing"]},
+          "next_quest": "sotl_q3_the_dark_library"
+        },
+        {
+          "id": "sotl_q3_the_dark_library",
+          "title": "The Dark Library",
+          "description": "A sage in the capital has decoded ancient texts pointing to two more shards hidden in the Lich's old tower. The tower is now occupied by a vampire lord acting as the Lich's lieutenant.",
+          "objectives": [
+            "Infiltrate the Lich's tower in the Darkspine Mountains",
+            "Defeat the vampire lord Valeris",
+            "Recover phylactery shards 2 and 3 from the hidden vault"
+          ],
+          "recommended_level": 10,
+          "enemy_ids": ["vampire", "death_knight", "bone_golem"],
+          "rewards": {"xp": 4000, "gold": 500, "items": ["phylactery_shard_2", "phylactery_shard_3", "cloak_of_shadows", "potion_of_greater_healing"]},
+          "next_quest": "sotl_q4_the_necropolis"
+        },
+        {
+          "id": "sotl_q4_the_necropolis",
+          "title": "March on the Necropolis",
+          "description": "Two shards remain. The Lich has retreated to his ancient Necropolis fortress. Break through the undead armies guarding the outer walls and reach the inner sanctum.",
+          "objectives": [
+            "Battle through the Necropolis outer wall",
+            "Defeat the Lich's four undead generals",
+            "Recover the fourth phylactery shard from the throne room",
+            "Locate the fifth shard hidden in the catacombs below"
+          ],
+          "recommended_level": 15,
+          "enemy_ids": ["lich_general", "death_knight", "wight", "mummy_lord"],
+          "rewards": {"xp": 10000, "gold": 1000, "items": ["phylactery_shard_4", "phylactery_shard_5", "sword_of_life_stealing", "amulet_of_protection"]},
+          "next_quest": "sotl_q5_final_confrontation"
+        },
+        {
+          "id": "sotl_q5_final_confrontation",
+          "title": "The End of Malachar",
+          "description": "All five phylactery shards are assembled. Perform the ritual to destroy them, then face the weakened Lich Malachar in his final form. The fate of the realm rests on this battle.",
+          "objectives": [
+            "Perform the destruction ritual on all five phylactery shards",
+            "Defeat the Lich Malachar in his throne room",
+            "Escape the collapsing Necropolis"
+          ],
+          "recommended_level": 20,
+          "enemy_ids": ["lich"],
+          "rewards": {"xp": 25000, "gold": 5000, "items": ["legendary_weapon", "crown_of_the_realm", "tome_of_ancient_magic"]},
+          "next_quest": null
+        }
+      ]
+    },
+    {
+      "id": "side_merchants_debt",
+      "name": "The Merchant's Debt",
+      "description": "A wealthy merchant named Aldric Voss owes a dangerous sum to a thieves' guild. He hires the players to investigate the missing shipment that caused his financial ruin — but not everything is as it seems. This side quest blends investigation, social interaction, and dungeon combat.",
+      "difficulty": "intermediate",
+      "estimated_sessions": 3,
+      "quests": [
+        {
+          "id": "md_q1_investigation",
+          "title": "Follow the Gold",
+          "description": "Merchant Aldric Voss claims his shipment of rare spices was stolen. Investigate the docks and question the witnesses to uncover the truth.",
+          "objectives": [
+            "Speak with the dockmaster at the harbor",
+            "Interrogate three dock workers about the missing shipment",
+            "Search the warehouse for clues about who took the goods",
+            "Report findings to Aldric Voss"
+          ],
+          "recommended_level": 3,
+          "enemy_ids": ["thug", "bandit"],
+          "rewards": {"xp": 600, "gold": 75, "items": ["potion_of_healing", "letter_of_credit"]},
+          "next_quest": "md_q2_dungeon_run"
+        },
+        {
+          "id": "md_q2_dungeon_run",
+          "title": "Into the Thieves' Den",
+          "description": "The investigation points to a thieves' guild hideout in the old sewers beneath the city. Retrieve the stolen goods or the ledger proving Aldric's innocence.",
+          "objectives": [
+            "Enter the thieves' guild hideout through the sewer entrance",
+            "Defeat or bypass the guild sentries (combat or stealth)",
+            "Find and retrieve the stolen ledger or spice crates",
+            "Confront the guild lieutenant responsible for the theft"
+          ],
+          "recommended_level": 4,
+          "enemy_ids": ["thief", "rogue", "bandit_captain"],
+          "rewards": {"xp": 1000, "gold": 150, "items": ["thieves_tools", "potion_of_greater_healing", "guild_seal"]},
+          "next_quest": "md_q3_resolution"
+        },
+        {
+          "id": "md_q3_resolution",
+          "title": "A Debt Repaid",
+          "description": "With evidence in hand, the players must help Aldric resolve his debt with the thieves' guild. The outcome depends on how the players handled the investigation — diplomacy, force, or deception all lead to different ends.",
+          "objectives": [
+            "Bring the evidence to Aldric Voss",
+            "Negotiate with or defeat the guild master to cancel the debt",
+            "Ensure Aldric's safety from guild retaliation"
+          ],
+          "recommended_level": 4,
+          "enemy_ids": ["guild_master", "assassin"],
+          "rewards": {"xp": 1200, "gold": 300, "items": ["potion_of_healing", "merchants_ring", "letter_of_recommendation"]},
+          "next_quest": null
+        }
+      ]
+    }
+  ]
+}

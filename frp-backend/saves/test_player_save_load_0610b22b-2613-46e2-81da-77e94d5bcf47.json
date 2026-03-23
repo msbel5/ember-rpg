@@ -1,0 +1,25 @@
+{
+  "save_id": "0610b22b-2613-46e2-81da-77e94d5bcf47",
+  "player_id": "test_player_save_load",
+  "session_data": {
+    "session_id": "61a8a605-6ee1-48c4-b55a-2eb6c54d5757",
+    "scene": "exploration",
+    "location": "dungeon",
+    "player": {
+      "name": "SaveTest",
+      "level": 1,
+      "hp": 20,
+      "max_hp": 20,
+      "spell_points": 0,
+      "max_spell_points": 0,
+      "xp": 0,
+      "classes": {
+        "warrior": 1
+      }
+    },
+    "in_combat": false,
+    "turn": 2
+  },
+  "timestamp": "2026-03-23T16:04:38.342923",
+  "schema_version": "1.0"
+}

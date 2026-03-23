@@ -1,0 +1,382 @@
+{
+  "npc_templates": [
+    {
+      "id": "merchant_general_goods",
+      "name": "Bram Holloway",
+      "role": "merchant",
+      "personality": ["pragmatic", "talkative", "greedy"],
+      "speech_style": "casual",
+      "dialogue": {
+        "greeting": ["Step right up, friend! Best prices in the Reach!", "Welcome, welcome! See anything you like?", "Ah, a customer! My lucky day!"],
+        "farewell": ["Come back soon, friend — I'll have new stock!", "Safe travels, and spend wisely!", "May the road be kind to you!"],
+        "quest_offer": ["Actually, I could use someone with your skills. Bandits hit my last supply run...", "There's a job if you want it — good pay, minimal risk. Well, minimal-ish."],
+        "quest_complete": ["Ha! I knew you were the right person for the job!", "Excellent work. Here's your coin, and I'll remember this."],
+        "combat_warning": ["Guards! Guards! Help!", "I want no trouble — take what you want and go!"],
+        "idle": ["Supply chains aren't what they used to be...", "Did you hear? The north road is plagued by wolves.", "Business is slow since the troubles started."]
+      },
+      "disposition": "friendly",
+      "faction": "merchants_guild",
+      "level_range": [1, 5]
+    },
+    {
+      "id": "merchant_weapons",
+      "name": "Dara Ironstone",
+      "role": "merchant",
+      "personality": ["blunt", "honest", "professional"],
+      "speech_style": "gruff",
+      "dialogue": {
+        "greeting": ["Need a blade? You've come to the right place.", "I sell the finest steel in three counties. Don't let the price scare you.", "What'll it be?"],
+        "farewell": ["Keep your weapon clean and it'll serve you well.", "Don't come back crying if you get yourself killed.", "Good luck out there."],
+        "quest_offer": ["I need someone to recover a sword I sold. Turns out the buyer had sticky fingers.", "There's ore in the old mine — someone cleared it last month but never delivered."],
+        "quest_complete": ["Good. Clean work. Here's your pay.", "I don't hand out compliments, but that wasn't bad."],
+        "combat_warning": ["That was your last mistake.", "I forged these blades — I know exactly how to use them."],
+        "idle": ["Steel doesn't lie. People do.", "A dull blade is more dangerous than none.", "I've armed kings and peasants alike. They all bleed the same."]
+      },
+      "disposition": "neutral",
+      "faction": "merchants_guild",
+      "level_range": [2, 8]
+    },
+    {
+      "id": "merchant_potions",
+      "name": "Sylva Greenleaf",
+      "role": "merchant",
+      "personality": ["cheerful", "knowledgeable", "eccentric"],
+      "speech_style": "cheerful",
+      "dialogue": {
+        "greeting": ["Oh! A new face! Welcome, welcome, welcome!", "Hello, dear! Are you in the market for potions, salves, or something more... exotic?", "Don't be shy! Come in, come in!"],
+        "farewell": ["Do take care! Adventures can be so dangerous!", "Remember: two potions are always better than one!", "Bye-bye! Come back before you die!"],
+        "quest_offer": ["I need rare herbs from the Thornwood — my supplier was eaten. Nasty business. Could you fetch them?", "A rival alchemist has been undercutting my prices with inferior product. I'd like proof she's cheating."],
+        "quest_complete": ["Oh wonderful, wonderful! You are simply the best adventurer I've ever met!", "Marvellous! I'll brew you something special as a bonus!"],
+        "combat_warning": ["I have seventeen unstable potions on my belt! Think very carefully!", "Don't make me turn this shop into a crater!"],
+        "idle": ["The mushrooms this season have been simply extraordinary!", "Did you know a drop of basilisk blood can cure three diseases? Or cause five. It's a fine line.", "I once made a potion that turned a man into a tree for a week. He said it was peaceful."]
+      },
+      "disposition": "friendly",
+      "faction": "neutral",
+      "level_range": [1, 10]
+    },
+    {
+      "id": "merchant_black_market",
+      "name": "Renn the Quiet",
+      "role": "merchant",
+      "personality": ["secretive", "calculating", "paranoid"],
+      "speech_style": "mysterious",
+      "dialogue": {
+        "greeting": ["You weren't followed, were you? Good. What do you need?", "I don't know your name. You don't know mine. Let's keep it that way.", "Someone sent you. Who?"],
+        "farewell": ["This conversation never happened.", "Don't come back the same way you came.", "Forget you were here."],
+        "quest_offer": ["There's a package that needs moving. Discreetly. You look like the discreet type.", "Someone has something that belongs to me. I need it back. No questions asked."],
+        "quest_complete": ["You're better than I expected. Perhaps we'll work together again.", "Good. The coin is there. Walk away and don't look back."],
+        "combat_warning": ["You really don't want to do this. I have friends in dark places.", "Last chance to reconsider."],
+        "idle": ["Information is worth more than gold if you know who to sell it to.", "Everyone has a price. It's just a matter of finding it.", "Trust no one — including me."]
+      },
+      "disposition": "neutral",
+      "faction": "neutral",
+      "level_range": [5, 15]
+    },
+    {
+      "id": "innkeeper_welcoming",
+      "name": "Marta Croft",
+      "role": "innkeeper",
+      "personality": ["warm", "gossipy", "maternal"],
+      "speech_style": "casual",
+      "dialogue": {
+        "greeting": ["Oh, you look exhausted! Come in, sit down. Stew's still hot!", "Welcome to the Crossroads Inn! I'm Marta — and I run a clean establishment.", "Come in, come in! Is it just you, or do you have companions?"],
+        "farewell": ["Sleep well, dear. Breakfast is at dawn!", "You're welcome back any time — I'll keep your usual room free.", "Safe travels! Don't forget to eat!"],
+        "quest_offer": ["Between you and me... there's been something strange in the cellar at night. My husband won't go down there anymore.", "A group of travelers left without paying last week. They had red cloaks — you haven't seen them, have you?"],
+        "quest_complete": ["Oh, you are a treasure! Free meals for a week, I insist!", "My husband is so relieved. We all are. Thank you, truly."],
+        "combat_warning": ["Out! Out of my inn right now or I'll brain you with this skillet!", "I've dealt with worse than you, friend. Walk away."],
+        "idle": ["A merchant passed through yesterday — said the eastern roads are full of soldiers.", "Did you hear about the miller's son? Joined the army, just like that.", "The nights are getting longer, I swear. Something's not right."]
+      },
+      "disposition": "friendly",
+      "faction": "neutral",
+      "level_range": [1, 3]
+    },
+    {
+      "id": "innkeeper_gruff",
+      "name": "Otto Blackwood",
+      "role": "innkeeper",
+      "personality": ["stern", "fair", "private"],
+      "speech_style": "gruff",
+      "dialogue": {
+        "greeting": ["Room or drink?", "I run a quiet place. You look like trouble. Are you trouble?", "Three gold for a room. Two for a meal. Pay now."],
+        "farewell": ["Check out by morning.", "Don't break anything.", "I'll remember your face."],
+        "quest_offer": ["A man left a chest in room four three weeks ago. Never came back. If you can find out what happened, it's yours to keep.", "My stable boy ran off. I need someone to track him down before the horses go unfed."],
+        "quest_complete": ["Fine work. Don't make it a habit — I don't like owing favors.", "Said you could do it. You did it. That's that."],
+        "combat_warning": ["I'll have you in chains before you hit the floor.", "Last man who tried that lost three teeth. He left with two."],
+        "idle": ["World's going to ruin. It was better before.", "Ale prices up again. Everything's up.", "Quiet night. Good night."]
+      },
+      "disposition": "neutral",
+      "faction": "neutral",
+      "level_range": [1, 4]
+    },
+    {
+      "id": "innkeeper_retired_adventurer",
+      "name": "Geld the Scarred",
+      "role": "innkeeper",
+      "personality": ["nostalgic", "wise", "generous"],
+      "speech_style": "casual",
+      "dialogue": {
+        "greeting": ["Hah! You've got that look — the adventurer's itch! Come in, drinks are on me the first round.", "Welcome, welcome. Sit anywhere. I used to be like you, you know.", "Another wanderer! I love this job."],
+        "farewell": ["Keep your shield high and your wits sharper. Go get 'em.", "Come back and tell me the story. I love a good story.", "Safe roads and lucky dice!"],
+        "quest_offer": ["There's an old dungeon I mapped twenty years ago. I never cleared the lower level. It's yours if you want it.", "A young soldier came through here badly wounded — said her company was ambushed. They might still need help."],
+        "quest_complete": ["Ha! I knew it! That's exactly what I would have done! Drinks are free tonight!", "I'm proud of you. Really. Let me tell you about the time I did something similar..."],
+        "combat_warning": ["I've killed a dragon. A dragon! You really want to do this?", "This arm is scarred. So is my patience. Final warning."],
+        "idle": ["I miss the open road sometimes. But my knees don't.", "Best thing about retiring: you stop worrying about dying. Sort of.", "I've got stories, friend. All you have to do is ask."]
+      },
+      "disposition": "friendly",
+      "faction": "adventurers_guild",
+      "level_range": [1, 20]
+    },
+    {
+      "id": "guard_captain",
+      "name": "Captain Aldis Vorn",
+      "role": "guard",
+      "personality": ["disciplined", "just", "cautious"],
+      "speech_style": "formal",
+      "dialogue": {
+        "greeting": ["State your business in Millhaven, traveler.", "I keep the peace here. Don't give me reason to notice you.", "Welcome to Millhaven. Keep your weapons sheathed and we'll have no problems."],
+        "farewell": ["Move along, then. And stay out of trouble.", "Carry on. I'll be watching.", "Good day. Keep to the marked roads."],
+        "quest_offer": ["I'll be direct: I'm short on men and there's a bandit camp north of here. If you clear it, you'll have the town's gratitude — and coin.", "Someone's been poisoning the wells. I can't send my own people without causing a panic. Could use a quiet hand."],
+        "quest_complete": ["Well done. The town is safer for it. Here's what I promised.", "I don't say this lightly — you've earned my respect. And the reward."],
+        "combat_warning": ["Stand down. Now.", "I am authorized to use lethal force. Don't test me."],
+        "idle": ["Every season there are more refugees. The roads are dangerous.", "I've served this town for fifteen years. I'll serve fifteen more if needed.", "Reports of undead to the east. I'm taking them seriously, unlike some."]
+      },
+      "disposition": "neutral",
+      "faction": "town_guard",
+      "level_range": [5, 12]
+    },
+    {
+      "id": "guard_nervous",
+      "name": "Pip Ashford",
+      "role": "guard",
+      "personality": ["timid", "eager", "inexperienced"],
+      "speech_style": "fearful",
+      "dialogue": {
+        "greeting": ["H-halt! I mean — welcome! Please state your... um... purpose.", "Oh! You startled me. I'm the guard. I'm guarding. Obviously.", "Good day! Please don't make any sudden moves. Captain's orders."],
+        "farewell": ["Have a s-safe trip! And stay on the road, please, it's much safer!", "Okay, g-goodbye! You seem nice!", "Right then! Carry on! I'll be here. Guarding."],
+        "quest_offer": ["There's... there's something in the old warehouse. I heard it. I went to check and then I — I didn't check. Could you check?", "I was supposed to patrol the east gate last night but I didn't because, well... I'll pay you to do it. Captain doesn't have to know."],
+        "quest_complete": ["Oh thank the gods! I'll tell the captain! Well, maybe I'll let you tell the captain.", "You actually did it! You're incredible! I want to be you when I grow up!"],
+        "combat_warning": ["P-please stop! I have a spear! It's quite sharp!", "I'm going to blow this whistle! I'm doing it! I'm blowing it right now!"],
+        "idle": ["Did that shadow move? That shadow moved.", "The captain says there's nothing to be afraid of. The captain is very brave.", "Only six more hours on shift. Six more hours. I can do this."]
+      },
+      "disposition": "friendly",
+      "faction": "town_guard",
+      "level_range": [1, 3]
+    },
+    {
+      "id": "guard_corrupt",
+      "name": "Sergeant Drunn",
+      "role": "guard",
+      "personality": ["greedy", "arrogant", "menacing"],
+      "speech_style": "gruff",
+      "dialogue": {
+        "greeting": ["Nice gear you've got. New in town?", "You need to pay the... inspection fee. Everyone does.", "Keep walking unless you've got something worth my time."],
+        "farewell": ["Smart choice.", "Don't let me catch you without coin again.", "I'll be around. Remember that."],
+        "quest_offer": ["I've got a job. Off the books. You didn't hear it from me.", "There's a merchant that's been skipping my 'protection.' That needs to change."],
+        "quest_complete": ["You do good work. Maybe we'll do this again.", "Pleasure doing business. Tell no one."],
+        "combat_warning": ["I'll have your head for this.", "You're making a very stupid mistake."],
+        "idle": ["Taxes pay for the guard. The guard takes the taxes. Works out fine.", "This job has... benefits, if you know what I mean.", "New arrivals always have the best coin."]
+      },
+      "disposition": "hostile",
+      "faction": "town_guard",
+      "level_range": [3, 7]
+    },
+    {
+      "id": "quest_giver_elder",
+      "name": "Elder Maren",
+      "role": "quest_giver",
+      "personality": ["wise", "worried", "duty-bound"],
+      "speech_style": "formal",
+      "dialogue": {
+        "greeting": ["I have prayed for capable souls to arrive. Perhaps the gods have answered.", "You come at a desperate hour, traveler. Will you hear an old woman's plea?", "Welcome. I am Elder Maren. Our village is in need."],
+        "farewell": ["The village blesses you for your efforts.", "Return safely. We will be waiting.", "May wisdom guide your steps."],
+        "quest_offer": ["Our children have been going missing at night for three weeks now. The guard says it's wolves. I know it is not wolves.", "An ancient evil stirs beneath the hill. I have felt it for years. It is waking. Someone must stop it before it's too late."],
+        "quest_complete": ["You have saved us. Words cannot express my gratitude.", "The village will tell stories of you for generations. This I promise."],
+        "combat_warning": ["I am too old to fight — but not too old to call for those who will.", "You would threaten a village elder? You are less than I thought."],
+        "idle": ["The old ways are being forgotten. That worries me more than the monsters.", "I remember when the forests were safe. I remember many things.", "Power is not strength, and strength is not courage. Remember that."]
+      },
+      "disposition": "friendly",
+      "faction": "neutral",
+      "level_range": [1, 10]
+    },
+    {
+      "id": "quest_giver_noble",
+      "name": "Lord Edric Castellan",
+      "role": "quest_giver",
+      "personality": ["pompous", "desperate", "cunning"],
+      "speech_style": "formal",
+      "dialogue": {
+        "greeting": ["Ah. You must be the adventurers I was told about. Somewhat less... impressive than I had hoped.", "I am Lord Edric Castellan. You may address me as 'My Lord.' Now — I have a delicate matter to discuss.", "I'll be brief. I need something done that my name cannot be attached to."],
+        "farewell": ["You have been... serviceable. I may have use for you again.", "Remember: discretion is the quality I value most. Don't forget that.", "Good day. Do not speak of our meeting."],
+        "quest_offer": ["A document has gone missing from my study. Its contents would be... professionally embarrassing. Retrieve it before it reaches the wrong hands.", "My son has fallen in with a dangerous cult. I need him extracted. Quietly. Without scandal."],
+        "quest_complete": ["Adequate performance. The agreed payment will be delivered to your lodgings.", "I admit, you exceeded my somewhat modest expectations. Well done."],
+        "combat_warning": ["Do you have any idea who I am? My family has ruled this region for two centuries!", "Touch me and every guard in this city will have your description by nightfall."],
+        "idle": ["The merchant class grows insufferably bold these days.", "Politics is simply chess played with lives. I've always been good at chess.", "My family has sacrificed much for this realm. Not that anyone remembers."]
+      },
+      "disposition": "neutral",
+      "faction": "neutral",
+      "level_range": [5, 15]
+    },
+    {
+      "id": "quest_giver_guild_master",
+      "name": "Hilda Stormglass",
+      "role": "quest_giver",
+      "personality": ["efficient", "fair", "resourceful"],
+      "speech_style": "casual",
+      "dialogue": {
+        "greeting": ["You're registered with the guild? Good. I've got work.", "Welcome to the Ironpost Guild Hall. Contracts are posted on the board — or I can brief you personally.", "Ah, reputation precedes you. Sit down, we should talk."],
+        "farewell": ["Contract closed. Your record has been updated.", "Good work. The board has more jobs whenever you're ready.", "Stay sharp out there."],
+        "quest_offer": ["High-priority contract just came in. Missing caravan, three days east. Guild wants it handled before the client gets nervous.", "Dungeon survey — scouting only, no engagement. Simple job, good pay. You interested?"],
+        "quest_complete": ["Contract fulfilled. Bounty transferred. Your guild rank has been updated.", "Clean execution. The client is satisfied, which means I'm satisfied. Here's your cut."],
+        "combat_warning": ["This is a Guild Hall. There are fourteen armed adventurers within earshot. Rethink your life choices.", "Guild Regulation 7: assaulting a Guild Master is punishable by permanent expulsion. And worse."],
+        "idle": ["The Guild doesn't judge your past. Only your results.", "I've placed contracts on kings. I've also placed them on rats. Gold is gold.", "Information network is the real business. The contracts are just the service."]
+      },
+      "disposition": "neutral",
+      "faction": "adventurers_guild",
+      "level_range": [1, 20]
+    },
+    {
+      "id": "villain_cult_leader",
+      "name": "High Priest Sevaras",
+      "role": "villain",
+      "personality": ["fanatical", "charismatic", "cruel"],
+      "speech_style": "formal",
+      "dialogue": {
+        "greeting": ["Ah. More sacrifices send themselves to my door. How convenient.", "You stand in the presence of the Chosen Voice. Kneel, or die standing.", "I've been expecting visitors. My master sees all."],
+        "farewell": ["Run. It won't help, but I enjoy watching hope die slowly.", "Tell your masters what you've seen here. Tell them it's already too late.", "Go. And count your remaining days carefully."],
+        "quest_offer": ["You could join us, you know. The Lich offers eternal life. Think about that offer before you answer foolishly.", "I have a task — should you prove worthy. Betray your companions. Bring me their leader's ring."],
+        "quest_complete": ["You have served the dark well today. Perhaps there is hope for your soul after all.", "Impressive. I did not expect mortals to accomplish this. I will remember your names."],
+        "combat_warning": ["Death is merely a transition. I've made mine already.", "I have resurrected ten times. You will not stop me on the eleventh."],
+        "idle": ["The old gods failed this world. Only the Lich sees the truth.", "Mortals cling to life like children cling to candles in the dark.", "The age of the living is ending. Be grateful — you will witness history."]
+      },
+      "disposition": "hostile",
+      "faction": "undead_cult",
+      "level_range": [10, 20]
+    },
+    {
+      "id": "villain_bandit_lord",
+      "name": "The Red Vane",
+      "role": "villain",
+      "personality": ["ruthless", "pragmatic", "proud"],
+      "speech_style": "gruff",
+      "dialogue": {
+        "greeting": ["You've got guts. Wandering into my camp alone. Stupid guts, but guts.", "I know why you're here. The question is: can you deliver?", "Everyone who walks in here wants something. What do you want?"],
+        "farewell": ["You've earned your life today. Don't waste it.", "We're done here. Don't come back without gold or a death wish.", "Smart choice. Smart people live longer."],
+        "quest_offer": ["There's a merchant convoy coming through the pass next week. Too well-guarded for my crew. You take care of the guards — I'll cut you in.", "Someone's been robbing MY robbers. I want it stopped. Ironic, I know."],
+        "quest_complete": ["A deal's a deal. Here. Now get out of my sight.", "You're good. Wasted on the law-abiding, honestly."],
+        "combat_warning": ["Kill them all. Leave the gear, take the coin.", "I've buried better than you in this forest."],
+        "idle": ["The law never helped me, so I stopped following it. Simple.", "Every noble got rich by taking from someone. I just skip the middleman.", "Loyalty is earned, not owed. Remember that."]
+      },
+      "disposition": "hostile",
+      "faction": "neutral",
+      "level_range": [5, 10]
+    },
+    {
+      "id": "ally_ranger",
+      "name": "Thea Wildstep",
+      "role": "ally",
+      "personality": ["independent", "resourceful", "loyal"],
+      "speech_style": "casual",
+      "dialogue": {
+        "greeting": ["I've been tracking you for two miles. You've good instincts but terrible trail discipline.", "Finally caught up with you. I have news.", "You came. Good. I wasn't sure you would."],
+        "farewell": ["I'll find you when I need to. I always do.", "Stay low if you're heading north. The patrols are thick.", "Watch the eastern flank. Something's moving in the trees."],
+        "quest_offer": ["I've found the camp. Twelve of them, three watchpoints, one exit. Want the full report?", "I tracked the monster to its lair. I'll take point — you cover the retreat."],
+        "quest_complete": ["That's how it's done. Clean, fast, no loose ends.", "Good work, team. Let's get out before reinforcements arrive."],
+        "combat_warning": ["I have an arrow nocked. Try me.", "I don't miss. Not at this range."],
+        "idle": ["The forest has been quiet lately. That worries me more than noise.", "Animals know before we do. Watch the birds.", "I travel light and sleep light. You should too."]
+      },
+      "disposition": "friendly",
+      "faction": "adventurers_guild",
+      "level_range": [3, 15]
+    },
+    {
+      "id": "ally_scholar",
+      "name": "Corvin Ashfeld",
+      "role": "ally",
+      "personality": ["intellectual", "nervous", "dedicated"],
+      "speech_style": "formal",
+      "dialogue": {
+        "greeting": ["Thank the ancients you're here. I've decoded the cipher but the practical application is rather beyond me.", "I believe I have information relevant to your situation. Several folders of it, actually.", "Oh, good! Please come in. Mind the stacks — I know where everything is."],
+        "farewell": ["I'll continue research from here. Send word if you find any inscriptions.", "Be careful! And please document anything unusual — sketches are fine!", "Safe return, and do try not to die with the artifact."],
+        "quest_offer": ["I need someone to retrieve an artifact from the old library. The guardian is aggressive, but I've mapped a route around it.", "I've located the fourth tome. It's in a private collection. The collector is... not inclined to share."],
+        "quest_complete": ["Extraordinary! This confirms my secondary hypothesis entirely! Thank you, this is remarkable!", "Splendid work! I'll have a full analysis ready within the fortnight!"],
+        "combat_warning": ["I warn you: I know six lethal spells, and anxiety tends to make me less precise.", "Please reconsider. Blood is very difficult to remove from old manuscripts."],
+        "idle": ["The founding civilization was far more advanced than we believe. The evidence is overwhelming.", "History isn't lost — it's just misfiled.", "I've been awake for forty hours. I think I've nearly cracked it."]
+      },
+      "disposition": "friendly",
+      "faction": "neutral",
+      "level_range": [1, 12]
+    },
+    {
+      "id": "misc_blacksmith",
+      "name": "Forge-Arm Nikos",
+      "role": "neutral",
+      "personality": ["passionate", "proud", "direct"],
+      "speech_style": "gruff",
+      "dialogue": {
+        "greeting": ["You want something forged, or just looking?", "That blade of yours needs work. I can see it from here.", "Speak up — the forge is loud and I'm deaf in one ear."],
+        "farewell": ["Come back when it's ready. Don't rush me.", "Good craftsmanship takes time. Tell your friends.", "Don't bring me cheap ore. I won't work with it."],
+        "quest_offer": ["I need rare ore from the Deepvein Mine. My usual courier is dead. Occupational hazard in this region.", "My masterwork hammer was stolen by a thief last month. If you find it, I'll craft you something exceptional in return."],
+        "quest_complete": ["Good ore. Clean delivery. Come pick up the work in three days.", "Outstanding. I don't say that often. I mean it."],
+        "combat_warning": ["I hold a hammer all day every day. Don't.", "The forge is hot. You can leave on foot or in a bucket. Your choice."],
+        "idle": ["Good steel tells you what it wants to be. You just have to listen.", "They don't make miners like they used to.", "Every blade I've forged is still out there somewhere. I think about that."]
+      },
+      "disposition": "neutral",
+      "faction": "merchants_guild",
+      "level_range": [1, 8]
+    },
+    {
+      "id": "misc_healer",
+      "name": "Sister Ambra",
+      "role": "neutral",
+      "personality": ["compassionate", "firm", "tired"],
+      "speech_style": "formal",
+      "dialogue": {
+        "greeting": ["Come in. Sit. Let me see what needs fixing.", "You're wounded. Don't be stubborn about it — let me help.", "The temple is open to all who need healing. No questions asked."],
+        "farewell": ["Rest. Eat. Drink water. Those three things cure more than potions.", "Return if the wound worsens. And don't get stabbed again.", "Go well, traveler. I'll pray for your safety."],
+        "quest_offer": ["Our medicine stores are gone — raided. I have patients dying. I need someone to retrieve what was taken.", "A plague has broken out in the southern quarter. I need volunteers to distribute aid. It's dangerous work."],
+        "quest_complete": ["You may have just saved a dozen lives. The temple will remember this.", "Thank you. From all of us here."],
+        "combat_warning": ["This is a place of healing. Violence here is an abomination.", "I've stitched men back together after battles you can't imagine. You don't frighten me."],
+        "idle": ["We see more wounded every week. The wars never quite end.", "Faith heals what medicine cannot. Both have their place.", "I used to pray for peace. Now I pray for enough bandages."]
+      },
+      "disposition": "friendly",
+      "faction": "neutral",
+      "level_range": [1, 10]
+    },
+    {
+      "id": "misc_sage",
+      "name": "Aldric the Unbound",
+      "role": "neutral",
+      "personality": ["cryptic", "ancient", "detached"],
+      "speech_style": "mysterious",
+      "dialogue": {
+        "greeting": ["You seek answers. Most who find me do.", "I have been here a long time. Longer than this village, longer than this road.", "Sit. I will tell you what I know. Whether you understand it is your concern."],
+        "farewell": ["The path forward was always clear. You simply needed to see it.", "You will return here. I have already seen it.", "Remember what I said — not now, but when it matters."],
+        "quest_offer": ["There is a convergence coming. Three places, one night. Someone must be at each. Will you be one of the three?", "A book was stolen from me centuries ago. I have recently felt it wake. Find it."],
+        "quest_complete": ["As it was written.", "Yes. That is how it always would have ended. Well done."],
+        "combat_warning": ["I have died seven times. Each time I come back more difficult to kill.", "You raise a hand against the Unbound. Consider what that means."],
+        "idle": ["The stars speak if you know the language. Most don't.", "I remember when this was all ocean. Everything changes, eventually.", "Time is not a river. It is more like... a tree. With roots, and unexpected branches."]
+      },
+      "disposition": "neutral",
+      "faction": "neutral",
+      "level_range": [1, 20]
+    },
+    {
+      "id": "misc_beggar_spy",
+      "name": "Patches",
+      "role": "neutral",
+      "personality": ["sly", "observant", "opportunistic"],
+      "speech_style": "casual",
+      "dialogue": {
+        "greeting": ["Spare a coin for a hungry soul? I see things, you know. Things worth knowing.", "You look like someone who needs information. And I look like someone who needs a meal.", "Don't look at me like that. I'm useful."],
+        "farewell": ["Pleasure. Don't mention my name anywhere.", "Come find me when you need street-level intelligence.", "I was never here, yeah?"],
+        "quest_offer": ["I overheard something last night. Two men by the fountain. Big job, big coin. Want details? Costs you.", "There's a man who pays me to watch the south gate. He's nervous lately. Very nervous."],
+        "quest_complete": ["Nice doing business. Same arrangement next time?", "See? Told you I was useful. Remember that."],
+        "combat_warning": ["Oy! Not the face! Not the face!", "I know every guard in this city by name! Don't make me shout!"],
+        "idle": ["People ignore beggars. That's their mistake.", "I've heard twelve conversations today. Four of them were interesting.", "Warmth, food, and coin. Simple needs. Simple life."]
+      },
+      "disposition": "neutral",
+      "faction": "neutral",
+      "level_range": [1, 5]
+    }
+  ]
+}
