@@ -77,8 +77,9 @@ var current_palette: Dictionary = {}
 var player_pos: Vector2i = Vector2i(0, 0)
 var player_facing: int = 0  # 0=N, 1=E, 2=S, 3=W
 var visible_entities: Array = []
-var revealed_ids: Dictionary = {}  # entity_id → true (revealed by DM)
+var revealed_ids: Dictionary = {}  # entity_id → reveal_alpha (0.0 to 1.0)
 var entity_cache: Dictionary = {}  # cache key → rendered data
+var _fade_active: bool = false
 
 # Facing direction vectors
 const FACING_VECTORS = [
@@ -115,14 +116,30 @@ func update_player(pos: Vector2i, facing: int) -> void:
 	queue_redraw()
 
 func reveal_entity(entity_id: String) -> void:
-	revealed_ids[entity_id] = true
+	if not revealed_ids.has(entity_id):
+		revealed_ids[entity_id] = 0.0  # Start at 0 alpha, will fade in
+		_fade_active = true
 	queue_redraw()
 
 func reveal_all() -> void:
 	for entity in visible_entities:
 		var eid = entity.get("id", "")
-		if eid != "":
-			revealed_ids[eid] = true
+		if eid != "" and not revealed_ids.has(eid):
+			revealed_ids[eid] = 0.0
+	_fade_active = true
+	queue_redraw()
+
+func _process(delta: float) -> void:
+	if not _fade_active:
+		return
+	# Gradually increase alpha of fading-in entities
+	var all_done = true
+	for eid in revealed_ids:
+		if revealed_ids[eid] < 1.0:
+			revealed_ids[eid] = minf(revealed_ids[eid] + delta * 0.7, 1.0)  # ~1.4s fade
+			all_done = false
+	if all_done:
+		_fade_active = false
 	queue_redraw()
 
 func _on_map_loaded(_map_data: Dictionary) -> void:
@@ -249,8 +266,11 @@ func _draw_entities(w: float, h: float) -> void:
 	var draw_list: Array = []
 	for entity in visible_entities:
 		var eid = entity.get("id", "")
-		if not revealed_ids.get(eid, false):
+		if not revealed_ids.has(eid):
 			continue  # Not yet revealed by DM
+		var alpha = revealed_ids[eid]
+		if alpha <= 0.0:
+			continue
 
 		var pos = entity.get("position", [0, 0])
 		var entity_pos = Vector2i(int(pos[0]), int(pos[1]))
@@ -269,6 +289,7 @@ func _draw_entities(w: float, h: float) -> void:
 			"entity": entity,
 			"forward": forward,
 			"lateral": lateral,
+			"alpha": alpha,
 		})
 
 	# Sort back to front (furthest first)
@@ -281,6 +302,7 @@ func _draw_single_entity(item: Dictionary, w: float, h: float, horizon_y: float)
 	var entity = item["entity"]
 	var forward: int = item["forward"]
 	var lateral: int = item["lateral"]
+	var fade_alpha: float = item.get("alpha", 1.0)
 	var template = entity.get("template", "default")
 	var entity_name = entity.get("name", "?")
 
@@ -301,13 +323,13 @@ func _draw_single_entity(item: Dictionary, w: float, h: float, horizon_y: float)
 	var corridor_half_w = w * 0.3 * dist_factor  # visible corridor narrows with distance
 	var entity_x = center_x + lateral * corridor_half_w - entity_w * 0.5
 
-	# Get entity color
+	# Get entity color with fade alpha
 	var base_color = ENTITY_COLORS.get(template, ENTITY_COLORS["default"])
-	# Darken with distance
 	var draw_color = Color(
 		base_color.r * (0.4 + 0.6 * dist_factor),
 		base_color.g * (0.4 + 0.6 * dist_factor),
 		base_color.b * (0.4 + 0.6 * dist_factor),
+		fade_alpha,
 	)
 
 	# --- Draw silhouette (simple humanoid shape) ---
@@ -325,20 +347,21 @@ func _draw_single_entity(item: Dictionary, w: float, h: float, horizon_y: float)
 	var leg_top = body_top + body_h
 	var leg_h = entity_h - (head_radius * 2 + body_h)
 	var leg_w = entity_w * 0.25
-	draw_rect(Rect2(entity_x + entity_w * 0.15, leg_top, leg_w, leg_h), draw_color * 0.85)
-	draw_rect(Rect2(entity_x + entity_w * 0.6, leg_top, leg_w, leg_h), draw_color * 0.85)
+	var leg_color = Color(draw_color.r * 0.85, draw_color.g * 0.85, draw_color.b * 0.85, fade_alpha)
+	draw_rect(Rect2(entity_x + entity_w * 0.15, leg_top, leg_w, leg_h), leg_color)
+	draw_rect(Rect2(entity_x + entity_w * 0.6, leg_top, leg_w, leg_h), leg_color)
 
 	# --- Layer 4: Label ---
-	if dist_factor > 0.3:  # Only show labels for closer entities
+	if dist_factor > 0.3 and fade_alpha > 0.3:
 		var font = ThemeDB.fallback_font
 		var font_size = int(10 * dist_factor + 6)
 		var label_pos = Vector2(entity_x + entity_w * 0.5, entity_y - 4)
 		var text_size = font.get_string_size(entity_name, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
 		label_pos.x -= text_size.x * 0.5
 		# Shadow
-		draw_string(font, label_pos + Vector2(1, 1), entity_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0, 0, 0, 0.7))
+		draw_string(font, label_pos + Vector2(1, 1), entity_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0, 0, 0, 0.7 * fade_alpha))
 		# Text
-		var label_color = Color(1, 1, 0.85, dist_factor)
+		var label_color = Color(1, 1, 0.85, dist_factor * fade_alpha)
 		draw_string(font, label_pos, entity_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, label_color)
 
 func _gui_input(event: InputEvent) -> void:

@@ -88,8 +88,8 @@ func _on_scene_entered(data) -> void:
 		var cy = int(md.get("height", 15)) / 2
 		pov_renderer.update_player(Vector2i(cx, cy), 0)
 
-	# After all narrative streams process, reveal remaining hidden entities
-	await get_tree().create_timer(10.0).timeout
+	# Fallback: reveal remaining hidden entities after narrative completes
+	await get_tree().create_timer(3.0).timeout
 	if tile_map_renderer:
 		tile_map_renderer.reveal_all()
 	if pov_renderer:
@@ -276,15 +276,21 @@ func _set_view_mode(pov: bool) -> void:
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed):
 		return
+
+	# INSERT key always works (even when typing) — safe, not a character key
+	if event.keycode == KEY_INSERT:
+		_set_view_mode(not is_pov_mode)
+		get_viewport().set_input_as_handled()
+		return
+
+	# Other hotkeys only when NOT typing
 	if text_input.has_focus():
-		return  # Don't process hotkeys while typing
+		return
 
 	match event.keycode:
 		KEY_M:
-			# Toggle map panel visibility
 			map_viewer.visible = not map_viewer.visible
-		KEY_V:
-			# Toggle POV ↔ tile map
+		KEY_TAB:
 			_set_view_mode(not is_pov_mode)
 		KEY_I:
 			pass  # Inventory (future)
