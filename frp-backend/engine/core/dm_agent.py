@@ -309,6 +309,23 @@ class DMAIAgent:
                 f"- [{e.type.value}] {e.description}" for e in recent
             )
 
+        # Build enriched event description with data context
+        context_parts = [event.description]
+        if event.data:
+            if event.data.get("npc_personality"):
+                p = event.data["npc_personality"]
+                context_parts.append(
+                    f"NPC: {p.get('name', 'Unknown')} ({p.get('role', 'stranger')}). "
+                    f"Personality: {', '.join(p.get('personality', []))}. "
+                    f"Speech style: {p.get('speech_style', 'neutral')}. "
+                    f"Typical greeting: '{p.get('greeting', [''])[0]}'"
+                )
+            if event.data.get("raw_input"):
+                context_parts.append(f"Player's exact words: \"{event.data['raw_input']}\"")
+            if event.data.get("location"):
+                context_parts.append(f"Current location: {event.data['location']}")
+        enriched_description = "\n".join(context_parts)
+
         prompt = (
             f"You are the Dungeon Master of Ember RPG, a dark fantasy world.\n\n"
             f"## Current Scene\n"
@@ -321,8 +338,7 @@ class DMAIAgent:
             f"{history_lines if history_lines else '(no recent events)'}\n\n"
             f"## Event\n"
             f"Type: {event.type.value}\n"
-            f"Description: {event.description}\n"
-            f"Data: {event.data}\n\n"
+            f"Description: {enriched_description}\n\n"
             f"## Task\n"
             f"Narrate this event in 2-3 sentences. "
             f"Keep the tone dark, immersive, and concise. "

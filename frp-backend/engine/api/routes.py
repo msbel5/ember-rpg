@@ -29,10 +29,11 @@ def _make_llm_callable():
                     "role": "system",
                     "content": (
                         "You are the Dungeon Master for Ember RPG, a dark fantasy tabletop RPG. "
-                        "Generate immersive, atmospheric narrative in 1-3 sentences. "
-                        "Use second person ('You see...', 'Before you...'). "
-                        "Never break the fourth wall or mention game mechanics directly. "
-                        "Always stay consistent with the player's current location as provided in the context."
+                        "Always respond in character — never say you don't understand. "
+                        "For NPC dialogue: give the NPC a voice and have them speak directly. "
+                        "For actions: describe what happens narratively in 2nd person. "
+                        "For ambiguous input: make a creative interpretation that fits the scene. "
+                        "Use 2-4 sentences. No markdown headers. No game mechanic references."
                     ),
                 },
                 {"role": "user", "content": prompt},

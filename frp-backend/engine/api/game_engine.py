@@ -152,6 +152,7 @@ class GameEngine:
             ActionIntent.REST:       self._handle_rest,
             ActionIntent.MOVE:       self._handle_move,
             ActionIntent.OPEN:       self._handle_open,
+            ActionIntent.TRADE:      self._handle_trade,
             ActionIntent.UNKNOWN:    self._handle_unknown,
         }
 
@@ -293,16 +294,50 @@ class GameEngine:
 
     def _handle_talk(self, session: GameSession, action: ParsedAction) -> ActionResult:
         target = action.target or "a stranger"
-        location = session.dm_context.location or "the area"
+
+        # Try to find NPC personality from templates
+        npc_personality = self._get_npc_personality(target)
+
         desc = (
-            f"{session.player.name} initiates a conversation with {target} in {location}. "
-            f"This is a social interaction — {session.player.name} speaks directly to {target}, "
-            f"waiting for a reply and engaging in dialogue."
+            f"{session.player.name} approaches {target} to speak. "
+            f"{session.player.name} says: (initiate conversation). "
+            f"Generate {target}'s response as they would actually speak, "
+            f"in character with their personality."
         )
-        event = DMEvent(type=EventType.DIALOGUE, description=desc)
+        event = DMEvent(type=EventType.DIALOGUE, description=desc, data={
+            "player_name": session.player.name,
+            "location": session.dm_context.location,
+            "npc_name": target,
+            "npc_personality": npc_personality,
+            "action": "talk",
+            "player_input": action.raw_input,
+        })
         self.dm.transition(session.dm_context, SceneType.DIALOGUE)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+
+    def _get_npc_personality(self, target_name: str) -> dict:
+        """Find NPC template by partial name match."""
+        try:
+            import json, os
+            data_dir = os.path.join(os.path.dirname(__file__), "../../data")
+            with open(os.path.join(data_dir, "npc_templates.json")) as f:
+                npcs = json.load(f)["npc_templates"]
+            target_lower = target_name.lower()
+            for npc in npcs:
+                if (target_lower in npc.get("name", "").lower() or
+                    target_lower in npc.get("id", "").lower() or
+                    target_lower in npc.get("role", "").lower()):
+                    return {
+                        "name": npc.get("name"),
+                        "role": npc.get("role"),
+                        "personality": npc.get("personality", []),
+                        "speech_style": npc.get("speech_style"),
+                        "greeting": npc.get("dialogue", {}).get("greeting", []),
+                    }
+        except Exception:
+            pass
+        return {}
 
     def _handle_rest(self, session: GameSession, action: ParsedAction) -> ActionResult:
         if session.in_combat():
@@ -355,9 +390,39 @@ class GameEngine:
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
+    def _handle_trade(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        target = action.target or "a merchant"
+        npc_personality = self._get_npc_personality(target)
+        desc = (
+            f"{session.player.name} wants to trade with {target}. "
+            f"Generate {target}'s response showing their wares and willingness to trade."
+        )
+        event = DMEvent(type=EventType.DIALOGUE, description=desc, data={
+            "player_name": session.player.name,
+            "location": session.dm_context.location,
+            "npc_name": target,
+            "npc_personality": npc_personality,
+            "action": "trade",
+            "player_input": action.raw_input,
+        })
+        self.dm.transition(session.dm_context, SceneType.DIALOGUE)
+        narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+
     def _handle_unknown(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        desc = f"'{action.raw_input}' — I'm not sure what you're trying to do."
-        event = DMEvent(type=EventType.DISCOVERY, description=desc)
+        # Unknown intent → pass raw input to LLM as free-form DM action
+        desc = (
+            f"The player says or does: '{action.raw_input}'. "
+            f"They are in {session.dm_context.location}. "
+            f"As the Dungeon Master, interpret this action and respond narratively. "
+            f"If unclear, make a reasonable creative interpretation."
+        )
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name,
+            "location": session.dm_context.location,
+            "raw_input": action.raw_input,
+            "action": "free_form",
+        })
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 

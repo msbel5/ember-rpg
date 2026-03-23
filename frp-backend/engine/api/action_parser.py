@@ -17,6 +17,7 @@ class ActionIntent(Enum):
     PICKUP = "pickup"
     MOVE = "move"
     TALK = "talk"
+    TRADE = "trade"
     LOOK = "look"
     EXAMINE = "examine"
     REST = "rest"
@@ -94,10 +95,26 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
         ),
     ]),
 
-    # TALK: "talk to guard" / "speak with innkeeper" / "konuş muhafızla"
+    # TALK: "talk to guard" / "speak with innkeeper" / "hey merchant" / "konuş muhafızla"
     (ActionIntent.TALK, [
         re.compile(
-            r"^(?:talk\s+to|speak\s+(?:to|with)|chat\s+with|greet|konuş|selamla|söyle|sor|pazarlık)\s+(?P<target>[\w\s]+)$",
+            r"^(?:talk\s+to|talk|speak\s+(?:to|with)|chat\s+with|greet|konuş|selamla|söyle|sor|pazarlık|hey|excuse\s+me|what\s+does)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?:innkeeper|merchant|guard|blacksmith|priest|wizard|elder|captain|barkeep|tavernkeeper)(?:\s+[\w\s]*)?$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # TRADE: "trade with merchant" / "barter" / "buy something" / "show me your wares"
+    (ActionIntent.TRADE, [
+        re.compile(
+            r"^(?:trade\s+(?:with\s+)?|barter\s+(?:with\s+)?|buy\s+from\s+|shop\s+(?:with\s+)?)(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?:show\s+me\s+(?:your\s+)?wares|what\s+do\s+you\s+have|what\s+are\s+you\s+selling|buy\s+something|i\s+want\s+to\s+buy|alışveriş|satın\s+al)$",
             re.IGNORECASE
         ),
     ]),
@@ -215,6 +232,7 @@ _KEYWORD_FALLBACK: list[tuple[ActionIntent, list[str]]] = [
     (ActionIntent.ATTACK, ["saldır", "vur", "öldür", "attack", "strike", "hit", "kill"]),
     (ActionIntent.CAST_SPELL, ["büyü", "sihir", "cast", "spell", "magic", "fireball", "heal"]),
     (ActionIntent.USE_ITEM, ["kullan", "iç", "ye", "use", "drink", "eat", "consume", "potion"]),
+    (ActionIntent.TRADE, ["trade", "barter", "buy", "sell", "wares", "shop", "alışveriş"]),
     (ActionIntent.TALK, ["konuş", "söyle", "talk", "speak", "greet"]),
     (ActionIntent.REST, ["dinlen", "uyu", "rest", "sleep", "camp"]),
     (ActionIntent.OPEN, ["aç", "kır", "open", "unlock"]),

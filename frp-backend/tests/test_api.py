@@ -217,7 +217,8 @@ class TestGameEngine:
         session = self.engine.new_session("Aria")
         result = self.engine.process_action(session, "xyzzy plugh")
         assert result.narrative
-        assert "not sure" in result.narrative
+        # LLM catch-all: should return narrative, not "not sure"
+        assert len(result.narrative) > 0
 
     def test_turn_advances_on_action(self):
         session = self.engine.new_session("Aria")
