@@ -105,7 +105,18 @@ Connect actual LLMs to the game engine.
 - Chat-based interaction with DM
 - Player status panel (HP, XP, inventory)
 
-### 5b. Tile Map Renderer
+### 5b. AI Asset Pipeline + POV Compositor 🔥 NEW
+**Hitchhiker's Guide meets AI art — every scene uniquely illustrated**
+- Layered compositing: Far BG → Mid BG → Items → Entities → FX
+- AI-generated assets (HuggingFace SDXL/Flux, free tier)
+- Smart caching: generate once, reuse everywhere (same tile+direction = same image)
+- Color palette swapping for NPC/item variations (no API call needed)
+- Procedural renderer as fallback while assets load (crossfade)
+- ~20 generations per new location, ~50MB per campaign
+- Cross-campaign shared asset library (barrel, chest, torch = universal)
+- PRD: `docs/PRD_asset_pipeline.md`
+
+### 5b-legacy. Tile Map Renderer (Top-down view)
 - 32x32 pixel tiles
 - Fog of war
 - Room/corridor visualization
@@ -196,6 +207,8 @@ Connect actual LLMs to the game engine.
 | World state / NPC memory | Alcyone (Pi) | Phase 3 priority |
 | LLM integration | Alcyone (Pi) | Phase 4 |
 | Godot client scenes | Mami + Claude Code | Windows |
+| AI Asset Pipeline | Mami + Claude Code | HuggingFace API, Godot compositor |
+| Asset Generation Worker | Alcyone (Pi) | Background generation, caching |
 | Pixel art assets | AI generated + manual | Phase 5 |
 | PRD writing | Mami + Claude Code | Quality control |
 | Testing & QA | Both | Alcyone: unit, Mami: integration |

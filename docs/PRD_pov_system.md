@@ -200,9 +200,14 @@ Layer 5: UI overlay (HP, hotkeys, map)
 
 > "Her varlık bir kere render edilir."
 
-- Monster atlas: her monster 8 direction × N animation frame. Bir kere bake edilir.
-- Pozisyon değişince atlas'tan doğru slice alınır, tile üzerine yerleştirilir.
-- `invisible → fade-in` geçişi sadece alpha değeridir.
+**UPDATED (2026-03-24):** Asset rendering upgraded from pixel art sprites to **AI-generated layered compositing**. See `PRD_asset_pipeline.md` for full details.
+
+- **Phase 5b Asset Pipeline** replaces sprite atlas with AI-generated PNGs
+- 5 compositing layers: Far BG → Mid BG → Items → Entities → FX
+- Assets generated once per type, cached with content-addressable storage
+- Color palette swapping for variations (no API call needed)
+- Procedural silhouettes remain as fallback while AI assets load
+- `invisible → fade-in` geçişi sadece alpha değeridir (same as before)
 
 ### 4.3 POV Body Rendering
 
