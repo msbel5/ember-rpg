@@ -3,8 +3,8 @@ Ember RPG - Core Engine
 Effect system for items and spells
 """
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from engine.core.character import Character
@@ -57,7 +57,13 @@ class Effect(ABC):
         elif effect_type == 'damage':
             return DamageEffect(**effect_data)
         elif effect_type == 'buff':
-            return BuffEffect(**effect_data)
+            return BuffEffect.from_dict_data(effect_data)
+        elif effect_type == 'status':
+            return StatusEffect(**effect_data)
+        elif effect_type == 'utility':
+            return UtilityEffect(**effect_data)
+        elif effect_type == 'summon':
+            return SummonEffect(**effect_data)
         else:
             raise ValueError(f"Unknown effect type: {effect_type}")
 
@@ -68,6 +74,11 @@ class HealEffect(Effect):
     
     amount: str  # Dice notation (e.g., "2d6+2")
     
+    def __init__(self, amount: str, **kwargs):
+        self.amount = amount
+        # Accept extra fields (e.g. targets) without crashing
+        self._extra = kwargs
+
     def apply(self, target: 'Character') -> str:
         from engine.core.rules import roll_dice
         
@@ -89,6 +100,11 @@ class DamageEffect(Effect):
     amount: str  # Dice notation
     damage_type: str  # fire, cold, necrotic, etc.
     
+    def __init__(self, amount: str, damage_type: str, **kwargs):
+        self.amount = amount
+        self.damage_type = damage_type
+        self._extra = kwargs
+
     def apply(self, target: 'Character') -> str:
         from engine.core.rules import roll_dice
         
@@ -111,9 +127,25 @@ class BuffEffect(Effect):
     """Temporarily increase a stat."""
     
     stat: str  # MIG, AGI, END, etc.
-    bonus: int  # +2, +4, etc.
+    bonus: Any  # +2, +4, etc. (may be int or str for dice notation)
     duration: int  # turns/hours (context-dependent)
-    
+
+    def __init__(self, stat: str, duration: int, bonus: Any = None,
+                 amount: Any = None, value: Any = None, **kwargs):
+        self.stat = stat
+        self.duration = duration
+        # Accept bonus, amount, or value as aliases
+        resolved = bonus if bonus is not None else (amount if amount is not None else value)
+        if resolved is None:
+            raise ValueError("BuffEffect requires one of: bonus, amount, value")
+        self.bonus = resolved
+        self._extra = kwargs
+
+    @classmethod
+    def from_dict_data(cls, data: dict) -> 'BuffEffect':
+        """Create BuffEffect from raw dict data (without 'type' key)."""
+        return cls(**data)
+
     def apply(self, target: 'Character') -> str:
         # Temporary stat buff
         # TODO: Proper condition tracking with expiry (Module 3)
@@ -121,7 +153,8 @@ class BuffEffect(Effect):
         if self.stat not in target.stats:
             raise ValueError(f"Invalid stat: {self.stat}")
         
-        target.stats[self.stat] += self.bonus
+        bonus_val = self.bonus if isinstance(self.bonus, (int, float)) else 0
+        target.stats[self.stat] += bonus_val
         return f"{target.name} gains +{self.bonus} {self.stat} for {self.duration} turns"
     
     def to_dict(self) -> dict:
@@ -131,3 +164,48 @@ class BuffEffect(Effect):
             'bonus': self.bonus,
             'duration': self.duration
         }
+
+
+class StatusEffect(Effect):
+    """Apply a status condition to a target."""
+
+    def __init__(self, status: str, duration: int = 0, **kwargs):
+        self.status = status
+        self.duration = duration
+        self._extra = kwargs
+
+    def apply(self, target: 'Character') -> str:
+        # TODO: Proper condition tracking (Module 3)
+        return f"{target.name} is affected by {self.status} for {self.duration} turns"
+
+    def to_dict(self) -> dict:
+        return {'type': 'status', 'status': self.status, 'duration': self.duration}
+
+
+class UtilityEffect(Effect):
+    """Non-damage utility action (dispel, teleport, detect, etc.)."""
+
+    def __init__(self, action: str, **kwargs):
+        self.action = action
+        self._extra = kwargs
+
+    def apply(self, target: 'Character') -> str:
+        return f"Utility action '{self.action}' applied to {target.name}"
+
+    def to_dict(self) -> dict:
+        return {'type': 'utility', 'action': self.action}
+
+
+class SummonEffect(Effect):
+    """Summon a creature or object."""
+
+    def __init__(self, creature: str, **kwargs):
+        self.creature = creature
+        self._extra = kwargs
+
+    def apply(self, target: 'Character') -> str:
+        return f"{target.name} summons a {self.creature}"
+
+    def to_dict(self) -> dict:
+        return {'type': 'summon', 'creature': self.creature}
+

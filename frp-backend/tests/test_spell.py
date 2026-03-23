@@ -394,3 +394,13 @@ class TestSpellCanCast:
         caster = Character(name="Mage", spell_points=5, max_spell_points=10)
         
         assert spell.can_cast(caster) is True
+
+
+class TestSpellDatabaseIntegration:
+    """Integration tests for the full spells.json database."""
+
+    def test_load_full_spells_json(self):
+        """SpellDatabase.load('data/spells.json') should not raise any exception."""
+        db = SpellDatabase()
+        db.load('data/spells.json')
+        assert len(db.spells) > 0

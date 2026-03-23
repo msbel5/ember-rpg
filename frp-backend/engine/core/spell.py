@@ -20,6 +20,8 @@ class SpellSchool(Enum):
     NECROMANCY = "necromancy"
     CONJURATION = "conjuration"
     ILLUSION = "illusion"
+    ENCHANTMENT = "enchantment"
+    DIVINATION = "divination"
 
 
 class TargetType(Enum):
@@ -27,6 +29,7 @@ class TargetType(Enum):
     SELF = "self"
     SINGLE = "single"
     AREA = "area"
+    CONE = "cone"
 
 
 @dataclass
