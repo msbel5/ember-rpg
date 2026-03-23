@@ -84,8 +84,8 @@ func _on_scene_entered(data) -> void:
 	# Set initial player position for POV (center of map or player entity)
 	if pov_renderer and data.has("map_data"):
 		var md = data["map_data"]
-		var cx = int(md.get("width", 20)) / 2
-		var cy = int(md.get("height", 15)) / 2
+		var cx: int = int(md.get("width", 20)) / 2
+		var cy: int = int(md.get("height", 15)) / 2
 		pov_renderer.update_player(Vector2i(cx, cy), 0)
 
 	# Fallback: reveal remaining hidden entities after narrative completes
@@ -95,7 +95,7 @@ func _on_scene_entered(data) -> void:
 	if pov_renderer:
 		pov_renderer.reveal_all()
 
-func _on_entity_clicked(entity_id: String, entity_data: Dictionary) -> void:
+func _on_entity_clicked(_entity_id: String, entity_data: Dictionary) -> void:
 	var entity_name = entity_data.get("name", "Unknown")
 	var actions = entity_data.get("context_actions", [])
 	if actions.is_empty():
@@ -164,12 +164,21 @@ func _process_typing_queue() -> void:
 	_is_typing = false
 
 func _type_text(text: String) -> void:
-	# Type character by character with small delay
+	# Type character by character, but preserve BBCode tags as whole units
+	var i = 0
 	var chars_added = 0
-	for c in text:
-		narrative_panel.append_text(c)
+	while i < text.length():
+		if text[i] == "[":
+			# Find closing bracket — append entire tag at once
+			var end = text.find("]", i)
+			if end != -1:
+				narrative_panel.append_text(text.substr(i, end - i + 1))
+				i = end + 1
+				continue
+		narrative_panel.append_text(text[i])
+		i += 1
 		chars_added += 1
-		if chars_added % 3 == 0:  # Every 3 chars, scroll and tiny pause
+		if chars_added % 3 == 0:
 			await get_tree().process_frame
 	narrative_panel.append_text("\n\n")
 	await get_tree().process_frame
@@ -190,7 +199,7 @@ func _refresh_player_status() -> void:
 	if p.is_empty():
 		return
 
-	var name = p.get("name", "Unknown")
+	var player_name = p.get("name", "Unknown")
 	var level = p.get("level", 1)
 	var classes = p.get("classes", {})
 	var char_class = ""
@@ -198,7 +207,7 @@ func _refresh_player_status() -> void:
 		char_class = c.capitalize()
 		break
 
-	player_info.text = "Lv.%d %s  %s" % [level, char_class, name]
+	player_info.text = "Lv.%d %s  %s" % [level, char_class, player_name]
 
 	var hp = p.get("hp", 0)
 	var max_hp = p.get("max_hp", 1)

@@ -119,6 +119,7 @@ func get_display_location() -> String:
 
 func _clean_narrative(text: String) -> String:
 	# Detect and block raw LLM prompt leaks
+	# Only block if MULTIPLE markers match (single match might be false positive)
 	var lower = text.to_lower()
 	var prompt_markers = [
 		"generate merchant's response",
@@ -128,14 +129,20 @@ func _clean_narrative(text: String) -> String:
 		"respond as this character",
 		"you are a dungeon master",
 		"system prompt",
-		"[system]",
 		"[instruction]",
-		"initiate conversation",
 	]
+	var match_count = 0
 	for marker in prompt_markers:
 		if lower.contains(marker):
-			print("[GameState] Blocked prompt leak: %s" % text.substr(0, 80))
-			return "[i][color=gray]The DM considers their words...[/color][/i]"
+			match_count += 1
+	if match_count >= 2:
+		# Definite prompt leak — multiple markers
+		print("[GameState] Blocked prompt leak (%d markers): %s" % [match_count, text.substr(0, 80)])
+		return "..."
+	if match_count == 1 and text.length() > 200:
+		# Long text with one marker — likely prompt leak
+		print("[GameState] Blocked long prompt leak: %s" % text.substr(0, 80))
+		return "..."
 
 	# Remove markdown headers and clean technical names
 	var lines = text.split("\n")
