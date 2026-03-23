@@ -63,9 +63,57 @@ var fog_overlay: ColorRect = null
 signal entity_clicked(entity_id: String, entity_data: Dictionary)
 signal tile_clicked(tile_x: int, tile_y: int)
 
+var player_marker: Control = null
+
 func _ready() -> void:
 	GameState.map_loaded.connect(_on_map_loaded)
 	GameState.entities_loaded.connect(_on_entities_loaded)
+	# Create player position marker
+	_create_player_marker()
+
+func _process(_delta: float) -> void:
+	if player_marker and map_width > 0:
+		var pos = GameState.player_map_pos
+		player_marker.position = camera_offset + Vector2(pos.x * TILE_SIZE, pos.y * TILE_SIZE)
+		player_marker.queue_redraw()
+
+func _create_player_marker() -> void:
+	player_marker = Control.new()
+	player_marker.z_index = 10  # Always on top
+	player_marker.set_script(null)
+	# Use a custom draw node for the marker
+	var marker = _PlayerMarker.new()
+	marker.size = Vector2(TILE_SIZE, TILE_SIZE)
+	player_marker.add_child(marker)
+	add_child(player_marker)
+
+class _PlayerMarker extends Control:
+	var _pulse: float = 0.0
+	func _process(delta: float) -> void:
+		_pulse += delta * 3.0
+		queue_redraw()
+	func _draw() -> void:
+		var center = Vector2(size.x / 2.0, size.y / 2.0)
+		var pulse_alpha = 0.5 + sin(_pulse) * 0.3
+		# Outer glow
+		draw_circle(center, 12, Color(0, 0.8, 1.0, pulse_alpha * 0.3))
+		# Inner circle
+		draw_circle(center, 6, Color(0, 0.9, 1.0, pulse_alpha))
+		# Facing direction arrow
+		var facing = GameState.player_facing
+		var arrow_dir = Vector2.ZERO
+		match facing:
+			0: arrow_dir = Vector2(0, -1)  # North
+			1: arrow_dir = Vector2(1, 0)   # East
+			2: arrow_dir = Vector2(0, 1)   # South
+			3: arrow_dir = Vector2(-1, 0)  # West
+		var arrow_tip = center + arrow_dir * 14
+		var arrow_base_l = center + arrow_dir.rotated(2.5) * 6
+		var arrow_base_r = center + arrow_dir.rotated(-2.5) * 6
+		draw_polygon(
+			PackedVector2Array([arrow_tip, arrow_base_l, arrow_base_r]),
+			PackedColorArray([Color(0, 1, 1, pulse_alpha), Color(0, 1, 1, pulse_alpha * 0.5), Color(0, 1, 1, pulse_alpha * 0.5)])
+		)
 
 func _on_map_loaded(map_data: Dictionary) -> void:
 	_clear_map()
