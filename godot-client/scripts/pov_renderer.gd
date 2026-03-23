@@ -96,6 +96,8 @@ var revealed_ids: Dictionary = {}  # entity_id → reveal_alpha (0.0 to 1.0)
 var entity_cache: Dictionary = {}  # cache key → rendered data
 var _fade_active: bool = false
 var _entity_hit_boxes: Array = []  # [{rect: Rect2, id: String, data: Dictionary}, ...]
+var _bg_texture: Texture2D = null  # AI-generated background (if available)
+var _bg_alpha: float = 0.0        # crossfade alpha for background
 
 # Facing direction vectors
 const FACING_VECTORS = [
@@ -132,7 +134,27 @@ func set_location_type(location: String) -> void:
 		if loc_lower.contains(key):
 			current_palette = PALETTES[key]
 			break
+	# Try to load AI-generated background for this location
+	_load_ai_background(loc_lower)
 	queue_redraw()
+
+func _load_ai_background(location: String) -> void:
+	# Map location names to generated asset files
+	var bg_map = {
+		"harbor": "res://assets/generated/test_harbor_bg.png",
+		"town": "res://assets/generated/test_harbor_bg.png",
+		"dungeon": "res://assets/generated/test_dungeon_bg.png",
+		"cave": "res://assets/generated/test_dungeon_bg.png",
+	}
+	_bg_texture = null
+	_bg_alpha = 0.0
+	for key in bg_map:
+		if location.contains(key):
+			if ResourceLoader.exists(bg_map[key]):
+				_bg_texture = load(bg_map[key])
+				_bg_alpha = 0.0  # Will crossfade in
+				_fade_active = true
+			break
 
 func update_player(pos: Vector2i, facing: int) -> void:
 	var moved = (pos != player_pos)
@@ -161,11 +183,15 @@ func reveal_all() -> void:
 func _process(delta: float) -> void:
 	if not _fade_active:
 		return
-	# Gradually increase alpha of fading-in entities
 	var all_done = true
+	# Crossfade AI background
+	if _bg_texture and _bg_alpha < 1.0:
+		_bg_alpha = minf(_bg_alpha + delta * 0.5, 1.0)  # 2 second crossfade
+		all_done = false
+	# Gradually increase alpha of fading-in entities
 	for eid in revealed_ids:
 		if revealed_ids[eid] < 1.0:
-			revealed_ids[eid] = minf(revealed_ids[eid] + delta * 0.7, 1.0)  # ~1.4s fade
+			revealed_ids[eid] = minf(revealed_ids[eid] + delta * 0.7, 1.0)
 			all_done = false
 	if all_done:
 		_fade_active = false
@@ -216,20 +242,23 @@ func _draw() -> void:
 
 	_entity_hit_boxes.clear()
 
-	# --- Layer 0: Sky / Ceiling ---
+	# --- Procedural background (always drawn as base) ---
 	draw_rect(Rect2(0, 0, w, h * 0.4), current_palette.get("sky", Color.BLACK))
-
-	# --- Layer 1: Floor ---
 	_draw_floor(w, h)
-
-	# --- Layer 2: Walls / Environment ---
 	_draw_walls(w, h)
-
-	# --- Layer 3: Ambient light overlay ---
 	var ambient = current_palette.get("ambient", Color(0.5, 0.5, 0.5, 0.05))
 	draw_rect(Rect2(0, 0, w, h), ambient)
 
-	# --- Layer 4: Entities (distance-sorted, back to front) ---
+	# --- AI Background overlay (crossfades over procedural) ---
+	if _bg_texture and _bg_alpha > 0.0:
+		draw_texture_rect(
+			_bg_texture,
+			Rect2(0, 0, w, h),
+			false,
+			Color(1, 1, 1, _bg_alpha)
+		)
+
+	# --- Entities (distance-sorted, back to front) ---
 	_draw_entities(w, h)
 
 func _draw_floor(w: float, h: float) -> void:
