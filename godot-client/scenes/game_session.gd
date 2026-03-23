@@ -173,8 +173,9 @@ func _on_action_response(data) -> void:
 	# Refresh POV entities
 	if pov_renderer and is_pov_mode:
 		pov_renderer.update_player(GameState.player_map_pos, GameState.player_facing)
-
-	text_input.grab_focus()
+		pov_renderer.grab_focus()  # Keep focus on POV for arrow keys
+	else:
+		text_input.grab_focus()
 
 var _typing_queue: Array[String] = []
 var _is_typing: bool = false
@@ -359,6 +360,20 @@ func _input(event: InputEvent) -> void:
 
 	# Other hotkeys only when NOT typing
 	if text_input.has_focus():
+		return
+
+	# If POV has focus and user types a printable character → switch to text input
+	if is_pov_mode and event.unicode > 31 and event.keycode not in [KEY_M, KEY_I, KEY_TAB]:
+		text_input.grab_focus()
+		text_input.text += char(event.unicode)
+		text_input.caret_column = text_input.text.length()
+		get_viewport().set_input_as_handled()
+		return
+
+	# ENTER key → focus text input to type command
+	if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+		text_input.grab_focus()
+		get_viewport().set_input_as_handled()
 		return
 
 	match event.keycode:
