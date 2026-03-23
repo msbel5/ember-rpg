@@ -114,6 +114,13 @@ func _ready() -> void:
 	current_palette = PALETTES["default"]
 	mouse_filter = Control.MOUSE_FILTER_STOP  # Receive mouse events
 	focus_mode = Control.FOCUS_ALL  # Receive keyboard events
+	# Prevent arrow keys from navigating to other UI elements
+	focus_neighbor_top = get_path()
+	focus_neighbor_bottom = get_path()
+	focus_neighbor_left = get_path()
+	focus_neighbor_right = get_path()
+	focus_next = get_path()
+	focus_previous = get_path()
 	GameState.map_loaded.connect(_on_map_loaded)
 	GameState.entities_loaded.connect(_on_entities_loaded)
 	GameState.entity_revealed.connect(_on_entity_revealed)
@@ -436,15 +443,20 @@ func _draw_object_silhouette(ex: float, ey: float, ew: float, eh: float, color: 
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		# Always reclaim focus when POV is clicked
+		grab_focus()
 		var click_pos = event.position
 		# Check hit boxes in reverse order (front entities drawn last = on top)
+		var hit_entity = false
 		for i in range(_entity_hit_boxes.size() - 1, -1, -1):
 			var hb = _entity_hit_boxes[i]
 			if hb["rect"].has_point(click_pos):
 				entity_clicked_pov.emit(hb["id"], hb["data"])
+				hit_entity = true
 				break
+		get_viewport().set_input_as_handled()
 
-	# Arrow keys / WASD rotate facing (only when POV is visible)
+	# Arrow keys / WASD rotate facing (only when POV is visible and focused)
 	if event is InputEventKey and event.pressed and visible:
 		var handled = true
 		match event.keycode:
