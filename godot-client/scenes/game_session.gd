@@ -238,10 +238,16 @@ func _on_level_up(new_level: int) -> void:
 	_append_narrative("[color=yellow]✦ LEVEL UP! You are now level %d! ✦[/color]" % new_level)
 
 func _input(event: InputEvent) -> void:
-	# M key toggles map visibility
+	# M key toggles map visibility — but not when typing in text input
 	if event is InputEventKey and event.pressed and event.keycode == KEY_M:
+		if text_input.has_focus():
+			return  # Don't toggle map while typing
 		if tile_map_renderer:
 			map_viewer.visible = not map_viewer.visible
+	# I key toggles inventory (future)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_I:
+		if text_input.has_focus():
+			return
 
 func _on_entity_revealed(entity_id: String) -> void:
 	if tile_map_renderer:
