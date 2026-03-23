@@ -75,10 +75,28 @@ VALID_TRANSITIONS: Dict[SceneType, set] = {
 # Rich narrative templates per event type (English)
 # Each event type has 5+ templates with {placeholders} for dynamic content.
 NARRATIVE_TEMPLATES: dict = {
-    EventType.ENCOUNTER: ["{description}"],
-    EventType.DISCOVERY: ["{description}"],
-    EventType.DIALOGUE: ["{description}"],
-    EventType.REST: ["{description}"],
+    EventType.ENCOUNTER: [
+        "Something stirs in the shadows ahead — {player_name} readies themselves for what may come.",
+        "The hairs on {player_name}'s neck prickle. Danger lurks somewhere close in {location}.",
+        "A sound breaks the silence in {location}. {player_name} grips their weapon and prepares.",
+    ],
+    EventType.DISCOVERY: [
+        "{player_name} examines the area carefully, noting every detail of {location}.",
+        "Something catches {player_name}'s eye — there is more here than first appeared.",
+        "Careful inspection of {location} reveals hidden details that most would miss.",
+    ],
+    EventType.DIALOGUE: [
+        "{npc_name} regards {player_name} with guarded curiosity, choosing their words carefully.",
+        "A brief silence hangs between {player_name} and {npc_name} before the conversation begins.",
+        "{npc_name} pauses, studying {player_name} before speaking in measured tones.",
+        "The air between {player_name} and {npc_name} carries the weight of unspoken things.",
+        "{npc_name} leans in slightly. 'What brings you to me, traveler?' they ask quietly.",
+    ],
+    EventType.REST: [
+        "{player_name} settles into a brief rest, letting the tension of {location} ease from their muscles.",
+        "A moment of stillness in {location} — {player_name} breathes, recovers, prepares for what lies ahead.",
+        "Exhaustion yields to rest. {player_name} closes their eyes briefly, gathering strength.",
+    ],
 
     EventType.COMBAT_START: [
         "Steel sings through the air as {enemy_name} lunges forward — there's no time to think, only to fight!",
@@ -378,7 +396,13 @@ class DMAIAgent:
         if templates:
             template = random.choice(templates)
         else:
-            template = "{description}"
+            # Safe generic fallback — never expose raw LLM prompt strings
+            generic = [
+                "The world holds its breath in {location} as events unfold around {player_name}.",
+                "Something shifts in {location}. {player_name} remains alert.",
+                "The moment passes in {location}, leaving only the echo of what just happened.",
+            ]
+            template = random.choice(generic)
 
         # Build a safe format dict from event data + description
         fmt = {

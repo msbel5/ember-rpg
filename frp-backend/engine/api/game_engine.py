@@ -476,12 +476,27 @@ class GameEngine:
         result = combat.cast_spell(spell, target_idx)
 
         if "error" in result:
-            desc = f"Spell failed: {result['error']}"
-        else:
-            desc = f"{session.player.name} unleashes {spell.name}!"
+            # Spell failed — return error narrative directly, skip LLM
+            return ActionResult(
+                narrative=f"The spell failed: {result['error']}",
+                events=[result],
+                scene_type=session.dm_context.scene_type,
+                combat_state=self._combat_state(combat),
+            )
 
-        event = DMEvent(type=EventType.ENCOUNTER, description=desc)
+        desc = f"{session.player.name} unleashes {spell.name}!"
+        fallback_narrative = f"{session.player.name} unleashes {spell.name} with a surge of magical force!"
+
+        event = DMEvent(type=EventType.ENCOUNTER, description=desc, data={
+            "player_name": session.player.name,
+            "spell_name": spell.name,
+            "action": "cast_spell",
+        })
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        # If LLM returned a generic template without spell keywords, use specific fallback
+        spell_keywords = ["spell", "magic", "missile", "force", "unleash", "cast", "arcane", "incantation", "surge"]
+        if not any(kw in narrative.lower() for kw in spell_keywords):
+            narrative = fallback_narrative
 
         return ActionResult(
             narrative=narrative,

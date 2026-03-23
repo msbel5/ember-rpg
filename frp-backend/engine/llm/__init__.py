@@ -29,11 +29,15 @@ class LLMRouter:
         self._client: Optional[openai.OpenAI] = None
         self._available = None  # None = untested
 
-    def _get_client(self) -> openai.OpenAI:
-        if self._client is None:
+    def _load_token(self) -> str:
+        """Load fresh token from disk each time (token rotates)."""
+        with open(COPILOT_TOKEN_PATH) as f:
+            return json.load(f)['token']
+
+    def _get_client(self, force_refresh: bool = False) -> openai.OpenAI:
+        if self._client is None or force_refresh:
             try:
-                with open(COPILOT_TOKEN_PATH) as f:
-                    token = json.load(f)['token']
+                token = self._load_token()
                 self._client = openai.OpenAI(
                     base_url=COPILOT_BASE_URL,
                     api_key=token,
@@ -59,7 +63,12 @@ class LLMRouter:
         return self._available
 
     def complete(self, messages: list, model: str = MODEL_FAST, max_tokens: int = 300, temperature: float = 0.8) -> Optional[str]:
-        """Call LLM. Returns None if unavailable (caller falls back to template)."""
+        """Call LLM. Returns None if unavailable (caller falls back to template).
+        
+        On token expiry: resets client and retries once with fresh token.
+        On failure: tries MODEL_FALLBACK before giving up.
+        """
+        # Attempt 1: current client + requested model
         try:
             client = self._get_client()
             resp = client.chat.completions.create(
@@ -68,11 +77,48 @@ class LLMRouter:
                 max_tokens=max_tokens,
                 temperature=temperature
             )
+            self._available = True
             return resp.choices[0].message.content.strip()
         except Exception as e:
+            err_str = str(e).lower()
             logger.warning(f"LLM call failed ({model}): {e}")
-            self._available = False
-            return None
+
+            # Token expired — reset client and retry with fresh token
+            if 'expired' in err_str or 'unauthorized' in err_str or '401' in err_str:
+                logger.info("Token expired, refreshing client...")
+                self._client = None
+                self._available = None
+                try:
+                    client = self._get_client(force_refresh=True)
+                    resp = client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        max_tokens=max_tokens,
+                        temperature=temperature
+                    )
+                    self._available = True
+                    return resp.choices[0].message.content.strip()
+                except Exception as e2:
+                    logger.warning(f"LLM retry failed ({model}): {e2}")
+
+        # Attempt 2: fallback model (gpt-5-mini — free tier)
+        if model != MODEL_FALLBACK:
+            try:
+                client = self._get_client()
+                resp = client.chat.completions.create(
+                    model=MODEL_FALLBACK,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature
+                )
+                self._available = True
+                logger.info(f"Used fallback model {MODEL_FALLBACK}")
+                return resp.choices[0].message.content.strip()
+            except Exception as e3:
+                logger.warning(f"LLM fallback failed ({MODEL_FALLBACK}): {e3}")
+
+        self._available = False
+        return None
 
     def narrative(self, system_prompt: str, user_prompt: str, important: bool = False) -> Optional[str]:
         """Convenience: generate narrative. Uses haiku normally, sonnet if important=True."""
