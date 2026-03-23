@@ -59,7 +59,9 @@ size_flags_vertical = 3
 
 [node name="MapPanel" type="Panel" parent="MainLayout/ContentSplit"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 280)
+custom_minimum_size = Vector2(0, 400)
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
 
 [node name="LocationLabel" type="Label" parent="MainLayout/ContentSplit/MapPanel"]
 layout_mode = 1
@@ -76,7 +78,9 @@ horizontal_alignment = 1
 
 [node name="NarrativePanel" type="RichTextLabel" parent="MainLayout/ContentSplit"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 200)
+custom_minimum_size = Vector2(0, 120)
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
 bbcode_enabled = true
 text = ""
 scroll_following = true
