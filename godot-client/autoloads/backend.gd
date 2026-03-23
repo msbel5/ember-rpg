@@ -34,7 +34,15 @@ func get_map(session_id: String, callback: Callable) -> void:
 	_http_get("/game/session/%s/map" % session_id, callback)
 
 func enter_scene(session_id: String, location: String, callback: Callable) -> void:
-	var body = JSON.stringify({"session_id": session_id, "location": location})
+	var p = GameState.player
+	var player_name = p.get("name", "Adventurer")
+	var player_level = int(p.get("level", 1))
+	var body = JSON.stringify({
+		"session_id": session_id,
+		"location": location,
+		"player_name": player_name,
+		"player_level": player_level
+	})
 	_post("/game/scene/enter", body, callback)
 
 func save_game(session_id: String, callback: Callable) -> void:
