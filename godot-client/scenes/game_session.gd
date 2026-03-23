@@ -159,16 +159,21 @@ func _on_action_response(data) -> void:
 	GameState.update_from_response(data)
 
 	# Update POV with backend player position if available
+	# ONLY accept non-zero positions (backend sends [0,0] when tracking not implemented)
 	if data.has("player") and data["player"].has("position"):
 		var pos = data["player"]["position"]
-		GameState.player_map_pos = Vector2i(int(pos[0]), int(pos[1]))
+		var bx = int(pos[0])
+		var by = int(pos[1])
+		if bx > 0 or by > 0:  # Skip [0,0] placeholder
+			GameState.player_map_pos = Vector2i(bx, by)
 	if data.has("player") and data["player"].has("facing"):
-		var facing_str = data["player"].get("facing", "south")
-		match facing_str:
-			"north": GameState.player_facing = 0
-			"east": GameState.player_facing = 1
-			"south": GameState.player_facing = 2
-			"west": GameState.player_facing = 3
+		var facing_str = data["player"].get("facing", "")
+		if facing_str != "":
+			match facing_str:
+				"north": GameState.player_facing = 0
+				"east": GameState.player_facing = 1
+				"south": GameState.player_facing = 2
+				"west": GameState.player_facing = 3
 
 	# Refresh POV entities
 	if pov_renderer and is_pov_mode:
