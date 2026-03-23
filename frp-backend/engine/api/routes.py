@@ -15,7 +15,33 @@ from engine.api.models import (
 from engine.core.dm_agent import DMEvent, EventType, SceneType
 
 router = APIRouter()
-engine = GameEngine()
+
+# Wire LLM to GameEngine — narrative uses claude-haiku-4.5 via Copilot API
+def _make_llm_callable():
+    from engine.llm import get_llm_router, MODEL_FAST
+    llm_router = get_llm_router()
+
+    def _llm(prompt: str) -> str:
+        result = llm_router.complete(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are the Dungeon Master for Ember RPG, a dark fantasy tabletop RPG. "
+                        "Generate immersive, atmospheric narrative in 1-3 sentences. "
+                        "Use second person ('You see...', 'Before you...'). "
+                        "Never break the fourth wall or mention game mechanics directly."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            model=MODEL_FAST,
+        )
+        return result  # None → GameEngine falls back to template
+
+    return _llm
+
+engine = GameEngine(llm=_make_llm_callable())
 
 # In-memory session store (replace with Redis in production)
 _sessions: Dict[str, GameSession] = {}

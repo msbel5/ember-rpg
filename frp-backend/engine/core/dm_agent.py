@@ -352,7 +352,10 @@ class DMAIAgent:
 
         if llm is not None:
             prompt = self.build_prompt(event, context)
-            return llm(prompt)
+            result = llm(prompt)
+            if result is not None:
+                return result
+            # LLM returned None (unavailable) — fall through to template
 
         # Fallback: template-based narrative with random selection
         templates = NARRATIVE_TEMPLATES.get(event.type)
