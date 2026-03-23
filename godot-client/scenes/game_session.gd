@@ -8,9 +8,9 @@ extends Control
 @onready var hp_label: Label = $MainLayout/PlayerStatus/HPLabel
 @onready var player_info: Label = $MainLayout/PlayerStatus/PlayerInfo
 @onready var xp_bar: ProgressBar = $MainLayout/PlayerStatus/XPBar
-@onready var combat_hud: PanelContainer = $CombatHUD
-@onready var combat_list: VBoxContainer = $CombatHUD/VBox/CombatantList
-@onready var combat_round: Label = $CombatHUD/VBox/RoundLabel
+@onready var combat_hud: PanelContainer = $MainLayout/ContentSplit/MapPanel/CombatHUD
+@onready var combat_list: VBoxContainer = $MainLayout/ContentSplit/MapPanel/CombatHUD/VBox/CombatantList
+@onready var combat_round: Label = $MainLayout/ContentSplit/MapPanel/CombatHUD/VBox/RoundLabel
 @onready var map_viewer: Panel = $MainLayout/ContentSplit/MapPanel
 @onready var location_label: Label = $MainLayout/ContentSplit/MapPanel/LocationLabel
 
