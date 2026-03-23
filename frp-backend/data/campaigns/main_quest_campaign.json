@@ -3,7 +3,7 @@
   "title": "Ember's Edge: The Darkening of Aldenmoor",
   "description": "A full story arc spanning five acts. A corrupted dragon egg has been stolen from the vault of the Archmage Valdris, and dark forces are converging to use it in a ritual that would shatter the boundary between the mortal realm and the Abyss. Only a band of bold adventurers can stop the demon lord Zytharax from crossing over.",
   "recommended_level": 5,
-  "max_cr": 13,
+  "max_cr": 20,
   "min_cr": 1,
   "acts": [
     {
@@ -253,7 +253,7 @@
       ],
       "rewards": [
         {"item_id": "dragonscale_armor", "quantity": 1},
-        {"item_id": "flametounge_blade", "quantity": 1},
+        {"item_id": "flametongue_blade", "quantity": 1},
         {"item_id": "dragon_scale", "quantity": 3},
         {"item_id": "ruby_gem", "quantity": 2},
         {"item_id": "gold_coin", "quantity": 300}

@@ -3,7 +3,7 @@
   "title": "The Hollow Peaks: Secrets of the Ancients",
   "description": "A standalone adventure for seasoned explorers. Deep in the Hollow Peaks mountain range lies a forgotten dwarven hold, sealed for centuries. Strange lights have been spotted from the peaks, and a merchant's journal speaks of a treasure vault guarded by elemental wards and ancient puzzles. Glory — and danger — await those bold enough to seek the truth.",
   "recommended_level": 5,
-  "max_cr": 8,
+  "max_cr": 13,
   "min_cr": 3,
   "acts": [
     {

@@ -184,14 +184,41 @@ class TestMonsterReferences:
             f"Campaign {campaign_id!r} references unknown monsters: {invalid}"
         )
 
-    def test_tutorial_uses_low_cr_monsters(
-        self, loader: CampaignLoader, monster_ids: set[str]
-    ):
+    def test_tutorial_uses_low_cr_monsters(self, loader: CampaignLoader):
+        data = json.loads(_MONSTERS_FILE.read_text(encoding="utf-8"))
+        monsters_list = data if isinstance(data, list) else data.get("monsters", [])
+        monster_cr = {m["id"]: m["cr"] for m in monsters_list}
+
         campaign = loader.get("tutorial_campaign")
         refs = self._collect_monster_refs(campaign)
-        # All referenced monsters should be in the DB
         for ref in refs:
-            assert ref in monster_ids
+            cr = monster_cr.get(ref)
+            assert cr is not None, f"Monster {ref!r} not found in monsters.json"
+            assert cr <= 2.0, f"Tutorial monster {ref!r} has CR {cr} > 2.0"
+
+    @pytest.mark.parametrize("campaign_id", list(_EXPECTED_CAMPAIGN_IDS))
+    def test_campaign_monsters_within_max_cr(
+        self, loader: CampaignLoader, campaign_id: str
+    ):
+        data = json.loads(_MONSTERS_FILE.read_text(encoding="utf-8"))
+        monsters_list = data if isinstance(data, list) else data.get("monsters", [])
+        monster_cr = {m["id"]: m["cr"] for m in monsters_list}
+
+        campaign = loader.get(campaign_id)
+        max_cr = campaign.get("max_cr")
+        if max_cr is None:
+            pytest.skip(f"Campaign {campaign_id!r} has no max_cr defined")
+
+        refs = self._collect_monster_refs(campaign)
+        violations = [
+            (ref, monster_cr[ref])
+            for ref in refs
+            if ref in monster_cr and monster_cr[ref] > max_cr
+        ]
+        assert violations == [], (
+            f"Campaign {campaign_id!r} (max_cr={max_cr}) has monsters exceeding max_cr: "
+            + ", ".join(f"{r}(CR {c})" for r, c in violations)
+        )
 
     def test_main_quest_has_monster_encounters(self, loader: CampaignLoader):
         campaign = loader.get("main_quest_campaign")
