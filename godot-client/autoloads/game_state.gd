@@ -118,6 +118,25 @@ func get_display_location() -> String:
 	return location.replace("_", " ").capitalize()
 
 func _clean_narrative(text: String) -> String:
+	# Detect and block raw LLM prompt leaks
+	var lower = text.to_lower()
+	var prompt_markers = [
+		"generate merchant's response",
+		"generate npc response",
+		"generate response as they would",
+		"in character with their personality",
+		"respond as this character",
+		"you are a dungeon master",
+		"system prompt",
+		"[system]",
+		"[instruction]",
+		"initiate conversation",
+	]
+	for marker in prompt_markers:
+		if lower.contains(marker):
+			print("[GameState] Blocked prompt leak: %s" % text.substr(0, 80))
+			return "[i][color=gray]The DM considers their words...[/color][/i]"
+
 	# Remove markdown headers and clean technical names
 	var lines = text.split("\n")
 	var cleaned: Array[String] = []
