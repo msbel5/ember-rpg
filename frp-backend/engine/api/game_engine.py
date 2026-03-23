@@ -155,6 +155,9 @@ class GameEngine:
             ActionIntent.TRADE:      self._handle_trade,
             ActionIntent.UNKNOWN:    self._handle_unknown,
         }
+        # Add FLEE if it exists in ActionIntent
+        if hasattr(ActionIntent, "FLEE"):
+            handlers[ActionIntent.FLEE] = self._handle_flee
 
         handler = handlers.get(action.intent, self._handle_unknown)
         return handler(session, action)
@@ -162,6 +165,47 @@ class GameEngine:
     # --- Intent Handlers ---
 
     def _handle_attack(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        # --- Bug 1: Non-hostile target handling (route to DM for funny response) ---
+        hostile_keywords = ["goblin", "orc", "bandit", "wolf", "skeleton", "zombie",
+                            "enemy", "monster", "troll", "guard", "militia", "watchman",
+                            "ogre", "dragon", "rat", "spider", "cultist", "thug"]
+        target_lower = (action.target or "").lower()
+        in_active_combat = session.dm_context.scene_type == SceneType.COMBAT
+
+        if not in_active_combat and action.target and not any(kw in target_lower for kw in hostile_keywords):
+            # Non-hostile target → creative DM response
+            target_name = action.target or "something"
+            desc = (
+                f"The player tries to attack '{target_name}' which is not a hostile creature. "
+                f"As DM, react humorously or creatively to this absurd action. "
+                f"Maybe the {target_name} 'fights back' in an absurd way, "
+                f"maybe NPCs nearby react with laughter or alarm, or maybe something funny happens."
+            )
+            event = DMEvent(
+                type=EventType.EXPLORATION,
+                description=desc,
+                data={
+                    "raw_input": action.raw_input,
+                    "target": action.target,
+                    "action": "attack_nonhostile",
+                },
+            )
+            narrative = self.dm.narrate(event, session.dm_context, self.llm)
+            return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+
+        # --- Bug 4: If already in combat, target existing enemy instead of spawning new ---
+        if session.in_combat() and session.combat:
+            combat = session.combat
+            # Use _find_target to support both existing and specified targets
+            target_idx = self._find_target(combat, action.target, exclude=session.player.name)
+            if target_idx is None:
+                return ActionResult(
+                    narrative="No valid target found.",
+                    scene_type=session.dm_context.scene_type,
+                )
+            return self._execute_attack_round(session, combat, target_idx)
+
+        # Not in combat — start new combat
         if not session.in_combat():
             enemy = self._spawn_enemy(session.player.level)
             self._start_combat(session, [enemy])
@@ -175,27 +219,101 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
 
+        return self._execute_attack_round(session, combat, target_idx)
+
+    def _execute_attack_round(self, session: GameSession, combat: CombatManager, target_idx: int) -> ActionResult:
+        """Execute player's attack and then all living enemy counterattacks."""
         result = combat.attack(target_idx)
         state_changes = {}
+        narrative_parts = []
 
         if result.get("crit"):
-            desc = f"CRITICAL! {session.player.name} lands a devastating blow — {result.get('damage', 0)} damage!"
+            narrative_parts.append(f"CRITICAL! {session.player.name} lands a devastating blow — {result.get('damage', 0)} damage!")
         elif result.get("fumble"):
-            desc = f"{session.player.name} stumbles — the attack goes wide!"
+            narrative_parts.append(f"{session.player.name} stumbles — the attack goes wide!")
         elif result.get("hit"):
-            desc = f"{session.player.name} strikes — hit! {result.get('damage', 0)} damage."
+            narrative_parts.append(f"{session.player.name} strikes — hit! {result.get('damage', 0)} damage.")
         else:
-            desc = f"{session.player.name} swings but misses."
+            narrative_parts.append(f"{session.player.name} swings but misses.")
 
+        # --- Bug 5: Guard backup in town ---
+        if result.get("killed"):
+            target_name = result.get("target", "")
+            killed_combatant = next(
+                (c for c in combat.combatants if c.name == target_name), None
+            )
+            if killed_combatant:
+                killed_char = killed_combatant.character
+                role = getattr(killed_char, "role", "")
+                location = (session.dm_context.location or "").lower()
+                is_town = any(w in location for w in ["town", "village", "city", "square", "market", "tavern", "inn"])
+                if is_town and role in ["guard", "militia", "watchman"]:
+                    backup1 = self._spawn_guard_backup(session)
+                    backup2 = self._spawn_guard_backup(session)
+                    combat.combatants.append(
+                        __import__("engine.core.combat", fromlist=["Combatant"]).Combatant(
+                            character=backup1, initiative=10
+                        )
+                    )
+                    combat.combatants.append(
+                        __import__("engine.core.combat", fromlist=["Combatant"]).Combatant(
+                            character=backup2, initiative=9
+                        )
+                    )
+                    narrative_parts.append(
+                        "Nearby guards heard the commotion! Two more guards rush toward you, weapons drawn!"
+                    )
+
+        # --- Bug 2: Enemy counterattack after player's action ---
+        if not combat.combat_ended:
+            from engine.core.enemy_ai import EnemyAI
+            enemy_ai = EnemyAI()
+            living_enemies = [
+                c for c in combat.combatants
+                if not c.is_dead and c.name != session.player.name
+            ]
+            player_idx = next(
+                (i for i, c in enumerate(combat.combatants) if c.name == session.player.name), None
+            )
+            if player_idx is not None:
+                for enemy_combatant in living_enemies:
+                    if combat.combat_ended:
+                        break
+                    # Temporarily set active turn to enemy for attack resolution
+                    saved_turn = combat.current_turn
+                    combat.current_turn = combat.combatants.index(enemy_combatant)
+                    enemy_combatant.ap = 3  # Give enemy AP for this counterattack
+                    enemy_result = combat.attack(player_idx)
+                    combat.current_turn = saved_turn
+                    if enemy_result.get("hit"):
+                        dmg = enemy_result.get("damage", 0)
+                        session.player.hp = max(0, session.player.hp - dmg)
+                        # Sync the combat combatant's hp too
+                        player_combatant = combat.combatants[player_idx]
+                        player_combatant.character.hp = session.player.hp
+                        narrative_parts.append(
+                            f"{enemy_combatant.name} hits you for {dmg} damage! "
+                            f"(HP: {session.player.hp}/{session.player.max_hp})"
+                        )
+                    elif enemy_result.get("fumble") or not enemy_result.get("hit"):
+                        narrative_parts.append(f"{enemy_combatant.name} swings at you but misses!")
+
+                    if session.player.hp <= 0:
+                        narrative_parts.append("You have fallen in combat... darkness closes in.")
+                        combat.combat_ended = True
+                        break
+
+        desc = " ".join(narrative_parts)
         combat_state = self._combat_state(combat)
         xp_result = None
 
         if combat.combat_ended:
             xp = XP_REWARDS.get(session.player.level, 100)
-            xp_result = self.progression.add_xp(session.player, xp)
-            state_changes["xp_gained"] = xp
-            if xp_result:
-                state_changes["level_up"] = xp_result.new_level
+            if session.player.hp > 0:
+                xp_result = self.progression.add_xp(session.player, xp)
+                state_changes["xp_gained"] = xp
+                if xp_result:
+                    state_changes["level_up"] = xp_result.new_level
 
             event = DMEvent(
                 type=EventType.COMBAT_END,
@@ -216,6 +334,16 @@ class GameEngine:
             combat_state=combat_state,
             level_up=xp_result,
         )
+
+    def _spawn_guard_backup(self, session: GameSession) -> Character:
+        """Spawn a backup town guard."""
+        guard = Character(
+            name="Town Guard",
+            hp=12, max_hp=12,
+            stats={"MIG": 12, "AGI": 10, "END": 12, "MND": 8, "INS": 10, "PRE": 12},
+        )
+        guard.role = "guard"
+        return guard
 
     def _handle_spell(self, session: GameSession, action: ParsedAction) -> ActionResult:
         if session.player.spell_points <= 0:
@@ -265,6 +393,16 @@ class GameEngine:
 
     def _handle_look(self, session: GameSession, action: ParsedAction) -> ActionResult:
         """Handle 'look around', 'look', 'observe' — scene description at current location."""
+        # --- Bug 3: Combat look shows combat status ---
+        if session.dm_context.scene_type == SceneType.COMBAT and session.combat:
+            enemies = [c for c in session.combat.combatants if not c.is_dead and c.name != session.player.name]
+            enemy_desc = ", ".join([f"{e.name} (HP:{e.character.hp})" for e in enemies])
+            narrative = (
+                f"You're in combat! Enemies: {enemy_desc}. "
+                f"Player HP: {session.player.hp}/{session.player.max_hp}"
+            )
+            return ActionResult(narrative=narrative, scene_type=SceneType.COMBAT)
+
         location = session.dm_context.location or "the area"
         desc = (
             f"{session.player.name} surveys their surroundings in {location}. "
@@ -385,6 +523,16 @@ class GameEngine:
         )
 
     def _handle_move(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        # --- Bug 3: Block movement during combat, allow flee ---
+        if session.dm_context.scene_type == SceneType.COMBAT:
+            flee_words = ["flee", "run", "escape", "retreat"]
+            if action.raw_input and any(w in action.raw_input.lower() for w in flee_words):
+                return self._handle_flee(session, action)
+            return ActionResult(
+                narrative="You can't simply walk away — you're in the middle of combat! Fight, cast a spell, or flee if you must.",
+                scene_type=SceneType.COMBAT,
+            )
+
         dest = action.direction or action.target or action.action_detail or "forward"
         # Clean direction strings like "to the tavern" -> "the tavern"
         if dest and dest.startswith("to "):
@@ -396,6 +544,16 @@ class GameEngine:
             "location": dest,
             "action": f"move to {dest}",
         })
+        narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+
+    def _handle_flee(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Handle fleeing from combat."""
+        if session.combat:
+            session.combat.combat_ended = True
+        self.dm.transition(session.dm_context, SceneType.EXPLORATION)
+        desc = f"{session.player.name} turns and flees from combat!"
+        event = DMEvent(type=EventType.EXPLORATION, description=desc)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
