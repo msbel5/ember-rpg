@@ -15,6 +15,8 @@ extends Control
 @onready var location_label: Label = $MainLayout/ContentSplit/MapPanel/LocationLabel
 
 var tile_map_renderer: Control = null
+var pov_renderer: Control = null
+var is_pov_mode: bool = true  # Start in POV mode
 var is_waiting: bool = false
 
 func _ready() -> void:
@@ -38,6 +40,16 @@ func _ready() -> void:
 	tile_map_renderer.entity_clicked.connect(_on_entity_clicked)
 	tile_map_renderer.tile_clicked.connect(_on_tile_clicked)
 	map_viewer.add_child(tile_map_renderer)
+
+	# Create POV renderer (storyboard first-person view)
+	var pov_script = load("res://scripts/pov_renderer.gd")
+	pov_renderer = Control.new()
+	pov_renderer.set_script(pov_script)
+	pov_renderer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	map_viewer.add_child(pov_renderer)
+
+	# Start in POV mode
+	_set_view_mode(true)
 
 	# Show initial narrative
 	if not GameState.narrative_history.is_empty():
@@ -65,10 +77,23 @@ func _on_scene_entered(data) -> void:
 		return
 	print("[DEBUG] scene_entered: got data, keys=%s" % str(data.keys()))
 	GameState.update_from_response(data)
+
+	# Update POV with location type
+	if pov_renderer and data.has("location"):
+		pov_renderer.set_location_type(data["location"])
+	# Set initial player position for POV (center of map or player entity)
+	if pov_renderer and data.has("map_data"):
+		var md = data["map_data"]
+		var cx = int(md.get("width", 20)) / 2
+		var cy = int(md.get("height", 15)) / 2
+		pov_renderer.update_player(Vector2i(cx, cy), 0)
+
 	# After all narrative streams process, reveal remaining hidden entities
 	await get_tree().create_timer(10.0).timeout
 	if tile_map_renderer:
 		tile_map_renderer.reveal_all()
+	if pov_renderer:
+		pov_renderer.reveal_all()
 
 func _on_entity_clicked(entity_id: String, entity_data: Dictionary) -> void:
 	var entity_name = entity_data.get("name", "Unknown")
@@ -187,6 +212,8 @@ func _refresh_player_status() -> void:
 
 func _refresh_location() -> void:
 	location_label.text = GameState.get_display_location()
+	if pov_renderer:
+		pov_renderer.set_location_type(GameState.location)
 
 func _refresh_combat_hud() -> void:
 	if not GameState.is_in_combat():
@@ -237,21 +264,36 @@ func _on_combat_ended() -> void:
 func _on_level_up(new_level: int) -> void:
 	_append_narrative("[color=yellow]✦ LEVEL UP! You are now level %d! ✦[/color]" % new_level)
 
+func _set_view_mode(pov: bool) -> void:
+	is_pov_mode = pov
+	if tile_map_renderer:
+		tile_map_renderer.visible = not pov
+	if pov_renderer:
+		pov_renderer.visible = pov
+	# LocationLabel always visible
+	location_label.text = GameState.get_display_location()
+
 func _input(event: InputEvent) -> void:
-	# M key toggles map visibility — but not when typing in text input
-	if event is InputEventKey and event.pressed and event.keycode == KEY_M:
-		if text_input.has_focus():
-			return  # Don't toggle map while typing
-		if tile_map_renderer:
+	if not (event is InputEventKey and event.pressed):
+		return
+	if text_input.has_focus():
+		return  # Don't process hotkeys while typing
+
+	match event.keycode:
+		KEY_M:
+			# Toggle map panel visibility
 			map_viewer.visible = not map_viewer.visible
-	# I key toggles inventory (future)
-	if event is InputEventKey and event.pressed and event.keycode == KEY_I:
-		if text_input.has_focus():
-			return
+		KEY_V:
+			# Toggle POV ↔ tile map
+			_set_view_mode(not is_pov_mode)
+		KEY_I:
+			pass  # Inventory (future)
 
 func _on_entity_revealed(entity_id: String) -> void:
 	if tile_map_renderer:
 		tile_map_renderer.reveal_entity(entity_id)
+	if pov_renderer:
+		pov_renderer.reveal_entity(entity_id)
 
 func _on_backend_error(message: String) -> void:
 	_append_narrative("[color=red][%s][/color]" % message)
