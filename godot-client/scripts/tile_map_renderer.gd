@@ -41,9 +41,11 @@ const SPRITE_TEXTURES = {
 var tile_cache: Dictionary = {}
 var sprite_cache: Dictionary = {}
 var entity_nodes: Array[Node] = []
+var entity_containers: Dictionary = {}  # entity_id → Control node
 var camera_offset: Vector2 = Vector2.ZERO
 var map_width: int = 0
 var map_height: int = 0
+var fog_overlay: ColorRect = null
 
 signal entity_clicked(entity_id: String, entity_data: Dictionary)
 signal tile_clicked(tile_x: int, tile_y: int)
@@ -140,8 +142,30 @@ func _draw_entity(entity: Dictionary) -> void:
 	button.pressed.connect(_on_entity_pressed.bind(entity_id, entity))
 	container.add_child(button)
 
+	# Start invisible — will fade in when DM mentions this entity
+	container.modulate = Color(1, 1, 1, 0)
+
 	add_child(container)
 	entity_nodes.append(container)
+	entity_containers[entity_id] = container
+
+func reveal_entity(entity_id: String) -> void:
+	"""Fade in an entity when the DM narrative mentions it."""
+	if not entity_containers.has(entity_id):
+		return
+	var container = entity_containers[entity_id]
+	if not is_instance_valid(container):
+		return
+	# Fade in tween
+	var tween = create_tween()
+	tween.tween_property(container, "modulate", Color(1, 1, 1, 1), 1.0)
+
+func reveal_all() -> void:
+	"""Reveal all entities immediately."""
+	for eid in entity_containers:
+		var container = entity_containers[eid]
+		if is_instance_valid(container):
+			container.modulate = Color(1, 1, 1, 1)
 
 func _on_entity_pressed(entity_id: String, entity_data: Dictionary) -> void:
 	entity_clicked.emit(entity_id, entity_data)

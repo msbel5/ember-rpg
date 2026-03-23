@@ -24,6 +24,7 @@ signal narrative_received(text: String)
 signal scene_changed(new_scene: String)
 signal map_loaded(map_data: Dictionary)
 signal entities_loaded(entities: Dictionary)
+signal entity_revealed(entity_id: String)
 
 func update_from_response(data: Dictionary) -> void:
 	if data.has("session_id"):
@@ -83,6 +84,11 @@ func update_from_response(data: Dictionary) -> void:
 				var clean = _clean_narrative(item["text"])
 				narrative_history.append(clean)
 				narrative_received.emit(clean)
+			# Emit reveal signal if present
+			if item.has("reveal") and item["reveal"] != null:
+				var reveal = item["reveal"]
+				if reveal.has("id"):
+					entity_revealed.emit(reveal["id"])
 
 	state_updated.emit()
 

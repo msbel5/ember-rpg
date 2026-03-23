@@ -27,6 +27,7 @@ func _ready() -> void:
 	GameState.combat_started.connect(_on_combat_started)
 	GameState.combat_ended.connect(_on_combat_ended)
 	GameState.level_up_occurred.connect(_on_level_up)
+	GameState.entity_revealed.connect(_on_entity_revealed)
 	Backend.request_error.connect(_on_backend_error)
 
 	# Create tile map renderer in the map panel
@@ -64,6 +65,10 @@ func _on_scene_entered(data) -> void:
 		return
 	print("[DEBUG] scene_entered: got data, keys=%s" % str(data.keys()))
 	GameState.update_from_response(data)
+	# After all narrative streams process, reveal remaining hidden entities
+	await get_tree().create_timer(10.0).timeout
+	if tile_map_renderer:
+		tile_map_renderer.reveal_all()
 
 func _on_entity_clicked(entity_id: String, entity_data: Dictionary) -> void:
 	var entity_name = entity_data.get("name", "Unknown")
@@ -231,6 +236,16 @@ func _on_combat_ended() -> void:
 
 func _on_level_up(new_level: int) -> void:
 	_append_narrative("[color=yellow]✦ LEVEL UP! You are now level %d! ✦[/color]" % new_level)
+
+func _input(event: InputEvent) -> void:
+	# M key toggles map visibility
+	if event is InputEventKey and event.pressed and event.keycode == KEY_M:
+		if tile_map_renderer:
+			map_viewer.visible = not map_viewer.visible
+
+func _on_entity_revealed(entity_id: String) -> void:
+	if tile_map_renderer:
+		tile_map_renderer.reveal_entity(entity_id)
 
 func _on_backend_error(message: String) -> void:
 	_append_narrative("[color=red][%s][/color]" % message)
