@@ -2,6 +2,7 @@
 Ember RPG - Core Engine
 Universal Item class for all objects
 """
+import json
 from dataclasses import dataclass, field
 from typing import List, Optional, TYPE_CHECKING
 from enum import Enum
@@ -160,3 +161,98 @@ class Item:
         """String representation of item."""
         qty_str = f" x{self.quantity}" if self.stackable and self.quantity > 1 else ""
         return f"<Item {self.name} ({self.rarity.name}){qty_str} - {self.total_value}gp, {self.total_weight:.1f}lb>"
+
+
+class ItemDatabase:
+    """Load and manage item definitions from JSON."""
+
+    def __init__(self, filepath: Optional[str] = None):
+        """
+        Initialize item database.
+
+        Args:
+            filepath: Path to items JSON file (optional)
+        """
+        self.items: List[Item] = []
+        if filepath:
+            self.load(filepath)
+
+    def load(self, filepath: str):
+        """
+        Load items from JSON file.
+
+        Args:
+            filepath: Path to JSON file containing item definitions.
+                      Expected structure: {"items": [...]}
+        """
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+
+        for item_data in data['items']:
+            item = self._item_from_json(item_data)
+            self.items.append(item)
+
+    @staticmethod
+    def _item_from_json(data: dict) -> 'Item':
+        """Convert a JSON item dict to an Item instance (no Effect objects)."""
+        return Item(
+            name=data['name'],
+            value=data.get('value', 0),
+            weight=data.get('weight', 0.0),
+            item_type=ItemType(data['type']),
+            description=data.get('description', ''),
+            rarity=Rarity[data.get('rarity', 'COMMON').upper()],
+            damage_dice=data.get('damage_dice'),
+            damage_type=data.get('damage_type'),
+            armor_bonus=data.get('armor_bonus', 0),
+            armor_type=data.get('armor_type'),
+            stackable=data.get('stackable', False),
+            quantity=data.get('quantity', 1),
+            can_drop=data.get('can_drop', True),
+            can_sell=data.get('can_sell', True),
+        )
+
+    def add(self, item: Item):
+        """Add an item to the database."""
+        self.items.append(item)
+
+    def get(self, name: str) -> Optional[Item]:
+        """
+        Get item by name (case-insensitive).
+
+        Args:
+            name: Item name
+
+        Returns:
+            Item if found, None otherwise
+        """
+        for item in self.items:
+            if item.name.lower() == name.lower():
+                return item
+        return None
+
+    def filter(self,
+               item_type: Optional[ItemType] = None,
+               rarity: Optional[Rarity] = None,
+               max_value: Optional[int] = None) -> List[Item]:
+        """
+        Filter items by criteria.
+
+        Args:
+            item_type: Filter by item type
+            rarity: Filter by rarity
+            max_value: Maximum gold value
+
+        Returns:
+            List of matching items
+        """
+        results = self.items
+
+        if item_type:
+            results = [i for i in results if i.item_type == item_type]
+        if rarity:
+            results = [i for i in results if i.rarity == rarity]
+        if max_value is not None:
+            results = [i for i in results if i.value <= max_value]
+
+        return results

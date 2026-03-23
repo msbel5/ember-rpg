@@ -1,0 +1,700 @@
+{
+  "items": [
+    {
+      "name": "Iron Shortsword",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 10,
+      "weight": 2.0,
+      "description": "A simple iron shortsword favored by new adventurers.",
+      "damage_dice": "1d6",
+      "damage_type": "slashing",
+      "requirements": { "level": 1 }
+    },
+    {
+      "name": "Longsword",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 15,
+      "weight": 3.0,
+      "description": "A standard longsword with a balanced hilt.",
+      "damage_dice": "1d10",
+      "damage_type": "slashing",
+      "requirements": { "level": 1, "stat": { "MIG": 10 } }
+    },
+    {
+      "name": "Greatsword",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 50,
+      "weight": 6.0,
+      "description": "A heavy two-handed blade that cleaves through armor.",
+      "damage_dice": "2d6",
+      "damage_type": "slashing",
+      "requirements": { "level": 3, "stat": { "MIG": 13 } }
+    },
+    {
+      "name": "Silver Longsword",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 100,
+      "weight": 3.0,
+      "description": "A longsword with a silver blade, effective against undead and lycanthropes.",
+      "damage_dice": "1d10",
+      "damage_type": "slashing",
+      "requirements": { "level": 3 }
+    },
+    {
+      "name": "Flametounge Blade",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 800,
+      "weight": 3.5,
+      "description": "A sword that crackles with magical flames along its edge.",
+      "damage_dice": "1d10",
+      "damage_type": "slashing",
+      "effects": [
+        { "type": "damage", "amount": "1d6", "damage_type": "fire" }
+      ],
+      "requirements": { "level": 6 }
+    },
+    {
+      "name": "Vorpal Sword",
+      "type": "weapon",
+      "rarity": "LEGENDARY",
+      "value": 8000,
+      "weight": 3.0,
+      "description": "A supernaturally sharp blade said to decapitate on a perfect strike.",
+      "damage_dice": "2d8",
+      "damage_type": "slashing",
+      "effects": [
+        { "type": "special", "id": "vorpal", "description": "On natural 20, instantly slays target." }
+      ],
+      "requirements": { "level": 15 }
+    },
+    {
+      "name": "Shortbow",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 25,
+      "weight": 2.0,
+      "description": "A lightweight bow for quick shots at medium range.",
+      "damage_dice": "1d6",
+      "damage_type": "piercing",
+      "requirements": { "level": 1, "stat": { "AGI": 10 } }
+    },
+    {
+      "name": "Longbow",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 50,
+      "weight": 2.5,
+      "description": "A powerful bow that deals devastating damage at long range.",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "requirements": { "level": 2, "stat": { "AGI": 12 } }
+    },
+    {
+      "name": "Elven Recurve Bow",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 300,
+      "weight": 2.0,
+      "description": "A gracefully carved recurve bow of elven make. Swift and silent.",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "effects": [
+        { "type": "buff", "stat": "AGI", "bonus": 1, "duration": 0 }
+      ],
+      "requirements": { "level": 4, "stat": { "AGI": 14 } }
+    },
+    {
+      "name": "Storm Arrow Bow",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 1200,
+      "weight": 2.5,
+      "description": "Arrows fired from this bow crackle with lightning energy.",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "effects": [
+        { "type": "damage", "amount": "1d6", "damage_type": "lightning" }
+      ],
+      "requirements": { "level": 8, "stat": { "AGI": 14 } }
+    },
+    {
+      "name": "Arcane Staff",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 20,
+      "weight": 4.0,
+      "description": "A wooden staff imbued with minor arcane resonance.",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "requirements": { "level": 1, "class": "mage" }
+    },
+    {
+      "name": "Staff of Fire",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 400,
+      "weight": 4.0,
+      "description": "A staff tipped with a smouldering ember that never goes out.",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "effects": [
+        { "type": "damage", "amount": "1d8", "damage_type": "fire" }
+      ],
+      "requirements": { "level": 4, "class": "mage" }
+    },
+    {
+      "name": "Staff of the Archmage",
+      "type": "weapon",
+      "rarity": "EPIC",
+      "value": 5000,
+      "weight": 4.5,
+      "description": "A legendary staff that amplifies spell power beyond mortal limits.",
+      "damage_dice": "1d8",
+      "damage_type": "force",
+      "effects": [
+        { "type": "buff", "stat": "MND", "bonus": 4, "duration": 0 },
+        { "type": "special", "id": "spell_amplify", "description": "Spells deal +2 damage per die." }
+      ],
+      "requirements": { "level": 12, "class": "mage", "stat": { "MND": 16 } }
+    },
+    {
+      "name": "Leather Helmet",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 8,
+      "weight": 2.0,
+      "description": "A simple leather cap offering minimal head protection.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "requirements": { "level": 1 }
+    },
+    {
+      "name": "Iron Helmet",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 30,
+      "weight": 5.0,
+      "description": "A solid iron helmet that protects the head from direct blows.",
+      "armor_bonus": 2,
+      "armor_type": "medium",
+      "requirements": { "level": 2 }
+    },
+    {
+      "name": "Greathelm",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 150,
+      "weight": 8.0,
+      "description": "A full-face heavy helm that encases the entire head.",
+      "armor_bonus": 3,
+      "armor_type": "heavy",
+      "requirements": { "level": 4, "stat": { "END": 12 } }
+    },
+    {
+      "name": "Circlet of Clarity",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 600,
+      "weight": 0.5,
+      "description": "A mage's circlet that sharpens the mind and enhances focus.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "effects": [
+        { "type": "buff", "stat": "MND", "bonus": 3, "duration": 0 }
+      ],
+      "requirements": { "level": 6, "class": "mage" }
+    },
+    {
+      "name": "Crown of the Conqueror",
+      "type": "armor",
+      "rarity": "LEGENDARY",
+      "value": 9000,
+      "weight": 3.0,
+      "description": "A golden crown radiating authority and battlefield might.",
+      "armor_bonus": 4,
+      "armor_type": "heavy",
+      "effects": [
+        { "type": "buff", "stat": "PRE", "bonus": 5, "duration": 0 },
+        { "type": "buff", "stat": "MIG", "bonus": 2, "duration": 0 }
+      ],
+      "requirements": { "level": 15 }
+    },
+    {
+      "name": "Padded Armor",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 8.0,
+      "description": "Quilted cloth layered to absorb impacts.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "requirements": { "level": 1 }
+    },
+    {
+      "name": "Chain Shirt",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 50,
+      "weight": 20.0,
+      "description": "Interlocking metal rings providing solid torso protection.",
+      "armor_bonus": 3,
+      "armor_type": "medium",
+      "requirements": { "level": 2 }
+    },
+    {
+      "name": "Breastplate",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 400,
+      "weight": 20.0,
+      "description": "A fitted metal breastplate that protects the vital organs.",
+      "armor_bonus": 4,
+      "armor_type": "medium",
+      "requirements": { "level": 4, "stat": { "END": 10 } }
+    },
+    {
+      "name": "Plate Armor",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 1500,
+      "weight": 45.0,
+      "description": "Full plate armor — the pinnacle of mundane protection.",
+      "armor_bonus": 6,
+      "armor_type": "heavy",
+      "requirements": { "level": 6, "stat": { "END": 14, "MIG": 12 } }
+    },
+    {
+      "name": "Dragonscale Armor",
+      "type": "armor",
+      "rarity": "EPIC",
+      "value": 7500,
+      "weight": 25.0,
+      "description": "Armor crafted from the scales of a slain dragon. Immune to fire.",
+      "armor_bonus": 7,
+      "armor_type": "heavy",
+      "effects": [
+        { "type": "special", "id": "fire_resistance", "description": "Resistance to fire damage." }
+      ],
+      "requirements": { "level": 12 }
+    },
+    {
+      "name": "Leather Leggings",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 8,
+      "weight": 4.0,
+      "description": "Tanned leather leggings offering basic leg protection.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "requirements": { "level": 1 }
+    },
+    {
+      "name": "Chainmail Leggings",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 40,
+      "weight": 12.0,
+      "description": "Linked chainmail offering reliable leg protection.",
+      "armor_bonus": 2,
+      "armor_type": "medium",
+      "requirements": { "level": 2 }
+    },
+    {
+      "name": "Greaves of the Vanguard",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 900,
+      "weight": 10.0,
+      "description": "Heavy steel greaves that let you hold the line even under heavy assault.",
+      "armor_bonus": 3,
+      "armor_type": "heavy",
+      "effects": [
+        { "type": "buff", "stat": "END", "bonus": 2, "duration": 0 }
+      ],
+      "requirements": { "level": 7 }
+    },
+    {
+      "name": "Wooden Shield",
+      "type": "shield",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 5.0,
+      "description": "A round wooden shield, light but not very durable.",
+      "armor_bonus": 1,
+      "requirements": { "level": 1 }
+    },
+    {
+      "name": "Iron Shield",
+      "type": "shield",
+      "rarity": "COMMON",
+      "value": 20,
+      "weight": 8.0,
+      "description": "A sturdy iron kite shield that deflects arrows and blows.",
+      "armor_bonus": 2,
+      "requirements": { "level": 1 }
+    },
+    {
+      "name": "Tower Shield",
+      "type": "shield",
+      "rarity": "UNCOMMON",
+      "value": 150,
+      "weight": 15.0,
+      "description": "A massive tower shield that can shelter your whole body.",
+      "armor_bonus": 4,
+      "requirements": { "level": 4, "stat": { "MIG": 12, "END": 10 } }
+    },
+    {
+      "name": "Shield of the Ancients",
+      "type": "shield",
+      "rarity": "EPIC",
+      "value": 4500,
+      "weight": 10.0,
+      "description": "A rune-engraved shield said to have protected a legendary king.",
+      "armor_bonus": 5,
+      "effects": [
+        { "type": "buff", "stat": "END", "bonus": 3, "duration": 0 },
+        { "type": "special", "id": "block_magic", "description": "Once per day, negate one incoming spell." }
+      ],
+      "requirements": { "level": 10 }
+    },
+    {
+      "name": "Potion of Healing",
+      "type": "consumable",
+      "rarity": "COMMON",
+      "value": 50,
+      "weight": 0.5,
+      "description": "A ruby-red liquid that mends wounds when consumed.",
+      "effects": [
+        { "type": "heal", "amount": "2d6+2" }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Potion of Greater Healing",
+      "type": "consumable",
+      "rarity": "UNCOMMON",
+      "value": 150,
+      "weight": 0.5,
+      "description": "A potent healing brew that closes even serious wounds.",
+      "effects": [
+        { "type": "heal", "amount": "4d6+4" }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Potion of Superior Healing",
+      "type": "consumable",
+      "rarity": "RARE",
+      "value": 500,
+      "weight": 0.5,
+      "description": "A legendary tonic that restores life from near death.",
+      "effects": [
+        { "type": "heal", "amount": "8d6+8" }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Potion of Strength",
+      "type": "consumable",
+      "rarity": "UNCOMMON",
+      "value": 200,
+      "weight": 0.5,
+      "description": "Temporarily increases might for brutal physical feats.",
+      "effects": [
+        { "type": "buff", "stat": "MIG", "bonus": 4, "duration": 10 }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Potion of Agility",
+      "type": "consumable",
+      "rarity": "UNCOMMON",
+      "value": 200,
+      "weight": 0.5,
+      "description": "A shimmering blue liquid that quickens the reflexes.",
+      "effects": [
+        { "type": "buff", "stat": "AGI", "bonus": 4, "duration": 10 }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Potion of Endurance",
+      "type": "consumable",
+      "rarity": "UNCOMMON",
+      "value": 200,
+      "weight": 0.5,
+      "description": "A thick green draught that fortifies the body against punishment.",
+      "effects": [
+        { "type": "buff", "stat": "END", "bonus": 4, "duration": 10 }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Vial of Poison",
+      "type": "consumable",
+      "rarity": "COMMON",
+      "value": 30,
+      "weight": 0.2,
+      "description": "A vial of contact poison — coat a blade or throw at enemies.",
+      "effects": [
+        { "type": "damage", "amount": "1d6", "damage_type": "poison" }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Alchemist's Fire",
+      "type": "consumable",
+      "rarity": "COMMON",
+      "value": 50,
+      "weight": 0.5,
+      "description": "A thrown flask that ignites on impact, dealing fire damage.",
+      "effects": [
+        { "type": "damage", "amount": "1d4", "damage_type": "fire" }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Elixir of the Warrior",
+      "type": "consumable",
+      "rarity": "RARE",
+      "value": 750,
+      "weight": 0.5,
+      "description": "A golden elixir that temporarily grants the power of a seasoned warrior.",
+      "effects": [
+        { "type": "buff", "stat": "MIG", "bonus": 6, "duration": 5 },
+        { "type": "heal", "amount": "2d6" }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Scroll of Fireball",
+      "type": "consumable",
+      "rarity": "UNCOMMON",
+      "value": 300,
+      "weight": 0.1,
+      "description": "A scroll inscribed with the formula for a fiery explosion.",
+      "effects": [
+        { "type": "damage", "amount": "8d6", "damage_type": "fire" }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Scroll of Lightning Bolt",
+      "type": "consumable",
+      "rarity": "UNCOMMON",
+      "value": 300,
+      "weight": 0.1,
+      "description": "A scroll containing crackling lightning runes.",
+      "effects": [
+        { "type": "damage", "amount": "8d6", "damage_type": "lightning" }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Scroll of Healing Word",
+      "type": "consumable",
+      "rarity": "COMMON",
+      "value": 80,
+      "weight": 0.1,
+      "description": "A scroll with a divine phrase that seals minor wounds.",
+      "effects": [
+        { "type": "heal", "amount": "1d8+3" }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Scroll of Haste",
+      "type": "consumable",
+      "rarity": "RARE",
+      "value": 500,
+      "weight": 0.1,
+      "description": "A scroll that briefly doubles the target's speed and actions.",
+      "effects": [
+        { "type": "buff", "stat": "AGI", "bonus": 4, "duration": 5 }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Scroll of Shield",
+      "type": "consumable",
+      "rarity": "COMMON",
+      "value": 100,
+      "weight": 0.1,
+      "description": "An arcane scroll that conjures a magical barrier.",
+      "effects": [
+        { "type": "buff", "stat": "armor_class", "bonus": 5, "duration": 3 }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Ancient Key",
+      "type": "quest",
+      "rarity": "COMMON",
+      "value": 0,
+      "weight": 0.1,
+      "description": "A tarnished iron key covered in glowing runes. Opens the Vault of Echoes.",
+      "can_drop": false,
+      "can_sell": false
+    },
+    {
+      "name": "Crimson Seal",
+      "type": "quest",
+      "rarity": "RARE",
+      "value": 0,
+      "weight": 0.05,
+      "description": "A wax seal bearing the emblem of the Red Council. Proof of your mission.",
+      "can_drop": false,
+      "can_sell": false
+    },
+    {
+      "name": "Dragon Egg",
+      "type": "quest",
+      "rarity": "EPIC",
+      "value": 0,
+      "weight": 5.0,
+      "description": "A warm, faintly glowing egg. The scholars want this returned immediately.",
+      "can_drop": false,
+      "can_sell": false
+    },
+    {
+      "name": "The Lost Chronicle",
+      "type": "quest",
+      "rarity": "UNCOMMON",
+      "value": 0,
+      "weight": 2.0,
+      "description": "A crumbling tome containing the final records of the Ashen Order.",
+      "can_drop": false,
+      "can_sell": false
+    },
+    {
+      "name": "Shattered Amulet",
+      "type": "quest",
+      "rarity": "UNCOMMON",
+      "value": 0,
+      "weight": 0.2,
+      "description": "A broken pendant split in two. Half of something important.",
+      "can_drop": false,
+      "can_sell": false
+    },
+    {
+      "name": "Gold Coins",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 1,
+      "weight": 0.02,
+      "description": "Standard gold coins, the currency of the realm.",
+      "stackable": true,
+      "quantity": 1
+    },
+    {
+      "name": "Silver Coins",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 0,
+      "weight": 0.01,
+      "description": "Silver coins worth 1/10 of a gold piece.",
+      "stackable": true,
+      "quantity": 1
+    },
+    {
+      "name": "Arrows",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 1,
+      "weight": 0.05,
+      "description": "Standard iron-tipped arrows for use with any bow.",
+      "stackable": true,
+      "quantity": 20
+    },
+    {
+      "name": "Dagger",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 2,
+      "weight": 1.0,
+      "description": "A short blade useful for close-quarters and throwing.",
+      "damage_dice": "1d4",
+      "damage_type": "piercing",
+      "requirements": { "level": 1 }
+    },
+    {
+      "name": "Handaxe",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 2.0,
+      "description": "A one-handed axe that can also be thrown.",
+      "damage_dice": "1d6",
+      "damage_type": "slashing",
+      "requirements": { "level": 1 }
+    },
+    {
+      "name": "War Hammer",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 80,
+      "weight": 4.0,
+      "description": "A heavy hammer that bludgeons foes with devastating force.",
+      "damage_dice": "1d8",
+      "damage_type": "bludgeoning",
+      "requirements": { "level": 3, "stat": { "MIG": 12 } }
+    },
+    {
+      "name": "Mithral Longsword",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 1500,
+      "weight": 2.0,
+      "description": "An impossibly light longsword forged from rare mithral.",
+      "damage_dice": "1d10",
+      "damage_type": "slashing",
+      "effects": [
+        { "type": "buff", "stat": "AGI", "bonus": 1, "duration": 0 }
+      ],
+      "requirements": { "level": 6 }
+    },
+    {
+      "name": "Ring of Protection",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 350,
+      "weight": 0.1,
+      "description": "A simple ring enchanted with a ward against harm.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "requirements": { "level": 3 }
+    },
+    {
+      "name": "Amulet of Health",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 800,
+      "weight": 0.2,
+      "description": "A carved jade amulet that fortifies the body's resilience.",
+      "armor_bonus": 0,
+      "effects": [
+        { "type": "buff", "stat": "END", "bonus": 4, "duration": 0 }
+      ],
+      "requirements": { "level": 5 }
+    },
+    {
+      "name": "Boots of Speed",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 1000,
+      "weight": 1.0,
+      "description": "Enchanted boots that dramatically increase movement speed.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        { "type": "buff", "stat": "AGI", "bonus": 3, "duration": 0 }
+      ],
+      "requirements": { "level": 5 }
+    }
+  ]
+}
