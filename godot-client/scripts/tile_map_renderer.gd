@@ -13,14 +13,18 @@ const TILE_TEXTURES = {
 	"door": "res://assets/tiles/door.png",
 	"chest": "res://assets/tiles/chest.png",
 	"stairs": "res://assets/tiles/stairs.png",
-	# Fallbacks for backend tile types we don't have
-	"cobblestone": "res://assets/tiles/stone_floor.png",
+	"cobblestone": "res://assets/tiles/cobblestone.png",
+	"wood_floor": "res://assets/tiles/wood_floor.png",
+	"sand": "res://assets/tiles/sand.png",
+	"dark_stone": "res://assets/tiles/dark_stone.png",
+	"tavern_floor": "res://assets/tiles/tavern_floor.png",
+	# Fallbacks
 	"wall": "res://assets/tiles/stone_wall.png",
 	"floor": "res://assets/tiles/stone_floor.png",
 	"road": "res://assets/tiles/dirt_path.png",
 	"building_wall": "res://assets/tiles/stone_wall.png",
-	"building_floor": "res://assets/tiles/stone_floor.png",
-	"dock_planks": "res://assets/tiles/dirt_path.png",
+	"building_floor": "res://assets/tiles/tavern_floor.png",
+	"dock_planks": "res://assets/tiles/wood_floor.png",
 }
 
 const SPRITE_TEXTURES = {
@@ -31,11 +35,20 @@ const SPRITE_TEXTURES = {
 	"goblin": "res://assets/sprites/goblin.png",
 	"skeleton": "res://assets/sprites/skeleton.png",
 	"merchant": "res://assets/sprites/merchant.png",
-	"quest_giver": "res://assets/sprites/warrior.png",
-	"innkeeper": "res://assets/sprites/merchant.png",
-	"guard": "res://assets/sprites/warrior.png",
-	"blacksmith": "res://assets/sprites/warrior.png",
-	"healer": "res://assets/sprites/priest.png",
+	"quest_giver": "res://assets/sprites/quest_giver.png",
+	"innkeeper": "res://assets/sprites/innkeeper.png",
+	"guard": "res://assets/sprites/guard.png",
+	"blacksmith": "res://assets/sprites/blacksmith.png",
+	"healer": "res://assets/sprites/healer.png",
+	"beggar": "res://assets/sprites/beggar.png",
+	"spy": "res://assets/sprites/spy.png",
+	"sage": "res://assets/sprites/sage.png",
+	"wolf": "res://assets/sprites/wolf.png",
+	"orc": "res://assets/sprites/orc.png",
+	"spider": "res://assets/sprites/spider.png",
+	"bandit": "res://assets/sprites/bandit.png",
+	"dragon": "res://assets/sprites/dragon.png",
+	"zombie": "res://assets/sprites/zombie.png",
 }
 
 var tile_cache: Dictionary = {}
