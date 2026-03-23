@@ -298,22 +298,44 @@ class GameEngine:
         # Try to find NPC personality from templates
         npc_personality = self._get_npc_personality(target)
 
+        # Check NPC memory for prior interactions
+        npc_id = target.lower().replace(" ", "_")
+        memory = session.npc_memory.get_memory(npc_id, npc_name=target)
+        prior_context = {}
+        if memory and len(memory.conversations) > 0:
+            prior_context["prior_interactions"] = len(memory.conversations)
+            prior_context["npc_memory_summary"] = memory.build_context()
+
         desc = (
             f"{session.player.name} approaches {target} to speak. "
             f"{session.player.name} says: (initiate conversation). "
             f"Generate {target}'s response as they would actually speak, "
             f"in character with their personality."
         )
-        event = DMEvent(type=EventType.DIALOGUE, description=desc, data={
+        event_data = {
             "player_name": session.player.name,
             "location": session.dm_context.location,
             "npc_name": target,
             "npc_personality": npc_personality,
             "action": "talk",
             "player_input": action.raw_input,
-        })
+        }
+        event_data.update(prior_context)
+
+        event = DMEvent(type=EventType.DIALOGUE, description=desc, data=event_data)
         self.dm.transition(session.dm_context, SceneType.DIALOGUE)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
+
+        # Record this interaction
+        from datetime import datetime
+        game_time = datetime.now().strftime("%Y-%m-%d")
+        session.npc_memory.record_interaction(
+            npc_id,
+            action.raw_input[:200],
+            "neutral",
+            game_time,
+        )
+
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _get_npc_personality(self, target_name: str) -> dict:
