@@ -14,6 +14,8 @@ var level_up_pending: Dictionary = {}
 var map_data: Dictionary = {}
 var entities: Dictionary = {}
 var narrative_stream: Array = []
+var player_map_pos: Vector2i = Vector2i(10, 7)  # Player position on tile map
+var player_facing: int = 2  # 0=N,1=E,2=S,3=W — default facing south
 
 # Signals
 signal state_updated
@@ -32,6 +34,10 @@ func update_from_response(data: Dictionary) -> void:
 
 	if data.has("player"):
 		player = data["player"]
+		# Update player map position if backend provides it
+		if player.has("position"):
+			var pos = player["position"]
+			player_map_pos = Vector2i(int(pos[0]), int(pos[1]))
 
 	if data.has("location"):
 		location = data["location"]
@@ -103,6 +109,8 @@ func reset() -> void:
 	map_data = {}
 	entities = {}
 	narrative_stream = []
+	player_map_pos = Vector2i(10, 7)
+	player_facing = 2
 
 func is_in_combat() -> bool:
 	return scene == "combat" and not combat_state.is_empty()

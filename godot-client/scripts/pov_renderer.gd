@@ -69,8 +69,23 @@ const ENTITY_COLORS = {
 	"bandit": Color(0.4, 0.2, 0.2),
 	"dragon": Color(0.7, 0.15, 0.1),
 	"zombie": Color(0.3, 0.4, 0.3),
+	# Items / Objects
+	"notice_board": Color(0.5, 0.35, 0.15),
+	"well": Color(0.3, 0.4, 0.5),
+	"crate": Color(0.45, 0.35, 0.2),
+	"barrel": Color(0.4, 0.3, 0.15),
+	"chest": Color(0.6, 0.5, 0.1),
+	"market_stall": Color(0.5, 0.4, 0.2),
+	"fountain": Color(0.3, 0.5, 0.7),
+	"campfire": Color(0.8, 0.4, 0.1),
 	"default": Color(0.5, 0.5, 0.5),
 }
+
+# Templates that are objects/items (not humanoid NPCs)
+const OBJECT_TEMPLATES = [
+	"notice_board", "well", "crate", "barrel", "chest",
+	"market_stall", "fountain", "campfire",
+]
 
 # Render state
 var current_palette: Dictionary = {}
@@ -332,24 +347,12 @@ func _draw_single_entity(item: Dictionary, w: float, h: float, horizon_y: float)
 		fade_alpha,
 	)
 
-	# --- Draw silhouette (simple humanoid shape) ---
-	# Head (circle)
-	var head_radius = entity_w * 0.35
-	var head_center = Vector2(entity_x + entity_w * 0.5, entity_y + head_radius)
-	draw_circle(head_center, head_radius, draw_color)
-
-	# Body (rectangle)
-	var body_top = entity_y + head_radius * 2
-	var body_h = entity_h * 0.45
-	draw_rect(Rect2(entity_x + entity_w * 0.15, body_top, entity_w * 0.7, body_h), draw_color)
-
-	# Legs (two thin rectangles)
-	var leg_top = body_top + body_h
-	var leg_h = entity_h - (head_radius * 2 + body_h)
-	var leg_w = entity_w * 0.25
-	var leg_color = Color(draw_color.r * 0.85, draw_color.g * 0.85, draw_color.b * 0.85, fade_alpha)
-	draw_rect(Rect2(entity_x + entity_w * 0.15, leg_top, leg_w, leg_h), leg_color)
-	draw_rect(Rect2(entity_x + entity_w * 0.6, leg_top, leg_w, leg_h), leg_color)
+	# --- Draw silhouette ---
+	var is_object = template in OBJECT_TEMPLATES
+	if is_object:
+		_draw_object_silhouette(entity_x, entity_y, entity_w, entity_h, draw_color, fade_alpha)
+	else:
+		_draw_humanoid_silhouette(entity_x, entity_y, entity_w, entity_h, draw_color, fade_alpha)
 
 	# --- Layer 4: Label ---
 	if dist_factor > 0.3 and fade_alpha > 0.3:
@@ -363,6 +366,38 @@ func _draw_single_entity(item: Dictionary, w: float, h: float, horizon_y: float)
 		# Text
 		var label_color = Color(1, 1, 0.85, dist_factor * fade_alpha)
 		draw_string(font, label_pos, entity_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, label_color)
+
+func _draw_humanoid_silhouette(ex: float, ey: float, ew: float, eh: float, color: Color, alpha: float) -> void:
+	# Head (circle)
+	var head_radius = ew * 0.35
+	var head_center = Vector2(ex + ew * 0.5, ey + head_radius)
+	draw_circle(head_center, head_radius, color)
+	# Body
+	var body_top = ey + head_radius * 2
+	var body_h = eh * 0.45
+	draw_rect(Rect2(ex + ew * 0.15, body_top, ew * 0.7, body_h), color)
+	# Legs
+	var leg_top = body_top + body_h
+	var leg_h = eh - (head_radius * 2 + body_h)
+	var leg_w = ew * 0.25
+	var leg_color = Color(color.r * 0.85, color.g * 0.85, color.b * 0.85, alpha)
+	draw_rect(Rect2(ex + ew * 0.15, leg_top, leg_w, leg_h), leg_color)
+	draw_rect(Rect2(ex + ew * 0.6, leg_top, leg_w, leg_h), leg_color)
+
+func _draw_object_silhouette(ex: float, ey: float, ew: float, eh: float, color: Color, _alpha: float) -> void:
+	# Objects are shorter, wider rectangles with a top detail
+	var obj_h = eh * 0.5
+	var obj_w = ew * 1.2
+	var obj_x = ex - ew * 0.1  # slightly wider
+	var obj_y = ey + eh - obj_h  # sits on ground
+	# Main body
+	draw_rect(Rect2(obj_x, obj_y, obj_w, obj_h), color)
+	# Top edge highlight
+	var highlight = Color(color.r + 0.1, color.g + 0.1, color.b + 0.1, color.a)
+	draw_rect(Rect2(obj_x, obj_y, obj_w, obj_h * 0.15), highlight)
+	# Dark base
+	var dark = Color(color.r * 0.6, color.g * 0.6, color.b * 0.6, color.a)
+	draw_rect(Rect2(obj_x, obj_y + obj_h * 0.85, obj_w, obj_h * 0.15), dark)
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:

@@ -133,6 +133,9 @@ func _submit_action(text: String) -> void:
 	_append_narrative("[color=cyan]> %s[/color]" % text)
 	text_input.text = ""
 
+	# Parse move commands to update player position for POV
+	_parse_move_command(text)
+
 	Backend.submit_action(GameState.session_id, text, _on_action_response)
 
 	# Timeout indicator
@@ -193,6 +196,31 @@ func _on_state_updated() -> void:
 	_refresh_player_status()
 	_refresh_location()
 	_refresh_combat_hud()
+	_refresh_pov()
+
+func _refresh_pov() -> void:
+	if pov_renderer:
+		pov_renderer.update_player(GameState.player_map_pos, GameState.player_facing)
+
+func _parse_move_command(text: String) -> void:
+	var lower = text.to_lower().strip_edges()
+	# "move to X,Y" or "move to X Y"
+	if lower.begins_with("move to ") or lower.begins_with("move "):
+		var parts = lower.replace("move to ", "").replace("move ", "").split(",")
+		if parts.size() < 2:
+			parts = lower.replace("move to ", "").replace("move ", "").split(" ")
+		if parts.size() >= 2:
+			var tx = parts[0].strip_edges().to_int()
+			var ty = parts[1].strip_edges().to_int()
+			if tx >= 0 and ty >= 0:
+				GameState.player_map_pos = Vector2i(tx, ty)
+				# Calculate facing direction based on movement delta
+				var old_pos = GameState.player_map_pos
+				var delta = Vector2i(tx, ty) - old_pos
+				if abs(delta.x) > abs(delta.y):
+					GameState.player_facing = 1 if delta.x > 0 else 3  # E or W
+				elif delta.y != 0:
+					GameState.player_facing = 2 if delta.y > 0 else 0  # S or N
 
 func _refresh_player_status() -> void:
 	var p = GameState.player
