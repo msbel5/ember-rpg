@@ -112,6 +112,8 @@ signal entity_clicked_pov(entity_id: String, entity_data: Dictionary)
 
 func _ready() -> void:
 	current_palette = PALETTES["default"]
+	mouse_filter = Control.MOUSE_FILTER_STOP  # Receive mouse events
+	focus_mode = Control.FOCUS_ALL  # Receive keyboard events
 	GameState.map_loaded.connect(_on_map_loaded)
 	GameState.entities_loaded.connect(_on_entities_loaded)
 	GameState.entity_revealed.connect(_on_entity_revealed)
@@ -126,9 +128,13 @@ func set_location_type(location: String) -> void:
 	queue_redraw()
 
 func update_player(pos: Vector2i, facing: int) -> void:
+	var moved = (pos != player_pos)
 	player_pos = pos
 	player_facing = clampi(facing, 0, 3)
 	_recalculate_visible()
+	# Auto-reveal entities in FOV when player moves
+	if moved:
+		_auto_reveal_fov_entities()
 	queue_redraw()
 
 func reveal_entity(entity_id: String) -> void:
@@ -174,7 +180,25 @@ func _on_entity_revealed(entity_id: String) -> void:
 func _recalculate_visible() -> void:
 	# Entities in FOV will be drawn; others ignored
 	# FOV is a cone: VIEW_DEPTH ahead, expanding width
-	pass  # For now all entities are potentially visible; distance check in _draw
+	pass  # Distance check done in _draw_entities
+
+func _auto_reveal_fov_entities() -> void:
+	# When player moves, reveal entities that are now in FOV
+	var facing_vec = FACING_VECTORS[player_facing]
+	var right_vec = FACING_VECTORS[(player_facing + 1) % 4]
+	for entity in visible_entities:
+		var eid = entity.get("id", "")
+		if eid == "" or revealed_ids.has(eid):
+			continue
+		var pos = entity.get("position", [0, 0])
+		var entity_pos = Vector2i(int(pos[0]), int(pos[1]))
+		var delta = entity_pos - player_pos
+		var forward = delta.x * facing_vec.x + delta.y * facing_vec.y
+		var lateral = delta.x * right_vec.x + delta.y * right_vec.y
+		# Reveal if in FOV cone (within 3 tiles for auto-reveal)
+		if forward >= 1 and forward <= 3 and abs(lateral) <= forward:
+			revealed_ids[eid] = 0.0
+			_fade_active = true
 
 func _draw() -> void:
 	var rect = get_rect()
@@ -420,12 +444,18 @@ func _gui_input(event: InputEvent) -> void:
 				entity_clicked_pov.emit(hb["id"], hb["data"])
 				break
 
-	# Arrow keys / WASD rotate facing
-	if event is InputEventKey and event.pressed:
+	# Arrow keys / WASD rotate facing (only when POV is visible)
+	if event is InputEventKey and event.pressed and visible:
+		var handled = true
 		match event.keycode:
 			KEY_LEFT, KEY_A:
 				player_facing = (player_facing + 3) % 4  # turn left
-				queue_redraw()
 			KEY_RIGHT, KEY_D:
 				player_facing = (player_facing + 1) % 4  # turn right
-				queue_redraw()
+			_:
+				handled = false
+		if handled:
+			GameState.player_facing = player_facing
+			_auto_reveal_fov_entities()
+			queue_redraw()
+			get_viewport().set_input_as_handled()

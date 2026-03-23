@@ -85,8 +85,8 @@ func _on_scene_entered(data) -> void:
 	# Set initial player position for POV (center of map or player entity)
 	if pov_renderer and data.has("map_data"):
 		var md = data["map_data"]
-		var cx: int = int(md.get("width", 20)) / 2
-		var cy: int = int(md.get("height", 15)) / 2
+		var cx: int = int(md.get("width", 20)) / int(2)
+		var cy: int = int(md.get("height", 15)) / int(2)
 		pov_renderer.update_player(Vector2i(cx, cy), 0)
 
 	# Fallback: reveal remaining hidden entities after narrative completes
@@ -157,6 +157,23 @@ func _on_action_response(data) -> void:
 		return
 
 	GameState.update_from_response(data)
+
+	# Update POV with backend player position if available
+	if data.has("player") and data["player"].has("position"):
+		var pos = data["player"]["position"]
+		GameState.player_map_pos = Vector2i(int(pos[0]), int(pos[1]))
+	if data.has("player") and data["player"].has("facing"):
+		var facing_str = data["player"].get("facing", "south")
+		match facing_str:
+			"north": GameState.player_facing = 0
+			"east": GameState.player_facing = 1
+			"south": GameState.player_facing = 2
+			"west": GameState.player_facing = 3
+
+	# Refresh POV entities
+	if pov_renderer and is_pov_mode:
+		pov_renderer.update_player(GameState.player_map_pos, GameState.player_facing)
+
 	text_input.grab_focus()
 
 var _typing_queue: Array[String] = []
@@ -317,6 +334,10 @@ func _set_view_mode(pov: bool) -> void:
 		tile_map_renderer.visible = not pov
 	if pov_renderer:
 		pov_renderer.visible = pov
+		if pov:
+			pov_renderer.grab_focus()
+			pov_renderer._auto_reveal_fov_entities()
+			pov_renderer.queue_redraw()
 	# LocationLabel always visible
 	location_label.text = GameState.get_display_location()
 
