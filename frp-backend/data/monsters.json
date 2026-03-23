@@ -8,17 +8,34 @@
       "hp": 11,
       "armor_class": 13,
       "speed": 40,
-      "stats": {"str": 12, "dex": 15, "con": 12, "int": 3, "wis": 12, "cha": 6},
+      "stats": {
+        "str": 12,
+        "dex": 15,
+        "con": 12,
+        "int": 3,
+        "wis": 12,
+        "cha": 6
+      },
       "attacks": [
-        {"name": "Bite", "damage_dice": "2d4+2", "damage_type": "piercing", "attack_bonus": 4}
+        {
+          "name": "Bite",
+          "damage_dice": "2d4+2",
+          "damage_type": "piercing",
+          "attack_bonus": 4
+        }
       ],
       "abilities": {
-        "special_moves": ["Pack Tactics"],
+        "special_moves": [
+          "Pack Tactics"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 50,
-      "loot_table": ["wolf_pelt", "fang"]
+      "loot_table": [
+        "wolf_pelt",
+        "fang"
+      ]
     },
     {
       "id": "dire_wolf",
@@ -28,17 +45,35 @@
       "hp": 37,
       "armor_class": 14,
       "speed": 50,
-      "stats": {"str": 17, "dex": 15, "con": 15, "int": 3, "wis": 12, "cha": 7},
+      "stats": {
+        "str": 17,
+        "dex": 15,
+        "con": 15,
+        "int": 3,
+        "wis": 12,
+        "cha": 7
+      },
       "attacks": [
-        {"name": "Bite", "damage_dice": "2d6+3", "damage_type": "piercing", "attack_bonus": 5}
+        {
+          "name": "Bite",
+          "damage_dice": "2d6+3",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        }
       ],
       "abilities": {
-        "special_moves": ["Pack Tactics", "Knock Prone"],
+        "special_moves": [
+          "Pack Tactics",
+          "Knock Prone"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 200,
-      "loot_table": ["dire_wolf_pelt", "large_fang"]
+      "loot_table": [
+        "dire_wolf_pelt",
+        "large_fang"
+      ]
     },
     {
       "id": "black_bear",
@@ -48,18 +83,40 @@
       "hp": 19,
       "armor_class": 11,
       "speed": 40,
-      "stats": {"str": 15, "dex": 10, "con": 14, "int": 2, "wis": 12, "cha": 7},
+      "stats": {
+        "str": 15,
+        "dex": 10,
+        "con": 14,
+        "int": 2,
+        "wis": 12,
+        "cha": 7
+      },
       "attacks": [
-        {"name": "Claws", "damage_dice": "2d6+2", "damage_type": "slashing", "attack_bonus": 4},
-        {"name": "Bite", "damage_dice": "1d6+2", "damage_type": "piercing", "attack_bonus": 4}
+        {
+          "name": "Claws",
+          "damage_dice": "2d6+2",
+          "damage_type": "slashing",
+          "attack_bonus": 4
+        },
+        {
+          "name": "Bite",
+          "damage_dice": "1d6+2",
+          "damage_type": "piercing",
+          "attack_bonus": 4
+        }
       ],
       "abilities": {
-        "special_moves": ["Multiattack"],
+        "special_moves": [
+          "Multiattack"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 100,
-      "loot_table": ["bear_pelt", "bear_claw"]
+      "loot_table": [
+        "bear_pelt",
+        "bear_claw"
+      ]
     },
     {
       "id": "grizzly_bear",
@@ -69,18 +126,42 @@
       "hp": 42,
       "armor_class": 11,
       "speed": 40,
-      "stats": {"str": 19, "dex": 10, "con": 16, "int": 2, "wis": 13, "cha": 7},
+      "stats": {
+        "str": 19,
+        "dex": 10,
+        "con": 16,
+        "int": 2,
+        "wis": 13,
+        "cha": 7
+      },
       "attacks": [
-        {"name": "Claws", "damage_dice": "2d8+4", "damage_type": "slashing", "attack_bonus": 6},
-        {"name": "Bite", "damage_dice": "1d8+4", "damage_type": "piercing", "attack_bonus": 6}
+        {
+          "name": "Claws",
+          "damage_dice": "2d8+4",
+          "damage_type": "slashing",
+          "attack_bonus": 6
+        },
+        {
+          "name": "Bite",
+          "damage_dice": "1d8+4",
+          "damage_type": "piercing",
+          "attack_bonus": 6
+        }
       ],
       "abilities": {
-        "special_moves": ["Multiattack", "Grapple"],
+        "special_moves": [
+          "Multiattack",
+          "Grapple"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 450,
-      "loot_table": ["grizzly_pelt", "bear_claw", "bear_meat"]
+      "loot_table": [
+        "grizzly_pelt",
+        "bear_claw",
+        "bear_meat"
+      ]
     },
     {
       "id": "giant_spider",
@@ -90,37 +171,75 @@
       "hp": 26,
       "armor_class": 14,
       "speed": 30,
-      "stats": {"str": 14, "dex": 16, "con": 12, "int": 2, "wis": 11, "cha": 4},
+      "stats": {
+        "str": 14,
+        "dex": 16,
+        "con": 12,
+        "int": 2,
+        "wis": 11,
+        "cha": 4
+      },
       "attacks": [
-        {"name": "Bite", "damage_dice": "1d8+3", "damage_type": "piercing", "attack_bonus": 5}
+        {
+          "name": "Bite",
+          "damage_dice": "1d8+3",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        }
       ],
       "abilities": {
-        "special_moves": ["Web Restrain", "Spider Climb", "Poison Bite"],
+        "special_moves": [
+          "Web Restrain",
+          "Spider Climb",
+          "Poison Bite"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 200,
-      "loot_table": ["spider_silk", "venom_sac"]
+      "loot_table": [
+        "spider_silk",
+        "venom_sac"
+      ]
     },
     {
       "id": "phase_spider",
       "name": "Phase Spider",
       "type": "beast",
       "cr": 3.0,
-      "hp": 32,
+      "hp": 55,
       "armor_class": 13,
       "speed": 30,
-      "stats": {"str": 15, "dex": 15, "con": 12, "int": 6, "wis": 10, "cha": 6},
+      "stats": {
+        "str": 15,
+        "dex": 15,
+        "con": 12,
+        "int": 6,
+        "wis": 10,
+        "cha": 6
+      },
       "attacks": [
-        {"name": "Bite", "damage_dice": "1d10+2", "damage_type": "piercing", "attack_bonus": 4}
+        {
+          "name": "Bite",
+          "damage_dice": "1d10+2",
+          "damage_type": "piercing",
+          "attack_bonus": 4
+        }
       ],
       "abilities": {
-        "special_moves": ["Phase Step", "Poison Bite", "Ethereal Jaunt"],
+        "special_moves": [
+          "Phase Step",
+          "Poison Bite",
+          "Ethereal Jaunt"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 700,
-      "loot_table": ["phase_spider_silk", "ethereal_essence"]
+      "loot_table": [
+        "phase_spider_silk",
+        "ethereal_essence"
+      ]
     },
     {
       "id": "skeleton",
@@ -130,17 +249,37 @@
       "hp": 13,
       "armor_class": 13,
       "speed": 30,
-      "stats": {"str": 10, "dex": 14, "con": 15, "int": 6, "wis": 8, "cha": 5},
+      "stats": {
+        "str": 10,
+        "dex": 14,
+        "con": 15,
+        "int": 6,
+        "wis": 8,
+        "cha": 5
+      },
       "attacks": [
-        {"name": "Shortsword", "damage_dice": "1d6+2", "damage_type": "piercing", "attack_bonus": 4}
+        {
+          "name": "Shortsword",
+          "damage_dice": "1d6+2",
+          "damage_type": "piercing",
+          "attack_bonus": 4
+        }
       ],
       "abilities": {
         "special_moves": [],
-        "resistances": ["piercing"],
-        "immunities": ["poison", "exhaustion"]
+        "resistances": [
+          "piercing"
+        ],
+        "immunities": [
+          "poison",
+          "exhaustion"
+        ]
       },
       "xp_reward": 50,
-      "loot_table": ["bone_fragment", "rusty_sword"]
+      "loot_table": [
+        "bone_fragment",
+        "rusty_sword"
+      ]
     },
     {
       "id": "skeleton_archer",
@@ -150,17 +289,39 @@
       "hp": 13,
       "armor_class": 13,
       "speed": 30,
-      "stats": {"str": 10, "dex": 16, "con": 15, "int": 6, "wis": 8, "cha": 5},
+      "stats": {
+        "str": 10,
+        "dex": 16,
+        "con": 15,
+        "int": 6,
+        "wis": 8,
+        "cha": 5
+      },
       "attacks": [
-        {"name": "Shortbow", "damage_dice": "1d6+3", "damage_type": "piercing", "attack_bonus": 5}
+        {
+          "name": "Shortbow",
+          "damage_dice": "1d6+3",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        }
       ],
       "abilities": {
-        "special_moves": ["Volley"],
-        "resistances": ["piercing"],
-        "immunities": ["poison", "exhaustion"]
+        "special_moves": [
+          "Volley"
+        ],
+        "resistances": [
+          "piercing"
+        ],
+        "immunities": [
+          "poison",
+          "exhaustion"
+        ]
       },
       "xp_reward": 100,
-      "loot_table": ["bone_fragment", "arrow"]
+      "loot_table": [
+        "bone_fragment",
+        "arrow"
+      ]
     },
     {
       "id": "zombie",
@@ -170,17 +331,36 @@
       "hp": 22,
       "armor_class": 8,
       "speed": 20,
-      "stats": {"str": 13, "dex": 6, "con": 16, "int": 3, "wis": 6, "cha": 5},
+      "stats": {
+        "str": 13,
+        "dex": 6,
+        "con": 16,
+        "int": 3,
+        "wis": 6,
+        "cha": 5
+      },
       "attacks": [
-        {"name": "Slam", "damage_dice": "1d6+1", "damage_type": "bludgeoning", "attack_bonus": 3}
+        {
+          "name": "Slam",
+          "damage_dice": "1d6+1",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 3
+        }
       ],
       "abilities": {
-        "special_moves": ["Undead Fortitude"],
+        "special_moves": [
+          "Undead Fortitude"
+        ],
         "resistances": [],
-        "immunities": ["poison"]
+        "immunities": [
+          "poison"
+        ]
       },
       "xp_reward": 50,
-      "loot_table": ["rotting_flesh", "copper_coin"]
+      "loot_table": [
+        "rotting_flesh",
+        "copper_coin"
+      ]
     },
     {
       "id": "plague_zombie",
@@ -190,18 +370,43 @@
       "hp": 35,
       "armor_class": 8,
       "speed": 20,
-      "stats": {"str": 14, "dex": 6, "con": 18, "int": 3, "wis": 6, "cha": 5},
+      "stats": {
+        "str": 14,
+        "dex": 6,
+        "con": 18,
+        "int": 3,
+        "wis": 6,
+        "cha": 5
+      },
       "attacks": [
-        {"name": "Slam", "damage_dice": "1d8+2", "damage_type": "bludgeoning", "attack_bonus": 4},
-        {"name": "Plague Bite", "damage_dice": "1d6", "damage_type": "necrotic", "attack_bonus": 4}
+        {
+          "name": "Slam",
+          "damage_dice": "1d8+2",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 4
+        },
+        {
+          "name": "Plague Bite",
+          "damage_dice": "1d6",
+          "damage_type": "necrotic",
+          "attack_bonus": 4
+        }
       ],
       "abilities": {
-        "special_moves": ["Undead Fortitude", "Disease Carrier"],
+        "special_moves": [
+          "Undead Fortitude",
+          "Disease Carrier"
+        ],
         "resistances": [],
-        "immunities": ["poison"]
+        "immunities": [
+          "poison"
+        ]
       },
       "xp_reward": 200,
-      "loot_table": ["plague_essence", "copper_coin"]
+      "loot_table": [
+        "plague_essence",
+        "copper_coin"
+      ]
     },
     {
       "id": "vampire_spawn",
@@ -211,18 +416,51 @@
       "hp": 82,
       "armor_class": 15,
       "speed": 30,
-      "stats": {"str": 16, "dex": 16, "con": 16, "int": 11, "wis": 10, "cha": 12},
+      "stats": {
+        "str": 16,
+        "dex": 16,
+        "con": 16,
+        "int": 11,
+        "wis": 10,
+        "cha": 12
+      },
       "attacks": [
-        {"name": "Claws", "damage_dice": "2d4+3", "damage_type": "slashing", "attack_bonus": 6},
-        {"name": "Bite", "damage_dice": "1d6+3", "damage_type": "piercing", "attack_bonus": 6}
+        {
+          "name": "Claws",
+          "damage_dice": "2d4+3",
+          "damage_type": "slashing",
+          "attack_bonus": 6
+        },
+        {
+          "name": "Bite",
+          "damage_dice": "1d6+3",
+          "damage_type": "piercing",
+          "attack_bonus": 6
+        }
       ],
       "abilities": {
-        "special_moves": ["Life Drain", "Spider Climb", "Charm"],
-        "resistances": ["necrotic", "bludgeoning", "piercing", "slashing"],
-        "immunities": ["poison", "exhaustion"]
+        "special_moves": [
+          "Life Drain",
+          "Spider Climb",
+          "Charm"
+        ],
+        "resistances": [
+          "necrotic",
+          "bludgeoning",
+          "piercing",
+          "slashing"
+        ],
+        "immunities": [
+          "poison",
+          "exhaustion"
+        ]
       },
       "xp_reward": 1800,
-      "loot_table": ["blood_vial", "vampire_fang", "silver_coin"]
+      "loot_table": [
+        "blood_vial",
+        "vampire_fang",
+        "silver_coin"
+      ]
     },
     {
       "id": "goblin",
@@ -232,18 +470,41 @@
       "hp": 7,
       "armor_class": 15,
       "speed": 30,
-      "stats": {"str": 8, "dex": 14, "con": 10, "int": 10, "wis": 8, "cha": 8},
+      "stats": {
+        "str": 8,
+        "dex": 14,
+        "con": 10,
+        "int": 10,
+        "wis": 8,
+        "cha": 8
+      },
       "attacks": [
-        {"name": "Scimitar", "damage_dice": "1d6-1", "damage_type": "slashing", "attack_bonus": 4},
-        {"name": "Shortbow", "damage_dice": "1d6+2", "damage_type": "piercing", "attack_bonus": 4}
+        {
+          "name": "Scimitar",
+          "damage_dice": "1d6-1",
+          "damage_type": "slashing",
+          "attack_bonus": 4
+        },
+        {
+          "name": "Shortbow",
+          "damage_dice": "1d6+2",
+          "damage_type": "piercing",
+          "attack_bonus": 4
+        }
       ],
       "abilities": {
-        "special_moves": ["Nimble Escape"],
+        "special_moves": [
+          "Nimble Escape"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 50,
-      "loot_table": ["copper_coin", "crude_dagger", "goblin_ear"]
+      "loot_table": [
+        "copper_coin",
+        "crude_dagger",
+        "goblin_ear"
+      ]
     },
     {
       "id": "goblin_boss",
@@ -253,18 +514,43 @@
       "hp": 21,
       "armor_class": 17,
       "speed": 30,
-      "stats": {"str": 10, "dex": 14, "con": 10, "int": 10, "wis": 8, "cha": 10},
+      "stats": {
+        "str": 10,
+        "dex": 14,
+        "con": 10,
+        "int": 10,
+        "wis": 8,
+        "cha": 10
+      },
       "attacks": [
-        {"name": "Scimitar", "damage_dice": "2d6", "damage_type": "slashing", "attack_bonus": 4},
-        {"name": "Javelin", "damage_dice": "1d6", "damage_type": "piercing", "attack_bonus": 2}
+        {
+          "name": "Scimitar",
+          "damage_dice": "2d6",
+          "damage_type": "slashing",
+          "attack_bonus": 4
+        },
+        {
+          "name": "Javelin",
+          "damage_dice": "1d6",
+          "damage_type": "piercing",
+          "attack_bonus": 2
+        }
       ],
       "abilities": {
-        "special_moves": ["Multiattack", "Nimble Escape", "Redirect Attack"],
+        "special_moves": [
+          "Multiattack",
+          "Nimble Escape",
+          "Redirect Attack"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 200,
-      "loot_table": ["silver_coin", "scimitar", "goblin_crown"]
+      "loot_table": [
+        "silver_coin",
+        "scimitar",
+        "goblin_crown"
+      ]
     },
     {
       "id": "orc",
@@ -274,18 +560,41 @@
       "hp": 15,
       "armor_class": 13,
       "speed": 30,
-      "stats": {"str": 16, "dex": 12, "con": 16, "int": 7, "wis": 11, "cha": 10},
+      "stats": {
+        "str": 16,
+        "dex": 12,
+        "con": 16,
+        "int": 7,
+        "wis": 11,
+        "cha": 10
+      },
       "attacks": [
-        {"name": "Greataxe", "damage_dice": "1d12+3", "damage_type": "slashing", "attack_bonus": 5},
-        {"name": "Javelin", "damage_dice": "1d6+3", "damage_type": "piercing", "attack_bonus": 5}
+        {
+          "name": "Greataxe",
+          "damage_dice": "1d12+3",
+          "damage_type": "slashing",
+          "attack_bonus": 5
+        },
+        {
+          "name": "Javelin",
+          "damage_dice": "1d6+3",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        }
       ],
       "abilities": {
-        "special_moves": ["Aggressive"],
+        "special_moves": [
+          "Aggressive"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 100,
-      "loot_table": ["copper_coin", "greataxe", "orc_tusk"]
+      "loot_table": [
+        "copper_coin",
+        "greataxe",
+        "orc_tusk"
+      ]
     },
     {
       "id": "orc_warchief",
@@ -295,18 +604,44 @@
       "hp": 93,
       "armor_class": 16,
       "speed": 30,
-      "stats": {"str": 18, "dex": 12, "con": 18, "int": 11, "wis": 11, "cha": 16},
+      "stats": {
+        "str": 18,
+        "dex": 12,
+        "con": 18,
+        "int": 11,
+        "wis": 11,
+        "cha": 16
+      },
       "attacks": [
-        {"name": "Greataxe", "damage_dice": "1d12+4", "damage_type": "slashing", "attack_bonus": 6},
-        {"name": "Javelin", "damage_dice": "1d6+4", "damage_type": "piercing", "attack_bonus": 6}
+        {
+          "name": "Greataxe",
+          "damage_dice": "1d12+4",
+          "damage_type": "slashing",
+          "attack_bonus": 6
+        },
+        {
+          "name": "Javelin",
+          "damage_dice": "1d6+4",
+          "damage_type": "piercing",
+          "attack_bonus": 6
+        }
       ],
       "abilities": {
-        "special_moves": ["Multiattack", "Aggressive", "Battle Cry", "Gruumsh's Fury"],
+        "special_moves": [
+          "Multiattack",
+          "Aggressive",
+          "Battle Cry",
+          "Gruumsh's Fury"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 1100,
-      "loot_table": ["gold_coin", "war_greataxe", "warchief_helmet"]
+      "loot_table": [
+        "gold_coin",
+        "war_greataxe",
+        "warchief_helmet"
+      ]
     },
     {
       "id": "bandit",
@@ -316,10 +651,27 @@
       "hp": 11,
       "armor_class": 12,
       "speed": 30,
-      "stats": {"str": 11, "dex": 12, "con": 12, "int": 10, "wis": 10, "cha": 10},
+      "stats": {
+        "str": 11,
+        "dex": 12,
+        "con": 12,
+        "int": 10,
+        "wis": 10,
+        "cha": 10
+      },
       "attacks": [
-        {"name": "Scimitar", "damage_dice": "1d6+1", "damage_type": "slashing", "attack_bonus": 3},
-        {"name": "Light Crossbow", "damage_dice": "1d8+1", "damage_type": "piercing", "attack_bonus": 3}
+        {
+          "name": "Scimitar",
+          "damage_dice": "1d6+1",
+          "damage_type": "slashing",
+          "attack_bonus": 3
+        },
+        {
+          "name": "Light Crossbow",
+          "damage_dice": "1d8+1",
+          "damage_type": "piercing",
+          "attack_bonus": 3
+        }
       ],
       "abilities": {
         "special_moves": [],
@@ -327,7 +679,11 @@
         "immunities": []
       },
       "xp_reward": 25,
-      "loot_table": ["copper_coin", "scimitar", "stolen_goods"]
+      "loot_table": [
+        "copper_coin",
+        "scimitar",
+        "stolen_goods"
+      ]
     },
     {
       "id": "bandit_captain",
@@ -337,18 +693,42 @@
       "hp": 65,
       "armor_class": 15,
       "speed": 30,
-      "stats": {"str": 15, "dex": 16, "con": 14, "int": 14, "wis": 11, "cha": 14},
+      "stats": {
+        "str": 15,
+        "dex": 16,
+        "con": 14,
+        "int": 14,
+        "wis": 11,
+        "cha": 14
+      },
       "attacks": [
-        {"name": "Scimitar", "damage_dice": "1d6+3", "damage_type": "slashing", "attack_bonus": 5},
-        {"name": "Dagger", "damage_dice": "1d4+3", "damage_type": "piercing", "attack_bonus": 5}
+        {
+          "name": "Scimitar",
+          "damage_dice": "1d6+3",
+          "damage_type": "slashing",
+          "attack_bonus": 5
+        },
+        {
+          "name": "Dagger",
+          "damage_dice": "1d4+3",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        }
       ],
       "abilities": {
-        "special_moves": ["Multiattack", "Parry"],
+        "special_moves": [
+          "Multiattack",
+          "Parry"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 450,
-      "loot_table": ["gold_coin", "captain_scimitar", "wanted_poster"]
+      "loot_table": [
+        "gold_coin",
+        "captain_scimitar",
+        "wanted_poster"
+      ]
     },
     {
       "id": "fire_elemental",
@@ -358,18 +738,50 @@
       "hp": 102,
       "armor_class": 13,
       "speed": 50,
-      "stats": {"str": 10, "dex": 17, "con": 16, "int": 6, "wis": 10, "cha": 7},
+      "stats": {
+        "str": 10,
+        "dex": 17,
+        "con": 16,
+        "int": 6,
+        "wis": 10,
+        "cha": 7
+      },
       "attacks": [
-        {"name": "Touch", "damage_dice": "2d6+3", "damage_type": "fire", "attack_bonus": 6},
-        {"name": "Slam", "damage_dice": "2d8+3", "damage_type": "fire", "attack_bonus": 6}
+        {
+          "name": "Touch",
+          "damage_dice": "2d6+3",
+          "damage_type": "fire",
+          "attack_bonus": 6
+        },
+        {
+          "name": "Slam",
+          "damage_dice": "2d8+3",
+          "damage_type": "fire",
+          "attack_bonus": 6
+        }
       ],
       "abilities": {
-        "special_moves": ["Fire Form", "Ignite", "Illuminate"],
-        "resistances": ["bludgeoning", "piercing", "slashing"],
-        "immunities": ["fire", "poison", "exhaustion"]
+        "special_moves": [
+          "Fire Form",
+          "Ignite",
+          "Illuminate"
+        ],
+        "resistances": [
+          "bludgeoning",
+          "piercing",
+          "slashing"
+        ],
+        "immunities": [
+          "fire",
+          "poison",
+          "exhaustion"
+        ]
       },
       "xp_reward": 1800,
-      "loot_table": ["fire_essence", "ember_shard"]
+      "loot_table": [
+        "fire_essence",
+        "ember_shard"
+      ]
     },
     {
       "id": "water_elemental",
@@ -379,18 +791,50 @@
       "hp": 114,
       "armor_class": 14,
       "speed": 30,
-      "stats": {"str": 18, "dex": 14, "con": 18, "int": 5, "wis": 10, "cha": 8},
+      "stats": {
+        "str": 18,
+        "dex": 14,
+        "con": 18,
+        "int": 5,
+        "wis": 10,
+        "cha": 8
+      },
       "attacks": [
-        {"name": "Slam", "damage_dice": "2d8+4", "damage_type": "bludgeoning", "attack_bonus": 7},
-        {"name": "Whelm", "damage_dice": "2d8+4", "damage_type": "bludgeoning", "attack_bonus": 7}
+        {
+          "name": "Slam",
+          "damage_dice": "2d8+4",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 7
+        },
+        {
+          "name": "Whelm",
+          "damage_dice": "2d8+4",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 7
+        }
       ],
       "abilities": {
-        "special_moves": ["Water Form", "Freeze", "Whelm"],
-        "resistances": ["acid", "bludgeoning", "piercing", "slashing"],
-        "immunities": ["poison", "exhaustion"]
+        "special_moves": [
+          "Water Form",
+          "Freeze",
+          "Whelm"
+        ],
+        "resistances": [
+          "acid",
+          "bludgeoning",
+          "piercing",
+          "slashing"
+        ],
+        "immunities": [
+          "poison",
+          "exhaustion"
+        ]
       },
       "xp_reward": 1800,
-      "loot_table": ["water_essence", "tidal_crystal"]
+      "loot_table": [
+        "water_essence",
+        "tidal_crystal"
+      ]
     },
     {
       "id": "earth_elemental",
@@ -400,18 +844,49 @@
       "hp": 126,
       "armor_class": 17,
       "speed": 30,
-      "stats": {"str": 20, "dex": 8, "con": 20, "int": 5, "wis": 10, "cha": 5},
+      "stats": {
+        "str": 20,
+        "dex": 8,
+        "con": 20,
+        "int": 5,
+        "wis": 10,
+        "cha": 5
+      },
       "attacks": [
-        {"name": "Slam", "damage_dice": "2d8+5", "damage_type": "bludgeoning", "attack_bonus": 8},
-        {"name": "Stomp", "damage_dice": "2d10+5", "damage_type": "bludgeoning", "attack_bonus": 8}
+        {
+          "name": "Slam",
+          "damage_dice": "2d8+5",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 8
+        },
+        {
+          "name": "Stomp",
+          "damage_dice": "2d10+5",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 8
+        }
       ],
       "abilities": {
-        "special_moves": ["Earth Glide", "Siege Monster", "Tremorsense"],
-        "resistances": ["bludgeoning", "piercing", "slashing"],
-        "immunities": ["poison", "exhaustion"]
+        "special_moves": [
+          "Earth Glide",
+          "Siege Monster",
+          "Tremorsense"
+        ],
+        "resistances": [
+          "bludgeoning",
+          "piercing",
+          "slashing"
+        ],
+        "immunities": [
+          "poison",
+          "exhaustion"
+        ]
       },
       "xp_reward": 1800,
-      "loot_table": ["earth_essence", "stone_shard"]
+      "loot_table": [
+        "earth_essence",
+        "stone_shard"
+      ]
     },
     {
       "id": "air_elemental",
@@ -421,39 +896,94 @@
       "hp": 90,
       "armor_class": 15,
       "speed": 90,
-      "stats": {"str": 14, "dex": 20, "con": 14, "int": 6, "wis": 10, "cha": 6},
+      "stats": {
+        "str": 14,
+        "dex": 20,
+        "con": 14,
+        "int": 6,
+        "wis": 10,
+        "cha": 6
+      },
       "attacks": [
-        {"name": "Slam", "damage_dice": "2d8+5", "damage_type": "bludgeoning", "attack_bonus": 8},
-        {"name": "Whirlwind", "damage_dice": "3d8", "damage_type": "bludgeoning", "attack_bonus": 8}
+        {
+          "name": "Slam",
+          "damage_dice": "2d8+5",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 8
+        },
+        {
+          "name": "Whirlwind",
+          "damage_dice": "3d8",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 8
+        }
       ],
       "abilities": {
-        "special_moves": ["Air Form", "Whirlwind", "Lightning Strike"],
-        "resistances": ["bludgeoning", "piercing", "slashing"],
-        "immunities": ["poison", "exhaustion", "lightning"]
+        "special_moves": [
+          "Air Form",
+          "Whirlwind",
+          "Lightning Strike"
+        ],
+        "resistances": [
+          "bludgeoning",
+          "piercing",
+          "slashing"
+        ],
+        "immunities": [
+          "poison",
+          "exhaustion",
+          "lightning"
+        ]
       },
       "xp_reward": 1800,
-      "loot_table": ["air_essence", "storm_crystal"]
+      "loot_table": [
+        "air_essence",
+        "storm_crystal"
+      ]
     },
     {
       "id": "troll",
       "name": "Troll",
-      "type": "humanoid",
+      "type": "beast",
       "cr": 5.0,
       "hp": 84,
       "armor_class": 15,
       "speed": 30,
-      "stats": {"str": 18, "dex": 13, "con": 20, "int": 7, "wis": 9, "cha": 7},
+      "stats": {
+        "str": 18,
+        "dex": 13,
+        "con": 20,
+        "int": 7,
+        "wis": 9,
+        "cha": 7
+      },
       "attacks": [
-        {"name": "Bite", "damage_dice": "1d6+4", "damage_type": "piercing", "attack_bonus": 7},
-        {"name": "Claw", "damage_dice": "2d6+4", "damage_type": "slashing", "attack_bonus": 7}
+        {
+          "name": "Bite",
+          "damage_dice": "1d6+4",
+          "damage_type": "piercing",
+          "attack_bonus": 7
+        },
+        {
+          "name": "Claw",
+          "damage_dice": "2d6+4",
+          "damage_type": "slashing",
+          "attack_bonus": 7
+        }
       ],
       "abilities": {
-        "special_moves": ["Multiattack", "Regeneration"],
+        "special_moves": [
+          "Multiattack",
+          "Regeneration"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 1800,
-      "loot_table": ["troll_hide", "troll_heart"]
+      "loot_table": [
+        "troll_hide",
+        "troll_heart"
+      ]
     },
     {
       "id": "ogre",
@@ -463,10 +993,27 @@
       "hp": 59,
       "armor_class": 11,
       "speed": 40,
-      "stats": {"str": 19, "dex": 8, "con": 16, "int": 5, "wis": 7, "cha": 7},
+      "stats": {
+        "str": 19,
+        "dex": 8,
+        "con": 16,
+        "int": 5,
+        "wis": 7,
+        "cha": 7
+      },
       "attacks": [
-        {"name": "Greatclub", "damage_dice": "2d8+4", "damage_type": "bludgeoning", "attack_bonus": 6},
-        {"name": "Javelin", "damage_dice": "2d6+4", "damage_type": "piercing", "attack_bonus": 6}
+        {
+          "name": "Greatclub",
+          "damage_dice": "2d8+4",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 6
+        },
+        {
+          "name": "Javelin",
+          "damage_dice": "2d6+4",
+          "damage_type": "piercing",
+          "attack_bonus": 6
+        }
       ],
       "abilities": {
         "special_moves": [],
@@ -474,7 +1021,11 @@
         "immunities": []
       },
       "xp_reward": 450,
-      "loot_table": ["gold_coin", "greatclub", "ogre_tooth"]
+      "loot_table": [
+        "gold_coin",
+        "greatclub",
+        "ogre_tooth"
+      ]
     },
     {
       "id": "wight",
@@ -484,18 +1035,50 @@
       "hp": 45,
       "armor_class": 14,
       "speed": 30,
-      "stats": {"str": 15, "dex": 14, "con": 16, "int": 10, "wis": 13, "cha": 15},
+      "stats": {
+        "str": 15,
+        "dex": 14,
+        "con": 16,
+        "int": 10,
+        "wis": 13,
+        "cha": 15
+      },
       "attacks": [
-        {"name": "Longsword", "damage_dice": "1d8+2", "damage_type": "slashing", "attack_bonus": 4},
-        {"name": "Life Drain", "damage_dice": "1d6+2", "damage_type": "necrotic", "attack_bonus": 4}
+        {
+          "name": "Longsword",
+          "damage_dice": "1d8+2",
+          "damage_type": "slashing",
+          "attack_bonus": 4
+        },
+        {
+          "name": "Life Drain",
+          "damage_dice": "1d6+2",
+          "damage_type": "necrotic",
+          "attack_bonus": 4
+        }
       ],
       "abilities": {
-        "special_moves": ["Multiattack", "Life Drain", "Create Zombie"],
-        "resistances": ["necrotic", "bludgeoning", "piercing", "slashing"],
-        "immunities": ["poison", "exhaustion"]
+        "special_moves": [
+          "Multiattack",
+          "Life Drain",
+          "Create Zombie"
+        ],
+        "resistances": [
+          "necrotic",
+          "bludgeoning",
+          "piercing",
+          "slashing"
+        ],
+        "immunities": [
+          "poison",
+          "exhaustion"
+        ]
       },
       "xp_reward": 700,
-      "loot_table": ["dark_iron_coin", "wight_essence"]
+      "loot_table": [
+        "dark_iron_coin",
+        "wight_essence"
+      ]
     },
     {
       "id": "wraith",
@@ -505,17 +1088,48 @@
       "hp": 67,
       "armor_class": 13,
       "speed": 60,
-      "stats": {"str": 6, "dex": 16, "con": 16, "int": 12, "wis": 14, "cha": 15},
+      "stats": {
+        "str": 6,
+        "dex": 16,
+        "con": 16,
+        "int": 12,
+        "wis": 14,
+        "cha": 15
+      },
       "attacks": [
-        {"name": "Life Drain", "damage_dice": "4d8+3", "damage_type": "necrotic", "attack_bonus": 6}
+        {
+          "name": "Life Drain",
+          "damage_dice": "4d8+3",
+          "damage_type": "necrotic",
+          "attack_bonus": 6
+        }
       ],
       "abilities": {
-        "special_moves": ["Incorporeal Movement", "Life Drain", "Create Specter"],
-        "resistances": ["acid", "fire", "lightning", "thunder", "bludgeoning", "piercing", "slashing"],
-        "immunities": ["cold", "necrotic", "poison"]
+        "special_moves": [
+          "Incorporeal Movement",
+          "Life Drain",
+          "Create Specter"
+        ],
+        "resistances": [
+          "acid",
+          "fire",
+          "lightning",
+          "thunder",
+          "bludgeoning",
+          "piercing",
+          "slashing"
+        ],
+        "immunities": [
+          "cold",
+          "necrotic",
+          "poison"
+        ]
       },
       "xp_reward": 1800,
-      "loot_table": ["wraithstone", "necrotic_essence"]
+      "loot_table": [
+        "wraithstone",
+        "necrotic_essence"
+      ]
     },
     {
       "id": "young_dragon",
@@ -525,19 +1139,52 @@
       "hp": 178,
       "armor_class": 18,
       "speed": 40,
-      "stats": {"str": 23, "dex": 10, "con": 21, "int": 14, "wis": 11, "cha": 19},
+      "stats": {
+        "str": 23,
+        "dex": 10,
+        "con": 21,
+        "int": 14,
+        "wis": 11,
+        "cha": 19
+      },
       "attacks": [
-        {"name": "Bite", "damage_dice": "2d10+6", "damage_type": "piercing", "attack_bonus": 10},
-        {"name": "Claw", "damage_dice": "2d6+6", "damage_type": "slashing", "attack_bonus": 10},
-        {"name": "Fire Breath", "damage_dice": "12d6", "damage_type": "fire", "attack_bonus": 0}
+        {
+          "name": "Bite",
+          "damage_dice": "2d10+6",
+          "damage_type": "piercing",
+          "attack_bonus": 10
+        },
+        {
+          "name": "Claw",
+          "damage_dice": "2d6+6",
+          "damage_type": "slashing",
+          "attack_bonus": 10
+        },
+        {
+          "name": "Fire Breath",
+          "damage_dice": "12d6",
+          "damage_type": "fire",
+          "attack_bonus": 0
+        }
       ],
       "abilities": {
-        "special_moves": ["Multiattack", "Fire Breath", "Frightful Presence"],
+        "special_moves": [
+          "Multiattack",
+          "Fire Breath",
+          "Frightful Presence"
+        ],
         "resistances": [],
-        "immunities": ["fire"]
+        "immunities": [
+          "fire"
+        ]
       },
       "xp_reward": 5900,
-      "loot_table": ["dragon_scale", "dragon_tooth", "gold_hoard", "ruby_gem"]
+      "loot_table": [
+        "dragon_scale",
+        "dragon_tooth",
+        "gold_hoard",
+        "ruby_gem"
+      ]
     },
     {
       "id": "ancient_dragon",
@@ -547,20 +1194,60 @@
       "hp": 546,
       "armor_class": 22,
       "speed": 40,
-      "stats": {"str": 30, "dex": 10, "con": 29, "int": 18, "wis": 15, "cha": 23},
+      "stats": {
+        "str": 30,
+        "dex": 10,
+        "con": 29,
+        "int": 18,
+        "wis": 15,
+        "cha": 23
+      },
       "attacks": [
-        {"name": "Bite", "damage_dice": "2d10+10", "damage_type": "piercing", "attack_bonus": 17},
-        {"name": "Claw", "damage_dice": "2d6+10", "damage_type": "slashing", "attack_bonus": 17},
-        {"name": "Tail", "damage_dice": "2d8+10", "damage_type": "bludgeoning", "attack_bonus": 17},
-        {"name": "Fire Breath", "damage_dice": "26d6", "damage_type": "fire", "attack_bonus": 0}
+        {
+          "name": "Bite",
+          "damage_dice": "2d10+10",
+          "damage_type": "piercing",
+          "attack_bonus": 17
+        },
+        {
+          "name": "Claw",
+          "damage_dice": "2d6+10",
+          "damage_type": "slashing",
+          "attack_bonus": 17
+        },
+        {
+          "name": "Tail",
+          "damage_dice": "2d8+10",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 17
+        },
+        {
+          "name": "Fire Breath",
+          "damage_dice": "26d6",
+          "damage_type": "fire",
+          "attack_bonus": 0
+        }
       ],
       "abilities": {
-        "special_moves": ["Multiattack", "Fire Breath", "Frightful Presence", "Legendary Actions", "Wing Attack"],
+        "special_moves": [
+          "Multiattack",
+          "Fire Breath",
+          "Frightful Presence",
+          "Legendary Actions",
+          "Wing Attack"
+        ],
         "resistances": [],
-        "immunities": ["fire"]
+        "immunities": [
+          "fire"
+        ]
       },
       "xp_reward": 62000,
-      "loot_table": ["ancient_dragon_scale", "dragon_heart", "legendary_hoard", "dragon_eye_gem"]
+      "loot_table": [
+        "ancient_dragon_scale",
+        "dragon_heart",
+        "legendary_hoard",
+        "dragon_eye_gem"
+      ]
     },
     {
       "id": "lich",
@@ -570,18 +1257,57 @@
       "hp": 135,
       "armor_class": 17,
       "speed": 30,
-      "stats": {"str": 11, "dex": 16, "con": 16, "int": 20, "wis": 14, "cha": 16},
+      "stats": {
+        "str": 11,
+        "dex": 16,
+        "con": 16,
+        "int": 20,
+        "wis": 14,
+        "cha": 16
+      },
       "attacks": [
-        {"name": "Paralyzing Touch", "damage_dice": "3d6", "damage_type": "cold", "attack_bonus": 12},
-        {"name": "Disrupt Life", "damage_dice": "8d6", "damage_type": "necrotic", "attack_bonus": 0}
+        {
+          "name": "Paralyzing Touch",
+          "damage_dice": "3d6",
+          "damage_type": "cold",
+          "attack_bonus": 12
+        },
+        {
+          "name": "Disrupt Life",
+          "damage_dice": "8d6",
+          "damage_type": "necrotic",
+          "attack_bonus": 0
+        }
       ],
       "abilities": {
-        "special_moves": ["Legendary Actions", "Lair Actions", "Rejuvenation", "Turn Resistance", "Legendary Resistance", "Spellcasting"],
-        "resistances": ["cold", "lightning", "necrotic"],
-        "immunities": ["poison", "exhaustion", "charmed", "frightened", "paralyzed"]
+        "special_moves": [
+          "Legendary Actions",
+          "Lair Actions",
+          "Rejuvenation",
+          "Turn Resistance",
+          "Legendary Resistance",
+          "Spellcasting"
+        ],
+        "resistances": [
+          "cold",
+          "lightning",
+          "necrotic"
+        ],
+        "immunities": [
+          "poison",
+          "exhaustion",
+          "charmed",
+          "frightened",
+          "paralyzed"
+        ]
       },
       "xp_reward": 33000,
-      "loot_table": ["phylactery_shard", "lich_crown", "spellbook_ancient", "necrotic_crystal"]
+      "loot_table": [
+        "phylactery_shard",
+        "lich_crown",
+        "spellbook_ancient",
+        "necrotic_crystal"
+      ]
     },
     {
       "id": "demon_lord",
@@ -591,19 +1317,59 @@
       "hp": 262,
       "armor_class": 19,
       "speed": 40,
-      "stats": {"str": 26, "dex": 15, "con": 27, "int": 20, "wis": 16, "cha": 22},
+      "stats": {
+        "str": 26,
+        "dex": 15,
+        "con": 27,
+        "int": 20,
+        "wis": 16,
+        "cha": 22
+      },
       "attacks": [
-        {"name": "Longsword of Vorpal Flame", "damage_dice": "3d8+8", "damage_type": "slashing", "attack_bonus": 14},
-        {"name": "Whip", "damage_dice": "2d6+8", "damage_type": "fire", "attack_bonus": 14},
-        {"name": "Abyssal Flame", "damage_dice": "6d6", "damage_type": "fire", "attack_bonus": 0}
+        {
+          "name": "Longsword of Vorpal Flame",
+          "damage_dice": "3d8+8",
+          "damage_type": "slashing",
+          "attack_bonus": 14
+        },
+        {
+          "name": "Whip",
+          "damage_dice": "2d6+8",
+          "damage_type": "fire",
+          "attack_bonus": 14
+        },
+        {
+          "name": "Abyssal Flame",
+          "damage_dice": "6d6",
+          "damage_type": "fire",
+          "attack_bonus": 0
+        }
       ],
       "abilities": {
-        "special_moves": ["Multiattack", "Legendary Actions", "Death Throes", "Fire Aura", "Magic Resistance", "Teleport"],
-        "resistances": ["cold", "lightning"],
-        "immunities": ["fire", "poison"]
+        "special_moves": [
+          "Multiattack",
+          "Legendary Actions",
+          "Death Throes",
+          "Fire Aura",
+          "Magic Resistance",
+          "Teleport"
+        ],
+        "resistances": [
+          "cold",
+          "lightning"
+        ],
+        "immunities": [
+          "fire",
+          "poison"
+        ]
       },
       "xp_reward": 25000,
-      "loot_table": ["demon_heart", "abyssal_blade", "demon_lord_horn", "hellfire_essence"]
+      "loot_table": [
+        "demon_heart",
+        "abyssal_blade",
+        "demon_lord_horn",
+        "hellfire_essence"
+      ]
     },
     {
       "id": "beholder",
@@ -613,39 +1379,94 @@
       "hp": 180,
       "armor_class": 18,
       "speed": 0,
-      "stats": {"str": 10, "dex": 14, "con": 18, "int": 17, "wis": 15, "cha": 17},
+      "stats": {
+        "str": 10,
+        "dex": 14,
+        "con": 18,
+        "int": 17,
+        "wis": 15,
+        "cha": 17
+      },
       "attacks": [
-        {"name": "Bite", "damage_dice": "4d6", "damage_type": "piercing", "attack_bonus": 5},
-        {"name": "Eye Ray", "damage_dice": "3d8", "damage_type": "varies", "attack_bonus": 7}
+        {
+          "name": "Bite",
+          "damage_dice": "4d6",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        },
+        {
+          "name": "Eye Ray",
+          "damage_dice": "3d8",
+          "damage_type": "varies",
+          "attack_bonus": 7
+        }
       ],
       "abilities": {
-        "special_moves": ["Legendary Actions", "Eye Rays", "Antimagic Cone", "Disintegrate Ray", "Death Ray"],
+        "special_moves": [
+          "Legendary Actions",
+          "Eye Rays",
+          "Antimagic Cone",
+          "Disintegrate Ray",
+          "Death Ray"
+        ],
         "resistances": [],
-        "immunities": ["prone"]
+        "immunities": [
+          "prone"
+        ]
       },
       "xp_reward": 10000,
-      "loot_table": ["beholder_eye", "antimagic_shard", "aberrant_flesh"]
+      "loot_table": [
+        "beholder_eye",
+        "antimagic_shard",
+        "aberrant_flesh"
+      ]
     },
     {
       "id": "mind_flayer",
       "name": "Mind Flayer",
-      "type": "humanoid",
+      "type": "aberration",
       "cr": 7.0,
       "hp": 71,
       "armor_class": 15,
       "speed": 30,
-      "stats": {"str": 11, "dex": 12, "con": 12, "int": 19, "wis": 17, "cha": 17},
+      "stats": {
+        "str": 11,
+        "dex": 12,
+        "con": 12,
+        "int": 19,
+        "wis": 17,
+        "cha": 17
+      },
       "attacks": [
-        {"name": "Tentacles", "damage_dice": "2d10+4", "damage_type": "psychic", "attack_bonus": 7},
-        {"name": "Extract Brain", "damage_dice": "10d10", "damage_type": "piercing", "attack_bonus": 7}
+        {
+          "name": "Tentacles",
+          "damage_dice": "2d10+4",
+          "damage_type": "psychic",
+          "attack_bonus": 7
+        },
+        {
+          "name": "Extract Brain",
+          "damage_dice": "10d10",
+          "damage_type": "piercing",
+          "attack_bonus": 7
+        }
       ],
       "abilities": {
-        "special_moves": ["Mind Blast", "Telepathy", "Extract Brain", "Innate Spellcasting"],
+        "special_moves": [
+          "Mind Blast",
+          "Telepathy",
+          "Extract Brain",
+          "Innate Spellcasting"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 2900,
-      "loot_table": ["mind_flayer_brain", "psionic_crystal", "illithid_robes"]
+      "loot_table": [
+        "mind_flayer_brain",
+        "psionic_crystal",
+        "illithid_robes"
+      ]
     },
     {
       "id": "medusa",
@@ -655,18 +1476,288 @@
       "hp": 127,
       "armor_class": 15,
       "speed": 30,
-      "stats": {"str": 10, "dex": 15, "con": 16, "int": 12, "wis": 13, "cha": 15},
+      "stats": {
+        "str": 10,
+        "dex": 15,
+        "con": 16,
+        "int": 12,
+        "wis": 13,
+        "cha": 15
+      },
       "attacks": [
-        {"name": "Shortsword", "damage_dice": "2d6", "damage_type": "slashing", "attack_bonus": 5},
-        {"name": "Snake Hair", "damage_dice": "1d4", "damage_type": "piercing", "attack_bonus": 5}
+        {
+          "name": "Shortsword",
+          "damage_dice": "2d6",
+          "damage_type": "slashing",
+          "attack_bonus": 5
+        },
+        {
+          "name": "Snake Hair",
+          "damage_dice": "1d4",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        }
       ],
       "abilities": {
-        "special_moves": ["Petrifying Gaze", "Poison Bite", "Multiattack"],
+        "special_moves": [
+          "Petrifying Gaze",
+          "Poison Bite",
+          "Multiattack"
+        ],
         "resistances": [],
         "immunities": []
       },
       "xp_reward": 2300,
-      "loot_table": ["medusa_scale", "petrification_essence", "venom_extract"]
+      "loot_table": [
+        "medusa_scale",
+        "petrification_essence",
+        "venom_extract"
+      ]
+    },
+    {
+      "id": "stone_giant",
+      "name": "Stone Giant",
+      "type": "humanoid",
+      "cr": 8.0,
+      "hp": 126,
+      "armor_class": 17,
+      "speed": 40,
+      "stats": {
+        "str": 23,
+        "dex": 15,
+        "con": 20,
+        "int": 10,
+        "wis": 12,
+        "cha": 9
+      },
+      "attacks": [
+        {
+          "name": "Greatclub",
+          "damage_dice": "3d8+6",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 9
+        },
+        {
+          "name": "Rock Throw",
+          "damage_dice": "4d10+6",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 9
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Rock Catching",
+          "Stone Camouflage"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 3900,
+      "loot_table": [
+        "stone_giant_club",
+        "granite_rune",
+        "giant_coin_pouch"
+      ]
+    },
+    {
+      "id": "cloud_giant",
+      "name": "Cloud Giant",
+      "type": "humanoid",
+      "cr": 9.0,
+      "hp": 200,
+      "armor_class": 14,
+      "speed": 40,
+      "stats": {
+        "str": 27,
+        "dex": 10,
+        "con": 22,
+        "int": 12,
+        "wis": 16,
+        "cha": 16
+      },
+      "attacks": [
+        {
+          "name": "Morningstar",
+          "damage_dice": "3d8+8",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 12
+        },
+        {
+          "name": "Rock Throw",
+          "damage_dice": "4d10+8",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 12
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Keen Smell",
+          "Cloud Walk",
+          "Spellcasting"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 5000,
+      "loot_table": [
+        "cloud_giant_morningstar",
+        "silver_cloud_gem",
+        "storm_essence",
+        "giant_coin_pouch"
+      ]
+    },
+    {
+      "id": "frost_giant",
+      "name": "Frost Giant",
+      "type": "humanoid",
+      "cr": 11.0,
+      "hp": 138,
+      "armor_class": 15,
+      "speed": 40,
+      "stats": {
+        "str": 23,
+        "dex": 9,
+        "con": 21,
+        "int": 9,
+        "wis": 10,
+        "cha": 12
+      },
+      "attacks": [
+        {
+          "name": "Greataxe",
+          "damage_dice": "3d12+6",
+          "damage_type": "slashing",
+          "attack_bonus": 9
+        },
+        {
+          "name": "Rock Throw",
+          "damage_dice": "4d10+6",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 9
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Giant Stature"
+        ],
+        "resistances": [
+          "cold"
+        ],
+        "immunities": [
+          "cold"
+        ]
+      },
+      "xp_reward": 7200,
+      "loot_table": [
+        "frost_giant_axe",
+        "glacial_shard",
+        "frozen_trophy",
+        "giant_coin_pouch"
+      ]
+    },
+    {
+      "id": "archmage",
+      "name": "Archmage",
+      "type": "humanoid",
+      "cr": 12.0,
+      "hp": 99,
+      "armor_class": 12,
+      "speed": 30,
+      "stats": {
+        "str": 10,
+        "dex": 14,
+        "con": 12,
+        "int": 20,
+        "wis": 15,
+        "cha": 16
+      },
+      "attacks": [
+        {
+          "name": "Dagger",
+          "damage_dice": "1d4+2",
+          "damage_type": "piercing",
+          "attack_bonus": 6
+        },
+        {
+          "name": "Arcane Blast",
+          "damage_dice": "8d6",
+          "damage_type": "force",
+          "attack_bonus": 9
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Spellcasting",
+          "Magic Resistance",
+          "Legendary Resistance"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 8400,
+      "loot_table": [
+        "spellbook_archmage",
+        "arcane_focus_gem",
+        "scroll_of_mastery",
+        "archmage_robes"
+      ]
+    },
+    {
+      "id": "vampire",
+      "name": "Vampire",
+      "type": "undead",
+      "cr": 13.0,
+      "hp": 144,
+      "armor_class": 16,
+      "speed": 30,
+      "stats": {
+        "str": 18,
+        "dex": 18,
+        "con": 18,
+        "int": 17,
+        "wis": 15,
+        "cha": 18
+      },
+      "attacks": [
+        {
+          "name": "Unarmed Strike",
+          "damage_dice": "1d8+4",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 9
+        },
+        {
+          "name": "Bite",
+          "damage_dice": "1d6+4",
+          "damage_type": "piercing",
+          "attack_bonus": 9
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Legendary Resistance",
+          "Misty Escape",
+          "Vampire Charm",
+          "Regeneration",
+          "Spider Climb"
+        ],
+        "resistances": [
+          "necrotic",
+          "bludgeoning",
+          "piercing",
+          "slashing"
+        ],
+        "immunities": [
+          "poison"
+        ]
+      },
+      "xp_reward": 10000,
+      "loot_table": [
+        "vampire_cloak",
+        "blood_crystal",
+        "vampire_ring",
+        "ancient_gold_coin",
+        "noble_signet"
+      ]
     }
   ]
 }

@@ -64,6 +64,7 @@ class Item:
     item_type: ItemType
     description: str = ""
     rarity: Rarity = Rarity.COMMON
+    id: Optional[str] = None  # slug identifier (e.g. "wolf_pelt")
     
     # Weapon properties
     damage_dice: Optional[str] = None
@@ -184,12 +185,20 @@ class ItemDatabase:
         Args:
             filepath: Path to JSON file containing item definitions.
                       Expected structure: {"items": [...]}
+        
+        Raises:
+            ValueError: If duplicate item ids are detected.
         """
         with open(filepath, 'r') as f:
             data = json.load(f)
 
+        seen_ids: set = set()
         for item_data in data['items']:
             item = self._item_from_json(item_data)
+            if item.id is not None:
+                if item.id in seen_ids:
+                    raise ValueError(f"Duplicate item id detected: '{item.id}'")
+                seen_ids.add(item.id)
             self.items.append(item)
 
     @staticmethod
@@ -202,6 +211,7 @@ class ItemDatabase:
             item_type=ItemType(data['type']),
             description=data.get('description', ''),
             rarity=Rarity[data.get('rarity', 'COMMON').upper()],
+            id=data.get('id'),
             damage_dice=data.get('damage_dice'),
             damage_type=data.get('damage_type'),
             armor_bonus=data.get('armor_bonus', 0),
@@ -218,16 +228,19 @@ class ItemDatabase:
 
     def get(self, name: str) -> Optional[Item]:
         """
-        Get item by name (case-insensitive).
+        Get item by name or id (case-insensitive).
 
         Args:
-            name: Item name
+            name: Item name or slug id
 
         Returns:
             Item if found, None otherwise
         """
+        name_lower = name.lower()
         for item in self.items:
-            if item.name.lower() == name.lower():
+            if item.name.lower() == name_lower:
+                return item
+            if item.id is not None and item.id.lower() == name_lower:
                 return item
         return None
 

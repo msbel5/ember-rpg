@@ -15,6 +15,7 @@ class MonsterType(Enum):
     HUMANOID = "humanoid"
     ELEMENTAL = "elemental"
     BOSS = "boss"
+    ABERRATION = "aberration"
 
 
 @dataclass

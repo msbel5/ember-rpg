@@ -379,3 +379,139 @@ class TestCategoryCoverage:
         db = get_db()
         demons = [m for m in db.monsters if "demon" in m.name.lower()]
         assert len(demons) >= 1
+
+
+# ---------------------------------------------------------------------------
+# Loot table resolution via ItemDatabase
+# ---------------------------------------------------------------------------
+
+
+class TestLootTableResolution:
+    """Verify all monster loot table IDs resolve in ItemDatabase."""
+
+    ITEM_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "items.json")
+
+    def get_item_db(self):
+        from engine.core.item import ItemDatabase
+        return ItemDatabase(self.ITEM_PATH)
+
+    def test_all_loot_ids_resolve(self):
+        """Every loot_table entry in monsters.json must resolve via ItemDatabase.get()."""
+        monster_db = get_db()
+        item_db = self.get_item_db()
+        missing = []
+        for monster in monster_db.monsters:
+            for loot_id in monster.loot_table:
+                if item_db.get(loot_id) is None:
+                    missing.append(f"{monster.name}: {loot_id}")
+        assert not missing, f"Unresolved loot IDs:\n" + "\n".join(missing)
+
+    def test_item_db_get_by_id(self):
+        """ItemDatabase.get() should find items by slug id."""
+        item_db = self.get_item_db()
+        assert item_db.get("wolf_pelt") is not None
+        assert item_db.get("dragon_scale") is not None
+        assert item_db.get("gold_coin") is not None
+
+    def test_item_db_get_by_name_still_works(self):
+        """ItemDatabase.get() by name should still work after id addition."""
+        item_db = self.get_item_db()
+        assert item_db.get("Potion of Healing") is not None
+        assert item_db.get("Longsword") is not None
+
+
+# ---------------------------------------------------------------------------
+# Duplicate ID detection
+# ---------------------------------------------------------------------------
+
+
+class TestDuplicateIdDetection:
+    """ItemDatabase should raise on duplicate item ids."""
+
+    def test_no_duplicates_in_real_data(self):
+        """Real items.json must have no duplicate ids."""
+        item_path = os.path.join(os.path.dirname(__file__), "..", "data", "items.json")
+        from engine.core.item import ItemDatabase
+        # Should not raise
+        db = ItemDatabase(item_path)
+        ids = [i.id for i in db.items if i.id is not None]
+        assert len(ids) == len(set(ids)), "Duplicate item ids found in items.json"
+
+    def test_duplicate_id_raises(self, tmp_path):
+        """Loading a JSON with duplicate ids should raise ValueError."""
+        import json as _json
+        from engine.core.item import ItemDatabase
+        dup_data = {
+            "items": [
+                {"id": "test_item", "name": "Item A", "type": "currency", "rarity": "COMMON", "value": 1, "weight": 0.1, "description": ""},
+                {"id": "test_item", "name": "Item B", "type": "currency", "rarity": "COMMON", "value": 2, "weight": 0.1, "description": ""},
+            ]
+        }
+        p = tmp_path / "dup_items.json"
+        p.write_text(_json.dumps(dup_data))
+        with pytest.raises(ValueError, match="Duplicate item id"):
+            ItemDatabase(str(p))
+
+
+# ---------------------------------------------------------------------------
+# CR range filter tests
+# ---------------------------------------------------------------------------
+
+
+class TestCRRangeFilter:
+    """Combined CR range filter tests."""
+
+    def test_cr_band_8_to_9(self):
+        """CR 8-9 band should have at least 2 monsters."""
+        db = get_db()
+        results = db.filter(min_cr=8.0, max_cr=9.0)
+        assert len(results) >= 2, f"Expected >=2 monsters in CR 8-9, got {len(results)}"
+
+    def test_cr_band_11_to_12(self):
+        """CR 11-12 band should have at least 2 monsters."""
+        db = get_db()
+        results = db.filter(min_cr=11.0, max_cr=12.0)
+        assert len(results) >= 2, f"Expected >=2 monsters in CR 11-12, got {len(results)}"
+
+    def test_cr_band_8_to_13(self):
+        """CR 8-13 band should have at least 5 monsters (new additions)."""
+        db = get_db()
+        results = db.filter(min_cr=8.0, max_cr=13.0)
+        assert len(results) >= 5, f"Expected >=5 monsters in CR 8-13, got {len(results)}"
+
+    def test_cr_range_exclusive_bounds(self):
+        """max_cr and min_cr are inclusive."""
+        db = get_db()
+        at_8 = db.filter(min_cr=8.0, max_cr=8.0)
+        assert all(m.cr == 8.0 for m in at_8)
+
+
+# ---------------------------------------------------------------------------
+# Type classification checks
+# ---------------------------------------------------------------------------
+
+
+class TestTypeClassification:
+    """Verify specific monster type assignments."""
+
+    def test_troll_is_beast(self):
+        db = get_db()
+        troll = db.get("Troll")
+        assert troll is not None
+        assert troll.type == MonsterType.BEAST, f"Troll should be BEAST, got {troll.type}"
+
+    def test_mind_flayer_is_aberration(self):
+        db = get_db()
+        mf = db.get("Mind Flayer")
+        assert mf is not None
+        assert mf.type == MonsterType.ABERRATION, f"Mind Flayer should be ABERRATION, got {mf.type}"
+
+    def test_aberration_enum_exists(self):
+        assert hasattr(MonsterType, "ABERRATION")
+        assert MonsterType.ABERRATION.value == "aberration"
+
+    def test_phase_spider_hp_55(self):
+        db = get_db()
+        ps = db.get("Phase Spider")
+        assert ps is not None
+        assert ps.hp == 55, f"Phase Spider HP should be 55, got {ps.hp}"
