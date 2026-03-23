@@ -10,6 +10,9 @@ import uuid
 from engine.core.character import Character
 from engine.core.dm_agent import DMContext, SceneType
 from engine.core.combat import CombatManager
+from engine.world import WorldState
+from engine.npc.npc_memory import NPCMemoryManager
+from engine.world.consequence import CascadeEngine
 
 
 @dataclass
@@ -29,8 +32,19 @@ class GameSession:
     dm_context: DMContext
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     combat: Optional[CombatManager] = None
+    world_state: Optional[WorldState] = None
+    npc_memory: Optional[NPCMemoryManager] = None
+    cascade_engine: Optional[CascadeEngine] = None
     created_at: datetime = field(default_factory=datetime.now)
     last_action: datetime = field(default_factory=datetime.now)
+
+    def __post_init__(self):
+        if self.world_state is None:
+            self.world_state = WorldState(game_id=self.session_id)
+        if self.npc_memory is None:
+            self.npc_memory = NPCMemoryManager(session_id=self.session_id)
+        if self.cascade_engine is None:
+            self.cascade_engine = CascadeEngine()
 
     def touch(self):
         """Update last_action timestamp."""
