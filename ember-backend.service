@@ -1,0 +1,18 @@
+[Unit]
+Description=Ember RPG FastAPI Backend
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=msbel
+WorkingDirectory=/home/msbel/.openclaw/workspace/projects/frp-game/frp-backend
+ExecStart=/home/msbel/.openclaw/workspace/projects/frp-game/frp-backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8765
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
