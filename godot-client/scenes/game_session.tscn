@@ -1,0 +1,121 @@
+[gd_scene load_steps=2 format=3 uid="uid://cgamesession"]
+
+[ext_resource type="Script" path="res://scenes/game_session.gd" id="1"]
+
+[node name="GameSession" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.06, 0.05, 0.1, 1)
+
+[node name="MainLayout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+
+[node name="PlayerStatus" type="HBoxContainer" parent="MainLayout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 32)
+
+[node name="PlayerInfo" type="Label" parent="MainLayout/PlayerStatus"]
+layout_mode = 2
+custom_minimum_size = Vector2(250, 0)
+text = "Lv.1 Warrior  Hero"
+
+[node name="HPBar" type="ProgressBar" parent="MainLayout/PlayerStatus"]
+layout_mode = 2
+custom_minimum_size = Vector2(150, 0)
+max_value = 20.0
+value = 20.0
+show_percentage = false
+
+[node name="HPLabel" type="Label" parent="MainLayout/PlayerStatus"]
+layout_mode = 2
+text = "20/20"
+
+[node name="XPBar" type="ProgressBar" parent="MainLayout/PlayerStatus"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 0)
+show_percentage = false
+
+[node name="ContentSplit" type="HSplitContainer" parent="MainLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MapPanel" type="Panel" parent="MainLayout/ContentSplit"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 0)
+
+[node name="LocationLabel" type="Label" parent="MainLayout/ContentSplit/MapPanel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 10.0
+offset_right = 100.0
+offset_bottom = 30.0
+grow_horizontal = 2
+text = "Unknown Location"
+horizontal_alignment = 1
+
+[node name="NarrativePanel" type="RichTextLabel" parent="MainLayout/ContentSplit"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 0)
+bbcode_enabled = true
+text = ""
+scroll_following = true
+
+[node name="InputBar" type="HBoxContainer" parent="MainLayout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+
+[node name="InputLabel" type="Label" parent="MainLayout/InputBar"]
+layout_mode = 2
+text = " > "
+
+[node name="TextInput" type="LineEdit" parent="MainLayout/InputBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "What do you do?..."
+
+[node name="SendButton" type="Button" parent="MainLayout/InputBar"]
+layout_mode = 2
+text = "Send"
+
+[node name="CombatHUD" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -250.0
+offset_right = 408.0
+offset_bottom = -50.0
+grow_vertical = 0
+
+[node name="VBox" type="VBoxContainer" parent="CombatHUD"]
+layout_mode = 2
+
+[node name="RoundLabel" type="Label" parent="CombatHUD/VBox"]
+layout_mode = 2
+text = "Round 1"
+
+[node name="CombatantList" type="VBoxContainer" parent="CombatHUD/VBox"]
+layout_mode = 2
