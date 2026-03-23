@@ -1,6 +1,9 @@
 # PRD: Game Flow Architecture — The Living DM Experience
-# This is the CORE DESIGN DOCUMENT for how the game actually FEELS to play
-# Priority: CRITICAL — This defines the player experience
+**Project:** Ember RPG  
+**Phase:** 4  
+**Author:** Alcyone (CAPTAIN)  
+**Date:** 2026-03-23  
+**Status:** Draft
 
 ## 1. Vision
 
@@ -307,3 +310,141 @@ The key insight: elements appear on screen AS the DM narrates.
 5. Godot: NPC dialogue panel
 6. Godot: Narrative text crawl with reveal triggers
 7. Integration: Connect Godot ↔ Backend streaming
+
+---
+
+## Header
+**Project:** Ember RPG
+**Phase:** 4 (Living DM Experience)
+**Author:** Alcyone (CAPTAIN)
+**Date:** 2026-03-23
+**Status:** Draft
+
+---
+
+## 11. Functional Requirements
+
+**FR-01:** The Orchestrator must coordinate MAP_GENERATOR, ENTITY_PLACER, and DM_NARRATOR in sequence when a player enters a new area, returning a combined scene response with map_data, entities, and narrative_stream.
+
+**FR-02:** DM_NARRATOR must generate narrative with `[REVEAL:entity_id]` markers timed to the progressive disclosure of entities.
+
+**FR-03:** ENTITY_PLACER must populate NPCs, items, and enemies based on location template and world_state (no enemies in peaceful areas, merchants in market zones).
+
+**FR-04:** All three interaction modes (text input, map right-click, NPC click) must produce identical game outcomes for the same logical action.
+
+**FR-05:** MAP_GENERATOR output must be deterministic for the same `location_id + seed` combination.
+
+**FR-06:** Each subagent must be independently callable (unit-testable without the full orchestrator pipeline).
+
+**FR-07:** DM_NARRATOR must never modify game state directly — it only produces narrative strings.
+
+**FR-08:** The streaming response format must include `reveal` events with entity IDs and delay_ms values for progressive client rendering.
+
+**FR-09:** The Orchestrator endpoint must return the full scene response (map + entities + narrative_stream + available_actions) within 5 seconds.
+
+**FR-10:** Context menus must show class-specific options (e.g., Rogue sees `[Lock pick]` on doors; Mage sees `[Detect magic]` on items).
+
+---
+
+## 12. Data Structures
+
+```python
+@dataclass
+class SceneRequest:
+    location: str
+    player: dict          # player_state snapshot
+    world_state: dict
+    time_of_day: str
+
+@dataclass
+class NarrativeChunk:
+    text: str
+    delay_ms: int         # Client waits this long before displaying
+    reveal: Optional[dict]  # {"type": "npc"|"item"|"area", "id": str, "highlight": bool}
+
+@dataclass
+class SceneResponse:
+    narrative_stream: List[NarrativeChunk]
+    map_data: dict
+    entities: dict        # {"npcs": [...], "items": [...], "enemies": [...]}
+    available_actions: List[str]
+```
+
+---
+
+## 13. Public API
+
+```python
+# Orchestrator endpoint
+POST /game/session/{id}/enter_area
+Body: SceneRequest
+Returns: SceneResponse
+
+# Subagents (internal, independently callable)
+class MapGenerator:
+    def generate(self, location: str, seed: int) -> dict: ...
+
+class EntityPlacer:
+    def populate(self, map_data: dict, location_template: dict, world_state: dict) -> dict: ...
+
+class DMNarrator:
+    def narrate(self, context: dict) -> List[NarrativeChunk]: ...
+```
+
+---
+
+## 14. Acceptance Criteria (Standard Format)
+
+AC-01 [FR-01]: Given a player entering "harbor_town", when the Orchestrator processes the scene, then the response contains map_data (tile grid), entities (at least one NPC), and narrative_stream (at least 3 chunks).
+
+AC-02 [FR-02]: Given DM_NARRATOR narrating a scene with a guard entity, when narrative is generated, then the narrative_stream contains at least one chunk with `reveal.id == "guard_1"`.
+
+AC-03 [FR-04]: Given an action "attack goblin" submitted via text input, and the same action triggered via right-click context menu on the goblin sprite, when both are processed, then both produce identical `ActionResult` objects.
+
+AC-04 [FR-05]: Given `MapGenerator.generate("harbor_town", seed=42)` called twice, when `to_ascii()` outputs are compared, then they are identical.
+
+AC-05 [FR-06]: Given `DMNarrator.narrate(context)` called in isolation without Orchestrator, when valid context is passed, then a non-empty narrative_stream is returned.
+
+AC-06 [FR-07]: Given DM_NARRATOR narrates a combat result, when `world_state` is inspected before and after, then no fields have changed (narrator is stateless).
+
+AC-07 [FR-09]: Given a complex scene request, when the Orchestrator endpoint is called, then the full response is returned within 5 seconds.
+
+AC-08 [FR-10]: Given a Rogue class player, when right-clicking a locked door, then the context menu contains `[Lock pick]`. Given a Warrior class, then `[Lock pick]` does not appear.
+
+---
+
+## 15. Performance Requirements
+
+- Full scene generation (map + entities + narrative): < 5 seconds (includes 1 LLM call)
+- MAP_GENERATOR (deterministic, no LLM): < 100ms
+- ENTITY_PLACER (deterministic, no LLM): < 50ms
+- DM_NARRATOR (LLM): 2-4 seconds (Haiku target)
+- Streaming first chunk delivered: < 1 second
+
+---
+
+## 16. Error Handling
+
+| Condition | Behavior |
+|---|---|
+| LLM unavailable (DM_NARRATOR) | Fall back to template-based narrative |
+| Unknown location ID | Return generic "unknown area" map with placeholder narrative |
+| ENTITY_PLACER fails | Return empty entities (not an error, just sparse scene) |
+| Orchestrator timeout | Return partial response with what was generated |
+
+---
+
+## 17. Integration Points
+
+- **Map Generator (Phase 4):** MAP_GENERATOR delegates to `DungeonGenerator`/`TownGenerator`/`WildernessGenerator`
+- **NPC Memory (Phase 3b):** ENTITY_PLACER reads NPC memory to set initial `revealed` state
+- **World State (Phase 3a):** ENTITY_PLACER filters enemies/items based on world flags (cleared, looted)
+- **DM Agent (Module 6):** DM_NARRATOR wraps `DMAIAgent.narrate()` with scene context
+- **Godot Client:** Consumes `narrative_stream` for progressive tile/entity reveal
+
+---
+
+## 18. Test Coverage Target
+
+- **Target:** ≥ 85% line coverage (LLM paths use mocked callables)
+- **Must cover:** subagent isolation tests (each callable independently), determinism test for map, streaming format validation, class-specific context menu logic

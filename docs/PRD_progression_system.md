@@ -1,9 +1,9 @@
 # PRD: Leveling & Progression System (Module 5)
-**Project:** Ember RPG — FRP AI Game  
-**Module:** Phase 2, Module 5  
-**Role:** CAPTAIN (Sonnet — Opus unavailable, Sonnet planning)  
+**Project:** Ember RPG  
+**Phase:** 2  
+**Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-23  
-**Status:** Planning → Implementation
+**Status:** Draft
 
 ---
 
@@ -244,3 +244,90 @@ def test_mage_spell_point_increase():
 - [ ] Coverage ≥ 95%
 - [ ] Level calculation < 1ms
 - [ ] 4 classes × 5 levels = 20 abilities in JSON
+
+---
+
+## 10. Public API
+
+```python
+class ProgressionSystem:
+    XP_THRESHOLDS: List[int]  # Index = level-1, value = XP required
+
+    def get_level_for_xp(self, xp: int) -> int:
+        """Returns character level (1-20) for given XP total. O(n) scan."""
+
+    def add_xp(self, character: Character, amount: int) -> Optional[LevelUpResult]:
+        """Adds amount to character.xp. If level-up occurs, applies bonuses and returns LevelUpResult. Returns None if no level-up."""
+
+    def get_abilities(self, class_name: str, level: int) -> List[ClassAbility]:
+        """Returns all abilities unlocked at or below given level for the class."""
+
+@dataclass
+class ClassAbility:
+    name: str
+    description: str
+    passive: bool
+    required_level: int
+    class_name: str
+    cost: int = 0  # AP cost if active (0 = no cost / passive)
+
+@dataclass
+class LevelUpResult:
+    old_level: int
+    new_level: int
+    new_abilities: List[ClassAbility]
+    stat_bonus: Optional[str]  # e.g., "MIG"
+    hp_increase: int
+    sp_increase: int
+```
+
+---
+
+## 11. Acceptance Criteria (Standard Format)
+
+AC-01 [FR1]: Given `ProgressionSystem`, when `get_level_for_xp(0)` is called, then result is 1. When `get_level_for_xp(300)` is called, then result is 2. When `get_level_for_xp(354999)` is called, then result is 19.
+
+AC-02 [FR2]: Given a Character with `xp=0, level=1`, when `add_xp(char, 300)` is called, then `char.level == 2`, `char.xp == 300`, and the returned `LevelUpResult.new_level == 2`.
+
+AC-03 [FR2]: Given a Character with `xp=0, level=1`, when `add_xp(char, 2700)` is called, then `char.level == 4` (multi-level jump handled correctly).
+
+AC-04 [FR3]: Given `get_abilities("warrior", 3)`, when called, then 3 abilities are returned (Combat Stance, Second Wind, Extra Attack) and all have `class_name == "warrior"`.
+
+AC-05 [FR4]: Given a Character at level 1, when leveled to 2 (even level), then `LevelUpResult.stat_bonus` is not None (stat bonus awarded).
+
+AC-06 [FR4]: Given a Mage Character, when `add_xp()` triggers level-up, then `LevelUpResult.sp_increase > 0` and `character.max_spell_points` increases by that amount.
+
+---
+
+## 12. Performance Requirements
+
+- `get_level_for_xp()`: < 1ms (20-element scan)
+- `add_xp()` with level-up: < 5ms
+- `get_abilities()`: < 1ms
+
+---
+
+## 13. Error Handling
+
+| Condition | Method | Behavior |
+|---|---|---|
+| `amount < 0` | `add_xp()` | No specification in MVP; should be treated as 0 or raise ValueError |
+| Unknown class name | `get_abilities()` | Returns empty list (no abilities found) |
+| `xp` already at max (level 20) | `add_xp()` | Returns None; no further level-up |
+| Character missing `xp` field | `add_xp()` | AttributeError — caller must ensure Character has `xp` field |
+
+---
+
+## 14. Integration Points
+
+- **Character System (Module 1):** Reads and mutates `character.xp`, `character.level`, `character.stats`, `character.max_hp`, `character.max_spell_points`
+- **Combat Engine (Module 3):** Awards XP on kill via `add_xp()` call from CombatManager
+- **Class Abilities Data:** `data/class_abilities.json` — loaded by ProgressionSystem at init
+- **DM Agent (Module 6):** Receives `LevelUpResult` for level-up narrative
+
+---
+
+## 15. Test Coverage Target
+
+- **Target:** ≥ 95% line coverage
+- **Must cover:** XP threshold boundaries (exact boundary values), multi-level jump, level-20 cap, stat bonus at even levels, SP increase for Mage vs Warrior, empty class abilities for unknown class

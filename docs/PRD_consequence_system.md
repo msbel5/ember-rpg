@@ -1,6 +1,9 @@
 # PRD: Consequence Cascading System
-# Phase 3c — Makes the World Feel Alive
-# Priority: HIGH — BG3's best feature, AI Dungeon's biggest weakness
+**Project:** Ember RPG  
+**Phase:** 3  
+**Author:** Alcyone (CAPTAIN)  
+**Date:** 2026-03-23  
+**Status:** Draft
 
 ## 1. Overview
 Every player action ripples through the world. Kill a merchant → prices rise → town reputation drops → guards become hostile → new quest appears to restore order. This is the system that makes Ember RPG feel alive.
@@ -147,3 +150,131 @@ class CascadeEngine:
 4. Chain: help merchant → get discount → buy cheap → sell expensive elsewhere
 5. Save/load with pending delayed effects → verify they still trigger
 6. Max cascade depth → verify no infinite loop
+
+---
+
+## Header
+**Project:** Ember RPG
+**Phase:** 3c
+**Author:** Alcyone (CAPTAIN)
+**Date:** 2026-03-23
+**Status:** Draft
+
+---
+
+## 7. Functional Requirements
+
+**FR-01:** `CascadeEngine.process_action(action, world_state)` must evaluate all registered rules, apply matching rules with `delay=0` immediately, and queue rules with `delay>0` as `PendingEffect`.
+
+**FR-02:** Recursive cascade chains must be limited to a maximum depth of 5 to prevent infinite loops.
+
+**FR-03:** `ConsequenceRule` with `probability < 1.0` must only trigger with the specified probability (random check per evaluation).
+
+**FR-04:** `CascadeEngine.tick(world_state)` must process all `PendingEffect` entries whose `trigger_time <= world_state.time` and remove them after application.
+
+**FR-05:** Killing an NPC with `role=merchant` must immediately trigger: prices +30% in location AND faction reputation -20.
+
+**FR-06:** A witnessed kill must queue a bounty `PendingEffect` with `delay=24` game hours.
+
+**FR-07:** `GET /game/session/{id}/consequences` must return a list of active (applied) consequences for the session.
+
+**FR-08:** `GET /game/session/{id}/pending` must return a list of queued pending effects with their trigger times.
+
+**FR-09:** Pending effects must be included in save/load serialization so they survive session restart.
+
+**FR-10:** Each consequence application must append an entry to `world_state.history`.
+
+---
+
+## 8. Data Structures
+
+```python
+@dataclass
+class ConsequenceRule:
+    trigger: str           # e.g. "npc_killed", "quest_completed"
+    conditions: dict       # e.g. {"npc_role": "merchant"}
+    effects: List[Effect]  # World state changes to apply
+    delay: int = 0         # Game hours before effect fires
+    probability: float = 1.0  # 0.0 - 1.0
+
+@dataclass
+class PendingEffect:
+    rule: ConsequenceRule
+    trigger_time: int      # Game time when effect fires (world_state.time + delay)
+
+class CascadeEngine:
+    rules: List[ConsequenceRule]
+    pending_effects: List[PendingEffect]
+
+    def process_action(self, action, world_state, depth: int = 0) -> List: ...
+    def tick(self, world_state) -> None: ...
+```
+
+---
+
+## 9. Public API
+
+```python
+class CascadeEngine:
+    def __init__(self, rules: List[ConsequenceRule])
+
+    def process_action(self, action, world_state, depth: int = 0) -> List[Effect]:
+        """Evaluates all rules against action. Applies immediate effects, queues delayed.
+        Recursive up to depth=5. Returns list of triggered effects."""
+
+    def tick(self, world_state) -> None:
+        """Processes all pending effects whose trigger_time <= world_state.time.
+        Removes processed effects from queue."""
+```
+
+---
+
+## 10. Acceptance Criteria (Standard Format)
+
+AC-01 [FR-01]: Given a CascadeEngine with a merchant-kill rule, when `process_action({"type": "npc_killed", "npc_role": "merchant"}, world_state)` is called, then location prices increase by 30% and faction reputation decreases by 20 in world_state.
+
+AC-02 [FR-02]: Given a set of rules that could cascade indefinitely, when `process_action()` is called, then the recursion stops at depth 5 and no infinite loop occurs.
+
+AC-03 [FR-03]: Given a rule with `probability=0.0`, when `process_action()` evaluates it, then the rule never fires.
+
+AC-04 [FR-04]: Given a pending effect with `trigger_time=100` and `world_state.time=99`, when `tick()` is called, then the effect does not fire. When `world_state.time=100`, then the effect fires and is removed from the queue.
+
+AC-05 [FR-05]: Given a kill action with `witnessed=True`, when processed, then a bounty `PendingEffect` appears in the queue with `trigger_time = world_state.time + 24`.
+
+AC-06 [FR-09]: Given a session with pending effects, when saved and reloaded, then pending effects are present in the reloaded session and fire at the correct time.
+
+---
+
+## 11. Performance Requirements
+
+- `process_action()` for 20 rules: < 10ms
+- `tick()` for 50 pending effects: < 5ms
+- Cascade chain depth 5: < 50ms total
+
+---
+
+## 12. Error Handling
+
+| Condition | Behavior |
+|---|---|
+| Cascade depth > 5 | Stop recursion silently, log warning |
+| Rule with invalid effect type | Skip rule, log error |
+| `tick()` called with no pending effects | No-op, no error |
+| Missing world_state field | Rule condition check returns False (no match) |
+
+---
+
+## 13. Integration Points
+
+- **World State (Phase 3a):** All effects mutate `world_state` fields (prices, reputation, flags)
+- **NPC Memory (Phase 3b):** Kill/social consequences update NPC dispositions
+- **Quest System (Phase 4):** Quest completion/failure triggers consequence rules
+- **DM Agent (Module 6):** Receives updated world context after cascade for narrative
+- **Save/Load:** `pending_effects` serialized with session
+
+---
+
+## 14. Test Coverage Target
+
+- **Target:** ≥ 90% line coverage
+- **Must cover:** immediate effect, delayed effect, cascade chain, max depth stop, probability=0 no-fire, probability=1 always-fires, tick with expired and non-expired effects, save/load round-trip of pending effects

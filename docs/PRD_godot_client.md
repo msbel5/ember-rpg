@@ -1,10 +1,9 @@
 # PRD: Godot 4.6 Client — Ember RPG
-**Version:** 1.0  
-**Status:** Draft  
+**Project:** Ember RPG  
+**Phase:** 1  
 **Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-23  
-**Engine:** Godot 4.6 (GDScript 2.0)  
-**Backend:** FastAPI — http://localhost:8765
+**Status:** Draft
 
 ---
 
@@ -352,3 +351,105 @@ signal narrative_received(text: String)
 | OQ2 | Save/load via file or backend? | Mami | Pending |
 | OQ3 | Target tile size: 16×16 or 32×32? | Mami | Pending |
 | OQ4 | NPC portrait art style? | Mami | Pending |
+
+---
+
+## 15. Functional Requirements
+
+**FR-01:** The client must connect to the backend via `POST /game/session/new` on new game creation and display the opening narrative within 2 seconds.
+
+**FR-02:** Player text input (Enter key or Send button) must call `POST /game/session/{id}/action` and update NarrativePanel with the returned narrative.
+
+**FR-03:** When `ActionResult.scene == "combat"` and `combat_state != null`, the CombatHUD must be shown with HP bars and AP indicators for all combatants.
+
+**FR-04:** When `ActionResult.scene != "combat"`, the CombatHUD must be hidden.
+
+**FR-05:** The `PlayerStatusBar` must reflect `player.hp / player.max_hp` after every action result.
+
+**FR-06:** The NarrativePanel must auto-scroll to the latest text after every update.
+
+**FR-07:** When `ActionResult.level_up != null`, a level-up notification panel must flash with the new level number.
+
+**FR-08:** When the backend returns HTTP 500 or is unreachable, the client must append `[Error: backend unreachable]` to the NarrativePanel without crashing.
+
+**FR-09:** The `[Quit]` button must call `DELETE /game/session/{id}` before closing.
+
+**FR-10:** The client must be exportable to Web (HTML5) and run in Chrome/Firefox without errors.
+
+---
+
+## 16. Scope
+
+**In scope:**
+- TitleScreen with new game dialog
+- GameSession main scene (map, narrative, input)
+- CombatHUD overlay (HP bars, AP dots, turn order)
+- DialogueBox overlay (NPC dialogue)
+- HTTP client (all backend calls)
+- GameState singleton (local state mirror)
+- Input handling (text + Enter key)
+- PlayerStatusBar (HP, XP, level)
+- Web export (HTML5)
+
+**Out of scope:**
+- WebSocket real-time events (Phase 2)
+- Inventory drag-and-drop UI (Phase 2)
+- Map tile rendering with real backend data (Phase 2)
+- Audio and animation system (Phase 2)
+- Mobile export (Phase 2)
+- Multiplayer (future)
+- C# scripts (GDScript only)
+
+---
+
+## 17. Acceptance Criteria (Standard Format)
+
+AC-01 [FR-01]: Given the TitleScreen is shown, when the player fills in name, selects class, and clicks "Start Adventure", then `POST /game/session/new` is called and the opening narrative appears in NarrativePanel within 2 seconds.
+
+AC-02 [FR-02]: Given an active game session, when the player types "attack the goblin" and presses Enter, then `POST /game/session/{id}/action` is called with `{"input": "attack the goblin"}` and the response narrative is appended to NarrativePanel.
+
+AC-03 [FR-03]: Given `ActionResult.combat_state != null` and `scene == "combat"`, when the UI is updated, then CombatHUD is visible with correct HP bar for each combatant.
+
+AC-04 [FR-04]: Given CombatHUD is visible, when `ActionResult.scene == "exploration"` is received, then CombatHUD becomes hidden.
+
+AC-05 [FR-05]: Given `player.hp == 15` and `player.max_hp == 20` in the action result, when PlayerStatusBar updates, then the HP bar shows 75% fill.
+
+AC-06 [FR-07]: Given `ActionResult.level_up != null` with `new_level == 5`, when the UI processes the response, then a level-up panel flashes showing "Level 5!".
+
+AC-07 [FR-08]: Given the backend is unreachable, when the player submits any action, then `[Error: backend unreachable]` is appended to NarrativePanel and the game does not crash.
+
+AC-08 [FR-09]: Given an active session, when the player clicks Quit, then `DELETE /game/session/{id}` is called before the application closes.
+
+AC-09 [FR-10]: Given the project is exported as HTML5, when loaded in Chrome or Firefox, then no JavaScript console errors occur and the game is playable.
+
+AC-10 [FR-06]: Given NarrativePanel has 50+ lines, when a new narrative is appended, then the panel automatically scrolls to the bottom.
+
+---
+
+## 18. Performance Requirements
+
+- Backend response → UI updated: < 100ms (rendering only, not including network)
+- Scene transition (combat → exploration): < 50ms
+- CombatHUD refresh: < 16ms (60fps target)
+- Web export load time (cold): < 5 seconds on localhost
+
+---
+
+## 19. Error Handling
+
+| Condition | Behavior |
+|---|---|
+| HTTP 404 (session not found) | Show "Session lost. Start a new game?" dialog |
+| HTTP 500 / unreachable | Append error to narrative, do not crash |
+| Timeout > 5s | Append `[The DM is thinking...]`, retry once |
+| Malformed JSON response | Log error, append `[Parse error]` to narrative |
+| Web export thread limitation | No threading used (Godot 4.6 Web constraint) |
+
+---
+
+## 20. Test Coverage Target
+
+- **Target:** All 10 AC criteria verified
+- **Method:** Mix of manual play-testing and Godot unit tests (GUT framework or built-in)
+- **Must test:** mock API responses for combat_state, level_up, error cases
+- **Automated:** HTTP client unit tests with mock HTTPRequest responses

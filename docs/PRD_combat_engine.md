@@ -1,9 +1,9 @@
 # PRD: Combat Engine (Module 3)
-**Project:** Ember RPG — FRP AI Game  
-**Module:** Phase 2, Module 3  
-**Author:** Alcyone  
+**Project:** Ember RPG  
+**Phase:** 2  
+**Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-22  
-**Status:** Draft → Implementation
+**Status:** Draft
 
 ---
 
@@ -542,3 +542,98 @@ def test_combat_end():
 ---
 
 **Next Step:** Implement `combat.py` + tests (TDD approach)
+
+---
+
+## 9. Public API
+
+```python
+class CombatManager:
+    def __init__(self, combatants: List[Character], seed: Optional[int] = None)
+    # Rolls initiative for all combatants, sorts descending, logs combat_start.
+
+    @property
+    def active_combatant(self) -> Combatant:
+        """Returns combatant whose turn it currently is."""
+
+    def roll_initiative(self, char: Character) -> int:
+        """Returns d20 + AGI modifier + initiative_bonus."""
+
+    def start_turn(self) -> None:
+        """Resets AP to 3, applies condition turn effects, decrements durations, removes expired conditions, logs turn_start."""
+
+    def attack(self, target_index: int, weapon: Optional[Item] = None) -> Dict:
+        """Costs 1 AP. Returns result dict with hit/miss/crit/fumble/damage.
+        Precondition: active combatant has AP >= 1, target is not dead.
+        Postcondition: target HP reduced if hit; target.is_dead=True if HP<=0."""
+
+    def use_item(self, item: Item) -> Dict:
+        """Costs 1 AP. Applies item effects to active combatant. Returns result dict."""
+
+    def apply_condition(self, target_index: int, condition: Condition) -> Dict:
+        """Appends condition to target's condition list. Returns confirmation dict."""
+
+    def end_turn(self) -> None:
+        """Advances to next living combatant. Increments round if all have acted. Calls start_turn()."""
+
+    def get_summary(self) -> Dict:
+        """Returns {'rounds': int, 'survivors': List[str], 'casualties': List[str], 'event_count': int}."""
+```
+
+---
+
+## 10. Acceptance Criteria (Standard Format)
+
+AC-01 [FR1]: Given a CombatManager initialized with 3 characters, when combat starts, then all 3 combatants have an initiative value and are sorted in descending order.
+
+AC-02 [FR2]: Given an active combatant, when `start_turn()` is called, then `active_combatant.ap == 3`. When `end_turn()` is called after all 3 combatants act, then `round == 2`.
+
+AC-03 [FR3]: Given an attacker with melee skill +5 and a target with AC=12, when `attack()` is called with seed forcing roll=15, then `attack_roll == 20`, `hit=True`, and `damage > 0`. When roll=1, then `fumble=True` and `hit=False`.
+
+AC-04 [FR4]: Given a target with HP=10 and a weapon dealing 5 damage, when `attack()` hits, then `target.character.hp == 5`. When HP drops to 0, then `target.is_dead == True`.
+
+AC-05 [FR5]: Given a combatant with a Poison condition of duration=2, when `start_turn()` is called twice, then HP decreases each turn and the condition is removed after duration expires.
+
+AC-06 [FR6]: Given a CombatManager where all combatants except one are dead, when `_check_combat_end()` runs, then `combat_ended == True` and the log contains a `combat_end` event with the winner's name.
+
+AC-07 [FR7]: Given a completed combat, when `get_summary()` is called, then it returns correct survivors, casualties, and round count.
+
+---
+
+## 11. Performance Requirements
+
+- Initiative roll: < 1ms per combatant
+- Single action resolution (attack): < 5ms
+- Full combat simulation (10 combatants, 20 rounds): < 1 second
+- Log serialization (JSON dump of full log): < 10ms
+
+---
+
+## 12. Error Handling
+
+| Condition | Method | Behavior |
+|---|---|---|
+| `target_index` out of range | `attack()` | Raises `IndexError` (default list behavior) |
+| Target already dead | `attack()` | Returns `{"error": "Target is dead"}` |
+| Insufficient AP (< 1) | `attack()`, `use_item()` | Returns `{"error": "Insufficient AP"}` |
+| All combatants dead | `end_turn()` | `_check_combat_end()` catches; combat_ended=True |
+| Negative dice roll result | `roll_dice()` | Not possible for standard dice; modifier can produce negative |
+
+---
+
+## 13. Integration Points
+
+- **Character System (Module 1):** All combatants are `Character` instances; reads `stats`, `skills`, `hp`, `ac`
+- **Item System (Module 2):** `weapon.damage_dice`, `item.apply_effects()` called during combat actions
+- **Rules Module:** `roll_dice()` used for initiative, attacks, and damage
+- **Magic System (Module 4):** `cast_spell()` method delegates to `Spell.cast()`
+- **DM Agent (Module 6):** Consumes `self.log` to narrate combat events
+
+---
+
+## 14. Test Coverage Target
+
+- **Target:** ≥ 95% line coverage
+- **Must cover:** natural 20 crit path, natural 1 fumble path, condition expiry, turn wraparound (end of round), combat_ended detection
+- **Determinism:** all combat tests use `seed=` parameter for reproducibility
+- **Edge cases:** all combatants dead simultaneously; single-combatant combat

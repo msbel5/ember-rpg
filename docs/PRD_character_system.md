@@ -1,9 +1,9 @@
 # PRD: Character System (Module 1)
-**Project:** Ember RPG — FRP AI Game  
-**Module:** Phase 2, Module 1  
-**Author:** Alcyone  
+**Project:** Ember RPG  
+**Phase:** 2  
+**Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-22  
-**Status:** Draft → Implementation
+**Status:** Draft
 
 ---
 
@@ -459,3 +459,93 @@ def test_invalid_slot():
 ---
 
 **Next Step:** Implement `character.py` + `test_character.py` (TDD)
+
+---
+
+## 11. Public API
+
+```python
+class Character:
+    # Constructor
+    def __init__(self, name: str, race: str = "Human", classes: Dict[str, int] = None,
+                 stats: Dict[str, int] = None, hp: int = 10, max_hp: int = 10,
+                 ac: int = 10, initiative_bonus: int = 0, spell_points: int = 0,
+                 max_spell_points: int = 0, skills: Dict[str, int] = None,
+                 gold: int = 0, inventory: List[str] = None,
+                 equipment: Dict[str, str] = None, conditions: List[str] = None)
+    # Raises: nothing (uses defaults for missing fields)
+
+    @property
+    def total_level(self) -> int:
+        """Sum of all class levels. Returns 0 if no classes."""
+
+    @property
+    def dominant_class(self) -> Optional[str]:
+        """Class with highest level. Returns None if no classes."""
+
+    def stat_modifier(self, stat: str) -> int:
+        """Returns (stat_value - 10) // 2.
+        Raises: ValueError if stat not in ('MIG','AGI','END','MND','INS','PRE')."""
+
+    def skill_bonus(self, skill: str) -> int:
+        """Returns stat_modifier(governing_stat) + proficiency.
+        Raises: ValueError if skill name unknown."""
+
+    def add_class(self, class_name: str, level: int = 1) -> None:
+        """Adds or increases class level. level must be >= 1."""
+
+    def equip_item(self, slot: str, item_id: str) -> None:
+        """Equips item to slot. Valid slots: weapon, offhand, armor, accessory.
+        Raises: ValueError for invalid slot."""
+
+    def unequip_item(self, slot: str) -> Optional[str]:
+        """Removes item from slot. Returns item_id or None if slot empty."""
+
+    def to_dict(self) -> dict:
+        """Serializes character to JSON-compatible dict."""
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Character':
+        """Deserializes character from dict. Raises: KeyError if required field missing."""
+```
+
+---
+
+## 12. Acceptance Criteria (Standard Format)
+
+AC-01 [FR1]: Given `Character(name="Aldric")` is called with only a name, when the object is created, then `race == "Human"`, all stats equal 10, `hp == 10`, and `total_level == 0`.
+
+AC-02 [FR2]: Given a Character with `stats={'MIG': 16}`, when `stat_modifier('MIG')` is called, then the return value is 3. Given `stats={'MIG': 8}`, then the return value is -1.
+
+AC-03 [FR3]: Given a Character with `stats={'AGI': 16}` and `skills={'stealth': 4}`, when `skill_bonus('stealth')` is called, then the result is 7 (AGI mod +3 + Expert +4).
+
+AC-04 [FR4]: Given a Character with classes `{'Warrior': 5, 'Mage': 3}`, when `total_level` is accessed, then it returns 8. When `dominant_class` is accessed, then it returns `"Warrior"`.
+
+AC-05 [FR5]: Given a Character with `hp=0` and `max_hp=20`, when HP is not changed, then `hp` remains 0 (no auto-heal; HP is a plain field with no clamping).
+
+AC-06 [FR6]: Given a Character, when `equip_item('weapon', 'sword_01')` is called, then `equipment['weapon'] == 'sword_01'`. When `unequip_item('weapon')` is called, then the return value is `'sword_01'` and `'weapon'` is no longer in equipment.
+
+AC-07 [FR7]: Given a fully populated Character, when `to_dict()` is called and the result passed to `Character.from_dict()`, then the reconstructed character has identical name, stats, classes, equipment, and skills.
+
+---
+
+## 13. Error Handling
+
+| Condition | Method | Behavior |
+|---|---|---|
+| Unknown stat name (e.g. `'STR'`) | `stat_modifier()` | Raises `ValueError("Unknown stat: STR")` |
+| Unknown skill name | `skill_bonus()` | Raises `ValueError("Unknown skill: <name>")` |
+| Invalid equipment slot | `equip_item()` | Raises `ValueError("Invalid slot: <slot>")` |
+| Missing required key in dict | `from_dict()` | Raises `KeyError` (dataclass default behavior) |
+| `add_class()` with level ≤ 0 | `add_class()` | Should raise `ValueError("level must be >= 1")` |
+| Stat value outside 3-20 range | `__init__` | No validation in MVP; consumers responsible for range checks |
+
+---
+
+## 14. Test Coverage Target
+
+- **Target:** ≥ 95% line coverage
+- **Must cover:** every branch of `stat_modifier`, `skill_bonus`, `equip_item`, `from_dict`
+- **Property-based:** `stat_modifier` tested for all values 3–20 (parametrize)
+- **Error paths:** each `ValueError` branch must have at least one test
+- **Serialization:** round-trip test with all fields populated

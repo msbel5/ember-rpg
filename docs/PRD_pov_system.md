@@ -1,10 +1,9 @@
 # PRD: First-Person POV System + Storyboard Moments
-# Ember RPG — Phase 8
-
-**Status:** Planning
-**Priority:** High (core visual identity)
-**Depends on:** Phase 7 (Godot client), Player Position Tracking (this PRD)
-**Authors:** Alcyone (backend), Mami (Godot client)
+**Project:** Ember RPG  
+**Phase:** 8  
+**Author:** Alcyone (CAPTAIN)  
+**Date:** 2026-03-23  
+**Status:** Draft
 
 ---
 
@@ -272,3 +271,149 @@ Body katmanı background'ın önünde, entity'lerin arkasında. Yakın entity'le
 
 *Bu PRD Phase 8 implementation başlamadan önce Mami ile review edilmeli.*
 *Godot render architecture notları informational — implementation Mami'nin sorumluluğu.*
+
+---
+
+## Standardized Sections
+
+**Project:** Ember RPG
+**Phase:** 8
+**Author:** Alcyone (CAPTAIN)
+**Date:** 2026-03-23
+**Status:** Draft
+
+---
+
+## Functional Requirements
+
+**FR-01:** `PlayerPosition` must track x, y, facing direction (north/south/east/west), floor level, and area_id. It must be stored in `GameSession` and included in save/load.
+
+**FR-02:** Movement commands (`"move forward"`, `"move north"`, `"turn left"`) must update `PlayerPosition` fields: facing changes for turns, x/y changes for movement.
+
+**FR-03:** `POST /game/session/{id}/action` response must include a `player_position` field whenever the action causes a position change.
+
+**FR-04:** `GET /game/session/{id}/pov` must return FOV tiles for 3-5 tile depth at 90° viewing angle, each tile including type, visibility, and entity list.
+
+**FR-05:** Each entity in FOV tiles must have a `revealed` boolean. An entity's `revealed` flag must be set to `True` when the DM narrative includes a `[REVEAL:entity_id]` marker.
+
+**FR-06:** Storyboard-triggering actions (`"look up"`, `"examine sword"`, `"peek around corner"`) must return an `ActionResult` containing a `storyboard_moment` field with type, target_entity, duration_ms, and render_hint.
+
+**FR-07:** The FOV algorithm must guarantee that tiles behind walls are NOT included (shadowcasting/raycasting occlusion).
+
+**FR-08:** `PlayerPosition` must survive save/load round-trip with identical values.
+
+**FR-09:** Two calls to the FOV calculation with the same position and map must produce identical results (determinism).
+
+**FR-10:** Unrevealed entities must NOT appear in the FOV response (client only sees revealed entities unless entity has `always_visible=True`).
+
+---
+
+## Data Structures
+
+```python
+@dataclass
+class PlayerPosition:
+    x: int
+    y: int
+    facing: str          # "north" | "south" | "east" | "west"
+    floor: int = 0       # dungeon floor
+    area_id: str = ""
+
+@dataclass
+class FOVTile:
+    x: int
+    y: int
+    relative: str        # "forward_1", "left_1", etc.
+    tile_type: str
+    visibility: str      # "visible" | "foggy" | "hidden"
+    entities: List[dict] # [{"type", "id", "revealed", "context_actions"}]
+
+@dataclass
+class StoryboardMoment:
+    type: str            # "item_closeup", "sky_reveal", etc.
+    target_entity: str
+    duration_ms: int
+    return_to: str
+    render_hint: dict    # {"zoom_level", "angle", "layer"}
+```
+
+---
+
+## Public API
+
+```python
+# Position update (called by action handlers)
+def update_position(session: GameSession, command: str) -> PlayerPosition:
+    """Parses movement/turn command, updates session.player_position, returns new position."""
+
+# FOV endpoint
+GET /game/session/{id}/pov
+Returns: {
+    "player_position": PlayerPosition,
+    "fov_tiles": List[FOVTile],
+    "ambient": {"light_level": str, "sound_hints": List[str], "weather": str}
+}
+
+# Storyboard detection (in action_parser.py)
+def detect_storyboard(text: str) -> Optional[str]:
+    """Returns storyboard type if action triggers one, else None."""
+
+# Storyboard handler (in game_engine.py)
+def _handle_storyboard(session, action) -> ActionResult:
+    """Generates narrative with LLM, returns ActionResult with storyboard_moment field."""
+```
+
+---
+
+## Acceptance Criteria (Standard Format)
+
+AC-01 [FR-01]: Given a GameSession, when it is saved and reloaded, then `session.player_position` has identical x, y, facing, floor, and area_id values.
+
+AC-02 [FR-02]: Given `player_position.facing = "north"` and `player_position.x = 5, y = 5`, when action `"move forward"` is processed, then `player_position.y == 4` (moved north) and `facing` remains "north".
+
+AC-03 [FR-03]: Given any action that moves the player, when the action response is received, then `response.player_position` reflects the updated position.
+
+AC-04 [FR-04]: Given `GET /game/session/{id}/pov` with player facing north at (5,8), when the response is received, then `fov_tiles` contains tiles at forward_1, forward_2, and side tiles — none behind walls.
+
+AC-05 [FR-05]: Given DM narrative containing `[REVEAL:guard_01]`, when processed, then `guard_01` entity in subsequent `/pov` response has `revealed=true`.
+
+AC-06 [FR-06]: Given action `"examine sword"`, when processed, then `ActionResult.storyboard_moment.type == "item_closeup"` and `duration_ms > 0`.
+
+AC-07 [FR-09]: Given identical player position and map, when `/pov` is called twice, then both responses have identical `fov_tiles` content.
+
+---
+
+## Performance Requirements
+
+- FOV calculation (32x32 grid, depth 5): < 20ms
+- `update_position()`: < 1ms
+- `/pov` endpoint total response: < 50ms (no LLM call)
+- Storyboard LLM narrative: < 3 seconds (Haiku model)
+
+---
+
+## Error Handling
+
+| Condition | Behavior |
+|---|---|
+| Movement out of map bounds | Position clamped to map edges; narrative notes obstacle |
+| Movement into wall tile | Position unchanged; narrative notes wall |
+| Unknown storyboard action | Falls through to default action handler |
+| Area ID not found in map registry | Returns empty FOV with error flag |
+
+---
+
+## Integration Points
+
+- **Map Generator (Phase 4):** FOV reads tile grid from MapData
+- **Entity Placer (Phase 4):** Entity positions from scene_data used in FOV entity lists
+- **DM Agent (Module 6):** `[REVEAL:entity_id]` markers parsed from DM narrative
+- **Godot Client (Phase 1):** Polls `/pov` after each action; triggers fade-in on `revealed=true`
+- **Save/Load:** `player_position` serialized in GameSession
+
+---
+
+## Test Coverage Target
+
+- **Target:** ≥ 90% line coverage
+- **Must cover:** all 4 facing directions + movement, FOV wall occlusion, REVEAL marker parsing, storyboard type detection, save/load position round-trip, bounds clamping

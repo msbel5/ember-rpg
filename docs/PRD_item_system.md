@@ -1,9 +1,9 @@
 # PRD: Item System (Module 2)
-**Project:** Ember RPG — FRP AI Game  
-**Module:** Phase 2, Module 2  
-**Author:** Alcyone  
+**Project:** Ember RPG  
+**Phase:** 2  
+**Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-22  
-**Status:** Draft → Implementation
+**Status:** Draft
 
 ---
 
@@ -553,3 +553,89 @@ def test_item_serialization():
 ---
 
 **Next Step:** Implement `rules.py` → `effect.py` → `item.py` (TDD)
+
+---
+
+## 9. Public API
+
+```python
+class Item:
+    def __init__(self, name: str, value: int, weight: float, item_type: ItemType, ...)
+    # value >= 0, weight >= 0 assumed; no runtime validation in MVP
+
+    @property
+    def total_value(self) -> int:
+        """Returns value * quantity."""
+
+    @property
+    def total_weight(self) -> float:
+        """Returns weight * quantity."""
+
+    def apply_effects(self, target: 'Character') -> List[str]:
+        """Calls effect.apply(target) for each effect. Returns list of log messages."""
+
+    def to_dict(self) -> dict:
+        """JSON-serializable dict. Effects are serialized via each effect's to_dict()."""
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Item':
+        """Deserializes item + effects. Raises KeyError if required field missing."""
+
+def roll_dice(dice_str: str) -> int:
+    """Parses NdX[+/-M] notation and returns integer result.
+    Raises: ValueError if dice_str is malformed."""
+```
+
+---
+
+## 10. Acceptance Criteria (Standard Format)
+
+AC-01 [FR1]: Given `Item(name="Longsword", value=15, weight=3.0, item_type=ItemType.WEAPON, damage_dice="1d10", damage_type="slashing")`, when created, then `damage_dice == "1d10"` and `total_value == 15`.
+
+AC-02 [FR2]: Given an item with `item_type=ItemType.QUEST, can_drop=False, can_sell=False`, when inspected, then both flags are False and the item has no armor_bonus or damage_dice.
+
+AC-03 [FR3]: Given a `HealEffect(amount="2d6+2")` applied to a Character with `hp=50, max_hp=100`, when `apply()` is called, then HP increases by the roll result (capped at 100).
+
+AC-04 [FR4]: Given `Item(stackable=True, quantity=100, value=1, weight=0.02)`, when `total_value` and `total_weight` are accessed, then they return 100 and 2.0 respectively.
+
+AC-05 [FR5]: Given `roll_dice("1d6")` called 50 times, when results are checked, then all results are between 1 and 6 inclusive. Given `roll_dice("1d6+2")`, then all results are between 3 and 8.
+
+AC-06 [FR6]: Given a Flaming Sword item with a DamageEffect, when `to_dict()` is called and `from_dict()` is called on the result, then the restored item has identical name, damage_dice, and a DamageEffect with the same amount.
+
+---
+
+## 11. Performance Requirements
+
+- Item creation: < 0.1ms
+- Effect application (single effect): < 1ms
+- Dice roll (`roll_dice`): < 0.1ms per call
+- Serialization round-trip: < 1ms
+
+---
+
+## 12. Error Handling
+
+| Condition | Method | Behavior |
+|---|---|---|
+| Malformed dice string `"d6"` | `roll_dice()` | Raises `ValueError("Invalid dice notation: d6")` |
+| Unknown effect type in dict | `Effect.from_dict()` | Raises `ValueError("Unknown effect type: <type>")` |
+| Missing required field in dict | `Item.from_dict()` | Raises `KeyError` |
+| Heal effect overshooting max_hp | `HealEffect.apply()` | HP clamped to `max_hp` (no over-healing) |
+| Negative value/weight | Constructor | No validation in MVP; callers responsible |
+
+---
+
+## 13. Integration Points
+
+- **Character System (Module 1):** `apply_effects(target: Character)` mutates `character.hp`, `character.stats`
+- **Combat Engine (Module 3):** `Item.damage_dice` and `Item.damage_type` consumed by `CombatManager.attack()`
+- **Magic System (Module 4):** Shares `Effect` base class (spells and items both use HealEffect, DamageEffect, BuffEffect)
+- **Progression System (Module 5):** Items may grant XP on use (future extension)
+
+---
+
+## 14. Test Coverage Target
+
+- **Target:** ≥ 95% line coverage
+- **Must cover:** all ItemType branches, all Effect subclass `apply()` methods, `roll_dice` with and without modifier, from_dict error path for unknown effect type
+- **Statistical:** roll_dice tested over 100+ samples to verify distribution bounds

@@ -1,9 +1,9 @@
 # PRD: Magic System (Module 4)
-**Project:** Ember RPG — FRP AI Game  
-**Module:** Phase 2, Module 4  
-**Author:** Alcyone  
+**Project:** Ember RPG  
+**Phase:** 2  
+**Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-22  
-**Status:** Draft → Implementation
+**Status:** Draft
 
 ---
 
@@ -496,3 +496,93 @@ def test_spell_database_load():
 ---
 
 **Next Step:** Implement `spell.py` + tests (TDD approach)
+
+---
+
+## 10. Public API
+
+```python
+class Spell:
+    def __init__(self, name: str, cost: int, range: int, target_type: TargetType,
+                 effects: List[Effect] = None, school: SpellSchool = SpellSchool.EVOCATION,
+                 description: str = "", level: int = 1)
+
+    def can_cast(self, caster: Character) -> bool:
+        """Returns True if caster.spell_points >= self.cost."""
+
+    def cast(self, caster: Character, target: Optional[Character] = None) -> dict:
+        """Deducts spell points, applies effects to target, returns result dict.
+        Raises: ValueError if insufficient spell points or missing target for SINGLE-type spell.
+        Postcondition: caster.spell_points reduced by self.cost."""
+
+    def to_dict(self) -> dict
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Spell'
+
+class SpellDatabase:
+    def __init__(self, filepath: str)
+    def load(self, filepath: str) -> None
+    def get(self, name: str) -> Optional[Spell]
+        """Case-insensitive name match."""
+    def filter(self, school: Optional[SpellSchool] = None,
+               max_cost: Optional[int] = None,
+               max_level: Optional[int] = None) -> List[Spell]
+
+# CombatManager extension:
+def cast_spell(self, spell: Spell, target_index: Optional[int] = None) -> Dict:
+    """Costs 2 AP. Validates AP and target, delegates to spell.cast(). Returns result or error dict."""
+```
+
+---
+
+## 11. Acceptance Criteria (Standard Format)
+
+AC-01 [FR1]: Given `Spell(name="Fireball", cost=5, range=60, target_type=TargetType.SINGLE, school=SpellSchool.EVOCATION, level=3)`, when created, then all fields are stored correctly.
+
+AC-02 [FR2]: Given a caster with `spell_points=10` and a spell with `cost=3`, when `cast(caster, target)` is called, then `caster.spell_points == 7` and target HP decreases.
+
+AC-03 [FR2]: Given a caster with `spell_points=2` and a spell with `cost=5`, when `cast()` is called, then `ValueError("Insufficient spell points")` is raised and `spell_points` remains 2.
+
+AC-04 [FR2]: Given a self-target spell (`target_type=TargetType.SELF`), when `cast(caster)` is called with no target argument, then effects are applied to the caster without error.
+
+AC-05 [FR3]: Given a Mage with `spell_points=10` in combat, when `cast_spell()` is called successfully, then `active_combatant.ap` decreases by 2 and the event is logged as `spell_cast`.
+
+AC-06 [FR4]: Given a `SpellDatabase` loaded from a valid JSON file, when `get("Fireball")` is called, then a Spell with `school=EVOCATION` is returned. When `filter(school=SpellSchool.EVOCATION)` is called, then only evocation spells are returned.
+
+---
+
+## 12. Performance Requirements
+
+- Spell casting (effect application): < 5ms
+- SpellDatabase load from JSON: < 100ms
+- `SpellDatabase.filter()`: < 1ms for up to 100 spells
+
+---
+
+## 13. Error Handling
+
+| Condition | Method | Behavior |
+|---|---|---|
+| `spell_points < cost` | `cast()` | Raises `ValueError("Insufficient spell points (X/Y)")` |
+| SINGLE spell with no target | `cast()` | Raises `ValueError("Single-target spell requires a target")` |
+| Insufficient AP (< 2) | `cast_spell()` | Returns `{"error": "Insufficient AP (casting costs 2 AP)"}` |
+| No target index for SINGLE spell in combat | `cast_spell()` | Returns `{"error": "Single-target spell requires target"}` |
+| File not found | `SpellDatabase.load()` | Raises `FileNotFoundError` |
+| Unknown target_type in JSON | `Spell.from_dict()` | Raises `ValueError` from Enum constructor |
+
+---
+
+## 14. Integration Points
+
+- **Character System (Module 1):** Reads `caster.spell_points`, `caster.max_spell_points`, mutates `caster.spell_points`
+- **Item System (Module 2):** Reuses `HealEffect`, `DamageEffect`, `BuffEffect` from `engine.core.effect`
+- **Combat Engine (Module 3):** `CombatManager.cast_spell()` wraps `Spell.cast()`, costs 2 AP, logs event
+- **Progression System (Module 5):** Max spell points determined by class level (Mage scaling)
+- **DM Agent (Module 6):** Consumes `spell_cast` log events for narrative generation
+
+---
+
+## 15. Test Coverage Target
+
+- **Target:** ≥ 95% line coverage
+- **Must cover:** successful cast, insufficient SP error, missing target error, self-target (no target arg), combat cast AP deduction, SpellDatabase get/filter, serialization round-trip

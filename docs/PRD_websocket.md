@@ -1,7 +1,7 @@
 # PRD: WebSocket Real-Time Events — Ember RPG Backend
-
-**Version:** 1.0  
-**Author:** Alcyone (Subagent)  
+**Project:** Ember RPG  
+**Phase:** 2  
+**Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-23  
 **Status:** Draft
 
@@ -205,3 +205,130 @@ The engine's `process_action` method will emit a list of typed events. The WebSo
 - Rate limiting per WebSocket connection
 - Presence / player roster management
 - Voice or video channels
+
+---
+
+## 11. Functional Requirements
+
+**FR-01:** The WebSocket endpoint `ws://{host}/ws/game` must accept connections and respond to all 5 message types: `subscribe`, `unsubscribe`, `action`, `ping`, `resync`.
+
+**FR-02:** After a `subscribe` message, the server must immediately send a `session_state` snapshot to the subscribing client.
+
+**FR-03:** When `action` is submitted via WebSocket, the engine must process it and broadcast an `action_result` event to ALL clients subscribed to that session.
+
+**FR-04:** Combat actions must trigger a `combat_update` event broadcast to all subscribers of the session.
+
+**FR-05:** `ping` messages must receive a `pong` response within 1 second.
+
+**FR-06:** On WebSocket disconnect, the server must remove the client from all subscriptions without affecting other subscribers.
+
+**FR-07:** A client subscribed to session A must NOT receive events for session B (session isolation).
+
+**FR-08:** Two clients subscribed to the same session must both receive broadcast events (fan-out).
+
+**FR-09:** REST endpoints (`POST /action`, `GET /session`) must remain functional alongside WebSocket (additive, not replacing).
+
+**FR-10:** Concurrent action submissions from multiple clients on the same session must be handled safely (asyncio.Lock per session).
+
+---
+
+## 12. Data Structures
+
+```python
+# All messages are JSON dicts with a "type" field
+
+# Client → Server
+Subscribe = {"type": "subscribe", "session_id": str}
+Unsubscribe = {"type": "unsubscribe", "session_id": str}
+Action = {"type": "action", "session_id": str, "text": str}
+Ping = {"type": "ping"}
+Resync = {"type": "resync", "session_id": str}
+
+# Server → Client
+ActionResult = {"type": "action_result", "session_id": str, "narrative": str,
+                "player_state": dict, "effects": list}
+CombatUpdate = {"type": "combat_update", "session_id": str, "round": int,
+                "combatants": list, "last_action": dict, "combat_ended": bool}
+DMNarrative = {"type": "dm_narrative", "session_id": str, "text": str,
+               "scene_type": str, "location": str}
+SessionState = {"type": "session_state", "session_id": str, ...}
+Error = {"type": "error", "code": str, "message": str}
+Pong = {"type": "pong"}
+```
+
+---
+
+## 13. Public API
+
+```python
+# ConnectionManager
+class ConnectionManager:
+    def __init__(self)
+    async def subscribe(self, session_id: str, ws: WebSocket) -> None
+    async def unsubscribe(self, session_id: str, ws: WebSocket) -> None
+    async def broadcast(self, session_id: str, event: dict) -> None
+        """Sends event to all WebSockets subscribed to session_id. Handles dead connections gracefully."""
+    def remove_all_subscriptions(self, ws: WebSocket) -> None
+        """Called on disconnect to clean up all session subscriptions for this WebSocket."""
+
+# FastAPI route
+@router.websocket("/ws/game")
+async def websocket_endpoint(websocket: WebSocket): ...
+```
+
+---
+
+## 14. Acceptance Criteria (Standard Format)
+
+AC-01 [FR-01]: Given a running server, when a client connects to `ws://{host}/ws/game`, then the connection is accepted without error.
+
+AC-02 [FR-02]: Given a connected client, when it sends `{"type": "subscribe", "session_id": "abc"}`, then it receives a `session_state` message within 500ms.
+
+AC-03 [FR-03]: Given two clients A and B both subscribed to session "abc", when client A sends an `action` message, then both A and B receive an `action_result` event.
+
+AC-04 [FR-04]: Given a session in combat, when any action triggers a combat state change, then a `combat_update` event is broadcast to all subscribers.
+
+AC-05 [FR-05]: Given a connected client, when it sends `{"type": "ping"}`, then it receives `{"type": "pong"}` within 1 second.
+
+AC-06 [FR-06]: Given two clients subscribed to the same session, when one disconnects, then the other continues to receive events without error.
+
+AC-07 [FR-07]: Given client A subscribed to session "abc" and client B subscribed to session "xyz", when an action is processed for session "abc", then client B receives no events.
+
+AC-08 [FR-09]: Given a running WebSocket server, when `POST /game/session/{id}/action` is called via HTTP, then it returns a response normally (REST not broken by WS).
+
+---
+
+## 15. Performance Requirements
+
+- `ping` → `pong` round-trip: < 1 second
+- Action broadcast to 10 subscribers: < 50ms
+- Subscribe + session_state delivery: < 500ms
+- Disconnect cleanup: < 10ms
+
+---
+
+## 16. Error Handling
+
+| Condition | Behavior |
+|---|---|
+| Unknown message type | Send `{"type": "error", "code": "UNKNOWN_MSG", "message": "..."}` |
+| `action` on non-existent session | Send `{"type": "error", "code": "SESSION_NOT_FOUND"}` |
+| Subscriber WebSocket dead during broadcast | Remove from subscription silently, continue broadcast to others |
+| Malformed JSON received | Send error event, do not crash the handler |
+| Concurrent actions on same session | asyncio.Lock per session prevents race condition |
+
+---
+
+## 17. Integration Points
+
+- **GameEngine:** `process_action()` called from WebSocket handler; events emitted after processing
+- **REST API Layer:** WebSocket is additive; both share the same in-memory session store
+- **Session Store:** `ConnectionManager.subscriptions` keyed by `session_id`
+- **Future: Redis pub/sub** — scale-out path when multi-node deployment needed
+
+---
+
+## 18. Test Coverage Target
+
+- **Target:** ≥ 90% line coverage using FastAPI's `TestClient` with WebSocket support
+- **Must cover:** subscribe/broadcast flow, session isolation (two sessions), disconnect cleanup, unknown message type error, concurrent action safety
