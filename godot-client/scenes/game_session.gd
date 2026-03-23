@@ -46,6 +46,7 @@ func _ready() -> void:
 	pov_renderer = Control.new()
 	pov_renderer.set_script(pov_script)
 	pov_renderer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pov_renderer.entity_clicked_pov.connect(_on_entity_clicked)
 	map_viewer.add_child(pov_renderer)
 
 	# Start in POV mode
@@ -129,6 +130,13 @@ func _submit_action(text: String) -> void:
 	if text.is_empty() or is_waiting:
 		return
 
+	# Death check — HP 0 means you can't act
+	var hp = GameState.player.get("hp", 1)
+	if hp <= 0 and not text.to_lower().begins_with("rest"):
+		_append_narrative("[color=red]You have fallen... Your vision fades to darkness.[/color]")
+		_append_narrative("[color=gray](Type 'rest' to recover at the nearest shrine, or start a new adventure.)[/color]")
+		return
+
 	is_waiting = true
 	_append_narrative("[color=cyan]> %s[/color]" % text)
 	text_input.text = ""
@@ -206,21 +214,22 @@ func _parse_move_command(text: String) -> void:
 	var lower = text.to_lower().strip_edges()
 	# "move to X,Y" or "move to X Y"
 	if lower.begins_with("move to ") or lower.begins_with("move "):
-		var parts = lower.replace("move to ", "").replace("move ", "").split(",")
+		var coord_str = lower.replace("move to ", "").replace("move ", "")
+		var parts = coord_str.split(",")
 		if parts.size() < 2:
-			parts = lower.replace("move to ", "").replace("move ", "").split(" ")
+			parts = coord_str.split(" ")
 		if parts.size() >= 2:
 			var tx = parts[0].strip_edges().to_int()
 			var ty = parts[1].strip_edges().to_int()
 			if tx >= 0 and ty >= 0:
-				GameState.player_map_pos = Vector2i(tx, ty)
-				# Calculate facing direction based on movement delta
-				var old_pos = GameState.player_map_pos
-				var delta = Vector2i(tx, ty) - old_pos
+				var new_pos = Vector2i(tx, ty)
+				# Calculate facing direction BEFORE updating position
+				var delta = new_pos - GameState.player_map_pos
 				if abs(delta.x) > abs(delta.y):
 					GameState.player_facing = 1 if delta.x > 0 else 3  # E or W
 				elif delta.y != 0:
 					GameState.player_facing = 2 if delta.y > 0 else 0  # S or N
+				GameState.player_map_pos = new_pos
 
 func _refresh_player_status() -> void:
 	var p = GameState.player
@@ -292,11 +301,12 @@ func _refresh_combat_hud() -> void:
 		combat_list.add_child(hbox)
 
 func _on_combat_started() -> void:
-	_append_narrative("[color=red]⚔ Combat begins![/color]")
+	# Use typing queue so combat announcement doesn't interrupt narrative
+	_on_narrative("[color=red]⚔ Combat begins![/color]")
 
 func _on_combat_ended() -> void:
 	combat_hud.visible = false
-	_append_narrative("[color=green]Combat ended.[/color]")
+	_on_narrative("[color=green]Combat ended.[/color]")
 
 func _on_level_up(new_level: int) -> void:
 	_append_narrative("[color=yellow]✦ LEVEL UP! You are now level %d! ✦[/color]" % new_level)
@@ -320,6 +330,12 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
+	# HOME key always works — toggle inventory
+	if event.keycode == KEY_HOME:
+		_toggle_inventory()
+		get_viewport().set_input_as_handled()
+		return
+
 	# Other hotkeys only when NOT typing
 	if text_input.has_focus():
 		return
@@ -330,7 +346,59 @@ func _input(event: InputEvent) -> void:
 		KEY_TAB:
 			_set_view_mode(not is_pov_mode)
 		KEY_I:
-			pass  # Inventory (future)
+			_toggle_inventory()
+
+var _inventory_popup: PopupPanel = null
+
+func _toggle_inventory() -> void:
+	if _inventory_popup and _inventory_popup.visible:
+		_inventory_popup.hide()
+		return
+
+	# Fetch inventory from GameState
+	var inventory = GameState.player.get("inventory", [])
+	var gold = GameState.player.get("gold", 0)
+
+	if _inventory_popup:
+		_inventory_popup.queue_free()
+
+	_inventory_popup = PopupPanel.new()
+	var vbox = VBoxContainer.new()
+	vbox.custom_minimum_size = Vector2(300, 200)
+
+	# Title
+	var title = Label.new()
+	title.text = "⚔ Inventory"
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
+	vbox.add_child(title)
+
+	# Gold
+	var gold_label = Label.new()
+	gold_label.text = "💰 Gold: %d" % gold
+	gold_label.add_theme_color_override("font_color", Color(1, 0.9, 0.4))
+	vbox.add_child(gold_label)
+
+	# Separator
+	var sep = HSeparator.new()
+	vbox.add_child(sep)
+
+	# Items
+	if inventory.is_empty():
+		var empty_label = Label.new()
+		empty_label.text = "Your pack is empty."
+		empty_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+		vbox.add_child(empty_label)
+	else:
+		for item in inventory:
+			var item_label = Label.new()
+			var item_name = item if item is String else item.get("name", str(item))
+			item_label.text = "• %s" % item_name
+			vbox.add_child(item_label)
+
+	_inventory_popup.add_child(vbox)
+	add_child(_inventory_popup)
+	_inventory_popup.popup_centered()
 
 func _on_entity_revealed(entity_id: String) -> void:
 	if tile_map_renderer:

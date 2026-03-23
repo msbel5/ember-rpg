@@ -95,6 +95,7 @@ var visible_entities: Array = []
 var revealed_ids: Dictionary = {}  # entity_id → reveal_alpha (0.0 to 1.0)
 var entity_cache: Dictionary = {}  # cache key → rendered data
 var _fade_active: bool = false
+var _entity_hit_boxes: Array = []  # [{rect: Rect2, id: String, data: Dictionary}, ...]
 
 # Facing direction vectors
 const FACING_VECTORS = [
@@ -181,6 +182,8 @@ func _draw() -> void:
 	var h = rect.size.y
 	if w <= 0 or h <= 0:
 		return
+
+	_entity_hit_boxes.clear()
 
 	# --- Layer 0: Sky / Ceiling ---
 	draw_rect(Rect2(0, 0, w, h * 0.4), current_palette.get("sky", Color.BLACK))
@@ -367,6 +370,14 @@ func _draw_single_entity(item: Dictionary, w: float, h: float, horizon_y: float)
 		var label_color = Color(1, 1, 0.85, dist_factor * fade_alpha)
 		draw_string(font, label_pos, entity_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, label_color)
 
+	# Store hit box for click detection
+	if fade_alpha > 0.2:
+		_entity_hit_boxes.append({
+			"rect": Rect2(entity_x, entity_y, entity_w, entity_h),
+			"id": entity.get("id", ""),
+			"data": entity,
+		})
+
 func _draw_humanoid_silhouette(ex: float, ey: float, ew: float, eh: float, color: Color, alpha: float) -> void:
 	# Head (circle)
 	var head_radius = ew * 0.35
@@ -401,9 +412,13 @@ func _draw_object_silhouette(ex: float, ey: float, ew: float, eh: float, color: 
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		# Check if click hit an entity (simple bounding box check)
-		# TODO: implement click-to-entity mapping
-		pass
+		var click_pos = event.position
+		# Check hit boxes in reverse order (front entities drawn last = on top)
+		for i in range(_entity_hit_boxes.size() - 1, -1, -1):
+			var hb = _entity_hit_boxes[i]
+			if hb["rect"].has_point(click_pos):
+				entity_clicked_pov.emit(hb["id"], hb["data"])
+				break
 
 	# Arrow keys / WASD rotate facing
 	if event is InputEventKey and event.pressed:
