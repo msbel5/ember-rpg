@@ -192,6 +192,67 @@ class MapData:
 
 ---
 
+## 11. UPGRADE: Zone-Based Generation (Dwarf Fortress-Inspired)
+
+**Date Added:** 2026-03-24
+**Status:** Planned (Phase 4b)
+**Reference:** GDD_v3.md, Dwarf Fortress world generation research
+
+### 11.1 Problem
+
+Current TownGenerator places buildings randomly on a grid. Tiles don't reflect logical zones (market, docks, residential). NPCs spawn without regard to building type. DM narrative describes a coherent town but the tile map shows random tiles.
+
+### 11.2 Solution: Zone -> Road -> Template -> Entity Pipeline
+
+**Step 1: Zone Layout** — Divide map into named zones:
+```python
+zones = {
+    "market_square": Rect(8, 6, 6, 4),
+    "docks": Rect(0, 12, 20, 3),
+    "residential": Rect(0, 0, 8, 6),
+    "gate": Rect(8, 0, 4, 2),
+    "tavern_district": Rect(14, 0, 6, 6),
+}
+```
+
+**Step 2: Road Network** — Connect all zones with road tiles.
+
+**Step 3: Building Templates** — Stamp pre-defined shapes:
+```python
+TEMPLATES = {
+    "tavern_3x3": {"dim": (3,3), "tiles": [["wall","door","wall"],["wall","tavern_floor","wall"],["wall","wall","wall"]], "entities": {(1,1): "innkeeper"}},
+    "shop_2x3": {"dim": (2,3), "tiles": [["wall","door"],["wall","wood_floor"],["wall","wall"]], "entities": {(1,1): "merchant"}},
+    "market_stall_2x2": {"dim": (2,2), "tiles": [["cobblestone","cobblestone"],["cobblestone","cobblestone"]], "entities": {(0,0): "merchant"}},
+}
+```
+
+**Step 4: Entity Placement** — NPC role matches zone (merchant->market, guard->gate).
+
+**Step 5: Validation** — Buildings touch roads, no NPC in walls, all zones connected. Fail -> regenerate.
+
+### 11.3 Multi-Layer Tile
+
+```python
+@dataclass
+class EnhancedTile:
+    terrain: str       # grass, stone, water, sand, wood_plank
+    structure: str     # none, wall, door, floor, road
+    zone: str          # market, residential, docks, wilderness, gate
+    passable: bool
+    building_id: str   # which building template ("" if none)
+```
+
+Backward compatible: `to_dict()` returns flat strings. New `to_enhanced_dict()` returns full objects.
+
+### 11.4 New FRs
+
+**FR-11:** TownGenerator must assign every tile to a named zone.
+**FR-12:** Building templates must form closed rectangles (walls around interior).
+**FR-13:** Every building door must be adjacent to a road tile.
+**FR-14:** Entity placement must respect zone affinity.
+**FR-15:** Map validation: all zones connected, no NPC in walls, reachable from spawn.
+
 ## Changelog
 
+- 2026-03-24: Added Section 11 — DF-inspired zone-based generation upgrade
 - 2026-03-23: Rewritten to PRD standard (post-implementation)

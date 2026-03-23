@@ -1,16 +1,18 @@
 # Ember RPG
 
-A 2D fantasy role-playing game powered by AI. A Living Dungeon Master generates narrative, responds to natural language, and remembers every choice you make.
+A 2D fantasy RPG with **AI-generated unique art**, **real tabletop mechanics**, and a **living world simulation** inspired by Dwarf Fortress. Every playthrough looks different, feels different, and tells a unique story.
 
 ## What Makes This Different
 
-| Feature | AI Dungeon | BG3 | Ember RPG |
-|---------|:---:|:---:|:---:|
-| Real game mechanics (dice, HP, combat) | No | Yes | **Yes** |
-| AI-generated narrative | Yes | No | **Yes** |
-| Persistent NPC memory | No | No | **Yes** |
-| World state consequences | No | Partial | **Yes** |
-| Open source | No | No | **Yes** |
+| Feature | AI Dungeon | BG3 | Dwarf Fortress | Ember RPG |
+|---------|:---:|:---:|:---:|:---:|
+| Real game mechanics (dice, stats, combat) | No | Yes | No | **Yes** |
+| AI-generated narrative | Yes | No | No | **Yes** |
+| AI-generated unique art | No | No | No | **Yes** |
+| Persistent NPC memory | No | No | Yes | **Yes** |
+| World simulation (DF-style) | No | Scripted | **Yes** | **Yes** |
+| Consequence cascading | No | Partial | **Yes** | **Yes** |
+| Open source | No | No | Yes | **Yes** |
 
 ## Architecture
 
@@ -56,11 +58,13 @@ ember-rpg/
   ROADMAP.md      # Development roadmap
 ```
 
-## Current State
+## Current State (March 2026)
 
-- **Backend**: 830+ tests, LLM-powered DM, NPC memory, combat, save/load
-- **Client**: Tile map, entity rendering, fade-in reveal, AI narrative display
-- **Phase**: Active development — backend production-ready, client in progress
+- **Backend**: 872+ tests, 97% coverage, LLM-powered DM, combat, save/load
+- **Client**: First-person POV + tile map, AI narrative, entity fade-in, inventory
+- **AI Art**: HuggingFace Flux Schnell integration tested (free, ~3s/image)
+- **Inspiration**: Dwarf Fortress (world sim), BBC Hitchhiker's Guide (illustrated text adventure), Doom (POV)
+- **Phase**: Active development — backend production-ready, POV + AI art pipeline in progress
 
 ## Tech Stack
 
@@ -77,8 +81,10 @@ ember-rpg/
 
 All design documents are in `docs/`:
 - `PRD_STANDARD.md` — Template all PRDs follow
-- `PRD_*.md` — 19 Product Requirement Documents
-- `GDD_v2.md` — Game Design Document
+- `PRD_*.md` — 20 Product Requirement Documents
+- `PRD_asset_pipeline.md` — **NEW** AI-generated layered art system
+- `GDD_v3.md` — **NEW** Game Design Document (DF-inspired world sim + AI art)
+- `GDD_v2.md` — Core mechanics reference
 - `RESEARCH.md` — Market research and competitor analysis
 - `ROADMAP.md` — Development phases and milestones
 
