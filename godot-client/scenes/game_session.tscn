@@ -53,13 +53,13 @@ layout_mode = 2
 custom_minimum_size = Vector2(100, 0)
 show_percentage = false
 
-[node name="ContentSplit" type="HSplitContainer" parent="MainLayout"]
+[node name="ContentSplit" type="VSplitContainer" parent="MainLayout"]
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="MapPanel" type="Panel" parent="MainLayout/ContentSplit"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 0)
+custom_minimum_size = Vector2(0, 280)
 
 [node name="LocationLabel" type="Label" parent="MainLayout/ContentSplit/MapPanel"]
 layout_mode = 1
@@ -67,16 +67,16 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -100.0
-offset_top = 10.0
+offset_top = 5.0
 offset_right = 100.0
-offset_bottom = 30.0
+offset_bottom = 25.0
 grow_horizontal = 2
 text = "Unknown Location"
 horizontal_alignment = 1
 
 [node name="NarrativePanel" type="RichTextLabel" parent="MainLayout/ContentSplit"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 0)
+custom_minimum_size = Vector2(0, 200)
 bbcode_enabled = true
 text = ""
 scroll_following = true
