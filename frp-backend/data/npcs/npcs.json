@@ -1,0 +1,1178 @@
+{
+  "npcs": [
+    {
+      "id": "merchant_bram",
+      "name": "Bram Holloway",
+      "race": "human",
+      "role": "merchant",
+      "faction_alignment": "merchants_guild",
+      "personality": {
+        "traits": [
+          "pragmatic",
+          "talkative",
+          "opportunistic"
+        ],
+        "motivations": [
+          "profit",
+          "expanding trade routes",
+          "supporting his family"
+        ],
+        "fears": [
+          "bandits on the road",
+          "market collapse",
+          "losing his license"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Step right up, friend! Best prices in the Reach!",
+          "Welcome, welcome! See anything you like?",
+          "Ah, a customer! My lucky day!"
+        ],
+        "farewells": [
+          "Come back soon \u2014 I'll have new stock!",
+          "Safe travels, and spend wisely!",
+          "May the road be kind to you!"
+        ],
+        "idle": [
+          "Supply chains aren't what they used to be...",
+          "Did you hear? The north road is plagued by wolves.",
+          "Business is slow since the troubles started."
+        ],
+        "quest_related": [
+          "Bandits hit my last supply run \u2014 could use someone with your skills.",
+          "There's a job if you want it \u2014 good pay, minimal risk. Well, minimal-ish.",
+          "Recover my stolen goods and I'll cut you a deal on anything in the shop."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_with_trade": 15,
+        "recovered_goods": 25,
+        "stole_from_shop": -40,
+        "intimidated": -20,
+        "bought_items": 5,
+        "completed_quest": 30
+      }
+    },
+    {
+      "id": "merchant_dara",
+      "name": "Dara Ironstone",
+      "race": "dwarf",
+      "role": "merchant",
+      "faction_alignment": "merchants_guild",
+      "personality": {
+        "traits": [
+          "blunt",
+          "honest",
+          "professional"
+        ],
+        "motivations": [
+          "mastery of craft",
+          "fair trade",
+          "dwarven pride"
+        ],
+        "fears": [
+          "shoddy craftsmanship",
+          "being cheated",
+          "dishonour"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Need a blade? You've come to the right place.",
+          "I sell the finest steel in three counties. Don't let the price scare you.",
+          "What'll it be?"
+        ],
+        "farewells": [
+          "Keep your weapon clean and it'll serve you well.",
+          "Don't come back crying if you get yourself killed.",
+          "Good luck out there."
+        ],
+        "idle": [
+          "Steel doesn't lie. People do.",
+          "A dull blade is more dangerous than none.",
+          "I've armed kings and peasants alike. They all bleed the same."
+        ],
+        "quest_related": [
+          "I need someone to recover a sword I sold to a thief.",
+          "There's rare ore in the old mine \u2014 bring me a sample and I'll reward you.",
+          "My apprentice went missing near the forge district. Find him."
+        ]
+      },
+      "relationship_modifiers": {
+        "bought_weapons": 10,
+        "returned_stolen_sword": 30,
+        "disrespected_craft": -25,
+        "completed_quest": 30,
+        "haggled_fairly": 5,
+        "haggled_rudely": -15
+      }
+    },
+    {
+      "id": "merchant_sylva",
+      "name": "Sylva Greenleaf",
+      "race": "elf",
+      "role": "alchemist",
+      "faction_alignment": "circle_of_herbs",
+      "personality": {
+        "traits": [
+          "cheerful",
+          "knowledgeable",
+          "eccentric"
+        ],
+        "motivations": [
+          "understanding rare plants",
+          "helping the sick",
+          "collecting exotic ingredients"
+        ],
+        "fears": [
+          "running out of rare reagents",
+          "rival alchemists",
+          "fire near her shop"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Oh! A new face! Welcome, welcome, welcome!",
+          "Hello, dear! Potions, salves, or something more exotic?",
+          "Don't be shy! Come in, come in!"
+        ],
+        "farewells": [
+          "Do take care! Adventures can be so dangerous!",
+          "Remember: two potions are always better than one!",
+          "Bye-bye! Come back before you die!"
+        ],
+        "idle": [
+          "I'm working on a new formula. It only exploded twice today!",
+          "Have you tried moonpetal tea? It cures almost everything.",
+          "The Thornwood is lovely this time of year... shame about the monsters."
+        ],
+        "quest_related": [
+          "I need rare herbs from the Thornwood \u2014 my supplier was eaten. Fetch them?",
+          "A rival alchemist is undercutting me with inferior product. I need proof.",
+          "Fetch me three firebloom flowers and I'll brew you something extraordinary!"
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_rare_herbs": 35,
+        "bought_potions": 5,
+        "exposed_rival": 20,
+        "damaged_shop": -30,
+        "completed_quest": 30
+      }
+    },
+    {
+      "id": "guard_captain_aldric",
+      "name": "Aldric Vane",
+      "race": "human",
+      "role": "guard_captain",
+      "faction_alignment": "city_watch",
+      "personality": {
+        "traits": [
+          "stern",
+          "duty-bound",
+          "fair"
+        ],
+        "motivations": [
+          "protecting the city",
+          "upholding the law",
+          "training soldiers"
+        ],
+        "fears": [
+          "corruption in the watch",
+          "war coming to the city",
+          "failing his duty"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "State your business, citizen.",
+          "Move along. Unless you have something to report.",
+          "The watch is busy. Speak quickly."
+        ],
+        "farewells": [
+          "Stay out of trouble.",
+          "Keep your nose clean.",
+          "The law is watching. Always."
+        ],
+        "idle": [
+          "Three incidents on the docks this week. Something's stirring.",
+          "We're stretched thin. Half my men are patrolling the eastern gate.",
+          "Crime's up since the new moon festival. Always is."
+        ],
+        "quest_related": [
+          "I need a discreet hand \u2014 someone who won't be recognised as a guard.",
+          "There's a smuggling ring at the harbour. I need evidence.",
+          "A witness to a murder has gone into hiding. Find them first."
+        ]
+      },
+      "relationship_modifiers": {
+        "reported_crime": 20,
+        "assisted_watch": 25,
+        "arrested_criminal": 15,
+        "bribed_guard": -35,
+        "resisted_arrest": -50,
+        "completed_quest": 40
+      }
+    },
+    {
+      "id": "guard_nervous_tobias",
+      "name": "Tobias Prenn",
+      "race": "human",
+      "role": "guard",
+      "faction_alignment": "city_watch",
+      "personality": {
+        "traits": [
+          "anxious",
+          "eager-to-please",
+          "inexperienced"
+        ],
+        "motivations": [
+          "proving himself",
+          "not getting killed",
+          "making his mother proud"
+        ],
+        "fears": [
+          "combat",
+          "disappointing his captain",
+          "the undead"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "H-halt! I mean... please halt. You're supposed to halt.",
+          "Good day! Is everything... fine? Are you fine?",
+          "I'm on very serious duty! What do you want?"
+        ],
+        "farewells": [
+          "Right! Yes! Carry on then. Safely!",
+          "I'll just be... here. Watching. Very alertly.",
+          "May nothing bad happen to you. Or me."
+        ],
+        "idle": [
+          "Did you hear that? Never mind. Probably nothing.",
+          "Captain Vane says I need to look more intimidating. I'm trying.",
+          "I've only been in one real fight. I sneezed at a critical moment."
+        ],
+        "quest_related": [
+          "I saw something suspicious but I'm not sure I should report it...",
+          "A house at the end of the lane \u2014 people go in and don't come out.",
+          "I lost my official record book. The captain can't find out. Please help."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_find_book": 40,
+        "investigated_house": 25,
+        "laughed_at_him": -20,
+        "encouraged_him": 15,
+        "completed_quest": 30
+      }
+    },
+    {
+      "id": "guard_corrupt_maren",
+      "name": "Maren Dusk",
+      "race": "human",
+      "role": "guard",
+      "faction_alignment": "shadow_coin",
+      "personality": {
+        "traits": [
+          "greedy",
+          "cynical",
+          "calculating"
+        ],
+        "motivations": [
+          "accumulating wealth",
+          "staying off the radar",
+          "eventual retirement"
+        ],
+        "fears": [
+          "captain discovering her schemes",
+          "the crime boss she works for",
+          "audit"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Evening. Nice night for a walk. Expensive area, though.",
+          "Everything fine here. Move along.",
+          "I could look the other way, for the right consideration."
+        ],
+        "farewells": [
+          "Pleasure doing business.",
+          "You didn't see me. I didn't see you.",
+          "Keep your mouth shut and we'll both be fine."
+        ],
+        "idle": [
+          "Captain's making his rounds in an hour. Good time to be elsewhere.",
+          "The Shadow Coin pays better than the Watch.",
+          "Nobody bribes a dead guard. Remember that."
+        ],
+        "quest_related": [
+          "Evidence needs to disappear from the evidence room. Quietly.",
+          "A shipment needs to pass through the gate tonight. Make it happen.",
+          "A man owes money. Convince him to pay. Nicely or not."
+        ]
+      },
+      "relationship_modifiers": {
+        "accepted_bribe": 20,
+        "helped_smuggling": 15,
+        "reported_to_captain": -60,
+        "refused_bribe": -10,
+        "completed_quest": 25
+      }
+    },
+    {
+      "id": "bartender_rynna",
+      "name": "Rynna Ashford",
+      "race": "halfling",
+      "role": "bartender",
+      "faction_alignment": "innkeepers_league",
+      "personality": {
+        "traits": [
+          "warm",
+          "perceptive",
+          "gossipy"
+        ],
+        "motivations": [
+          "keeping the inn prosperous",
+          "knowing everything in town",
+          "her regulars' wellbeing"
+        ],
+        "fears": [
+          "bar fights destroying the inn",
+          "losing her license",
+          "rats in the cellar"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Welcome to the Ember Crown! What'll it be?",
+          "Stranger! Sit down. First drink's on me if you've got a good story.",
+          "You look like you've had a day. Good thing you're here."
+        ],
+        "farewells": [
+          "Safe roads, friend. Come back when you need a warm fire.",
+          "Don't be a stranger! We're here every night.",
+          "The bed's made if you need it. Three coppers."
+        ],
+        "idle": [
+          "A merchant spoke of strange lights in the forest last night.",
+          "I've heard three versions of that rumour. None of them good.",
+          "The regulars say something's wrong at the mill. Nobody works there anymore."
+        ],
+        "quest_related": [
+          "One of my regulars hasn't been in for a week. Could you check on him?",
+          "A stranger came in asking questions about you. Thought you should know.",
+          "I found this letter slipped under the door \u2014 someone wants to meet you at midnight."
+        ]
+      },
+      "relationship_modifiers": {
+        "bought_drinks": 10,
+        "started_bar_fight": -40,
+        "paid_for_room": 5,
+        "shared_gossip": 15,
+        "checked_on_regular": 35,
+        "completed_quest": 30
+      }
+    },
+    {
+      "id": "quest_giver_elder_serafine",
+      "name": "Elder Serafine",
+      "race": "human",
+      "role": "village_elder",
+      "faction_alignment": "village_council",
+      "personality": {
+        "traits": [
+          "wise",
+          "cautious",
+          "burdened"
+        ],
+        "motivations": [
+          "protecting her village",
+          "preserving old traditions",
+          "finding peace"
+        ],
+        "fears": [
+          "the old threat returning",
+          "village being abandoned",
+          "secrets dying with her"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Sit, child. I was expecting someone like you.",
+          "The village has waited long enough. Perhaps you are the answer.",
+          "Don't mind my eyes \u2014 I see well enough where it matters."
+        ],
+        "farewells": [
+          "Go carefully. The road is darker than it looks.",
+          "I've said my prayers for you. It's all I have left to give.",
+          "Come back alive. We're not finished yet."
+        ],
+        "idle": [
+          "Fifty years ago, the same shadow fell on this land. We survived. Barely.",
+          "The young don't understand why we keep the old wards. They will.",
+          "Light a candle at the shrine. Old habit \u2014 but old habits keep old evils out."
+        ],
+        "quest_related": [
+          "Something has disturbed the old burial ground. The dead should not walk.",
+          "The harvest will fail unless someone appeases the forest spirit.",
+          "My granddaughter followed a strange light into the marsh. Find her."
+        ]
+      },
+      "relationship_modifiers": {
+        "completed_quest": 50,
+        "disrespected_traditions": -30,
+        "helped_villager": 20,
+        "found_granddaughter": 60,
+        "shared_old_knowledge": 10
+      }
+    },
+    {
+      "id": "quest_giver_noble_aldros",
+      "name": "Lord Aldros Crestfall",
+      "race": "human",
+      "role": "noble",
+      "faction_alignment": "crestfall_house",
+      "personality": {
+        "traits": [
+          "arrogant",
+          "cunning",
+          "secretly desperate"
+        ],
+        "motivations": [
+          "maintaining family power",
+          "concealing a dark secret",
+          "eliminating rivals"
+        ],
+        "fears": [
+          "debts being discovered",
+          "king withdrawing favour",
+          "the truth emerging"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "I don't typically speak with your sort. Consider yourself fortunate.",
+          "I have been told you are capable. We shall see.",
+          "Sit. I'll get to the point. I don't have time for pleasantries."
+        ],
+        "farewells": [
+          "This conversation never happened. Understood?",
+          "You'll be compensated. If you succeed.",
+          "Don't contact me directly. I'll reach out."
+        ],
+        "idle": [
+          "The council meeting was a farce. As always.",
+          "My rivals underestimate me. That's their first mistake.",
+          "Loyalty is bought, not given. Remember that."
+        ],
+        "quest_related": [
+          "A document in my rival's estate would be most inconvenient for them. Retrieve it.",
+          "My debts need to be settled quietly before my creditor speaks to the king.",
+          "Someone is blackmailing me. Find them and silence them."
+        ]
+      },
+      "relationship_modifiers": {
+        "completed_quest": 35,
+        "refused_quest": -25,
+        "exposed_secret": -70,
+        "covered_for_him": 20,
+        "threatened_him": -40
+      }
+    },
+    {
+      "id": "wizard_elowen",
+      "name": "Elowen the Grey",
+      "race": "elf",
+      "role": "wizard",
+      "faction_alignment": "arcane_conclave",
+      "personality": {
+        "traits": [
+          "aloof",
+          "brilliant",
+          "obsessive"
+        ],
+        "motivations": [
+          "unlocking dimensional theory",
+          "proving a controversial theory",
+          "outliving critics"
+        ],
+        "fears": [
+          "losing her memory",
+          "her theory being disproved",
+          "mundane death"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Hmm. You're not a student. What do you want?",
+          "I'm in the middle of something important. This better be worth interrupting.",
+          "Ah. A visitor. How... biological of you."
+        ],
+        "farewells": [
+          "Try not to die before I have use of you again.",
+          "Don't touch anything on your way out.",
+          "Fascinating. Now leave."
+        ],
+        "idle": [
+          "The Veil between worlds is thinning. Most people are too stupid to notice.",
+          "I've spent forty years on this theorem. I'm close. I can feel it.",
+          "Magic is not power. Magic is understanding. Power is merely a side effect."
+        ],
+        "quest_related": [
+          "I need a component from the Shattered Observatory. It's guarded by something I won't fight personally.",
+          "A rival mage stole my notes. Retrieve them. I don't care what happens to him.",
+          "I require a test subject for a dimensional rift experiment. Don't panic."
+        ]
+      },
+      "relationship_modifiers": {
+        "retrieved_component": 40,
+        "helped_with_research": 30,
+        "touched_her_things": -20,
+        "called_her_old": -35,
+        "completed_quest": 35,
+        "showed_magical_talent": 15
+      }
+    },
+    {
+      "id": "cleric_brother_oswin",
+      "name": "Brother Oswin",
+      "race": "human",
+      "role": "cleric",
+      "faction_alignment": "order_of_the_flame",
+      "personality": {
+        "traits": [
+          "compassionate",
+          "devout",
+          "quietly troubled"
+        ],
+        "motivations": [
+          "healing the sick",
+          "spreading his faith gently",
+          "atoning for past mistake"
+        ],
+        "fears": [
+          "losing his faith",
+          "causing harm",
+          "his past catching up"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Peace be upon you, friend. How can I help?",
+          "You're welcome here. Everyone is.",
+          "The Flame guides all who seek warmth. Come in."
+        ],
+        "farewells": [
+          "Go with the Flame's blessing.",
+          "May your path be lit, and your burdens lightened.",
+          "I'll pray for your safe return."
+        ],
+        "idle": [
+          "I've been treating wounded travellers all week. Something is happening out there.",
+          "Faith isn't certainty. It's choosing to keep walking in the dark.",
+          "I wasn't always a cleric. That life feels very distant now."
+        ],
+        "quest_related": [
+          "A family in the lower quarter has been afflicted with a strange sickness.",
+          "Sacred relics were stolen from the temple last night. Help recover them.",
+          "A child bears a mark I've only seen in forbidden texts. I need help understanding it."
+        ]
+      },
+      "relationship_modifiers": {
+        "healed_others": 20,
+        "donated_to_temple": 15,
+        "recovered_relics": 40,
+        "desecrated_shrine": -50,
+        "helped_sick_family": 35,
+        "completed_quest": 30
+      }
+    },
+    {
+      "id": "rogue_sable",
+      "name": "Sable",
+      "race": "half-elf",
+      "role": "rogue",
+      "faction_alignment": "thieves_guild",
+      "personality": {
+        "traits": [
+          "slippery",
+          "charming",
+          "self-serving"
+        ],
+        "motivations": [
+          "personal freedom",
+          "amassing favours",
+          "staying ahead of everyone"
+        ],
+        "fears": [
+          "being caged",
+          "predictability",
+          "trusting the wrong person"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Relax. If I wanted you dead, we wouldn't be talking.",
+          "You've got the look of someone useful. Let's see if the reality matches.",
+          "I heard about you. Interesting reputation."
+        ],
+        "farewells": [
+          "Stay unpredictable. It's kept me alive.",
+          "Don't mention my name. Ever.",
+          "We'll meet again. Probably at an inconvenient moment."
+        ],
+        "idle": [
+          "Everyone's hiding something. I just know most of the hiding spots.",
+          "Trust is a luxury. Information is currency.",
+          "The Watch just rotated their patrol schedule. I noticed."
+        ],
+        "quest_related": [
+          "I need something from a very secure location. You'd be the distraction.",
+          "Someone's been following me. I need to know who hired them.",
+          "I have a job for two. Fifty-fifty split. That's generous, coming from me."
+        ]
+      },
+      "relationship_modifiers": {
+        "kept_secret": 25,
+        "betrayed_to_watch": -80,
+        "double_crossed": -60,
+        "shared_information": 15,
+        "completed_quest": 30
+      }
+    },
+    {
+      "id": "mysterious_wanderer_vorath",
+      "name": "Vorath",
+      "race": "unknown",
+      "role": "wanderer",
+      "faction_alignment": "none",
+      "personality": {
+        "traits": [
+          "cryptic",
+          "ancient",
+          "unsettling"
+        ],
+        "motivations": [
+          "observing mortal affairs",
+          "correcting cosmic imbalance",
+          "amusement"
+        ],
+        "fears": [
+          "being fully understood",
+          "boredom",
+          "the void"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "I've been watching you for some time. You don't notice much, do you?",
+          "Sit. I'll explain everything. Some of it will even be true.",
+          "You've walked into something larger than you know. Congratulations."
+        ],
+        "farewells": [
+          "We'll speak again. After the third death.",
+          "Remember: the obvious answer is usually wrong.",
+          "Don't look for me. I'll find you."
+        ],
+        "idle": [
+          "This town will be ash in a century. Enjoy it while it stands.",
+          "Three people in this tavern are not what they appear. Including me.",
+          "The stars are wrong tonight. You wouldn't know what that means."
+        ],
+        "quest_related": [
+          "Find the silver needle in the Tomb of Whispers. Don't ask why.",
+          "There's a door in this city with no keyhole. Open it.",
+          "Someone will betray you tonight. Pay attention to who smiles."
+        ]
+      },
+      "relationship_modifiers": {
+        "followed_cryptic_advice": 20,
+        "ignored_warning": -10,
+        "completed_quest": 40,
+        "tried_to_expose_identity": -30,
+        "showed_wisdom": 15
+      }
+    },
+    {
+      "id": "common_folk_marta",
+      "name": "Marta Greenbow",
+      "race": "human",
+      "role": "farmer",
+      "faction_alignment": "commoners",
+      "personality": {
+        "traits": [
+          "hardworking",
+          "superstitious",
+          "kind"
+        ],
+        "motivations": [
+          "feeding her children",
+          "a good harvest",
+          "the old ways"
+        ],
+        "fears": [
+          "blight",
+          "tax collectors",
+          "the forest after dark"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Morning! Can I help you? We don't get many strangers out this way.",
+          "Mind the mud. The well overflowed again.",
+          "You're not from around here, are you? Welcome, I suppose."
+        ],
+        "farewells": [
+          "Take care on the road. It's not safe past the old oak.",
+          "Come back anytime. I'll have bread made.",
+          "Blessings on you, friend."
+        ],
+        "idle": [
+          "The crows have been acting strange. Gran says that's a bad sign.",
+          "Harvest looks poor this year. I don't know what we'll do.",
+          "My youngest keeps seeing lights in the field at night."
+        ],
+        "quest_related": [
+          "Something's been getting at my chickens at night. It's not foxes.",
+          "My husband went to the city two weeks ago. He hasn't come back.",
+          "I found something buried under the north field. I daren't touch it."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_with_farm": 20,
+        "solved_chicken_mystery": 35,
+        "found_husband": 50,
+        "trampled_crops": -30,
+        "completed_quest": 30
+      }
+    },
+    {
+      "id": "blacksmith_garrett",
+      "name": "Garrett Ironhand",
+      "race": "human",
+      "role": "blacksmith",
+      "faction_alignment": "craftsmen_union",
+      "personality": {
+        "traits": [
+          "stoic",
+          "proud",
+          "reliable"
+        ],
+        "motivations": [
+          "perfect craftsmanship",
+          "legacy",
+          "his late father's memory"
+        ],
+        "fears": [
+          "shoddy work",
+          "the forge going cold",
+          "being surpassed by lesser craftsmen"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Give me a moment. Good steel takes time.",
+          "What do you need? I've got orders to fill.",
+          "You want something made or are you just looking?"
+        ],
+        "farewells": [
+          "Come back in two days. It'll be ready.",
+          "Don't thank me. Thank the steel.",
+          "Keep that edge oiled."
+        ],
+        "idle": [
+          "My father taught me: a good blade remembers every hammer.",
+          "Had a knight come in last week. Wanted decorative. I charged him double.",
+          "Apprentices these days don't understand patience."
+        ],
+        "quest_related": [
+          "I need a rare ore from the Deepvein Mine \u2014 something's in there cutting off supply.",
+          "Someone's selling counterfeits with my mark on them. Find the source.",
+          "A specific hammer was stolen from me years ago. I want it back."
+        ]
+      },
+      "relationship_modifiers": {
+        "cleared_the_mine": 35,
+        "found_counterfeiter": 40,
+        "recovered_hammer": 45,
+        "insulted_his_work": -30,
+        "completed_quest": 30
+      }
+    },
+    {
+      "id": "sage_velindra",
+      "name": "Velindra of the Scrolls",
+      "race": "high-elf",
+      "role": "sage",
+      "faction_alignment": "keepers_of_lore",
+      "personality": {
+        "traits": [
+          "pedantic",
+          "generous-with-knowledge",
+          "frail"
+        ],
+        "motivations": [
+          "preserving history",
+          "teaching worthy students",
+          "finding the Lost Codex"
+        ],
+        "fears": [
+          "knowledge being destroyed",
+          "her library burning",
+          "dying before finishing her work"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Ah, an enquiring mind! Please, sit. Ask anything.",
+          "Welcome to the archive. Careful of that stack \u2014 thirty years to organise.",
+          "A seeker! Wonderful. What brings you to dusty old Velindra?"
+        ],
+        "farewells": [
+          "Knowledge is your greatest weapon. Use it wisely.",
+          "Come back when you've read more. We'll have better conversations.",
+          "Take this note. You may need it."
+        ],
+        "idle": [
+          "The Lost Codex is real. Everyone calls me obsessed. I am. That's different.",
+          "History is just the version that survived. Remember that.",
+          "I've been translating these tablets for a decade. I think I finally understand the verb tense."
+        ],
+        "quest_related": [
+          "A fragment of the Lost Codex was sighted in the Tomb of the First Kings. Retrieve it intact.",
+          "Three scholars disappeared researching the same site. What did they find?",
+          "Someone is stealing pages from the restricted archive. Stop them before they translate what they've taken."
+        ]
+      },
+      "relationship_modifiers": {
+        "retrieved_codex_fragment": 50,
+        "donated_rare_book": 25,
+        "damaged_books": -40,
+        "completed_quest": 35,
+        "shared_rare_knowledge": 20
+      }
+    },
+    {
+      "id": "fence_kael",
+      "name": "Kael the Fence",
+      "race": "human",
+      "role": "fence",
+      "faction_alignment": "thieves_guild",
+      "personality": {
+        "traits": [
+          "nervous",
+          "greedy",
+          "street-smart"
+        ],
+        "motivations": [
+          "making coin",
+          "staying out of jail",
+          "expanding his network"
+        ],
+        "fears": [
+          "the Watch",
+          "guild cutting him loose",
+          "powerful clients"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Keep your voice down. This isn't a social call.",
+          "You buying or selling? Either way, be quick.",
+          "Oh. It's you. What have you got?"
+        ],
+        "farewells": [
+          "Don't come here two days in a row. People notice.",
+          "Clean business. Clean business.",
+          "Next time, use the back alley."
+        ],
+        "idle": [
+          "Business is complicated lately. The Watch has informants everywhere.",
+          "I had an ancient ring in here last week. Gave me a headache just holding it.",
+          "I don't ask where things come from. I don't ask where they go. That's the job."
+        ],
+        "quest_related": [
+          "I need something moved across the city without being searched.",
+          "Someone's been skimming my inventory. I need to know who.",
+          "A buyer wants a scholar's opinion on an old item. Get it quietly."
+        ]
+      },
+      "relationship_modifiers": {
+        "sold_rare_items": 15,
+        "reported_to_watch": -80,
+        "identified_skimmer": 35,
+        "threatened_him": -30,
+        "completed_quest": 25
+      }
+    },
+    {
+      "id": "inquisitor_selene",
+      "name": "Inquisitor Selene",
+      "race": "human",
+      "role": "inquisitor",
+      "faction_alignment": "order_of_the_flame",
+      "personality": {
+        "traits": [
+          "zealous",
+          "perceptive",
+          "coldly righteous"
+        ],
+        "motivations": [
+          "rooting out corruption",
+          "purifying the faith",
+          "justice above mercy"
+        ],
+        "fears": [
+          "heresy within the Order",
+          "going too far",
+          "being wrong"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "I've heard of your deeds. Whether they serve the Light remains to be seen.",
+          "You've crossed something unclean recently. I can tell.",
+          "I ask questions for the Order. Answer honestly. It's better for everyone."
+        ],
+        "farewells": [
+          "The Flame sees all. Including what you just didn't say.",
+          "I'll be watching. That's a courtesy, not a threat.",
+          "Pray you're as righteous as you appear."
+        ],
+        "idle": [
+          "Seventeen known cults in this region. I intend to reduce that number.",
+          "Mercy delayed justice once. It won't happen again.",
+          "The guilty always think they're subtle. They never are."
+        ],
+        "quest_related": [
+          "A cult has infiltrated the city guard. I need names without tipping them off.",
+          "A priest in the eastern chapel performs unsanctioned rites. Investigate and report only to me.",
+          "A relic of dark power has surfaced. Find it before it finds a wielder."
+        ]
+      },
+      "relationship_modifiers": {
+        "exposed_cultist": 40,
+        "aided_inquisition": 25,
+        "protected_heretic": -50,
+        "lied_to_her": -35,
+        "completed_quest": 40
+      }
+    },
+    {
+      "id": "disgraced_knight_davan",
+      "name": "Ser Davan Moth",
+      "race": "human",
+      "role": "disgraced_knight",
+      "faction_alignment": "none",
+      "personality": {
+        "traits": [
+          "haunted",
+          "honourable",
+          "self-destructive"
+        ],
+        "motivations": [
+          "redemption",
+          "protecting the innocent",
+          "dying with dignity"
+        ],
+        "fears": [
+          "dying without honour",
+          "hurting another innocent",
+          "being recognised"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Leave me be. Unless you need protecting.",
+          "Don't call me Ser. I haven't earned it in a long time.",
+          "You look like trouble. I was hoping for a quiet drink."
+        ],
+        "farewells": [
+          "Don't follow my example. Pick a better road.",
+          "Stay alive, if you can manage it.",
+          "Maybe I'll see you on the other side of this."
+        ],
+        "idle": [
+          "I served a lord who deserved none of it. The consequences belong to me.",
+          "I've won a dozen battles and lost the only one that mattered.",
+          "There's no honour in regret. But I can't seem to stop."
+        ],
+        "quest_related": [
+          "A village is being terrorised by my former order. I can't fight them alone.",
+          "I owe a debt to a family I wronged. Help me settle it without more bloodshed.",
+          "A young squire is about to make the same mistake I made. We need to intervene."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_village": 35,
+        "judged_his_past": -20,
+        "offered_redemption": 30,
+        "completed_quest": 40,
+        "fought_alongside": 25
+      }
+    },
+    {
+      "id": "noble_lady_fiora",
+      "name": "Lady Fiora Ashmont",
+      "race": "human",
+      "role": "noble",
+      "faction_alignment": "ashmont_house",
+      "personality": {
+        "traits": [
+          "gracious",
+          "politically astute",
+          "quietly ruthless"
+        ],
+        "motivations": [
+          "securing her house's future",
+          "a political marriage for her daughter",
+          "eliminating rival influence"
+        ],
+        "fears": [
+          "scandal",
+          "her daughter's rebellion",
+          "the king's fading favour"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "How delightful. A capable person, I'm told.",
+          "I don't waste words, and I hope you don't either.",
+          "Sit. I'll pour. Good wine loosens the truth."
+        ],
+        "farewells": [
+          "Our arrangement remains between us.",
+          "You've been most helpful. I shan't forget it.",
+          "Do call again. On your discretion, of course."
+        ],
+        "idle": [
+          "The council is theatre. I play my role while choosing the script.",
+          "My daughter has opinions about her future husband. We disagree.",
+          "Lord Crestfall smiled at me today. That means he's planning something unpleasant."
+        ],
+        "quest_related": [
+          "A letter containing things best left unread was intercepted. Retrieve it.",
+          "I need a certain noble discredited before the spring council. Quietly.",
+          "My daughter has run off with someone unsuitable. Retrieve her discreetly."
+        ]
+      },
+      "relationship_modifiers": {
+        "retrieved_letter": 40,
+        "discredited_rival": 30,
+        "found_daughter": 45,
+        "gossiped_about_her": -40,
+        "completed_quest": 35
+      }
+    },
+    {
+      "id": "beggar_old_pete",
+      "name": "Old Pete",
+      "race": "human",
+      "role": "beggar",
+      "faction_alignment": "none",
+      "personality": {
+        "traits": [
+          "sharp",
+          "observant",
+          "playing-the-fool"
+        ],
+        "motivations": [
+          "survival",
+          "protecting his information network",
+          "quiet revenge on a corrupt official"
+        ],
+        "fears": [
+          "being dismissed",
+          "network being discovered",
+          "the cold"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Spare a copper for an old man? No? Then maybe information instead.",
+          "I see more from this gutter than you see from standing up.",
+          "Heh. You've got the look of someone who needs to know a thing."
+        ],
+        "farewells": [
+          "Move along now. I've got appearances to maintain.",
+          "Come back when you've got coin. Or a question worth answering.",
+          "I wasn't here. You didn't see me."
+        ],
+        "idle": [
+          "Three carts went into the warehouse last night. None came out.",
+          "The magistrate's been visiting a house he doesn't officially visit.",
+          "People talk around beggars. We're furniture to them. It's useful."
+        ],
+        "quest_related": [
+          "I know where the stolen shipment went. What's that worth to you?",
+          "I've been watching a man the Watch should be watching. Interested?",
+          "There's a door in the merchant district that opens at midnight every seven days."
+        ]
+      },
+      "relationship_modifiers": {
+        "gave_coin": 10,
+        "bought_information": 20,
+        "dismissed_him": -15,
+        "protected_him": 40,
+        "completed_quest": 30,
+        "treated_with_respect": 20
+      }
+    },
+    {
+      "id": "innkeeper_magda",
+      "name": "Magda Stoneback",
+      "race": "human",
+      "role": "innkeeper",
+      "faction_alignment": "innkeepers_league",
+      "personality": {
+        "traits": [
+          "battle-hardened",
+          "hospitable",
+          "nostalgic"
+        ],
+        "motivations": [
+          "giving adventurers a safe harbour",
+          "proper retirement",
+          "living adventures through others"
+        ],
+        "fears": [
+          "inn destroyed in a fight",
+          "being dragged back to the old life",
+          "dying in a bed"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Welcome. Rooms are clean, food is honest, and fights stay outside.",
+          "Sit down, take the weight off. You've got the road in your eyes.",
+          "Back again? I'll put your usual on."
+        ],
+        "farewells": [
+          "Sleep well. Tomorrow's trouble will come whether you're rested or not.",
+          "I've buried better adventurers than you. Try not to join them.",
+          "Door's always open."
+        ],
+        "idle": [
+          "Twenty years adventuring, and my worst scar is from a tavern brawl. Funny how it works.",
+          "A hundred heroes have passed through here. Maybe three were actually heroic.",
+          "When the dragon came in '82... now that was a night."
+        ],
+        "quest_related": [
+          "One of my guests hasn't come back from a job. I'd like to know if they're alive.",
+          "Something's been in my cellar. And I've fought dragons \u2014 I know what trouble smells like.",
+          "A letter came for an old colleague. He's dead. His enemies might intercept it \u2014 deliver it first."
+        ]
+      },
+      "relationship_modifiers": {
+        "found_missing_guest": 35,
+        "cleared_cellar": 30,
+        "delivered_letter": 25,
+        "started_fight_in_inn": -40,
+        "respected_her_stories": 15,
+        "completed_quest": 30
+      }
+    }
+  ]
+}
