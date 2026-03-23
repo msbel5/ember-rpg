@@ -52,21 +52,38 @@ func _ready() -> void:
 	text_input.grab_focus()
 
 func _enter_scene(location_name: String) -> void:
-	_append_narrative("[color=gray]Entering %s...[/color]" % location_name)
+	print("[DEBUG] enter_scene called. session_id='%s', location='%s'" % [GameState.session_id, location_name])
+	var display_name = location_name.replace("_", " ").capitalize()
+	_append_narrative("[color=gray]Entering %s...[/color]" % display_name)
 	Backend.enter_scene(GameState.session_id, location_name, _on_scene_entered)
 
 func _on_scene_entered(data) -> void:
 	if data == null:
+		print("[DEBUG] scene_entered: data is NULL — backend returned error")
 		_append_narrative("[color=red]Failed to enter scene.[/color]")
 		return
+	print("[DEBUG] scene_entered: got data, keys=%s" % str(data.keys()))
 	GameState.update_from_response(data)
 
 func _on_entity_clicked(entity_id: String, entity_data: Dictionary) -> void:
-	var name = entity_data.get("name", "Unknown")
+	var entity_name = entity_data.get("name", "Unknown")
 	var actions = entity_data.get("context_actions", [])
-	_append_narrative("[color=yellow]%s[/color] — %s" % [name, ", ".join(actions)])
-	# Auto-examine on click
-	_submit_action("examine %s" % name.to_lower())
+	if actions.is_empty():
+		_submit_action("examine %s" % entity_name.to_lower())
+		return
+	# Show context menu popup
+	var popup = PopupMenu.new()
+	popup.name = "EntityContextMenu"
+	for i in range(actions.size()):
+		popup.add_item(actions[i].capitalize(), i)
+	add_child(popup)
+	popup.id_pressed.connect(func(id: int):
+		var action_name = actions[id]
+		_submit_action("%s %s" % [action_name, entity_name.to_lower()])
+		popup.queue_free()
+	)
+	popup.popup_on_parent(Rect2i(get_viewport().get_mouse_position(), Vector2i(120, 0)))
+	popup.popup_hide.connect(popup.queue_free)
 
 func _on_tile_clicked(tx: int, ty: int) -> void:
 	_submit_action("move to %d,%d" % [tx, ty])
@@ -101,13 +118,35 @@ func _on_action_response(data) -> void:
 	GameState.update_from_response(data)
 	text_input.grab_focus()
 
+var _typing_queue: Array[String] = []
+var _is_typing: bool = false
+
 func _on_narrative(text: String) -> void:
-	_append_narrative(text)
+	_typing_queue.append(text)
+	if not _is_typing:
+		_process_typing_queue()
+
+func _process_typing_queue() -> void:
+	_is_typing = true
+	while not _typing_queue.is_empty():
+		var text = _typing_queue.pop_front()
+		await _type_text(text)
+	_is_typing = false
+
+func _type_text(text: String) -> void:
+	# Type character by character with small delay
+	var chars_added = 0
+	for c in text:
+		narrative_panel.append_text(c)
+		chars_added += 1
+		if chars_added % 3 == 0:  # Every 3 chars, scroll and tiny pause
+			await get_tree().process_frame
+	narrative_panel.append_text("\n\n")
+	await get_tree().process_frame
+	narrative_panel.scroll_to_line(narrative_panel.get_line_count())
 
 func _append_narrative(text: String) -> void:
 	narrative_panel.append_text(text + "\n\n")
-
-	# Auto-scroll to bottom
 	await get_tree().process_frame
 	narrative_panel.scroll_to_line(narrative_panel.get_line_count())
 
@@ -142,8 +181,7 @@ func _refresh_player_status() -> void:
 	xp_bar.value = xp % 100
 
 func _refresh_location() -> void:
-	if GameState.location != "":
-		location_label.text = GameState.location
+	location_label.text = GameState.get_display_location()
 
 func _refresh_combat_hud() -> void:
 	if not GameState.is_in_combat():
