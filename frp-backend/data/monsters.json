@@ -33,8 +33,14 @@
       },
       "xp_reward": 50,
       "loot_table": [
-        "wolf_pelt",
-        "fang"
+        {
+          "item_id": "wolf_pelt",
+          "drop_rate": 0.4
+        },
+        {
+          "item_id": "fang",
+          "drop_rate": 0.3
+        }
       ]
     },
     {
@@ -71,8 +77,18 @@
       },
       "xp_reward": 200,
       "loot_table": [
-        "dire_wolf_pelt",
-        "large_fang"
+        {
+          "item_id": "dire_wolf_pelt",
+          "drop_rate": 0.45
+        },
+        {
+          "item_id": "large_fang",
+          "drop_rate": 0.35
+        },
+        {
+          "item_id": "potion_of_healing",
+          "drop_rate": 0.15
+        }
       ]
     },
     {
@@ -114,8 +130,14 @@
       },
       "xp_reward": 100,
       "loot_table": [
-        "bear_pelt",
-        "bear_claw"
+        {
+          "item_id": "bear_pelt",
+          "drop_rate": 0.4
+        },
+        {
+          "item_id": "bear_claw",
+          "drop_rate": 0.3
+        }
       ]
     },
     {
@@ -158,9 +180,18 @@
       },
       "xp_reward": 450,
       "loot_table": [
-        "grizzly_pelt",
-        "bear_claw",
-        "bear_meat"
+        {
+          "item_id": "grizzly_pelt",
+          "drop_rate": 0.45
+        },
+        {
+          "item_id": "bear_claw",
+          "drop_rate": 0.35
+        },
+        {
+          "item_id": "bear_meat",
+          "drop_rate": 0.25
+        }
       ]
     },
     {
@@ -198,8 +229,14 @@
       },
       "xp_reward": 200,
       "loot_table": [
-        "spider_silk",
-        "venom_sac"
+        {
+          "item_id": "spider_silk",
+          "drop_rate": 0.35
+        },
+        {
+          "item_id": "venom_sac",
+          "drop_rate": 0.25
+        }
       ]
     },
     {
@@ -237,8 +274,18 @@
       },
       "xp_reward": 700,
       "loot_table": [
-        "phase_spider_silk",
-        "ethereal_essence"
+        {
+          "item_id": "phase_spider_silk",
+          "drop_rate": 0.5
+        },
+        {
+          "item_id": "ethereal_essence",
+          "drop_rate": 0.4
+        },
+        {
+          "item_id": "vial_of_poison",
+          "drop_rate": 0.3
+        }
       ]
     },
     {
@@ -277,8 +324,14 @@
       },
       "xp_reward": 50,
       "loot_table": [
-        "bone_fragment",
-        "rusty_sword"
+        {
+          "item_id": "bone_fragment",
+          "drop_rate": 0.3
+        },
+        {
+          "item_id": "rusty_sword",
+          "drop_rate": 0.15
+        }
       ]
     },
     {
@@ -319,8 +372,18 @@
       },
       "xp_reward": 100,
       "loot_table": [
-        "bone_fragment",
-        "arrow"
+        {
+          "item_id": "bone_fragment",
+          "drop_rate": 0.3
+        },
+        {
+          "item_id": "arrow",
+          "drop_rate": 0.4
+        },
+        {
+          "item_id": "shortbow",
+          "drop_rate": 0.15
+        }
       ]
     },
     {
@@ -358,8 +421,14 @@
       },
       "xp_reward": 50,
       "loot_table": [
-        "rotting_flesh",
-        "copper_coin"
+        {
+          "item_id": "rotting_flesh",
+          "drop_rate": 0.35
+        },
+        {
+          "item_id": "copper_coin",
+          "drop_rate": 0.2
+        }
       ]
     },
     {
@@ -404,8 +473,18 @@
       },
       "xp_reward": 200,
       "loot_table": [
-        "plague_essence",
-        "copper_coin"
+        {
+          "item_id": "rotting_flesh",
+          "drop_rate": 0.4
+        },
+        {
+          "item_id": "plague_essence",
+          "drop_rate": 0.35
+        },
+        {
+          "item_id": "vial_of_poison",
+          "drop_rate": 0.2
+        }
       ]
     },
     {
@@ -457,9 +536,18 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "blood_vial",
-        "vampire_fang",
-        "silver_coin"
+        {
+          "item_id": "blood_vial",
+          "drop_rate": 0.55
+        },
+        {
+          "item_id": "vampire_fang",
+          "drop_rate": 0.45
+        },
+        {
+          "item_id": "silver_coin",
+          "drop_rate": 0.3
+        }
       ]
     },
     {
@@ -501,9 +589,18 @@
       },
       "xp_reward": 50,
       "loot_table": [
-        "copper_coin",
-        "crude_dagger",
-        "goblin_ear"
+        {
+          "item_id": "goblin_ear",
+          "drop_rate": 0.35
+        },
+        {
+          "item_id": "crude_dagger",
+          "drop_rate": 0.2
+        },
+        {
+          "item_id": "copper_coin",
+          "drop_rate": 0.3
+        }
       ]
     },
     {
@@ -547,9 +644,18 @@
       },
       "xp_reward": 200,
       "loot_table": [
-        "silver_coin",
-        "scimitar",
-        "goblin_crown"
+        {
+          "item_id": "goblin_crown",
+          "drop_rate": 0.6
+        },
+        {
+          "item_id": "scimitar",
+          "drop_rate": 0.35
+        },
+        {
+          "item_id": "potion_of_healing",
+          "drop_rate": 0.4
+        }
       ]
     },
     {
@@ -591,9 +697,18 @@
       },
       "xp_reward": 100,
       "loot_table": [
-        "copper_coin",
-        "greataxe",
-        "orc_tusk"
+        {
+          "item_id": "orc_tusk",
+          "drop_rate": 0.35
+        },
+        {
+          "item_id": "handaxe",
+          "drop_rate": 0.2
+        },
+        {
+          "item_id": "silver_coin",
+          "drop_rate": 0.25
+        }
       ]
     },
     {
@@ -638,9 +753,18 @@
       },
       "xp_reward": 1100,
       "loot_table": [
-        "gold_coin",
-        "war_greataxe",
-        "warchief_helmet"
+        {
+          "item_id": "warchief_helmet",
+          "drop_rate": 0.5
+        },
+        {
+          "item_id": "war_greataxe",
+          "drop_rate": 0.4
+        },
+        {
+          "item_id": "gold_coin",
+          "drop_rate": 0.55
+        }
       ]
     },
     {
@@ -680,9 +804,18 @@
       },
       "xp_reward": 25,
       "loot_table": [
-        "copper_coin",
-        "scimitar",
-        "stolen_goods"
+        {
+          "item_id": "stolen_goods",
+          "drop_rate": 0.3
+        },
+        {
+          "item_id": "dagger",
+          "drop_rate": 0.2
+        },
+        {
+          "item_id": "silver_coin",
+          "drop_rate": 0.35
+        }
       ]
     },
     {
@@ -725,9 +858,18 @@
       },
       "xp_reward": 450,
       "loot_table": [
-        "gold_coin",
-        "captain_scimitar",
-        "wanted_poster"
+        {
+          "item_id": "captain_scimitar",
+          "drop_rate": 0.55
+        },
+        {
+          "item_id": "chain_shirt",
+          "drop_rate": 0.4
+        },
+        {
+          "item_id": "stolen_goods",
+          "drop_rate": 0.6
+        }
       ]
     },
     {
@@ -779,8 +921,14 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "fire_essence",
-        "ember_shard"
+        {
+          "item_id": "fire_essence",
+          "drop_rate": 0.45
+        },
+        {
+          "item_id": "ember_shard",
+          "drop_rate": 0.35
+        }
       ]
     },
     {
@@ -832,8 +980,14 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "water_essence",
-        "tidal_crystal"
+        {
+          "item_id": "water_essence",
+          "drop_rate": 0.45
+        },
+        {
+          "item_id": "tidal_crystal",
+          "drop_rate": 0.3
+        }
       ]
     },
     {
@@ -884,8 +1038,14 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "earth_essence",
-        "stone_shard"
+        {
+          "item_id": "earth_essence",
+          "drop_rate": 0.45
+        },
+        {
+          "item_id": "stone_shard",
+          "drop_rate": 0.35
+        }
       ]
     },
     {
@@ -937,8 +1097,14 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "air_essence",
-        "storm_crystal"
+        {
+          "item_id": "air_essence",
+          "drop_rate": 0.45
+        },
+        {
+          "item_id": "storm_crystal",
+          "drop_rate": 0.3
+        }
       ]
     },
     {
@@ -981,8 +1147,18 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "troll_hide",
-        "troll_heart"
+        {
+          "item_id": "troll_hide",
+          "drop_rate": 0.45
+        },
+        {
+          "item_id": "troll_heart",
+          "drop_rate": 0.3
+        },
+        {
+          "item_id": "potion_of_healing",
+          "drop_rate": 0.2
+        }
       ]
     },
     {
@@ -1022,9 +1198,18 @@
       },
       "xp_reward": 450,
       "loot_table": [
-        "gold_coin",
-        "greatclub",
-        "ogre_tooth"
+        {
+          "item_id": "ogre_tooth",
+          "drop_rate": 0.4
+        },
+        {
+          "item_id": "greatclub",
+          "drop_rate": 0.25
+        },
+        {
+          "item_id": "gold_coin",
+          "drop_rate": 0.35
+        }
       ]
     },
     {
@@ -1076,8 +1261,18 @@
       },
       "xp_reward": 700,
       "loot_table": [
-        "dark_iron_coin",
-        "wight_essence"
+        {
+          "item_id": "wight_essence",
+          "drop_rate": 0.55
+        },
+        {
+          "item_id": "necrotic_essence",
+          "drop_rate": 0.4
+        },
+        {
+          "item_id": "iron_shortsword",
+          "drop_rate": 0.3
+        }
       ]
     },
     {
@@ -1127,8 +1322,18 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "wraithstone",
-        "necrotic_essence"
+        {
+          "item_id": "wraithstone",
+          "drop_rate": 0.6
+        },
+        {
+          "item_id": "necrotic_essence",
+          "drop_rate": 0.5
+        },
+        {
+          "item_id": "scroll_of_healing_word",
+          "drop_rate": 0.25
+        }
       ]
     },
     {
@@ -1180,10 +1385,22 @@
       },
       "xp_reward": 5900,
       "loot_table": [
-        "dragon_scale",
-        "dragon_tooth",
-        "gold_hoard",
-        "ruby_gem"
+        {
+          "item_id": "dragon_scale",
+          "drop_rate": 0.7
+        },
+        {
+          "item_id": "dragon_tooth",
+          "drop_rate": 0.6
+        },
+        {
+          "item_id": "gold_hoard",
+          "drop_rate": 0.8
+        },
+        {
+          "item_id": "ruby_gem",
+          "drop_rate": 0.5
+        }
       ]
     },
     {
@@ -1243,10 +1460,22 @@
       },
       "xp_reward": 62000,
       "loot_table": [
-        "ancient_dragon_scale",
-        "dragon_heart",
-        "legendary_hoard",
-        "dragon_eye_gem"
+        {
+          "item_id": "ancient_dragon_scale",
+          "drop_rate": 0.9
+        },
+        {
+          "item_id": "dragon_heart",
+          "drop_rate": 0.8
+        },
+        {
+          "item_id": "legendary_hoard",
+          "drop_rate": 1.0
+        },
+        {
+          "item_id": "dragon_eye_gem",
+          "drop_rate": 0.7
+        }
       ]
     },
     {
@@ -1303,10 +1532,22 @@
       },
       "xp_reward": 33000,
       "loot_table": [
-        "phylactery_shard",
-        "lich_crown",
-        "spellbook_ancient",
-        "necrotic_crystal"
+        {
+          "item_id": "lich_crown",
+          "drop_rate": 0.85
+        },
+        {
+          "item_id": "phylactery_shard",
+          "drop_rate": 0.9
+        },
+        {
+          "item_id": "necrotic_crystal",
+          "drop_rate": 0.75
+        },
+        {
+          "item_id": "scroll_of_mastery",
+          "drop_rate": 0.6
+        }
       ]
     },
     {
@@ -1365,10 +1606,22 @@
       },
       "xp_reward": 25000,
       "loot_table": [
-        "demon_heart",
-        "abyssal_blade",
-        "demon_lord_horn",
-        "hellfire_essence"
+        {
+          "item_id": "demon_heart",
+          "drop_rate": 0.9
+        },
+        {
+          "item_id": "demon_lord_horn",
+          "drop_rate": 0.85
+        },
+        {
+          "item_id": "hellfire_essence",
+          "drop_rate": 0.8
+        },
+        {
+          "item_id": "abyssal_blade",
+          "drop_rate": 0.65
+        }
       ]
     },
     {
@@ -1416,9 +1669,18 @@
       },
       "xp_reward": 10000,
       "loot_table": [
-        "beholder_eye",
-        "antimagic_shard",
-        "aberrant_flesh"
+        {
+          "item_id": "beholder_eye",
+          "drop_rate": 0.85
+        },
+        {
+          "item_id": "antimagic_shard",
+          "drop_rate": 0.75
+        },
+        {
+          "item_id": "aberrant_flesh",
+          "drop_rate": 0.6
+        }
       ]
     },
     {
@@ -1463,9 +1725,18 @@
       },
       "xp_reward": 2900,
       "loot_table": [
-        "mind_flayer_brain",
-        "psionic_crystal",
-        "illithid_robes"
+        {
+          "item_id": "mind_flayer_brain",
+          "drop_rate": 0.65
+        },
+        {
+          "item_id": "psionic_crystal",
+          "drop_rate": 0.55
+        },
+        {
+          "item_id": "illithid_robes",
+          "drop_rate": 0.35
+        }
       ]
     },
     {
@@ -1509,9 +1780,18 @@
       },
       "xp_reward": 2300,
       "loot_table": [
-        "medusa_scale",
-        "petrification_essence",
-        "venom_extract"
+        {
+          "item_id": "medusa_scale",
+          "drop_rate": 0.65
+        },
+        {
+          "item_id": "petrification_essence",
+          "drop_rate": 0.5
+        },
+        {
+          "item_id": "venom_extract",
+          "drop_rate": 0.45
+        }
       ]
     },
     {
@@ -1554,9 +1834,18 @@
       },
       "xp_reward": 3900,
       "loot_table": [
-        "stone_giant_club",
-        "granite_rune",
-        "giant_coin_pouch"
+        {
+          "item_id": "stone_giant_club",
+          "drop_rate": 0.55
+        },
+        {
+          "item_id": "granite_rune",
+          "drop_rate": 0.5
+        },
+        {
+          "item_id": "giant_coin_pouch",
+          "drop_rate": 0.6
+        }
       ]
     },
     {
@@ -1600,10 +1889,18 @@
       },
       "xp_reward": 5000,
       "loot_table": [
-        "cloud_giant_morningstar",
-        "silver_cloud_gem",
-        "storm_essence",
-        "giant_coin_pouch"
+        {
+          "item_id": "cloud_giant_morningstar",
+          "drop_rate": 0.6
+        },
+        {
+          "item_id": "silver_cloud_gem",
+          "drop_rate": 0.55
+        },
+        {
+          "item_id": "storm_essence",
+          "drop_rate": 0.45
+        }
       ]
     },
     {
@@ -1649,10 +1946,18 @@
       },
       "xp_reward": 7200,
       "loot_table": [
-        "frost_giant_axe",
-        "glacial_shard",
-        "frozen_trophy",
-        "giant_coin_pouch"
+        {
+          "item_id": "frost_giant_axe",
+          "drop_rate": 0.6
+        },
+        {
+          "item_id": "glacial_shard",
+          "drop_rate": 0.55
+        },
+        {
+          "item_id": "frozen_trophy",
+          "drop_rate": 0.45
+        }
       ]
     },
     {
@@ -1696,10 +2001,22 @@
       },
       "xp_reward": 8400,
       "loot_table": [
-        "spellbook_archmage",
-        "arcane_focus_gem",
-        "scroll_of_mastery",
-        "archmage_robes"
+        {
+          "item_id": "spellbook_archmage",
+          "drop_rate": 0.8
+        },
+        {
+          "item_id": "arcane_focus_gem",
+          "drop_rate": 0.75
+        },
+        {
+          "item_id": "staff_of_the_archmage",
+          "drop_rate": 0.55
+        },
+        {
+          "item_id": "scroll_of_mastery",
+          "drop_rate": 0.65
+        }
       ]
     },
     {
@@ -1752,11 +2069,22 @@
       },
       "xp_reward": 10000,
       "loot_table": [
-        "vampire_cloak",
-        "blood_crystal",
-        "vampire_ring",
-        "ancient_gold_coin",
-        "noble_signet"
+        {
+          "item_id": "blood_crystal",
+          "drop_rate": 0.8
+        },
+        {
+          "item_id": "vampire_cloak",
+          "drop_rate": 0.65
+        },
+        {
+          "item_id": "vampire_ring",
+          "drop_rate": 0.6
+        },
+        {
+          "item_id": "ancient_gold_coin",
+          "drop_rate": 0.75
+        }
       ]
     }
   ]
