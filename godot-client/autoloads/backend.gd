@@ -2,7 +2,7 @@ extends Node
 
 # Backend HTTP Client — all API calls to FastAPI server
 
-const DEFAULT_URL = "http://localhost:8765"
+const DEFAULT_URL = "http://192.168.1.55:8000"
 
 var base_url: String = DEFAULT_URL
 
@@ -32,6 +32,10 @@ func delete_session(session_id: String, callback: Callable) -> void:
 
 func get_map(session_id: String, callback: Callable) -> void:
 	_http_get("/game/session/%s/map" % session_id, callback)
+
+func enter_scene(session_id: String, location: String, callback: Callable) -> void:
+	var body = JSON.stringify({"session_id": session_id, "location": location})
+	_post("/game/scene/enter", body, callback)
 
 func save_game(session_id: String, callback: Callable) -> void:
 	_post("/game/session/%s/save" % session_id, "{}", callback)

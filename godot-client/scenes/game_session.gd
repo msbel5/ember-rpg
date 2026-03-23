@@ -14,6 +14,7 @@ extends Control
 @onready var map_viewer: Panel = $MainLayout/ContentSplit/MapPanel
 @onready var location_label: Label = $MainLayout/ContentSplit/MapPanel/LocationLabel
 
+var tile_map_renderer: Control = null
 var is_waiting: bool = false
 
 func _ready() -> void:
@@ -28,13 +29,47 @@ func _ready() -> void:
 	GameState.level_up_occurred.connect(_on_level_up)
 	Backend.request_error.connect(_on_backend_error)
 
+	# Create tile map renderer in the map panel
+	var renderer_script = load("res://scripts/tile_map_renderer.gd")
+	tile_map_renderer = Control.new()
+	tile_map_renderer.set_script(renderer_script)
+	tile_map_renderer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tile_map_renderer.entity_clicked.connect(_on_entity_clicked)
+	tile_map_renderer.tile_clicked.connect(_on_tile_clicked)
+	map_viewer.add_child(tile_map_renderer)
+
 	# Show initial narrative
 	if not GameState.narrative_history.is_empty():
 		for line in GameState.narrative_history:
 			_append_narrative(line)
 
 	_refresh_player_status()
+
+	# Auto-enter the starting scene
+	if GameState.session_id != "":
+		_enter_scene("harbor_town")
+
 	text_input.grab_focus()
+
+func _enter_scene(location_name: String) -> void:
+	_append_narrative("[color=gray]Entering %s...[/color]" % location_name)
+	Backend.enter_scene(GameState.session_id, location_name, _on_scene_entered)
+
+func _on_scene_entered(data) -> void:
+	if data == null:
+		_append_narrative("[color=red]Failed to enter scene.[/color]")
+		return
+	GameState.update_from_response(data)
+
+func _on_entity_clicked(entity_id: String, entity_data: Dictionary) -> void:
+	var name = entity_data.get("name", "Unknown")
+	var actions = entity_data.get("context_actions", [])
+	_append_narrative("[color=yellow]%s[/color] — %s" % [name, ", ".join(actions)])
+	# Auto-examine on click
+	_submit_action("examine %s" % name.to_lower())
+
+func _on_tile_clicked(tx: int, ty: int) -> void:
+	_submit_action("move to %d,%d" % [tx, ty])
 
 func _on_text_submitted(text: String) -> void:
 	_submit_action(text)
