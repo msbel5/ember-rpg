@@ -277,3 +277,40 @@ class NPCManager:
     def list_npcs(self) -> List[NPC]:
         """Return all registered NPCs."""
         return list(self.npcs.values())
+
+
+def generate_npc_dialogue_llm(npc_template: dict, npc_memory, world_state=None, player_input: str = "") -> str:
+    """Generate contextual NPC dialogue using LLM + NPC memory."""
+    from engine.llm import get_llm_router
+    router = get_llm_router()
+
+    # Build NPC context from memory
+    npc_ctx = npc_memory.build_context(npc_template) if npc_memory else ""
+
+    # World context
+    world_ctx = ""
+    if world_state:
+        world_ctx = world_state.build_ai_context()
+
+    personality = npc_template.get('personality', [])
+    personality_str = ', '.join(personality) if isinstance(personality, list) else str(personality)
+
+    system_prompt = npc_ctx or (
+        f"You are {npc_template.get('name', 'an NPC')}, a {npc_template.get('role', 'person')} in a dark fantasy world.\n"
+        f"Personality: {personality_str}\n"
+        f"Speech style: {npc_template.get('speech_style', 'casual')}\n"
+        f"Stay in character. Keep responses to 1-2 sentences."
+    )
+
+    user_prompt = player_input if player_input else "The player approaches and greets you."
+    if world_ctx:
+        user_prompt = f"WORLD CONTEXT:\n{world_ctx}\n\nPlayer says: {user_prompt}"
+
+    result = router.narrative(system_prompt, user_prompt)
+    if result:
+        return result
+
+    # Fallback to template dialogue
+    greetings = npc_template.get('dialogue', {}).get('greeting', [])
+    import random
+    return random.choice(greetings) if greetings else "Hello, traveler."

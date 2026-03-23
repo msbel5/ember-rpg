@@ -377,3 +377,94 @@ class DMAIAgent:
             return template.format(**fmt)
         except (KeyError, ValueError):
             return event.description
+
+    def generate_narrative(self, event_type, **kwargs) -> str:
+        """
+        Template-based narrative generation (no LLM).
+        Accepts event_type + keyword arguments matching template placeholders.
+        """
+        templates = NARRATIVE_TEMPLATES.get(event_type)
+        if not templates:
+            return kwargs.get('description', 'Something happens.')
+        template = random.choice(templates)
+        fmt = {
+            'description': kwargs.get('description', ''),
+            'player_name': kwargs.get('player_name', 'the adventurer'),
+            'enemy_name': kwargs.get('enemy_name', 'the enemy'),
+            'npc_name': kwargs.get('npc_name', 'the stranger'),
+            'location': kwargs.get('location', 'this place'),
+            'item_name': kwargs.get('item_name', 'a mysterious item'),
+            'level': kwargs.get('level', '?'),
+            'xp_gained': kwargs.get('xp_gained', ''),
+            **kwargs,
+        }
+        try:
+            return template.format(**fmt)
+        except (KeyError, ValueError):
+            return kwargs.get('description', 'Something happens.')
+
+    def generate_narrative_llm(
+        self,
+        event_type,
+        context: dict,
+        world_context: str = "",
+        npc_context: str = "",
+        important: bool = False,
+    ) -> str:
+        """
+        Generate narrative using LLM with world state + NPC memory context.
+        Falls back to template if LLM unavailable.
+        """
+        from engine.llm import get_llm_router
+        router = get_llm_router()
+
+        system_prompt = """You are the Dungeon Master for Ember RPG, a dark fantasy tabletop RPG.
+Your job: generate immersive, atmospheric narrative responses to player actions.
+
+Rules:
+- Keep responses 1-3 sentences (concise but evocative)
+- Use second-person ("You see...", "Before you stands...")
+- Match the tone: tense in combat, mysterious in exploration, warm in friendly NPC interactions
+- Reference world state and NPC memory naturally when provided
+- Never break the 4th wall or mention game mechanics directly
+- Never repeat the same opening phrase twice in a session"""
+
+        context_parts = []
+        if world_context:
+            context_parts.append(f"WORLD STATE:\n{world_context}")
+        if npc_context:
+            context_parts.append(f"NPC CONTEXT:\n{npc_context}")
+
+        player_name = context.get('player_name', 'Adventurer')
+        location = context.get('location', 'unknown location')
+        action = context.get('action', '')
+        description = context.get('description', '')
+
+        event_prompts = {
+            'EXPLORATION': f"The player ({player_name}) is exploring {location}. They {action or 'look around'}. Describe what they observe.",
+            'COMBAT_START': f"Combat begins! {player_name} encounters {description} in {location}. Open with dramatic combat narration.",
+            'COMBAT_END_VICTORY': f"{player_name} has defeated {description}. Describe the victory moment briefly.",
+            'COMBAT_END_DEFEAT': f"{player_name} has been defeated in combat. Describe the dramatic defeat.",
+            'NPC_ENCOUNTER': f"{player_name} encounters {description} in {location}. Describe the meeting atmosphere.",
+            'ITEM_FOUND': f"{player_name} discovers {description}. Describe the discovery vividly.",
+            'LEVEL_UP': f"{player_name} has reached level {context.get('level', '?')}. Describe their growth.",
+            'QUEST_START': f"{player_name} begins a new quest: {description}. Set the scene.",
+            'QUEST_COMPLETE': f"{player_name} has completed: {description}. Describe the satisfaction.",
+            'DUNGEON_ENTRANCE': f"{player_name} stands at the entrance of {description}. Build dread and anticipation.",
+        }
+
+        event_key = event_type.value if hasattr(event_type, 'value') else str(event_type)
+        user_prompt = event_prompts.get(
+            event_key.upper(),
+            f"{player_name} {action or 'acts'} in {location}. Describe what happens."
+        )
+
+        if context_parts:
+            user_prompt = "\n".join(context_parts) + "\n\n" + user_prompt
+
+        result = router.narrative(system_prompt, user_prompt, important=important)
+        if result:
+            return result
+
+        # Fallback to template
+        return self.generate_narrative(event_type, **{k: v for k, v in context.items() if k != 'action'})

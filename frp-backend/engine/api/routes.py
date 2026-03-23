@@ -129,3 +129,19 @@ def _get_session(session_id: str) -> GameSession:
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
+
+
+@router.get("/llm/status")
+def llm_status():
+    """Check LLM availability and return a test response."""
+    from engine.llm import get_llm_router, MODEL_FAST
+    router = get_llm_router()
+    test_response = router.narrative(
+        "You are a fantasy game DM. Keep responses to 1 sentence.",
+        "Player looks around a dark dungeon corridor."
+    )
+    return {
+        "available": test_response is not None,
+        "model": MODEL_FAST,
+        "test_response": test_response or "(LLM unavailable — templates active)",
+    }
