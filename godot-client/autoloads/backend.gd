@@ -2,7 +2,7 @@ extends Node
 
 # Backend HTTP Client — all API calls to FastAPI server
 
-const DEFAULT_URL = "http://192.168.1.55:8000"
+const DEFAULT_URL = "http://192.168.1.55:8765"
 
 var base_url: String = DEFAULT_URL
 
@@ -62,8 +62,10 @@ func _post(path: String, body: String, callback: Callable) -> void:
 	http.request_completed.connect(_on_request_completed.bind(http, callback))
 	request_started.emit()
 
+	var full_url = base_url + path
+	print("[Backend] POST %s body_len=%d" % [full_url, body.length()])
 	var headers = ["Content-Type: application/json"]
-	var error = http.request(base_url + path, headers, HTTPClient.METHOD_POST, body)
+	var error = http.request(full_url, headers, HTTPClient.METHOD_POST, body)
 	if error != OK:
 		request_error.emit("HTTP request failed: %s" % error_string(error))
 		http.queue_free()
@@ -93,19 +95,24 @@ func _http_delete(path: String, callback: Callable) -> void:
 func _on_request_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray, http: HTTPRequest, callback: Callable) -> void:
 	http.queue_free()
 	request_finished.emit()
+	print("[Backend] Response: result=%d, code=%d, body_size=%d" % [result, response_code, body.size()])
 
 	if result != HTTPRequest.RESULT_SUCCESS:
 		request_error.emit("Connection failed — is the backend running?")
 		callback.call(null)
 		return
 
-	if response_code == 404:
-		request_error.emit("Session not found. Start a new game?")
-		callback.call(null)
-		return
-
-	if response_code >= 500:
-		request_error.emit("Backend error (HTTP %d)" % response_code)
+	if response_code >= 400:
+		var err_text = body.get_string_from_utf8()
+		var err_msg = "HTTP %d" % response_code
+		var err_data = JSON.parse_string(err_text)
+		if err_data and err_data.has("detail"):
+			err_msg = str(err_data["detail"])
+		if response_code == 404:
+			request_error.emit("Session not found. Start a new game?")
+		else:
+			request_error.emit("Backend error: %s" % err_msg)
+		print("[Backend] Error %d: %s" % [response_code, err_msg])
 		callback.call(null)
 		return
 

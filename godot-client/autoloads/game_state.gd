@@ -37,7 +37,7 @@ func update_from_response(data: Dictionary) -> void:
 
 	# Narrative
 	if data.has("narrative") and data["narrative"] != "":
-		var text = data["narrative"]
+		var text = _clean_narrative(data["narrative"])
 		narrative_history.append(text)
 		if narrative_history.size() > 50:
 			narrative_history.pop_front()
@@ -80,8 +80,9 @@ func update_from_response(data: Dictionary) -> void:
 		narrative_stream = data["narrative_stream"]
 		for item in narrative_stream:
 			if item.has("text") and item["text"] != "":
-				narrative_history.append(item["text"])
-				narrative_received.emit(item["text"])
+				var clean = _clean_narrative(item["text"])
+				narrative_history.append(clean)
+				narrative_received.emit(clean)
 
 	state_updated.emit()
 
@@ -104,3 +105,23 @@ func get_player_hp_ratio() -> float:
 	var hp = player.get("hp", 0)
 	var max_hp = player.get("max_hp", 1)
 	return float(hp) / float(max_hp)
+
+func get_display_location() -> String:
+	if location.is_empty():
+		return "Unknown"
+	return location.replace("_", " ").capitalize()
+
+func _clean_narrative(text: String) -> String:
+	# Remove markdown headers
+	var lines = text.split("\n")
+	var cleaned: Array[String] = []
+	for line in lines:
+		var trimmed = line.strip_edges()
+		if trimmed.begins_with("# "):
+			continue  # Skip markdown headers
+		if trimmed.begins_with("## "):
+			continue
+		if trimmed.is_empty():
+			continue
+		cleaned.append(trimmed)
+	return "\n".join(cleaned)
