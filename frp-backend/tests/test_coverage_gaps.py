@@ -602,3 +602,343 @@ class TestCampaignEdgeCases:
         gen = CampaignGenerator(seed=7)
         quest = gen.generate_side_quest(location="Forest")
         assert quest is not None
+
+
+# ── engine/llm/__init__.py (78% → ~95%) ───────────────────────────────────────
+
+class TestLLMRouter:
+    """Cover _get_client exception path and is_available."""
+
+    def test_get_client_raises_on_missing_token(self):
+        from engine.llm import LLMRouter
+        router = LLMRouter()
+        with patch("builtins.open", side_effect=FileNotFoundError("no token")):
+            with pytest.raises(Exception):
+                router._get_client()
+
+    def test_get_client_raises_on_bad_json(self):
+        from engine.llm import LLMRouter
+        import io
+        router = LLMRouter()
+        with patch("builtins.open", return_value=io.StringIO("not json")):
+            with pytest.raises(Exception):
+                router._get_client()
+
+    def test_is_available_returns_true_when_client_works(self):
+        from engine.llm import LLMRouter
+        router = LLMRouter()
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = MagicMock()
+        with patch.object(router, '_get_client', return_value=mock_client):
+            result = router.is_available()
+            assert result is True
+            # Cached — second call doesn't re-test
+            result2 = router.is_available()
+            assert result2 is True
+
+    def test_is_available_returns_false_when_client_fails(self):
+        from engine.llm import LLMRouter
+        router = LLMRouter()
+        with patch.object(router, '_get_client', side_effect=Exception("fail")):
+            result = router.is_available()
+            assert result is False
+
+    def test_complete_success(self):
+        from engine.llm import LLMRouter
+        router = LLMRouter()
+        mock_client = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.choices[0].message.content = "  The sword bites deep.  "
+        mock_client.chat.completions.create.return_value = mock_resp
+        with patch.object(router, '_get_client', return_value=mock_client):
+            result = router.complete([{"role": "user", "content": "narrate"}])
+            assert result == "The sword bites deep."
+
+    def test_complete_uses_model_smart_when_specified(self):
+        from engine.llm import LLMRouter, MODEL_SMART
+        router = LLMRouter()
+        mock_client = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.choices[0].message.content = "Epic"
+        mock_client.chat.completions.create.return_value = mock_resp
+        with patch.object(router, '_get_client', return_value=mock_client):
+            router.complete([{"role": "user", "content": "test"}], model=MODEL_SMART)
+            call_kwargs = mock_client.chat.completions.create.call_args[1]
+            assert call_kwargs['model'] == MODEL_SMART
+
+
+# ── engine/world/__init__.py (91% → ~98%) ─────────────────────────────────────
+
+class TestWorldState:
+    """Cover GameTime.advance and WorldState edge cases."""
+
+    def test_gametime_advance_basic(self):
+        from engine.world import GameTime
+        t = GameTime(day=1, hour=10, minute=0)
+        t.advance(1.5)
+        assert t.hour == 11
+        assert t.minute == 30
+
+    def test_gametime_advance_wraps_hour(self):
+        from engine.world import GameTime
+        t = GameTime(day=1, hour=23, minute=0)
+        t.advance(2)
+        assert t.day == 2
+        assert t.hour == 1
+
+    def test_gametime_advance_wraps_day(self):
+        from engine.world import GameTime
+        t = GameTime(day=1, hour=22, minute=30)
+        t.advance(2)
+        assert t.day == 2
+
+    def test_quest_entry_from_dict_roundtrip(self):
+        from engine.world import QuestEntry
+        q = QuestEntry(quest_id="q1", title="Find gem", status="active")
+        d = q.to_dict()
+        q2 = QuestEntry.from_dict(d)
+        assert q2.quest_id == "q1"
+        assert q2.title == "Find gem"
+
+    def test_world_state_context_with_cleared_location(self):
+        from engine.world import WorldState, LocationState
+        ws = WorldState(game_id="test")
+        ws.locations["loc1"] = LocationState(id="loc1", name="Dark Cave", cleared=True)
+        ctx = ws.build_ai_context("loc1")
+        assert "cleared" in ctx.lower() or "Dark Cave" in ctx
+
+    def test_world_state_context_with_hostile_location(self):
+        from engine.world import WorldState, LocationState
+        ws = WorldState(game_id="test")
+        ws.locations["loc2"] = LocationState(id="loc2", name="Bandit Camp", hostile=True)
+        ctx = ws.build_ai_context("loc2")
+        assert "hostile" in ctx.lower() or "Bandit Camp" in ctx
+
+    def test_world_state_context_with_dead_npc(self):
+        from engine.world import WorldState, NPCWorldState
+        ws = WorldState(game_id="test")
+        ws.npc_states["guard_1"] = NPCWorldState(id="guard_1", alive=False)
+        ctx = ws.build_ai_context()
+        assert "guard_1" in ctx
+
+
+# ── engine/save/__init__.py (95% → ~100%) ─────────────────────────────────────
+
+class TestSaveEdgeCases:
+    """Cover corrupt/missing file edge cases."""
+
+    def test_sanitize_rejects_path_traversal(self):
+        import tempfile
+        from engine.save import SaveManager
+        with tempfile.TemporaryDirectory() as d:
+            sm = SaveManager(saves_dir=d)
+            with pytest.raises(ValueError):
+                sm._sanitize("../evil", "player_id")
+
+    def test_sanitize_rejects_slash(self):
+        import tempfile
+        from engine.save import SaveManager
+        with tempfile.TemporaryDirectory() as d:
+            sm = SaveManager(saves_dir=d)
+            with pytest.raises(ValueError):
+                sm._sanitize("a/b", "player_id")
+
+    def test_find_file_direct_path(self):
+        """Covers the direct exists() path in _find_file."""
+        import tempfile, json
+        from pathlib import Path
+        from engine.save import SaveManager, SaveFile
+        with tempfile.TemporaryDirectory() as d:
+            sm = SaveManager(saves_dir=d)
+            # Create file with just the save_id as name (no player prefix)
+            path = Path(d) / "mysave.json"
+            import datetime
+            sf = SaveFile(save_id="mysave", player_id="player1",
+                          session_data={}, timestamp=datetime.datetime.now().isoformat())
+            path.write_text(json.dumps(sf.to_dict()))
+            found = sm._find_file("mysave")
+            assert found == path
+
+    def test_list_saves_skips_corrupt_files(self):
+        """Covers the except block when listing saves."""
+        import tempfile
+        from pathlib import Path
+        from engine.save import SaveManager
+        with tempfile.TemporaryDirectory() as d:
+            sm = SaveManager(saves_dir=d)
+            # Write a corrupt JSON file
+            (Path(d) / "player1_corrupt.json").write_text("not json at all")
+            # Should not raise, should just skip it
+            saves = sm.list_saves("player1")
+            assert saves == []
+
+
+# ── engine/core/campaign.py (89% → ~98%) ──────────────────────────────────────
+
+class TestCoreCampaignLoader:
+    """Cover invalid JSON and campaigns property."""
+
+    def test_load_raises_on_invalid_json(self):
+        import tempfile
+        from pathlib import Path
+        from engine.core.campaign import CampaignLoader
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "bad.json").write_text("{invalid json}")
+            loader = CampaignLoader(campaigns_dir=d)
+            with pytest.raises(ValueError, match="Failed to parse"):
+                loader.load()
+
+    def test_campaigns_property_triggers_load(self):
+        import tempfile, json
+        from pathlib import Path
+        from engine.core.campaign import CampaignLoader
+        with tempfile.TemporaryDirectory() as d:
+            data = {"id": "test_camp", "name": "Test Campaign", "arcs": []}
+            (Path(d) / "test_camp.json").write_text(json.dumps(data))
+            loader = CampaignLoader(campaigns_dir=d)
+            loader.load()
+            camps = loader.campaigns
+            assert "test_camp" in camps
+
+
+# ── engine/api/game_engine.py — fallback paths (92% → ~97%) ──────────────────
+
+class TestGameEngineFallbackNarratives:
+    """Cover fallback narrative paths when LLM raises."""
+
+    def _make_session(self, name="Hero"):
+        from engine.api.game_session import GameSession
+        from engine.core.character import Character
+        from engine.core.dm_agent import DMContext, SceneType
+        player = Character(name=name, hp=10, max_hp=10,
+                           stats={"MIG":10,"AGI":10,"END":10,"MND":10,"INS":10,"PRE":10})
+        ctx = DMContext(location="dungeon", scene_type=SceneType.COMBAT, party=[])
+        return GameSession(player=player, dm_context=ctx)
+
+    def test_build_combat_narrative_fallback_hit(self):
+        from engine.api.game_engine import GameEngine
+        eng = GameEngine()
+        sess = self._make_session()
+        target = MagicMock()
+        target.name = "Goblin"
+        target.hp = 5
+        with patch.object(eng.dm, 'narrate', side_effect=Exception("llm fail")):
+            result = eng._build_combat_narrative(sess, "Hero", target, hit=True, damage=5)
+        assert "strikes" in result or "hit" in result.lower() or "5" in result
+
+    def test_build_combat_narrative_fallback_miss(self):
+        from engine.api.game_engine import GameEngine
+        eng = GameEngine()
+        sess = self._make_session()
+        target = MagicMock()
+        target.name = "Goblin"
+        target.hp = 5
+        with patch.object(eng.dm, 'narrate', side_effect=Exception("llm fail")):
+            result = eng._build_combat_narrative(sess, "Hero", target, hit=False, damage=0)
+        assert "miss" in result.lower()
+
+    def test_build_combat_narrative_fallback_crit(self):
+        from engine.api.game_engine import GameEngine
+        eng = GameEngine()
+        sess = self._make_session()
+        target = MagicMock()
+        target.name = "Goblin"
+        target.hp = 5
+        with patch.object(eng.dm, 'narrate', side_effect=Exception("llm fail")):
+            result = eng._build_combat_narrative(sess, "Hero", target, hit=True, damage=10, crit=True)
+        assert "CRITICAL" in result or "devastating" in result
+
+    def test_build_combat_narrative_fallback_fumble(self):
+        from engine.api.game_engine import GameEngine
+        eng = GameEngine()
+        sess = self._make_session()
+        target = MagicMock()
+        target.name = "Goblin"
+        target.hp = 5
+        with patch.object(eng.dm, 'narrate', side_effect=Exception("llm fail")):
+            result = eng._build_combat_narrative(sess, "Hero", target, hit=False, damage=0, fumble=True)
+        assert "stumbles" in result or "wide" in result
+
+    def test_build_enemy_combat_narrative_fallback_hit(self):
+        from engine.api.game_engine import GameEngine
+        eng = GameEngine()
+        sess = self._make_session()
+        enemy = MagicMock()
+        enemy.name = "Orc"
+        with patch.object(eng.dm, 'narrate', side_effect=Exception("llm fail")):
+            result = eng._build_enemy_combat_narrative(sess, enemy, hit=True, damage=3)
+        assert "Orc" in result and "hits" in result
+
+    def test_build_enemy_combat_narrative_fallback_miss(self):
+        from engine.api.game_engine import GameEngine
+        eng = GameEngine()
+        sess = self._make_session()
+        enemy = MagicMock()
+        enemy.name = "Orc"
+        with patch.object(eng.dm, 'narrate', side_effect=Exception("llm fail")):
+            result = eng._build_enemy_combat_narrative(sess, enemy, hit=False, damage=0)
+        assert "miss" in result.lower()
+
+    def test_build_death_narrative_fallback(self):
+        from engine.api.game_engine import GameEngine
+        eng = GameEngine()
+        sess = self._make_session()
+        with patch.object(eng.dm, 'narrate', side_effect=Exception("llm fail")):
+            result = eng._build_death_narrative(sess, "Dragon")
+        assert "Dragon" in result and "defeated" in result
+
+
+# ── engine/world/world_routes.py (84% → ~95%) ────────────────────────────────
+
+class TestWorldRoutes:
+    """Cover uncovered world route endpoints."""
+
+    def _create_session(self):
+        resp = client.post("/game/session/new", json={"player_name": "RouteTest", "player_class": "warrior"})
+        return resp.json()["session_id"]
+
+    def test_world_state_endpoint(self):
+        sid = self._create_session()
+        resp = client.get(f"/game/session/{sid}/world-state")
+        assert resp.status_code == 200
+
+    def test_history_endpoint(self):
+        sid = self._create_session()
+        resp = client.get(f"/game/session/{sid}/history")
+        assert resp.status_code == 200
+        assert "history" in resp.json()
+
+    def test_history_endpoint_with_limit(self):
+        sid = self._create_session()
+        resp = client.get(f"/game/session/{sid}/history?limit=5")
+        assert resp.status_code == 200
+
+    def test_factions_endpoint(self):
+        sid = self._create_session()
+        resp = client.get(f"/game/session/{sid}/factions")
+        assert resp.status_code == 200
+
+    def test_flags_endpoint(self):
+        sid = self._create_session()
+        resp = client.get(f"/game/session/{sid}/flags")
+        assert resp.status_code == 200
+
+    def test_consequences_endpoint(self):
+        sid = self._create_session()
+        resp = client.get(f"/game/session/{sid}/consequences")
+        assert resp.status_code == 200
+
+    def test_fire_trigger_endpoint(self):
+        sid = self._create_session()
+        resp = client.post(f"/game/session/{sid}/trigger",
+                           json={"trigger_type": "npc_death", "npc_id": "guard1"})
+        assert resp.status_code == 200
+
+    def test_fire_trigger_missing_type(self):
+        sid = self._create_session()
+        resp = client.post(f"/game/session/{sid}/trigger", json={"npc_id": "guard1"})
+        assert resp.status_code == 400
+
+    def test_session_not_found_404(self):
+        resp = client.get("/game/session/nonexistent_xyz/world-state")
+        assert resp.status_code == 404

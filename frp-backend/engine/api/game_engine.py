@@ -221,24 +221,121 @@ class GameEngine:
 
         return self._execute_attack_round(session, combat, target_idx)
 
+    def _build_combat_narrative(self, session, attacker_name, target, hit, damage, crit=False, fumble=False):
+        """Generate LLM narrative for a player attack. Falls back to template on failure."""
+        # Template fallback strings
+        if crit:
+            fallback = f"CRITICAL! {attacker_name} lands a devastating blow — {damage} damage!"
+        elif fumble:
+            fallback = f"{attacker_name} stumbles — the attack goes wide!"
+        elif hit:
+            fallback = f"{attacker_name} strikes — hit! {damage} damage."
+        else:
+            fallback = f"{attacker_name} swings but misses."
+        try:
+            if hit:
+                desc = (
+                    f"{attacker_name} attacks {target.name}. "
+                    f"{'Critical hit! ' if crit else ''}Dealt {damage} damage. "
+                    f"{target.name} has {target.hp} HP remaining. "
+                    f"Describe the attack {'critically ' if crit else ''}hitting cinematically in 1-2 sentences."
+                )
+            else:
+                desc = (
+                    f"{attacker_name} attacks {target.name} but {'fumbles and ' if fumble else ''}misses. "
+                    f"Describe the miss dramatically in 1 sentence."
+                )
+            event = DMEvent(type=EventType.COMBAT, description=desc, data={
+                "player_name": session.player.name,
+                "target_name": target.name,
+                "hit": hit,
+                "damage": damage,
+                "player_hp": session.player.hp,
+                "player_max_hp": session.player.max_hp,
+                "target_hp": target.hp,
+                "action": "attack",
+            })
+            return self.dm.narrate(event, session.dm_context, self.llm)
+        except Exception:
+            return fallback
+
+    def _build_enemy_combat_narrative(self, session, enemy, hit, damage):
+        """Generate LLM narrative for an enemy counterattack. Falls back to template on failure."""
+        if hit:
+            fallback = f"{enemy.name} hits you for {damage} damage! (HP: {session.player.hp}/{session.player.max_hp})"
+        else:
+            fallback = f"{enemy.name} swings at you but misses!"
+        try:
+            desc = (
+                f"{enemy.name} counterattacks {session.player.name}. "
+                f"{'Hit for ' + str(damage) + ' damage' if hit else 'Miss'}. "
+                f"Player has {session.player.hp}/{session.player.max_hp} HP. "
+                f"Describe in 1 sentence."
+            )
+            event = DMEvent(type=EventType.COMBAT, description=desc, data={
+                "attacker_name": enemy.name,
+                "player_name": session.player.name,
+                "hit": hit,
+                "damage": damage,
+                "player_hp": session.player.hp,
+                "player_max_hp": session.player.max_hp,
+                "action": "enemy_attack",
+            })
+            return self.dm.narrate(event, session.dm_context, self.llm)
+        except Exception:
+            return fallback
+
+    def _build_death_narrative(self, session, enemy_name):
+        """Generate LLM narrative for enemy death. Falls back to template on failure."""
+        fallback = f"{enemy_name} has been defeated!"
+        try:
+            desc = f"{enemy_name} has been defeated! Describe their death dramatically in 1-2 sentences."
+            event = DMEvent(type=EventType.COMBAT, description=desc, data={
+                "enemy_name": enemy_name,
+                "action": "enemy_death",
+            })
+            return self.dm.narrate(event, session.dm_context, self.llm)
+        except Exception:
+            return fallback
+
     def _execute_attack_round(self, session: GameSession, combat: CombatManager, target_idx: int) -> ActionResult:
         """Execute player's attack and then all living enemy counterattacks."""
         result = combat.attack(target_idx)
         state_changes = {}
         narrative_parts = []
 
-        if result.get("crit"):
-            narrative_parts.append(f"CRITICAL! {session.player.name} lands a devastating blow — {result.get('damage', 0)} damage!")
-        elif result.get("fumble"):
-            narrative_parts.append(f"{session.player.name} stumbles — the attack goes wide!")
-        elif result.get("hit"):
-            narrative_parts.append(f"{session.player.name} strikes — hit! {result.get('damage', 0)} damage.")
+        # Identify target for narrative
+        target_combatant = None
+        if 0 <= target_idx < len(combat.combatants):
+            target_combatant = combat.combatants[target_idx]
+
+        hit = result.get("hit", False)
+        damage = result.get("damage", 0)
+        crit = result.get("crit", False)
+        fumble = result.get("fumble", False)
+
+        if target_combatant:
+            narrative_parts.append(
+                self._build_combat_narrative(
+                    session, session.player.name, target_combatant.character,
+                    hit=hit or crit, damage=damage, crit=crit, fumble=fumble
+                )
+            )
         else:
-            narrative_parts.append(f"{session.player.name} swings but misses.")
+            # Fallback if no target
+            if crit:
+                narrative_parts.append(f"CRITICAL! {session.player.name} lands a devastating blow — {damage} damage!")
+            elif fumble:
+                narrative_parts.append(f"{session.player.name} stumbles — the attack goes wide!")
+            elif hit:
+                narrative_parts.append(f"{session.player.name} strikes — hit! {damage} damage.")
+            else:
+                narrative_parts.append(f"{session.player.name} swings but misses.")
 
         # --- Bug 5: Guard backup in town ---
         if result.get("killed"):
             target_name = result.get("target", "")
+            narrative_parts.append(self._build_death_narrative(session, target_name or "the enemy"))
             killed_combatant = next(
                 (c for c in combat.combatants if c.name == target_name), None
             )
@@ -292,18 +389,19 @@ class GameEngine:
                         player_combatant = combat.combatants[player_idx]
                         player_combatant.character.hp = session.player.hp
                         narrative_parts.append(
-                            f"{enemy_combatant.name} hits you for {dmg} damage! "
-                            f"(HP: {session.player.hp}/{session.player.max_hp})"
+                            self._build_enemy_combat_narrative(session, enemy_combatant, hit=True, damage=dmg)
                         )
                     elif enemy_result.get("fumble") or not enemy_result.get("hit"):
-                        narrative_parts.append(f"{enemy_combatant.name} swings at you but misses!")
+                        narrative_parts.append(
+                            self._build_enemy_combat_narrative(session, enemy_combatant, hit=False, damage=0)
+                        )
 
                     if session.player.hp <= 0:
                         narrative_parts.append("You have fallen in combat... darkness closes in.")
                         combat.combat_ended = True
                         break
 
-        desc = " ".join(narrative_parts)
+        narrative_text = " ".join(narrative_parts)
         combat_state = self._combat_state(combat)
         xp_result = None
 
@@ -317,14 +415,15 @@ class GameEngine:
 
             event = DMEvent(
                 type=EventType.COMBAT_END,
-                description=desc,
+                description=narrative_text,
                 data=combat.get_summary(),
             )
             self.dm.transition(session.dm_context, SceneType.EXPLORATION)
+            # For combat end, do a final narrate to wrap up the battle
+            narrative = self.dm.narrate(event, session.dm_context, self.llm)
         else:
-            event = DMEvent(type=EventType.ENCOUNTER, description=desc)
-
-        narrative = self.dm.narrate(event, session.dm_context, self.llm)
+            # Individual parts are already LLM-narrated; return them directly
+            narrative = narrative_text
 
         return ActionResult(
             narrative=narrative,
