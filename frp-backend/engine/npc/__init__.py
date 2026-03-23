@@ -27,6 +27,7 @@ class NPCRole(Enum):
     ALLY = "ally"
     COMMONER = "commoner"
     MONSTER = "monster"
+    ROGUE = "rogue"
 
 
 @dataclass
@@ -279,6 +280,70 @@ class NPCManager:
         return list(self.npcs.values())
 
 
+    def load_templates(self, filepath: str) -> List[NPC]:
+        """
+        Load NPC templates from a JSON file and instantiate NPC objects.
+
+        The JSON file must have a top-level key ``npc_templates`` containing a
+        list of NPC definition objects.  Each definition may contain:
+            id, name, role, personality, disposition, location, quest, inventory
+
+        All loaded NPCs are registered in this manager and also returned.
+
+        Args:
+            filepath: Path to the npc_templates.json file.
+
+        Returns:
+            List of instantiated NPC objects.
+        """
+        import json
+
+        with open(filepath, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+
+        templates = data.get("npc_templates", [])
+        loaded: List[NPC] = []
+
+        for tmpl in templates:
+            # Resolve role enum (fall back to COMMONER on unknown value)
+            role_str = tmpl.get("role", "commoner").upper()
+            try:
+                role = NPCRole[role_str]
+            except KeyError:
+                role = NPCRole.COMMONER
+
+            # Resolve disposition enum
+            disp_str = tmpl.get("disposition", "neutral").upper()
+            try:
+                disposition = Disposition[disp_str]
+            except KeyError:
+                disposition = Disposition.NEUTRAL
+
+            # Personality may be a list or a plain string
+            personality_raw = tmpl.get("personality", "")
+            if isinstance(personality_raw, list):
+                personality = ", ".join(personality_raw)
+            else:
+                personality = str(personality_raw)
+
+            npc = NPC(
+                name=tmpl.get("name", tmpl.get("id", "Unknown")),
+                role=role,
+                disposition=disposition,
+                personality=personality,
+                location=tmpl.get("location", ""),
+                inventory=tmpl.get("inventory", []),
+                quest=tmpl.get("quest"),
+            )
+            # Store the original id as an attribute for easy lookup
+            npc.template_id = tmpl.get("id", "")  # type: ignore[attr-defined]
+
+            self.add_npc(npc)
+            loaded.append(npc)
+
+        return loaded
+
+
 def generate_npc_dialogue_llm(npc_template: dict, npc_memory, world_state=None, player_input: str = "") -> str:
     """Generate contextual NPC dialogue using LLM + NPC memory."""
     from engine.llm import get_llm_router
@@ -314,3 +379,4 @@ def generate_npc_dialogue_llm(npc_template: dict, npc_memory, world_state=None, 
     greetings = npc_template.get('dialogue', {}).get('greeting', [])
     import random
     return random.choice(greetings) if greetings else "Hello, traveler."
+

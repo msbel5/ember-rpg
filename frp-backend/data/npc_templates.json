@@ -44,13 +44,6 @@
       "level_range": [
         1,
         5
-      ],
-      "shop_inventory": [
-        "potion_of_healing",
-        "potion_of_greater_healing",
-        "arrow",
-        "gold_coin",
-        "dagger"
       ]
     },
     {
@@ -97,14 +90,6 @@
       "level_range": [
         2,
         8
-      ],
-      "shop_inventory": [
-        "iron_shortsword",
-        "longsword",
-        "shortbow",
-        "leather_helmet",
-        "padded_armor",
-        "wooden_shield"
       ]
     },
     {
@@ -151,13 +136,6 @@
       "level_range": [
         1,
         10
-      ],
-      "shop_inventory": [
-        "potion_of_healing",
-        "potion_of_greater_healing",
-        "potion_of_superior_healing",
-        "potion_of_strength",
-        "potion_of_endurance"
       ]
     },
     {
@@ -204,12 +182,6 @@
       "level_range": [
         5,
         15
-      ],
-      "shop_inventory": [
-        "vial_of_poison",
-        "stolen_goods",
-        "crude_dagger",
-        "potion_of_healing"
       ]
     },
     {
@@ -813,7 +785,7 @@
     {
       "id": "misc_blacksmith",
       "name": "Forge-Arm Nikos",
-      "role": "neutral",
+      "role": "commoner",
       "personality": [
         "passionate",
         "proud",
@@ -854,20 +826,12 @@
       "level_range": [
         1,
         8
-      ],
-      "shop_inventory": [
-        "iron_shortsword",
-        "longsword",
-        "greatsword",
-        "iron_helmet",
-        "chain_shirt",
-        "iron_shield"
       ]
     },
     {
       "id": "misc_healer",
       "name": "Sister Ambra",
-      "role": "neutral",
+      "role": "commoner",
       "personality": [
         "compassionate",
         "firm",
@@ -908,18 +872,12 @@
       "level_range": [
         1,
         10
-      ],
-      "shop_inventory": [
-        "potion_of_healing",
-        "potion_of_greater_healing",
-        "potion_of_superior_healing",
-        "potion_of_strength"
       ]
     },
     {
       "id": "misc_sage",
       "name": "Aldric the Unbound",
-      "role": "neutral",
+      "role": "commoner",
       "personality": [
         "cryptic",
         "ancient",
@@ -965,7 +923,7 @@
     {
       "id": "misc_beggar_spy",
       "name": "Patches",
-      "role": "neutral",
+      "role": "commoner",
       "personality": [
         "sly",
         "observant",
@@ -1006,6 +964,37 @@
       "level_range": [
         1,
         5
+      ]
+    },
+    {
+      "id": "rogue_shadow_thief",
+      "name": "Silena Dusk",
+      "role": "rogue",
+      "personality": [
+        "cunning",
+        "cautious",
+        "opportunistic"
+      ],
+      "speech_style": "hushed",
+      "dialogue": {
+        "greeting": [
+          "Keep your voice down. I don't want attention.",
+          "You looking for work... or looking to report me?"
+        ],
+        "farewell": [
+          "Vanish before someone sees us together.",
+          "Forget you saw me."
+        ],
+        "idle": [
+          "Eyes open, mouth shut \u2014 that's how you survive.",
+          "There's coin to be had if you know where to look."
+        ]
+      },
+      "disposition": "neutral",
+      "faction": "shadow_guild",
+      "level_range": [
+        3,
+        8
       ]
     }
   ]
