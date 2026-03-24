@@ -15,8 +15,6 @@ extends Control
 @onready var location_label: Label = $MainLayout/ContentSplit/MapPanel/LocationLabel
 
 var tile_map_renderer: Control = null
-var pov_renderer: Control = null
-var is_pov_mode: bool = true  # Start in POV mode
 var is_waiting: bool = false
 
 func _ready() -> void:
@@ -41,16 +39,7 @@ func _ready() -> void:
 	tile_map_renderer.tile_clicked.connect(_on_tile_clicked)
 	map_viewer.add_child(tile_map_renderer)
 
-	# Create POV renderer (storyboard first-person view)
-	var pov_script = load("res://scripts/pov_renderer.gd")
-	pov_renderer = Control.new()
-	pov_renderer.set_script(pov_script)
-	pov_renderer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	pov_renderer.entity_clicked_pov.connect(_on_entity_clicked)
-	map_viewer.add_child(pov_renderer)
-
-	# Start in POV mode
-	_set_view_mode(true)
+	# Always tile map mode — no POV (3D SubViewport coming later)
 
 	# Show initial narrative
 	if not GameState.narrative_history.is_empty():
@@ -79,30 +68,22 @@ func _on_scene_entered(data) -> void:
 	print("[DEBUG] scene_entered: got data, keys=%s" % str(data.keys()))
 	GameState.update_from_response(data)
 
-	# Update POV with location type
-	if pov_renderer and data.has("location"):
-		pov_renderer.set_location_type(data["location"])
-	# Set initial player position for POV (center of map or spawn point)
+	# Set initial player position (center of map or spawn point)
 	if data.has("map_data"):
 		var md = data["map_data"]
 		var cx: int = int(md.get("width", 20)) / int(2)
 		var cy: int = int(md.get("height", 15)) / int(2)
-		# Use spawn_point if available, else map center
 		if md.has("spawn_point"):
 			var sp = md["spawn_point"]
 			cx = int(sp[0])
 			cy = int(sp[1])
 		GameState.player_map_pos = Vector2i(cx, cy)
-		GameState.player_facing = 2  # Start facing south
-		if pov_renderer:
-			pov_renderer.update_player(GameState.player_map_pos, GameState.player_facing)
+		GameState.player_facing = 2
 
 	# Fallback: reveal remaining hidden entities after narrative completes
 	await get_tree().create_timer(3.0).timeout
 	if tile_map_renderer:
 		tile_map_renderer.reveal_all()
-	if pov_renderer:
-		pov_renderer.reveal_all()
 
 func _on_entity_clicked(_entity_id: String, entity_data: Dictionary) -> void:
 	var entity_name = entity_data.get("name", "Unknown")
@@ -183,12 +164,10 @@ func _on_action_response(data) -> void:
 				"south": GameState.player_facing = 2
 				"west": GameState.player_facing = 3
 
-	# Refresh POV entities
-	if pov_renderer and is_pov_mode:
-		pov_renderer.update_player(GameState.player_map_pos, GameState.player_facing)
-		pov_renderer.grab_focus()  # Keep focus on POV for arrow keys
-	else:
-		text_input.grab_focus()
+	# Update tile map player marker
+	if tile_map_renderer:
+		tile_map_renderer.queue_redraw()
+	text_input.grab_focus()
 
 var _typing_queue: Array[String] = []
 var _is_typing: bool = false
@@ -238,8 +217,8 @@ func _on_state_updated() -> void:
 	_refresh_pov()
 
 func _refresh_pov() -> void:
-	if pov_renderer:
-		pov_renderer.update_player(GameState.player_map_pos, GameState.player_facing)
+	if tile_map_renderer:
+		tile_map_renderer.queue_redraw()
 
 func _parse_move_command(text: String) -> void:
 	var lower = text.to_lower().strip_edges()
@@ -316,8 +295,7 @@ func _refresh_player_status() -> void:
 
 func _refresh_location() -> void:
 	location_label.text = GameState.get_display_location()
-	if pov_renderer:
-		pov_renderer.set_location_type(GameState.location)
+	pass  # Location label already updated above
 
 func _refresh_combat_hud() -> void:
 	if not GameState.is_in_combat():
@@ -369,27 +347,8 @@ func _on_combat_ended() -> void:
 func _on_level_up(new_level: int) -> void:
 	_append_narrative("[color=yellow]✦ LEVEL UP! You are now level %d! ✦[/color]" % new_level)
 
-func _set_view_mode(pov: bool) -> void:
-	is_pov_mode = pov
-	if tile_map_renderer:
-		tile_map_renderer.visible = not pov
-	if pov_renderer:
-		pov_renderer.visible = pov
-		if pov:
-			pov_renderer.grab_focus()
-			pov_renderer._auto_reveal_fov_entities()
-			pov_renderer.queue_redraw()
-	# LocationLabel always visible
-	location_label.text = GameState.get_display_location()
-
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed):
-		return
-
-	# INSERT key always works (even when typing) — safe, not a character key
-	if event.keycode == KEY_INSERT:
-		_set_view_mode(not is_pov_mode)
-		get_viewport().set_input_as_handled()
 		return
 
 	# HOME key always works — toggle inventory
@@ -397,16 +356,6 @@ func _input(event: InputEvent) -> void:
 		_toggle_inventory()
 		get_viewport().set_input_as_handled()
 		return
-
-	# Other hotkeys only when NOT typing
-	if text_input.has_focus():
-		return
-
-	# If POV has focus and user types a printable character → switch to text input
-	if is_pov_mode and event.unicode > 31 and event.keycode not in [KEY_M, KEY_I, KEY_TAB]:
-		text_input.grab_focus()
-		text_input.text += char(event.unicode)
-		text_input.caret_column = text_input.text.length()
 		get_viewport().set_input_as_handled()
 		return
 
