@@ -387,7 +387,218 @@ Player can only interact with nearby entities. No examining things across the ma
 
 ---
 
-## Implementation Priority
+## Module 11: Law & Institution Layer
+
+### Purpose
+Towns have governance. Mayor issues decrees, captain of guard deploys patrols, broker sets trade policy. Without institutions, there's no one to enforce consequences.
+
+### Functional Requirements
+
+**FR-46**: Each town has an `institutions` dict defining civic roles:
+```python
+TOWN_INSTITUTIONS = {
+    "harbor_town": {
+        "mayor": {"npc_id": "mayor_1", "authority": ["curfew", "tax", "exile", "pardon"]},
+        "captain_of_guard": {"npc_id": "guard_captain_1", "authority": ["patrol_routes", "bounty", "arrest", "martial_law"]},
+        "broker": {"npc_id": "broker_1", "authority": ["trade_policy", "price_floor", "embargo"]},
+        "tavern_keeper": {"npc_id": "innkeeper_1", "authority": ["room_price", "ban_patron"]},
+        "blacksmith": {"npc_id": "smith_1", "authority": ["repair_priority", "commission"]},
+        "priest": {"npc_id": "priest_1", "authority": ["sanctuary", "blessing", "funeral"]},
+        "thieves_guild_fixer": {"npc_id": "fixer_1", "authority": ["contract", "fence", "safe_house"]},
+    }
+}
+```
+
+**FR-47**: Institutional responses to events (CascadeEngine integration):
+  - theft detected → captain_of_guard issues bounty
+  - murder witnessed → captain_of_guard declares martial_law if severity > threshold
+  - shortage → broker adjusts price_floor
+  - faction reputation < -50 → mayor considers exile
+  - violence in tavern → tavern_keeper bans patron
+
+**FR-48**: Institutions persist across saves — killing the mayor creates a power vacuum (no one issues pardons, guard morale drops)
+**FR-49**: Institution NPCs have elevated needs priority: duty > personal needs
+
+### Acceptance Criteria
+- AC-31: Stealing triggers captain_of_guard bounty via CascadeEngine
+- AC-32: Killing mayor → no pardons available, guard effectiveness -30%
+- AC-33: Broker raises prices when stock < 30%
+
+---
+
+## Module 12: Offscreen Simulation
+
+### Purpose
+Locations the player isn't in still change. Stock depletes, NPCs move, rumors spread — but at lower fidelity to save CPU.
+
+### Functional Requirements
+
+**FR-50**: Two simulation modes:
+  - **Full tick** (loaded location): all subsystems run at full detail
+  - **Coarse tick** (unloaded locations): simplified rules per hour:
+    - Stock: `stock *= 0.98` (2% decay per hour)
+    - NPC schedules: instant teleport to scheduled location (no pathfinding)
+    - Rumors: `propagation_chance *= 0.5` (slower spread offscreen)
+    - Combat/incidents: skipped entirely (no offscreen combat)
+    - Needs: decay at 50% rate
+
+**FR-51**: When player enters a previously unloaded location, run N coarse ticks to catch up (N = hours since last visit, capped at 72)
+**FR-52**: Offscreen events logged to WorldState.history for DM to reference
+
+### Acceptance Criteria
+- AC-34: After 24 hours away, tavern stock decreased ~38% (0.98^24)
+- AC-35: NPC at scheduled location when player returns
+- AC-36: No offscreen combat or incidents generated
+
+---
+
+## Module 13: Caravan & Trade Routes
+
+### Purpose
+Raw materials arrive by caravan. Towns don't produce everything locally — external trade creates supply dynamics.
+
+### Functional Requirements
+
+**FR-53**: Caravan definitions:
+```python
+CARAVANS = {
+    "iron_caravan": {
+        "route": ["mountain_mine", "harbor_town"],
+        "goods": {"iron_ore": 30, "coal": 20, "flux": 10},
+        "frequency_hours": 168,  # weekly
+        "capacity": 60,
+    },
+    "food_caravan": {
+        "route": ["farming_village", "harbor_town"],
+        "goods": {"grain": 40, "herbs": 15, "yeast": 10},
+        "frequency_hours": 48,  # every 2 days
+        "capacity": 65,
+    },
+    "luxury_caravan": {
+        "route": ["capital_city", "harbor_town"],
+        "goods": {"mithril_ore": 2, "silk": 5, "spices": 10},
+        "frequency_hours": 336,  # biweekly
+        "capacity": 17,
+    },
+}
+```
+
+**FR-54**: Caravan arrival triggers: stock restock, price drop event, DM narrative
+**FR-55**: Caravan can be raided (bandit encounter) → delayed arrival or goods lost
+**FR-56**: Player can intercept/trade with caravan on the road
+
+### Acceptance Criteria
+- AC-37: Iron caravan arrives weekly, restocks iron_ore by 30
+- AC-38: If caravan raided, iron price increases due to scarcity
+- AC-39: DM announces caravan arrival in narrative
+
+---
+
+## Module 14: Rumor & Information System
+
+### Purpose
+Rumors are not just strings — they have source, confidence, decay, and faction filters. "I saw the merchant get killed" ≠ "I heard someone died."
+
+### Functional Requirements
+
+**FR-57**: Rumor dataclass:
+```python
+@dataclass
+class Rumor:
+    fact: str              # "merchant_killed_by_player"
+    source_npc: str        # who originated this
+    confidence: float      # 1.0 = witnessed, 0.5 = heard, 0.2 = third-hand
+    timestamp: int         # game hour when created
+    spread_radius: int     # how many hops from source (0 = origin, 1 = direct, 2+ = chain)
+    faction_filter: list   # which factions care about this
+    is_witnessed: bool     # eyewitness vs hearsay
+    decay_rate: float      # confidence drops by this per hour
+```
+
+**FR-58**: Rumor propagation rules:
+  - NPCs in same location share rumors during social periods (evening at tavern)
+  - Confidence decreases per hop: `new_confidence = confidence * 0.7`
+  - Rumors decay over time: `confidence -= decay_rate * hours`
+  - Confidence < 0.1 → rumor forgotten
+  - Faction filter: guards only care about crime rumors, merchants about trade rumors
+
+**FR-59**: NPC decisions influenced by rumors:
+  - Guard hears crime rumor (confidence > 0.5) → patrol increase
+  - Merchant hears scarcity rumor → price adjustment
+  - NPC hears danger rumor (confidence > 0.7) → avoids location
+
+### Acceptance Criteria
+- AC-40: Witnessed murder has confidence=1.0, heard rumor has confidence=0.5
+- AC-41: After 48 hours, rumor confidence drops below 0.3
+- AC-42: Guard increases patrol after hearing crime rumor with confidence > 0.5
+
+---
+
+## Module 15: NPC Need Satisfaction Logic
+
+### Purpose
+NPCs don't just have decaying needs — they actively try to satisfy them. A hungry NPC goes to the tavern. A lonely guard visits the market.
+
+### Functional Requirements
+
+**FR-60**: Need satisfaction triggers (checked per tick):
+  - `sustenance < 30` AND NPC is at tavern/home → eat action → sustenance +40
+  - `sustenance < 15` → NPC DEVIATES from schedule to find food (nearest tavern)
+  - `social < 25` AND other NPC in same location → chat action → social +15
+  - `duty < 20` AND NPC has assigned role → return to post → duty +30
+  - `safety < 20` → NPC moves to nearest guarded zone
+
+**FR-61**: Need satisfaction consumes location stock:
+  - NPC eats → tavern stock ale -1, food -1
+  - NPC buys → merchant stock item -1, merchant gold +price
+
+**FR-62**: If satisfaction impossible (no food in tavern), need continues dropping → emotional state worsens → behavior changes
+
+### Acceptance Criteria
+- AC-43: Hungry NPC (sustenance=10) leaves post and goes to tavern
+- AC-44: NPC eating depletes tavern food stock by 1
+- AC-45: No food available → NPC emotional_state becomes "desperate"
+
+---
+
+## Module 16: Quest Timeout System
+
+### Purpose
+Quests have deadlines. "Save the merchant before sundown" means something.
+
+### Functional Requirements
+
+**FR-63**: QuestEntry extended with:
+```python
+@dataclass
+class QuestEntry:
+    # ... existing fields ...
+    deadline_hour: Optional[int] = None  # game hour when quest expires
+    timeout_consequence: str = "quest_failed"  # what happens on timeout
+    reminder_hours: list = field(default_factory=lambda: [6, 1])  # reminder at N hours before
+```
+
+**FR-64**: WorldTickScheduler checks quest deadlines per tick
+**FR-65**: Timeout triggers consequence (quest_failed event → CascadeEngine)
+**FR-66**: DM reminds player at reminder intervals: "The sun is setting — the merchant won't wait forever."
+
+### Acceptance Criteria
+- AC-46: Quest with 24-hour deadline fails after 24 game hours
+- AC-47: DM reminder at 6 hours and 1 hour before deadline
+- AC-48: Failed quest triggers reputation loss via CascadeEngine
+
+---
+
+## Implementation Priority (Updated)
+
+| Phase | Modules | Estimated Effort | Impact |
+|-------|---------|-----------------|--------|
+| Sprint 1 | 10 (Proximity) + 3 (Schedules) + 9 (Naming) | 2 days | "World has rules" |
+| Sprint 2 | 1 (Tick Scheduler) + 2 (Needs) + 15 (Need Satisfaction) | 3 days | "World breathes" |
+| Sprint 3 | 6 (Ethics) + 7 (History Seed) + 11 (Institutions) | 2 days | "World has depth" |
+| Sprint 4 | 4 (Materials) + 5 (Body Parts) | 2 days | "Combat has weight" |
+| Sprint 5 | 8 (Economy) + 13 (Caravans) + 14 (Rumors) | 3 days | "World has trade" |
+| Sprint 6 | 12 (Offscreen) + 16 (Quest Timeout) | 1 day | "World persists" |
 
 | Phase | Modules | Estimated Effort | Impact |
 |-------|---------|-----------------|--------|
