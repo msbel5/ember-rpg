@@ -383,14 +383,25 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	# Arrow keys — move on tile map (only when not typing)
+	# Arrow keys — ALWAYS move on tile map (arrows don't type text)
+	var dir = ""
+	match event.keycode:
+		KEY_UP: dir = "north"
+		KEY_DOWN: dir = "south"
+		KEY_LEFT: dir = "west"
+		KEY_RIGHT: dir = "east"
+	if dir != "":
+		_submit_action("move %s" % dir)
+		get_viewport().set_input_as_handled()
+		return
+
+	# WASD — only when not typing
 	if not text_input.has_focus():
-		var dir = ""
 		match event.keycode:
-			KEY_UP, KEY_W: dir = "north"
-			KEY_DOWN, KEY_S: dir = "south"
-			KEY_LEFT, KEY_A: dir = "west"
-			KEY_RIGHT, KEY_D: dir = "east"
+			KEY_W: dir = "north"
+			KEY_S: dir = "south"
+			KEY_A: dir = "west"
+			KEY_D: dir = "east"
 		if dir != "":
 			_submit_action("move %s" % dir)
 			get_viewport().set_input_as_handled()
