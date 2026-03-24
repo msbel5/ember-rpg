@@ -141,10 +141,10 @@ func set_location_type(location: String) -> void:
 func _load_ai_background(location: String) -> void:
 	# Map location names to generated asset files
 	var bg_map = {
-		"harbor": "res://assets/generated/test_harbor_bg.png",
-		"town": "res://assets/generated/test_harbor_bg.png",
-		"dungeon": "res://assets/generated/test_dungeon_bg.png",
-		"cave": "res://assets/generated/test_dungeon_bg.png",
+		"harbor": "res://assets/generated/test_harbor_bg.jpg",
+		"town": "res://assets/generated/test_harbor_bg.jpg",
+		"dungeon": "res://assets/generated/test_dungeon_bg.jpg",
+		"cave": "res://assets/generated/test_dungeon_bg.jpg",
 	}
 	_bg_texture = null
 	_bg_alpha = 0.0
