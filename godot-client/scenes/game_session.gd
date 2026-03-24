@@ -351,11 +351,9 @@ func _input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed):
 		return
 
-	# HOME key always works — toggle inventory
-	if event.keycode == KEY_HOME:
+	# HOME key or I — toggle inventory
+	if event.keycode == KEY_HOME or event.keycode == KEY_I:
 		_toggle_inventory()
-		get_viewport().set_input_as_handled()
-		return
 		get_viewport().set_input_as_handled()
 		return
 
@@ -365,13 +363,10 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	match event.keycode:
-		KEY_M:
-			map_viewer.visible = not map_viewer.visible
-		KEY_TAB:
-			_set_view_mode(not is_pov_mode)
-		KEY_I:
-			_toggle_inventory()
+	# M key — toggle map visibility (only when not typing)
+	if event.keycode == KEY_M and not text_input.has_focus():
+		map_viewer.visible = not map_viewer.visible
+		get_viewport().set_input_as_handled()
 
 var _inventory_popup: PopupPanel = null
 
@@ -428,8 +423,6 @@ func _toggle_inventory() -> void:
 func _on_entity_revealed(entity_id: String) -> void:
 	if tile_map_renderer:
 		tile_map_renderer.reveal_entity(entity_id)
-	if pov_renderer:
-		pov_renderer.reveal_entity(entity_id)
 
 func _on_backend_error(message: String) -> void:
 	_append_narrative("[color=red][%s][/color]" % message)
