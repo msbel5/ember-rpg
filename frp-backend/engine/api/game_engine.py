@@ -689,6 +689,21 @@ class GameEngine:
             # Named destination (tavern etc.) — update location name
             session.dm_context.location = dest
 
+        # --- New: coordinate support ("x,y") → set absolute position ---
+        import re
+        coord_match = re.match(r"^\s*(\d{1,3})\s*,\s*(\d{1,3})\s*$", str(dest))
+        if coord_match:
+            try:
+                x = int(coord_match.group(1))
+                y = int(coord_match.group(2))
+                # Clamp to map bounds
+                x = max(0, min(MAP_SIZE - 1, x))
+                y = max(0, min(MAP_SIZE - 1, y))
+                session.position = [x, y]
+                # Optional: update facing toward previous position
+            except Exception:
+                pass
+
         desc = f"{session.player.name} moves toward {dest}."
         event = DMEvent(type=EventType.DISCOVERY, description=desc, data={
             "player_name": session.player.name,

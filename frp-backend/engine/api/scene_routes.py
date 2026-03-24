@@ -89,6 +89,19 @@ def enter_scene(req: SceneEnterRequest):
     """
     scene_req = _enrich_from_session(req)
     result = _orchestrator.enter_scene(scene_req)
+
+    # Ensure player info is present for client (Godot uses this for start position)
+    try:
+        from engine.api.routes import _sessions
+        session = _sessions.get(req.session_id)
+        if session and (not getattr(result, "player", None)):
+            # attach player dict from session
+            r = result.__dict__.copy()
+            r["player"] = session.to_dict().get("player", {})
+            return r
+    except Exception:
+        pass
+
     return result.__dict__
 
 
