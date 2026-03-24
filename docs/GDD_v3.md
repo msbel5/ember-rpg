@@ -332,3 +332,39 @@ Phase 4 (FUTURE): Storyboard moments (item closeups, reflections)
 - **Doom (1993)** — First-person perspective with static sprites, storyboard feel
 - **AI Dungeon** — AI-powered narrative (but lacks real game mechanics)
 - **Mantella (Skyrim mod)** — NPC memory persistence, personality-driven dialogue
+
+---
+
+## Appendix: DF Comparison Analysis (2026-03-24)
+
+### How Dwarf Fortress Does It
+
+DF uses **tag-based entity definitions** (`raw/objects/entity_default.txt`):
+- ENTITY:MOUNTAIN → CREATURE:DWARF → WEAPON/ARMOR tags define what that faction uses
+- Buildings are separate tag objects with size, required materials, work functions
+- World history runs as simulation: civilizations rise, wage war, fall. Each entity has goals + needs.
+- NPC communication: via "conversation nodes" — topic chains, mood modifiers, needs fulfillment
+- The world is deterministic: same seed = same world. AI flavor never touches simulation.
+
+### Our Zone System vs DF
+
+| Concept | DF | Ember RPG |
+|---|---|---|
+| Tile selection | Material tags + biome | `ZONE_TILE_PALETTES` weighted selection ✅ |
+| Building layout | Stamped templates | `BUILDING_TEMPLATES` 7 types ✅ |
+| Entity placement | Creature + job + zone affinity | `ZONE_ENTITY_RULES` zone affinity ✅ |
+| NPC communication | Conversation nodes, topic chains | `NPCMemoryManager` + LLM dialogue ✅ |
+| World history | Pre-simulated centuries | **NOT YET** — future Consequence System |
+| Faction dynamics | Entity tag relations | **NOT YET** — PRD_consequence_system.md |
+
+### Key DF Lessons for Ember RPG
+
+1. **Separation of simulation and narrative (already done):** DF never uses AI for world state — rules decide, AI narrates. Our DM Agent follows this: `disposition = -30` (rule) → "the merchant glares at you" (LLM).
+
+2. **Tag-based entity definitions:** DF's `[CREATURE:GOBLIN][CASTE:MALE][ATTACK:SCRATCH]` pattern maps to our `npc_templates.json`. We could extend: `{role: "blacksmith", zone_affinity: ["blacksmith", "market"], goods: ["iron_sword", "shield"]}`.
+
+3. **Zone affinity (DF calls it "site") is the key insight:** DF merchants only appear in market zones. Guards only appear near gates. Our `ZONE_ENTITY_RULES` implements exactly this. 
+
+4. **NPC needs + goals (future):** DF NPCs have `[NEED:CRAFTSMANSHIP]`, `[NEED:FAMILY]`. When needs are unmet, behavior changes. Future version: innkeeper has `needs: ["customers", "ale_supply"]`. If ale supply drops, they're grumpy. This creates emergent world feel without AI.
+
+5. **The "1000-year history" illusion:** DF generates history before you play. We can fake this: at campaign start, generate a "history seed" that determines faction relationships, who owns what, past wars. NPCs reference this history without us simulating it. Pure pre-generated flavor, zero runtime cost.
