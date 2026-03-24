@@ -82,12 +82,20 @@ func _on_scene_entered(data) -> void:
 	# Update POV with location type
 	if pov_renderer and data.has("location"):
 		pov_renderer.set_location_type(data["location"])
-	# Set initial player position for POV (center of map or player entity)
-	if pov_renderer and data.has("map_data"):
+	# Set initial player position for POV (center of map or spawn point)
+	if data.has("map_data"):
 		var md = data["map_data"]
 		var cx: int = int(md.get("width", 20)) / int(2)
 		var cy: int = int(md.get("height", 15)) / int(2)
-		pov_renderer.update_player(Vector2i(cx, cy), 0)
+		# Use spawn_point if available, else map center
+		if md.has("spawn_point"):
+			var sp = md["spawn_point"]
+			cx = int(sp[0])
+			cy = int(sp[1])
+		GameState.player_map_pos = Vector2i(cx, cy)
+		GameState.player_facing = 2  # Start facing south
+		if pov_renderer:
+			pov_renderer.update_player(GameState.player_map_pos, GameState.player_facing)
 
 	# Fallback: reveal remaining hidden entities after narrative completes
 	await get_tree().create_timer(3.0).timeout
@@ -235,6 +243,33 @@ func _refresh_pov() -> void:
 
 func _parse_move_command(text: String) -> void:
 	var lower = text.to_lower().strip_edges()
+
+	# Direction-based moves: "move north", "go south", "move forward"
+	var dir_map = {"north": Vector2i(0, -1), "south": Vector2i(0, 1),
+		"east": Vector2i(1, 0), "west": Vector2i(-1, 0),
+		"up": Vector2i(0, -1), "down": Vector2i(0, 1),
+		"left": Vector2i(-1, 0), "right": Vector2i(1, 0)}
+	var facing_map = {"north": 0, "south": 2, "east": 1, "west": 3,
+		"up": 0, "down": 2, "left": 3, "right": 1}
+
+	for dir_name in dir_map:
+		if lower.contains(dir_name):
+			var delta = dir_map[dir_name]
+			GameState.player_facing = facing_map[dir_name]
+			GameState.player_map_pos += delta
+			# Clamp to map bounds
+			GameState.player_map_pos.x = clampi(GameState.player_map_pos.x, 0, 19)
+			GameState.player_map_pos.y = clampi(GameState.player_map_pos.y, 0, 14)
+			return
+
+	# "forward" uses current facing
+	if lower.contains("forward"):
+		var fv = [Vector2i(0,-1), Vector2i(1,0), Vector2i(0,1), Vector2i(-1,0)]
+		GameState.player_map_pos += fv[GameState.player_facing]
+		GameState.player_map_pos.x = clampi(GameState.player_map_pos.x, 0, 19)
+		GameState.player_map_pos.y = clampi(GameState.player_map_pos.y, 0, 14)
+		return
+
 	# "move to X,Y" or "move to X Y"
 	if lower.begins_with("move to ") or lower.begins_with("move "):
 		var coord_str = lower.replace("move to ", "").replace("move ", "")
@@ -249,9 +284,9 @@ func _parse_move_command(text: String) -> void:
 				# Calculate facing direction BEFORE updating position
 				var delta = new_pos - GameState.player_map_pos
 				if abs(delta.x) > abs(delta.y):
-					GameState.player_facing = 1 if delta.x > 0 else 3  # E or W
+					GameState.player_facing = 1 if delta.x > 0 else 3
 				elif delta.y != 0:
-					GameState.player_facing = 2 if delta.y > 0 else 0  # S or N
+					GameState.player_facing = 2 if delta.y > 0 else 0
 				GameState.player_map_pos = new_pos
 
 func _refresh_player_status() -> void:
