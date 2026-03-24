@@ -35,6 +35,100 @@ Ember RPG is a **Python/FastAPI backend** for an AI-driven tabletop-style RPG. P
 
 ## Architecture
 
+### Mermaid Flow Diagram
+
+```mermaid
+flowchart TD
+    CLIENT["🎮 Client\nGodot 4 / Web / CLI"]
+
+    subgraph API["API Layer — engine/api/"]
+        MAIN["main.py\nFastAPI App + CORS"]
+        ROUTES["routes.py\nGET/POST /game/session/*"]
+        SHOP["shop_routes.py\n/shop/{npc}/buy|sell"]
+        SAVE["save_routes.py\n/saves/*"]
+        SCENE["scene_routes.py\n/scene/enter"]
+        INV["inventory_routes.py\n/inventory/*"]
+        NPC_R["npc_memory_routes.py\n/session/{id}/npc/*"]
+    end
+
+    subgraph ENGINE["Engine Layer — engine/api/"]
+        GE["GameEngine\norchestrates all systems"]
+        GS["GameSession\nplayer state + dm context"]
+        AP["ActionParser\nNL → ActionIntent"]
+        MODELS["models.py\nPydantic schemas"]
+    end
+
+    subgraph CORE["Core Models — engine/core/"]
+        CHAR["Character\nstats, hp, xp, inventory"]
+        COMBAT["CombatManager\ninitiative, AP, rounds"]
+        SPELL["Spell + SpellSystem\n50+ spells, mana cost"]
+        EFFECT["Effect\ndamage/heal/status"]
+        ITEM["Item\nweapons, armor, potions"]
+        RULES["Rules\nhit/dodge/crit math"]
+        PROG["ProgressionSystem\nleveling, stat growth"]
+        DMA["DMAIAgent\nnarrative generation"]
+        LOOT["LootSystem\ndrop tables"]
+        NPC_C["NPC\npersonality, templates"]
+        MONSTER["Monster\nenemy templates"]
+        ENEMY_AI["EnemyAI\ndecision trees"]
+    end
+
+    subgraph MAP["Map Layer — engine/map/"]
+        DG["DungeonGenerator\nBSP rooms + corridors"]
+        TG["TownGenerator\nstreets + buildings"]
+        ZONES["ZoneManager\narea transitions"]
+    end
+
+    subgraph NPC_MOD["NPC Layer — engine/npc/"]
+        NPC_MEM["NPCMemoryManager\nper-NPC relationship state"]
+    end
+
+    subgraph WORLD["World Layer — engine/world/"]
+        WS["WorldState\ndiscovery, facts"]
+        CASCADE["CascadeEngine\nconsequence chains"]
+    end
+
+    subgraph SAVE_MOD["Save Layer — engine/save/"]
+        SM["SaveManager\nJSON persistence"]
+    end
+
+    subgraph LLM["LLM Layer — engine/llm/"]
+        LLM_R["LLMRouter\nOpenAI / Copilot / fallback"]
+    end
+
+    subgraph DATA["Data Files — data/"]
+        D1["items.json\nweapons, armor, potions"]
+        D2["monsters.json\nenemy definitions"]
+        D3["npc_templates.json\nNPC personalities"]
+        D4["campaign_templates.json\nquest templates"]
+    end
+
+    CLIENT -->|HTTP REST JSON| MAIN
+    MAIN --> ROUTES & SHOP & SAVE & SCENE & INV & NPC_R
+
+    ROUTES --> GE & GS & AP & MODELS
+    SHOP --> GS
+    SAVE --> SM
+    SCENE --> GE
+    INV --> GS
+    NPC_R --> NPC_MEM
+
+    GE --> CHAR & COMBAT & SPELL & EFFECT & ITEM & RULES & PROG & DMA & LOOT & NPC_C & MONSTER & ENEMY_AI
+    GS --> CHAR & WS & NPC_MEM & CASCADE
+
+    DMA --> LLM_R
+    COMBAT --> RULES & EFFECT
+    SPELL --> EFFECT
+    LOOT --> ITEM
+
+    DG & TG --> ZONES
+    MONSTER --> DATA
+    NPC_C --> DATA
+    ITEM --> DATA
+```
+
+### ASCII Quick Reference
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                     CLIENT LAYER                        │
@@ -42,36 +136,37 @@ Ember RPG is a **Python/FastAPI backend** for an AI-driven tabletop-style RPG. P
 └────────────────────────┬────────────────────────────────┘
                          │ HTTP REST (JSON)
 ┌────────────────────────▼────────────────────────────────┐
-│                   FastAPI (main.py)                     │
-│               /game/* routes (routes.py)                │
+│                API LAYER  (engine/api/)                 │
+│  routes.py · shop_routes · save_routes · scene_routes  │
+│           inventory_routes · npc_memory_routes          │
 │                                                         │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
 │  │  GameEngine  │  │  GameSession │  │ActionParser  │  │
 │  │  (orchestr.) │  │  (state)     │  │(NL → intent) │  │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
-└─────────┼─────────────────┼─────────────────┼──────────┘
-          │                 │                 │
-┌─────────▼─────────────────▼─────────────────▼──────────┐
-│                    CORE ENGINE                          │
-│                                                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  │
-│  │Character │  │  Combat  │  │  Spell   │  │  Item  │  │
-│  └──────────┘  └──────────┘  └──────────┘  └────────┘  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  │
-│  │   Rules  │  │  Effect  │  │Progression│  │DM Agent│  │
-│  └──────────┘  └──────────┘  └──────────┘  └────────┘  │
-└─────────────────────────────────────────────────────────┘
-          │                              │
-┌─────────▼──────┐              ┌────────▼───────┐
-│  MAP MODULE    │              │  NPC / CAMPAIGN │
-│  DungeonGen    │              │  NPC Agent      │
-│  TownGen       │              │  Campaign Gen   │
-└────────────────┘              └────────────────┘
+│  └──────┬───────┘  └──────┬───────┘  └──────────────┘  │
+└─────────┼─────────────────┼──────────────────────────── ┘
+          │                 │
+┌─────────▼─────────────────▼─────────────────────────── ┐
+│                CORE MODELS  (engine/core/)              │
+│  Character · Combat · Spell · Effect · Item · Rules    │
+│  Progression · DMAIAgent · Loot · Monster · EnemyAI   │
+└─────────┬───────────────────────────────────┬──────────┘
+          │                                   │
+┌─────────▼──────┐    ┌──────────┐   ┌────────▼───────┐
+│  MAP MODULE    │    │  WORLD   │   │   NPC MODULE   │
+│  DungeonGen    │    │WorldState│   │ NPCMemoryMgr   │
+│  TownGen       │    │Cascade   │   │ NPC templates  │
+└────────────────┘    └──────────┘   └────────────────┘
           │
 ┌─────────▼──────────────────────────────────────────────┐
 │                    DATA LAYER                          │
-│   data/spells.json    data/items.json (planned)        │
-│   In-memory sessions  (Redis planned)                  │
+│  items.json · monsters.json · npc_templates.json       │
+│  campaign_templates.json · saves/*.json                │
+└────────────────────────────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────── ┐
+│                   LLM LAYER                            │
+│         LLMRouter → OpenAI / Copilot / fallback        │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -347,7 +442,30 @@ Spell database. Schema:
 
 ## Testing
 
+### Coverage
+
+Current API layer coverage: **93%** (engine/api + main.py)
+
+| Module | Coverage |
+|---|---|
+| `engine/api/__init__.py` | 100% |
+| `engine/api/action_parser.py` | 90% |
+| `engine/api/game_engine.py` | 91% |
+| `engine/api/game_session.py` | 100% |
+| `engine/api/inventory_routes.py` | 97% |
+| `engine/api/models.py` | 100% |
+| `engine/api/npc_memory_routes.py` | 100% |
+| `engine/api/routes.py` | 88% |
+| `engine/api/save_routes.py` | 100% |
+| `engine/api/scene_routes.py` | 89% |
+| `engine/api/shop_routes.py` | 98% |
+| `main.py` | 91% |
+
 ```bash
+# Run coverage-targeted test suite (fast, no LLM)
+pytest tests/test_coverage_boost.py tests/test_shop.py tests/test_npc_memory_routes.py \
+    --cov=engine/api --cov=main --cov-report=term-missing
+
 # Run all tests
 cd frp-backend
 pytest tests/ -v
