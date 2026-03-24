@@ -218,6 +218,8 @@ func _load_texture(path: String) -> Texture2D:
 
 func _clear_map() -> void:
 	for child in get_children():
+		if child == player_marker:
+			continue  # Don't delete the player marker
 		child.queue_free()
 	entity_nodes.clear()
 
