@@ -79,6 +79,20 @@ func _on_scene_entered(data) -> void:
 			cy = int(sp[1])
 		GameState.player_map_pos = Vector2i(cx, cy)
 		GameState.player_facing = 2
+		print("[DEBUG] Player spawn at: %s" % str(GameState.player_map_pos))
+
+	# Also check if backend returned player position
+	if data.has("player") and data["player"].has("position"):
+		var pos = data["player"]["position"]
+		var bx = int(pos[0])
+		var by = int(pos[1])
+		if bx > 0 or by > 0:
+			GameState.player_map_pos = Vector2i(bx, by)
+			print("[DEBUG] Player position from backend: %s" % str(GameState.player_map_pos))
+
+	# Force tile map redraw with player position
+	if tile_map_renderer:
+		tile_map_renderer.queue_redraw()
 
 	# Fallback: reveal remaining hidden entities after narrative completes
 	await get_tree().create_timer(3.0).timeout
@@ -367,6 +381,20 @@ func _input(event: InputEvent) -> void:
 	if event.keycode == KEY_M and not text_input.has_focus():
 		map_viewer.visible = not map_viewer.visible
 		get_viewport().set_input_as_handled()
+		return
+
+	# Arrow keys — move on tile map (only when not typing)
+	if not text_input.has_focus():
+		var dir = ""
+		match event.keycode:
+			KEY_UP, KEY_W: dir = "north"
+			KEY_DOWN, KEY_S: dir = "south"
+			KEY_LEFT, KEY_A: dir = "west"
+			KEY_RIGHT, KEY_D: dir = "east"
+		if dir != "":
+			_submit_action("move %s" % dir)
+			get_viewport().set_input_as_handled()
+			return
 
 var _inventory_popup: PopupPanel = null
 
