@@ -37,6 +37,8 @@ class GameSession:
     cascade_engine: Optional[CascadeEngine] = None
     created_at: datetime = field(default_factory=datetime.now)
     last_action: datetime = field(default_factory=datetime.now)
+    position: list = field(default_factory=lambda: [0, 0])
+    facing: str = "north"
 
     def __post_init__(self):
         if self.world_state is None:
@@ -72,4 +74,6 @@ class GameSession:
             },
             "in_combat": self.in_combat(),
             "turn": self.dm_context.turn,
+            "position": list(self.position),
+            "facing": self.facing,
         }

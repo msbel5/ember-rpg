@@ -651,7 +651,44 @@ class GameEngine:
         # Clean direction strings like "to the tavern" -> "the tavern"
         if dest and dest.startswith("to "):
             dest = dest[3:]
-        session.dm_context.location = dest
+
+        # --- Position tracking ---
+        DIRECTION_DELTAS = {
+            "north": (0, -1), "south": (0, 1),
+            "east": (1, 0), "west": (-1, 0),
+        }
+        MAP_SIZE = 32
+        raw = action.raw_input.lower() if action.raw_input else ""
+        dest_lower = dest.lower()
+
+        if dest_lower in ("left", "right"):
+            # Turn only, don't move
+            turn_map = {
+                "left":  {"north": "west", "west": "south", "south": "east", "east": "north"},
+                "right": {"north": "east", "east": "south", "south": "west", "west": "north"},
+            }
+            session.facing = turn_map[dest_lower].get(session.facing, session.facing)
+        elif dest_lower in DIRECTION_DELTAS:
+            # Cardinal move: update facing and advance
+            session.facing = dest_lower
+            dx, dy = DIRECTION_DELTAS[dest_lower]
+            session.position = [
+                max(0, min(MAP_SIZE - 1, session.position[0] + dx)),
+                max(0, min(MAP_SIZE - 1, session.position[1] + dy)),
+            ]
+            session.dm_context.location = dest
+        elif dest_lower == "forward":
+            # Advance in current facing
+            dx, dy = DIRECTION_DELTAS.get(session.facing, (0, -1))
+            session.position = [
+                max(0, min(MAP_SIZE - 1, session.position[0] + dx)),
+                max(0, min(MAP_SIZE - 1, session.position[1] + dy)),
+            ]
+            session.dm_context.location = dest
+        else:
+            # Named destination (tavern etc.) — update location name
+            session.dm_context.location = dest
+
         desc = f"{session.player.name} moves toward {dest}."
         event = DMEvent(type=EventType.DISCOVERY, description=desc, data={
             "player_name": session.player.name,

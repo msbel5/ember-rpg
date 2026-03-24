@@ -82,6 +82,7 @@ class MapData:
         spawn_point: Player starting position (col, row)
         exit_points: List of exit positions
         metadata: Map metadata (seed, type, level, etc.)
+        zones: Zone data from ZoneMap (optional)
     """
     width: int
     height: int
@@ -90,6 +91,7 @@ class MapData:
     spawn_point: Tuple[int, int]
     exit_points: List[Tuple[int, int]] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
+    zones: Optional[list] = field(default=None)
 
     def get_tile(self, x: int, y: int) -> TileType:
         """Get tile at position (col x, row y)."""
@@ -122,7 +124,7 @@ class MapData:
 
     def to_dict(self) -> dict:
         """Serialize map for API responses."""
-        return {
+        result = {
             "width": self.width,
             "height": self.height,
             "tiles": [[t.value for t in row] for row in self.tiles],
@@ -139,6 +141,9 @@ class MapData:
             "exit_points": [list(p) for p in self.exit_points],
             "metadata": self.metadata,
         }
+        if self.zones is not None:
+            result["zones"] = self.zones
+        return result
 
     def reachable_from_spawn(self) -> set:
         """BFS from spawn point; return set of reachable (x, y) positions."""
@@ -225,6 +230,21 @@ class DungeonGenerator:
         tiles[by][bx] = TileType.STAIRS_DOWN
         exit_points = [(bx, by)]
 
+        # Zone integration
+        from engine.map.zones import create_zone_map
+        zone_map = create_zone_map("dungeon", width, height)
+        zone_data = [
+            {
+                "id": z.id,
+                "zone_type": z.zone_type.value,
+                "name": z.name,
+                "x1": z.x1, "y1": z.y1, "x2": z.x2, "y2": z.y2,
+                "is_indoor": z.is_indoor,
+                "danger_level": z.danger_level,
+            }
+            for z in zone_map.zones.values()
+        ]
+
         return MapData(
             width=width,
             height=height,
@@ -233,6 +253,7 @@ class DungeonGenerator:
             spawn_point=spawn,
             exit_points=exit_points,
             metadata={"seed": self.seed, "map_type": "dungeon"},
+            zones=zone_data,
         )
 
     def _carve_room(self, tiles, room: Room) -> None:
@@ -355,6 +376,21 @@ class TownGenerator:
 
         spawn = (width // 2, height // 2)
 
+        # Zone integration
+        from engine.map.zones import create_zone_map
+        zone_map = create_zone_map("town", width, height)
+        zone_data = [
+            {
+                "id": z.id,
+                "zone_type": z.zone_type.value,
+                "name": z.name,
+                "x1": z.x1, "y1": z.y1, "x2": z.x2, "y2": z.y2,
+                "is_indoor": z.is_indoor,
+                "danger_level": z.danger_level,
+            }
+            for z in zone_map.zones.values()
+        ]
+
         return MapData(
             width=width,
             height=height,
@@ -363,6 +399,7 @@ class TownGenerator:
             spawn_point=spawn,
             exit_points=[],
             metadata={"seed": self.seed, "map_type": "town"},
+            zones=zone_data,
         )
 
 
@@ -412,6 +449,21 @@ class WildernessGenerator:
         spawn = (width // 4, road_y)
         tiles[road_y][width // 4] = TileType.FLOOR
 
+        # Zone integration
+        from engine.map.zones import create_zone_map
+        zone_map = create_zone_map("wilderness", width, height)
+        zone_data = [
+            {
+                "id": z.id,
+                "zone_type": z.zone_type.value,
+                "name": z.name,
+                "x1": z.x1, "y1": z.y1, "x2": z.x2, "y2": z.y2,
+                "is_indoor": z.is_indoor,
+                "danger_level": z.danger_level,
+            }
+            for z in zone_map.zones.values()
+        ]
+
         return MapData(
             width=width,
             height=height,
@@ -420,6 +472,7 @@ class WildernessGenerator:
             spawn_point=spawn,
             exit_points=[],
             metadata={"seed": self.seed, "map_type": "wilderness"},
+            zones=zone_data,
         )
 
     def _smooth(self, tiles, width, height) -> List[List[TileType]]:
@@ -434,3 +487,11 @@ class WildernessGenerator:
                 )
                 new_tiles[y][x] = TileType.TREE if tree_count >= 5 else TileType.FLOOR
         return new_tiles
+
+from dataclasses import dataclass, field
+from typing import List, Optional, Tuple
+from enum import Enum
+import random
+from collections import deque
+
+

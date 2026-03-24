@@ -342,6 +342,9 @@ class DMAIAgent:
                 context_parts.append(f"Player's exact words: \"{event.data['raw_input']}\"")
             if event.data.get("location"):
                 context_parts.append(f"Current location: {event.data['location']}")
+            if event.data.get("zone_type"):
+                building = event.data.get("building", "open area")
+                context_parts.append(f"Current zone: {event.data['zone_type']} ({building})")
         enriched_description = "\n".join(context_parts)
 
         prompt = (
