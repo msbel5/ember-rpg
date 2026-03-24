@@ -1930,6 +1930,471 @@
       "weight": 0.1,
       "description": "A noble's signet ring \u2014 proof of a vampire lord's lineage.",
       "stackable": false
+    },
+    {
+      "id": "wolf_heart",
+      "name": "Wolf Heart",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 15,
+      "weight": 0.2,
+      "description": "Still-warm heart of a wolf, valued by alchemists."
+    },
+    {
+      "id": "dire_wolf_heart",
+      "name": "Dire Wolf Heart",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 50,
+      "weight": 0.5,
+      "description": "Pulsing heart of a dire wolf, radiates primal energy."
+    },
+    {
+      "id": "grizzly_fang",
+      "name": "Grizzly Fang",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 20,
+      "weight": 0.3,
+      "description": "A massive curved fang from a grizzly bear."
+    },
+    {
+      "id": "spider_eye",
+      "name": "Spider Eye",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 0.1,
+      "description": "A multifaceted spider eye used in scrying potions."
+    },
+    {
+      "id": "phase_crystal",
+      "name": "Phase Crystal",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 120,
+      "weight": 0.2,
+      "description": "A shimmering crystal that exists partially in another plane."
+    },
+    {
+      "id": "quiver",
+      "name": "Quiver",
+      "type": "equipment",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 0.5,
+      "description": "A standard leather quiver for carrying arrows."
+    },
+    {
+      "id": "torn_cloth",
+      "name": "Torn Cloth",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 1,
+      "weight": 0.1,
+      "description": "Dirty, torn cloth scraps."
+    },
+    {
+      "id": "infected_blood",
+      "name": "Infected Blood",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 40,
+      "weight": 0.1,
+      "description": "Dark ichor from a plague zombie, used in cursed potions."
+    },
+    {
+      "id": "dark_cloak",
+      "name": "Dark Cloak",
+      "type": "equipment",
+      "rarity": "UNCOMMON",
+      "value": 25,
+      "weight": 0.5,
+      "description": "A shadowy cloak that helps conceal the wearer."
+    },
+    {
+      "id": "stolen_trinket",
+      "name": "Stolen Trinket",
+      "type": "treasure",
+      "rarity": "UNCOMMON",
+      "value": 10,
+      "weight": 0.1,
+      "description": "A small trinket a goblin stole from an unfortunate traveler."
+    },
+    {
+      "id": "boss_key",
+      "name": "Boss Key",
+      "type": "key",
+      "rarity": "RARE",
+      "value": 0,
+      "weight": 0.1,
+      "description": "A crude iron key belonging to the Goblin Boss."
+    },
+    {
+      "id": "crude_armor_shard",
+      "name": "Crude Armor Shard",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 8,
+      "weight": 1.0,
+      "description": "A shard from orcish armor, useful for salvaging."
+    },
+    {
+      "id": "orc_warbanner",
+      "name": "Orc Warbanner",
+      "type": "treasure",
+      "rarity": "RARE",
+      "value": 60,
+      "weight": 2.0,
+      "description": "The tribal banner of an orc warband."
+    },
+    {
+      "id": "captain_signet_ring",
+      "name": "Captain's Signet Ring",
+      "type": "equipment",
+      "rarity": "RARE",
+      "value": 80,
+      "weight": 0.1,
+      "description": "A ring bearing the mark of a bandit captain, granting authority among criminals."
+    },
+    {
+      "id": "scorched_core",
+      "name": "Scorched Core",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 35,
+      "weight": 0.3,
+      "description": "The central core of a fire elemental."
+    },
+    {
+      "id": "blazing_crystal",
+      "name": "Blazing Crystal",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 90,
+      "weight": 0.2,
+      "description": "A crystal that perpetually burns with inner fire."
+    },
+    {
+      "id": "sea_foam_vial",
+      "name": "Sea Foam Vial",
+      "type": "potion",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 0.2,
+      "description": "A vial of compressed sea foam from a water elemental."
+    },
+    {
+      "id": "deep_current_gem",
+      "name": "Deep Current Gem",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 85,
+      "weight": 0.2,
+      "description": "A gem containing the pull of deep ocean currents."
+    },
+    {
+      "id": "granite_core",
+      "name": "Granite Core",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 2.0,
+      "description": "A dense core of granite from inside an earth elemental."
+    },
+    {
+      "id": "geode_crystal",
+      "name": "Geode Crystal",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 80,
+      "weight": 0.5,
+      "description": "A beautiful crystal geode formed within an earth elemental."
+    },
+    {
+      "id": "wind_wisp_essence",
+      "name": "Wind Wisp Essence",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 0.0,
+      "description": "Bottled essence of a wind wisp."
+    },
+    {
+      "id": "tempest_shard",
+      "name": "Tempest Shard",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 90,
+      "weight": 0.1,
+      "description": "A crystallized fragment of a storm elemental."
+    },
+    {
+      "id": "regeneration_gland",
+      "name": "Regeneration Gland",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 120,
+      "weight": 0.5,
+      "description": "A troll's regeneration gland; alchemists prize it highly."
+    },
+    {
+      "id": "ogre_skin_belt",
+      "name": "Ogre Skin Belt",
+      "type": "equipment",
+      "rarity": "UNCOMMON",
+      "value": 25,
+      "weight": 1.5,
+      "description": "A thick belt made from ogre hide."
+    },
+    {
+      "id": "life_drain_crystal",
+      "name": "Life Drain Crystal",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 100,
+      "weight": 0.2,
+      "description": "A dark crystal that drains life from the living."
+    },
+    {
+      "id": "shadow_essence",
+      "name": "Shadow Essence",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 110,
+      "weight": 0.0,
+      "description": "Pure shadow condensed into liquid form."
+    },
+    {
+      "id": "ethereal_cloak",
+      "name": "Ethereal Cloak",
+      "type": "equipment",
+      "rarity": "EPIC",
+      "value": 400,
+      "weight": 0.3,
+      "description": "A cloak woven from wraith-substance, grants partial incorporeality."
+    },
+    {
+      "id": "fire_dragon_blood",
+      "name": "Fire Dragon Blood",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 500,
+      "weight": 0.5,
+      "description": "Blood of a red dragon, used to forge fire-resistant gear."
+    },
+    {
+      "id": "young_dragon_heart",
+      "name": "Young Dragon Heart",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 600,
+      "weight": 1.0,
+      "description": "The still-smoldering heart of a young red dragon."
+    },
+    {
+      "id": "ancient_fire_essence",
+      "name": "Ancient Fire Essence",
+      "type": "crafting_material",
+      "rarity": "LEGENDARY",
+      "value": 2000,
+      "weight": 0.3,
+      "description": "Distilled essence of an ancient red dragon's flame."
+    },
+    {
+      "id": "tyrants_fang_sword",
+      "name": "Tyrant's Fang",
+      "type": "weapon",
+      "rarity": "LEGENDARY",
+      "value": 5000,
+      "weight": 4.0,
+      "description": "A sword carved from the fang of the ancient red dragon. Deals fire damage.",
+      "damage_dice": "2d10+5",
+      "damage_type": "fire",
+      "requirements": {
+        "level": 15
+      }
+    },
+    {
+      "id": "undying_essence",
+      "name": "Undying Essence",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 800,
+      "weight": 0.1,
+      "description": "The essence of undying will, distilled from a lich's magic."
+    },
+    {
+      "id": "bone_staff_fragment",
+      "name": "Bone Staff Fragment",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 150,
+      "weight": 0.8,
+      "description": "A fragment of a lich's magical staff."
+    },
+    {
+      "id": "brimstone_shard",
+      "name": "Brimstone Shard",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 700,
+      "weight": 0.5,
+      "description": "A chunk of brimstone infused with demonic energy."
+    },
+    {
+      "id": "lords_sigil",
+      "name": "Lord's Sigil",
+      "type": "crafting_material",
+      "rarity": "LEGENDARY",
+      "value": 3000,
+      "weight": 0.1,
+      "description": "The personal sigil of a demon lord, contains immense power."
+    },
+    {
+      "id": "central_eye_lens",
+      "name": "Central Eye Lens",
+      "type": "crafting_material",
+      "rarity": "LEGENDARY",
+      "value": 2500,
+      "weight": 0.3,
+      "description": "The lens of a beholder's central eye, radiates antimagic."
+    },
+    {
+      "id": "eye_stalk_fragment",
+      "name": "Eye Stalk Fragment",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 200,
+      "weight": 0.2,
+      "description": "A fragment of a beholder's eye stalk, still twitching."
+    },
+    {
+      "id": "elder_brain_fragment",
+      "name": "Elder Brain Fragment",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 600,
+      "weight": 0.4,
+      "description": "A fragment of elder brain tissue, pulsing with psychic energy."
+    },
+    {
+      "id": "tentacle_whip",
+      "name": "Tentacle Whip",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 300,
+      "weight": 1.5,
+      "description": "A whip fashioned from a mind flayer's tentacle.",
+      "damage_dice": "1d6+2",
+      "damage_type": "psychic",
+      "requirements": {
+        "level": 8
+      }
+    },
+    {
+      "id": "serpent_crown",
+      "name": "Serpent Crown",
+      "type": "equipment",
+      "rarity": "EPIC",
+      "value": 800,
+      "weight": 0.5,
+      "description": "The iconic crown of a medusa, grants minor charm resistance."
+    },
+    {
+      "id": "gorgon_eye",
+      "name": "Gorgon Eye",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 700,
+      "weight": 0.2,
+      "description": "A medusa's eye; still holds petrification power."
+    },
+    {
+      "id": "giant_rune_stone",
+      "name": "Giant Rune Stone",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 180,
+      "weight": 3.0,
+      "description": "A stone carved with ancient giant runes."
+    },
+    {
+      "id": "sky_forge_fragment",
+      "name": "Sky Forge Fragment",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 250,
+      "weight": 2.0,
+      "description": "A fragment from a cloud giant's skyforge."
+    },
+    {
+      "id": "giant_gold_ring",
+      "name": "Giant Gold Ring",
+      "type": "treasure",
+      "rarity": "UNCOMMON",
+      "value": 150,
+      "weight": 2.0,
+      "description": "An enormous gold ring sized for a cloud giant."
+    },
+    {
+      "id": "permafrost_core",
+      "name": "Permafrost Core",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 200,
+      "weight": 1.5,
+      "description": "A block of permafrost from a frost giant's homeland."
+    },
+    {
+      "id": "giant_frost_rune",
+      "name": "Giant Frost Rune",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 220,
+      "weight": 1.0,
+      "description": "A rune stone imbued with frost giant magic."
+    },
+    {
+      "id": "mages_signet",
+      "name": "Mage's Signet",
+      "type": "equipment",
+      "rarity": "EPIC",
+      "value": 600,
+      "weight": 0.1,
+      "description": "The personal signet ring of an archmage, grants spell knowledge."
+    },
+    {
+      "id": "power_word_scroll",
+      "name": "Power Word Scroll",
+      "type": "scroll",
+      "rarity": "RARE",
+      "value": 400,
+      "weight": 0.1,
+      "description": "A scroll containing a powerful word of magic."
+    },
+    {
+      "id": "lords_fang",
+      "name": "Lord's Fang",
+      "type": "weapon",
+      "rarity": "LEGENDARY",
+      "value": 2500,
+      "weight": 0.5,
+      "description": "The ceremonial fang of a vampire lord, deals necrotic damage.",
+      "damage_dice": "1d8+3",
+      "damage_type": "necrotic",
+      "requirements": {
+        "level": 12
+      }
+    },
+    {
+      "id": "crimson_cape",
+      "name": "Crimson Cape",
+      "type": "equipment",
+      "rarity": "RARE",
+      "value": 350,
+      "weight": 0.5,
+      "description": "A deep crimson cape worn by a vampire lord."
     }
   ]
 }

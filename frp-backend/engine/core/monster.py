@@ -180,7 +180,10 @@ class Monster:
             attacks=[Attack.from_dict(a) for a in data.get("attacks", [])],
             abilities=Abilities.from_dict(data.get("abilities", {})),
             xp_reward=data["xp_reward"],
-            loot_table=data.get("loot_table", []),
+            loot_table=[
+                entry["id"] if isinstance(entry, dict) else entry
+                for entry in data.get("loot_table", [])
+            ],
         )
 
     def __repr__(self) -> str:

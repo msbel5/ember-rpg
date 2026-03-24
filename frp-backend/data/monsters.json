@@ -33,8 +33,18 @@
       },
       "xp_reward": 50,
       "loot_table": [
-        "wolf_pelt",
-        "fang"
+        {
+          "id": "wolf_pelt",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "fang",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "wolf_heart",
+          "rarity": "UNCOMMON"
+        }
       ]
     },
     {
@@ -71,9 +81,22 @@
       },
       "xp_reward": 200,
       "loot_table": [
-        "dire_wolf_pelt",
-        "large_fang",
-        "potion_of_healing"
+        {
+          "id": "dire_wolf_pelt",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "large_fang",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "potion_of_healing",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "dire_wolf_heart",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -115,8 +138,18 @@
       },
       "xp_reward": 100,
       "loot_table": [
-        "bear_pelt",
-        "bear_claw"
+        {
+          "id": "bear_pelt",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "bear_claw",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "bear_meat",
+          "rarity": "COMMON"
+        }
       ]
     },
     {
@@ -159,9 +192,26 @@
       },
       "xp_reward": 450,
       "loot_table": [
-        "grizzly_pelt",
-        "bear_claw",
-        "bear_meat"
+        {
+          "id": "grizzly_pelt",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "bear_claw",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "bear_meat",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "grizzly_fang",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "potion_of_healing",
+          "rarity": "UNCOMMON"
+        }
       ]
     },
     {
@@ -199,8 +249,18 @@
       },
       "xp_reward": 200,
       "loot_table": [
-        "spider_silk",
-        "venom_sac"
+        {
+          "id": "spider_silk",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "venom_sac",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "spider_eye",
+          "rarity": "COMMON"
+        }
       ]
     },
     {
@@ -238,9 +298,22 @@
       },
       "xp_reward": 700,
       "loot_table": [
-        "phase_spider_silk",
-        "ethereal_essence",
-        "vial_of_poison"
+        {
+          "id": "phase_spider_silk",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "ethereal_essence",
+          "rarity": "RARE"
+        },
+        {
+          "id": "vial_of_poison",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "phase_crystal",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -279,8 +352,18 @@
       },
       "xp_reward": 50,
       "loot_table": [
-        "bone_fragment",
-        "rusty_sword"
+        {
+          "id": "bone_fragment",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "rusty_sword",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "copper_coin",
+          "rarity": "COMMON"
+        }
       ]
     },
     {
@@ -321,9 +404,22 @@
       },
       "xp_reward": 100,
       "loot_table": [
-        "bone_fragment",
-        "arrow",
-        "shortbow"
+        {
+          "id": "bone_fragment",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "arrow",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "shortbow",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "quiver",
+          "rarity": "COMMON"
+        }
       ]
     },
     {
@@ -361,8 +457,18 @@
       },
       "xp_reward": 50,
       "loot_table": [
-        "rotting_flesh",
-        "copper_coin"
+        {
+          "id": "rotting_flesh",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "copper_coin",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "torn_cloth",
+          "rarity": "COMMON"
+        }
       ]
     },
     {
@@ -407,9 +513,22 @@
       },
       "xp_reward": 200,
       "loot_table": [
-        "rotting_flesh",
-        "plague_essence",
-        "vial_of_poison"
+        {
+          "id": "rotting_flesh",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "plague_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "vial_of_poison",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "infected_blood",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -461,9 +580,26 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "blood_vial",
-        "vampire_fang",
-        "silver_coin"
+        {
+          "id": "blood_vial",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "vampire_fang",
+          "rarity": "RARE"
+        },
+        {
+          "id": "silver_coin",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "dark_cloak",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "necrotic_essence",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -505,9 +641,22 @@
       },
       "xp_reward": 50,
       "loot_table": [
-        "goblin_ear",
-        "crude_dagger",
-        "copper_coin"
+        {
+          "id": "goblin_ear",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "crude_dagger",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "copper_coin",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "stolen_trinket",
+          "rarity": "UNCOMMON"
+        }
       ]
     },
     {
@@ -551,9 +700,26 @@
       },
       "xp_reward": 200,
       "loot_table": [
-        "goblin_crown",
-        "scimitar",
-        "potion_of_healing"
+        {
+          "id": "goblin_crown",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "scimitar",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "potion_of_healing",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "silver_coin",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "boss_key",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -595,9 +761,22 @@
       },
       "xp_reward": 100,
       "loot_table": [
-        "orc_tusk",
-        "handaxe",
-        "silver_coin"
+        {
+          "id": "orc_tusk",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "handaxe",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "silver_coin",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "crude_armor_shard",
+          "rarity": "UNCOMMON"
+        }
       ]
     },
     {
@@ -642,9 +821,26 @@
       },
       "xp_reward": 1100,
       "loot_table": [
-        "warchief_helmet",
-        "war_greataxe",
-        "gold_coin"
+        {
+          "id": "warchief_helmet",
+          "rarity": "RARE"
+        },
+        {
+          "id": "war_greataxe",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "orc_warbanner",
+          "rarity": "RARE"
+        },
+        {
+          "id": "potion_of_greater_healing",
+          "rarity": "UNCOMMON"
+        }
       ]
     },
     {
@@ -684,9 +880,18 @@
       },
       "xp_reward": 25,
       "loot_table": [
-        "stolen_goods",
-        "dagger",
-        "silver_coin"
+        {
+          "id": "stolen_goods",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "dagger",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "silver_coin",
+          "rarity": "COMMON"
+        }
       ]
     },
     {
@@ -729,9 +934,26 @@
       },
       "xp_reward": 450,
       "loot_table": [
-        "captain_scimitar",
-        "chain_shirt",
-        "stolen_goods"
+        {
+          "id": "captain_scimitar",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "chain_shirt",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "stolen_goods",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "captain_signet_ring",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -783,8 +1005,22 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "fire_essence",
-        "ember_shard"
+        {
+          "id": "fire_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "ember_shard",
+          "rarity": "RARE"
+        },
+        {
+          "id": "scorched_core",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "blazing_crystal",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -836,8 +1072,22 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "water_essence",
-        "tidal_crystal"
+        {
+          "id": "water_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "tidal_crystal",
+          "rarity": "RARE"
+        },
+        {
+          "id": "sea_foam_vial",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "deep_current_gem",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -888,8 +1138,22 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "earth_essence",
-        "stone_shard"
+        {
+          "id": "earth_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "stone_shard",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "granite_core",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "geode_crystal",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -941,8 +1205,22 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "air_essence",
-        "storm_crystal"
+        {
+          "id": "air_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "storm_crystal",
+          "rarity": "RARE"
+        },
+        {
+          "id": "wind_wisp_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "tempest_shard",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -985,9 +1263,22 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "troll_hide",
-        "troll_heart",
-        "potion_of_healing"
+        {
+          "id": "troll_hide",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "troll_heart",
+          "rarity": "RARE"
+        },
+        {
+          "id": "potion_of_healing",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "regeneration_gland",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -1027,9 +1318,22 @@
       },
       "xp_reward": 450,
       "loot_table": [
-        "ogre_tooth",
-        "greatclub",
-        "gold_coin"
+        {
+          "id": "ogre_tooth",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "greatclub",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "ogre_skin_belt",
+          "rarity": "UNCOMMON"
+        }
       ]
     },
     {
@@ -1081,9 +1385,22 @@
       },
       "xp_reward": 700,
       "loot_table": [
-        "wight_essence",
-        "necrotic_essence",
-        "iron_shortsword"
+        {
+          "id": "wight_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "necrotic_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "iron_shortsword",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "life_drain_crystal",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -1133,9 +1450,26 @@
       },
       "xp_reward": 1800,
       "loot_table": [
-        "wraithstone",
-        "necrotic_essence",
-        "scroll_of_healing_word"
+        {
+          "id": "wraithstone",
+          "rarity": "RARE"
+        },
+        {
+          "id": "necrotic_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "scroll_of_healing_word",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "shadow_essence",
+          "rarity": "RARE"
+        },
+        {
+          "id": "ethereal_cloak",
+          "rarity": "EPIC"
+        }
       ]
     },
     {
@@ -1187,10 +1521,30 @@
       },
       "xp_reward": 5900,
       "loot_table": [
-        "dragon_scale",
-        "dragon_tooth",
-        "gold_hoard",
-        "ruby_gem"
+        {
+          "id": "dragon_scale",
+          "rarity": "RARE"
+        },
+        {
+          "id": "dragon_tooth",
+          "rarity": "RARE"
+        },
+        {
+          "id": "gold_hoard",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "ruby_gem",
+          "rarity": "RARE"
+        },
+        {
+          "id": "fire_dragon_blood",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "young_dragon_heart",
+          "rarity": "EPIC"
+        }
       ]
     },
     {
@@ -1250,10 +1604,30 @@
       },
       "xp_reward": 62000,
       "loot_table": [
-        "ancient_dragon_scale",
-        "dragon_heart",
-        "legendary_hoard",
-        "dragon_eye_gem"
+        {
+          "id": "ancient_dragon_scale",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "dragon_heart",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "legendary_hoard",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "dragon_eye_gem",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "ancient_fire_essence",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "tyrants_fang_sword",
+          "rarity": "LEGENDARY"
+        }
       ]
     },
     {
@@ -1310,10 +1684,30 @@
       },
       "xp_reward": 33000,
       "loot_table": [
-        "lich_crown",
-        "phylactery_shard",
-        "necrotic_crystal",
-        "scroll_of_mastery"
+        {
+          "id": "lich_crown",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "phylactery_shard",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "necrotic_crystal",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "scroll_of_mastery",
+          "rarity": "RARE"
+        },
+        {
+          "id": "undying_essence",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "bone_staff_fragment",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -1372,10 +1766,30 @@
       },
       "xp_reward": 25000,
       "loot_table": [
-        "demon_heart",
-        "demon_lord_horn",
-        "hellfire_essence",
-        "abyssal_blade"
+        {
+          "id": "demon_heart",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "demon_lord_horn",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "hellfire_essence",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "abyssal_blade",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "brimstone_shard",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "lords_sigil",
+          "rarity": "LEGENDARY"
+        }
       ]
     },
     {
@@ -1423,9 +1837,26 @@
       },
       "xp_reward": 10000,
       "loot_table": [
-        "beholder_eye",
-        "antimagic_shard",
-        "aberrant_flesh"
+        {
+          "id": "beholder_eye",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "antimagic_shard",
+          "rarity": "RARE"
+        },
+        {
+          "id": "aberrant_flesh",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "central_eye_lens",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "eye_stalk_fragment",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -1470,9 +1901,26 @@
       },
       "xp_reward": 2900,
       "loot_table": [
-        "mind_flayer_brain",
-        "psionic_crystal",
-        "illithid_robes"
+        {
+          "id": "mind_flayer_brain",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "psionic_crystal",
+          "rarity": "RARE"
+        },
+        {
+          "id": "illithid_robes",
+          "rarity": "RARE"
+        },
+        {
+          "id": "elder_brain_fragment",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "tentacle_whip",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -1516,9 +1964,26 @@
       },
       "xp_reward": 2300,
       "loot_table": [
-        "medusa_scale",
-        "petrification_essence",
-        "venom_extract"
+        {
+          "id": "medusa_scale",
+          "rarity": "RARE"
+        },
+        {
+          "id": "petrification_essence",
+          "rarity": "RARE"
+        },
+        {
+          "id": "venom_extract",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "serpent_crown",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "gorgon_eye",
+          "rarity": "EPIC"
+        }
       ]
     },
     {
@@ -1561,9 +2026,22 @@
       },
       "xp_reward": 3900,
       "loot_table": [
-        "stone_giant_club",
-        "granite_rune",
-        "giant_coin_pouch"
+        {
+          "id": "stone_giant_club",
+          "rarity": "RARE"
+        },
+        {
+          "id": "granite_rune",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "giant_coin_pouch",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "giant_rune_stone",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -1607,9 +2085,26 @@
       },
       "xp_reward": 5000,
       "loot_table": [
-        "cloud_giant_morningstar",
-        "silver_cloud_gem",
-        "storm_essence"
+        {
+          "id": "cloud_giant_morningstar",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "silver_cloud_gem",
+          "rarity": "RARE"
+        },
+        {
+          "id": "storm_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "sky_forge_fragment",
+          "rarity": "RARE"
+        },
+        {
+          "id": "giant_gold_ring",
+          "rarity": "UNCOMMON"
+        }
       ]
     },
     {
@@ -1655,9 +2150,26 @@
       },
       "xp_reward": 7200,
       "loot_table": [
-        "frost_giant_axe",
-        "glacial_shard",
-        "frozen_trophy"
+        {
+          "id": "frost_giant_axe",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "glacial_shard",
+          "rarity": "RARE"
+        },
+        {
+          "id": "frozen_trophy",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "permafrost_core",
+          "rarity": "RARE"
+        },
+        {
+          "id": "giant_frost_rune",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -1701,10 +2213,30 @@
       },
       "xp_reward": 8400,
       "loot_table": [
-        "spellbook_archmage",
-        "arcane_focus_gem",
-        "staff_of_the_archmage",
-        "scroll_of_mastery"
+        {
+          "id": "spellbook_archmage",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "arcane_focus_gem",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "staff_of_the_archmage",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "scroll_of_mastery",
+          "rarity": "RARE"
+        },
+        {
+          "id": "mages_signet",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "power_word_scroll",
+          "rarity": "RARE"
+        }
       ]
     },
     {
@@ -1757,10 +2289,30 @@
       },
       "xp_reward": 10000,
       "loot_table": [
-        "blood_crystal",
-        "vampire_cloak",
-        "vampire_ring",
-        "ancient_gold_coin"
+        {
+          "id": "blood_crystal",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "vampire_cloak",
+          "rarity": "RARE"
+        },
+        {
+          "id": "vampire_ring",
+          "rarity": "EPIC"
+        },
+        {
+          "id": "ancient_gold_coin",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "lords_fang",
+          "rarity": "LEGENDARY"
+        },
+        {
+          "id": "crimson_cape",
+          "rarity": "RARE"
+        }
       ]
     }
   ]

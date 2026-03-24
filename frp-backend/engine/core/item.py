@@ -20,6 +20,12 @@ class ItemType(Enum):
     CONSUMABLE = "consumable"
     QUEST = "quest"
     CURRENCY = "currency"
+    CRAFTING_MATERIAL = "crafting_material"
+    EQUIPMENT = "equipment"
+    TREASURE = "treasure"
+    KEY = "key"
+    SCROLL = "scroll"
+    POTION = "potion"
 
 
 class Rarity(Enum):
