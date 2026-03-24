@@ -34,10 +34,13 @@ func update_from_response(data: Dictionary) -> void:
 
 	if data.has("player"):
 		player = data["player"]
-		# Update player map position if backend provides it
+		# Update player map position if backend provides non-zero position
 		if player.has("position"):
 			var pos = player["position"]
-			player_map_pos = Vector2i(int(pos[0]), int(pos[1]))
+			var bx = int(pos[0])
+			var by = int(pos[1])
+			if bx > 0 or by > 0:  # Skip [0,0] placeholder from backend
+				player_map_pos = Vector2i(bx, by)
 
 	if data.has("location"):
 		location = data["location"]
