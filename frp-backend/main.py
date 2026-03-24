@@ -9,6 +9,7 @@ from engine.world.world_routes import router as world_router
 from engine.api.npc_memory_routes import router as npc_memory_router
 from engine.api.scene_routes import router as scene_router
 from engine.api.inventory_routes import router as inventory_router
+from engine.api.ws_routes import router as ws_router
 
 app = FastAPI(
     title="Ember RPG API",
