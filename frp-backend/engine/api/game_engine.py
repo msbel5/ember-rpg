@@ -310,8 +310,24 @@ class GameEngine:
                 name_faction = "elf"
             name = session.name_gen.generate_name(faction=name_faction, gender=gender, npc_id=npc_id)
 
-            # Find a walkable position near spawn
-            pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=8, min_dist=2)
+            # Keep key interaction NPCs meaningfully reachable from the spawn area.
+            if role in {"merchant", "innkeeper"}:
+                pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=2, min_dist=1)
+            else:
+                role_anchor = {
+                    "merchant": "shop",
+                    "blacksmith": "forge",
+                    "priest": "temple",
+                    "quest_giver": "market_square",
+                    "guard": "gate",
+                    "beggar": "alley",
+                    "spy": "alley",
+                }.get(role)
+                if role_anchor and role_anchor in anchors:
+                    anchor_x, anchor_y = anchors[role_anchor]
+                    pos = self._find_walkable_near(session, anchor_x, anchor_y, radius=4, min_dist=1)
+                else:
+                    pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=8, min_dist=2)
             needs = NPCNeeds()
 
             # Determine glyph/color from NPC_VISUALS
@@ -589,6 +605,17 @@ class GameEngine:
         pending_ap_after = result.state_changes.pop("_ap_after_world_tick", None) if result.state_changes else None
         if pending_ap_after is not None and session.ap_tracker is not None:
             session.ap_tracker.current_ap = max(0, min(session.ap_tracker.max_ap, int(pending_ap_after)))
+
+        auto_refresh = bool(session.narration_context.pop("_auto_refresh_after_action", False))
+        if (
+            auto_refresh
+            and pending_ap_after is None
+            and session.ap_tracker is not None
+            and not session.in_combat()
+            and session.ap_tracker.current_ap <= 0
+        ):
+            session.ap_tracker.refresh()
+            result.narrative = f"{result.narrative} (New turn — AP refreshed)"
 
         session.sync_player_state()
         return result
@@ -1137,6 +1164,9 @@ class GameEngine:
         prox_fail = self._check_entity_proximity(session, target, "examine")
         if prox_fail:
             return prox_fail
+        ap_fail = self._check_ap(session, "examine")
+        if ap_fail:
+            return ap_fail
 
         world_context = self._build_world_context(session)
         desc = f"{session.player.name} examines {target} closely, looking for details.\n{world_context}"
@@ -1156,6 +1186,9 @@ class GameEngine:
         prox_fail = self._check_entity_proximity(session, target, "talk")
         if prox_fail:
             return prox_fail
+        ap_fail = self._check_ap(session, "talk")
+        if ap_fail:
+            return ap_fail
 
         # Try to find NPC personality from templates
         npc_personality = self._get_npc_personality(target)
@@ -1681,6 +1714,9 @@ class GameEngine:
         prox_fail = self._check_entity_proximity(session, target, "trade")
         if prox_fail:
             return prox_fail
+        ap_fail = self._check_ap(session, "trade")
+        if ap_fail:
+            return ap_fail
 
         # Check NPC willingness to trade (from needs)
         found_entity = self._find_entity_by_name(session, target)
@@ -1847,13 +1883,26 @@ class GameEngine:
                     narrative=f"Too heavy! {match.name} would bring you to {new_weight:.1f}/{max_weight:.1f} kg.",
                     scene_type=session.dm_context.scene_type,
                 )
+        if not session.can_add_item(item_dict, merge=True):
+            return ActionResult(
+                narrative=f"No room for {match.name}. Your containers are full.",
+                scene_type=session.dm_context.scene_type,
+            )
 
         if session.spatial_index:
             session.spatial_index.remove(match)
         added = session.add_item(item_dict, merge=True)
-        auto_turn = self._auto_end_turn(session)
+        if added is None:
+            if session.spatial_index:
+                session.spatial_index.add(match)
+            return ActionResult(
+                narrative=f"No room for {match.name}. Your containers are full.",
+                scene_type=session.dm_context.scene_type,
+            )
+        if session.ap_tracker and session.ap_tracker.current_ap <= 0 and not session.in_combat():
+            session.narration_context["_auto_refresh_after_action"] = True
         return ActionResult(
-            narrative=f"You pick up {match.name}.{auto_turn}",
+            narrative=f"You pick up {match.name}.",
             scene_type=session.dm_context.scene_type,
         )
 
@@ -1893,6 +1942,30 @@ class GameEngine:
             narrative=f"You drop {item['name']} on the ground.",
             scene_type=session.dm_context.scene_type,
         )
+
+    def _spawn_ground_item(self, session: GameSession, item: Dict[str, Any]) -> Entity:
+        payload = copy.deepcopy(item)
+        px, py = session.position[0], session.position[1]
+        item_entity = Entity(
+            id=payload.get("ground_instance_id") or payload.get("instance_id") or Entity.generate_id(),
+            entity_type=EntityType.ITEM,
+            name=payload.get("name", "Unknown Item"),
+            position=(px, py),
+            glyph="!",
+            color="yellow",
+            blocking=False,
+            inventory=[payload],
+        )
+        if session.spatial_index:
+            session.spatial_index.add(item_entity)
+        return item_entity
+
+    def _add_or_drop_item(self, session: GameSession, item: Dict[str, Any], merge: bool = True) -> bool:
+        added = session.add_item(item, merge=merge)
+        if added is not None:
+            return True
+        self._spawn_ground_item(session, item)
+        return False
 
     def _handle_equip(self, session: GameSession, action: ParsedAction) -> ActionResult:
         """Equip an item from inventory, or unequip if target starts with 'un'."""
@@ -2088,6 +2161,7 @@ class GameEngine:
                 if delta > 0:
                     session.remove_item(item_id, delta)
 
+            dropped_products: List[str] = []
             for product_id, qty in craft_result.products:
                 product_record = {
                     "id": product_id,
@@ -2097,9 +2171,14 @@ class GameEngine:
                 }
                 if crafted_material:
                     product_record["material"] = crafted_material
-                session.add_item(product_record)
+                if not self._add_or_drop_item(session, product_record):
+                    dropped_products.append(product_record["name"])
                 if getattr(session, "location_stock", None) is not None:
                     session.location_stock.add_stock(product_id, qty)
+            if dropped_products:
+                narrative_parts.append(
+                    f"No room to carry {', '.join(dropped_products)}. The item lands on the ground instead."
+                )
 
         narrative_parts = [check_text, craft_result.narrative]
         if craft_result.xp_gained > 0:
@@ -2730,6 +2809,8 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
         session.ap_tracker.spend(cost)
+        if session.ap_tracker.current_ap <= 0 and not session.in_combat():
+            session.narration_context["_auto_refresh_after_action"] = True
         return None
 
     def _format_skill_check(self, result: SkillCheckResult, ability_name: str, dc: int) -> str:
@@ -3120,12 +3201,14 @@ class GameEngine:
         check_text = self._format_skill_check(check_result, ability, dc)
 
         if check_result.success:
-            session.add_item({"id": "raw_fish", "name": "Raw Fish", "qty": 1})
+            dropped = not self._add_or_drop_item(session, {"id": "raw_fish", "name": "Raw Fish", "qty": 1})
             if check_result.critical == "success":
-                session.add_item({"id": "raw_fish", "name": "Raw Fish", "qty": 1})
                 narrative = "You feel a strong tug and pull out two beautiful fish!"
+                dropped = (not self._add_or_drop_item(session, {"id": "raw_fish", "name": "Raw Fish", "qty": 1})) or dropped
             else:
                 narrative = "After a patient wait, you catch a fine fish!"
+            if dropped:
+                narrative += " You have no room for the catch, so it flops onto the ground at your feet."
         else:
             narrative = "You wait patiently, but the fish aren't biting today."
 
@@ -3163,12 +3246,14 @@ class GameEngine:
         check_text = self._format_skill_check(check_result, ability, dc)
 
         if check_result.success:
-            session.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 1})
+            dropped = not self._add_or_drop_item(session, {"id": "iron_ore", "name": "Iron Ore", "qty": 1})
             if check_result.critical == "success":
-                session.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 1})
                 narrative = "You strike a rich vein and extract two chunks of quality ore!"
+                dropped = (not self._add_or_drop_item(session, {"id": "iron_ore", "name": "Iron Ore", "qty": 1})) or dropped
             else:
                 narrative = "You chip away at the rock and extract some usable ore."
+            if dropped:
+                narrative += " You cannot carry the ore, so it clatters to the ground."
         else:
             narrative = "You swing your pickaxe but only break off worthless rubble."
 
@@ -3207,12 +3292,14 @@ class GameEngine:
         check_text = self._format_skill_check(check_result, ability, dc)
 
         if check_result.success:
-            session.add_item({"id": "wood_plank", "name": "Wood Plank", "qty": 1})
+            dropped = not self._add_or_drop_item(session, {"id": "wood_plank", "name": "Wood Plank", "qty": 1})
             if check_result.critical == "success":
-                session.add_item({"id": "wood_plank", "name": "Wood Plank", "qty": 1})
                 narrative = f"You fell {target} with powerful strokes, yielding plenty of timber!"
+                dropped = (not self._add_or_drop_item(session, {"id": "wood_plank", "name": "Wood Plank", "qty": 1})) or dropped
             else:
                 narrative = f"You chop {target} into usable planks."
+            if dropped:
+                narrative += " You have no room for the timber, so it falls nearby."
         else:
             narrative = f"You hack at {target} but can't fell it properly. No usable wood."
 

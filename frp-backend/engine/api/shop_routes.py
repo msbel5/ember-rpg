@@ -163,11 +163,22 @@ def buy_item(npc_id: str, req: BuyRequest):
             detail=f"Insufficient gold. Need {total_price}g, have {player_gold}g"
         )
 
-    player.gold -= total_price
-
     purchased_item = copy.deepcopy(item)
     purchased_item["qty"] = req.quantity
-    session.add_item(purchased_item)
+    if hasattr(session, "can_add_item") and not session.can_add_item(purchased_item):
+        raise HTTPException(
+            status_code=400,
+            detail=f"No room to carry {req.quantity}x {item['name']}. Free some inventory space first."
+        )
+
+    player.gold -= total_price
+    added = session.add_item(purchased_item)
+    if added is None:
+        player.gold += total_price
+        raise HTTPException(
+            status_code=400,
+            detail=f"No room to carry {req.quantity}x {item['name']}. Free some inventory space first."
+        )
 
     if getattr(session, "location_stock", None) is not None:
         removed = session.location_stock.remove_stock(req.item_id, req.quantity)

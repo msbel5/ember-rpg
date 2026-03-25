@@ -593,9 +593,19 @@ class GameSession:
         weapon = self.equipment.get("weapon")
         self.player.weapon_material = (weapon or {}).get("material", "iron")
         if self.ap_tracker is not None:
-            self.player.ap = self.ap_tracker.current_ap
-            self.player.max_ap = self.ap_tracker.max_ap
             self.ap_tracker.set_armor(self._armor_type_from_item(self.equipment.get("armor")))
+            ap_current = self.ap_tracker.current_ap
+            ap_max = self.ap_tracker.max_ap
+            if self.in_combat() and self.combat is not None:
+                player_combatant = next(
+                    (combatant for combatant in self.combat.combatants if combatant.name == self.player.name),
+                    None,
+                )
+                if player_combatant is not None:
+                    ap_current = int(player_combatant.ap)
+                    ap_max = 3
+            self.player.ap = ap_current
+            self.player.max_ap = ap_max
         if self.player_entity is not None:
             self.player_entity.hp = self.player.hp
             self.player_entity.max_hp = self.player.max_hp
@@ -610,10 +620,17 @@ class GameSession:
         mig = (getattr(self.player, "stats", None) or {}).get("MIG", 10)
         return (mig - 10) // 2
 
-    def add_item(self, item: Any, merge: bool = True) -> Dict[str, Any]:
+    def can_add_item(self, item: Any, merge: bool = True) -> bool:
         normalized = self._normalize_item_record(item)
         stack = ItemStack.from_legacy_dict(normalized)
-        success, msg = self.physical_inventory.add_item_auto(stack)
+        return self.physical_inventory.can_add_item_auto(stack, merge=merge)
+
+    def add_item(self, item: Any, merge: bool = True) -> Optional[Dict[str, Any]]:
+        normalized = self._normalize_item_record(item)
+        stack = ItemStack.from_legacy_dict(normalized)
+        success, _ = self.physical_inventory.add_item_auto(stack, merge=merge)
+        if not success:
+            return None
         self.sync_player_state()
         return normalized
 

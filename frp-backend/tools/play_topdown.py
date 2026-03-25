@@ -156,6 +156,11 @@ def format_game_time(session: GameSession) -> str:
 # ── Render: Header ───────────────────────────────────────────────────
 def render_header(session: GameSession) -> Panel:
     p = session.player
+    snapshot = session.to_dict()
+    player_ap = snapshot.get("player", {}).get("ap") or {
+        "current": getattr(p, "ap", 4),
+        "max": getattr(p, "max_ap", 4),
+    }
     char_class = list(p.classes.keys())[0].capitalize() if p.classes else "Unknown"
     loc = session.dm_context.location
 
@@ -167,7 +172,7 @@ def render_header(session: GameSession) -> Panel:
     armor = (session.equipment.get("armor") or {}).get("name", "None") if getattr(session, "equipment", None) else "None"
 
     sp_text = f"SP: {p.spell_points}/{p.max_spell_points}" if p.max_spell_points > 0 else ""
-    ap_text = f"AP: {getattr(p, 'ap', 4)}/{getattr(p, 'max_ap', 4)}"
+    ap_text = f"AP: {player_ap.get('current', 0)}/{player_ap.get('max', 0)}"
 
     # Weight display
     weight_text = ""

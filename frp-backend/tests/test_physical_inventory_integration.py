@@ -337,6 +337,25 @@ class TestNewHandlers:
         result = engine.process_action(session, "look")
         # Not testing specific behavior, just that it doesn't crash
 
+    def test_drop_and_pickup_preserve_contained_matter(self, engine, session):
+        session.add_item({
+            "id": "waterskin",
+            "name": "Waterskin",
+            "type": "tool",
+            "container_type": {"liquid_capacity_ml": 500},
+            "contained_matter": {"item_id": "water", "amount_ml": 300},
+        })
+
+        drop_result = engine.process_action(session, "drop waterskin")
+        assert "drop" in drop_result.narrative.lower()
+
+        pickup_result = engine.process_action(session, "pick up waterskin")
+        assert "pick up" in pickup_result.narrative.lower()
+
+        found = session.physical_inventory.find_item("waterskin")
+        assert found is not None
+        assert found.contained_matter == {"item_id": "water", "amount_ml": 300}
+
 
 # ---------------------------------------------------------------------------
 # 6. Save/Load with PhysicalInventory

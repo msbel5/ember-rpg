@@ -117,6 +117,23 @@ ITEM_TYPE_SHAPES: Dict[str, str] = {
     "default": "tiny",
 }
 
+_STACK_EXCLUDED_ITEM_KEYS = {
+    "qty",
+    "quantity",
+    "instance_id",
+    "ground_instance_id",
+    "entity_id",
+}
+
+
+def _freeze_value(value: Any) -> Any:
+    """Convert nested mutable metadata into a stable comparable shape."""
+    if isinstance(value, dict):
+        return tuple(sorted((str(key), _freeze_value(val)) for key, val in value.items()))
+    if isinstance(value, list):
+        return tuple(_freeze_value(entry) for entry in value)
+    return value
+
 
 def get_item_shape(item_data: Dict) -> ItemShape:
     """Determine the grid shape for an item based on its data."""
@@ -195,6 +212,18 @@ class ItemStack:
             return self.shape.rotated(self.orientation)
         return self.shape
 
+    def stack_signature(self) -> Tuple[Any, ...]:
+        """Return metadata that must match before two stacks can merge."""
+        metadata = tuple(
+            sorted(
+                (str(key), _freeze_value(value))
+                for key, value in self.item_data.items()
+                if key not in _STACK_EXCLUDED_ITEM_KEYS
+            )
+        )
+        contained = _freeze_value(self.contained_matter) if self.contained_matter is not None else None
+        return (self.item_id, metadata, contained)
+
     def to_dict(self) -> Dict:
         d = {
             "item_id": self.item_id,
@@ -224,10 +253,11 @@ class ItemStack:
     @classmethod
     def from_legacy_dict(cls, item: Dict) -> "ItemStack":
         """Convert a legacy flat inventory dict to ItemStack."""
-        item_data = dict(item)
+        item_data = copy.deepcopy(dict(item))
         item_id = item_data.pop("id", item_data.get("item_id", "unknown"))
         qty = item_data.pop("qty", 1)
         inst_id = item_data.pop("instance_id", None) or item_data.pop("ground_instance_id", None) or str(uuid.uuid4())[:8]
+        contained_matter = item_data.pop("contained_matter", None)
         shape = get_item_shape(item_data)
         return cls(
             item_id=item_id,
@@ -235,6 +265,7 @@ class ItemStack:
             item_data={**item_data, "id": item_id},
             instance_id=inst_id,
             shape=shape,
+            contained_matter=copy.deepcopy(contained_matter),
         )
 
     def to_legacy_dict(self) -> Dict:
@@ -506,15 +537,31 @@ class PhysicalInventory:
             result.append(self.backpack)
         return result
 
-    def add_item_auto(self, item: ItemStack) -> Tuple[bool, str]:
+    def can_add_item_auto(self, item: ItemStack, merge: bool = True) -> bool:
+        preview = copy.deepcopy(self)
+        preview_stack = copy.deepcopy(item)
+        success, _ = preview.add_item_auto(preview_stack, merge=merge)
+        return success
+
+    def add_item_auto(self, item: ItemStack, merge: bool = True) -> Tuple[bool, str]:
         """Auto-place item in the best-fit container. Returns (success, message)."""
         # Try stacking first
         for container in self.all_containers():
-            if item.stackable:
+            if merge and item.stackable:
                 for existing in container.placed_items.values():
-                    if existing.item_id == item.item_id and existing.quantity < existing.max_stack:
+                    if (
+                        existing.stack_signature() == item.stack_signature()
+                        and existing.quantity < existing.max_stack
+                    ):
                         space = existing.max_stack - existing.quantity
-                        added = min(space, item.quantity)
+                        per_unit_weight = float(existing.item_data.get("weight", 0.5))
+                        if per_unit_weight > 0:
+                            weight_space = int(container.remaining_weight() // per_unit_weight)
+                        else:
+                            weight_space = item.quantity
+                        added = min(space, item.quantity, max(0, weight_space))
+                        if added <= 0:
+                            continue
                         existing.quantity += added
                         item.quantity -= added
                         if item.quantity <= 0:

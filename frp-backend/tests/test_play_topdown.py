@@ -138,3 +138,19 @@ def test_render_map_smoke(monkeypatch):
     panel = play_topdown.render_map(map_state)
 
     assert panel is not None
+
+
+def test_render_header_uses_combat_ap(monkeypatch):
+    _install_topdown_stubs(monkeypatch)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play_topdown = importlib.import_module("tools.play_topdown")
+
+    engine = GameEngine(llm=None)
+    session = engine.new_session("Renderer", "warrior", location="Harbor Town")
+    engine.process_action(session, "attack")
+
+    panel = play_topdown.render_header(session)
+    rendered = panel.args[0]
+
+    assert "AP: 3/3" in rendered

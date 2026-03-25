@@ -101,6 +101,18 @@ class TestItemStack:
         assert stack.quantity == 3
         assert stack.shape == SHAPES["tiny"]
 
+    def test_from_legacy_dict_preserves_contained_matter(self):
+        legacy = {
+            "id": "waterskin",
+            "name": "Waterskin",
+            "qty": 1,
+            "type": "tool",
+            "container_type": {"liquid_capacity_ml": 500},
+            "contained_matter": {"item_id": "water", "amount_ml": 300},
+        }
+        stack = ItemStack.from_legacy_dict(legacy)
+        assert stack.contained_matter == {"item_id": "water", "amount_ml": 300}
+
     def test_to_legacy_dict(self):
         stack = ItemStack(item_id="bread", quantity=3, item_data={"name": "Bread", "type": "consumable", "id": "bread"})
         d = stack.to_legacy_dict()
@@ -285,6 +297,38 @@ class TestPhysicalInventory:
         all_bread = [s for s in inv.all_items() if s.item_id == "bread"]
         total_qty = sum(s.quantity for s in all_bread)
         assert total_qty == 5
+
+    def test_stacking_does_not_merge_different_metadata(self):
+        inv = PhysicalInventory()
+        fine_bread = ItemStack(
+            item_id="bread",
+            quantity=1,
+            item_data={"name": "Bread", "weight": 0.3, "quality": "fine"},
+            shape=SHAPES["tiny"],
+        )
+        spoiled_bread = ItemStack(
+            item_id="bread",
+            quantity=1,
+            item_data={"name": "Bread", "weight": 0.3, "quality": "spoiled"},
+            shape=SHAPES["tiny"],
+        )
+        inv.add_item_auto(fine_bread)
+        inv.add_item_auto(spoiled_bread)
+
+        bread_stacks = [stack for stack in inv.all_items() if stack.item_id == "bread"]
+        assert len(bread_stacks) == 2
+        assert sorted(stack.item_data.get("quality") for stack in bread_stacks) == ["fine", "spoiled"]
+
+    def test_stacking_respects_container_weight_limit(self):
+        inv = PhysicalInventory()
+        first = ItemStack(item_id="ore", quantity=9, item_data={"name": "Ore", "weight": 0.5}, shape=SHAPES["tiny"])
+        second = ItemStack(item_id="ore", quantity=8, item_data={"name": "Ore", "weight": 0.5}, shape=SHAPES["tiny"])
+
+        inv.add_item_auto(first)
+        inv.add_item_auto(second)
+
+        assert inv.belt.total_weight() <= inv.belt.max_weight
+        assert sum(stack.quantity for stack in inv.all_items() if stack.item_id == "ore") == 17
 
     def test_remove_item(self):
         inv = PhysicalInventory()

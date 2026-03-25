@@ -336,6 +336,18 @@ class TestHandleTalk:
         assert "quest accepted" in accept_result.narrative.lower()
         assert mage_session.quest_tracker.get_quest("story_offer") is not None
 
+    def test_talk_spends_exploration_ap(self, engine, mage_session):
+        merchant_id, merchant = _entity_by_role(mage_session, "merchant")
+        _move_player_near_entity(mage_session, merchant)
+        mage_session.game_time.minute = 15
+        ap_before = mage_session.ap_tracker.current_ap
+
+        result = engine.process_action(mage_session, "talk to merchant")
+
+        assert merchant_id in mage_session.npc_memory.memories
+        assert mage_session.ap_tracker.current_ap == ap_before - 1
+        assert result.scene_type == SceneType.DIALOGUE
+
 
 class TestQuestHardening:
     def test_accept_and_turn_in_delivery_quest_requires_explicit_flow(self, engine, mage_session):
@@ -368,6 +380,19 @@ class TestQuestHardening:
         assert "you turn in" in turn_in_result.narrative.lower()
         assert mage_session.quest_tracker.get_active_quests() == []
         assert all(item.get("id") != "bread" for item in mage_session.inventory)
+
+    def test_trade_and_examine_spend_exploration_ap(self, engine, mage_session):
+        _merchant_id, merchant = _entity_by_role(mage_session, "merchant")
+        _move_player_near_entity(mage_session, merchant)
+        mage_session.game_time.minute = 15
+        ap_before = mage_session.ap_tracker.current_ap
+
+        engine.process_action(mage_session, "trade with merchant")
+        after_trade = mage_session.ap_tracker.current_ap
+        engine.process_action(mage_session, "examine merchant")
+
+        assert after_trade == ap_before - 1
+        assert mage_session.ap_tracker.current_ap == after_trade - 1
 
 
 class TestSaveCommands:
@@ -593,6 +618,35 @@ class TestInventoryHardening:
         bread_entries = [item for item in session.inventory if item.get("id") == "bread"]
         assert len(bread_entries) == 1
         assert bread_entries[0]["qty"] == 3
+
+    def test_pickup_keeps_ground_item_when_inventory_cannot_accept_it(self, engine, warrior_session):
+        from engine.world.entity import Entity, EntityType
+
+        heavy = Entity(
+            id="heavy_boulder",
+            entity_type=EntityType.ITEM,
+            name="Heavy Boulder",
+            position=tuple(warrior_session.position),
+            glyph="*",
+            color="grey",
+            blocking=False,
+            inventory=[{"id": "heavy_boulder", "name": "Heavy Boulder", "type": "item", "weight": 32.0}],
+        )
+        warrior_session.spatial_index.add(heavy)
+
+        result = engine.process_action(warrior_session, "pick up heavy boulder")
+
+        assert "no room" in result.narrative.lower()
+        assert any(entity.id == "heavy_boulder" for entity in warrior_session.spatial_index.at(*warrior_session.position))
+        assert warrior_session.find_inventory_item("heavy_boulder") is None
+
+    def test_search_auto_refreshes_ap_when_action_hits_zero(self, engine, warrior_session):
+        warrior_session.game_time.minute = 15
+        warrior_session.ap_tracker.current_ap = 1
+
+        engine.process_action(warrior_session, "search area")
+
+        assert warrior_session.ap_tracker.current_ap == warrior_session.ap_tracker.max_ap
 
 
 # ---------------------------------------------------------------------------
