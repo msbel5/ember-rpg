@@ -16,10 +16,7 @@ from engine.world.consequence import CascadeEngine
 
 # Living World imports
 from engine.world.schedules import GameTime as LivingGameTime
-from engine.world.tick_scheduler import WorldTickScheduler
 from engine.world.naming import NameGenerator
-from engine.world.npc_needs import NPCNeeds
-from engine.world.ethics import FACTION_ETHICS
 from engine.world.history import HistorySeed
 from engine.world.economy import LocationStock
 from engine.world.rumors import RumorNetwork

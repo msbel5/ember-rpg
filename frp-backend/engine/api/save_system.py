@@ -78,13 +78,23 @@ class SaveSystem:
         if session.ap_tracker is not None:
             data["ap_tracker"] = session.ap_tracker.to_dict()
 
-        # Inventory and equipment
-        data["inventory"] = session.inventory
-        data["equipment"] = session.equipment
+        # Inventory and equipment (deep copy to avoid mutation)
+        data["inventory"] = list(session.inventory) if session.inventory else []
+        data["equipment"] = dict(session.equipment) if session.equipment else {}
 
         # Living World entities dict (legacy NPC dict)
+        # NPCNeeds objects need serialization
         if session.entities:
-            data["entities"] = session.entities
+            serialized_entities = {}
+            for eid, ent in session.entities.items():
+                ent_copy = dict(ent)
+                needs = ent_copy.get("needs")
+                if needs is not None and hasattr(needs, "to_dict"):
+                    ent_copy["needs"] = needs.to_dict()
+                # Remove non-serializable entity_ref
+                ent_copy.pop("entity_ref", None)
+                serialized_entities[eid] = ent_copy
+            data["entities"] = serialized_entities
 
         # World state
         if session.world_state is not None:
@@ -272,7 +282,14 @@ class SaveSystem:
         session.body_tracker = body_tracker
         session.caravan_manager = caravan_manager
         session.history_seed = history_seed
-        session.entities = data.get("entities", {})
+        # Reconstruct entities with NPCNeeds objects
+        raw_entities = data.get("entities", {})
+        for eid, ent in raw_entities.items():
+            needs_data = ent.get("needs")
+            if isinstance(needs_data, dict):
+                from engine.world.npc_needs import NPCNeeds
+                ent["needs"] = NPCNeeds.from_dict(needs_data)
+        session.entities = raw_entities
 
         # Entity / Spatial / Viewport / AP fields
         session.map_data = map_data
@@ -281,10 +298,14 @@ class SaveSystem:
         session.player_entity = player_entity
         session.ap_tracker = ap_tracker
         session.inventory = data.get("inventory", [])
-        session.equipment = data.get("equipment", {
+        # Merge saved equipment with defaults so all 8 slots always exist
+        _default_equipment = {
             "weapon": None, "armor": None, "shield": None, "helmet": None,
             "boots": None, "gloves": None, "ring": None, "amulet": None,
-        })
+        }
+        saved_equip = data.get("equipment", {})
+        _default_equipment.update(saved_equip)
+        session.equipment = _default_equipment
 
         # Lazy-init subsystems that were None
         if session.world_state is None:
@@ -386,11 +407,15 @@ class SaveSystem:
         if not filepath.exists():
             return None
 
-        text = filepath.read_text(encoding="utf-8")
-        save_data = json.loads(text)
-
-        state = save_data.get("session_state", {})
-        return self._deserialize_session(state)
+        try:
+            text = filepath.read_text(encoding="utf-8")
+            save_data = json.loads(text)
+            state = save_data.get("session_state", {})
+            if not state or "player" not in state:
+                return None  # Corrupt/incomplete save
+            return self._deserialize_session(state)
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
+            return None  # Corrupt save file
 
     def list_saves(self) -> List[Dict]:
         """List all save files with metadata (sorted newest first)."""
