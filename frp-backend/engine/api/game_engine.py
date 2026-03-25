@@ -311,7 +311,7 @@ class GameEngine:
             name = session.name_gen.generate_name(faction=name_faction, gender=gender, npc_id=npc_id)
 
             # Find a walkable position near spawn
-            pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=5)
+            pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=8, min_dist=2)
             needs = NPCNeeds()
 
             # Determine glyph/color from NPC_VISUALS
@@ -398,11 +398,15 @@ class GameEngine:
 
         self._spawn_workstations(session, anchors)
 
-    def _find_walkable_near(self, session: GameSession, cx: int, cy: int, radius: int = 5) -> list:
-        """Find a walkable tile near (cx, cy) using map_data. Falls back to random offset."""
+    def _find_walkable_near(self, session: GameSession, cx: int, cy: int, radius: int = 5, min_dist: int = 2) -> list:
+        """Find a walkable tile near (cx, cy) using map_data.
+
+        min_dist: minimum distance from (cx, cy) — keeps a buffer zone around spawn.
+        Falls back to random offset if no walkable tile found.
+        """
         if session.map_data is not None:
-            # Try positions in expanding rings
-            for r in range(1, radius + 1):
+            # Try positions in expanding rings, starting from min_dist
+            for r in range(max(1, min_dist), radius + 1):
                 candidates = []
                 for dx in range(-r, r + 1):
                     for dy in range(-r, r + 1):
@@ -414,8 +418,22 @@ class GameEngine:
                                 candidates.append([nx, ny])
                 if candidates:
                     return random.choice(candidates)
-        # Fallback: random offset
-        return [cx + random.randint(-2, 2), cy + random.randint(-2, 2)]
+            # If min_dist prevented finding anything, try again from ring 1
+            if min_dist > 1:
+                for r in range(1, min_dist):
+                    candidates = []
+                    for dx in range(-r, r + 1):
+                        for dy in range(-r, r + 1):
+                            if abs(dx) != r and abs(dy) != r:
+                                continue
+                            nx, ny = cx + dx, cy + dy
+                            if session.map_data.is_walkable(nx, ny):
+                                if session.spatial_index is None or not session.spatial_index.blocking_at(nx, ny):
+                                    candidates.append([nx, ny])
+                    if candidates:
+                        return random.choice(candidates)
+        # Fallback: random offset at min_dist
+        return [cx + random.randint(-3, 3), cy + random.randint(-3, 3)]
 
     def _scene_anchor_positions(self, session: GameSession) -> Dict[str, List[int]]:
         if not session.map_data:
@@ -1017,8 +1035,8 @@ class GameEngine:
         )
 
     def _handle_look(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        """Handle 'look around', 'look', 'observe' — scene description at current location."""
-        # --- Bug 3: Combat look shows combat status ---
+        """Handle 'look around', 'look', 'observe' — deterministic scene + DM flavor."""
+        # Combat look
         if session.dm_context.scene_type == SceneType.COMBAT and session.combat:
             enemies = [c for c in session.combat.combatants if not c.is_dead and c.name != session.player.name]
             enemy_desc = ", ".join([f"{e.name} (HP:{e.character.hp})" for e in enemies])
@@ -1029,21 +1047,64 @@ class GameEngine:
             return ActionResult(narrative=narrative, scene_type=SceneType.COMBAT)
 
         location = session.dm_context.location or "the area"
+        px, py = session.position[0], session.position[1]
+
+        # Build deterministic scene description with nearby entities
+        scene_parts = [f"== {location} =="]
+
+        # Time
+        if session.game_time:
+            scene_parts.append(f"Time: {session.game_time.to_string()}")
+
+        # Nearby NPCs (within 5 tiles)
+        nearby_npcs = []
+        for eid, entity in session.entities.items():
+            epos = entity.get("position", [0, 0])
+            dist = abs(epos[0] - px) + abs(epos[1] - py)
+            if dist <= 5 and entity.get("alive", True):
+                role = entity.get("role", "")
+                name = entity.get("name", eid)
+                direction = ""
+                dx, dy = epos[0] - px, epos[1] - py
+                if abs(dx) > abs(dy):
+                    direction = "east" if dx > 0 else "west"
+                elif dy != 0:
+                    direction = "south" if dy > 0 else "north"
+                nearby_npcs.append(f"  {name} ({role}) — {dist} tile{'s' if dist != 1 else ''} {direction}")
+
+        if nearby_npcs:
+            scene_parts.append("Nearby:")
+            scene_parts.extend(nearby_npcs)
+
+        # Ground items at player position
+        if session.spatial_index:
+            items_here = [e for e in session.spatial_index.at(px, py) if e.entity_type == EntityType.ITEM]
+            if items_here:
+                scene_parts.append("On the ground:")
+                for item in items_here:
+                    scene_parts.append(f"  {item.name}")
+
+        # AP status
+        if session.ap_tracker:
+            scene_parts.append(f"AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap}")
+
+        deterministic_scene = "\n".join(scene_parts)
+
+        # Add DM flavor narration
         world_context = self._build_world_context(session)
         desc = (
-            f"{session.player.name} surveys their surroundings in {location}. "
-            f"Current location: {location}. "
-            f"They take in the sights, sounds, and atmosphere of {location} specifically.\n"
+            f"{session.player.name} surveys their surroundings in {location}.\n"
             f"{world_context}"
         )
         event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
             "player_name": session.player.name,
             "location": location,
-            "current_location": location,
             "action": "look around",
             "world_context": world_context,
         })
-        narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        dm_flavor = self.dm.narrate(event, session.dm_context, self.llm)
+
+        narrative = f"{deterministic_scene}\n\n{dm_flavor}"
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_examine(self, session: GameSession, action: ParsedAction) -> ActionResult:
@@ -1435,17 +1496,23 @@ class GameEngine:
                 names = ", ".join(e.name for e in hostiles)
                 hostile_alert = f" You spot hostile creatures nearby: {names}!"
 
-        world_context = self._build_world_context(session)
-        desc = f"{session.player.name} moves toward {dest}.\n{world_context}"
-        event = DMEvent(type=EventType.DISCOVERY, description=desc, data={
-            "player_name": session.player.name,
-            "location": dest,
-            "action": f"move to {dest}",
-            "world_context": world_context,
-        })
-        narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        # Build concise movement narrative
+        direction_name = dest_lower if dest_lower in DIRECTION_DELTAS else dest
+        px, py = session.position[0], session.position[1]
+        base_narrative = f"You move {direction_name}. (Position: {px},{py})"
+
+        # Add nearby entity awareness
+        if session.spatial_index:
+            nearby = session.spatial_index.in_radius(px, py, 3)
+            notable = [e for e in nearby if e.id != "player" and e.alive]
+            if notable:
+                names = ", ".join(f"{e.name}" for e in notable[:3])
+                base_narrative += f" You see {names} nearby."
+
         if hostile_alert:
-            narrative += hostile_alert
+            base_narrative += hostile_alert
+
+        narrative = base_narrative
 
         return ActionResult(
             narrative=narrative,
@@ -1522,6 +1589,11 @@ class GameEngine:
 
             if heal_amount > 0:
                 old_hp = session.player.hp
+                if old_hp >= session.player.max_hp:
+                    return ActionResult(
+                        narrative=f"You're already at full health ({session.player.hp}/{session.player.max_hp}). No need to use {item_name}.",
+                        scene_type=session.dm_context.scene_type,
+                    )
                 session.player.hp = min(session.player.max_hp, session.player.hp + heal_amount)
                 actual_heal = session.player.hp - old_hp
                 effects.append(f"restored {actual_heal} HP")
@@ -1788,6 +1860,13 @@ class GameEngine:
                 break
 
         if match_idx is None:
+            # Check if already equipped
+            for slot, eq_item in session.equipment.items():
+                if eq_item and (target in eq_item.get("name", "").lower() or target in eq_item.get("id", "").lower()):
+                    return ActionResult(
+                        narrative=f"{eq_item['name']} is already equipped in your {slot} slot.",
+                        scene_type=session.dm_context.scene_type,
+                    )
             return ActionResult(
                 narrative=f"You don't have '{target}' in your inventory.",
                 scene_type=session.dm_context.scene_type,
@@ -1846,9 +1925,29 @@ class GameEngine:
         """Handle crafting attempts using the CraftingSystem."""
         target = (action.target or "").lower().strip()
         if not target:
-            recipe_names = [r.name for r in ALL_RECIPES.values()][:10]
+            # Show recipes grouped by what player can craft now vs what exists
+            inv_dict = {}
+            for item in session.inventory:
+                iid = item.get("id", "")
+                inv_dict[iid] = inv_dict.get(iid, 0) + item.get("qty", 1)
+            crafting = CraftingSystem()
+            can_craft = []
+            other_recipes = []
+            for r in ALL_RECIPES.values():
+                if crafting.check_ingredients(r, dict(inv_dict)):
+                    can_craft.append(f"  [*] {r.name} ({r.skill} DC {r.skill_dc}, {r.ap_cost} AP)")
+                else:
+                    other_recipes.append(r.name)
+            parts = ["== Crafting Recipes =="]
+            if can_craft:
+                parts.append("You can craft:")
+                parts.extend(can_craft)
+            else:
+                parts.append("You don't have ingredients for any recipe right now.")
+            if other_recipes:
+                parts.append(f"\nOther recipes: {', '.join(other_recipes[:15])}...")
             return ActionResult(
-                narrative=f"Craft what? Available recipes: {', '.join(recipe_names)}...",
+                narrative="\n".join(parts),
                 scene_type=session.dm_context.scene_type,
             )
 
