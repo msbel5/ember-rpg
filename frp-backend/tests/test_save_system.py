@@ -10,6 +10,7 @@ from pathlib import Path
 
 from engine.core.character import Character
 from engine.core.dm_agent import DMContext, DMEvent, SceneType, EventType
+from engine.api.game_engine import GameEngine
 from engine.api.game_session import GameSession
 from engine.api.save_system import SaveSystem
 from engine.world.entity import Entity, EntityType
@@ -258,6 +259,30 @@ class TestSaveLoadRoundtrip:
         assert loaded.inventory[0]["id"] == "iron_sword"
         assert loaded.inventory[1]["id"] == "health_potion"
         assert loaded.equipment["weapon"]["id"] == "iron_sword"
+
+    def test_world_entity_refs_and_offer_sources_restored(self, save_system):
+        engine = GameEngine()
+        session = engine.new_session("Roundtrip", "warrior", location="Harbor Town")
+        merchant_id, merchant = next(
+            (entity_id, entity) for entity_id, entity in session.entities.items() if entity.get("role") == "merchant"
+        )
+        merchant["entity_ref"].hp = 6
+        merchant["entity_ref"].max_hp = 8
+        session.quest_offers = [{"id": "story_offer", "title": "Story Quest"}]
+
+        save_system.save_game(session, "test_world_refs")
+        loaded = save_system.load_game("test_world_refs")
+
+        loaded_merchant = loaded.entities[merchant_id]
+        assert loaded_merchant["entity_ref"] is not None
+        assert loaded_merchant["hp"] == loaded_merchant["entity_ref"].hp == 6
+        assert loaded_merchant["max_hp"] == loaded_merchant["entity_ref"].max_hp == 8
+        assert loaded_merchant["alive"] == loaded_merchant["entity_ref"].alive
+        assert loaded.quest_offers[0]["source"] == "authored"
+
+        combatant = engine._character_from_world_entity(merchant_id, loaded_merchant)
+        assert combatant is not None
+        assert combatant.hp == 6
         assert loaded.equipment["armor"]["id"] == "chain_mail"
 
     def test_ap_tracker_preserved(self, save_system, sample_session):

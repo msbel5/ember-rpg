@@ -128,6 +128,7 @@ class TestHandleAttack:
         result = engine.process_action(warrior_session, "attack")
         assert result.combat_state is not None
         assert warrior_session.in_combat()
+        assert result.combat_state["active"] == warrior_session.player.name
 
     def test_attack_returns_narrative(self, engine, warrior_session):
         result = engine.process_action(warrior_session, "attack")
@@ -135,8 +136,17 @@ class TestHandleAttack:
 
     def test_attack_narrative_contains_action_word(self, engine, warrior_session):
         result = engine.process_action(warrior_session, "attack the goblin")
+        assert result.scene_type == SceneType.COMBAT
+        assert result.combat_state["active"] == warrior_session.player.name
         assert any(w in result.narrative.lower() for w in
-                   ["strike", "miss", "critical", "stumbles", "swings", "blow", "damage"])
+                   ["combat", "fight", "battle", "attack"])
+
+    def test_attack_starts_combat_without_resolving_opening_round(self, engine, warrior_session):
+        result = engine.process_action(warrior_session, "attack")
+        enemies = [c for c in result.combat_state["combatants"] if c["name"] != warrior_session.player.name]
+        assert enemies
+        assert all(enemy["hp"] == enemy["max_hp"] for enemy in enemies)
+        assert warrior_session.player.hp == warrior_session.player.max_hp
 
     def test_attack_no_valid_target(self, engine, warrior_session):
         """When _find_target returns None, narrative says no target."""
@@ -303,6 +313,27 @@ class TestHandleTalk:
         assert merchant_id in mage_session.npc_memory.memories
         assert "merchant" not in mage_session.npc_memory.memories
 
+    def test_authored_quest_offer_survives_talk_and_can_be_accepted(self, engine, mage_session):
+        _merchant_id, merchant = _entity_by_role(mage_session, "merchant")
+        mage_session.quest_offers = [{
+            "id": "story_offer",
+            "kind": "delivery",
+            "title": "Story Quest",
+            "description": "Keep this authored offer available.",
+            "target_item": "bread",
+            "required_qty": 1,
+        }]
+        _move_player_near_entity(mage_session, merchant)
+
+        talk_result = engine.process_action(mage_session, "talk to merchant")
+        assert "story quest" in talk_result.narrative.lower()
+        assert any(offer["id"] == "story_offer" for offer in mage_session.quest_offers)
+        assert next(offer for offer in mage_session.quest_offers if offer["id"] == "story_offer")["source"] == "authored"
+
+        accept_result = engine.process_action(mage_session, "accept quest story quest")
+        assert "quest accepted" in accept_result.narrative.lower()
+        assert mage_session.quest_tracker.get_quest("story_offer") is not None
+
 
 class TestQuestHardening:
     def test_accept_and_turn_in_delivery_quest_requires_explicit_flow(self, engine, mage_session):
@@ -313,7 +344,8 @@ class TestQuestHardening:
 
         talk_result = engine.process_action(mage_session, "talk to merchant")
         assert "quest accepted" not in talk_result.narrative.lower()
-        mage_session.quest_offers = engine._generate_emergent_quests(mage_session)
+        assert any(offer.get("id") == "resupply_bread" for offer in mage_session.quest_offers)
+        assert all(offer.get("source") in {"authored", "emergent"} for offer in mage_session.quest_offers)
 
         accept_result = engine.process_action(mage_session, "accept quest bread shortage")
         assert "quest accepted" in accept_result.narrative.lower()
@@ -507,6 +539,29 @@ class TestCombatHardening:
 
         assert merchant["body"].current_hp["head"] < before_head_hp
         assert merchant["hp"] == enemy.hp
+
+
+class TestInventoryHardening:
+    def test_failed_pickup_does_not_spend_ap(self, engine, warrior_session):
+        ap_before = warrior_session.ap_tracker.current_ap
+
+        result = engine.process_action(warrior_session, "pick up bread")
+
+        assert "nothing to pick up" in result.narrative.lower()
+        assert warrior_session.ap_tracker.current_ap == ap_before
+
+    def test_pickup_merges_stackable_items(self, engine):
+        session = engine.new_session("Collector", "warrior", location="Harbor Town")
+
+        drop_result = engine.process_action(session, "drop bread")
+        assert "drop" in drop_result.narrative.lower()
+
+        pickup_result = engine.process_action(session, "pick up bread")
+        assert "pick up" in pickup_result.narrative.lower()
+
+        bread_entries = [item for item in session.inventory if item.get("id") == "bread"]
+        assert len(bread_entries) == 1
+        assert bread_entries[0]["qty"] == 3
 
 
 # ---------------------------------------------------------------------------

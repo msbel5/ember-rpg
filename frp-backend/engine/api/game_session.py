@@ -295,6 +295,107 @@ class GameSession:
         return item.get("type") not in {"weapon", "armor", "shield"}
 
     @staticmethod
+    def _canonical_offer_source(source: Optional[str], default_source: str = "authored") -> str:
+        source_value = str(source or default_source or "authored").strip().lower()
+        if source_value not in {"authored", "emergent"}:
+            return "authored"
+        return source_value
+
+    @classmethod
+    def normalize_quest_offer(cls, offer: Any, default_source: str = "authored") -> Dict[str, Any]:
+        data = copy.deepcopy(dict(offer or {}))
+        offer_id = str(data.get("id") or "").strip()
+        if not offer_id:
+            offer_id = f"quest_offer_{uuid.uuid4().hex[:8]}"
+        data["id"] = offer_id
+        data["source"] = cls._canonical_offer_source(data.get("source"), default_source)
+        return data
+
+    @classmethod
+    def normalize_quest_offers(
+        cls,
+        offers: Optional[List[Dict[str, Any]]],
+        default_source: str = "authored",
+    ) -> List[Dict[str, Any]]:
+        normalized: List[Dict[str, Any]] = []
+        seen_ids = set()
+        for offer in offers or []:
+            normalized_offer = cls.normalize_quest_offer(offer, default_source=default_source)
+            offer_id = normalized_offer["id"]
+            if offer_id in seen_ids:
+                continue
+            normalized.append(normalized_offer)
+            seen_ids.add(offer_id)
+        return normalized
+
+    @classmethod
+    def merge_quest_offers(
+        cls,
+        existing: Optional[List[Dict[str, Any]]],
+        new_offers: Optional[List[Dict[str, Any]]],
+        new_default_source: str = "emergent",
+    ) -> List[Dict[str, Any]]:
+        merged = cls.normalize_quest_offers(existing, default_source="authored")
+        seen_ids = {offer["id"] for offer in merged}
+        for offer in cls.normalize_quest_offers(new_offers, default_source=new_default_source):
+            if offer["id"] in seen_ids:
+                continue
+            merged.append(offer)
+            seen_ids.add(offer["id"])
+        return merged
+
+    def sync_entity_record(self, entity_id: str, entity_ref: Optional[Entity] = None) -> Optional[Dict[str, Any]]:
+        record = self.entities.get(entity_id)
+        if record is None:
+            return None
+        live_entity = entity_ref or record.get("entity_ref")
+        if live_entity is None:
+            return record
+
+        record["entity_ref"] = live_entity
+        record["position"] = [live_entity.position[0], live_entity.position[1]]
+        record["hp"] = live_entity.hp
+        record["max_hp"] = live_entity.max_hp
+        record["alive"] = live_entity.alive
+        record["blocking"] = live_entity.blocking
+        record.setdefault("name", live_entity.name)
+        record.setdefault("type", live_entity.entity_type.value)
+        if getattr(live_entity, "faction", None) is not None:
+            record.setdefault("faction", live_entity.faction)
+        if getattr(live_entity, "job", None) is not None:
+            record.setdefault("role", live_entity.job)
+
+        live_body = getattr(live_entity, "body", None)
+        if live_body is not None:
+            record["body"] = live_body
+        elif record.get("body") is not None:
+            live_entity.body = record["body"]
+
+        live_needs = getattr(live_entity, "needs", None)
+        if live_needs is not None:
+            record["needs"] = live_needs
+        elif record.get("needs") is not None:
+            live_entity.needs = record["needs"]
+
+        live_schedule = getattr(live_entity, "schedule", None)
+        if live_schedule is not None:
+            record["schedule"] = live_schedule
+        elif record.get("schedule") is not None:
+            live_entity.schedule = record["schedule"]
+
+        return record
+
+    def reattach_entity_refs(self) -> None:
+        if not self.entities or self.spatial_index is None:
+            return
+        live_entities = {entity.id: entity for entity in self.spatial_index.all_entities()}
+        for entity_id in list(self.entities.keys()):
+            live_entity = live_entities.get(entity_id)
+            if live_entity is None:
+                continue
+            self.sync_entity_record(entity_id, live_entity)
+
+    @staticmethod
     def _armor_type_from_item(item: Optional[Dict[str, Any]]) -> str:
         if not item:
             return "none"
@@ -382,6 +483,8 @@ class GameSession:
                 normalized["slot"] = slot
                 merged_equipment[slot] = normalized
         self.equipment = merged_equipment
+        self.quest_offers = self.normalize_quest_offers(self.quest_offers, default_source="authored")
+        self.reattach_entity_refs()
         self.sync_player_state()
 
     def sync_player_state(self) -> None:

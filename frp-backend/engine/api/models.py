@@ -3,6 +3,7 @@ Ember RPG - API Layer
 Pydantic request/response models
 """
 from pydantic import BaseModel
+from pydantic import Field
 from typing import Optional, List
 
 
@@ -44,8 +45,12 @@ class ActionResponse(BaseModel):
     scene: str
     player: dict
     combat: Optional[dict] = None
-    state_changes: dict = {}
+    state_changes: dict = Field(default_factory=dict)
     level_up: Optional[dict] = None
+    active_quests: List[dict] = Field(default_factory=list)
+    quest_offers: List[dict] = Field(default_factory=list)
+    ground_items: List[dict] = Field(default_factory=list)
+    campaign_state: dict = Field(default_factory=dict)
 
 
 class SessionStateResponse(BaseModel):

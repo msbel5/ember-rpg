@@ -4,6 +4,7 @@ Ember RPG - FastAPI endpoint integration tests
 import pytest
 from fastapi.testclient import TestClient
 from main import app
+from engine.api.routes import _sessions
 
 client = TestClient(app)
 
@@ -103,6 +104,24 @@ class TestSessionEndpoints:
         assert "hp" in player
         assert "level" in player
         assert "spell_points" in player
+
+    def test_action_response_includes_canonical_fr15_fields(self):
+        created = self._new_session()
+        sid = created["session_id"]
+
+        resp = client.post(f"/game/session/{sid}/action", json={"input": "bak"})
+        assert resp.status_code == 200
+        data = resp.json()
+        snapshot = _sessions[sid].to_dict()
+
+        assert "active_quests" in data
+        assert "quest_offers" in data
+        assert "ground_items" in data
+        assert "campaign_state" in data
+        assert data["active_quests"] == snapshot.get("active_quests", [])
+        assert data["quest_offers"] == snapshot.get("quest_offers", [])
+        assert data["ground_items"] == snapshot.get("ground_items", [])
+        assert data["campaign_state"] == snapshot.get("campaign_state", {})
 
     def test_custom_location(self):
         resp = client.post("/game/session/new", json={

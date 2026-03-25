@@ -39,7 +39,29 @@ class SaveSystem:
             "log": list(combat.log),
             "combatants": [
                 {
-                    "character": combatant.character.to_dict(),
+                    "character": {
+                        **combatant.character.to_dict(),
+                        **(
+                            {"_entity_id": getattr(combatant.character, "_entity_id")}
+                            if hasattr(combatant.character, "_entity_id")
+                            else {}
+                        ),
+                        **(
+                            {"role": getattr(combatant.character, "role")}
+                            if hasattr(combatant.character, "role")
+                            else {}
+                        ),
+                        **(
+                            {"equipped_armor": list(getattr(combatant.character, "equipped_armor", []))}
+                            if hasattr(combatant.character, "equipped_armor")
+                            else {}
+                        ),
+                        **(
+                            {"weapon_material": getattr(combatant.character, "weapon_material")}
+                            if hasattr(combatant.character, "weapon_material")
+                            else {}
+                        ),
+                    },
                     "initiative": combatant.initiative,
                     "ap": combatant.ap,
                     "conditions": [condition.__dict__ for condition in combatant.conditions],
@@ -59,8 +81,20 @@ class SaveSystem:
         combat = object.__new__(CombatManager)
         combat.combatants = []
         for combatant_data in data.get("combatants", []):
-            char_data = combatant_data.get("character", {})
+            char_data = dict(combatant_data.get("character", {}))
+            entity_id = char_data.pop("_entity_id", None)
+            role = char_data.pop("role", None)
+            equipped_armor = list(char_data.pop("equipped_armor", []) or [])
+            weapon_material = char_data.pop("weapon_material", None)
             character = player if char_data.get("name") == getattr(player, "name", None) else Character.from_dict(char_data)
+            if entity_id is not None:
+                character._entity_id = entity_id
+            if role is not None:
+                character.role = role
+            if equipped_armor:
+                character.equipped_armor = equipped_armor
+            if weapon_material is not None:
+                character.weapon_material = weapon_material
             combat.combatants.append(
                 Combatant(
                     character=character,
@@ -186,7 +220,12 @@ class SaveSystem:
         # History seed
         if session.history_seed is not None:
             data["history_seed"] = session.history_seed.to_dict()
-        data["quest_offers"] = list(getattr(session, "quest_offers", []))
+        from engine.api.game_session import GameSession
+
+        data["quest_offers"] = GameSession.normalize_quest_offers(
+            getattr(session, "quest_offers", []),
+            default_source="authored",
+        )
         data["campaign_state"] = dict(getattr(session, "campaign_state", {}))
         data["narration_context"] = dict(getattr(session, "narration_context", {}))
         data["last_save_slot"] = getattr(session, "last_save_slot", None)
@@ -364,7 +403,10 @@ class SaveSystem:
             if isinstance(body_data, dict):
                 ent["body"] = BodyPartTracker.from_dict(body_data)
         session.entities = raw_entities
-        session.quest_offers = list(data.get("quest_offers", []))
+        session.quest_offers = GameSession.normalize_quest_offers(
+            data.get("quest_offers", []),
+            default_source="authored",
+        )
         session.campaign_state = dict(data.get("campaign_state", {}))
         session.narration_context = dict(data.get("narration_context", {}))
         session.last_save_slot = data.get("last_save_slot")
@@ -421,6 +463,8 @@ class SaveSystem:
                 session.position[0], session.position[1],
                 radius=8,
             )
+        if hasattr(session, "reattach_entity_refs"):
+            session.reattach_entity_refs()
         if hasattr(session, "ensure_consistency"):
             session.ensure_consistency()
 

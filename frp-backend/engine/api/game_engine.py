@@ -270,7 +270,11 @@ class GameEngine:
             else:
                 session.add_item(item)
 
-        session.quest_offers = self._generate_emergent_quests(session, force=True)
+        session.quest_offers = GameSession.merge_quest_offers(
+            session.quest_offers,
+            self._generate_emergent_quests(session, force=True),
+            new_default_source="emergent",
+        )
         session.narration_context["last_world_tick_hour"] = self._current_game_hour(session)
         session.ensure_consistency()
         return session
@@ -384,8 +388,13 @@ class GameEngine:
                 "body": body,
                 "schedule": schedule,
                 "gender": gender,
+                "hp": entity.hp,
+                "max_hp": entity.max_hp,
+                "alive": entity.alive,
+                "blocking": entity.blocking,
                 "entity_ref": entity,  # reference to the Entity object
             }
+            session.sync_entity_record(npc_id, entity)
 
         self._spawn_workstations(session, anchors)
 
@@ -547,7 +556,7 @@ class GameEngine:
 
     def _handle_attack(self, session: GameSession, action: ParsedAction) -> ActionResult:
         # Proximity check for attack (melee range)
-        if action.target:
+        if action.target and not session.in_combat():
             prox_fail = self._check_entity_proximity(session, action.target, "attack_melee")
             if prox_fail:
                 return prox_fail
@@ -557,18 +566,26 @@ class GameEngine:
                             "enemy", "monster", "troll", "guard", "militia", "watchman",
                             "ogre", "dragon", "rat", "spider", "cultist", "thug"]
         target_lower = (action.target or "").lower()
-        in_active_combat = session.dm_context.scene_type == SceneType.COMBAT
+        in_active_combat = session.in_combat() and session.dm_context.scene_type == SceneType.COMBAT
         found_world_target = self._find_entity_by_name(session, action.target) if action.target else None
+
+        # If already in combat, target existing enemy instead of spawning new.
+        if session.in_combat() and session.combat:
+            combat = session.combat
+            target_idx = self._find_target(combat, action.target, exclude=session.player.name)
+            if target_idx is None:
+                return ActionResult(
+                    narrative="No valid target found.",
+                    scene_type=session.dm_context.scene_type,
+                )
+            return self._execute_attack_round(session, combat, target_idx)
 
         if not in_active_combat and found_world_target is not None:
             world_target_id, world_target = found_world_target
             enemy = self._character_from_world_entity(world_target_id, world_target)
             if enemy is not None:
                 self._start_combat(session, [enemy])
-                combat = session.combat
-                target_idx = self._find_target(combat, enemy.name, exclude=session.player.name)
-                if target_idx is not None:
-                    return self._execute_attack_round(session, combat, target_idx)
+                return self._build_combat_start_result(session, [enemy])
 
         if not in_active_combat and action.target and found_world_target is None and not any(kw in target_lower for kw in hostile_keywords):
             # Non-hostile target → creative DM response
@@ -591,33 +608,9 @@ class GameEngine:
             narrative = self.dm.narrate(event, session.dm_context, self.llm)
             return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
-        # --- Bug 4: If already in combat, target existing enemy instead of spawning new ---
-        if session.in_combat() and session.combat:
-            combat = session.combat
-            # Use _find_target to support both existing and specified targets
-            target_idx = self._find_target(combat, action.target, exclude=session.player.name)
-            if target_idx is None:
-                return ActionResult(
-                    narrative="No valid target found.",
-                    scene_type=session.dm_context.scene_type,
-                )
-            return self._execute_attack_round(session, combat, target_idx)
-
-        # Not in combat — start new combat
-        if not session.in_combat():
-            enemy = self._spawn_enemy(session.player.level)
-            self._start_combat(session, [enemy])
-
-        combat = session.combat
-        target_idx = self._find_target(combat, action.target, exclude=session.player.name)
-
-        if target_idx is None:
-            return ActionResult(
-                narrative="No valid target found.",
-                scene_type=session.dm_context.scene_type,
-            )
-
-        return self._execute_attack_round(session, combat, target_idx)
+        enemy = self._spawn_enemy(session.player.level, preferred_name=action.target)
+        self._start_combat(session, [enemy])
+        return self._build_combat_start_result(session, [enemy])
 
     def _build_combat_narrative(self, session, attacker_name, target, hit, damage, crit=False, fumble=False):
         """Generate LLM narrative for a player attack. Falls back to template on failure."""
@@ -702,6 +695,34 @@ class GameEngine:
         except Exception:
             return fallback
 
+    def _build_combat_start_result(self, session: GameSession, enemies: List[Character]) -> ActionResult:
+        enemy_names = ", ".join(enemy.name for enemy in enemies) or "an enemy"
+        fallback = f"Combat begins against {enemy_names}. You act first."
+        try:
+            desc = (
+                f"{session.player.name} enters combat with {enemy_names} in {session.dm_context.location}. "
+                f"The fight starts now, and {session.player.name} has the first turn."
+            )
+            event = DMEvent(
+                type=EventType.COMBAT_START,
+                description=desc,
+                data={
+                    "player_name": session.player.name,
+                    "enemy_name": enemy_names,
+                    "location": session.dm_context.location,
+                    "action": "combat_start",
+                },
+            )
+            narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        except Exception:
+            narrative = fallback
+        return ActionResult(
+            narrative=narrative,
+            scene_type=session.dm_context.scene_type,
+            combat_state=self._combat_state(session.combat),
+            state_changes={"_skip_world_tick": True},
+        )
+
     def _execute_attack_round(self, session: GameSession, combat: CombatManager, target_idx: int) -> ActionResult:
         """Execute player's attack and then all living enemy counterattacks."""
         weapon = self._build_weapon_item(session.equipment.get("weapon"))
@@ -756,6 +777,7 @@ class GameEngine:
                         entity_body.apply_damage(hit_part, effective_damage)
                     session.entities[entity_id]["hp"] = target_combatant.character.hp
                     session.entities[entity_id]["alive"] = not target_combatant.is_dead
+                    session.entities[entity_id]["blocking"] = not target_combatant.is_dead
                     entity_ref = session.entities[entity_id].get("entity_ref")
                     if entity_ref is not None:
                         entity_ref.hp = target_combatant.character.hp
@@ -763,6 +785,7 @@ class GameEngine:
                         entity_ref.blocking = not target_combatant.is_dead
                         if isinstance(getattr(entity_ref, "body", None), BodyPartTracker) and entity_ref.body is not entity_body and hit_part:
                             entity_ref.body.apply_damage(hit_part, effective_damage)
+                        session.sync_entity_record(entity_id, entity_ref)
             # Apply body part damage to tracker (for the target if it's an enemy)
             state_changes["hit_location"] = hit_part
             state_changes["armor_reduction"] = armor_reduction
@@ -1551,16 +1574,7 @@ class GameEngine:
         target = action.target or ""
         px, py = session.position[0], session.position[1]
 
-        # Check AP
-        if session.ap_tracker:
-            cost = ACTION_COSTS.get("pick_up", 1)
-            if not session.ap_tracker.spend(cost):
-                return ActionResult(
-                    narrative=f"Not enough AP to pick up items. (AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap})",
-                    scene_type=session.dm_context.scene_type,
-                )
-
-        # Search spatial index for item entities at player position
+        match = None
         if session.spatial_index:
             entities_here = session.spatial_index.at(px, py)
             items_here = [e for e in entities_here if e.entity_type == EntityType.ITEM]
@@ -1570,21 +1584,29 @@ class GameEngine:
             else:
                 match = items_here[0] if items_here else None
 
-            if match:
-                # Remove from spatial index and add to inventory
-                session.spatial_index.remove(match)
-                item_dict = {"id": match.id, "name": match.name, "type": "item", "entity_id": match.id}
-                if match.inventory:
-                    item_dict.update(copy.deepcopy(match.inventory[0]))
-                item_dict["ground_instance_id"] = match.id
-                session.add_item(item_dict, merge=False)
+        if not match:
+            return ActionResult(
+                narrative=f"There's nothing to pick up here{' matching that name' if target else ''}.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        if session.ap_tracker:
+            cost = ACTION_COSTS.get("pick_up", 1)
+            if not session.ap_tracker.spend(cost):
                 return ActionResult(
-                    narrative=f"You pick up {match.name}.",
+                    narrative=f"Not enough AP to pick up items. (AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap})",
                     scene_type=session.dm_context.scene_type,
                 )
 
+        if session.spatial_index:
+            session.spatial_index.remove(match)
+        item_dict = {"id": match.id, "name": match.name, "type": "item", "entity_id": match.id}
+        if match.inventory:
+            item_dict.update(copy.deepcopy(match.inventory[0]))
+        item_dict["ground_instance_id"] = match.id
+        session.add_item(item_dict, merge=True)
         return ActionResult(
-            narrative=f"There's nothing to pick up here{' matching that name' if target else ''}.",
+            narrative=f"You pick up {match.name}.",
             scene_type=session.dm_context.scene_type,
         )
 
@@ -1946,7 +1968,8 @@ class GameEngine:
         )
 
     def _character_from_world_entity(self, entity_id: str, entity: Dict[str, Any]) -> Optional[Character]:
-        role = entity.get("role") or entity.get("job")
+        entity_ref = entity.get("entity_ref")
+        role = entity.get("role") or entity.get("job") or getattr(entity_ref, "job", None)
         if not role and entity.get("type") != "npc":
             return None
 
@@ -1958,11 +1981,12 @@ class GameEngine:
             "quest_giver": {"MIG": 9, "AGI": 9, "END": 10, "MND": 12, "INS": 12, "PRE": 13},
             "spy": {"MIG": 9, "AGI": 13, "END": 9, "MND": 11, "INS": 13, "PRE": 11},
         }
-        hp = int(entity.get("hp", 10))
+        hp = int(getattr(entity_ref, "hp", entity.get("hp", 10)))
+        max_hp = int(getattr(entity_ref, "max_hp", entity.get("max_hp", hp)))
         character = Character(
             name=entity.get("name", entity_id),
             hp=hp,
-            max_hp=int(entity.get("max_hp", hp)),
+            max_hp=max_hp,
             stats=stat_presets.get(role, {"MIG": 10, "AGI": 10, "END": 10, "MND": 10, "INS": 10, "PRE": 10}),
         )
         character.role = role or "npc"
@@ -2180,6 +2204,7 @@ class GameEngine:
                     "deadline_hours": deadline,
                     "reward_gold": reward,
                     "reward_xp": 40,
+                    "source": "emergent",
                 })
 
         hunt_id = "clear_the_roads"
@@ -2194,6 +2219,7 @@ class GameEngine:
                 "deadline_hours": 36,
                 "reward_gold": 60,
                 "reward_xp": 75,
+                "source": "emergent",
             })
 
         return offers[:3]
@@ -2840,9 +2866,8 @@ class GameEngine:
                         moved = self._move_entity_if_possible(session, npc, step_target)
                         if moved:
                             if npc.id in session.entities:
-                                session.entities[npc.id]["position"] = [npc.position[0], npc.position[1]]
                                 session.entities[npc.id]["scheduled_location"] = session.entities[npc.id].get("scheduled_location")
-                                session.entities[npc.id]["entity_ref"] = npc
+                                session.sync_entity_record(npc.id, npc)
                             if action_type == "follow_schedule":
                                 destination = getattr(npc.schedule, "get_location", lambda _period: "their post")(current_period)
                             else:
@@ -2879,7 +2904,11 @@ class GameEngine:
                 if reminders:
                     events.extend(reminders)
 
-            session.quest_offers = self._generate_emergent_quests(session)
+            session.quest_offers = GameSession.merge_quest_offers(
+                session.quest_offers,
+                self._generate_emergent_quests(session),
+                new_default_source="emergent",
+            )
             remaining_minutes -= step_minutes
 
         session.campaign_state["last_world_tick_hour"] = final_hour
@@ -2984,7 +3013,7 @@ class GameEngine:
 
     # --- Helpers ---
 
-    def _spawn_enemy(self, player_level: int) -> Character:
+    def _spawn_enemy(self, player_level: int, preferred_name: Optional[str] = None) -> Character:
         """Spawn a level-appropriate enemy."""
         enemies = [
             Character(name="Goblin",   hp=8,  max_hp=8,
@@ -2994,12 +3023,22 @@ class GameEngine:
             Character(name="Skeleton", hp=10, max_hp=10,
                       stats={"MIG": 10, "AGI": 10, "END": 10, "MND": 4, "INS": 6, "PRE": 4}),
         ]
+        target_lower = (preferred_name or "").strip().lower()
+        if target_lower:
+            for enemy in enemies:
+                if target_lower in enemy.name.lower():
+                    return enemy
         return random.choice(enemies)
 
     def _start_combat(self, session: GameSession, enemies: List[Character]) -> None:
         """Initialize a combat encounter."""
         combatants = [session.player] + enemies
         session.combat = CombatManager(combatants, seed=random.randint(0, 9999))
+        player_idx = next(
+            (idx for idx, combatant in enumerate(session.combat.combatants) if combatant.name == session.player.name),
+            0,
+        )
+        session.combat.current_turn = player_idx
         session.combat.start_turn()
         self.dm.transition(session.dm_context, SceneType.COMBAT)
 

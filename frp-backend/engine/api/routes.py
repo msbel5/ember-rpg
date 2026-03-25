@@ -144,10 +144,8 @@ def take_action(session_id: str, req: ActionRequest):
         }
 
     _autosave_session(session)
-    player_data = session.to_dict()["player"]
-    # Add position for POV renderer
-    player_data["position"] = getattr(session, "position", [0, 0])
-    player_data["facing"] = getattr(session, "facing", "north")
+    snapshot = session.to_dict()
+    player_data = snapshot["player"]
     return ActionResponse(
         narrative=result.narrative,
         scene=result.scene_type.value,
@@ -155,6 +153,10 @@ def take_action(session_id: str, req: ActionRequest):
         combat=result.combat_state,
         state_changes=result.state_changes,
         level_up=level_up_dict,
+        active_quests=snapshot.get("active_quests", []),
+        quest_offers=snapshot.get("quest_offers", []),
+        ground_items=snapshot.get("ground_items", []),
+        campaign_state=snapshot.get("campaign_state", {}),
     )
 
 
