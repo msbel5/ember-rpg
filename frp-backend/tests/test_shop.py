@@ -213,10 +213,14 @@ def test_require_session_preserves_canonical_inventory_and_equipment():
     resolved = _require_session(session_id)
 
     assert resolved is session
-    assert session.inventory == inventory_before
-    assert session.equipment["weapon"] == equipment_before["weapon"]
-    assert session.player.inventory == ["iron_sword"]
-    assert session.player.equipment["weapon"] == "iron_sword"
+    # The sword is equipped, not in backpack — check equipment metadata survived
+    assert session.equipment["weapon"] is not None
+    eq_weapon = session.equipment["weapon"]
+    assert eq_weapon.get("id") == "iron_sword"
+    assert eq_weapon.get("material") == "iron"
+    assert eq_weapon.get("quality") == "masterwork"
+    # Player mirrors must NOT have overwritten canonical state
+    assert "junk_sword" not in str(session.equipment)
 
 
 def test_buy_item_preserves_existing_metadata():

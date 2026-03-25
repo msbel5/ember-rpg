@@ -520,9 +520,11 @@ class TestHandleRest:
 # ---------------------------------------------------------------------------
 
 class TestHandleMove:
-    def test_move_updates_location(self, engine, warrior_session):
-        engine.process_action(warrior_session, "move to the dungeon")
-        assert "dungeon" in warrior_session.dm_context.location.lower()
+    def test_move_unknown_destination_rejects(self, engine, warrior_session):
+        """Moving to unknown named destination should NOT silently teleport."""
+        result = engine.process_action(warrior_session, "move to the dungeon")
+        assert "don't know" in result.narrative.lower() or "direction" in result.narrative.lower()
+        assert warrior_session.dm_context.location != "the dungeon"
 
     def test_move_default_forward(self, engine, warrior_session):
         result = engine.process_action(warrior_session, "move")

@@ -100,8 +100,10 @@ class MapState:
         self.viewport = self.session.viewport or Viewport(width=MAP_WIDTH, height=MAP_HEIGHT)
         self.session.viewport = self.viewport
         if self.player_entity is not None:
-            self.viewport.width = MAP_WIDTH
-            self.viewport.height = MAP_HEIGHT
+            # Respect zoom-level dimensions instead of forcing defaults
+            zoom_config = Viewport.ZOOM_LEVELS.get(self.viewport.zoom_level, Viewport.ZOOM_LEVELS[1])
+            self.viewport.width = zoom_config["width"]
+            self.viewport.height = zoom_config["height"]
             self.viewport.center_on(self.player_entity.position[0], self.player_entity.position[1])
             self._recompute_fov()
 

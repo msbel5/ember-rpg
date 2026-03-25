@@ -509,16 +509,6 @@ class GameEngine:
             return 999
         return base_penalty + session.movement_ap_penalty()
 
-    def _auto_end_turn(self, session: GameSession) -> str:
-        """If AP <= 0 and not in combat, auto-end turn (world tick + AP refresh).
-        Returns narrative fragment if auto-turn happened, empty string otherwise."""
-        if session.in_combat():
-            return ""
-        if session.ap_tracker is None or session.ap_tracker.current_ap > 0:
-            return ""
-        session.ap_tracker.refresh()
-        return " (New turn — AP refreshed)"
-
     def _current_game_hour(self, session: GameSession) -> float:
         if not getattr(session, "game_time", None):
             return 0.0
@@ -564,7 +554,6 @@ class GameEngine:
             ActionIntent.TRADE:      self._handle_trade,
             ActionIntent.FLEE:       self._handle_flee,
             ActionIntent.INVENTORY:  self._handle_inventory,
-            ActionIntent.PICKUP:     self._handle_pickup,
             ActionIntent.PICK_UP:    self._handle_pickup,
             ActionIntent.DROP:       self._handle_drop,
             ActionIntent.EQUIP:      self._handle_equip,
@@ -1560,11 +1549,19 @@ class GameEngine:
                     from engine.api.action_parser import ParsedAction as _PA, ActionIntent as _AI
                     goto_action = _PA(intent=_AI.GO_TO, raw_input=action.raw_input, target=dest)
                     return self._handle_go_to(session, goto_action)
-                # Named destination — just update location name
-                session.dm_context.location = dest
+                # Unknown destination — don't silently teleport
+                return ActionResult(
+                    narrative=f"You don't know how to get to '{dest}'. Try a direction (north/south/east/west) or 'approach <name>'.",
+                    scene_type=session.dm_context.scene_type,
+                    state_changes={"_skip_world_tick": True},
+                )
 
         if blocked_msg:
-            return ActionResult(narrative=blocked_msg, scene_type=session.dm_context.scene_type)
+            return ActionResult(
+                narrative=blocked_msg,
+                scene_type=session.dm_context.scene_type,
+                state_changes={"_skip_world_tick": True},
+            )
 
         # Recompute FOV and center viewport after movement
         if moved and session.viewport and has_map:
@@ -1572,7 +1569,7 @@ class GameEngine:
             session.viewport.compute_fov(
                 lambda x, y: not session.map_data.is_walkable(x, y),
                 session.position[0], session.position[1],
-                radius=8,
+                radius=session.viewport.fov_radius,
             )
 
         # Check for hostile entities in visible range -> report them
@@ -1929,6 +1926,19 @@ class GameEngine:
                 narrative="Drop what? Specify an item name.",
                 scene_type=session.dm_context.scene_type,
             )
+
+        # Validate item exists before spending AP
+        candidate = session.find_inventory_item(target)
+        if candidate is None:
+            return ActionResult(
+                narrative=f"You don't have '{target}' in your inventory.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # Spend AP
+        ap_fail = self._check_ap(session, "pick_up")  # drop costs same as pick_up (1 AP)
+        if ap_fail:
+            return ap_fail
 
         # Remove item from inventory
         item = session.remove_item(target)

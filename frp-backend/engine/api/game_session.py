@@ -299,7 +299,8 @@ class GameSession:
                 self.physical_inventory.equipment[slot] = stack
 
     def set_equipment_slot(self, slot: str, item: Any) -> None:
-        """Set a single equipment slot. Accepts dict, str, or None."""
+        """Set a single equipment slot. Accepts dict, str, or None.
+        Also removes the item from container grid to prevent duplication."""
         if self.physical_inventory is None:
             self.physical_inventory = PhysicalInventory()
         canon = self._canonical_slot(slot) or slot
@@ -308,11 +309,17 @@ class GameSession:
         if item is None:
             self.physical_inventory.equipment[canon] = None
         elif isinstance(item, dict):
+            # Remove from container grid first to prevent duplication
+            item_id = item.get("id", "")
+            if item_id:
+                self.physical_inventory.remove_item(item_id)
             normalized = self._normalize_item_record(item)
             normalized["slot"] = canon
             stack = ItemStack.from_legacy_dict(normalized)
             self.physical_inventory.equipment[canon] = stack
         elif isinstance(item, str):
+            # Remove from container grid first
+            self.physical_inventory.remove_item(item)
             normalized = self._normalize_item_record({"id": item, "slot": canon})
             stack = ItemStack.from_legacy_dict(normalized)
             self.physical_inventory.equipment[canon] = stack
