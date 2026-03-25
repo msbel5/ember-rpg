@@ -24,7 +24,7 @@ class WorldEvent:
 
     def __post_init__(self):
         if not self.timestamp:
-            self.timestamp = datetime.utcnow().isoformat()
+            self.timestamp = datetime.now().isoformat()
 
 
 # Type alias for subsystem callables.
