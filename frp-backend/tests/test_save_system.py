@@ -297,6 +297,31 @@ class TestSaveLoadRoundtrip:
         assert loaded.ap_tracker.max_ap == sample_session.ap_tracker.max_ap
         assert loaded.ap_tracker.armor_type == "chain_mail"
 
+    def test_timed_conditions_roundtrip_and_expiry(self, save_system, sample_session):
+        sample_session.game_time.day = 1
+        sample_session.game_time.hour = 8
+        sample_session.game_time.minute = 0
+        sample_session.apply_timed_condition(
+            "back_strain",
+            1.0,
+            movement_ap_penalty=1,
+            agi_check_penalty=2,
+        )
+
+        save_system.save_game(sample_session, "test_timed_conditions")
+        loaded = save_system.load_game("test_timed_conditions")
+
+        assert loaded.has_timed_condition("back_strain")
+        assert "back_strain" in loaded.player.conditions
+
+        loaded.game_time.hour = 9
+        loaded.game_time.minute = 1
+        loaded.clear_expired_timed_conditions()
+        loaded.sync_player_state()
+
+        assert not loaded.has_timed_condition("back_strain")
+        assert "back_strain" not in loaded.player.conditions
+
     def test_body_tracker_preserved(self, save_system, sample_session):
         """Body part tracker survives roundtrip."""
         sample_session.body_tracker.apply_damage("left_arm", 5)
@@ -308,6 +333,23 @@ class TestSaveLoadRoundtrip:
         assert loaded.body_tracker.current_hp["left_arm"] == sample_session.body_tracker.current_hp["left_arm"]
         assert loaded.body_tracker.current_hp["chest"] == sample_session.body_tracker.current_hp["chest"]
         assert loaded.body_tracker.max_hp == sample_session.body_tracker.max_hp
+
+    def test_legacy_runtime_fields_are_reconstructed(self, save_system, sample_session):
+        sample_session.player.classes = {"Warrior": 3}
+        state = save_system._serialize_session(sample_session)
+        state.pop("ap_tracker", None)
+        state.pop("viewport", None)
+        state.pop("player_entity", None)
+        state.pop("spatial_entities", None)
+
+        loaded = save_system._deserialize_session(state)
+
+        assert loaded.ap_tracker is not None
+        assert loaded.ap_tracker.max_ap == 4
+        assert loaded.viewport is not None
+        assert loaded.player_entity is not None
+        assert loaded.spatial_index is not None
+        assert loaded.spatial_index.get_position("player") == tuple(loaded.position)
 
     def test_location_stock_preserved(self, save_system, sample_session):
         """Location stock survives roundtrip."""

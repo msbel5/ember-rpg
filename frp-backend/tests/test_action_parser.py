@@ -44,6 +44,11 @@ def test_open_turkish(parser):
     result = parser.parse("aç sandığı")
     assert result.intent == ActionIntent.OPEN
 
+def test_open_turkish_object_first(parser):
+    result = parser.parse("kapıyı aç")
+    assert result.intent == ActionIntent.OPEN
+    assert result.target == "kapı"
+
 
 # --- TALK ---
 def test_talk_to_guard(parser):
@@ -59,6 +64,11 @@ def test_speak_with_innkeeper(parser):
 def test_talk_turkish(parser):
     result = parser.parse("konuş muhafız")
     assert result.intent == ActionIntent.TALK
+
+def test_talk_turkish_instrumental_target(parser):
+    result = parser.parse("muhafızla konuş")
+    assert result.intent == ActionIntent.TALK
+    assert result.target == "muhafız"
 
 
 # --- CAST_SPELL ---
@@ -93,6 +103,11 @@ def test_attack_simple(parser):
 def test_attack_turkish(parser):
     result = parser.parse("saldır ork")
     assert result.intent == ActionIntent.ATTACK
+
+def test_attack_turkish_inflected_target(parser):
+    result = parser.parse("gobline saldırıyorum")
+    assert result.intent == ActionIntent.ATTACK
+    assert result.target == "goblin"
 
 
 # --- PICKUP ---
@@ -221,6 +236,16 @@ def test_turn_in_quest_turkish(parser):
 def test_unknown(parser):
     result = parser.parse("xyzzy plugh foo bar")
     assert result.intent == ActionIntent.UNKNOWN
+
+def test_examine_turkish_object_first(parser):
+    result = parser.parse("sandığı incele")
+    assert result.intent == ActionIntent.EXAMINE
+    assert result.target == "sandık"
+
+def test_steal_turkish_ablative_target(parser):
+    result = parser.parse("merchanttan çal")
+    assert result.intent == ActionIntent.STEAL
+    assert result.target == "merchant"
 
 def test_raw_input_preserved(parser):
     result = parser.parse("Attack the Orc!")

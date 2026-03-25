@@ -91,7 +91,51 @@ class ParsedAction:
 
 def _normalize(text: str) -> str:
     """Lowercase and strip punctuation."""
-    return re.sub(r"[^\w\s]", " ", text.lower()).strip()
+    normalized = re.sub(r"[^\w\s]", " ", text.lower()).strip()
+    return re.sub(r"\s+", " ", normalized)
+
+
+def _looks_turkish(text: str) -> bool:
+    lowered = (text or "").lower()
+    return (
+        any(ch in lowered for ch in "çğıöşü")
+        or any(keyword in lowered for keyword in ("konuş", "saldır", "incele", "aç", "çal", "görev", "git", "bak"))
+    )
+
+
+def _restore_turkish_final_consonant(stem: str) -> str:
+    if stem.endswith("ğ"):
+        return stem[:-1] + "k"
+    if stem.endswith("d"):
+        return stem[:-1] + "t"
+    if stem.endswith("b"):
+        return stem[:-1] + "p"
+    if stem.endswith("c"):
+        return stem[:-1] + "ç"
+    return stem
+
+
+def _strip_turkish_case_suffix(token: str) -> str:
+    lowered = token.lower().strip()
+    suffixes = (
+        "lardan", "lerden", "ların", "lerin", "lardan", "lerden",
+        "lardan", "lerden", "lerin", "ların", "lardan", "lerden",
+        "yla", "yle", "dan", "den", "tan", "ten", "la", "le",
+        "yı", "yi", "yu", "yü", "ya", "ye", "nı", "ni", "nu", "nü",
+        "ı", "i", "u", "ü", "a", "e",
+    )
+    for suffix in suffixes:
+        if len(lowered) > len(suffix) + 2 and lowered.endswith(suffix):
+            stem = lowered[:-len(suffix)]
+            return _restore_turkish_final_consonant(stem)
+    return lowered
+
+
+def _normalize_turkish_target(target: str) -> str:
+    tokens = [token for token in re.split(r"\s+", (target or "").strip()) if token]
+    if not tokens:
+        return ""
+    return " ".join(_strip_turkish_case_suffix(token) for token in tokens)
 
 
 # ---------------------------------------------------------------------------
@@ -163,6 +207,10 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
             re.IGNORECASE
         ),
         re.compile(
+            r"^(?P<target>[\w\s]+?)\s+(?:saldır(?:ıyorum|iyorum|uyorum|yorum|ıyom|iyom)?|vur|öldür)$",
+            re.IGNORECASE
+        ),
+        re.compile(
             r"^(?:attack|saldır|vur|hit|strike|slash|stab|fight|öldür|kesivur|çarp|hücum)\s+(?P<target>[\w\s]+)$",
             re.IGNORECASE
         ),
@@ -172,6 +220,10 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
     (ActionIntent.TALK, [
         re.compile(
             r"^(?:talk\s+to|talk|speak\s+(?:to|with)|chat\s+with|greet|konuş|selamla|söyle|sor|pazarlık|hey|excuse\s+me|what\s+does)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?P<target>[\w\s]+?)\s+konuş(?:uyorum|uyom|urum|uruz)?$",
             re.IGNORECASE
         ),
         re.compile(
@@ -244,6 +296,10 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
     (ActionIntent.STEAL, [
         re.compile(
             r"^(?:steal\s+(?:from\s+)?|pickpocket|swipe|pilfer|çal)\s*(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?P<target>[\w\s]+?)\s+çal$",
             re.IGNORECASE
         ),
     ]),
@@ -455,12 +511,20 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
             r"^(?:[\w\s]+\s+)?(?:inceliyorum|bakıyorum|arıyorum)\s*(?P<target>[\w\s]*)$",
             re.IGNORECASE
         ),
+        re.compile(
+            r"^(?P<target>[\w\s]+?)\s+incele$",
+            re.IGNORECASE
+        ),
     ]),
 
     # OPEN: "open chest" / "unlock door" / "aç sandığı"
     (ActionIntent.OPEN, [
         re.compile(
             r"^(?:open|unlock|force\s+open|break\s+open|aç|kır|zorla|sök)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?P<target>[\w\s]+?)\s+aç(?:ıyorum|iyorum|ar mısın|)$",
             re.IGNORECASE
         ),
     ]),
@@ -614,6 +678,8 @@ class ActionParser:
                     # Clean up captured groups
                     if target:
                         target = target.strip()
+                        if _looks_turkish(stripped):
+                            target = _normalize_turkish_target(target)
                     if spell_name:
                         spell_name = spell_name.strip()
                     if weapon:
@@ -645,6 +711,8 @@ class ActionParser:
                 if matched:
                     # Try simple target extraction after keyword
                     target = self._extract_after_keyword(normalized, kw)
+                    if target and _looks_turkish(stripped):
+                        target = _normalize_turkish_target(target)
                     return ParsedAction(
                         intent=intent,
                         raw_input=stripped,
@@ -661,7 +729,7 @@ class ActionParser:
             return None
         after = normalized[idx + len(keyword):].strip()
         # Remove common prepositions
-        after = re.sub(r"^(the|a|an|to|at|on|with|bir|bu|şu|o)\s+", "", after)
+        after = re.sub(r"^(the|a|an|to|at|on|with|from|bir|bu|şu|o)\s+", "", after)
         return after if after else None
 
     def _detect_intent(self, normalized_text: str) -> ActionIntent:

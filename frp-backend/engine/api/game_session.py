@@ -56,6 +56,8 @@ LEGACY_SLOT_ALIASES = {
     "accessory": "ring",
 }
 
+TIMED_CONDITION_NAMES = {"back_strain"}
+
 
 @dataclass
 class GameSession:
@@ -95,6 +97,7 @@ class GameSession:
     quest_offers: List[Dict[str, Any]] = field(default_factory=list)
     campaign_state: Dict[str, Any] = field(default_factory=dict)
     narration_context: Dict[str, Any] = field(default_factory=dict)
+    timed_conditions: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     last_save_slot: Optional[str] = None
 
     # --- Entity / Spatial / Viewport / AP fields ---
@@ -187,7 +190,8 @@ class GameSession:
         if self.ap_tracker is None:
             player_class = "warrior"
             if hasattr(self, "player") and self.player is not None:
-                player_class = next(iter(self.player.classes), "warrior") if self.player.classes else "warrior"
+                dominant = self.player.dominant_class or next(iter(self.player.classes), "warrior")
+                player_class = str(dominant or "warrior").lower()
             max_ap = CLASS_AP.get(player_class, 4)
             self.ap_tracker = ActionPointTracker(max_ap=max_ap)
         if self.physical_inventory is None:
@@ -570,6 +574,7 @@ class GameSession:
         if self.physical_inventory is None:
             self.physical_inventory = PhysicalInventory()
         self.quest_offers = self.normalize_quest_offers(self.quest_offers, default_source="authored")
+        self.clear_expired_timed_conditions()
         self.reattach_entity_refs()
         self.sync_player_state()
 
@@ -578,6 +583,16 @@ class GameSession:
             return
         self.player.inventory = self.inventory_item_ids()
         self.player.equipment = self.equipment_ids()
+        active_timed = self.active_timed_conditions()
+        persistent_conditions = [
+            condition
+            for condition in getattr(self.player, "conditions", [])
+            if condition not in TIMED_CONDITION_NAMES
+        ]
+        for condition_name in active_timed:
+            if condition_name not in persistent_conditions:
+                persistent_conditions.append(condition_name)
+        self.player.conditions = persistent_conditions
         base_ac = getattr(self.player, "base_ac", None)
         if base_ac is None:
             base_ac = getattr(self.player, "_base_ac", self.player.ac or 10)
@@ -620,17 +635,161 @@ class GameSession:
         mig = (getattr(self.player, "stats", None) or {}).get("MIG", 10)
         return (mig - 10) // 2
 
-    def can_add_item(self, item: Any, merge: bool = True) -> bool:
+    def current_game_hour(self) -> float:
+        if not getattr(self, "game_time", None):
+            return 0.0
+        return ((self.game_time.day - 1) * 24) + self.game_time.hour + (self.game_time.minute / 60.0)
+
+    def timed_condition_payload(self) -> List[Dict[str, Any]]:
+        now = self.current_game_hour()
+        payload: List[Dict[str, Any]] = []
+        for name, data in sorted(self.timed_conditions.items()):
+            expires_at = float(data.get("expires_at_hour", now))
+            remaining_hours = max(0.0, expires_at - now)
+            payload.append({
+                "name": name,
+                "expires_at_hour": expires_at,
+                "remaining_hours": round(remaining_hours, 2),
+                "remaining_minutes": max(0, int(round(remaining_hours * 60))),
+                "movement_ap_penalty": int(data.get("movement_ap_penalty", 0)),
+                "agi_check_penalty": int(data.get("agi_check_penalty", 0)),
+            })
+        return payload
+
+    def active_timed_conditions(self) -> Dict[str, Dict[str, Any]]:
+        now = self.current_game_hour()
+        active: Dict[str, Dict[str, Any]] = {}
+        for name, data in self.timed_conditions.items():
+            expires_at = float(data.get("expires_at_hour", now))
+            if expires_at > now:
+                active[name] = dict(data)
+        return active
+
+    def clear_expired_timed_conditions(self) -> List[str]:
+        expired = [
+            name
+            for name, data in self.timed_conditions.items()
+            if float(data.get("expires_at_hour", self.current_game_hour())) <= self.current_game_hour()
+        ]
+        for name in expired:
+            self.timed_conditions.pop(name, None)
+        return expired
+
+    def has_timed_condition(self, name: str) -> bool:
+        self.clear_expired_timed_conditions()
+        return name in self.timed_conditions
+
+    def apply_timed_condition(
+        self,
+        name: str,
+        duration_hours: float,
+        *,
+        movement_ap_penalty: int = 0,
+        agi_check_penalty: int = 0,
+    ) -> Dict[str, Any]:
+        expires_at = self.current_game_hour() + max(0.0, float(duration_hours))
+        current = dict(self.timed_conditions.get(name, {}))
+        current["name"] = name
+        current["expires_at_hour"] = max(float(current.get("expires_at_hour", 0.0)), expires_at)
+        current["movement_ap_penalty"] = max(int(current.get("movement_ap_penalty", 0)), int(movement_ap_penalty))
+        current["agi_check_penalty"] = max(int(current.get("agi_check_penalty", 0)), int(agi_check_penalty))
+        self.timed_conditions[name] = current
+        self.sync_player_state()
+        return current
+
+    def current_carry_weight(self) -> float:
+        if self.physical_inventory is None:
+            return 0.0
+        return float(self.physical_inventory.total_carried_weight())
+
+    def max_carry_weight(self) -> float:
+        if self.physical_inventory is None:
+            return 0.0
+        return float(self.physical_inventory.max_carry_weight(self._get_strength_modifier()))
+
+    def carry_ratio(self) -> float:
+        max_weight = self.max_carry_weight()
+        if max_weight <= 0:
+            return 999.0
+        return self.current_carry_weight() / max_weight
+
+    def agi_check_penalty(self) -> int:
+        penalty = 0
+        ratio = self.carry_ratio()
+        if 1.0 < ratio <= 1.25:
+            penalty += 2
+        active_back_strain = self.active_timed_conditions().get("back_strain")
+        if active_back_strain is not None:
+            penalty += int(active_back_strain.get("agi_check_penalty", 0))
+        return penalty
+
+    def movement_ap_penalty(self) -> int:
+        penalty = 0
+        active_back_strain = self.active_timed_conditions().get("back_strain")
+        if active_back_strain is not None:
+            penalty += int(active_back_strain.get("movement_ap_penalty", 0))
+        return penalty
+
+    def assess_item_addition(self, item: Any, merge: bool = True) -> Dict[str, Any]:
         normalized = self._normalize_item_record(item)
         stack = ItemStack.from_legacy_dict(normalized)
-        return self.physical_inventory.can_add_item_auto(stack, merge=merge)
+        projected_weight = self.current_carry_weight() + float(stack.weight)
+        max_weight = self.max_carry_weight()
+        projected_ratio = (projected_weight / max_weight) if max_weight > 0 else 999.0
+        fits_containers = self.physical_inventory.can_add_item_auto(stack, merge=merge)
+        reason = "ok"
+        allowed = True
+        if projected_ratio > 1.25:
+            allowed = False
+            reason = "overweight"
+        elif not fits_containers:
+            allowed = False
+            reason = "no_space"
+        return {
+            "allowed": allowed,
+            "reason": reason,
+            "normalized": normalized,
+            "projected_weight": projected_weight,
+            "max_weight": max_weight,
+            "projected_ratio": projected_ratio,
+            "item_name": normalized.get("name", "item"),
+        }
+
+    def _record_add_item_failure(self, status: Dict[str, Any]) -> None:
+        self.narration_context["_last_add_item_error"] = {
+            "reason": status.get("reason"),
+            "item_name": status.get("item_name"),
+            "projected_weight": round(float(status.get("projected_weight", 0.0)), 1),
+            "max_weight": round(float(status.get("max_weight", 0.0)), 1),
+            "projected_ratio": round(float(status.get("projected_ratio", 0.0)), 3),
+        }
+        if status.get("reason") == "overweight":
+            self.apply_timed_condition(
+                "back_strain",
+                1.0,
+                movement_ap_penalty=1,
+                agi_check_penalty=2,
+            )
+
+    def can_add_item(self, item: Any, merge: bool = True) -> bool:
+        return bool(self.assess_item_addition(item, merge=merge)["allowed"])
 
     def add_item(self, item: Any, merge: bool = True) -> Optional[Dict[str, Any]]:
-        normalized = self._normalize_item_record(item)
+        status = self.assess_item_addition(item, merge=merge)
+        normalized = status["normalized"]
+        if not status["allowed"]:
+            self._record_add_item_failure(status)
+            return None
         stack = ItemStack.from_legacy_dict(normalized)
         success, _ = self.physical_inventory.add_item_auto(stack, merge=merge)
         if not success:
+            self._record_add_item_failure({
+                **status,
+                "reason": "no_space",
+                "allowed": False,
+            })
             return None
+        self.narration_context.pop("_last_add_item_error", None)
         self.sync_player_state()
         return normalized
 
@@ -721,6 +880,7 @@ class GameSession:
             "equipment": {slot: copy.deepcopy(item) for slot, item in self.equipment.items() if item is not None},
             "position": list(self.position),
             "facing": self.facing,
+            "conditions": list(self.player.conditions),
         }
         result = {
             "session_id": self.session_id,
@@ -763,11 +923,11 @@ class GameSession:
 
         # --- Weight / Encumbrance ---
         if self.physical_inventory:
-            str_mod = self._get_strength_modifier()
+            base_encumbrance = self.physical_inventory.encumbrance_ap_penalty(self._get_strength_modifier())
             result["weight"] = {
-                "current": round(self.physical_inventory.total_carried_weight(), 1),
-                "max": round(self.physical_inventory.max_carry_weight(str_mod), 1),
-                "encumbrance_penalty": self.physical_inventory.encumbrance_ap_penalty(str_mod),
+                "current": round(self.current_carry_weight(), 1),
+                "max": round(self.max_carry_weight(), 1),
+                "encumbrance_penalty": 999 if base_encumbrance >= 999 else base_encumbrance + self.movement_ap_penalty(),
             }
 
         # --- Living World state ---
@@ -815,6 +975,7 @@ class GameSession:
         result["active_quests"] = active_quests
         result["quest_offers"] = copy.deepcopy(self.quest_offers) if self.quest_offers else []
         result["campaign_state"] = copy.deepcopy(self.campaign_state) if self.campaign_state else {}
+        result["timed_conditions"] = self.timed_condition_payload()
 
         if self.body_tracker:
             injuries = self.body_tracker.get_injury_effects()

@@ -504,7 +504,10 @@ class GameEngine:
         if session.physical_inventory is None:
             return 0
         str_mod = session._get_strength_modifier()
-        return session.physical_inventory.encumbrance_ap_penalty(str_mod)
+        base_penalty = session.physical_inventory.encumbrance_ap_penalty(str_mod)
+        if base_penalty >= 999:
+            return 999
+        return base_penalty + session.movement_ap_penalty()
 
     def _auto_end_turn(self, session: GameSession) -> str:
         """If AP <= 0 and not in combat, auto-end turn (world tick + AP refresh).
@@ -545,9 +548,6 @@ class GameEngine:
             result = system_handlers[action.intent](session, action)
             session.ensure_consistency()
             return result
-
-        session.touch()
-        session.dm_context.advance_turn()
 
         handlers = {
             ActionIntent.ATTACK:     self._handle_attack,
@@ -591,6 +591,15 @@ class GameEngine:
             ActionIntent.GO_TO:      self._handle_go_to,
             ActionIntent.UNKNOWN:    self._handle_unknown,
         }
+
+        if action.intent == ActionIntent.ROTATE_ITEM:
+            session.touch()
+            result = handlers.get(action.intent, self._handle_unknown)(session, action)
+            session.sync_player_state()
+            return result
+
+        session.touch()
+        session.dm_context.advance_turn()
 
         handler = handlers.get(action.intent, self._handle_unknown)
         result = handler(session, action)
@@ -1277,6 +1286,11 @@ class GameEngine:
             )
 
         giver = self._resolve_quest_giver(session)
+        if offer.get("kind") == "delivery" and giver is None:
+            return ActionResult(
+                narrative="That delivery quest is not bound to a real giver yet. Talk to the quest giver in person first.",
+                scene_type=session.dm_context.scene_type,
+            )
         giver_id = giver[0] if giver else None
         giver_name = giver[1].get("name") if giver else None
         accepted = self._accept_quest_offer(session, offer, giver_entity_id=giver_id, giver_name=giver_name)
@@ -1304,6 +1318,11 @@ class GameEngine:
         quest, meta = resolved
         giver_id = meta.get("giver_entity_id")
         giver_name = meta.get("giver_name") or "the quest giver"
+        if not giver_id:
+            return ActionResult(
+                narrative=f"'{quest.title}' is missing a bound giver and cannot be turned in until it is reissued properly.",
+                scene_type=session.dm_context.scene_type,
+            )
         if giver_id and giver_id in session.entities:
             target_pos = session.entities[giver_id].get("position", [0, 0])
             ok, msg = check_proximity(session.position, target_pos, "talk")
@@ -1598,8 +1617,7 @@ class GameEngine:
             )
 
         # AGI check to escape (DC 10)
-        agi_score = self._get_player_ability(session, "AGI")
-        flee_check = roll_check(agi_score, 10)
+        flee_check = self._roll_ability_check(session, "AGI", 10)
 
         if not flee_check.success:
             # Failed flee — player stays in combat
@@ -1626,6 +1644,9 @@ class GameEngine:
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_open(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        ap_fail = self._check_ap(session, "open")
+        if ap_fail:
+            return ap_fail
         target = action.target or "the door"
         desc = f"{session.player.name} tries to open {target}."
         event = DMEvent(type=EventType.DISCOVERY, description=desc)
@@ -1646,6 +1667,9 @@ class GameEngine:
                 narrative=f"You don't have '{action.target}' in your inventory.",
                 scene_type=session.dm_context.scene_type,
             )
+        ap_fail = self._check_ap(session, "use")
+        if ap_fail:
+            return ap_fail
 
         item_type = item.get("type", "")
         item_name = item.get("name", target)
@@ -1858,6 +1882,20 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
 
+        item_dict = {"id": match.id, "name": match.name, "type": "item", "entity_id": match.id}
+        if match.inventory:
+            item_dict.update(copy.deepcopy(match.inventory[0]))
+        item_dict["ground_instance_id"] = match.id
+
+        status = session.assess_item_addition(item_dict, merge=True)
+        if not status["allowed"]:
+            if status["reason"] == "overweight":
+                session._record_add_item_failure(status)
+            return ActionResult(
+                narrative=self._inventory_add_failure_message(session, match.name),
+                scene_type=session.dm_context.scene_type,
+            )
+
         if session.ap_tracker:
             cost = ACTION_COSTS.get("pick_up", 1)
             if not session.ap_tracker.spend(cost):
@@ -1866,29 +1904,6 @@ class GameEngine:
                     scene_type=session.dm_context.scene_type,
                 )
 
-        item_dict = {"id": match.id, "name": match.name, "type": "item", "entity_id": match.id}
-        if match.inventory:
-            item_dict.update(copy.deepcopy(match.inventory[0]))
-        item_dict["ground_instance_id"] = match.id
-
-        # Check weight limit before picking up
-        if session.physical_inventory:
-            from engine.world.inventory import ItemStack as _IS
-            test_stack = _IS.from_legacy_dict(session._normalize_item_record(item_dict))
-            str_mod = session._get_strength_modifier()
-            new_weight = session.physical_inventory.total_carried_weight() + test_stack.weight
-            max_weight = session.physical_inventory.max_carry_weight(str_mod)
-            if new_weight > max_weight * 1.5:
-                return ActionResult(
-                    narrative=f"Too heavy! {match.name} would bring you to {new_weight:.1f}/{max_weight:.1f} kg.",
-                    scene_type=session.dm_context.scene_type,
-                )
-        if not session.can_add_item(item_dict, merge=True):
-            return ActionResult(
-                narrative=f"No room for {match.name}. Your containers are full.",
-                scene_type=session.dm_context.scene_type,
-            )
-
         if session.spatial_index:
             session.spatial_index.remove(match)
         added = session.add_item(item_dict, merge=True)
@@ -1896,7 +1911,7 @@ class GameEngine:
             if session.spatial_index:
                 session.spatial_index.add(match)
             return ActionResult(
-                narrative=f"No room for {match.name}. Your containers are full.",
+                narrative=self._inventory_add_failure_message(session, match.name),
                 scene_type=session.dm_context.scene_type,
             )
         if session.ap_tracker and session.ap_tracker.current_ap <= 0 and not session.in_combat():
@@ -2133,7 +2148,7 @@ class GameEngine:
         ability_score = self._get_player_ability(session, ability)
 
         # Roll skill check
-        check_result = roll_check(ability_score, recipe.skill_dc)
+        check_result = self._roll_ability_check(session, ability, recipe.skill_dc)
         check_text = self._format_skill_check(check_result, ability, recipe.skill_dc)
 
         # Attempt craft
@@ -2230,6 +2245,9 @@ class GameEngine:
                 narrative="There's no water source nearby. Move closer to water, a well, or a fountain.",
                 scene_type=session.dm_context.scene_type,
             )
+        ap_fail = self._check_ap(session, "fill")
+        if ap_fail:
+            return ap_fail
         if session.physical_inventory:
             success, msg = session.physical_inventory.fill_liquid_container(target, "water", 500)
             if success:
@@ -2251,6 +2269,9 @@ class GameEngine:
         if session.physical_inventory:
             stack = session.physical_inventory.find_item(target)
             if stack and stack.contained_matter:
+                ap_fail = self._check_ap(session, "pour")
+                if ap_fail:
+                    return ap_fail
                 liquid = stack.contained_matter.get("item_id", "liquid")
                 amount = stack.contained_matter.get("amount_ml", 0)
                 stack.contained_matter = None
@@ -2272,6 +2293,14 @@ class GameEngine:
                 narrative="Stash what? Specify an item (e.g., 'stash gem in sock').",
                 scene_type=session.dm_context.scene_type,
             )
+        if session.find_inventory_item(target) is None:
+            return ActionResult(
+                narrative=f"You don't have '{target}' in your inventory.",
+                scene_type=session.dm_context.scene_type,
+            )
+        ap_fail = self._check_ap(session, "stash")
+        if ap_fail:
+            return ap_fail
         # Remove from inventory
         removed = session.remove_item(target)
         if removed is None:
@@ -2342,13 +2371,18 @@ class GameEngine:
                 narrative=f"Can't find a path to {entity_data.get('name', target)}.",
                 scene_type=session.dm_context.scene_type,
             )
-        # Walk along path, spending AP per step, auto-turning when AP runs out
+        # Walk along path, simulating the same AP/time cadence as repeated move actions.
         enc_penalty = self._encumbrance_penalty(session)
         if enc_penalty >= 999:
             return ActionResult(
                 narrative="You're too overencumbered to move!",
                 scene_type=session.dm_context.scene_type,
             )
+        local_ap = session.ap_tracker.current_ap if session.ap_tracker is not None else 0
+        max_ap = session.ap_tracker.max_ap if session.ap_tracker is not None else 0
+        simulated_hour = session.game_time.hour if session.game_time else 8
+        simulated_minute = session.game_time.minute if session.game_time else 0
+        elapsed_minutes = 0
         steps_taken = 0
         for step_pos in path:
             # Stop if adjacent to target (within melee range)
@@ -2356,11 +2390,19 @@ class GameEngine:
                 break
             move_cost = ACTION_COSTS.get("move_flat", 1)
             if session.ap_tracker:
-                if not session.ap_tracker.can_move(move_cost, enc_penalty):
-                    # Auto-turn: refresh AP and continue
-                    session.ap_tracker.refresh()
-                if not session.ap_tracker.spend_movement(move_cost, enc_penalty):
+                actual_cost = session.ap_tracker.movement_cost(move_cost, enc_penalty)
+                if max_ap < actual_cost:
                     break
+                while local_ap < actual_cost:
+                    elapsed_minutes += 15
+                    simulated_minute += 15
+                    while simulated_minute >= 60:
+                        simulated_minute -= 60
+                        simulated_hour += 1
+                        local_ap = max_ap
+                if local_ap < actual_cost:
+                    break
+                local_ap -= actual_cost
             # Check walkability and blocking
             nx, ny = step_pos[0], step_pos[1]
             if session.spatial_index and session.spatial_index.blocking_at(nx, ny):
@@ -2369,6 +2411,12 @@ class GameEngine:
                 session.spatial_index.move(session.player_entity, nx, ny)
             session.position = [nx, ny]
             steps_taken += 1
+            elapsed_minutes += 15
+            simulated_minute += 15
+            while simulated_minute >= 60:
+                simulated_minute -= 60
+                simulated_hour += 1
+                local_ap = max_ap
         # Update viewport
         if session.viewport and session.map_data:
             session.viewport.center_on(session.position[0], session.position[1])
@@ -2380,16 +2428,22 @@ class GameEngine:
         session.sync_player_state()
         npc_name = entity_data.get("name", target)
         dist_remaining = distance(session.position, target_pos)
+        state_changes = {
+            "position": list(session.position),
+            "_world_minutes": elapsed_minutes,
+        }
+        if session.ap_tracker is not None:
+            state_changes["_ap_after_world_tick"] = local_ap
         if dist_remaining <= 1:
             return ActionResult(
                 narrative=f"You walk to {npc_name} ({steps_taken} steps). You're now close enough to interact.",
                 scene_type=session.dm_context.scene_type,
-                state_changes={"position": list(session.position)},
+                state_changes=state_changes,
             )
         return ActionResult(
             narrative=f"You walk toward {npc_name} ({steps_taken} steps) but couldn't reach them. ({int(dist_remaining)} tiles away)",
             scene_type=session.dm_context.scene_type,
-            state_changes={"position": list(session.position)},
+            state_changes=state_changes,
         )
 
     def _handle_save_game(self, session: GameSession, action: ParsedAction) -> ActionResult:
@@ -2828,6 +2882,65 @@ class GameEngine:
         """Get a player's ability score by abbreviation (MIG, AGI, etc.)."""
         return session.player.stats.get(ability, 10)
 
+    def _apply_check_penalty(self, result: SkillCheckResult, penalty: int) -> SkillCheckResult:
+        if penalty <= 0:
+            return result
+        total = result.total - penalty
+        success = result.success if result.critical in {"success", "failure"} else total >= result.dc
+        return SkillCheckResult(
+            roll=result.roll,
+            modifier=result.modifier - penalty,
+            total=total,
+            dc=result.dc,
+            success=success,
+            margin=total - result.dc,
+            critical=result.critical,
+        )
+
+    def _roll_ability_check(self, session: GameSession, ability: str, dc: int) -> SkillCheckResult:
+        result = roll_check(self._get_player_ability(session, ability), dc)
+        penalty = session.agi_check_penalty() if ability == "AGI" else 0
+        return self._apply_check_penalty(result, penalty)
+
+    def _contested_agi_check(self, session: GameSession, opponent_score: int) -> tuple[SkillCheckResult, SkillCheckResult, str]:
+        result_a, result_b, _winner = contested_check(self._get_player_ability(session, "AGI"), opponent_score)
+        result_a = self._apply_check_penalty(result_a, session.agi_check_penalty())
+        if result_a.total > result_b.total:
+            winner = "a"
+        elif result_b.total > result_a.total:
+            winner = "b"
+        else:
+            winner = "tie"
+        result_a = SkillCheckResult(
+            roll=result_a.roll,
+            modifier=result_a.modifier,
+            total=result_a.total,
+            dc=result_b.total,
+            success=(winner == "a"),
+            margin=result_a.total - result_b.total,
+            critical=result_a.critical,
+        )
+        result_b = SkillCheckResult(
+            roll=result_b.roll,
+            modifier=result_b.modifier,
+            total=result_b.total,
+            dc=result_a.total,
+            success=(winner == "b"),
+            margin=result_b.total - result_a.total,
+            critical=result_b.critical,
+        )
+        return result_a, result_b, winner
+
+    def _inventory_add_failure_message(self, session: GameSession, item_name: str) -> str:
+        error = dict(session.narration_context.pop("_last_add_item_error", {}) or {})
+        if error.get("reason") == "overweight":
+            return (
+                f"{item_name} is too heavy to carry right now. It would bring you to "
+                f"{float(error.get('projected_weight', 0.0)):.1f}/{float(error.get('max_weight', 0.0)):.1f} kg. "
+                "You wrench your back trying to lift it."
+            )
+        return f"No room for {item_name}. Your containers are full."
+
     # --- Skill-Based Action Handlers ---
 
     def _handle_search(self, session: GameSession, action: ParsedAction) -> ActionResult:
@@ -2883,8 +2996,7 @@ class GameEngine:
             target = entity.get("name", target)
 
         # Contested check: player AGI vs NPC INS
-        player_agi = self._get_player_ability(session, "AGI")
-        result_a, result_b, winner = contested_check(player_agi, npc_ins)
+        result_a, result_b, winner = self._contested_agi_check(session, npc_ins)
         check_text = self._format_skill_check(result_a, "AGI", result_b.total)
 
         if winner == "a":
@@ -2996,8 +3108,7 @@ class GameEngine:
 
         dc = 13
         ability = "AGI"
-        ability_score = self._get_player_ability(session, ability)
-        check_result = roll_check(ability_score, dc)
+        check_result = self._roll_ability_check(session, ability, dc)
         check_text = self._format_skill_check(check_result, ability, dc)
 
         if check_result.success:
@@ -3030,7 +3141,10 @@ class GameEngine:
         mig = self._get_player_ability(session, "MIG")
         ability, ability_score = ("AGI", agi) if agi >= mig else ("MIG", mig)
 
-        check_result = roll_check(ability_score, dc)
+        if ability == "AGI":
+            check_result = self._roll_ability_check(session, ability, dc)
+        else:
+            check_result = roll_check(ability_score, dc)
         check_text = self._format_skill_check(check_result, ability, dc)
 
         if check_result.success:
@@ -3072,8 +3186,7 @@ class GameEngine:
 
         dc = 14
         ability = "AGI"
-        ability_score = self._get_player_ability(session, ability)
-        check_result = roll_check(ability_score, dc)
+        check_result = self._roll_ability_check(session, ability, dc)
         check_text = self._format_skill_check(check_result, ability, dc)
 
         if check_result.success:
@@ -3356,6 +3469,7 @@ class GameEngine:
             before_hour = self._current_game_hour(session)
             previous_period = session.game_time.period
             session.game_time.advance(step_minutes)
+            session.clear_expired_timed_conditions()
             after_hour = self._current_game_hour(session)
             final_hour = after_hour
             hours_passed = step_minutes / 60.0

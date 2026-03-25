@@ -2,6 +2,7 @@
 Tests for GameEngine — covers all action handlers, edge cases, and helper methods.
 Target: game_engine.py ≥ 97% coverage
 """
+import copy
 import pytest
 from unittest.mock import patch, MagicMock
 
@@ -11,6 +12,9 @@ from engine.core.character import Character
 from engine.core.combat import CombatManager
 from engine.core.dm_agent import SceneType
 from engine.world.skill_checks import SkillCheckResult
+from engine.world.proximity import astar_path, distance
+from engine.world.spatial_index import SpatialIndex
+from engine.map import MapData, TileType
 
 
 # ---------------------------------------------------------------------------
@@ -350,6 +354,22 @@ class TestHandleTalk:
 
 
 class TestQuestHardening:
+    def test_accept_delivery_quest_requires_real_giver(self, engine, mage_session):
+        mage_session.entities = {}
+        mage_session.quest_offers = [{
+            "id": "bread_shortage",
+            "kind": "delivery",
+            "title": "Bread Shortage",
+            "description": "Bring two loaves to the tavern.",
+            "target_item": "bread",
+            "required_qty": 2,
+        }]
+
+        result = engine.process_action(mage_session, "accept quest bread shortage")
+
+        assert "not bound to a real giver" in result.narrative.lower()
+        assert mage_session.quest_tracker.get_active_quests() == []
+
     def test_accept_and_turn_in_delivery_quest_requires_explicit_flow(self, engine, mage_session):
         merchant_id, merchant = _entity_by_role(mage_session, "merchant")
         mage_session.location_stock.stock["bread"] = 1
@@ -380,6 +400,23 @@ class TestQuestHardening:
         assert "you turn in" in turn_in_result.narrative.lower()
         assert mage_session.quest_tracker.get_active_quests() == []
         assert all(item.get("id") != "bread" for item in mage_session.inventory)
+
+    def test_turn_in_rejects_delivery_quest_missing_giver_binding(self, engine, mage_session):
+        offer = {
+            "id": "orphan_delivery",
+            "kind": "delivery",
+            "title": "Orphan Delivery",
+            "description": "This quest has no valid giver.",
+            "target_item": "bread",
+            "required_qty": 1,
+        }
+        engine._accept_quest_offer(mage_session, offer, giver_entity_id=None, giver_name=None)
+        mage_session.add_item({"id": "bread", "name": "Bread", "qty": 1})
+
+        result = engine.process_action(mage_session, "turn in quest orphan delivery")
+
+        assert "missing a bound giver" in result.narrative.lower()
+        assert mage_session.quest_tracker.get_active_quests()
 
     def test_trade_and_examine_spend_exploration_ap(self, engine, mage_session):
         _merchant_id, merchant = _entity_by_role(mage_session, "merchant")
@@ -636,9 +673,34 @@ class TestInventoryHardening:
 
         result = engine.process_action(warrior_session, "pick up heavy boulder")
 
-        assert "no room" in result.narrative.lower()
+        assert "too heavy" in result.narrative.lower()
+        assert warrior_session.has_timed_condition("back_strain")
         assert any(entity.id == "heavy_boulder" for entity in warrior_session.spatial_index.at(*warrior_session.position))
         assert warrior_session.find_inventory_item("heavy_boulder") is None
+
+    def test_overloaded_agi_checks_take_penalty(self, engine, warrior_session):
+        warrior_session.add_item({"id": "training_weight", "name": "Training Weight", "qty": 1, "weight": 23.0})
+        assert 1.0 < warrior_session.carry_ratio() <= 1.25
+
+        with patch(
+            "engine.api.game_engine.roll_check",
+            return_value=SkillCheckResult(roll=12, modifier=3, total=15, dc=13, success=True, margin=2, critical=None),
+        ):
+            result = engine._roll_ability_check(warrior_session, "AGI", 13)
+
+        assert result.total == 13
+        assert result.modifier == 1
+
+    def test_add_or_drop_item_respects_weight_for_crafting_and_gathering_outputs(self, engine, warrior_session):
+        dropped = not engine._add_or_drop_item(
+            warrior_session,
+            {"id": "anvil", "name": "Anvil", "qty": 1, "weight": 32.0},
+        )
+
+        assert dropped
+        assert warrior_session.find_inventory_item("anvil") is None
+        assert warrior_session.has_timed_condition("back_strain")
+        assert any(entity.name == "Anvil" for entity in warrior_session.spatial_index.at(*warrior_session.position))
 
     def test_search_auto_refreshes_ap_when_action_hits_zero(self, engine, warrior_session):
         warrior_session.game_time.minute = 15
@@ -647,6 +709,102 @@ class TestInventoryHardening:
         engine.process_action(warrior_session, "search area")
 
         assert warrior_session.ap_tracker.current_ap == warrior_session.ap_tracker.max_ap
+
+
+class TestGoToHardening:
+    def test_go_to_matches_repeated_move_time_and_ap(self, engine):
+        base_session = engine.new_session("Walker", "warrior", location="Forest Road")
+        tiles = [[TileType.FLOOR for _ in range(12)] for _ in range(12)]
+        for i in range(12):
+            tiles[0][i] = TileType.WALL
+            tiles[11][i] = TileType.WALL
+            tiles[i][0] = TileType.WALL
+            tiles[i][11] = TileType.WALL
+        base_session.map_data = MapData(width=12, height=12, tiles=tiles, rooms=[], spawn_point=(1, 1))
+        base_session.position = [1, 1]
+        base_session.game_time.hour = 8
+        base_session.game_time.minute = 15
+        base_session.entities = {}
+        base_session.spatial_index = SpatialIndex()
+        base_session.player_entity.position = (1, 1)
+        base_session.spatial_index.add(base_session.player_entity)
+        target_pos = [8, 1]
+        path = astar_path(base_session.map_data, base_session.position, target_pos, max_steps=40)
+        assert path is not None and target_pos is not None
+
+        save_system = SaveSystem()
+        clone_state = save_system._serialize_session(base_session)
+        goto_session = save_system._deserialize_session(copy.deepcopy(clone_state))
+        goto_session.entities["target_npc"] = {
+            "name": "Target NPC",
+            "type": "npc",
+            "position": list(target_pos),
+            "role": "merchant",
+            "faction": "merchant_guild",
+        }
+
+        goto_result = engine.process_action(goto_session, "approach target npc")
+        assert "walk" in goto_result.narrative.lower()
+        assert goto_session.position == [6, 1]
+        assert goto_session.game_time.hour == 10
+        assert goto_session.game_time.minute == 15
+        assert goto_session.ap_tracker.current_ap == 2
+
+
+class TestUtilityAPHardening:
+    def test_open_spends_ap_and_time(self, engine, warrior_session):
+        warrior_session.game_time.minute = 15
+        ap_before = warrior_session.ap_tracker.current_ap
+        hour_before = warrior_session.game_time.hour
+        minute_before = warrior_session.game_time.minute
+
+        engine.process_action(warrior_session, "open chest")
+
+        assert warrior_session.ap_tracker.current_ap == ap_before - 1
+        assert (warrior_session.game_time.hour, warrior_session.game_time.minute) != (hour_before, minute_before)
+
+    def test_fill_pour_and_stash_spend_ap(self, engine, warrior_session):
+        warrior_session.game_time.minute = 15
+        warrior_session.add_item({
+            "id": "waterskin",
+            "name": "Waterskin",
+            "type": "tool",
+            "container_type": {"liquid_capacity_ml": 500},
+        })
+        warrior_session.add_item({"id": "gem", "name": "Ruby Gem", "type": "gem"})
+        warrior_session.map_data.set_tile(warrior_session.position[0] + 1, warrior_session.position[1], TileType.WATER)
+
+        ap_before_fill = warrior_session.ap_tracker.current_ap
+        engine.process_action(warrior_session, "fill waterskin")
+        assert warrior_session.ap_tracker.current_ap == ap_before_fill - 1
+
+        ap_before_pour = warrior_session.ap_tracker.current_ap
+        engine.process_action(warrior_session, "pour waterskin")
+        assert warrior_session.ap_tracker.current_ap == ap_before_pour - 1
+
+    def test_stash_spends_ap(self, engine, warrior_session):
+        warrior_session.game_time.minute = 15
+        warrior_session.add_item({"id": "gem", "name": "Ruby Gem", "type": "gem"})
+
+        ap_before_stash = warrior_session.ap_tracker.current_ap
+        engine.process_action(warrior_session, "stash gem in sock_left")
+
+        assert warrior_session.ap_tracker.current_ap == ap_before_stash - 1
+
+    def test_rotate_item_is_zero_time(self, engine, warrior_session):
+        warrior_session.add_item({"id": "sword", "name": "Sword", "type": "weapon"})
+        ap_before = warrior_session.ap_tracker.current_ap
+        turn_before = warrior_session.dm_context.turn
+        hour_before = warrior_session.game_time.hour
+        minute_before = warrior_session.game_time.minute
+
+        result = engine.process_action(warrior_session, "rotate sword")
+
+        assert "rotate" in result.narrative.lower()
+        assert warrior_session.ap_tracker.current_ap == ap_before
+        assert warrior_session.dm_context.turn == turn_before
+        assert warrior_session.game_time.hour == hour_before
+        assert warrior_session.game_time.minute == minute_before
 
 
 # ---------------------------------------------------------------------------

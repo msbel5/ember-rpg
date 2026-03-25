@@ -52,6 +52,8 @@ ACTION_COSTS: Dict[str, int] = {
     "pray": 1,
     "drink": 1,
     "fill": 1,
+    "pour": 1,
+    "stash": 1,
     # Crafting
     "craft_simple": 5,
     "craft_complex": 15,

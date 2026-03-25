@@ -310,3 +310,25 @@ def test_sell_item_uses_canonical_stack_qty_and_preserves_metadata():
     assert sword["quality"] == "masterwork"
     assert sword["damage"] == 9
     assert sword["instance_id"] == "iron_sword-special"
+
+
+def test_buy_item_rejects_over_125_percent_carry_and_applies_back_strain():
+    session_id = create_session()
+    from engine.api.routes import _sessions
+
+    session = _sessions[session_id]
+    session.player.gold = 500
+
+    with patch("engine.api.shop_routes._get_npc") as mock_npc, patch("engine.api.shop_routes._get_item") as mock_item:
+        mock_npc.return_value = {"id": "merchant", "name": "Merchant", "shop_inventory": ["anvil"]}
+        mock_item.return_value = {"id": "anvil", "name": "Anvil", "value": 25, "type": "item", "weight": 32.0}
+        resp = client.post("/game/shop/merchant/buy", json={
+            "session_id": session_id,
+            "item_id": "anvil",
+            "quantity": 1,
+        })
+
+    assert resp.status_code == 400
+    assert "too heavy" in resp.json()["detail"].lower()
+    assert session.find_inventory_item("anvil") is None
+    assert session.has_timed_condition("back_strain")

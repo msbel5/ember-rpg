@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import copy
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -231,6 +232,7 @@ class SaveSystem:
         )
         data["campaign_state"] = dict(getattr(session, "campaign_state", {}))
         data["narration_context"] = dict(getattr(session, "narration_context", {}))
+        data["timed_conditions"] = copy.deepcopy(getattr(session, "timed_conditions", {}))
         data["last_save_slot"] = getattr(session, "last_save_slot", None)
 
         return data
@@ -246,10 +248,10 @@ class SaveSystem:
         from engine.core.dm_agent import DMContext, SceneType
         from engine.api.game_session import GameSession
         from engine.map import MapData
-        from engine.world.entity import Entity
+        from engine.world.entity import Entity, EntityType
         from engine.world.spatial_index import SpatialIndex
         from engine.world.viewport import Viewport
-        from engine.world.action_points import ActionPointTracker
+        from engine.world.action_points import ActionPointTracker, CLASS_AP
         from engine.world.schedules import GameTime as LivingGameTime
         from engine.world.economy import LocationStock
         from engine.world.rumors import RumorNetwork
@@ -281,6 +283,7 @@ class SaveSystem:
 
         # 5. Viewport
         viewport = None
+        viewport_missing = "viewport" not in data
         if "viewport" in data:
             viewport = Viewport.from_dict(data["viewport"])
 
@@ -339,7 +342,8 @@ class SaveSystem:
         spatial_index = SpatialIndex()
         player_entity = None
 
-        if "spatial_entities" in data:
+        spatial_entities_present = "spatial_entities" in data
+        if spatial_entities_present:
             for ent_data in data["spatial_entities"]:
                 entity = Entity.from_dict(ent_data)
                 if entity.id == "player":
@@ -412,6 +416,7 @@ class SaveSystem:
         )
         session.campaign_state = dict(data.get("campaign_state", {}))
         session.narration_context = dict(data.get("narration_context", {}))
+        session.timed_conditions = copy.deepcopy(data.get("timed_conditions", {}))
         session.last_save_slot = data.get("last_save_slot")
 
         # Entity / Spatial / Viewport / AP fields
@@ -466,8 +471,68 @@ class SaveSystem:
             import random
             session.history_seed = HistorySeed().generate(seed=random.randint(0, 999999))
 
+        if session.ap_tracker is None:
+            dominant_class = (player.dominant_class or next(iter(player.classes), "warrior") or "warrior")
+            session.ap_tracker = ActionPointTracker(max_ap=CLASS_AP.get(str(dominant_class).lower(), 4))
+
+        if player_entity is None:
+            session.player_entity = Entity(
+                id="player",
+                entity_type=EntityType.NPC,
+                name=player.name,
+                position=tuple(session.position),
+                glyph="@",
+                color="white",
+                blocking=True,
+                hp=player.hp,
+                max_hp=player.max_hp,
+                disposition="friendly",
+            )
+        else:
+            session.player_entity = player_entity
+            session.player_entity.position = tuple(session.position)
+            session.player_entity.hp = player.hp
+            session.player_entity.max_hp = player.max_hp
+            session.player_entity.blocking = True
+
+        if session.spatial_index.get_position("player") is None:
+            session.spatial_index.add(session.player_entity)
+
+        if not spatial_entities_present and session.entities:
+            for entity_id, record in session.entities.items():
+                entity_type_name = str(record.get("type", "npc")).upper()
+                try:
+                    entity_type = EntityType[entity_type_name]
+                except KeyError:
+                    entity_type = EntityType.NPC
+                live_entity = Entity(
+                    id=entity_id,
+                    entity_type=entity_type,
+                    name=record.get("name", entity_id),
+                    position=tuple(record.get("position", [0, 0])),
+                    glyph=record.get("glyph", "?"),
+                    color=record.get("color", "white"),
+                    blocking=bool(record.get("blocking", entity_type == EntityType.NPC)),
+                    hp=int(record.get("hp", 8)),
+                    max_hp=int(record.get("max_hp", record.get("hp", 8) or 8)),
+                    faction=record.get("faction"),
+                    job=record.get("role"),
+                    disposition=record.get("disposition", "friendly"),
+                    needs=record.get("needs"),
+                    body=record.get("body"),
+                    schedule=record.get("schedule"),
+                )
+                if session.spatial_index.get_position(entity_id) is None:
+                    session.spatial_index.add(live_entity)
+
+        if session.viewport is None:
+            session.viewport = Viewport(width=40, height=20)
+            session.viewport.center_on(session.position[0], session.position[1])
+
         # Recompute viewport FOV if we have map + position
         if session.viewport is not None and session.map_data is not None:
+            if viewport_missing:
+                session.viewport.center_on(session.position[0], session.position[1])
             session.viewport.compute_fov(
                 lambda x, y: not session.map_data.is_walkable(x, y),
                 session.position[0], session.position[1],

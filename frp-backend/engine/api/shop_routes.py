@@ -165,19 +165,36 @@ def buy_item(npc_id: str, req: BuyRequest):
 
     purchased_item = copy.deepcopy(item)
     purchased_item["qty"] = req.quantity
-    if hasattr(session, "can_add_item") and not session.can_add_item(purchased_item):
+    status = session.assess_item_addition(purchased_item) if hasattr(session, "assess_item_addition") else None
+    if status is not None and not status["allowed"]:
+        if status["reason"] == "overweight":
+            session._record_add_item_failure(status)
+            detail = (
+                f"{item['name']} is too heavy to carry right now. It would bring you to "
+                f"{status['projected_weight']:.1f}/{status['max_weight']:.1f} kg, and you strain your back trying."
+            )
+        else:
+            detail = f"No room to carry {req.quantity}x {item['name']}. Free some inventory space first."
         raise HTTPException(
             status_code=400,
-            detail=f"No room to carry {req.quantity}x {item['name']}. Free some inventory space first."
+            detail=detail,
         )
 
     player.gold -= total_price
     added = session.add_item(purchased_item)
     if added is None:
         player.gold += total_price
+        error = dict(getattr(session, "narration_context", {}).get("_last_add_item_error", {}) or {})
+        if error.get("reason") == "overweight":
+            detail = (
+                f"{item['name']} is too heavy to carry right now. It would bring you to "
+                f"{float(error.get('projected_weight', 0.0)):.1f}/{float(error.get('max_weight', 0.0)):.1f} kg."
+            )
+        else:
+            detail = f"No room to carry {req.quantity}x {item['name']}. Free some inventory space first."
         raise HTTPException(
             status_code=400,
-            detail=f"No room to carry {req.quantity}x {item['name']}. Free some inventory space first."
+            detail=detail,
         )
 
     if getattr(session, "location_stock", None) is not None:
