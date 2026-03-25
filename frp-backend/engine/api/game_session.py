@@ -659,6 +659,7 @@ class GameSession:
             ]
 
         # --- Spatial index entity list (Entity objects) ---
+        ground_items = []
         if self.spatial_index and self.spatial_index.count() > 0:
             spatial_entities = []
             for ent in self.spatial_index.all_entities():
@@ -668,8 +669,7 @@ class GameSession:
             if spatial_entities:
                 result["world_entities"] = spatial_entities
                 ground_items = [ent for ent in spatial_entities if ent.get("entity_type") == EntityType.ITEM.value]
-                if ground_items:
-                    result["ground_items"] = ground_items
+        result["ground_items"] = ground_items
 
         # --- Map metadata ---
         if self.map_data:
@@ -679,18 +679,18 @@ class GameSession:
                 "spawn_point": list(self.map_data.spawn_point),
             }
 
+        active_quests = []
         if self.quest_tracker:
-            active_quests = self.quest_tracker.get_active_quests()
-            if active_quests:
-                result["active_quests"] = [
+            aq = self.quest_tracker.get_active_quests()
+            if aq:
+                active_quests = [
                     {"quest_id": q.quest_id, "title": q.title,
                      "deadline": q.deadline_hour, "status": q.status.value}
-                    for q in active_quests
+                    for q in aq
                 ]
-        if self.quest_offers:
-            result["quest_offers"] = copy.deepcopy(self.quest_offers)
-        if self.campaign_state:
-            result["campaign_state"] = copy.deepcopy(self.campaign_state)
+        result["active_quests"] = active_quests
+        result["quest_offers"] = copy.deepcopy(self.quest_offers) if self.quest_offers else []
+        result["campaign_state"] = copy.deepcopy(self.campaign_state) if self.campaign_state else {}
 
         if self.body_tracker:
             injuries = self.body_tracker.get_injury_effects()

@@ -125,6 +125,14 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
         ),
     ]),
 
+    # FISH must come before CAST_SPELL so "cast line" is not swallowed
+    (ActionIntent.FISH, [
+        re.compile(
+            r"^(?:fish|cast\s+line|go\s+fishing|balık\s+tut)(?:\s+(?:in\s+|at\s+)?(?P<target>[\w\s]*))?$",
+            re.IGNORECASE
+        ),
+    ]),
+
     # CAST_SPELL: "cast fireball at goblin" / "büyü ateş topu gobline"
     (ActionIntent.CAST_SPELL, [
         re.compile(
@@ -297,14 +305,6 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
         ),
     ]),
 
-    # FISH: "fish" / "cast line" / "go fishing"
-    (ActionIntent.FISH, [
-        re.compile(
-            r"^(?:fish|cast\s+line|go\s+fishing|balık\s+tut)(?:\s+(?:in\s+|at\s+)?(?P<target>[\w\s]*))?$",
-            re.IGNORECASE
-        ),
-    ]),
-
     # MINE: "mine ore" / "dig" / "excavate"
     (ActionIntent.MINE, [
         re.compile(
@@ -361,6 +361,19 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
         ),
     ]),
 
+    # INTERACT must come before USE_ITEM so "use lever" → INTERACT not USE_ITEM
+    # Matches mechanical/world objects: lever, switch, button, altar, well, fountain, etc.
+    (ActionIntent.INTERACT, [
+        re.compile(
+            r"^(?:interact\s+with|push|pull|turn|activate|press|etkileş|it|çek|çevir|aktive)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?:use|kullan)\s+(?P<target>(?:lever|switch|button|handle|crank|wheel|altar|well|fountain|gate|portal|mechanism|statue|shrine|pedestal|rope|chain|pulley|valve|dial|panel|door|hatch|trap|bridge)[\w\s]*)$",
+            re.IGNORECASE
+        ),
+    ]),
+
     # USE_ITEM: "use healing potion" / "drink potion" / "eat food" / "içtim iksiri"
     (ActionIntent.USE_ITEM, [
         re.compile(
@@ -397,14 +410,6 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
     (ActionIntent.OPEN, [
         re.compile(
             r"^(?:open|unlock|force\s+open|break\s+open|aç|kır|zorla|sök)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # INTERACT: "interact with lever" / "use lever" (generic interaction)
-    (ActionIntent.INTERACT, [
-        re.compile(
-            r"^(?:interact\s+with|use|push|pull|turn|activate|press|etkileş|kullan|it|çek|çevir|aktive)\s+(?P<target>[\w\s]+)$",
             re.IGNORECASE
         ),
     ]),

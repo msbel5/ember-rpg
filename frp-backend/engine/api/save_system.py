@@ -91,7 +91,7 @@ class SaveSystem:
                 character._entity_id = entity_id
             if role is not None:
                 character.role = role
-            if equipped_armor:
+            if equipped_armor is not None:
                 character.equipped_armor = equipped_armor
             if weapon_material is not None:
                 character.weapon_material = weapon_material

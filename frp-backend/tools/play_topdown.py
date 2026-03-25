@@ -115,38 +115,6 @@ class MapState:
 
         self.viewport.compute_fov(is_blocking, px, py, radius=FOV_RADIUS)
 
-    def try_move(self, session: GameSession, direction: str) -> str:
-        """Attempt to move player in a cardinal direction. Returns status message."""
-        delta = DIRECTION_DELTAS.get(direction)
-        if not delta:
-            return ""
-        dx, dy = delta
-        px, py = self.player_entity.position
-        nx, ny = px + dx, py + dy
-
-        # Check map bounds and walkability
-        if not self.map_data.is_walkable(nx, ny):
-            return "You can't move there -- the way is blocked."
-
-        # Check for blocking entities
-        if self.spatial_index.blocking_at(nx, ny):
-            ents = self.spatial_index.at(nx, ny)
-            names = [e.name for e in ents if e.blocking and e.id != "player"]
-            if names:
-                return f"{names[0]} blocks your path."
-            return "Something blocks your path."
-
-        # Move player
-        self.spatial_index.move(self.player_entity, nx, ny)
-        session.position = [nx, ny]
-        session.facing = direction
-
-        # Recenter viewport and recompute FOV
-        self.viewport.center_on(nx, ny)
-        self._recompute_fov()
-
-        return ""
-
     def get_visible_entities(self) -> list:
         """Return all visible entities (excluding player) within FOV."""
         result = []
@@ -277,7 +245,7 @@ def render_map(ms: MapState) -> Panel:
     legend.append("Tree", style="dim")
     text.append_text(legend)
 
-    border = "red" if False else "bright_blue"  # TODO: flash red during combat
+    border = "red" if session.in_combat() else "bright_blue"
     return Panel(text, title="[bold bright_white]Map[/bold bright_white]", border_style=border)
 
 

@@ -553,14 +553,19 @@ class TestCombatStress:
                 break
 
     def test_flee_during_combat(self):
-        """Start combat and immediately flee."""
+        """Start combat and immediately flee (with guaranteed success)."""
+        from unittest.mock import patch
+        from engine.world.skill_checks import SkillCheckResult
         engine = _engine()
         session = engine.new_session("Coward", "rogue", location="Harbor Town")
 
         result = engine.process_action(session, "attack goblin")
         _assert_valid_result(result, "attack goblin")
 
-        result = engine.process_action(session, "flee")
+        # Mock AGI check to always succeed for deterministic test
+        mock_result = SkillCheckResult(roll=18, modifier=3, total=21, dc=10, success=True, margin=11, critical=None)
+        with patch("engine.api.game_engine.roll_check", return_value=mock_result):
+            result = engine.process_action(session, "flee")
         _assert_valid_result(result, "flee")
         _print_excerpt("flee from combat", result)
 

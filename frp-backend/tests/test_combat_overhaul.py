@@ -145,7 +145,9 @@ def test_movement_blocked_in_combat():
 
 
 def test_flee_allowed_in_combat():
-    """'flee' during combat → exits combat."""
+    """'flee' during combat → exits combat on successful AGI check."""
+    from unittest.mock import patch
+    from engine.world.skill_checks import SkillCheckResult
     engine = make_engine()
     session = make_session(engine)
 
@@ -154,7 +156,10 @@ def test_flee_allowed_in_combat():
     engine._start_combat(session, [enemy])
     assert session.in_combat()
 
-    result = engine.process_action(session, "flee from combat")
+    # Mock AGI check to always succeed
+    mock_result = SkillCheckResult(roll=15, modifier=2, total=17, dc=10, success=True, margin=7, critical=None)
+    with patch("engine.api.game_engine.roll_check", return_value=mock_result):
+        result = engine.process_action(session, "flee from combat")
 
     assert not session.in_combat(), "Should exit combat after fleeing"
     assert result.scene_type != SceneType.COMBAT, "Scene should change from COMBAT"

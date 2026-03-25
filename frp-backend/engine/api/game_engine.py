@@ -555,13 +555,18 @@ class GameEngine:
     # --- Intent Handlers ---
 
     def _handle_attack(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        # --- AP check for initiating combat ---
+        if not session.in_combat():
+            ap_fail = self._check_ap(session, "attack_melee")
+            if ap_fail:
+                return ap_fail
+
         # Proximity check for attack (melee range)
         if action.target and not session.in_combat():
             prox_fail = self._check_entity_proximity(session, action.target, "attack_melee")
             if prox_fail:
                 return prox_fail
 
-        # --- Bug 1: Non-hostile target handling (route to DM for funny response) ---
         hostile_keywords = ["goblin", "orc", "bandit", "wolf", "skeleton", "zombie",
                             "enemy", "monster", "troll", "guard", "militia", "watchman",
                             "ogre", "dragon", "rat", "spider", "cultist", "thug"]
@@ -608,9 +613,16 @@ class GameEngine:
             narrative = self.dm.narrate(event, session.dm_context, self.llm)
             return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
-        enemy = self._spawn_enemy(session.player.level, preferred_name=action.target)
-        self._start_combat(session, [enemy])
-        return self._build_combat_start_result(session, [enemy])
+        # Spawn random enemy if no target specified (bare "attack") or target matches hostile keyword
+        if not action.target or any(kw in target_lower for kw in hostile_keywords):
+            enemy = self._spawn_enemy(session.player.level, preferred_name=action.target)
+            self._start_combat(session, [enemy])
+            return self._build_combat_start_result(session, [enemy])
+
+        return ActionResult(
+            narrative=f"There's no '{action.target}' here to attack.",
+            scene_type=session.dm_context.scene_type,
+        )
 
     def _build_combat_narrative(self, session, attacker_name, target, hit, damage, crit=False, fumble=False):
         """Generate LLM narrative for a player attack. Falls back to template on failure."""
@@ -1389,11 +1401,19 @@ class GameEngine:
                     y = max(0, min(MAP_H - 1, y))
                     if has_map and not session.map_data.is_walkable(x, y):
                         blocked_msg = "That position is not walkable."
+                    elif session.spatial_index and session.spatial_index.blocking_at(x, y):
+                        blocked_msg = "Something blocks your path."
                     else:
-                        if session.spatial_index and session.player_entity:
-                            session.spatial_index.move(session.player_entity, x, y)
-                        session.position = [x, y]
-                        moved = True
+                        move_cost = ACTION_COSTS.get("move_flat", 1)
+                        if session.ap_tracker and not session.ap_tracker.can_move(move_cost):
+                            blocked_msg = f"Not enough action points to move. (AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap})"
+                        else:
+                            if session.ap_tracker:
+                                session.ap_tracker.spend_movement(move_cost)
+                            if session.spatial_index and session.player_entity:
+                                session.spatial_index.move(session.player_entity, x, y)
+                            session.position = [x, y]
+                            moved = True
                 except Exception:
                     pass
             else:
@@ -1440,11 +1460,37 @@ class GameEngine:
         )
 
     def _handle_flee(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        """Handle fleeing from combat."""
-        if session.combat:
-            session.combat.combat_ended = True
+        """Handle fleeing from combat with AGI check."""
+        if not session.combat:
+            return ActionResult(
+                narrative="You're not in combat — nothing to flee from.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # AGI check to escape (DC 10)
+        agi_score = self._get_player_ability(session, "AGI")
+        flee_check = roll_check(agi_score, 10)
+
+        if not flee_check.success:
+            # Failed flee — player stays in combat
+            desc = (
+                f"{session.player.name} tries to flee but stumbles! "
+                f"(AGI check: {flee_check.roll}+{flee_check.modifier}={flee_check.total} vs DC 10 — FAIL)"
+            )
+            event = DMEvent(type=EventType.COMBAT, description=desc)
+            narrative = self.dm.narrate(event, session.dm_context, self.llm)
+            return ActionResult(
+                narrative=narrative,
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # Success — escape combat
+        session.combat.combat_ended = True
         self.dm.transition(session.dm_context, SceneType.EXPLORATION)
-        desc = f"{session.player.name} turns and flees from combat!"
+        desc = (
+            f"{session.player.name} successfully flees from combat! "
+            f"(AGI check: {flee_check.roll}+{flee_check.modifier}={flee_check.total} vs DC 10 — PASS)"
+        )
         event = DMEvent(type=EventType.EXPLORATION, description=desc)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
@@ -1457,7 +1503,71 @@ class GameEngine:
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_use_item(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        desc = f"{session.player.name} reaches for an item."
+        target = (action.target or "").lower()
+        if not target:
+            return ActionResult(
+                narrative="Use what? Specify an item name.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        item = session.find_inventory_item(target)
+        if not item:
+            return ActionResult(
+                narrative=f"You don't have '{action.target}' in your inventory.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        item_type = item.get("type", "")
+        item_name = item.get("name", target)
+
+        # Consumable: heal, restore SP, apply effects
+        if item_type == "consumable" or item.get("heal") or item.get("hp_restore"):
+            heal_amount = item.get("heal", 0) or item.get("hp_restore", 0)
+            sp_restore = item.get("sp_restore", 0)
+            effects = []
+
+            if heal_amount > 0:
+                old_hp = session.player.hp
+                session.player.hp = min(session.player.max_hp, session.player.hp + heal_amount)
+                actual_heal = session.player.hp - old_hp
+                effects.append(f"restored {actual_heal} HP")
+
+            if sp_restore > 0:
+                old_sp = session.player.spell_points
+                session.player.spell_points = min(
+                    getattr(session.player, "max_spell_points", session.player.spell_points + sp_restore),
+                    session.player.spell_points + sp_restore,
+                )
+                actual_sp = session.player.spell_points - old_sp
+                effects.append(f"restored {actual_sp} SP")
+
+            # Consume the item
+            session.remove_item(item.get("id", target), 1)
+
+            effect_str = " and ".join(effects) if effects else "had a mysterious effect"
+            return ActionResult(
+                narrative=f"You use {item_name} — {effect_str}. (HP: {session.player.hp}/{session.player.max_hp})",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # Tool with uses
+        if item.get("uses") is not None:
+            uses = item.get("uses", 0)
+            if uses <= 0:
+                return ActionResult(
+                    narrative=f"Your {item_name} is spent — no uses remaining.",
+                    scene_type=session.dm_context.scene_type,
+                )
+            item["uses"] = uses - 1
+            remaining = item["uses"]
+            narrative = f"You use {item_name}. ({remaining} uses remaining)"
+            if remaining <= 0:
+                session.remove_item(item.get("id", target), 1)
+                narrative += f" The {item_name} is now spent."
+            return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+
+        # Generic fallback for untyped items → DM narration
+        desc = f"{session.player.name} uses {item_name}."
         event = DMEvent(type=EventType.DISCOVERY, description=desc)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
@@ -1815,21 +1925,22 @@ class GameEngine:
             workstation_ok=workstation_ok,
         )
 
+        # Detect material BEFORE consuming ingredients (so items still exist)
+        crafted_material = None
+        for ingredient in recipe.ingredients:
+            ingredient_item = session.find_inventory_item(ingredient.item_id)
+            if ingredient_item and ingredient_item.get("material"):
+                crafted_material = ingredient_item.get("material")
+                break
+            if any(token in ingredient.item_id for token in ("iron", "steel", "leather", "cloth", "wood")):
+                crafted_material = ingredient.item_id.split("_")[0]
+                break
+
         if craft_result.success or craft_result.quality.value == "ruined":
             for item_id, before_qty in inventory_before.items():
                 delta = before_qty - inv_dict.get(item_id, 0)
                 if delta > 0:
                     session.remove_item(item_id, delta)
-
-            crafted_material = None
-            for ingredient in recipe.ingredients:
-                ingredient_item = session.find_inventory_item(ingredient.item_id)
-                if ingredient_item and ingredient_item.get("material"):
-                    crafted_material = ingredient_item.get("material")
-                    break
-                if any(token in ingredient.item_id for token in ("iron", "steel", "leather", "cloth", "wood")):
-                    crafted_material = ingredient.item_id.split("_")[0]
-                    break
 
             for product_id, qty in craft_result.products:
                 product_record = {
@@ -2137,9 +2248,6 @@ class GameEngine:
         if quest_id not in accepted_quests:
             accepted_quests.append(quest_id)
         return quest_id
-
-    def _update_quest_progress_for_inventory(self, session: GameSession) -> List[Dict[str, Any]]:
-        return []
 
     def _update_quest_progress_for_kill(self, session: GameSession, enemy_name: str) -> List[Dict[str, Any]]:
         events: List[Dict[str, Any]] = []
@@ -2866,7 +2974,6 @@ class GameEngine:
                         moved = self._move_entity_if_possible(session, npc, step_target)
                         if moved:
                             if npc.id in session.entities:
-                                session.entities[npc.id]["scheduled_location"] = session.entities[npc.id].get("scheduled_location")
                                 session.sync_entity_record(npc.id, npc)
                             if action_type == "follow_schedule":
                                 destination = getattr(npc.schedule, "get_location", lambda _period: "their post")(current_period)
@@ -2880,7 +2987,10 @@ class GameEngine:
                                 "destination": destination,
                             })
 
-            crossed_hours = list(range(int(before_hour) + 1, int(after_hour) + 1))
+            # Include current hour if tick starts exactly on the hour boundary
+            # (before_hour=47.0, after_hour=47.25 → should include hour 47)
+            start_hour = int(before_hour) if before_hour == int(before_hour) else int(before_hour) + 1
+            crossed_hours = list(range(start_hour, int(after_hour) + 1))
             for hour_marker in crossed_hours:
                 if session.ap_tracker is not None:
                     session.ap_tracker.refresh()
@@ -2904,11 +3014,13 @@ class GameEngine:
                 if reminders:
                     events.extend(reminders)
 
-            session.quest_offers = GameSession.merge_quest_offers(
-                session.quest_offers,
-                self._generate_emergent_quests(session),
-                new_default_source="emergent",
-            )
+            # Emergent quest generation only on hour boundaries (not every 15-min step)
+            if crossed_hours:
+                session.quest_offers = GameSession.merge_quest_offers(
+                    session.quest_offers,
+                    self._generate_emergent_quests(session),
+                    new_default_source="emergent",
+                )
             remaining_minutes -= step_minutes
 
         session.campaign_state["last_world_tick_hour"] = final_hour
