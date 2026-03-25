@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from engine.api.game_engine import GameEngine, ActionResult
+from engine.api.save_system import SaveSystem
 from engine.core.character import Character
 from engine.core.combat import CombatManager
 from engine.core.dm_agent import SceneType
@@ -239,6 +240,36 @@ class TestHandleTalk:
     def test_talk_narrative_returned(self, engine, warrior_session):
         result = engine.process_action(warrior_session, "talk to the merchant")
         assert len(result.narrative) > 0
+
+
+class TestSaveCommands:
+    def test_save_list_load_and_delete_roundtrip(self, engine, warrior_session, tmp_path):
+        engine.save_system = SaveSystem(tmp_path / "saves")
+        warrior_session.player.hp = 7
+        initial_turn = warrior_session.dm_context.turn
+
+        save_result = engine.process_action(warrior_session, "save as slot_alpha")
+        assert "slot_alpha" in save_result.narrative
+        assert warrior_session.last_save_slot == "slot_alpha"
+        assert warrior_session.dm_context.turn == initial_turn
+
+        warrior_session.player.hp = 2
+
+        list_result = engine.process_action(warrior_session, "list saves")
+        assert "slot_alpha" in list_result.narrative
+        assert warrior_session.dm_context.turn == initial_turn
+
+        load_result = engine.process_action(warrior_session, "load slot_alpha")
+        assert "slot_alpha" in load_result.narrative
+        assert warrior_session.player.hp == 7
+        assert warrior_session.dm_context.turn == initial_turn
+
+        delete_result = engine.process_action(warrior_session, "delete save slot_alpha")
+        assert "slot_alpha" in delete_result.narrative
+        assert warrior_session.dm_context.turn == initial_turn
+
+        missing_result = engine.process_action(warrior_session, "load slot_alpha")
+        assert "No save slot named 'slot_alpha'" in missing_result.narrative
 
 
 # ---------------------------------------------------------------------------

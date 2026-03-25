@@ -10,6 +10,12 @@ Transform Ember RPG from text-only into a **DF/Rimworld-style top-down ASCII vie
 
 **Core principle:** The simulation runs deterministically. The AI only narrates — it never decides game state.
 
+### Implementation Snapshot (2026-03-25)
+
+- The terminal client now renders the session's real map, viewport, spatial index, AP, and equipment state instead of maintaining a disconnected `MapState`.
+- Arrow-key movement and typed movement both route through `GameEngine.process_action(...)`, so movement, AP spend, world time, and NPC reactions stay unified.
+- Ground items, NPC movement, and workstation entities are visible because the renderer reads the same state the API and autosave use.
+
 ---
 
 ## 2. Architecture Overview
@@ -160,6 +166,8 @@ class SpatialIndex:
 |-------|------|--------|
 | **SimTick** | Every player action | NPC AI decisions, need decay, schedule checks |
 | **WorldTick** | Every 15 game-minutes | Economy, caravans, rumors, quest timers |
+
+Current implementation note: long actions and rest advance the same world loop by larger minute blocks instead of bypassing simulation.
 
 ### 5.2 Action Point System
 

@@ -113,6 +113,29 @@ class TestSessionEndpoints:
         assert resp.status_code == 200
         assert resp.json()["location"] == "Dark Tower"
 
+    def test_delete_session_does_not_restore_from_manual_save(self):
+        created = self._new_session("ManualSave", "warrior")
+        sid = created["session_id"]
+        slot_name = f"manual_restore_{sid.replace('-', '_')}"
+
+        try:
+            save_resp = client.post(
+                f"/game/session/{sid}/save",
+                json={"player_id": "manual_restore_player", "slot_name": slot_name},
+            )
+            assert save_resp.status_code == 200
+
+            load_resp = client.post(f"/game/session/load/{slot_name}")
+            assert load_resp.status_code == 200
+
+            delete_resp = client.delete(f"/game/session/{sid}")
+            assert delete_resp.status_code == 200
+
+            resp = client.get(f"/game/session/{sid}")
+            assert resp.status_code == 404
+        finally:
+            client.delete(f"/game/saves/{slot_name}")
+
 
 class TestMapEndpoint:
 

@@ -4,6 +4,7 @@ Universal Item class for all objects
 """
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Optional, TYPE_CHECKING
 from enum import Enum
 
@@ -195,7 +196,11 @@ class ItemDatabase:
         Raises:
             ValueError: If duplicate item ids are detected.
         """
-        with open(filepath, 'r') as f:
+        path = Path(filepath)
+        if not path.exists():
+            path = Path(__file__).resolve().parents[2] / filepath
+
+        with path.open('r', encoding='utf-8') as f:
             data = json.load(f)
 
         seen_ids: set = set()

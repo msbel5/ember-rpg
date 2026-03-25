@@ -294,11 +294,11 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
     # LOAD_GAME: "load" / "load game" / "load mysave" / "yükle"
     (ActionIntent.LOAD_GAME, [
         re.compile(
-            r"^(?:load\s+game|load|restore)\s+(?P<target>[\w\s]+)$",
+            r"^(?:load\s+game|load|restore|yükle|oyunu\s+yükle)$",
             re.IGNORECASE
         ),
         re.compile(
-            r"^(?:load\s+game|load|restore|yükle|oyunu\s+yükle)$",
+            r"^(?:load\s+game|load|restore)\s+(?P<target>[\w\s]+)$",
             re.IGNORECASE
         ),
     ]),

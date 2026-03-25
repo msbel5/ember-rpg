@@ -3,6 +3,7 @@ Ember RPG - Phase 5: NPC Agent System
 NPC personality, dialogue, memory, and DM-driven conversation.
 """
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Optional, Dict, Callable
 from enum import Enum
 import random
@@ -298,7 +299,11 @@ class NPCManager:
         """
         import json
 
-        with open(filepath, "r", encoding="utf-8") as fh:
+        path = Path(filepath)
+        if not path.exists():
+            path = Path(__file__).resolve().parents[2] / filepath
+
+        with path.open("r", encoding="utf-8") as fh:
             data = json.load(fh)
 
         templates = data.get("npc_templates", [])

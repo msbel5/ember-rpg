@@ -3,19 +3,22 @@ Ember RPG - API Layer
 GameEngine: orchestrates all Phase 2 systems for API actions
 """
 from dataclasses import dataclass, field
-from typing import Optional, List, Callable
+from typing import Optional, List, Callable, Dict, Any
+import copy
 import random
 
+from engine.api.save_system import SaveSystem
 from engine.core.character import Character
 from engine.core.combat import CombatManager
 from engine.core.progression import ProgressionSystem
 from engine.core.dm_agent import DMAIAgent, DMContext, DMEvent, SceneType, EventType
+from engine.core.item import Item, ItemType
 from engine.api.action_parser import ActionParser, ActionIntent, ParsedAction
 from engine.api.game_session import GameSession
 
 # Living World imports
 from engine.world.proximity import check_proximity, move_cardinal, distance
-from engine.world.schedules import GameTime as LivingGameTime, hour_to_period, DEFAULT_SCHEDULES
+from engine.world.schedules import GameTime as LivingGameTime, hour_to_period, DEFAULT_SCHEDULES, NPCSchedule
 from engine.world.tick_scheduler import WorldTickScheduler
 from engine.world.naming import NameGenerator
 from engine.world.npc_needs import NPCNeeds
@@ -56,6 +59,29 @@ NPC_VISUALS = {
     "healer":      ("H", "green"),
     "sage":        ("S", "magenta"),
     "bard":        ("♪", "yellow"),
+}
+
+WORKSTATION_SPECS = {
+    "forge": {"name": "Forge", "glyph": "F", "color": "bright_white"},
+    "alchemy_bench": {"name": "Alchemy Bench", "glyph": "A", "color": "bright_green"},
+    "workbench": {"name": "Workbench", "glyph": "W", "color": "bright_yellow"},
+    "kitchen": {"name": "Kitchen", "glyph": "K", "color": "yellow"},
+    "campfire": {"name": "Campfire", "glyph": "C", "color": "red"},
+}
+
+WORKSTATION_ANCHORS = {
+    "forge": "forge",
+    "alchemy_bench": "temple",
+    "workbench": "shop",
+    "kitchen": "tavern",
+    "campfire": "campfire",
+}
+
+ROLE_PRODUCTION = {
+    "blacksmith": ("iron_bar", "iron_sword"),
+    "innkeeper": ("bread", "ale"),
+    "merchant": ("torch",),
+    "priest": ("healing_potion",),
 }
 
 # Starter inventory kits per class
@@ -144,6 +170,7 @@ class GameEngine:
         self.dm = DMAIAgent()
         self.progression = ProgressionSystem()
         self.llm = llm
+        self.save_system = SaveSystem()
         # Living World shared systems
         self.tick_scheduler = WorldTickScheduler()
         self.need_satisfaction = NeedSatisfactionEngine()
@@ -243,12 +270,16 @@ class GameEngine:
             else:
                 session.inventory.append(item)
 
+        session.quest_offers = self._generate_emergent_quests(session, force=True)
+        session.narration_context["last_world_tick_hour"] = self._current_game_hour(session)
+        session.ensure_consistency()
         return session
 
     def _populate_scene_entities(self, session: GameSession, location: str) -> None:
         """Populate session with NPC Entity objects in the spatial index, plus backward-compat dict."""
         session.entities = {}
         loc_lower = location.lower()
+        anchors = self._scene_anchor_positions(session)
 
         # Define NPC archetypes by location type
         if any(w in loc_lower for w in ["tavern", "inn"]):
@@ -281,6 +312,27 @@ class GameEngine:
 
             # Determine glyph/color from NPC_VISUALS
             glyph, color = NPC_VISUALS.get(role, ("?", "white"))
+            body = BodyPartTracker()
+            schedule_data = DEFAULT_SCHEDULES.get(role, DEFAULT_SCHEDULES["merchant"])
+            schedule_positions = {
+                period: list(anchors.get(place, pos))
+                for period, place in schedule_data.items()
+            }
+            patrol_route = None
+            if role == "guard":
+                patrol_route = [
+                    list(anchors.get("gate", pos)),
+                    list(anchors.get("market_square", pos)),
+                    list(anchors.get("tavern", pos)),
+                    list(anchors.get("gate", pos)),
+                ]
+            schedule = NPCSchedule(
+                npc_id=npc_id,
+                npc_name=name,
+                locations=dict(schedule_data),
+                positions=schedule_positions,
+                patrol_route=patrol_route,
+            )
 
             # Build NPC skills based on role
             npc_skills = {}
@@ -308,7 +360,9 @@ class GameEngine:
                 blocking=True,
                 needs=needs,
                 skills=npc_skills if npc_skills else None,
+                body=body,
                 faction=faction,
+                schedule=schedule,
                 job=role,
                 disposition="friendly" if role != "spy" else "neutral",
                 hp=12 if role == "guard" else 8,
@@ -327,9 +381,13 @@ class GameEngine:
                 "faction": faction,
                 "role": role,
                 "needs": needs,
+                "body": body,
+                "schedule": schedule,
                 "gender": gender,
                 "entity_ref": entity,  # reference to the Entity object
             }
+
+        self._spawn_workstations(session, anchors)
 
     def _find_walkable_near(self, session: GameSession, cx: int, cy: int, radius: int = 5) -> list:
         """Find a walkable tile near (cx, cy) using map_data. Falls back to random offset."""
@@ -350,6 +408,59 @@ class GameEngine:
         # Fallback: random offset
         return [cx + random.randint(-2, 2), cy + random.randint(-2, 2)]
 
+    def _scene_anchor_positions(self, session: GameSession) -> Dict[str, List[int]]:
+        if not session.map_data:
+            px, py = session.position[0], session.position[1]
+            return {name: [px, py] for name in {
+                "home", "shop", "market_square", "tavern", "gate",
+                "forge", "temple", "alley", "docks", "campfire",
+            }}
+
+        spawn_x, spawn_y = session.map_data.spawn_point
+        offsets = {
+            "home": (-6, -3),
+            "shop": (5, -1),
+            "market_square": (0, 4),
+            "tavern": (6, 5),
+            "gate": (0, -7),
+            "forge": (8, 1),
+            "temple": (-8, 1),
+            "alley": (-6, 5),
+            "docks": (9, 6),
+            "campfire": (-4, 7),
+        }
+        anchors: Dict[str, List[int]] = {}
+        for name, (dx, dy) in offsets.items():
+            anchors[name] = self._find_walkable_near(session, spawn_x + dx, spawn_y + dy, radius=4)
+        return anchors
+
+    def _spawn_workstations(self, session: GameSession, anchors: Dict[str, List[int]]) -> None:
+        if session.spatial_index is None:
+            return
+        existing = {entity.id for entity in session.spatial_index.all_entities()}
+        for workstation_id, spec in WORKSTATION_SPECS.items():
+            entity_id = f"workstation_{workstation_id}"
+            if entity_id in existing:
+                continue
+            anchor_name = WORKSTATION_ANCHORS.get(workstation_id, "shop")
+            pos = anchors.get(anchor_name, list(session.position))
+            entity = Entity(
+                id=entity_id,
+                entity_type=EntityType.FURNITURE,
+                name=spec["name"],
+                position=tuple(pos),
+                glyph=spec["glyph"],
+                color=spec["color"],
+                blocking=False,
+                inventory=[{"workstation": workstation_id}],
+            )
+            session.spatial_index.add(entity)
+
+    def _current_game_hour(self, session: GameSession) -> float:
+        if not getattr(session, "game_time", None):
+            return 0.0
+        return ((session.game_time.day - 1) * 24) + session.game_time.hour + (session.game_time.minute / 60.0)
+
     def process_action(self, session: GameSession, input_text: str) -> ActionResult:
         """
         Process a player's natural language action.
@@ -361,13 +472,22 @@ class GameEngine:
         Returns:
             ActionResult with narrative and state changes
         """
+        session.ensure_consistency()
+        action = self.parser.parse(input_text)
+
+        system_handlers = {
+            ActionIntent.SAVE_GAME: self._handle_save_game,
+            ActionIntent.LOAD_GAME: self._handle_load_game,
+            ActionIntent.LIST_SAVES: self._handle_list_saves,
+            ActionIntent.DELETE_SAVE: self._handle_delete_save,
+        }
+        if action.intent in system_handlers:
+            result = system_handlers[action.intent](session, action)
+            session.ensure_consistency()
+            return result
+
         session.touch()
         session.dm_context.advance_turn()
-
-        # --- Living World: advance time and run world tick (includes AP refresh) ---
-        world_events = self._world_tick(session)
-
-        action = self.parser.parse(input_text)
 
         handlers = {
             ActionIntent.ATTACK:     self._handle_attack,
@@ -405,7 +525,17 @@ class GameEngine:
         }
 
         handler = handlers.get(action.intent, self._handle_unknown)
-        return handler(session, action)
+        result = handler(session, action)
+
+        world_minutes = int(result.state_changes.pop("_world_minutes", 15)) if result.state_changes else 15
+        skip_world_tick = bool(result.state_changes.pop("_skip_world_tick", False)) if result.state_changes else False
+
+        if not skip_world_tick:
+            world_events = self._world_tick(session, minutes=world_minutes, refresh_ap=(action.intent == ActionIntent.REST))
+            self._merge_world_events(session, result, world_events)
+
+        session.sync_player_state()
+        return result
 
     # --- Intent Handlers ---
 
@@ -422,8 +552,19 @@ class GameEngine:
                             "ogre", "dragon", "rat", "spider", "cultist", "thug"]
         target_lower = (action.target or "").lower()
         in_active_combat = session.dm_context.scene_type == SceneType.COMBAT
+        found_world_target = self._find_entity_by_name(session, action.target) if action.target else None
 
-        if not in_active_combat and action.target and not any(kw in target_lower for kw in hostile_keywords):
+        if not in_active_combat and found_world_target is not None:
+            world_target_id, world_target = found_world_target
+            enemy = self._character_from_world_entity(world_target_id, world_target)
+            if enemy is not None:
+                self._start_combat(session, [enemy])
+                combat = session.combat
+                target_idx = self._find_target(combat, enemy.name, exclude=session.player.name)
+                if target_idx is not None:
+                    return self._execute_attack_round(session, combat, target_idx)
+
+        if not in_active_combat and action.target and found_world_target is None and not any(kw in target_lower for kw in hostile_keywords):
             # Non-hostile target → creative DM response
             target_name = action.target or "something"
             desc = (
@@ -483,6 +624,8 @@ class GameEngine:
             fallback = f"{attacker_name} strikes — hit! {damage} damage."
         else:
             fallback = f"{attacker_name} swings but misses."
+        if self.llm is None:
+            return fallback
         try:
             if hit:
                 desc = (
@@ -516,6 +659,8 @@ class GameEngine:
             fallback = f"{enemy.name} hits you for {damage} damage! (HP: {session.player.hp}/{session.player.max_hp})"
         else:
             fallback = f"{enemy.name} swings at you but misses!"
+        if self.llm is None:
+            return fallback
         try:
             desc = (
                 f"{enemy.name} counterattacks {session.player.name}. "
@@ -539,6 +684,8 @@ class GameEngine:
     def _build_death_narrative(self, session, enemy_name):
         """Generate LLM narrative for enemy death. Falls back to template on failure."""
         fallback = f"{enemy_name} has been defeated!"
+        if self.llm is None:
+            return fallback
         try:
             desc = f"{enemy_name} has been defeated! Describe their death dramatically in 1-2 sentences."
             event = DMEvent(type=EventType.COMBAT, description=desc, data={
@@ -551,7 +698,11 @@ class GameEngine:
 
     def _execute_attack_round(self, session: GameSession, combat: CombatManager, target_idx: int) -> ActionResult:
         """Execute player's attack and then all living enemy counterattacks."""
-        result = combat.attack(target_idx)
+        weapon = self._build_weapon_item(session.equipment.get("weapon"))
+        try:
+            result = combat.attack(target_idx, weapon=weapon) if weapon else combat.attack(target_idx)
+        except TypeError:
+            result = combat.attack(target_idx)
         state_changes = {}
         narrative_parts = []
 
@@ -561,7 +712,8 @@ class GameEngine:
             target_combatant = combat.combatants[target_idx]
 
         hit = result.get("hit", False)
-        damage = result.get("damage", 0)
+        raw_damage = result.get("damage", 0)
+        damage = raw_damage
         crit = result.get("crit", False)
         fumble = result.get("fumble", False)
 
@@ -572,17 +724,34 @@ class GameEngine:
         if hit or crit:
             # Roll hit location
             hit_part = roll_hit_location()
-            # Check armor (player has no equipped armor list by default, but support it)
-            equipped_armor = getattr(session.player, 'equipped_armor', [])
+            equipped_armor = getattr(target_combatant.character, 'equipped_armor', []) if target_combatant else []
             armor_reduction = calculate_armor_reduction(hit_part, equipped_armor)
             # Apply weapon material bonus (default iron)
             weapon_material = getattr(session.player, 'weapon_material', 'iron')
             if weapon_material in MATERIALS:
                 mat = MATERIALS[weapon_material]
-                damage = max(1, int(damage * mat.damage_mult))
+                damage = max(1, int(raw_damage * mat.damage_mult))
                 material_bonus = f" ({weapon_material})"
             # Reduce damage by armor
             effective_damage = max(0, damage - armor_reduction)
+            if target_combatant is not None:
+                corrected_hp = target_combatant.character.hp + raw_damage - effective_damage
+                target_combatant.character.hp = max(0, min(target_combatant.character.max_hp, corrected_hp))
+                if target_combatant.character.hp <= 0:
+                    target_combatant.is_dead = True
+                    result["killed"] = True
+                else:
+                    target_combatant.is_dead = False
+                    result["killed"] = False
+                entity_id = getattr(target_combatant.character, "_entity_id", None)
+                if entity_id and entity_id in session.entities:
+                    session.entities[entity_id]["hp"] = target_combatant.character.hp
+                    session.entities[entity_id]["alive"] = not target_combatant.is_dead
+                    entity_ref = session.entities[entity_id].get("entity_ref")
+                    if entity_ref is not None:
+                        entity_ref.hp = target_combatant.character.hp
+                        entity_ref.alive = not target_combatant.is_dead
+                        entity_ref.blocking = not target_combatant.is_dead
             # Apply body part damage to tracker (for the target if it's an enemy)
             state_changes["hit_location"] = hit_part
             state_changes["armor_reduction"] = armor_reduction
@@ -617,6 +786,14 @@ class GameEngine:
         if result.get("killed"):
             target_name = result.get("target", "")
             narrative_parts.append(self._build_death_narrative(session, target_name or "the enemy"))
+            quest_events = self._update_quest_progress_for_kill(session, target_name or "")
+            if quest_events:
+                state_changes.setdefault("world_events", []).extend(copy.deepcopy(quest_events))
+                for event in quest_events:
+                    narrative_parts.append(
+                        f"Quest complete: {event.get('title', event.get('quest_id', 'Unknown quest'))}. "
+                        f"+{event.get('reward_gold', 0)} gold, +{event.get('reward_xp', 0)} XP."
+                    )
             killed_combatant = next(
                 (c for c in combat.combatants if c.name == target_name), None
             )
@@ -664,15 +841,18 @@ class GameEngine:
                     enemy_result = combat.attack(player_idx)
                     combat.current_turn = saved_turn
                     if enemy_result.get("hit"):
-                        dmg = enemy_result.get("damage", 0)
+                        raw_enemy_damage = enemy_result.get("damage", 0)
                         # Body part hit location for player damage
                         player_hit_part = roll_hit_location()
                         player_armor = getattr(session.player, 'equipped_armor', [])
                         player_armor_red = calculate_armor_reduction(player_hit_part, player_armor)
-                        effective_dmg = max(0, dmg - player_armor_red)
+                        effective_dmg = max(0, raw_enemy_damage - player_armor_red)
                         # Apply to body part tracker
                         session.body_tracker.apply_damage(player_hit_part, effective_dmg)
-                        session.player.hp = max(0, session.player.hp - effective_dmg)
+                        session.player.hp = max(
+                            0,
+                            min(session.player.max_hp, session.player.hp + raw_enemy_damage - effective_dmg),
+                        )
                         # Sync the combat combatant's hp too
                         player_combatant = combat.combatants[player_idx]
                         player_combatant.character.hp = session.player.hp
@@ -868,6 +1048,7 @@ class GameEngine:
         found_entity = self._find_entity_by_name(session, target)
         npc_mood = "content"
         npc_behavior = {}
+        accepted_quest_note = ""
         if found_entity:
             _, entity = found_entity
             needs = entity.get("needs")
@@ -879,6 +1060,11 @@ class GameEngine:
                         narrative=f"{entity['name']} looks too anxious to talk right now. Their eyes dart around nervously.",
                         scene_type=session.dm_context.scene_type,
                     )
+            if entity.get("role") in {"quest_giver", "guard", "merchant"} and session.quest_offers:
+                accepted = self._accept_quest_offer(session, session.quest_offers[0])
+                if accepted:
+                    accepted_quest_note = f"\nQuest accepted: {session.quest_offers[0]['title']}."
+                    session.quest_offers = [offer for offer in session.quest_offers if offer.get("id") != accepted]
 
         world_context = self._build_world_context(session)
         desc = (
@@ -912,10 +1098,10 @@ class GameEngine:
             npc_id,
             action.raw_input[:200],
             "neutral",
-            game_time,
+            session.game_time.to_string() if session.game_time else game_time,
         )
 
-        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+        return ActionResult(narrative=f"{narrative}{accepted_quest_note}", scene_type=session.dm_context.scene_type)
 
     def _get_npc_personality(self, target_name: str) -> dict:
         """Find NPC template by partial name match."""
@@ -950,19 +1136,6 @@ class GameEngine:
         heal = max(1, session.player.max_hp // 4)
         session.player.hp = min(session.player.hp + heal, session.player.max_hp)
         session.player.spell_points = session.player.max_spell_points
-
-        # Rest advances time by 8 hours (extra on top of the 15min from process_action)
-        for _ in range(32):  # 32 x 15min = 8 hours
-            session.game_time.advance(15)
-        # Run caravan/economy ticks for rest period
-        game_hour = session.game_time.hour + (session.game_time.day - 1) * 24
-        session.caravan_manager.tick(game_hour)
-        session.rumor_network.decay(hours=8)
-        # NPC needs decay during rest
-        for eid, entity in session.entities.items():
-            needs = entity.get("needs")
-            if isinstance(needs, NPCNeeds):
-                needs.tick(hours=8)
         # Heal body parts during rest
         for part in session.body_tracker.current_hp:
             session.body_tracker.heal(part, max(1, session.body_tracker.max_hp[part] // 4))
@@ -975,7 +1148,7 @@ class GameEngine:
 
         return ActionResult(
             narrative=narrative,
-            state_changes={"hp_restored": heal},
+            state_changes={"hp_restored": heal, "_world_minutes": 480},
             scene_type=session.dm_context.scene_type,
         )
 
@@ -1292,15 +1465,11 @@ class GameEngine:
             if match:
                 # Remove from spatial index and add to inventory
                 session.spatial_index.remove(match)
-                item_dict = {
-                    "id": match.id,
-                    "name": match.name,
-                    "type": "item",
-                }
-                # Copy any extra data from entity inventory
+                item_dict = {"id": match.id, "name": match.name, "type": "item", "entity_id": match.id}
                 if match.inventory:
-                    item_dict.update(match.inventory[0] if match.inventory else {})
-                session.inventory.append(item_dict)
+                    item_dict.update(copy.deepcopy(match.inventory[0]))
+                item_dict["ground_instance_id"] = match.id
+                session.add_item(item_dict, merge=False)
                 return ActionResult(
                     narrative=f"You pick up {match.name}.",
                     scene_type=session.dm_context.scene_type,
@@ -1333,18 +1502,24 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
 
-        item = session.inventory.pop(match_idx)
+        item = session.remove_item(target)
+        if item is None:
+            return ActionResult(
+                narrative=f"You don't have '{target}' in your inventory.",
+                scene_type=session.dm_context.scene_type,
+            )
         px, py = session.position[0], session.position[1]
 
         # Create an item Entity at the player's position
         item_entity = Entity(
-            id=item.get("id", Entity.generate_id()),
+            id=item.get("ground_instance_id") or item.get("instance_id") or Entity.generate_id(),
             entity_type=EntityType.ITEM,
             name=item.get("name", "Unknown Item"),
             position=(px, py),
             glyph="!",
             color="yellow",
             blocking=False,
+            inventory=[copy.deepcopy(item)],
         )
         if session.spatial_index:
             session.spatial_index.add(item_entity)
@@ -1384,37 +1559,14 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
 
-        item = session.inventory[match_idx]
-        slot = item.get("slot")
-        if not slot:
+        candidate = session.find_inventory_item(target)
+        old_item = session.equipment.get(session._infer_slot(candidate)) if candidate else None
+        item = session.equip_item(target)
+        if item is None:
             return ActionResult(
-                narrative=f"{item['name']} cannot be equipped.",
+                narrative=f"{session.find_inventory_item(target).get('name', target) if session.find_inventory_item(target) else target} cannot be equipped.",
                 scene_type=session.dm_context.scene_type,
             )
-
-        if slot not in session.equipment:
-            return ActionResult(
-                narrative=f"No equipment slot '{slot}' available.",
-                scene_type=session.dm_context.scene_type,
-            )
-
-        # If something is already in the slot, move it to inventory
-        old_item = session.equipment.get(slot)
-        if old_item is not None:
-            session.inventory.append(old_item)
-
-        # Equip the new item
-        session.equipment[slot] = item
-        session.inventory.pop(match_idx)
-
-        # Update armor type on AP tracker
-        if slot == "armor" and session.ap_tracker:
-            material = item.get("material", "none")
-            armor_weight_map = {
-                "cloth": "cloth", "leather": "leather",
-                "iron": "chain_mail", "steel": "plate_armor",
-            }
-            session.ap_tracker.set_armor(armor_weight_map.get(material, "none"))
 
         narrative = f"You equip {item['name']}."
         if old_item:
@@ -1444,13 +1596,12 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
 
-        item = session.equipment[matched_slot]
-        session.equipment[matched_slot] = None
-        session.inventory.append(item)
-
-        # Reset armor if unequipping armor
-        if matched_slot == "armor" and session.ap_tracker:
-            session.ap_tracker.set_armor("none")
+        item = session.unequip_item(target)
+        if item is None:
+            return ActionResult(
+                narrative=f"Nothing equipped matching '{target}'.",
+                scene_type=session.dm_context.scene_type,
+            )
 
         return ActionResult(
             narrative=f"You unequip {item['name']}.",
@@ -1480,11 +1631,15 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
 
-        # Check AP (craft_complex for dc >= 14, craft_simple otherwise)
-        cost_key = "craft_complex" if recipe.skill_dc >= 14 else "craft_simple"
-        ap_fail = self._check_ap(session, cost_key)
-        if ap_fail:
-            return ap_fail
+        if session.ap_tracker and session.ap_tracker.current_ap <= 0:
+            return ActionResult(
+                narrative=f"Not enough action points to start crafting. (AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap})",
+                scene_type=session.dm_context.scene_type,
+            )
+        turns_required = 1
+        if session.ap_tracker:
+            turns_required = max(1, (recipe.ap_cost + session.ap_tracker.max_ap - 1) // session.ap_tracker.max_ap)
+            session.ap_tracker.current_ap = 0 if recipe.ap_cost > session.ap_tracker.current_ap else max(0, session.ap_tracker.current_ap - recipe.ap_cost)
 
         # Check for nearby workstation
         crafting = CraftingSystem()
@@ -1502,6 +1657,7 @@ class GameEngine:
         for item in session.inventory:
             item_id = item.get("id", item.get("name", "unknown")).lower().replace(" ", "_")
             inv_dict[item_id] = inv_dict.get(item_id, 0) + item.get("qty", 1)
+        inventory_before = dict(inv_dict)
 
         # Map crafting skill to ability
         skill_ability_map = {
@@ -1523,16 +1679,34 @@ class GameEngine:
             workstation_ok=workstation_ok,
         )
 
-        # Sync inventory dict back to session.inventory list
         if craft_result.success or craft_result.quality.value == "ruined":
-            session.inventory = []
-            for item_id, qty in inv_dict.items():
-                if qty > 0:
-                    session.inventory.append({
-                        "id": item_id,
-                        "name": item_id.replace("_", " ").title(),
-                        "qty": qty,
-                    })
+            for item_id, before_qty in inventory_before.items():
+                delta = before_qty - inv_dict.get(item_id, 0)
+                if delta > 0:
+                    session.remove_item(item_id, delta)
+
+            crafted_material = None
+            for ingredient in recipe.ingredients:
+                ingredient_item = session.find_inventory_item(ingredient.item_id)
+                if ingredient_item and ingredient_item.get("material"):
+                    crafted_material = ingredient_item.get("material")
+                    break
+                if any(token in ingredient.item_id for token in ("iron", "steel", "leather", "cloth", "wood")):
+                    crafted_material = ingredient.item_id.split("_")[0]
+                    break
+
+            for product_id, qty in craft_result.products:
+                product_record = {
+                    "id": product_id,
+                    "name": product_id.replace("_", " ").title(),
+                    "qty": qty,
+                    "quality": craft_result.quality.value,
+                }
+                if crafted_material:
+                    product_record["material"] = crafted_material
+                session.add_item(product_record)
+                if getattr(session, "location_stock", None) is not None:
+                    session.location_stock.add_stock(product_id, qty)
 
         narrative_parts = [check_text, craft_result.narrative]
         if craft_result.xp_gained > 0:
@@ -1541,13 +1715,317 @@ class GameEngine:
         return ActionResult(
             narrative="\n".join(narrative_parts),
             scene_type=session.dm_context.scene_type,
-            state_changes={"xp_gained": craft_result.xp_gained, "crafted": craft_result.products},
+            state_changes={
+                "xp_gained": craft_result.xp_gained,
+                "crafted": craft_result.products,
+                "_world_minutes": turns_required * 15,
+            },
         )
 
     def _handle_unequip(self, session: GameSession, action: ParsedAction) -> ActionResult:
         """Unequip handler (delegates to _handle_unequip_item)."""
         target = (action.target or "").lower()
         return self._handle_unequip_item(session, target)
+
+    def _handle_save_game(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        slot_name = (action.target or "").strip() or (
+            session.last_save_slot
+            if getattr(session, "last_save_slot", None) and not str(session.last_save_slot).startswith("autosave_")
+            else "quicksave"
+        )
+        try:
+            self.save_system.save_game(session, slot_name, player_name=session.player.name)
+        except Exception as exc:
+            return ActionResult(
+                narrative=f"Save failed for slot '{slot_name}': {exc}",
+                scene_type=session.dm_context.scene_type,
+                state_changes={"_skip_world_tick": True},
+            )
+        return ActionResult(
+            narrative=f"Game saved to '{slot_name}'.",
+            scene_type=session.dm_context.scene_type,
+            state_changes={"save_slot": slot_name, "_skip_world_tick": True},
+        )
+
+    def _handle_load_game(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        slot_name = (action.target or "").strip() or (
+            session.last_save_slot
+            if getattr(session, "last_save_slot", None) and not str(session.last_save_slot).startswith("autosave_")
+            else "quicksave"
+        )
+        try:
+            loaded = self.save_system.load_game(slot_name, strict=True)
+        except FileNotFoundError:
+            return ActionResult(
+                narrative=f"No save slot named '{slot_name}' exists.",
+                scene_type=session.dm_context.scene_type,
+                state_changes={"_skip_world_tick": True},
+            )
+        except Exception as exc:
+            return ActionResult(
+                narrative=f"Could not load '{slot_name}': {exc}",
+                scene_type=session.dm_context.scene_type,
+                state_changes={"_skip_world_tick": True},
+            )
+
+        session.replace_with(loaded, preserve_session_id=True)
+        session.last_save_slot = slot_name
+        return ActionResult(
+            narrative=f"Loaded save slot '{slot_name}'.",
+            scene_type=session.dm_context.scene_type,
+            state_changes={"save_slot": slot_name, "_skip_world_tick": True},
+        )
+
+    def _handle_list_saves(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        saves = self.save_system.list_saves()
+        if not saves:
+            text = "No save slots found."
+        else:
+            lines = ["Save slots:"]
+            for save in saves[:12]:
+                lines.append(
+                    f"- {save['slot_name']} | {save.get('player_name', 'Unknown')} Lv{save.get('player_level', 1)} | "
+                    f"{save.get('location', 'Unknown')} | {save.get('game_time', '')}"
+                )
+            text = "\n".join(lines)
+        return ActionResult(
+            narrative=text,
+            scene_type=session.dm_context.scene_type,
+            state_changes={"_skip_world_tick": True},
+        )
+
+    def _handle_delete_save(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        slot_name = (action.target or "").strip()
+        if not slot_name:
+            return ActionResult(
+                narrative="Delete which save slot? Try 'delete save quicksave'.",
+                scene_type=session.dm_context.scene_type,
+                state_changes={"_skip_world_tick": True},
+            )
+        if not self.save_system.delete_save(slot_name):
+            return ActionResult(
+                narrative=f"No save slot named '{slot_name}' exists.",
+                scene_type=session.dm_context.scene_type,
+                state_changes={"_skip_world_tick": True},
+            )
+        return ActionResult(
+            narrative=f"Deleted save slot '{slot_name}'.",
+            scene_type=session.dm_context.scene_type,
+            state_changes={"deleted_slot": slot_name, "_skip_world_tick": True},
+        )
+
+    def _build_weapon_item(self, item_data: Optional[Dict[str, Any]]) -> Optional[Item]:
+        if not item_data:
+            return None
+        damage = max(1, int(item_data.get("damage", 4)))
+        damage_dice = item_data.get("damage_dice") or f"1d{damage}"
+        return Item(
+            id=item_data.get("id"),
+            name=item_data.get("name", "Weapon"),
+            value=int(item_data.get("value", 0)),
+            weight=float(item_data.get("weight", 0.0)),
+            item_type=ItemType.WEAPON,
+            damage_dice=damage_dice,
+            damage_type=item_data.get("damage_type", "slashing"),
+            armor_bonus=int(item_data.get("ac_bonus", 0)),
+        )
+
+    def _character_from_world_entity(self, entity_id: str, entity: Dict[str, Any]) -> Optional[Character]:
+        role = entity.get("role") or entity.get("job")
+        if not role and entity.get("type") != "npc":
+            return None
+
+        stat_presets = {
+            "guard": {"MIG": 12, "AGI": 10, "END": 12, "MND": 8, "INS": 10, "PRE": 11},
+            "merchant": {"MIG": 8, "AGI": 10, "END": 10, "MND": 10, "INS": 12, "PRE": 13},
+            "blacksmith": {"MIG": 14, "AGI": 10, "END": 12, "MND": 9, "INS": 11, "PRE": 10},
+            "innkeeper": {"MIG": 10, "AGI": 9, "END": 11, "MND": 10, "INS": 12, "PRE": 12},
+            "quest_giver": {"MIG": 9, "AGI": 9, "END": 10, "MND": 12, "INS": 12, "PRE": 13},
+            "spy": {"MIG": 9, "AGI": 13, "END": 9, "MND": 11, "INS": 13, "PRE": 11},
+        }
+        hp = int(entity.get("hp", 10))
+        character = Character(
+            name=entity.get("name", entity_id),
+            hp=hp,
+            max_hp=int(entity.get("max_hp", hp)),
+            stats=stat_presets.get(role, {"MIG": 10, "AGI": 10, "END": 10, "MND": 10, "INS": 10, "PRE": 10}),
+        )
+        character.role = role or "npc"
+        character._entity_id = entity_id
+        character.equipped_armor = ["shield"] if role == "guard" else []
+        character.weapon_material = "iron" if role in {"guard", "blacksmith"} else "wood"
+        return character
+
+    def _count_inventory_item(self, session: GameSession, item_id: str) -> int:
+        total = 0
+        for item in session.inventory:
+            if item.get("id") == item_id:
+                total += int(item.get("qty", 1))
+        return total
+
+    def _accept_quest_offer(self, session: GameSession, offer: Dict[str, Any]) -> Optional[str]:
+        quest_id = offer.get("id")
+        if not quest_id or session.quest_tracker.get_quest(quest_id):
+            return None
+        current_hour = self._current_game_hour(session)
+        deadline_hours = offer.get("deadline_hours")
+        deadline_hour = current_hour + deadline_hours if deadline_hours else None
+        session.quest_tracker.add_quest(
+            quest_id=quest_id,
+            title=offer.get("title", quest_id.replace("_", " ").title()),
+            current_hour=current_hour,
+            deadline_hour=deadline_hour,
+            timeout_consequence=offer.get("timeout_consequence", "quest_failed"),
+        )
+        session.campaign_state.setdefault("quest_meta", {})[quest_id] = copy.deepcopy(offer)
+        session.campaign_state.setdefault("accepted_quests", []).append(quest_id)
+        return quest_id
+
+    def _update_quest_progress_for_inventory(self, session: GameSession) -> List[Dict[str, Any]]:
+        events: List[Dict[str, Any]] = []
+        quest_meta = session.campaign_state.get("quest_meta", {})
+        current_hour = self._current_game_hour(session)
+        for quest in session.quest_tracker.get_active_quests():
+            meta = quest_meta.get(quest.quest_id, {})
+            if meta.get("kind") != "delivery":
+                continue
+            target_item = meta.get("target_item")
+            required_qty = int(meta.get("required_qty", 1))
+            if target_item and self._count_inventory_item(session, target_item) >= required_qty:
+                for _ in range(required_qty):
+                    session.remove_item(target_item)
+                session.quest_tracker.complete_quest(quest.quest_id, current_hour)
+                reward_gold = int(meta.get("reward_gold", 25))
+                reward_xp = int(meta.get("reward_xp", 40))
+                session.player.gold += reward_gold
+                self.progression.add_xp(session.player, reward_xp)
+                events.append({
+                    "type": "quest_complete",
+                    "quest_id": quest.quest_id,
+                    "title": quest.title,
+                    "reward_gold": reward_gold,
+                    "reward_xp": reward_xp,
+                })
+        return events
+
+    def _update_quest_progress_for_kill(self, session: GameSession, enemy_name: str) -> List[Dict[str, Any]]:
+        events: List[Dict[str, Any]] = []
+        quest_meta = session.campaign_state.get("quest_meta", {})
+        progress = session.campaign_state.setdefault("quest_progress", {})
+        current_hour = self._current_game_hour(session)
+        for quest in session.quest_tracker.get_active_quests():
+            meta = quest_meta.get(quest.quest_id, {})
+            if meta.get("kind") != "hunt":
+                continue
+            target_name = str(meta.get("target_name", "")).lower()
+            if target_name and target_name not in enemy_name.lower():
+                continue
+            progress[quest.quest_id] = int(progress.get(quest.quest_id, 0)) + 1
+            required_kills = int(meta.get("required_kills", 1))
+            if progress[quest.quest_id] >= required_kills:
+                session.quest_tracker.complete_quest(quest.quest_id, current_hour)
+                reward_gold = int(meta.get("reward_gold", 40))
+                reward_xp = int(meta.get("reward_xp", 60))
+                session.player.gold += reward_gold
+                self.progression.add_xp(session.player, reward_xp)
+                events.append({
+                    "type": "quest_complete",
+                    "quest_id": quest.quest_id,
+                    "title": quest.title,
+                    "reward_gold": reward_gold,
+                    "reward_xp": reward_xp,
+                })
+        return events
+
+    def _generate_emergent_quests(self, session: GameSession, force: bool = False) -> List[Dict[str, Any]]:
+        offers: List[Dict[str, Any]] = []
+        existing_quests = set(session.quest_tracker.quests.keys())
+        shortage_specs = [
+            ("bread", "Bread Shortage", "The taverns need fresh bread before tonight.", 2, 20, 35),
+            ("ale", "Dry Casks", "Cellars are running low on ale. Bring stock before evening trade.", 2, 18, 35),
+            ("healing_potion", "Remedy Run", "The local healer is running short on remedies.", 1, 24, 50),
+        ]
+        for item_id, title, description, qty, deadline, reward in shortage_specs:
+            baseline = session.location_stock.baseline.get(item_id, 0)
+            stock = session.location_stock.get_stock(item_id)
+            quest_id = f"resupply_{item_id}"
+            if quest_id in existing_quests:
+                continue
+            if force or (baseline and stock <= max(1, baseline // 3)):
+                offers.append({
+                    "id": quest_id,
+                    "kind": "delivery",
+                    "title": title,
+                    "description": description,
+                    "target_item": item_id,
+                    "required_qty": qty,
+                    "deadline_hours": deadline,
+                    "reward_gold": reward,
+                    "reward_xp": 40,
+                })
+
+        hunt_id = "clear_the_roads"
+        if hunt_id not in existing_quests and (force or "road" in session.dm_context.location.lower() or "forest" in session.dm_context.location.lower()):
+            offers.append({
+                "id": hunt_id,
+                "kind": "hunt",
+                "title": "Clear The Roads",
+                "description": "Predators and raiders have made the roads unsafe. Cut them down.",
+                "target_name": "goblin",
+                "required_kills": 2,
+                "deadline_hours": 36,
+                "reward_gold": 60,
+                "reward_xp": 75,
+            })
+
+        return offers[:3]
+
+    def _step_toward(self, start: tuple, target: tuple) -> tuple:
+        dx = target[0] - start[0]
+        dy = target[1] - start[1]
+        step_x = 0 if dx == 0 else (1 if dx > 0 else -1)
+        step_y = 0 if dy == 0 else (1 if dy > 0 else -1)
+        return (start[0] + step_x, start[1] + step_y)
+
+    def _move_entity_if_possible(self, session: GameSession, entity: Entity, target_pos: tuple) -> bool:
+        if tuple(entity.position) == tuple(target_pos):
+            return False
+        tx, ty = target_pos
+        if session.map_data and not session.map_data.is_walkable(tx, ty):
+            return False
+        if session.spatial_index and session.spatial_index.blocking_at(tx, ty):
+            blockers = [candidate for candidate in session.spatial_index.at(tx, ty) if candidate.id != entity.id and candidate.blocking]
+            if blockers:
+                return False
+        if session.spatial_index:
+            session.spatial_index.move(entity, tx, ty)
+        else:
+            entity.move_to(tx, ty)
+        return True
+
+    def _merge_world_events(self, session: GameSession, result: ActionResult, world_events: List[Dict[str, Any]]) -> None:
+        if not world_events:
+            return
+        result.state_changes.setdefault("world_events", []).extend(copy.deepcopy(world_events))
+        messages: List[str] = []
+        for event in world_events:
+            event_type = event.get("type")
+            if event_type == "quest_complete":
+                messages.append(
+                    f"Quest complete: {event.get('title', event.get('quest_id', 'Unknown quest'))}. "
+                    f"+{event.get('reward_gold', 0)} gold, +{event.get('reward_xp', 0)} XP."
+                )
+            elif event.get("hours_remaining") is not None:
+                messages.append(
+                    f"Reminder: {event.get('title', event.get('quest_id', 'A quest'))} has "
+                    f"{event.get('hours_remaining')} hours remaining."
+                )
+            elif event.get("consequence"):
+                messages.append(f"Quest failed: {event.get('title', event.get('quest_id', 'Unknown quest'))}.")
+            elif event_type == "caravan_arrival":
+                messages.append("A caravan arrives and local merchants restock their wares.")
+        if messages:
+            result.narrative = f"{result.narrative}\n" + "\n".join(messages)
 
     # --- AP & Skill Check Helpers ---
 
@@ -2068,87 +2546,109 @@ class GameEngine:
 
     # --- Living World Helpers ---
 
-    def _world_tick(self, session: GameSession) -> list:
+    def _world_tick(self, session: GameSession, minutes: int = 15, refresh_ap: bool = False) -> list:
         """Advance game time and run all Living World subsystems."""
-        events = []
+        events: List[Dict[str, Any]] = []
+        if not getattr(session, "game_time", None):
+            return events
 
-        # Refresh AP each turn
-        if session.ap_tracker:
+        before_hour = self._current_game_hour(session)
+        previous_period = session.game_time.period
+        session.game_time.advance(minutes)
+        after_hour = self._current_game_hour(session)
+        hours_passed = max(minutes / 60.0, after_hour - before_hour)
+        current_period = session.game_time.period
+        crossed_hour = int(before_hour) != int(after_hour)
+
+        if session.ap_tracker and (refresh_ap or crossed_hour):
             session.ap_tracker.refresh()
 
-        # Advance 15 minutes per action
-        period_changed = session.game_time.advance(15)
+        for entity_id, entity in session.entities.items():
+            needs = entity.get("needs")
+            if isinstance(needs, NPCNeeds):
+                needs.tick(hours=hours_passed)
+            schedule = entity.get("schedule")
+            if isinstance(schedule, NPCSchedule):
+                entity["scheduled_location"] = schedule.get_location(current_period)
 
-        if period_changed:
-            current_period = session.game_time.period
+        if session.spatial_index:
+            npc_entities = session.spatial_index.entities_of_type(EntityType.NPC)
+            for npc in npc_entities:
+                if npc.id == "player" or not npc.is_alive():
+                    continue
+                tree = create_npc_behavior_tree(is_guard=(npc.job == "guard"))
+                hostiles = [session.player_entity] if npc.is_hostile() and session.player_entity else []
+                ctx = BehaviorContext(
+                    entity=npc,
+                    spatial_index=session.spatial_index,
+                    game_time=session.game_time,
+                    map_data=session.map_data,
+                    hostiles=hostiles,
+                )
+                tree.tick(ctx)
+                action_type = ctx.blackboard.get("action")
+                target_pos = ctx.blackboard.get("target_pos")
 
-            # NPC schedule movements: update entity positions/locations
-            for eid, entity in session.entities.items():
-                role = entity.get("role", "merchant")
-                schedule = DEFAULT_SCHEDULES.get(role, DEFAULT_SCHEDULES["merchant"])
-                new_loc = schedule.get(current_period.value, "home")
-                entity["scheduled_location"] = new_loc
+                if action_type == "follow_schedule" and isinstance(npc.schedule, NPCSchedule):
+                    scheduled_pos = npc.schedule.get_position(current_period)
+                    if scheduled_pos:
+                        target_pos = tuple(scheduled_pos)
 
-            # NPC needs decay (all entities)
-            for eid, entity in session.entities.items():
-                needs = entity.get("needs")
-                if isinstance(needs, NPCNeeds):
-                    needs.tick(hours=1)
+                if target_pos and action_type in {"wander", "flee", "patrol", "move_toward_hostile", "follow_schedule"}:
+                    target_pos = tuple(target_pos)
+                    step_target = self._step_toward(tuple(npc.position), target_pos)
+                    moved = self._move_entity_if_possible(session, npc, step_target)
+                    if moved:
+                        if npc.id in session.entities:
+                            session.entities[npc.id]["position"] = [npc.position[0], npc.position[1]]
+                            session.entities[npc.id]["scheduled_location"] = session.entities[npc.id].get("scheduled_location")
+                            session.entities[npc.id]["entity_ref"] = npc
+                        if action_type == "follow_schedule":
+                            destination = getattr(npc.schedule, "get_location", lambda _period: "their post")(current_period)
+                        else:
+                            destination = action_type.replace("_", " ")
+                        events.append({
+                            "type": "npc_move",
+                            "npc_id": npc.id,
+                            "npc_name": npc.name,
+                            "position": [npc.position[0], npc.position[1]],
+                            "destination": destination,
+                        })
 
-            # --- Run behavior trees for NPC entities in spatial index ---
-            if session.spatial_index:
-                npc_entities = session.spatial_index.entities_of_type(EntityType.NPC)
-                for npc in npc_entities:
-                    if npc.id == "player" or not npc.is_alive():
+        if crossed_hour or refresh_ap:
+            for entity in session.entities.values():
+                role = entity.get("role")
+                for recipe_key in ROLE_PRODUCTION.get(role, ()):
+                    try:
+                        session.location_stock.produce(recipe_key)
+                    except Exception:
                         continue
-                    # Build behavior context
-                    is_guard = (npc.job == "guard")
-                    tree = create_npc_behavior_tree(is_guard=is_guard)
-                    ctx = BehaviorContext(
-                        entity=npc,
-                        spatial_index=session.spatial_index,
-                        game_time=session.game_time,
-                        map_data=session.map_data,
-                    )
-                    result = tree.tick(ctx)
-                    bb = ctx.blackboard
 
-                    # Process behavior tree result
-                    action_type = bb.get("action")
-                    target_pos = bb.get("target_pos")
-
-                    if target_pos and action_type in ("wander", "flee", "patrol", "move_toward_hostile"):
-                        tx, ty = target_pos
-                        # Validate walkability
-                        if session.map_data and session.map_data.is_walkable(tx, ty):
-                            if not session.spatial_index.blocking_at(tx, ty):
-                                session.spatial_index.move(npc, tx, ty)
-                                # Sync backward-compat dict
-                                if npc.id in session.entities:
-                                    session.entities[npc.id]["position"] = [tx, ty]
-
-            # Economy: caravan tick
-            game_hour = session.game_time.hour + (session.game_time.day - 1) * 24
-            caravan_events = session.caravan_manager.tick(game_hour)
+            caravan_events = session.caravan_manager.tick(int(after_hour))
             for ce in caravan_events:
                 if ce.get("type") == "arrival" and ce.get("goods_delivered"):
-                    # Deliver goods to location stock
                     for item, qty in ce["goods_delivered"].items():
                         session.location_stock.add_stock(item, qty)
-            events.extend(caravan_events)
+                    ce = dict(ce)
+                    ce["type"] = "caravan_arrival"
+                events.append(ce)
 
-            # Rumor decay
-            session.rumor_network.decay(hours=1)
+            session.rumor_network.decay(hours=max(1.0, hours_passed))
             session.rumor_network.prune_expired()
 
-        # Quest timeout check (every action, not just period changes)
-        game_hour = session.game_time.hour + (session.game_time.day - 1) * 24
-        quest_result = session.quest_tracker.tick(game_hour)
+        quest_result = session.quest_tracker.tick(after_hour)
         if quest_result.get("expired"):
             events.extend(quest_result["expired"])
         if quest_result.get("reminders"):
             events.extend(quest_result["reminders"])
 
+        quest_progress_events = self._update_quest_progress_for_inventory(session)
+        if quest_progress_events:
+            events.extend(quest_progress_events)
+
+        session.quest_offers = self._generate_emergent_quests(session)
+        session.campaign_state["last_world_tick_hour"] = after_hour
+        session.narration_context["world_period_changed"] = previous_period != current_period
         return events
 
     def _build_world_context(self, session: GameSession) -> str:
@@ -2209,6 +2709,10 @@ class GameEngine:
             quest_strs = [f"'{q.title}'" + (f" (deadline in {q.deadline_hour - (session.game_time.hour + (session.game_time.day-1)*24):.0f}h)" if q.deadline_hour else "")
                           for q in active_quests[:3]]
             parts.append("[Active Quests] " + "; ".join(quest_strs))
+        elif session.quest_offers:
+            offer_strs = [f"'{offer['title']}'" for offer in session.quest_offers[:2] if offer.get("title")]
+            if offer_strs:
+                parts.append("[Quest Leads] " + "; ".join(offer_strs))
 
         # Body injuries
         injuries = session.body_tracker.get_injury_effects()

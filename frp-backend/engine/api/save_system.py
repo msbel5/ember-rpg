@@ -29,12 +29,61 @@ class SaveSystem:
     # ------------------------------------------------------------------
 
     @staticmethod
+    def _serialize_combat(combat) -> Optional[Dict[str, Any]]:
+        if combat is None:
+            return None
+        return {
+            "current_turn": combat.current_turn,
+            "round": combat.round,
+            "combat_ended": combat.combat_ended,
+            "log": list(combat.log),
+            "combatants": [
+                {
+                    "character": combatant.character.to_dict(),
+                    "initiative": combatant.initiative,
+                    "ap": combatant.ap,
+                    "conditions": [condition.__dict__ for condition in combatant.conditions],
+                    "is_dead": combatant.is_dead,
+                }
+                for combatant in combat.combatants
+            ],
+        }
+
+    @staticmethod
+    def _deserialize_combat(data: Optional[Dict[str, Any]], player):
+        if not data:
+            return None
+        from engine.core.character import Character
+        from engine.core.combat import CombatManager, Combatant, Condition
+
+        combat = object.__new__(CombatManager)
+        combat.combatants = []
+        for combatant_data in data.get("combatants", []):
+            char_data = combatant_data.get("character", {})
+            character = player if char_data.get("name") == getattr(player, "name", None) else Character.from_dict(char_data)
+            combat.combatants.append(
+                Combatant(
+                    character=character,
+                    initiative=combatant_data.get("initiative", 0),
+                    ap=combatant_data.get("ap", 3),
+                    conditions=[Condition(**condition) for condition in combatant_data.get("conditions", [])],
+                    is_dead=combatant_data.get("is_dead", False),
+                )
+            )
+        combat.current_turn = data.get("current_turn", 0)
+        combat.round = data.get("round", 1)
+        combat.log = list(data.get("log", []))
+        combat.combat_ended = data.get("combat_ended", False)
+        return combat
+
+    @staticmethod
     def _serialize_session(session) -> Dict[str, Any]:
         """Serialize a GameSession to a plain dict.
 
         Captures every subsystem so load_game can reconstruct perfectly.
         """
-        from engine.core.character import Character
+        if hasattr(session, "ensure_consistency"):
+            session.ensure_consistency()
 
         data: Dict[str, Any] = {
             "session_id": session.session_id,
@@ -50,6 +99,8 @@ class SaveSystem:
         # DM context
         if session.dm_context is not None:
             data["dm_context"] = session.dm_context.to_dict()
+        if session.combat is not None:
+            data["combat"] = SaveSystem._serialize_combat(session.combat)
 
         # Game time (Living World GameTime from schedules)
         if session.game_time is not None:
@@ -91,6 +142,12 @@ class SaveSystem:
                 needs = ent_copy.get("needs")
                 if needs is not None and hasattr(needs, "to_dict"):
                     ent_copy["needs"] = needs.to_dict()
+                schedule = ent_copy.get("schedule")
+                if schedule is not None and hasattr(schedule, "to_dict"):
+                    ent_copy["schedule"] = schedule.to_dict()
+                body = ent_copy.get("body")
+                if body is not None and hasattr(body, "to_dict"):
+                    ent_copy["body"] = body.to_dict()
                 # Remove non-serializable entity_ref
                 ent_copy.pop("entity_ref", None)
                 serialized_entities[eid] = ent_copy
@@ -103,6 +160,8 @@ class SaveSystem:
         # NPC memory
         if session.npc_memory is not None:
             data["npc_memory"] = session.npc_memory.to_dict()
+        if session.cascade_engine is not None:
+            data["cascade_engine"] = session.cascade_engine.to_dict()
 
         # Location stock
         if session.location_stock is not None:
@@ -127,6 +186,10 @@ class SaveSystem:
         # History seed
         if session.history_seed is not None:
             data["history_seed"] = session.history_seed.to_dict()
+        data["quest_offers"] = list(getattr(session, "quest_offers", []))
+        data["campaign_state"] = dict(getattr(session, "campaign_state", {}))
+        data["narration_context"] = dict(getattr(session, "narration_context", {}))
+        data["last_save_slot"] = getattr(session, "last_save_slot", None)
 
         return data
 
@@ -154,6 +217,7 @@ class SaveSystem:
         from engine.world.history import HistorySeed
         from engine.world import WorldState
         from engine.npc.npc_memory import NPCMemoryManager
+        from engine.world.consequence import CascadeEngine
 
         # 1. Player character
         player = Character.from_dict(data["player"])
@@ -225,6 +289,9 @@ class SaveSystem:
                 session_id=data.get("session_id", "restored"),
                 data=data["npc_memory"],
             )
+        cascade_engine = CascadeEngine()
+        if "cascade_engine" in data:
+            cascade_engine.from_dict(data["cascade_engine"])
 
         # 15. Spatial index (rebuild from entity list)
         spatial_index = SpatialIndex()
@@ -256,10 +323,10 @@ class SaveSystem:
             location="Unknown",
             party=[player],
         )
-        session.combat = None
+        session.combat = SaveSystem._deserialize_combat(data.get("combat"), player)
         session.world_state = world_state
         session.npc_memory = npc_memory
-        session.cascade_engine = None
+        session.cascade_engine = cascade_engine
         session.created_at = (
             dt.fromisoformat(data["created_at"])
             if "created_at" in data
@@ -289,7 +356,18 @@ class SaveSystem:
             if isinstance(needs_data, dict):
                 from engine.world.npc_needs import NPCNeeds
                 ent["needs"] = NPCNeeds.from_dict(needs_data)
+            schedule_data = ent.get("schedule")
+            if isinstance(schedule_data, dict) and "npc_id" in schedule_data:
+                from engine.world.schedules import NPCSchedule
+                ent["schedule"] = NPCSchedule.from_dict(schedule_data)
+            body_data = ent.get("body")
+            if isinstance(body_data, dict):
+                ent["body"] = BodyPartTracker.from_dict(body_data)
         session.entities = raw_entities
+        session.quest_offers = list(data.get("quest_offers", []))
+        session.campaign_state = dict(data.get("campaign_state", {}))
+        session.narration_context = dict(data.get("narration_context", {}))
+        session.last_save_slot = data.get("last_save_slot")
 
         # Entity / Spatial / Viewport / AP fields
         session.map_data = map_data
@@ -313,9 +391,6 @@ class SaveSystem:
             session.world_state = WS(game_id=session.session_id)
         if session.npc_memory is None:
             session.npc_memory = NPCMemoryManager(session_id=session.session_id)
-        if session.cascade_engine is None:
-            from engine.world.consequence import CascadeEngine
-            session.cascade_engine = CascadeEngine()
         if session.game_time is None:
             session.game_time = LivingGameTime(hour=8)
         if session.name_gen is None:
@@ -346,6 +421,8 @@ class SaveSystem:
                 session.position[0], session.position[1],
                 radius=8,
             )
+        if hasattr(session, "ensure_consistency"):
+            session.ensure_consistency()
 
         return session
 
@@ -353,7 +430,13 @@ class SaveSystem:
     # Public API
     # ------------------------------------------------------------------
 
-    def save_game(self, session, slot_name: str = "autosave") -> str:
+    def save_game(
+        self,
+        session,
+        slot_name: str = "autosave",
+        *,
+        player_name: Optional[str] = None,
+    ) -> str:
         """Save full game state to a JSON file.
 
         Args:
@@ -363,13 +446,14 @@ class SaveSystem:
         Returns:
             Path to the saved file as string
         """
+        if hasattr(session, "last_save_slot"):
+            session.last_save_slot = slot_name
         state = self._serialize_session(session)
-
         save_data = {
             "schema_version": CURRENT_SCHEMA_VERSION,
             "slot_name": slot_name,
             "timestamp": datetime.now().isoformat(),
-            "player_name": session.player.name if session.player else "Unknown",
+            "player_name": player_name or (session.player.name if session.player else "Unknown"),
             "player_level": session.player.level if session.player else 1,
             "location": session.dm_context.location if session.dm_context else "Unknown",
             "game_time_display": (
@@ -392,7 +476,38 @@ class SaveSystem:
 
         return str(filepath)
 
-    def load_game(self, slot_name: str = "autosave"):
+    def read_save(self, slot_name: str) -> Optional[Dict[str, Any]]:
+        filepath = self.save_dir / f"{slot_name}.json"
+        if not filepath.exists():
+            return None
+        text = filepath.read_text(encoding="utf-8")
+        return json.loads(text)
+
+    def get_save_metadata(self, slot_name: str) -> Optional[Dict[str, Any]]:
+        try:
+            save_data = self.read_save(slot_name)
+        except json.JSONDecodeError:
+            return None
+        if save_data is None:
+            return None
+        return {
+            "slot_name": save_data.get("slot_name", slot_name),
+            "player_name": save_data.get("player_name", "Unknown"),
+            "player_level": save_data.get("player_level", 1),
+            "location": save_data.get("location", "Unknown"),
+            "timestamp": save_data.get("timestamp", ""),
+            "game_time": save_data.get("game_time_display", ""),
+            "schema_version": save_data.get("schema_version", ""),
+            "session_id": save_data.get("session_state", {}).get("session_id"),
+        }
+
+    def find_slot_by_session_id(self, session_id: str) -> Optional[str]:
+        for save in self.list_saves():
+            if save.get("session_id") == session_id:
+                return save.get("slot_name")
+        return None
+
+    def load_game(self, slot_name: str = "autosave", *, strict: bool = False):
         """Load game state from JSON file and reconstruct GameSession.
 
         Args:
@@ -401,29 +516,30 @@ class SaveSystem:
         Returns:
             Reconstructed GameSession, or None if file not found
         """
-        filename = f"{slot_name}.json"
-        filepath = self.save_dir / filename
-
-        if not filepath.exists():
-            return None
-
         try:
-            text = filepath.read_text(encoding="utf-8")
-            save_data = json.loads(text)
+            save_data = self.read_save(slot_name)
+            if save_data is None:
+                if strict:
+                    raise FileNotFoundError(slot_name)
+                return None
             state = save_data.get("session_state", {})
             if not state or "player" not in state:
+                if strict:
+                    raise ValueError(f"Corrupt save slot: {slot_name}")
                 return None  # Corrupt/incomplete save
             return self._deserialize_session(state)
         except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
+            if strict:
+                raise
             return None  # Corrupt save file
 
-    def list_saves(self) -> List[Dict]:
+    def list_saves(self, player_name: Optional[str] = None) -> List[Dict]:
         """List all save files with metadata (sorted newest first)."""
         saves = []
         for f in sorted(self.save_dir.glob("*.json"), key=os.path.getmtime, reverse=True):
             try:
                 data = json.loads(f.read_text(encoding="utf-8"))
-                saves.append({
+                entry = {
                     "slot_name": data.get("slot_name", f.stem),
                     "player_name": data.get("player_name", "Unknown"),
                     "player_level": data.get("player_level", 1),
@@ -431,7 +547,11 @@ class SaveSystem:
                     "timestamp": data.get("timestamp", ""),
                     "game_time": data.get("game_time_display", ""),
                     "schema_version": data.get("schema_version", ""),
-                })
+                    "session_id": data.get("session_state", {}).get("session_id"),
+                }
+                if player_name and entry["player_name"] != player_name:
+                    continue
+                saves.append(entry)
             except (json.JSONDecodeError, KeyError):
                 pass  # Skip corrupt files
         return saves

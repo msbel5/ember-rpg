@@ -21,14 +21,14 @@ Godot 4.6 Client (PC/Web)
     |
     | HTTP REST API
     |
-FastAPI Backend (Python 3.13)
+FastAPI Backend (Python 3.11+)
     |
-    +-- Game Engine (deterministic rules, combat, magic)
-    +-- Scene Orchestrator (map gen, entity placement, narrative)
-    +-- LLM Router (Claude Haiku / Sonnet via Copilot API)
-    +-- World State Ledger (persistent consequences)
-    +-- NPC Memory (per-NPC conversation history)
-    +-- Save/Load System (session persistence)
+    +-- GameSession (canonical runtime state: world, map, entities, quests, inventory)
+    +-- Game Engine (deterministic rules, combat, crafting, world tick)
+    +-- LLM Router (Claude Haiku / Sonnet / GPT fallback via Copilot API)
+    +-- Living World Systems (NPC schedules, rumors, economy, consequences)
+    +-- Full-Fidelity Save/Load (named slots + autosave restore)
+    +-- Terminal + Client Surfaces (shared map/spatial state)
 ```
 
 ## Quick Start
@@ -36,9 +36,9 @@ FastAPI Backend (Python 3.13)
 ### Backend (Raspberry Pi or any Linux)
 ```bash
 cd frp-backend
-python -m venv ../venv && source ../venv/bin/activate
+python3 -m venv ../venv && source ../venv/bin/activate
 pip install -r requirements.txt
-python main.py
+python3 main.py
 # API running at http://localhost:8000
 ```
 
@@ -60,20 +60,22 @@ ember-rpg/
 
 ## Current State (March 2026)
 
-- **Backend**: 872+ tests, 97% coverage, LLM-powered DM, combat, save/load
-- **Client**: First-person POV + tile map, AI narrative, entity fade-in, inventory
+- **Backend**: 1700+ tests, deterministic combat/magic/crafting, named-slot save/load, autosave restore, living-world NPC simulation
+- **Runtime**: `GameSession` is the canonical state for API, autosave, inventory/equipment, quests, and top-down rendering
+- **Living World**: NPC schedules and patrols move on the live spatial index every action; rumors, caravans, economy, and quest timers tick in the same loop
+- **Client**: First-person POV + tile map, AI narrative, shared session map rendering, live inventory/equipment state
 - **AI Art**: HuggingFace Flux Schnell integration tested (free, ~3s/image)
 - **Inspiration**: Dwarf Fortress (world sim), BBC Hitchhiker's Guide (illustrated text adventure), Doom (POV)
-- **Phase**: Active development — backend production-ready, POV + AI art pipeline in progress
+- **Phase**: Active development — backend core loop unified, Godot presentation and content breadth expanding
 
 ## Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
 | Game Client | Godot 4.6 (GDScript, Compatibility renderer) |
-| Backend | Python 3.13, FastAPI, Uvicorn |
+| Backend | Python 3.11+, FastAPI, Uvicorn |
 | AI Models | Claude Haiku 4.5 (narrative), Claude Sonnet 4.6 (key moments) |
-| Database | JSON files + SQLite (save system) |
+| Persistence | JSON save slots + autosave snapshots |
 | Hosting | Raspberry Pi 5 (backend), any PC (client) |
 | CI/CD | GitHub Actions (planned) |
 

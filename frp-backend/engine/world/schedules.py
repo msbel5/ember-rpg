@@ -61,6 +61,29 @@ class NPCSchedule:
         self._patrol_index += 1
         return pos
 
+    def to_dict(self) -> dict:
+        return {
+            "npc_id": self.npc_id,
+            "npc_name": self.npc_name,
+            "locations": dict(self.locations),
+            "positions": {key: list(value) for key, value in self.positions.items()},
+            "patrol_route": [list(pos) for pos in self.patrol_route] if self.patrol_route else None,
+            "_patrol_index": self._patrol_index,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "NPCSchedule":
+        patrol_route = data.get("patrol_route") or []
+        schedule = cls(
+            npc_id=data.get("npc_id", ""),
+            npc_name=data.get("npc_name", ""),
+            locations=dict(data.get("locations", {})),
+            positions={key: list(value) for key, value in data.get("positions", {}).items()},
+            patrol_route=[list(pos) for pos in patrol_route] or None,
+        )
+        schedule._patrol_index = data.get("_patrol_index", 0)
+        return schedule
+
 
 # Default NPC schedules by role
 DEFAULT_SCHEDULES = {

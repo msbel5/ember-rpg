@@ -3,6 +3,7 @@ Ember RPG - Core Engine
 Magic system (spells, spell points, casting)
 """
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Optional, TYPE_CHECKING
 from enum import Enum
 import json
@@ -163,7 +164,11 @@ class SpellDatabase:
         Args:
             filepath: Path to JSON file
         """
-        with open(filepath, 'r') as f:
+        path = Path(filepath)
+        if not path.exists():
+            path = Path(__file__).resolve().parents[2] / filepath
+
+        with path.open('r', encoding='utf-8') as f:
             data = json.load(f)
         
         for spell_data in data['spells']:

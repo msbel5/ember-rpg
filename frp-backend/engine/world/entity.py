@@ -158,8 +158,15 @@ class Entity:
             d["inventory"] = self.inventory
         if self.skills is not None:
             d["skills"] = self.skills
+        if self.body is not None:
+            d["body"] = self.body.to_dict()
         if self.faction is not None:
             d["faction"] = self.faction
+        if self.schedule is not None:
+            if hasattr(self.schedule, "to_dict"):
+                d["schedule"] = self.schedule.to_dict()
+            elif isinstance(self.schedule, dict):
+                d["schedule"] = self.schedule
         if self.job is not None:
             d["job"] = self.job
         return d
@@ -170,6 +177,13 @@ class Entity:
         needs = None
         if "needs" in data:
             needs = NPCNeeds.from_dict(data["needs"])
+        body = None
+        if "body" in data:
+            body = BodyPartTracker.from_dict(data["body"])
+        schedule = data.get("schedule")
+        if isinstance(schedule, dict) and "npc_id" in schedule and "npc_name" in schedule:
+            from engine.world.schedules import NPCSchedule
+            schedule = NPCSchedule.from_dict(schedule)
         return cls(
             id=data["id"],
             entity_type=EntityType(data["entity_type"]),
@@ -181,7 +195,9 @@ class Entity:
             needs=needs,
             inventory=data.get("inventory"),
             skills=data.get("skills"),
+            body=body,
             faction=data.get("faction"),
+            schedule=schedule,
             job=data.get("job"),
             alive=data.get("alive", True),
             hp=data.get("hp", 10),

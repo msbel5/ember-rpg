@@ -2,6 +2,7 @@
 Ember RPG - Shop/Merchant Endpoints (Deliverable 5)
 Players can buy/sell items through NPC merchants.
 """
+import copy
 import json
 import os
 from typing import List, Optional
@@ -67,6 +68,17 @@ def _require_session(session_id: str):
     session = sessions.get(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    legacy_inventory = list(getattr(session.player, "inventory", []) or [])
+    if legacy_inventory:
+        session.inventory = [session._normalize_item_record(item) for item in legacy_inventory]
+    legacy_equipment = dict(getattr(session.player, "equipment", {}) or {})
+    if legacy_equipment:
+        merged = dict(session.equipment or {})
+        for slot, item in legacy_equipment.items():
+            merged[slot] = item
+        session.equipment = merged
+    if hasattr(session, "ensure_consistency"):
+        session.ensure_consistency()
     return session
 
 
@@ -145,9 +157,12 @@ def buy_item(npc_id: str, req: BuyRequest):
 
     item = _get_item(req.item_id)
     session = _require_session(req.session_id)
+    if hasattr(session, "ensure_consistency"):
+        session.ensure_consistency()
     player = session.player
 
-    total_price = item.get("value", 0) * req.quantity
+    unit_price = item.get("value", 0)
+    total_price = unit_price * req.quantity
 
     # Check player gold
     player_gold = getattr(player, 'gold', 0)
@@ -157,14 +172,22 @@ def buy_item(npc_id: str, req: BuyRequest):
             detail=f"Insufficient gold. Need {total_price}g, have {player_gold}g"
         )
 
-    # Deduct gold
     player.gold -= total_price
 
-    # Add to inventory
-    if not hasattr(player, 'inventory'):
-        player.inventory = []
-    for _ in range(req.quantity):
-        player.inventory.append(req.item_id)
+    purchased_item = copy.deepcopy(item)
+    purchased_item["qty"] = req.quantity
+    if hasattr(session, "add_item"):
+        session.add_item(purchased_item)
+    else:
+        if not hasattr(player, "inventory"):
+            player.inventory = []
+        for _ in range(req.quantity):
+            player.inventory.append(req.item_id)
+
+    if getattr(session, "location_stock", None) is not None:
+        removed = session.location_stock.remove_stock(req.item_id, req.quantity)
+        if removed < req.quantity:
+            session.location_stock.add_stock(req.item_id, max(0, req.quantity - removed))
 
     return {
         "message": f"Purchased {req.quantity}x {item['name']} for {total_price}g",
@@ -182,28 +205,32 @@ def sell_item(npc_id: str, req: SellRequest):
 
     item = _get_item(req.item_id)
     session = _require_session(req.session_id)
+    if hasattr(session, "ensure_consistency"):
+        session.ensure_consistency()
     player = session.player
 
-    # Check player has item
-    inventory = getattr(player, 'inventory', [])
-    item_count = inventory.count(req.item_id)
-    if item_count < req.quantity:
+    owned_count = getattr(player, "inventory", []).count(req.item_id)
+    if owned_count < req.quantity:
         raise HTTPException(
             status_code=400,
-            detail=f"You don't have {req.quantity}x {req.item_id} to sell (have {item_count})"
+            detail=f"You don't have {req.quantity}x {req.item_id} to sell (have {owned_count})"
         )
 
     sell_price_each = int(item.get("value", 0) * 0.6)
     total_earned = sell_price_each * req.quantity
 
-    # Remove items from inventory
-    for _ in range(req.quantity):
-        player.inventory.remove(req.item_id)
+    if hasattr(session, "remove_item"):
+        for _ in range(req.quantity):
+            session.remove_item(req.item_id)
+    else:
+        for _ in range(req.quantity):
+            player.inventory.remove(req.item_id)
 
-    # Add gold
     if not hasattr(player, 'gold'):
         player.gold = 0
     player.gold += total_earned
+    if getattr(session, "location_stock", None) is not None:
+        session.location_stock.add_stock(req.item_id, req.quantity)
 
     return {
         "message": f"Sold {req.quantity}x {item['name']} for {total_earned}g",

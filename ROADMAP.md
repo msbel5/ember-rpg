@@ -1,6 +1,6 @@
 # Ember RPG — Master Roadmap
 # Based on market research: BG3, Skyrim AI mods, AI Dungeon, Hidden Door, Mantella
-# Last updated: 2026-03-23
+# Last updated: 2026-03-25
 
 ## Vision
 The first 2D RPG that combines **real game mechanics** (dice, stats, grid combat) with **AI narrative** (persistent memory, emergent quests, living world). No existing game does both well.
@@ -41,34 +41,32 @@ API layer, data, and content.
 | Rich DM Narratives | ✅ | 620 |
 | Content: 54 spells, 148 items, 37 monsters, 3 campaigns, 21 NPCs | ✅ | — |
 
-## Phase 3: World State & Memory 🔴 NEXT PRIORITY
-**This is our key differentiator.** No competitor does this well.
+## Phase 3: World State & Memory 🟡 CORE LOOP IMPLEMENTED
+**This is our key differentiator.** The core runtime pass is now in place; remaining work is content depth and tuning.
 
 ### 3a. World State Ledger
-- Structured JSON/SQLite tracking ALL world changes
-- Killed NPCs, completed quests, faction standings, building states
+- Canonical `GameSession` now owns world, map, entities, inventory, quests, narration context, and persistence
+- Full-fidelity save/load preserves combat, entity schedules, body state, ground items, fog, rumors, campaign state, and narration context
 - Fed to AI as context for every interaction
-- PRD needed: PRD_world_state.md
+- Ongoing: broaden cross-location persistence and faction-specific authored consequences
 
 ### 3b. Per-NPC Persistent Memory (Mantella-inspired)
-- Each NPC gets a memory file (JSON)
-- Stores: conversation summaries, relationship score, key facts, last interaction
-- Loaded into LLM context on interaction
-- NPCs reference past events naturally ("You helped me last week...")
-- PRD needed: PRD_npc_memory.md
+- NPC memory is stored with session state and stamped with in-game time instead of wall-clock time
+- Dialogue/trade prompts now receive stable world and relationship context
+- NPC schedules and patrol routes are serialized and restored with the session
+- Ongoing: richer long-term summarization across campaign-length play
 
 ### 3c. Consequence Cascading
-- Actions update world state → triggers downstream effects
-- Kill merchant → prices rise → town reputation drops → guards hostile
-- Quest outcomes affect faction standings
-- PRD needed: PRD_consequence_system.md
+- World tick now advances economy, caravans, rumor decay/spread, quest reminders/failures, and simple role-based production
+- Quest and derail actions surface visible downstream effects in state and narration
+- Combat outcomes sync back onto live entities, including HP/body-state changes
+- Ongoing: deeper faction politics and authored incident tables
 
 ### 3d. Emergent Quest Generation
-- AI reads world state ledger + NPC states
-- Generates quests from current world situation
-- "Blacksmith needs iron because goblins overran the mine you ignored"
-- Not pre-scripted quest trees — organic quest creation
-- PRD needed: PRD_emergent_quests.md
+- Deterministic quest flow now supports acceptance, reminder, completion, and failure in the shared world loop
+- Lightweight emergent quest offers are generated from shortages, unrest, deaths, and ignored threats
+- Merchant/guard/quest-giver conversations can surface these offers directly
+- Ongoing: expand authored quest archetypes and follow-up branches
 
 ## Phase 4: Real AI Integration 🔴
 Connect actual LLMs to the game engine.
@@ -158,13 +156,15 @@ Connect actual LLMs to the game engine.
 ### 7b. Additional Classes
 - Ranger, Paladin, Bard, Monk
 
-### 7c. Crafting System
-- Combine items to create new ones
-- Recipes discovered through exploration
+### 7c. Crafting System 🟡 V1 IMPLEMENTED
+- Recipe-based crafting now consumes canonical structured inventory records
+- Workstation entities exist on maps and long crafts can span multiple turns/AP windows
+- Ongoing: add more recipes, profession depth, and location-specific production chains
 
-### 7d. NPC Daily Schedules
-- NPCs move on map based on time-of-day
-- Merchant opens at 8am, tavern at 6pm, sleeps at 10pm
+### 7d. NPC Daily Schedules 🟡 V1 IMPLEMENTED
+- NPCs now spawn with schedules and patrol routes and move on the live spatial index
+- Behavior trees tick every action; rest and long actions advance the same loop
+- Ongoing: denser authored schedules, social gatherings, and reactive rerouting
 
 ### 7e. Weather & Time System
 - Day/night cycle affects gameplay

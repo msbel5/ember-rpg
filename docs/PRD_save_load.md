@@ -1,164 +1,164 @@
 # PRD: Save/Load System — Ember RPG Backend
 
-**Version:** 1.0  
-**Author:** Alcyone (Subagent)  
-**Date:** 2026-03-23  
-**Status:** Approved
+**Version:** 1.1  
+**Author:** Alcyone  
+**Date:** 2026-03-25  
+**Status:** Implemented
 
 ---
 
 ## 1. Overview & Goals
 
-The Save/Load system allows players to persist their game session state to disk, resume from a saved state, and manage multiple save files. This enables asynchronous play (start now, continue later) and protects against session loss due to disconnects or server restarts.
+The save/load system persists the full `GameSession` so a player can resume exactly where the simulation left off. The same serializer now powers autosave, manual save/load, restore-on-restart, REST routes, and natural-language engine commands.
 
 **Goals:**
 - Persist full session state as JSON on disk
-- Provide CRUD REST endpoints for save management
-- Support auto-save on every player action
-- Ensure thread-safe file operations for concurrent sessions
-- Version save files for future schema migrations
+- Use named save slots as the canonical save model
+- Restore per-session autosaves after restart
+- Expose `save/load/list/delete` through REST and engine intents
+- Preserve combat, world simulation, inventory/equipment, quest, and narration fidelity
 
 ---
 
 ## 2. Functional Requirements
 
-| ID    | Requirement |
-|-------|-------------|
-| FR-01 | The system SHALL save a session's state to a JSON file in the `saves/` directory |
-| FR-02 | Each save file SHALL include: `save_id`, `player_id`, `session_data`, `timestamp`, `schema_version` |
-| FR-03 | The system SHALL return a unique `save_id` upon successful save |
-| FR-04 | The system SHALL load (restore) session state from a save file given a `save_id` |
-| FR-05 | The system SHALL list all saves belonging to a given `player_id` |
-| FR-06 | The system SHALL delete a save file by `save_id` |
-| FR-07 | Auto-save SHALL be triggered after every player action (configurable flag) |
-| FR-08 | Thread-safe file writes SHALL be enforced via per-save-id file locks |
-| FR-09 | `schema_version` SHALL be set to `"1.0"` for all saves created by this system |
-| FR-10 | Loading a non-existent save SHALL raise a `SaveNotFoundError` |
-| FR-11 | Loading a corrupt/invalid JSON save SHALL raise a `CorruptSaveError` |
+| ID | Requirement |
+|----|-------------|
+| FR-01 | The system SHALL save a session to `saves/<slot_name>.json`. |
+| FR-02 | The save payload SHALL include `slot_name`, `player_name`, `session_state`, `timestamp`, `schema_version`, and session metadata. |
+| FR-03 | The serializer SHALL preserve combat state, map state, spatial entities, schedules, patrol routes, body trackers, fog, rumors, quests, inventory/equipment metadata, and narration context. |
+| FR-04 | The system SHALL support manual named slots via REST and natural-language commands such as `save`, `save as <slot>`, and `load <slot>`. |
+| FR-05 | The system SHALL support per-session autosave slots used for restore-on-restart. |
+| FR-06 | Ordinary session lookup SHALL restore from autosave only; manual saves are loaded explicitly. |
+| FR-07 | The system SHALL list saves globally or filtered by player name. |
+| FR-08 | The system SHALL delete a save by slot name. |
+| FR-09 | Loading a missing slot SHALL raise a missing-save error / return a clear user-facing message. |
+| FR-10 | Loading corrupt JSON SHALL raise a corrupt-save error. |
 
 ---
 
 ## 3. Non-Functional Requirements
 
-- **Performance:** Save/load operations complete in < 200ms for session data up to 1MB
-- **Reliability:** File writes are atomic (write-to-temp then rename) to prevent partial saves
-- **Portability:** Save files are plain JSON; no binary formats
-- **Testability:** SaveManager is fully unit-testable without a live FastAPI server
-- **Scalability:** Save directory supports thousands of save files (flat directory with player-prefixed filenames)
+- **Performance:** Save/load should complete in < 250ms for typical sessions.
+- **Reliability:** Writes must be atomic enough to avoid partial slot corruption.
+- **Portability:** Save files remain plain JSON.
+- **Compatibility:** Legacy route contracts may keep `save_id` as a field name, but it maps to the canonical slot name.
+- **Testability:** Save behavior must be testable without a running server.
 
 ---
 
 ## 4. Architecture & Data Model
 
 ### Directory Layout
-```
+
+```text
 frp-backend/
   saves/                  # runtime save files (git-ignored)
   engine/
-    save/
-      __init__.py         # SaveManager class
-      save_models.py      # SaveFile dataclass/Pydantic model
     api/
-      save_routes.py      # FastAPI router
+      save_system.py      # canonical serializer/deserializer
+      save_routes.py      # REST compatibility facade
 ```
 
-### Save File Format (JSON)
+### Save File Format
+
 ```json
 {
-  "save_id": "550e8400-e29b-41d4-a716-446655440000",
-  "player_id": "player_123",
-  "session_data": { ... },
-  "timestamp": "2026-03-23T12:00:00",
-  "schema_version": "1.0"
+  "slot_name": "quicksave",
+  "player_name": "Aria",
+  "timestamp": "2026-03-25T17:00:00",
+  "schema_version": "1.0",
+  "location": "Harbor Town",
+  "game_time": "Day 2 Hour 9",
+  "session_state": {
+    "session_id": "uuid",
+    "player": {},
+    "combat": {},
+    "inventory": [],
+    "equipment": {},
+    "quest_offers": [],
+    "campaign_state": {},
+    "narration_context": {}
+  }
 }
 ```
 
-### File Naming Convention
-`saves/{player_id}_{save_id}.json`
+### Naming
 
-### Thread Safety
-`threading.Lock` per `save_id` (keyed dict of locks in `SaveManager`).
+- Manual slots: `quicksave`, `before_mines`, `merchant_run_2`
+- Autosave slots: `autosave_<session_id>`
 
 ---
 
-## 5. API Endpoints
+## 5. Public API
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST   | `/game/session/{session_id}/save` | Save current session state |
-| GET    | `/game/saves/{player_id}` | List all saves for a player |
-| GET    | `/game/saves/file/{save_id}` | Get a specific save by ID |
-| DELETE | `/game/saves/{save_id}` | Delete a save |
-| POST   | `/game/session/load/{save_id}` | Load session from a save |
+| POST | `/game/session/{session_id}/save` | Save current session to a slot |
+| GET | `/game/saves/{player_id}` | List saves for a player |
+| GET | `/game/saves/file/{save_id}` | Get slot metadata |
+| DELETE | `/game/saves/{save_id}` | Delete a slot |
+| POST | `/game/session/load/{save_id}` | Load a session from a slot |
 
-### Request/Response Examples
+### Engine Commands
 
-**POST /game/session/{session_id}/save**
-- Body: `{ "player_id": "player_123" }`
-- Response: `{ "save_id": "uuid", "timestamp": "...", "schema_version": "1.0" }`
+- `save`
+- `save as <slot>`
+- `load <slot>`
+- `list saves`
+- `delete save <slot>`
 
-**GET /game/saves/{player_id}**
-- Response: `[ { "save_id": "...", "timestamp": "...", "schema_version": "1.0" }, ... ]`
-
-**POST /game/session/load/{save_id}**
-- Response: `{ "session_id": "...", "status": "loaded", "session_data": { ... } }`
+These commands do not advance the world tick.
 
 ---
 
 ## 6. Acceptance Criteria
 
-| AC    | Maps to | Criteria |
-|-------|---------|----------|
-| AC-01 | FR-01   | Calling save creates a `.json` file in `saves/` |
-| AC-02 | FR-03   | Save response contains a non-empty `save_id` string |
-| AC-03 | FR-04   | Loaded `session_data` matches what was saved |
-| AC-04 | FR-05   | List endpoint returns only saves for the given `player_id` |
-| AC-05 | FR-06   | After delete, the save file no longer exists on disk |
-| AC-06 | FR-10   | Loading a non-existent save raises `SaveNotFoundError` |
-| AC-07 | FR-11   | Loading a file with invalid JSON raises `CorruptSaveError` |
-| AC-08 | FR-09   | Every save file contains `schema_version == "1.0"` |
+| AC | Maps to | Criteria |
+|----|---------|----------|
+| AC-01 | FR-01 | Saving creates `saves/<slot>.json`. |
+| AC-02 | FR-03 | Load restores combat, entities, quests, inventory/equipment, and position losslessly. |
+| AC-03 | FR-04 | Engine save/load/list/delete intents work with named slots. |
+| AC-04 | FR-05 | Autosaves are written after player actions and can restore a session after restart. |
+| AC-05 | FR-06 | Deleting a live session does not auto-restore it from a manual save slot. |
+| AC-06 | FR-07 | Listing returns filtered saves for the specified player. |
+| AC-07 | FR-08 | Deleting a slot removes it from disk and from subsequent listings. |
+| AC-08 | FR-09 | Missing slots return a clear error. |
+| AC-09 | FR-10 | Corrupt JSON returns a clear corruption error. |
 
 ---
 
 ## 7. Edge Cases
 
-- **Concurrent saves for same player:** Each save gets a unique `save_id`; no overwrite
-- **Empty session_data:** Allowed; saves empty dict `{}`
-- **Player with no saves:** List returns empty list `[]`
-- **Delete non-existent save:** Raises `SaveNotFoundError`
-- **saves/ directory missing:** `SaveManager.__init__` creates it automatically
-- **Corrupt file (truncated JSON):** Detected on load; raises `CorruptSaveError`
-- **Very large session_data:** No artificial size cap; OS file limits apply
+- Re-saving an existing slot overwrites it atomically.
+- Sessions with no quests/combat still serialize as valid minimal saves.
+- Missing `saves/` directory is created automatically.
+- Manual saves remain available after a session is ended, but they are not used for implicit session restore.
+- Route compatibility keeps `save_id` in responses even though the backing model is slot-based.
 
 ---
 
 ## 8. Security Considerations
 
-- **Path traversal:** `player_id` and `save_id` are sanitized (alphanumeric + `-_` only) before use in filenames
-- **No authentication in v1:** All endpoints are open; authentication is out of scope (see Section 10)
-- **No secrets in session_data:** Caller responsibility; SaveManager does not inspect content
-- **File permissions:** `saves/` directory created with default umask; world-readable acceptable for single-user local server
+- Slot names are sanitized before being used as filenames.
+- No authentication is enforced in v1.
+- Save files are intended for single-user/self-hosted deployments.
 
 ---
 
 ## 9. Future Extensions
 
-- **Cloud save hooks:** Abstract `SaveManager` behind a `SaveBackend` protocol; swap local JSON for S3/GCS
-- **Multiplayer:** Tag saves with `session_id` + multiple `player_id`s; support shared session snapshots
-- **Schema migration:** `schema_version` field enables version-gated migration scripts (`migrate_1_0_to_1_1.py`)
-- **Compression:** Gzip large session blobs to reduce disk I/O
-- **Save slots UI:** Named save slots ("Before Boss Fight") stored as metadata alongside `save_id`
-- **Incremental saves:** Diff-based saves to store only changed state fields
+- Cloud or database-backed save providers behind the same interface
+- Save migration tooling for future schema versions
+- Richer slot metadata such as screenshots or labels
+- Compression for very large campaigns
 
 ---
 
 ## 10. Out of Scope
 
-- User authentication / authorization
-- Cloud or remote storage backends
-- Save encryption
-- Real-time sync between clients
-- Save file compression
-- GUI or frontend for save management
-- Database-backed saves (PostgreSQL, SQLite)
-- Automatic purging of old saves
+- Authentication / authorization
+- Cloud sync
+- Encryption
+- Multiplayer save coordination
+- Frontend save-slot UI

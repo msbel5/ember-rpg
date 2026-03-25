@@ -1,20 +1,30 @@
-# Ember RPG — Game Design Document v0.3
+# Ember RPG — Game Design Document v0.4
 **Project:** Ember RPG
-**Version:** 0.3 (World Simulation + AI Art Vision)
-**Date:** 2026-03-24
+**Version:** 0.4 (Runtime Unification + Living World Pass)
+**Date:** 2026-03-25
 **Authors:** Mami + Alcyone + Claude Code
 **Status:** Active Development
 
 ---
 
-## What Changed from v0.2
+## What Changed from v0.3
 
-v0.2 defined core mechanics (d20, 6 stats, 3AP combat, spell points). All implemented, 872+ tests.
+v0.3 defined the target shape of the living world and art pipeline.
 
-v0.3 adds three transformative layers:
-1. **Dwarf Fortress-inspired world simulation** — coherent, living maps
-2. **AI-generated layered art pipeline** — unique illustrations per scene
-3. **Hitchhiker's Guide interface** — text adventure + illustrated POV
+v0.4 records the runtime pass now implemented in the backend:
+1. **Canonical session state** — `GameSession` owns world, map, entities, inventory, quests, narration context, and persistence
+2. **Full-fidelity save/load** — named slots plus autosave restore serialize the same shared state the API and clients use
+3. **Visible world autonomy** — NPC schedules and patrols tick every action and move on the live spatial index
+4. **Unified inventory/crafting/economy loop** — structured items, equipment, ground items, workstations, and merchant stock interact through one system
+5. **Shared top-down runtime** — terminal rendering now reflects the actual session map instead of a disconnected duplicate world
+
+## Implementation Status (2026-03-25)
+
+- Backend runtime is unified around one mutable session object rather than split route/client snapshots.
+- Save/load roundtrips preserve combat state, body trackers, entity schedules, ground items, fog of war, quests, and narration context.
+- Hit-location combat and armor/equipment mitigation now affect real HP/body state without double-applying damage.
+- Crafting uses real workstation entities, supports multi-turn recipes, and preserves item metadata through pickup/drop/equip/craft flows.
+- Quest flow supports acceptance, reminders, completion, failure, and lightweight emergent offers in the same world tick that drives economy and rumors.
 
 ---
 

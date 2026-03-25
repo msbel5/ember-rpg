@@ -666,7 +666,8 @@ class CraftingSystem:
         for entity in spatial_index.in_radius(px, py, 2):
             etype = getattr(entity, "entity_type", None)
             ename = getattr(entity, "name", getattr(entity, "id", ""))
-            if etype in ("BUILDING", "FURNITURE", "workstation"):
+            etype_value = getattr(etype, "value", str(etype)).lower()
+            if etype_value in ("building", "furniture", "workstation"):
                 if workstation_type.lower() in ename.lower():
                     return entity
         return None

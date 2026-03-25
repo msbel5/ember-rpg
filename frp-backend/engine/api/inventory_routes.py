@@ -1,42 +1,19 @@
 """
 Ember RPG - Inventory Routes
-Player inventory management endpoints
+Player inventory management endpoints.
 """
+from __future__ import annotations
+
+import copy
+import uuid
+from typing import Dict
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Optional
+
+from engine.world.entity import Entity, EntityType
 
 router = APIRouter()
-
-# Item slot mapping by item ID keywords
-ITEM_SLOTS = {
-    "sword": "weapon",
-    "axe": "weapon",
-    "bow": "weapon",
-    "staff": "weapon",
-    "wand": "weapon",
-    "dagger": "weapon",
-    "shortsword": "weapon",
-    "longsword": "weapon",
-    "mace": "weapon",
-    "armor": "armor",
-    "shield": "offhand",
-    "helmet": "helmet",
-    "boots": "boots",
-    "gloves": "gloves",
-    "ring": "ring",
-    "amulet": "amulet",
-    "cloak": "cloak",
-}
-
-
-def _infer_slot(item_id: str) -> str:
-    """Infer equipment slot from item ID."""
-    item_lower = item_id.lower()
-    for keyword, slot in ITEM_SLOTS.items():
-        if keyword in item_lower:
-            return slot
-    return "misc"
 
 
 class EquipRequest(BaseModel):
@@ -52,75 +29,103 @@ def _get_sessions():
     return _sessions
 
 
-@router.get("/session/{session_id}/inventory")
-def get_inventory(session_id: str):
-    sessions = _get_sessions()
-    session = sessions.get(session_id)
+def _require_session(session_id: str):
+    session = _get_sessions().get(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    legacy_inventory = list(getattr(session.player, "inventory", []) or [])
+    if legacy_inventory:
+        session.inventory = [session._normalize_item_record(item) for item in legacy_inventory]
+    legacy_equipment = dict(getattr(session.player, "equipment", {}) or {})
+    if legacy_equipment:
+        merged = dict(session.equipment or {})
+        for slot, item in legacy_equipment.items():
+            merged[slot] = item
+        session.equipment = merged
+    if hasattr(session, "ensure_consistency"):
+        session.ensure_consistency()
+    return session
+
+
+def _legacy_inventory(session) -> list:
+    if hasattr(session, "inventory_item_ids"):
+        return session.inventory_item_ids()
+    return list(getattr(session.player, "inventory", []))
+
+
+def _legacy_equipment(session) -> Dict[str, str]:
+    if hasattr(session, "equipment_ids"):
+        return {slot: item_id for slot, item_id in session.equipment_ids().items() if item_id}
+    return dict(getattr(session.player, "equipment", {}))
+
+
+@router.get("/session/{session_id}/inventory")
+def get_inventory(session_id: str):
+    session = _require_session(session_id)
     return {
         "session_id": session_id,
-        "inventory": list(session.player.inventory),
-        "gold": session.player.gold,
+        "inventory": _legacy_inventory(session),
+        "items": copy.deepcopy(getattr(session, "inventory", [])),
+        "gold": getattr(session.player, "gold", 0),
     }
 
 
 @router.post("/session/{session_id}/inventory/equip")
 def equip_item(session_id: str, body: EquipRequest):
-    sessions = _get_sessions()
-    session = sessions.get(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    item_id = body.item_id
-    if item_id not in session.player.inventory:
-        raise HTTPException(status_code=404, detail=f"Item '{item_id}' not in inventory")
-    
-    slot = _infer_slot(item_id)
-    # Unequip previous item in slot (put back to inventory)
-    if slot in session.player.equipment:
-        old_item = session.player.equipment[slot]
-        if old_item not in session.player.inventory:
-            session.player.inventory.append(old_item)
-    
-    session.player.equipment[slot] = item_id
-    
+    session = _require_session(session_id)
+    equipped = session.equip_item(body.item_id) if hasattr(session, "equip_item") else None
+    if equipped is None:
+        raise HTTPException(status_code=404, detail=f"Item '{body.item_id}' not in inventory")
+
     return {
         "session_id": session_id,
-        "equipped": item_id,
-        "slot": slot,
-        "equipment": dict(session.player.equipment),
+        "equipped": equipped.get("id", body.item_id),
+        "item": copy.deepcopy(equipped),
+        "slot": equipped.get("slot", ""),
+        "equipment": _legacy_equipment(session),
+        "equipment_items": copy.deepcopy(getattr(session, "equipment", {})),
     }
 
 
 @router.post("/session/{session_id}/inventory/drop")
 def drop_item(session_id: str, body: DropRequest):
-    sessions = _get_sessions()
-    session = sessions.get(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    item_id = body.item_id
-    if item_id not in session.player.inventory:
-        raise HTTPException(status_code=404, detail=f"Item '{item_id}' not in inventory")
-    
-    session.player.inventory.remove(item_id)
-    
+    session = _require_session(session_id)
+    dropped = session.remove_item(body.item_id) if hasattr(session, "remove_item") else None
+    if dropped is None:
+        raise HTTPException(status_code=404, detail=f"Item '{body.item_id}' not in inventory")
+
+    px, py = session.position[0], session.position[1]
+    ground_id = dropped.get("ground_instance_id") or dropped.get("instance_id") or f"ground-{uuid.uuid4().hex[:8]}"
+    dropped["ground_instance_id"] = ground_id
+    item_entity = Entity(
+        id=ground_id,
+        entity_type=EntityType.ITEM,
+        name=dropped.get("name", dropped.get("id", "Item")),
+        position=(px, py),
+        glyph="!",
+        color="yellow",
+        blocking=False,
+        inventory=[copy.deepcopy(dropped)],
+    )
+    if session.spatial_index:
+        session.spatial_index.add(item_entity)
+    if hasattr(session, "sync_player_state"):
+        session.sync_player_state()
+
     return {
         "session_id": session_id,
-        "dropped": item_id,
-        "inventory": list(session.player.inventory),
+        "dropped": dropped.get("id", body.item_id),
+        "item": copy.deepcopy(dropped),
+        "inventory": _legacy_inventory(session),
+        "items": copy.deepcopy(getattr(session, "inventory", [])),
     }
 
 
 @router.get("/session/{session_id}/inventory/equipped")
 def get_equipped(session_id: str):
-    sessions = _get_sessions()
-    session = sessions.get(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
+    session = _require_session(session_id)
     return {
         "session_id": session_id,
-        "equipped": dict(session.player.equipment),
+        "equipped": _legacy_equipment(session),
+        "equipment": copy.deepcopy(getattr(session, "equipment", {})),
     }

@@ -2,8 +2,8 @@
 **Project:** Ember RPG  
 **Phase:** 3  
 **Author:** Alcyone (CAPTAIN)  
-**Date:** 2026-03-23  
-**Status:** Implemented  
+**Date:** 2026-03-25  
+**Status:** Implemented v1.1  
 
 ---
 
@@ -17,25 +17,24 @@ The API Layer exposes all game engine functionality as an HTTP REST API. It brid
 
 **In scope:**
 - ActionParser: natural language → structured intent (Turkish + English)
-- GameSession: per-player state container (UUID-keyed)
-- GameEngine: orchestrates Phase 2 systems per action intent
-- FastAPI routes: session CRUD + action endpoint
+- GameSession: canonical per-player runtime state container
+- GameEngine: orchestrates combat, crafting, living-world ticking, and save intents
+- FastAPI routes: session CRUD + action endpoint + map endpoint + save endpoints
 - Pydantic request/response models
-- In-memory session store (MVP)
+- In-memory session store with autosave-backed restore
 
 **Out of scope:**
 - Authentication / authorization (→ future Multiplayer phase)
-- Persistent session storage (→ Database phase)
+- Database-backed persistence (local JSON save slots are in scope)
 - WebSocket for real-time updates (→ Multiplayer phase)
 - Rate limiting (→ Production Ops phase)
-- NPC interaction endpoint (→ Phase 5 API extension)
-- Map endpoint (→ Phase 4 API extension)
+- Multiplayer state sync
 
 ---
 
 ## 3. Functional Requirements
 
-**FR-01:** `ActionParser.parse(text)` detects one of 8 intents (ATTACK, CAST_SPELL, USE_ITEM, MOVE, TALK, EXAMINE, REST, OPEN) or UNKNOWN. Supports Turkish and English.
+**FR-01:** `ActionParser.parse(text)` detects gameplay and system intents, including save/load/list/delete. Supports Turkish and English.
 
 **FR-02:** `ActionParser` uses priority-ordered keyword matching; more specific intents are checked before generic ones to avoid false matches.
 
@@ -43,13 +42,13 @@ The API Layer exposes all game engine functionality as an HTTP REST API. It brid
 
 **FR-04:** `GameEngine.new_session()` creates a session with a UUID, initializes Character with class-appropriate stats, and sets scene to EXPLORATION.
 
-**FR-05:** `GameEngine.process_action()` routes each intent to a handler, advances the turn counter, and returns an `ActionResult` with narrative and state.
+**FR-05:** `GameEngine.process_action()` routes each intent to a handler, advances the turn counter for gameplay actions, and returns an `ActionResult` with narrative and state.
 
 **FR-06:** `POST /game/session/new` returns session_id, narrative, player state, scene, and location.
 
 **FR-07:** `POST /game/session/{id}/action` accepts `{"input": str}`, returns narrative + player state + optional combat state.
 
-**FR-08:** `GET /game/session/{id}` returns full session state.
+**FR-08:** `GET /game/session/{id}` returns full canonical session state.
 
 **FR-09:** `DELETE /game/session/{id}` removes session; subsequent GET returns 404.
 
@@ -60,6 +59,12 @@ The API Layer exposes all game engine functionality as an HTTP REST API. It brid
 **FR-12:** When no LLM is configured, `GameEngine` uses template-based `DMAIAgent.narrate()` for all narratives.
 
 **FR-13:** When an LLM callable is injected into `GameEngine`, it is passed to `DMAIAgent.narrate()` for every action.
+
+**FR-14:** `GET /game/session/{id}/map` returns the session's real map state, not a duplicate world.
+
+**FR-15:** Session/action responses SHALL expose structured inventory, equipment, AP, quest, and ground-item state derived from the canonical `GameSession`.
+
+**FR-16:** Manual save slots SHALL be loaded explicitly; implicit session restore SHALL use autosave only.
 
 ---
 
@@ -100,6 +105,8 @@ class SessionStateResponse(BaseModel):
     turn: int
 ```
 
+`player` and top-level state now also carry structured inventory/equipment, AP, quest offer, and map-adjacent state used by the terminal client.
+
 ---
 
 ## 5. Public API
@@ -113,14 +120,20 @@ class SessionStateResponse(BaseModel):
 | `GET` | `/game/session/{id}` | Get session state |
 | `POST` | `/game/session/{id}/action` | Submit player action |
 | `DELETE` | `/game/session/{id}` | End session |
+| `GET` | `/game/session/{id}/map` | Get the session's current map |
+| `POST` | `/game/session/{id}/save` | Save to a named slot |
+| `GET` | `/game/saves/{player_id}` | List save slots for a player |
+| `POST` | `/game/session/load/{save_id}` | Load a named slot |
+| `DELETE` | `/game/saves/{save_id}` | Delete a save slot |
 
 ### `GameEngine.new_session(player_name, player_class, location=None) -> GameSession`
 - Default stats per class: warrior (MIG 16), mage (MND 16), rogue (AGI 16), priest (INS 16)
 - Random opening location if none provided
 
 ### `GameEngine.process_action(session, input_text) -> ActionResult`
-- Always advances `session.dm_context.turn`
-- Routes to handler: attack, spell, talk, rest, move, examine, open, use_item, unknown
+- Advances `session.dm_context.turn` for gameplay actions
+- Does not advance world time for save/list/load/delete system intents
+- Routes to combat, spell, talk, rest, move, examine, open, use_item, inventory, equip/drop/pickup, craft, save/list/load/delete, and unknown handlers
 - Returns `ActionResult(narrative, events, state_changes, scene_type, combat_state, level_up)`
 
 ---
@@ -161,6 +174,12 @@ class SessionStateResponse(BaseModel):
 
 **AC-17 [FR-13]:** `GameEngine(llm=mock_fn).process_action(session, "incele")` → narrative == mock_fn return value
 
+**AC-18 [FR-14]:** `GET /game/session/{id}/map` returns the same map state the session uses internally.
+
+**AC-19 [FR-15]:** Inventory/equipment/AP values in action responses match the values in the session serializer.
+
+**AC-20 [FR-16]:** Deleting a session does not auto-restore it from a manual save slot.
+
 ---
 
 ## 7. Performance Requirements
@@ -191,10 +210,11 @@ class SessionStateResponse(BaseModel):
 ## 10. Test Coverage Target
 
 - Minimum: **90%** across `engine/api/` and `main.py`
-- Must test: all 8 ActionParser intents (TR+EN), all route endpoints (TestClient), LLM mock path, rest in/out of combat, session lifecycle
+- Must test: gameplay intents, save/list/load/delete intents, route endpoints (TestClient), LLM mock path, rest in/out of combat, session lifecycle, manual-save-vs-autosave restore boundary
 
 ---
 
 ## Changelog
 
 - 2026-03-23: Rewritten to PRD standard (post-implementation)
+- 2026-03-25: Updated for canonical `GameSession`, map endpoint behavior, structured state responses, and slot-based save semantics

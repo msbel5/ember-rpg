@@ -25,6 +25,7 @@ class EventType(Enum):
     ENCOUNTER = "encounter"
     DISCOVERY = "discovery"
     DIALOGUE = "dialogue"
+    COMBAT = "combat"
     COMBAT_START = "combat_start"
     COMBAT_END = "combat_end"
     COMBAT_END_VICTORY = "combat_end_victory"
@@ -97,6 +98,12 @@ NARRATIVE_TEMPLATES: dict = {
         "{player_name} settles into a brief rest, letting the tension of {location} ease from their muscles.",
         "A moment of stillness in {location} — {player_name} breathes, recovers, prepares for what lies ahead.",
         "Exhaustion yields to rest. {player_name} closes their eyes briefly, gathering strength.",
+    ],
+
+    EventType.COMBAT: [
+        "{description}",
+        "Steel flashes and boots scrape stone. {description}",
+        "Violence breaks across the moment in a hard, sudden burst. {description}",
     ],
 
     EventType.COMBAT_START: [

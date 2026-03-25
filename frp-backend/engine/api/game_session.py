@@ -3,8 +3,9 @@ Ember RPG - API Layer
 GameSession: per-player game state container
 """
 from dataclasses import dataclass, field
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Any
 from datetime import datetime
+import copy
 import uuid
 
 from engine.core.character import Character
@@ -29,7 +30,25 @@ from engine.world.entity import Entity, EntityType
 from engine.world.spatial_index import SpatialIndex
 from engine.world.viewport import Viewport
 from engine.world.action_points import ActionPointTracker, CLASS_AP
-from engine.map import MapData, TownGenerator
+from engine.map import MapData, TownGenerator, DungeonGenerator, WildernessGenerator
+
+
+DEFAULT_EQUIPMENT_SLOTS = {
+    "weapon": None,
+    "armor": None,
+    "shield": None,
+    "helmet": None,
+    "boots": None,
+    "gloves": None,
+    "ring": None,
+    "amulet": None,
+}
+
+LEGACY_SLOT_ALIASES = {
+    "offhand": "shield",
+    "off_hand": "shield",
+    "accessory": "ring",
+}
 
 
 @dataclass
@@ -67,6 +86,10 @@ class GameSession:
     caravan_manager: Optional[CaravanManager] = None
     history_seed: Optional[HistorySeed] = None
     entities: Dict = field(default_factory=dict)
+    quest_offers: List[Dict[str, Any]] = field(default_factory=list)
+    campaign_state: Dict[str, Any] = field(default_factory=dict)
+    narration_context: Dict[str, Any] = field(default_factory=dict)
+    last_save_slot: Optional[str] = None
 
     # --- Entity / Spatial / Viewport / AP fields ---
     map_data: Optional[MapData] = None
@@ -75,10 +98,7 @@ class GameSession:
     player_entity: Optional[Entity] = None
     ap_tracker: Optional[ActionPointTracker] = None
     inventory: List[Dict] = field(default_factory=list)
-    equipment: Dict[str, Optional[Dict]] = field(default_factory=lambda: {
-        "weapon": None, "armor": None, "shield": None, "helmet": None,
-        "boots": None, "gloves": None, "ring": None, "amulet": None,
-    })
+    equipment: Dict[str, Optional[Dict]] = field(default_factory=lambda: dict(DEFAULT_EQUIPMENT_SLOTS))
 
     def __post_init__(self):
         if self.world_state is None:
@@ -112,9 +132,14 @@ class GameSession:
 
         # --- Initialize map, spatial index, viewport ---
         if self.map_data is None:
-            import random as _rng
             seed = hash(self.session_id) % 1000000
-            gen = TownGenerator(seed=seed)
+            location = (self.dm_context.location if self.dm_context else "").lower()
+            if any(word in location for word in ["dungeon", "cave", "crypt", "ruin", "tower", "keep"]):
+                gen = DungeonGenerator(seed=seed)
+            elif any(word in location for word in ["forest", "road", "wilderness", "swamp", "wilds"]):
+                gen = WildernessGenerator(seed=seed)
+            else:
+                gen = TownGenerator(seed=seed)
             self.map_data = gen.generate(width=48, height=48)
 
         # Set player position to map spawn point if still at default origin
@@ -160,6 +185,16 @@ class GameSession:
                 player_class = next(iter(self.player.classes), "warrior") if self.player.classes else "warrior"
             max_ap = CLASS_AP.get(player_class, 4)
             self.ap_tracker = ActionPointTracker(max_ap=max_ap)
+        if not self.campaign_state:
+            self.campaign_state = {
+                "active_quests": [],
+                "completed_quests": [],
+                "failed_quests": [],
+                "completed_quest_ids": [],
+                "failed_quest_ids": [],
+                "emergent_counter": 0,
+            }
+        self.ensure_consistency()
 
     def touch(self):
         """Update last_action timestamp."""
@@ -169,22 +204,323 @@ class GameSession:
         """Return True if session has active combat."""
         return self.combat is not None and not self.combat.combat_ended
 
+    @staticmethod
+    def _canonical_slot(slot: Optional[str]) -> Optional[str]:
+        if slot is None:
+            return None
+        slot_lower = slot.lower().strip()
+        return LEGACY_SLOT_ALIASES.get(slot_lower, slot_lower)
+
+    @staticmethod
+    def _display_name(item_id: str) -> str:
+        return item_id.replace("_", " ").strip().title() or "Unknown Item"
+
+    @classmethod
+    def _infer_slot(cls, item: Dict[str, Any]) -> Optional[str]:
+        item_type = str(item.get("type", "")).lower()
+        item_id = str(item.get("id", "")).lower()
+        name = str(item.get("name", "")).lower()
+        slot = cls._canonical_slot(item.get("slot"))
+        if slot:
+            return slot
+        candidates = f"{item_type} {item_id} {name}"
+        if "shield" in candidates or item_type == "shield":
+            return "shield"
+        if "helmet" in candidates or "helm" in candidates:
+            return "helmet"
+        if "boot" in candidates:
+            return "boots"
+        if "glove" in candidates or "gauntlet" in candidates:
+            return "gloves"
+        if "ring" in candidates:
+            return "ring"
+        if "amulet" in candidates or "necklace" in candidates:
+            return "amulet"
+        if "armor" in candidates or "mail" in candidates or "robe" in candidates:
+            return "armor"
+        if item_type == "weapon" or any(word in candidates for word in ["sword", "axe", "dagger", "mace", "staff", "bow", "wand", "hammer"]):
+            return "weapon"
+        return None
+
+    @classmethod
+    def _normalize_item_record(cls, item: Any) -> Dict[str, Any]:
+        if isinstance(item, str):
+            data: Dict[str, Any] = {"id": item, "name": cls._display_name(item), "qty": 1}
+        else:
+            data = dict(item or {})
+        item_id = str(data.get("id") or data.get("item_id") or data.get("name", "")).strip()
+        if not item_id:
+            item_id = f"item_{uuid.uuid4().hex[:8]}"
+        data["id"] = item_id
+        data["name"] = str(data.get("name") or cls._display_name(item_id))
+        qty = data.get("qty", data.get("quantity", 1))
+        try:
+            data["qty"] = max(1, int(qty))
+        except (TypeError, ValueError):
+            data["qty"] = 1
+        slot = cls._infer_slot(data)
+        if slot:
+            data["slot"] = slot
+        data.setdefault("type", slot or "item")
+        quality = data.get("quality")
+        if hasattr(quality, "value"):
+            data["quality"] = quality.value
+        data.setdefault("instance_id", data.get("ground_instance_id") or f"{item_id}-{uuid.uuid4().hex[:8]}")
+        if data.get("ground_instance_id") is None and data.get("entity_id"):
+            data["ground_instance_id"] = data["entity_id"]
+        return data
+
+    @classmethod
+    def _item_stack_key(cls, item: Dict[str, Any]) -> tuple:
+        return (
+            item.get("id"),
+            item.get("name"),
+            item.get("type"),
+            item.get("slot"),
+            item.get("material"),
+            item.get("quality"),
+            item.get("damage"),
+            item.get("ac_bonus"),
+            item.get("heal"),
+            item.get("restore_sp"),
+            item.get("uses"),
+        )
+
+    @classmethod
+    def _is_stackable(cls, item: Dict[str, Any]) -> bool:
+        if item.get("slot"):
+            return False
+        if item.get("uses") is not None:
+            return False
+        return item.get("type") not in {"weapon", "armor", "shield"}
+
+    @staticmethod
+    def _armor_type_from_item(item: Optional[Dict[str, Any]]) -> str:
+        if not item:
+            return "none"
+        candidates = f"{item.get('id', '')} {item.get('name', '')} {item.get('material', '')}".lower()
+        if "plate" in candidates or item.get("material") == "steel":
+            return "plate_armor"
+        if "chain" in candidates or item.get("material") == "iron":
+            return "chain_mail"
+        if "leather" in candidates:
+            return "leather"
+        if "robe" in candidates or "cloth" in candidates:
+            return "cloth"
+        return "none"
+
+    @staticmethod
+    def _armor_tokens(slot: str, item: Dict[str, Any]) -> List[str]:
+        candidates = f"{item.get('id', '')} {item.get('name', '')} {item.get('material', '')}".lower()
+        if slot == "helmet":
+            return ["helmet"]
+        if slot == "shield":
+            return ["shield"]
+        if slot == "gloves":
+            return ["gauntlets"]
+        if slot == "boots":
+            return ["boots"]
+        if slot != "armor":
+            return []
+        if "plate" in candidates:
+            return ["breastplate"]
+        if "chain" in candidates or item.get("material") in {"iron", "steel"}:
+            return ["chainmail"]
+        if "leather" in candidates:
+            return ["boots"]
+        return []
+
+    def inventory_item_ids(self) -> List[str]:
+        ids: List[str] = []
+        for item in self.inventory:
+            ids.extend([item.get("id", "")] * max(1, int(item.get("qty", 1))))
+        return [item_id for item_id in ids if item_id]
+
+    def equipment_ids(self) -> Dict[str, Optional[str]]:
+        equipment_ids: Dict[str, Optional[str]] = {}
+        for slot in DEFAULT_EQUIPMENT_SLOTS:
+            item = self.equipment.get(slot)
+            if item:
+                equipment_ids[slot] = item.get("id")
+        if equipment_ids.get("shield"):
+            equipment_ids["offhand"] = equipment_ids["shield"]
+        return equipment_ids
+
+    def ensure_consistency(self) -> None:
+        raw_inventory = list(self.inventory or [])
+        if not raw_inventory and hasattr(self.player, "inventory"):
+            raw_inventory = list(getattr(self.player, "inventory", []) or [])
+        normalized_inventory: List[Dict[str, Any]] = []
+        for item in raw_inventory:
+            normalized = self._normalize_item_record(item)
+            if self._is_stackable(normalized):
+                existing = next(
+                    (entry for entry in normalized_inventory if self._item_stack_key(entry) == self._item_stack_key(normalized)),
+                    None,
+                )
+                if existing is not None:
+                    existing["qty"] += normalized.get("qty", 1)
+                    continue
+            normalized_inventory.append(normalized)
+        self.inventory = normalized_inventory
+
+        merged_equipment = dict(DEFAULT_EQUIPMENT_SLOTS)
+        raw_equipment = dict(self.equipment or {})
+        if not any(raw_equipment.values()) and hasattr(self.player, "equipment"):
+            raw_equipment.update(getattr(self.player, "equipment", {}) or {})
+        for slot_name, item in raw_equipment.items():
+            slot = self._canonical_slot(slot_name)
+            if slot not in merged_equipment:
+                continue
+            if item is None:
+                merged_equipment[slot] = None
+            elif isinstance(item, str):
+                inv_item = next((entry for entry in self.inventory if entry.get("id") == item), None)
+                merged_equipment[slot] = copy.deepcopy(inv_item) if inv_item else self._normalize_item_record({"id": item, "slot": slot})
+            else:
+                normalized = self._normalize_item_record(item)
+                normalized["slot"] = slot
+                merged_equipment[slot] = normalized
+        self.equipment = merged_equipment
+        self.sync_player_state()
+
+    def sync_player_state(self) -> None:
+        if self.player is None:
+            return
+        self.player.inventory = self.inventory_item_ids()
+        self.player.equipment = self.equipment_ids()
+        base_ac = getattr(self.player, "base_ac", None)
+        if base_ac is None:
+            base_ac = getattr(self.player, "_base_ac", self.player.ac or 10)
+        self.player.base_ac = base_ac
+        self.player._base_ac = base_ac
+        armor_bonus = sum((item or {}).get("ac_bonus", 0) for item in self.equipment.values())
+        self.player.ac = base_ac + armor_bonus
+        equipped_armor: List[str] = []
+        for slot, item in self.equipment.items():
+            if item:
+                equipped_armor.extend(self._armor_tokens(slot, item))
+        self.player.equipped_armor = equipped_armor
+        weapon = self.equipment.get("weapon")
+        self.player.weapon_material = (weapon or {}).get("material", "iron")
+        if self.ap_tracker is not None:
+            self.player.ap = self.ap_tracker.current_ap
+            self.player.max_ap = self.ap_tracker.max_ap
+            self.ap_tracker.set_armor(self._armor_type_from_item(self.equipment.get("armor")))
+        if self.player_entity is not None:
+            self.player_entity.hp = self.player.hp
+            self.player_entity.max_hp = self.player.max_hp
+            self.player_entity.position = tuple(self.position)
+        if self.dm_context is not None:
+            self.dm_context.party = [self.player]
+
+    def add_item(self, item: Any, merge: bool = True) -> Dict[str, Any]:
+        normalized = self._normalize_item_record(item)
+        if merge and self._is_stackable(normalized):
+            existing = next(
+                (entry for entry in self.inventory if self._item_stack_key(entry) == self._item_stack_key(normalized)),
+                None,
+            )
+            if existing is not None:
+                existing["qty"] += normalized.get("qty", 1)
+                self.sync_player_state()
+                return existing
+        self.inventory.append(normalized)
+        self.sync_player_state()
+        return normalized
+
+    def find_inventory_item(self, query: str) -> Optional[Dict[str, Any]]:
+        query_lower = (query or "").lower().strip()
+        if not query_lower:
+            return None
+        for item in self.inventory:
+            if query_lower in {
+                str(item.get("id", "")).lower(),
+                str(item.get("instance_id", "")).lower(),
+                str(item.get("ground_instance_id", "")).lower(),
+            }:
+                return item
+            if query_lower in str(item.get("name", "")).lower() or query_lower in str(item.get("id", "")).lower():
+                return item
+        return None
+
+    def remove_item(self, query: str, quantity: int = 1) -> Optional[Dict[str, Any]]:
+        item = self.find_inventory_item(query)
+        if item is None:
+            return None
+        qty = max(1, quantity)
+        if item.get("qty", 1) > qty:
+            item["qty"] -= qty
+            detached = copy.deepcopy(item)
+            detached["qty"] = qty
+            detached["instance_id"] = f"{detached['id']}-{uuid.uuid4().hex[:8]}"
+            self.sync_player_state()
+            return detached
+        self.inventory.remove(item)
+        self.sync_player_state()
+        return item
+
+    def equip_item(self, query: str) -> Optional[Dict[str, Any]]:
+        item = self.remove_item(query)
+        if item is None:
+            return None
+        slot = self._infer_slot(item)
+        if slot not in self.equipment:
+            self.add_item(item)
+            return None
+        previous = self.equipment.get(slot)
+        if previous is not None:
+            self.add_item(previous)
+        item["slot"] = slot
+        self.equipment[slot] = item
+        self.sync_player_state()
+        return item
+
+    def unequip_item(self, query: str) -> Optional[Dict[str, Any]]:
+        query_lower = (query or "").lower().strip()
+        if not query_lower:
+            return None
+        for slot, item in self.equipment.items():
+            if item is None:
+                continue
+            if query_lower == slot or query_lower in str(item.get("id", "")).lower() or query_lower in str(item.get("name", "")).lower():
+                self.equipment[slot] = None
+                self.add_item(item)
+                self.sync_player_state()
+                return item
+        return None
+
+    def replace_with(self, other: "GameSession", preserve_session_id: bool = False) -> None:
+        current_session_id = self.session_id
+        for field_name in self.__dataclass_fields__:
+            setattr(self, field_name, getattr(other, field_name))
+        if preserve_session_id:
+            self.session_id = current_session_id
+        self.ensure_consistency()
+
     def to_dict(self) -> dict:
         """Serialize session state for API responses."""
+        self.ensure_consistency()
+        player_payload = {
+            "name": self.player.name,
+            "level": self.player.level,
+            "hp": self.player.hp,
+            "max_hp": self.player.max_hp,
+            "spell_points": self.player.spell_points,
+            "max_spell_points": self.player.max_spell_points,
+            "xp": self.player.xp,
+            "classes": self.player.classes,
+            "gold": getattr(self.player, "gold", 0),
+            "inventory": copy.deepcopy(self.inventory),
+            "equipment": {slot: copy.deepcopy(item) for slot, item in self.equipment.items() if item is not None},
+            "position": list(self.position),
+            "facing": self.facing,
+        }
         result = {
             "session_id": self.session_id,
             "scene": self.dm_context.scene_type.value,
             "location": self.dm_context.location,
-            "player": {
-                "name": self.player.name,
-                "level": self.player.level,
-                "hp": self.player.hp,
-                "max_hp": self.player.max_hp,
-                "spell_points": self.player.spell_points,
-                "max_spell_points": self.player.max_spell_points,
-                "xp": self.player.xp,
-                "classes": self.player.classes,
-            },
+            "player": player_payload,
             "in_combat": self.in_combat(),
             "turn": self.dm_context.turn,
             "position": list(self.position),
@@ -197,14 +533,15 @@ class GameSession:
                 "current": self.ap_tracker.current_ap,
                 "max": self.ap_tracker.max_ap,
             }
+            result["player"]["ap"] = dict(result["ap"])
 
         # --- Inventory & Equipment ---
         if self.inventory:
-            result["inventory"] = self.inventory
+            result["inventory"] = copy.deepcopy(self.inventory)
         if self.equipment:
             equipped = {slot: item for slot, item in self.equipment.items() if item is not None}
             if equipped:
-                result["equipment"] = equipped
+                result["equipment"] = copy.deepcopy(equipped)
 
         # --- Living World state ---
         if self.game_time:
@@ -227,6 +564,9 @@ class GameSession:
                 spatial_entities.append(ent.to_dict())
             if spatial_entities:
                 result["world_entities"] = spatial_entities
+                ground_items = [ent for ent in spatial_entities if ent.get("entity_type") == EntityType.ITEM.value]
+                if ground_items:
+                    result["ground_items"] = ground_items
 
         # --- Map metadata ---
         if self.map_data:
@@ -244,10 +584,18 @@ class GameSession:
                      "deadline": q.deadline_hour, "status": q.status.value}
                     for q in active_quests
                 ]
+        if self.quest_offers:
+            result["quest_offers"] = copy.deepcopy(self.quest_offers)
+        if self.campaign_state:
+            result["campaign_state"] = copy.deepcopy(self.campaign_state)
 
         if self.body_tracker:
             injuries = self.body_tracker.get_injury_effects()
             if injuries:
                 result["body_status"] = injuries
+        if self.narration_context:
+            result["narration_context"] = copy.deepcopy(self.narration_context)
+        if self.last_save_slot:
+            result["last_save_slot"] = self.last_save_slot
 
         return result

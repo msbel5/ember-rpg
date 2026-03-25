@@ -1,9 +1,9 @@
 # PRD: Living World v1 — DF-Inspired Simulation Systems
 
-**Status**: Draft
+**Status**: Implemented v1 slice
 **Priority**: P0 (Foundation for all future features)
 **Author**: Mami (analysis) + Claude Code (PRD)
-**Date**: 2026-03-24
+**Date**: 2026-03-25
 **References**: Dwarf Fortress entity_default.txt, reaction_smelter.txt, world_gen.txt
 
 ---
@@ -11,6 +11,14 @@
 ## Overview
 
 Transform Ember RPG from a "well-narrated reactive game" into a "living world where AI narrates what deterministic rules produce." Every system below is **zero AI cost** — pure data + rules. LLM only reads state and narrates.
+
+### Implementation Snapshot (2026-03-25)
+
+- `GameSession` is now the canonical runtime state shared by API routes, autosave, and the top-down terminal client.
+- The world loop advances on every action and on long actions/rest, with NPC schedules, patrol movement, needs decay, rumor updates, caravan deliveries, and quest deadline checks in the same tick.
+- NPCs now move on the live spatial index one step at a time instead of only changing abstract schedule state.
+- Emergent quest offers are generated from live world pressure signals such as shortages, unrest, deaths, and ignored threats.
+- Crafting, inventory/equipment, ground items, and merchant stock all feed back into the same world/economy state.
 
 ---
 
@@ -33,7 +41,7 @@ The world breathes without player input. Time passes, NPC needs change, stock de
   8. Quest timeout check
   9. Local incident generation (random events: bar fight, theft, merchant arrival)
 
-**FR-03**: Player actions trigger 1-hour tick. Resting triggers 8-hour tick.
+**FR-03**: Player actions trigger a deterministic world tick. Most actions advance 15 in-game minutes; resting advances 8 hours.
 **FR-04**: Loaded location = full tick. Unloaded = coarse summary tick.
 
 ### Data Model
@@ -124,15 +132,16 @@ schedule = {
 }
 ```
 
-**FR-11**: `WorldTickScheduler` moves NPCs to scheduled location on time period change
-**FR-12**: NPC position updates in `entities` response — Godot sees NPC appear/disappear
+**FR-11**: `WorldTickScheduler` resolves schedule/patrol intent into visible tile-by-tile movement on the live spatial index
+**FR-12**: NPC position updates in session responses and top-down rendering from the same canonical state
 **FR-13**: If NPC's scheduled location is destroyed/blocked, fallback to nearest safe zone
-**FR-14**: Guard schedules include patrol routes (list of positions cycled hourly)
+**FR-14**: Guard schedules include patrol routes and can be serialized/restored losslessly
 
 ### Acceptance Criteria
 - AC-08: Tavern has 0 NPCs at 07:00, 3+ NPCs at 20:00
 - AC-09: Merchant is at shop during morning, market during afternoon
 - AC-10: Guard cycles through 4 patrol positions
+- AC-10a: Repeated player actions visibly move scheduled NPCs on the session map without regenerating a second world state
 
 ---
 

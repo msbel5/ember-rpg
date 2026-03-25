@@ -7,6 +7,7 @@ from typing import Dict, Optional
 
 from engine.api.game_engine import GameEngine
 from engine.api.game_session import GameSession
+from engine.api.save_system import SaveSystem
 from engine.api.models import (
     NewSessionRequest, NewSessionResponse,
     ActionRequest, ActionResponse,
@@ -15,6 +16,7 @@ from engine.api.models import (
 from engine.core.dm_agent import DMEvent, EventType, SceneType
 
 router = APIRouter()
+_save_system = SaveSystem()
 
 # Wire LLM to GameEngine — narrative uses claude-haiku-4.5 via Copilot API
 def _make_llm_callable():
@@ -28,12 +30,12 @@ def _make_llm_callable():
                 {
                     "role": "system",
                     "content": (
-                        "You are the Dungeon Master for Ember RPG, a dark fantasy tabletop RPG. "
-                        "Always respond in character — never say you don't understand. "
-                        "For NPC dialogue: give the NPC a voice and have them speak directly. "
-                        "For actions: describe what happens narratively in 2nd person. "
-                        "For ambiguous input: make a creative interpretation that fits the scene. "
-                        "Use 2-4 sentences. No markdown headers. No game mechanic references."
+                        "You are the Dungeon Master for Ember RPG, a grounded dark-fantasy RPG. "
+                        "Respect the supplied game state and mechanics exactly; never invent extra outcomes "
+                        "or contradict deterministic results. Write concise second-person narration with a "
+                        "consistent, low-flourish tone. For NPC dialogue, let the NPC speak directly. For "
+                        "ambiguous input, acknowledge the uncertainty inside the fiction instead of claiming "
+                        "mechanics that did not happen. Use 2-4 sentences. No markdown headers."
                     ),
                 },
                 {"role": "user", "content": prompt},
@@ -51,18 +53,18 @@ engine = GameEngine(llm=_make_llm_callable())
 # In-memory session store
 _sessions: Dict[str, GameSession] = {}
 
-# Save manager for persistence across restarts
-from engine.save import SaveManager as _SaveManager
-_save_manager = _SaveManager()
+
+def _autosave_slot_name(session_id: str) -> str:
+    return f"autosave_{session_id}"
 
 
 def _autosave_session(session: GameSession) -> None:
     """Autosave session to disk after every action."""
     try:
-        state = session.to_dict()
-        _save_manager.save(
-            player_id=session.player.name,
-            session_data={"session_id": session.session_id, **state}
+        _save_system.save_game(
+            session,
+            _autosave_slot_name(session.session_id),
+            player_name=session.player.name if session.player else None,
         )
     except Exception:
         pass  # autosave is best-effort
@@ -74,37 +76,10 @@ def _try_restore_session(session_id: str) -> Optional[GameSession]:
     Returns None if not found or corrupt.
     """
     try:
-        # Find any save with matching session_id
-        from pathlib import Path
-        saves_dir = Path("saves")
-        if not saves_dir.exists():
-            return None
-        for f in saves_dir.glob("*.json"):
-            import json
-            try:
-                data = json.loads(f.read_text())
-                if data.get("session_data", {}).get("session_id") == session_id:
-                    sd = data["session_data"]
-                    # Reconstruct minimal session
-                    from engine.core.character import Character
-                    from engine.core.dm_agent import DMContext, SceneType
-                    player = Character(
-                        name=sd["player"]["name"],
-                        hp=sd["player"]["hp"],
-                        max_hp=sd["player"]["max_hp"],
-                        spell_points=sd["player"].get("spell_points", 0),
-                        max_spell_points=sd["player"].get("max_spell_points", 0),
-                        level=sd["player"]["level"],
-                        xp=sd["player"].get("xp", 0),
-                    )
-                    dm_ctx = DMContext(
-                        scene_type=SceneType(sd.get("scene", "exploration")),
-                        location=sd.get("location", "unknown"),
-                    )
-                    session = GameSession(player=player, dm_context=dm_ctx, session_id=session_id)
-                    return session
-            except Exception:
-                continue
+        autosave_slot = _autosave_slot_name(session_id)
+        session = _save_system.load_game(autosave_slot)
+        if session and session.session_id == session_id:
+            return session
     except Exception:
         pass
     return None
@@ -186,8 +161,18 @@ def take_action(session_id: str, req: ActionRequest):
 @router.delete("/session/{session_id}")
 def end_session(session_id: str):
     """End and remove a game session."""
-    _get_session(session_id)
+    session = _get_session(session_id)
     del _sessions[session_id]
+    try:
+        _save_system.delete_save(_autosave_slot_name(session_id))
+    except Exception:
+        pass
+    try:
+        last_slot = getattr(session, "last_save_slot", None)
+        if last_slot and str(last_slot).startswith("autosave_"):
+            _save_system.delete_save(last_slot)
+    except Exception:
+        pass
     return {"message": "Session ended."}
 
 
@@ -203,18 +188,20 @@ def get_map(session_id: str, seed: Optional[int] = None):
         Map data including tile grid, rooms, and metadata.
     """
     session = _get_session(session_id)
-    from engine.map import DungeonGenerator, TownGenerator
+    map_data = getattr(session, "map_data", None)
+    if map_data is None:
+        from engine.map import DungeonGenerator, TownGenerator, WildernessGenerator
 
-    map_seed = seed if seed is not None else abs(hash(session.session_id)) % (2**31)
-    location = session.dm_context.location.lower()
-
-    # Choose map type based on location name heuristics
-    if any(w in location for w in ["town", "tavern", "village", "harbor", "city", "inn", "market"]):
-        generator = TownGenerator(seed=map_seed)
+        map_seed = seed if seed is not None else abs(hash(session.session_id)) % (2**31)
+        location = session.dm_context.location.lower()
+        if any(w in location for w in ["town", "tavern", "village", "harbor", "city", "inn", "market"]):
+            generator = TownGenerator(seed=map_seed)
+        elif any(w in location for w in ["forest", "road", "wild", "field", "camp"]):
+            generator = WildernessGenerator(seed=map_seed)
+        else:
+            generator = DungeonGenerator(seed=map_seed)
         map_data = generator.generate(width=40, height=40)
-    else:
-        generator = DungeonGenerator(seed=map_seed)
-        map_data = generator.generate(width=40, height=40)
+        session.map_data = map_data
 
     return {
         "session_id": session_id,

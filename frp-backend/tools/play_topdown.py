@@ -21,7 +21,6 @@ _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _root not in sys.path:
     sys.path.insert(0, _root)
 
-import random
 import time
 import readchar
 
@@ -37,9 +36,7 @@ from rich.markup import escape
 from engine.api.game_engine import GameEngine, ActionResult
 from engine.api.game_session import GameSession
 from engine.core.dm_agent import SceneType
-from engine.map import MapData, TileType, TownGenerator, DungeonGenerator, WildernessGenerator
-from engine.world.entity import Entity, EntityType
-from engine.world.spatial_index import SpatialIndex
+from engine.map import TileType
 from engine.world.viewport import Viewport
 
 # ── Constants ────────────────────────────────────────────────────────
@@ -93,99 +90,20 @@ class MapState:
     """Holds map, spatial index, viewport, and player entity for the top-down view."""
 
     def __init__(self, session: GameSession, map_type: str = "town"):
-        seed = hash(session.session_id) % 1000000
+        self.session = session
+        self.sync_from_session()
 
-        # Generate map
-        if map_type == "dungeon":
-            gen = DungeonGenerator(seed=seed)
-            self.map_data: MapData = gen.generate(width=60, height=40)
-        elif map_type == "wilderness":
-            gen = WildernessGenerator(seed=seed)
-            self.map_data = gen.generate(width=60, height=40)
-        else:
-            gen = TownGenerator(seed=seed)
-            self.map_data = gen.generate(width=60, height=40)
-
-        # Spatial index
-        self.spatial_index = SpatialIndex()
-
-        # Player entity
-        sx, sy = self.map_data.spawn_point
-        self.player_entity = Entity(
-            id="player",
-            entity_type=EntityType.NPC,
-            name=session.player.name,
-            position=(sx, sy),
-            glyph="@",
-            color="bright_white",
-            blocking=True,
-            hp=session.player.hp,
-            max_hp=session.player.max_hp,
-        )
-        self.spatial_index.add(self.player_entity)
-
-        # Viewport
-        self.viewport = Viewport(width=MAP_WIDTH, height=MAP_HEIGHT)
-        self.viewport.center_on(sx, sy)
-
-        # Sync session position
-        session.position = [sx, sy]
-
-        # Populate NPC entities from session.entities onto the map
-        self._place_npcs(session)
-
-        # Compute initial FOV
-        self._recompute_fov()
-
-    def _place_npcs(self, session: GameSession) -> None:
-        """Place session entities onto walkable tiles near spawn."""
-        walkable = []
-        px, py = self.player_entity.position
-        for dy in range(-6, 7):
-            for dx in range(-6, 7):
-                wx, wy = px + dx, py + dy
-                if (wx, wy) != (px, py) and self.map_data.is_walkable(wx, wy):
-                    walkable.append((wx, wy))
-        random.shuffle(walkable)
-
-        idx = 0
-        for eid, edata in session.entities.items():
-            if idx >= len(walkable):
-                break
-            pos = walkable[idx]
-            idx += 1
-
-            role = edata.get("role", "npc")
-            glyph, color, disposition = self._npc_appearance(role)
-
-            entity = Entity(
-                id=eid,
-                entity_type=EntityType.NPC,
-                name=edata.get("name", eid),
-                position=pos,
-                glyph=glyph,
-                color=color,
-                blocking=True,
-                disposition=disposition,
-                faction=edata.get("faction"),
-                job=role,
-            )
-            self.spatial_index.add(entity)
-
-    @staticmethod
-    def _npc_appearance(role: str):
-        """Return (glyph, color, disposition) for an NPC role."""
-        mapping = {
-            "guard":       ("G", "bright_red",    "neutral"),
-            "merchant":    ("M", "bright_yellow",  "friendly"),
-            "innkeeper":   ("I", "bright_green",   "friendly"),
-            "blacksmith":  ("B", "bright_magenta", "friendly"),
-            "priest":      ("P", "bright_cyan",    "friendly"),
-            "beggar":      ("b", "grey50",         "neutral"),
-            "quest_giver": ("Q", "bright_yellow",  "friendly"),
-            "spy":         ("S", "grey62",         "neutral"),
-        }
-        return mapping.get(role, ("N", "white", "neutral"))
+    def sync_from_session(self) -> None:
+        self.map_data = self.session.map_data
+        self.spatial_index = self.session.spatial_index
+        self.player_entity = self.session.player_entity
+        self.viewport = self.session.viewport or Viewport(width=MAP_WIDTH, height=MAP_HEIGHT)
+        self.session.viewport = self.viewport
+        if self.player_entity is not None:
+            self.viewport.width = MAP_WIDTH
+            self.viewport.height = MAP_HEIGHT
+            self.viewport.center_on(self.player_entity.position[0], self.player_entity.position[1])
+            self._recompute_fov()
 
     def _recompute_fov(self) -> None:
         """Recompute field of view from player position."""
@@ -277,11 +195,8 @@ def render_header(session: GameSession) -> Panel:
     bar = hp_bar(p.hp, p.max_hp, width=16)
 
     # Equipment summary
-    weapon = "Fists"
-    armor = "None"
-    if hasattr(p, "equipment") and p.equipment:
-        weapon = p.equipment.get("weapon", {}).get("name", "Fists") if isinstance(p.equipment, dict) else "Fists"
-        armor = p.equipment.get("armor", {}).get("name", "None") if isinstance(p.equipment, dict) else "None"
+    weapon = (session.equipment.get("weapon") or {}).get("name", "Fists") if getattr(session, "equipment", None) else "Fists"
+    armor = (session.equipment.get("armor") or {}).get("name", "None") if getattr(session, "equipment", None) else "None"
 
     sp_text = f"SP: {p.spell_points}/{p.max_spell_points}" if p.max_spell_points > 0 else ""
     ap_text = f"AP: {getattr(p, 'ap', 4)}/{getattr(p, 'max_ap', 4)}"
@@ -295,7 +210,7 @@ def render_header(session: GameSession) -> Panel:
         f"[dim]XP: {p.xp}[/dim]  "
         f"[bright_yellow]Gold: {p.gold}[/bright_yellow]  "
         f"[bright_magenta]{sp_text}[/bright_magenta]  "
-        f"[dim]{ap_text}  AC: {p.ac}[/dim]  "
+        f"[dim]{ap_text}  AC: {p.ac}  Wpn: {weapon}  Arm: {armor}[/dim]  "
         f"[bright_yellow]{format_game_time(session)}[/bright_yellow]"
     )
 
@@ -640,12 +555,20 @@ def game_loop(engine: GameEngine, session: GameSession, ms: MapState,
         if not cmd:
             continue
 
-        # Arrow key movement (instant, no engine call for basic moves)
+        # Arrow key movement
         if cmd.startswith("__arrow__"):
             direction = cmd.replace("__arrow__", "")
-            msg = ms.try_move(session, direction)
-            if msg:
-                narrative_history.append(msg)
+            try:
+                result = engine.process_action(session, f"move {direction}")
+                if result.narrative:
+                    for line in result.narrative.strip().split("\n"):
+                        line = line.strip()
+                        if line:
+                            narrative_history.append(line)
+                _process_result_extras(result, narrative_history)
+                ms.sync_from_session()
+            except Exception as e:
+                narrative_history.append(f"Engine error: {e}")
             # Trim
             narrative_history = narrative_history[-MAX_NARRATIVES:]
             continue
@@ -670,21 +593,17 @@ def game_loop(engine: GameEngine, session: GameSession, ms: MapState,
                 break
 
         if move_prefix:
-            msg = ms.try_move(session, move_prefix)
-            if msg:
-                narrative_history.append(msg)
-            else:
-                # Also pass to engine for narrative flavor
-                try:
-                    result: ActionResult = engine.process_action(session, f"move {move_prefix}")
-                    if result.narrative:
-                        for line in result.narrative.strip().split("\n"):
-                            line = line.strip()
-                            if line:
-                                narrative_history.append(line)
-                    _process_result_extras(result, narrative_history)
-                except Exception:
-                    pass
+            try:
+                result = engine.process_action(session, f"move {move_prefix}")
+                if result.narrative:
+                    for line in result.narrative.strip().split("\n"):
+                        line = line.strip()
+                        if line:
+                            narrative_history.append(line)
+                _process_result_extras(result, narrative_history)
+                ms.sync_from_session()
+            except Exception as e:
+                narrative_history.append(f"Engine error: {e}")
             narrative_history = narrative_history[-MAX_NARRATIVES:]
             continue
 
@@ -703,18 +622,7 @@ def game_loop(engine: GameEngine, session: GameSession, ms: MapState,
                     narrative_history.append(line)
 
         _process_result_extras(result, narrative_history)
-
-        # After engine move, sync map position
-        px, py = ms.player_entity.position
-        sp = session.position
-        if isinstance(sp, list) and len(sp) >= 2:
-            if sp[0] != px or sp[1] != py:
-                # Engine moved the player; sync map state
-                nx, ny = int(sp[0]), int(sp[1])
-                if ms.map_data.is_walkable(nx, ny):
-                    ms.spatial_index.move(ms.player_entity, nx, ny)
-                    ms.viewport.center_on(nx, ny)
-                    ms._recompute_fov()
+        ms.sync_from_session()
 
         # Trim history
         narrative_history = narrative_history[-MAX_NARRATIVES:]
@@ -773,16 +681,27 @@ def main():
         console.print(f"\n[{STYLE_SYSTEM}]Cancelled.[/{STYLE_SYSTEM}]")
         return
 
+    location_by_map = {
+        "town": "Harbor Town",
+        "dungeon": "Ancient Dungeon",
+        "wilderness": "Forest Road",
+    }
+
     # Create engine and session
     engine = GameEngine()
-    session = engine.new_session(player_name=name, player_class=char_class)
+    session = engine.new_session(
+        player_name=name,
+        player_class=char_class,
+        location=location_by_map.get(map_type),
+    )
 
     # Create map state (generates map, places entities, sets up viewport)
     ms = MapState(session, map_type=map_type)
 
     # Build opening narrative
     loc = session.dm_context.location
-    opening = session.dm_context.history[-1] if session.dm_context.history else (
+    opening_event = session.dm_context.history[-1] if session.dm_context.history else None
+    opening = getattr(opening_event, "description", opening_event) if opening_event else (
         f"You arrive at {loc}. The air is thick with possibility."
     )
 

@@ -2,7 +2,7 @@
 
 > *"Natural language in, narrative out."*
 
-Ember RPG is a **Python/FastAPI backend** for an AI-driven tabletop-style RPG. Players describe their actions in plain English; the AI Dungeon Master (DM) narrates the world, drives combat, manages quests, and keeps the story alive — all via a clean REST API.
+Ember RPG is a **Python/FastAPI backend** for an AI-driven tabletop-style RPG. Players describe their actions in plain English; the AI Dungeon Master (DM) narrates the world while the deterministic engine drives combat, crafting, quests, economy, and the living-world simulation via a clean REST API.
 
 ---
 
@@ -22,12 +22,14 @@ Ember RPG is a **Python/FastAPI backend** for an AI-driven tabletop-style RPG. P
 
 ## Features
 
-- 🤖 **AI Dungeon Master** — OpenAI-powered narrative generation
+- 🤖 **AI Dungeon Master** — LLM-routed narrative generation with deterministic fallbacks
 - ⚔️ **Full Combat Engine** — turn-based combat with initiative, AP, status effects
+- 💾 **Full-Fidelity Saves** — named slots, autosave restore, lossless session roundtrips
 - 🧙 **Magic System** — 50+ spells across 8 schools with mana cost, range, effects
 - 🗺️ **Procedural Maps** — dungeon & town tile generation with rooms, corridors, NPCs
-- 👥 **NPC Agent System** — personality-driven NPCs with dialogue templates
+- 👥 **NPC Living World** — schedules, patrols, needs, rumors, and visible movement on the live map
 - 📜 **Campaign Generator** — quest structures, objectives, locations
+- 🎒 **Structured Inventory** — pickup, drop, equip, crafting, and merchant flows share one item model
 - 📈 **Progression System** — leveling, stat growth, ability unlocks
 - 🌐 **REST API** — stateless HTTP, session-based, easy Godot/Unity/web integration
 
@@ -52,8 +54,8 @@ flowchart TD
     end
 
     subgraph ENGINE["Engine Layer — engine/api/"]
-        GE["GameEngine\norchestrates all systems"]
-        GS["GameSession\nplayer state + dm context"]
+        GE["GameEngine\norchestrates combat, crafting, world tick, saves"]
+        GS["GameSession\ncanonical session state"]
         AP["ActionParser\nNL → ActionIntent"]
         MODELS["models.py\nPydantic schemas"]
     end
@@ -444,7 +446,7 @@ Spell database. Schema:
 
 ### Coverage
 
-Current API layer coverage: **93%** (engine/api + main.py)
+Current API layer coverage: **93%** (engine/api + main.py), with the broader backend suite covering 1700+ regression and integration cases.
 
 | Module | Coverage |
 |---|---|
@@ -463,23 +465,23 @@ Current API layer coverage: **93%** (engine/api + main.py)
 
 ```bash
 # Run coverage-targeted test suite (fast, no LLM)
-pytest tests/test_coverage_boost.py tests/test_shop.py tests/test_npc_memory_routes.py \
+python3 -m pytest tests/test_coverage_boost.py tests/test_shop.py tests/test_npc_memory_routes.py \
     --cov=engine/api --cov=main --cov-report=term-missing
 
 # Run all tests
 cd frp-backend
-pytest tests/ -v
+python3 -m pytest -s tests/ -q
 
 # E2E test suite only (curl simulation)
-pytest tests/test_e2e_curl_simulation.py -v
+python3 -m pytest tests/test_e2e_curl_simulation.py -v
 
 # With API-layer coverage report
-pytest tests/test_e2e_curl_simulation.py tests/test_api.py tests/test_integration.py \
+python3 -m pytest tests/test_e2e_curl_simulation.py tests/test_api.py tests/test_integration.py \
     tests/test_action_parser.py tests/test_game_engine.py tests/test_routes.py \
     --cov=engine/api --cov=main --cov-report=term-missing
 
 # Run specific test file
-pytest tests/test_spell.py -v
+python3 -m pytest tests/test_spell.py -v
 ```
 
 ### Coverage Report (API Layer)
