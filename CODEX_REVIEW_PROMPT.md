@@ -1,151 +1,174 @@
-# Ember RPG — Code Review Request
+# Ember RPG — Code Review & Implementation Request
 
 ## Project Overview
 
-Ember RPG is a text-based RPG with a living world simulation, inspired by many games. It features a top-down ASCII view, d20 skill checks, crafting, NPC behavior trees, and AI-narrated dungeon mastering for now later we will implement POV view, details can be found in PRDs. You should review and understand every PRDs and every *.md files so you can understand our progress and shift in time. After review you will implement all neceesary functions and code and we will do this review again. We are going to aim top-down ASCII view in terminal, this is for ewasy testing for you and me, wo we can play it without GODOT client. After our game quality is AAA level we will implement GODOT client as new renderer and make sure its playable with godot too. After we have playable complete of the game this top down view can be easly rendered in 3D then from POV angle with ai generated simple assets placed, this view will be post processed with AI again and presented to user for point and click game feel both keeping `The Hitch hiker guides to the galaxy BBC 30th edition` and `monkey island` soul intact. Every asset and post procces image will be cached in order to keep api requests minimum.In general game will be should be playable like Elder Scrolls 2 Daggerfall. Then we will decide how we should present the game to User. So after you read and understand our vision you should do your own Resarch. Track find best mechanics and find what we have missing and make and implemantation plan then create/update PRDs, readmes, roadmap and write a new gdd or update the existing one. After your review you should implement everything and make game playable then make this review again.
+Ember RPG is a text-based RPG with a living world simulation, inspired by Dwarf Fortress, Rimworld, Elder Scrolls II: Daggerfall, Monkey Island, and The Hitchhiker's Guide to the Galaxy. It features a top-down ASCII view, d20 skill checks, crafting, NPC behavior trees, and AI-narrated dungeon mastering.
 
-__Tech stack:__ Python 3.10+, FastAPI, Rich terminal UI, pytest
-__Test count:__ 1716 passing tests
-__Run tests:__ `cd frp-backend && python -m pytest tests/ -q`
-__Play the game:__ `cd frp-backend && python -m tools.play_topdown`
+**Current state:** Top-down ASCII terminal client is playable. 16 living world modules built. 1716 tests passing.
 
-## What to Review
+**Long-term vision:** Terminal ASCII view -> Godot 2D client -> AI-generated sprite assets -> post-processed POV view. The terminal client is the foundation and it must be AAA quality before we move to Godot. You should review and understand every PRD and every *.md file so you can understand our progress and vision shifts over time. After review you will implement all necessary functions and code and we will do this review again. We are aiming for top-down ASCII view in terminal first for easy testing. After our game quality is AAA level we will implement the Godot client as a new renderer. After we have a playable complete game, the top-down view can be easily rendered in 3D then from POV angle with AI-generated simple assets placed. This view will be post-processed with AI again and presented to the user for a point-and-click game feel, keeping both "The Hitchhiker's Guide to the Galaxy BBC 30th edition" and "Monkey Island" soul intact. Every asset and post-process image will be cached to keep API requests minimum. In general, the game should be playable like Elder Scrolls 2: Daggerfall. Then we will decide how to present the game to the user.
 
-### Core Engine (Priority: HIGH)
+After you read and understand our vision you should do your own research. Track and find best mechanics, find what we have missing, make an implementation plan, then create/update PRDs, READMEs, roadmap, and write a new GDD or update the existing one.
 
-Review these files for bugs, logic errors, edge cases, and code quality:
+**Tech stack:** Python 3.10+, FastAPI, Rich terminal UI, pytest
+**Test count:** 1716 passing tests
+**Run tests:** `cd frp-backend && python -m pytest tests/ -q`
+**Play the game:** `cd frp-backend && python -m tools.play_topdown`
 
-1. __`frp-backend/engine/api/game_engine.py`__ (~2200 lines) — Main orchestrator
+## Your Mission
 
+You are not just reviewing — you are **implementing**. The workflow is:
+
+1. **Read ALL `.md` files** (PRDs, ROADMAP, README, this file) to understand the full vision and history
+2. **Review every source file** listed below for bugs, logic errors, edge cases
+3. **Create an implementation plan** for everything that's missing or broken
+4. **Update/create PRDs, GDD, ROADMAP** as needed
+5. **Implement all fixes and missing features**
+6. **Run `python -m pytest tests/ -q` and ensure ALL tests pass** (add new tests for new code)
+7. **Play-test the game** via `python -m tools.play_topdown` — experience it as a player
+8. **Commit and push** your changes
+9. **Do this review cycle again** — review your own work, fix issues, iterate until AAA
+
+## What to Review & Implement
+
+### Core Engine (Priority: CRITICAL)
+
+1. **`frp-backend/engine/api/game_engine.py`** (~2200 lines) — Main orchestrator
    - `process_action()` routes 31+ intents to handlers
    - Each handler uses d20 skill checks, AP deduction, proximity checks
    - `_world_tick()` runs NPC behavior trees, need decay, caravans, rumors
    - `_populate_scene_entities()` creates Entity objects with SpatialIndex
    - **Check for:** null dereferences, missing error handling, logic bugs in combat/skill checks
 
-2. __`frp-backend/engine/api/game_session.py`__ (~210 lines) — Session state container
-
+2. **`frp-backend/engine/api/game_session.py`** (~210 lines) — Session state container
    - `__post_init__` generates 48x48 town map, SpatialIndex, Viewport, player Entity
    - **Check for:** initialization order dependencies, missing defaults
 
-3. __`frp-backend/engine/api/save_system.py`__ (~450 lines) — Save/Load
-
+3. **`frp-backend/engine/api/save_system.py`** (~450 lines) — Save/Load
    - Serializes ALL session state to JSON, reconstructs via `from_dict()`
    - Uses `object.__new__(GameSession)` to bypass `__post_init__`
    - **Check for:** data loss on roundtrip, missing fields, corruption handling
 
-4. __`frp-backend/engine/api/action_parser.py`__ (~500 lines) — NLP intent parser
-
+4. **`frp-backend/engine/api/action_parser.py`** (~500 lines) — NLP intent parser
    - 37 ActionIntent enum values with regex + keyword fallback
    - Supports English and Turkish
    - **Check for:** conflicting regex patterns, missed intents, false positives
 
-### World Simulation Modules (Priority: MEDIUM)
-
-These are in `frp-backend/engine/world/`:
+### World Simulation Modules (Priority: HIGH)
+All in `frp-backend/engine/world/`:
 
 5. **`entity.py`** — Entity dataclass (NPC/creature/item/building/furniture)
-6. __`spatial_index.py`__ — O(1) grid-based entity lookup
+6. **`spatial_index.py`** — O(1) grid-based entity lookup
 7. **`viewport.py`** — Camera + shadow-casting FOV
-8. __`behavior_tree.py`__ — Priority/Sequence NPC AI (flee/combat/needs/schedule/patrol/wander)
-9. __`skill_checks.py`__ — d20 system with 6 abilities, contested checks
-10. __`action_points.py`__ — Class-based AP pools, armor penalties
-11. **`crafting.py`** — 51 recipes, 5 disciplines, quality tiers (RUINED→MASTERWORK)
+8. **`behavior_tree.py`** — Priority/Sequence NPC AI (flee/combat/needs/schedule/patrol/wander)
+9. **`skill_checks.py`** — d20 system with 6 abilities, contested checks
+10. **`action_points.py`** — Class-based AP pools, armor penalties
+11. **`crafting.py`** — 51 recipes, 5 disciplines, quality tiers (RUINED to MASTERWORK)
 12. **`interactions.py`** — 85+ context-sensitive rules, 31 interaction types
+13. **`npc_needs.py`** — 5 needs (safety/commerce/social/sustenance/duty), emotional states
+14. **`ethics.py`** — 6 factions, 8 action types, reputation system
+15. **`economy.py`** — 10 recipes, LocationStock with scarcity pricing
+16. **`rumors.py`** — RumorNetwork with propagation/decay
+17. **`caravans.py`** — 3 caravan routes, tick-based arrivals, raiding
+18. **`quest_timeout.py`** — Quest tracking with deadline/reminders
+19. **`body_parts.py`** — d20 hit locations, per-part HP tracking, armor coverage
+20. **`materials.py`** — 10 materials with density/hardness/value/damage multipliers
 
-### Terminal Client (Priority: MEDIUM)
+### Terminal Client (Priority: HIGH)
+21. **`frp-backend/tools/play_topdown.py`** (~793 lines) — Top-down ASCII renderer
+    - Rich Layout split: map viewport + narrative panel + nearby panel
+    - Arrow key movement via readchar
+    - **Check for:** rendering bugs, input handling edge cases, UX improvements
 
-13. __`frp-backend/tools/play_topdown.py`__ (~793 lines) — Top-down ASCII renderer
-   - Rich Layout split: map viewport + narrative panel + nearby panel
-   - Arrow key movement via readchar
-   - **Check for:** rendering bugs, input handling edge cases
-
-### Tests (Priority: LOW — verify coverage)
-
-14. __`frp-backend/tests/test_playtest_derail.py`__ — 29 integration scenarios
-15. __`frp-backend/tests/test_save_system.py`__ — 46 save/load roundtrip tests
+### Tests (Priority: MEDIUM — verify + expand coverage)
+22. **`frp-backend/tests/test_playtest_derail.py`** — 29 integration scenarios
+23. **`frp-backend/tests/test_save_system.py`** — 46 save/load roundtrip tests
+24. All other test files in `frp-backend/tests/`
 
 ## Specific Review Questions
 
-1. __Are there any null/None dereference risks__ in game_engine.py handlers? (session.spatial_index, session.ap_tracker, session.map_data can be None)
-2. __Is the combat system balanced?__ Check `_execute_attack_round()` for:
+1. **Null/None dereference risks** in game_engine.py handlers? (session.spatial_index, session.ap_tracker, session.map_data can be None)
 
+2. **Combat system balance:** Check `_execute_attack_round()` for:
    - Body part hit locations + armor reduction
    - Enemy counterattack logic
    - Guard backup spawning
-   - XP rewards
+   - XP rewards scaling
 
-3. **Are skill check DCs reasonable?** Most are DC 10-15. Check the full list in handlers.
-4. __Is the crafting system complete?__ Does `_handle_craft()` properly:
+3. **Skill check DCs reasonable?** Most are DC 10-15. Check the full list in handlers.
 
+4. **Crafting system complete?** Does `_handle_craft()` properly:
    - Find recipes by name
    - Check workstation proximity
    - Consume ingredients
    - Award quality-tiered products
 
-5. **Does save/load preserve ALL state?** Especially:
-
+5. **Save/load preserves ALL state?** Especially:
    - Spatial index entities (positions)
    - Fog of war (explored tiles)
    - NPC needs states
    - Quest deadlines
    - Equipment slots
 
-6. **Are there any infinite loops or performance issues?** Check:
-
+6. **Infinite loops or performance issues?** Check:
    - `_world_tick()` behavior tree execution
    - `compute_fov()` shadow casting
    - `_find_walkable_near()` search loop
 
-7. **Is the action parser robust?** Does it handle:
-
-   - Empty input
-   - Very long input
-   - Special characters
-   - Turkish input
-   - English input
+7. **Action parser robust?** Does it handle:
+   - Empty input, very long input, special characters
+   - Turkish input, English input
    - Ambiguous commands ("mine" vs "examine")
 
-8. **Code quality issues:**
-
+8. **Code quality:**
    - Duplicated logic
-   - Functions that are too long (>50 lines)
+   - Functions too long (>50 lines)
    - Missing docstrings
    - Type annotation gaps
    - Magic numbers
 
-9. **Game Play**
+## Gameplay Quality Requirements (AAA Standard)
 
-   - Is it enjoyable from user perspective
-   - We have reachead rate limit and using less capable models like Haiku, but DM should nerrate the game logically
-   - Game and narration should be consisted
-   - When user derail the campaign Dm should adapt living world should react
-   - Living world should be consistent and can be observable from user persepective
-   - Talking and interaction should be enjoyable and consistent NPC`s and faction should have consistent memory
-   - Crafting should be consisted and should be used in living world with proper economy
-   - Quest should be finished with success or fail with properly
-   - User should be able do whatever they want within our world, calculations should be deterministic and DM will just narrates.
-   - DM should be proper not every corner have a hidden path, some places are just dull some places is awesome they should be consisted and deterministic
-   - User may talk directly DM or some NPC or to themselves this ambiguity should be resolved properly
+These are NOT optional — the game must meet ALL of these:
 
-## Expected Output
+1. **Living world consistency:** NPCs follow schedules, have needs, react to events. The world should feel alive even when the player does nothing.
 
-Please provide:
+2. **DM narration quality:** Even with less capable models (Haiku fallback), the DM must narrate logically and consistently. No random hidden passages in every corner — some places are dull, some are amazing, and it must be deterministic.
 
-1. **Critical bugs** (will crash or corrupt data) — with file:line
-2. **Logic errors** (wrong behavior) — with file:line and explanation
-3. **Edge cases** not handled — with scenario description
-4. **Code quality issues** — grouped by severity
-5. **Suggested improvements** — ordered by impact
-6. **Implementation Plan** — After the review you need to implement and finish the game 
+3. **Derailability:** When the player derails the campaign, the DM must adapt and the living world must react. The player should be able to do anything within the world rules — become mayor, start a business, derail a quest.
+
+4. **NPC depth:** NPCs and factions must have consistent memory. Talking and interaction should be enjoyable. NPCs should remember past interactions.
+
+5. **Crafting integration:** Crafting must work within the living economy. Scarcity pricing, material quality, workstation requirements.
+
+6. **Quest completion:** Quests must finish with success OR failure properly. No hanging quests.
+
+7. **Deterministic calculations:** All game mechanics (combat, skill checks, crafting) must be deterministic. The DM only narrates — it does not decide outcomes.
+
+8. **Ambiguity resolution:** When the user speaks, properly resolve whether they're talking to an NPC, the DM, or themselves.
+
+9. **World observability:** The living world should be observable from the player's perspective. NPC movements, caravan arrivals, rumors spreading — the player should see/hear about these.
+
+10. **Enjoyability:** Is it enjoyable from the user's perspective? Game and narration should be consistent. User should be able to do whatever they want within the world, calculations should be deterministic and the DM just narrates.
+
+## Expected Deliverables
+
+After review AND implementation:
+
+1. **Bug fixes** — all critical and logic bugs fixed
+2. **Missing features implemented** — inventory, NPC dialogue depth, world observability
+3. **Updated PRDs/GDD/ROADMAP** — reflecting current state and next steps
+4. **New tests** — for all new code, maintaining 100% pass rate
+5. **Polish** — UX improvements, better error messages, consistent formatting
+6. **Implementation plan** — After the review you need to implement and finish the game
+7. **Commit and push** — clean commits with descriptive messages
 
 ## How to Run
 
 ```bash
 cd frp-backend
 pip install -r requirements.txt
-python -m pytest tests/ -q          # All 1716 tests
+python -m pytest tests/ -q              # All tests
 python -m pytest tests/ -q -k playtest  # Just play-tests
-python -m tools.play_topdown        # Play the game
-
+python -m tools.play_topdown            # Play the game
 ```
