@@ -232,3 +232,27 @@ class TestSaveRouteErrors:
         # Delete save
         d = self.client.delete(f"/game/saves/{save_id}")
         assert d.status_code == 200
+
+    def test_load_session_returns_canonical_structured_inventory(self):
+        created = self.client.post(
+            "/game/session/new",
+            json={"player_name": "CanonicalLoad", "player_class": "warrior"},
+        )
+        sid = created.json()["session_id"]
+        save_resp = self.client.post(
+            f"/game/session/{sid}/save",
+            json={"player_id": "canonical_load_player", "slot_name": "canonical_load_slot"},
+        )
+        assert save_resp.status_code == 200
+
+        try:
+            load_resp = self.client.post("/game/session/load/canonical_load_slot")
+            assert load_resp.status_code == 200
+            data = load_resp.json()["session_data"]
+            player_inventory = data["player"]["inventory"]
+            assert isinstance(player_inventory, list)
+            assert player_inventory
+            assert isinstance(player_inventory[0], dict)
+            assert "id" in player_inventory[0]
+        finally:
+            self.client.delete("/game/saves/canonical_load_slot")

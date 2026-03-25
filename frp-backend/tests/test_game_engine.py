@@ -10,6 +10,7 @@ from engine.api.save_system import SaveSystem
 from engine.core.character import Character
 from engine.core.combat import CombatManager
 from engine.core.dm_agent import SceneType
+from engine.world.skill_checks import SkillCheckResult
 
 
 # ---------------------------------------------------------------------------
@@ -39,6 +40,44 @@ def rogue_session(engine):
 @pytest.fixture
 def priest_session(engine):
     return engine.new_session("Mercy", "priest", location="Temple")
+
+
+def _entity_by_role(session, role):
+    for entity_id, entity in session.entities.items():
+        if entity.get("role") == role:
+            return entity_id, entity
+    raise AssertionError(f"Missing entity role: {role}")
+
+
+def _move_player_to(session, x, y):
+    if session.player_entity and session.spatial_index:
+        session.spatial_index.move(session.player_entity, x, y)
+    session.position = [x, y]
+    session.sync_player_state()
+
+
+def _move_player_near_entity(session, entity):
+    ex, ey = entity["position"]
+    candidates = [
+        (ex + 1, ey),
+        (ex - 1, ey),
+        (ex, ey + 1),
+        (ex, ey - 1),
+    ]
+    width = session.map_data.width if session.map_data else 48
+    height = session.map_data.height if session.map_data else 48
+    for x, y in candidates:
+        if not (0 <= x < width and 0 <= y < height):
+            continue
+        if session.map_data and not session.map_data.is_walkable(x, y):
+            continue
+        if session.spatial_index:
+            blockers = [candidate for candidate in session.spatial_index.at(x, y) if candidate.id != "player" and candidate.blocking]
+            if blockers:
+                continue
+        _move_player_to(session, x, y)
+        return
+    _move_player_to(session, max(0, ex - 1), ey)
 
 
 # ---------------------------------------------------------------------------
@@ -241,6 +280,61 @@ class TestHandleTalk:
         result = engine.process_action(warrior_session, "talk to the merchant")
         assert len(result.narrative) > 0
 
+    def test_talk_shows_quest_offer_without_auto_accepting(self, engine, mage_session):
+        merchant_id, merchant = _entity_by_role(mage_session, "merchant")
+        mage_session.quest_offers = [{
+            "id": "resupply_bread",
+            "kind": "delivery",
+            "title": "Bread Shortage",
+            "description": "Bring two loaves to the tavern before nightfall.",
+            "target_item": "bread",
+            "required_qty": 2,
+            "deadline_hours": 12,
+            "reward_gold": 35,
+            "reward_xp": 40,
+        }]
+        _move_player_near_entity(mage_session, merchant)
+
+        result = engine.process_action(mage_session, "talk to merchant")
+
+        assert "available quests" in result.narrative.lower()
+        assert "quest accepted" not in result.narrative.lower()
+        assert mage_session.quest_tracker.get_active_quests() == []
+        assert merchant_id in mage_session.npc_memory.memories
+        assert "merchant" not in mage_session.npc_memory.memories
+
+
+class TestQuestHardening:
+    def test_accept_and_turn_in_delivery_quest_requires_explicit_flow(self, engine, mage_session):
+        merchant_id, merchant = _entity_by_role(mage_session, "merchant")
+        mage_session.location_stock.stock["bread"] = 1
+        mage_session.quest_offers = engine._generate_emergent_quests(mage_session)
+        _move_player_near_entity(mage_session, merchant)
+
+        talk_result = engine.process_action(mage_session, "talk to merchant")
+        assert "quest accepted" not in talk_result.narrative.lower()
+        mage_session.quest_offers = engine._generate_emergent_quests(mage_session)
+
+        accept_result = engine.process_action(mage_session, "accept quest bread shortage")
+        assert "quest accepted" in accept_result.narrative.lower()
+        assert len(mage_session.quest_tracker.get_active_quests()) == 1
+
+        mage_session.add_item({"id": "bread", "name": "Bread", "qty": 2})
+        idle_result = engine.process_action(mage_session, "inventory")
+        assert "quest complete" not in idle_result.narrative.lower()
+        assert len(mage_session.quest_tracker.get_active_quests()) == 1
+
+        _move_player_to(mage_session, 0, 0)
+        too_far_result = engine.process_action(mage_session, "turn in quest bread shortage")
+        assert "too far away" in too_far_result.narrative.lower()
+        assert len(mage_session.quest_tracker.get_active_quests()) == 1
+
+        _move_player_near_entity(mage_session, mage_session.entities[merchant_id])
+        turn_in_result = engine.process_action(mage_session, "turn in quest bread shortage")
+        assert "you turn in" in turn_in_result.narrative.lower()
+        assert mage_session.quest_tracker.get_active_quests() == []
+        assert all(item.get("id") != "bread" for item in mage_session.inventory)
+
 
 class TestSaveCommands:
     def test_save_list_load_and_delete_roundtrip(self, engine, warrior_session, tmp_path):
@@ -305,6 +399,24 @@ class TestHandleRest:
         result = engine.process_action(warrior_session, "rest")
         assert result.scene_type == SceneType.EXPLORATION
 
+    def test_rest_runs_hourly_world_updates_across_elapsed_window(self, engine, warrior_session):
+        warrior_session.game_time.day = 1
+        warrior_session.game_time.hour = 8
+        warrior_session.game_time.minute = 0
+        warrior_session.caravan_manager.active = {}
+        warrior_session.caravan_manager._last_departure = {}
+
+        result = engine.process_action(warrior_session, "rest")
+        departure_hours = [
+            event["hour"]
+            for event in result.state_changes.get("world_events", [])
+            if event.get("type") == "departure"
+        ]
+
+        assert departure_hours
+        assert 9 in departure_hours
+        assert 16 not in departure_hours
+
 
 # ---------------------------------------------------------------------------
 # Action: MOVE
@@ -342,6 +454,59 @@ class TestHandleUseItem:
     def test_use_item_narrative(self, engine, warrior_session):
         result = engine.process_action(warrior_session, "use potion")
         assert len(result.narrative) > 0
+
+
+class TestCraftHardening:
+    def test_crafting_with_low_ap_advances_time_and_pays_full_cost(self, engine):
+        session = engine.new_session("Crafter", "warrior", location="Harbor Town")
+        kitchen = next(entity for entity in session.spatial_index.all_entities() if entity.id == "workstation_kitchen")
+        _move_player_to(session, kitchen.position[0], kitchen.position[1])
+        session.add_item({"id": "flour", "name": "Flour", "qty": 2})
+        session.add_item({"id": "water", "name": "Water", "qty": 1})
+        session.ap_tracker.current_ap = 1
+        session.game_time.hour = 8
+        session.game_time.minute = 0
+        bread_before = sum(item.get("qty", 1) for item in session.inventory if item.get("id") == "bread")
+
+        with patch(
+            "engine.api.game_engine.roll_check",
+            return_value=SkillCheckResult(roll=12, modifier=0, total=12, dc=8, success=True, margin=4, critical=None),
+        ):
+            result = engine.process_action(session, "craft bread")
+
+        assert "lack the materials" not in result.narrative.lower()
+        assert session.game_time.hour == 9
+        assert session.game_time.minute == 0
+        assert session.ap_tracker.current_ap == 2
+        bread_after = sum(item.get("qty", 1) for item in session.inventory if item.get("id") == "bread")
+        assert bread_after == bread_before + 2
+
+
+class TestCombatHardening:
+    def test_attack_updates_world_npc_body_tracker(self, engine, warrior_session):
+        merchant_id, merchant = _entity_by_role(warrior_session, "merchant")
+        _move_player_near_entity(warrior_session, merchant)
+        enemy = engine._character_from_world_entity(merchant_id, merchant)
+        warrior_session.combat = CombatManager([warrior_session.player, enemy], seed=1)
+        warrior_session.dm_context.scene_type = SceneType.COMBAT
+        warrior_session.combat.start_turn()
+        while warrior_session.combat.active_combatant.name != warrior_session.player.name:
+            warrior_session.combat.end_turn()
+        target_idx = engine._find_target(warrior_session.combat, enemy.name, exclude=warrior_session.player.name)
+        assert target_idx is not None
+
+        before_head_hp = merchant["body"].current_hp["head"]
+
+        def _attack_once(*args, **kwargs):
+            warrior_session.combat.combat_ended = True
+            return {"hit": True, "damage": 6, "target": enemy.name}
+
+        with patch("engine.api.game_engine.roll_hit_location", return_value="head"):
+            with patch.object(warrior_session.combat, "attack", side_effect=_attack_once):
+                engine._execute_attack_round(warrior_session, warrior_session.combat, target_idx)
+
+        assert merchant["body"].current_hp["head"] < before_head_hp
+        assert merchant["hp"] == enemy.hp
 
 
 # ---------------------------------------------------------------------------

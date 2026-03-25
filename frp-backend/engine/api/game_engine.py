@@ -268,7 +268,7 @@ class GameEngine:
                     }
                     session.ap_tracker.set_armor(armor_weight_map.get(material, "none"))
             else:
-                session.inventory.append(item)
+                session.add_item(item)
 
         session.quest_offers = self._generate_emergent_quests(session, force=True)
         session.narration_context["last_world_tick_hour"] = self._current_game_hour(session)
@@ -496,6 +496,8 @@ class GameEngine:
             ActionIntent.EXAMINE:    self._handle_examine,
             ActionIntent.LOOK:       self._handle_look,
             ActionIntent.TALK:       self._handle_talk,
+            ActionIntent.ACCEPT_QUEST: self._handle_accept_quest,
+            ActionIntent.TURN_IN_QUEST: self._handle_turn_in_quest,
             ActionIntent.REST:       self._handle_rest,
             ActionIntent.MOVE:       self._handle_move,
             ActionIntent.OPEN:       self._handle_open,
@@ -533,6 +535,10 @@ class GameEngine:
         if not skip_world_tick:
             world_events = self._world_tick(session, minutes=world_minutes, refresh_ap=(action.intent == ActionIntent.REST))
             self._merge_world_events(session, result, world_events)
+
+        pending_ap_after = result.state_changes.pop("_ap_after_world_tick", None) if result.state_changes else None
+        if pending_ap_after is not None and session.ap_tracker is not None:
+            session.ap_tracker.current_ap = max(0, min(session.ap_tracker.max_ap, int(pending_ap_after)))
 
         session.sync_player_state()
         return result
@@ -745,6 +751,9 @@ class GameEngine:
                     result["killed"] = False
                 entity_id = getattr(target_combatant.character, "_entity_id", None)
                 if entity_id and entity_id in session.entities:
+                    entity_body = session.entities[entity_id].get("body")
+                    if isinstance(entity_body, BodyPartTracker) and hit_part:
+                        entity_body.apply_damage(hit_part, effective_damage)
                     session.entities[entity_id]["hp"] = target_combatant.character.hp
                     session.entities[entity_id]["alive"] = not target_combatant.is_dead
                     entity_ref = session.entities[entity_id].get("entity_ref")
@@ -752,6 +761,8 @@ class GameEngine:
                         entity_ref.hp = target_combatant.character.hp
                         entity_ref.alive = not target_combatant.is_dead
                         entity_ref.blocking = not target_combatant.is_dead
+                        if isinstance(getattr(entity_ref, "body", None), BodyPartTracker) and entity_ref.body is not entity_body and hit_part:
+                            entity_ref.body.apply_damage(hit_part, effective_damage)
             # Apply body part damage to tracker (for the target if it's an enemy)
             state_changes["hit_location"] = hit_part
             state_changes["armor_reduction"] = armor_reduction
@@ -1038,19 +1049,21 @@ class GameEngine:
 
         # Check NPC memory for prior interactions
         npc_id = target.lower().replace(" ", "_")
-        memory = session.npc_memory.get_memory(npc_id, npc_name=target)
         prior_context = {}
-        if memory and len(memory.conversations) > 0:
-            prior_context["prior_interactions"] = len(memory.conversations)
-            prior_context["npc_memory_summary"] = memory.build_context()
 
         # Check NPC willingness to talk (from needs system)
         found_entity = self._find_entity_by_name(session, target)
         npc_mood = "content"
         npc_behavior = {}
-        accepted_quest_note = ""
+        quest_offer_note = ""
+        resolved_name = target
         if found_entity:
-            _, entity = found_entity
+            npc_id, entity = found_entity
+            resolved_name = entity.get("name", target)
+            memory = session.npc_memory.get_memory(npc_id, npc_name=resolved_name)
+            if memory and len(memory.conversations) > 0:
+                prior_context["prior_interactions"] = len(memory.conversations)
+                prior_context["npc_memory_summary"] = memory.build_context()
             needs = entity.get("needs")
             if isinstance(needs, NPCNeeds):
                 npc_mood = needs.emotional_state()
@@ -1061,16 +1074,23 @@ class GameEngine:
                         scene_type=session.dm_context.scene_type,
                     )
             if entity.get("role") in {"quest_giver", "guard", "merchant"} and session.quest_offers:
-                accepted = self._accept_quest_offer(session, session.quest_offers[0])
-                if accepted:
-                    accepted_quest_note = f"\nQuest accepted: {session.quest_offers[0]['title']}."
-                    session.quest_offers = [offer for offer in session.quest_offers if offer.get("id") != accepted]
+                session.narration_context["last_quest_giver_id"] = npc_id
+                session.narration_context["last_quest_giver_name"] = resolved_name
+                session.narration_context["last_shown_quest_offer_ids"] = [offer.get("id") for offer in session.quest_offers[:3]]
+                offer_lines = [f"- {offer['title']}: {offer.get('description', '').strip()}" for offer in session.quest_offers[:2] if offer.get("title")]
+                if offer_lines:
+                    quest_offer_note = "\nAvailable quests:\n" + "\n".join(offer_lines) + "\nAccept with 'accept quest <title>'."
+        else:
+            memory = session.npc_memory.get_memory(npc_id, npc_name=resolved_name)
+            if memory and len(memory.conversations) > 0:
+                prior_context["prior_interactions"] = len(memory.conversations)
+                prior_context["npc_memory_summary"] = memory.build_context()
 
         world_context = self._build_world_context(session)
         desc = (
-            f"{session.player.name} approaches {target} to speak. "
+            f"{session.player.name} approaches {resolved_name} to speak. "
             f"{session.player.name} says: (initiate conversation). "
-            f"Generate {target}'s response as they would actually speak, "
+            f"Generate {resolved_name}'s response as they would actually speak, "
             f"in character with their personality.\n"
             f"NPC mood: {npc_mood}.\n"
             f"{world_context}"
@@ -1078,7 +1098,7 @@ class GameEngine:
         event_data = {
             "player_name": session.player.name,
             "location": session.dm_context.location,
-            "npc_name": target,
+            "npc_name": resolved_name,
             "npc_personality": npc_personality,
             "npc_mood": npc_mood,
             "action": "talk",
@@ -1091,17 +1111,105 @@ class GameEngine:
         self.dm.transition(session.dm_context, SceneType.DIALOGUE)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
 
-        # Record this interaction
-        from datetime import datetime
-        game_time = datetime.now().strftime("%Y-%m-%d")
+        # Record this interaction against in-game time for deterministic memory ordering.
+        memory_time = session.game_time.to_string() if session.game_time else "Day 1, 08:00 (morning)"
         session.npc_memory.record_interaction(
             npc_id,
             action.raw_input[:200],
             "neutral",
-            session.game_time.to_string() if session.game_time else game_time,
+            memory_time,
         )
 
-        return ActionResult(narrative=f"{narrative}{accepted_quest_note}", scene_type=session.dm_context.scene_type)
+        return ActionResult(narrative=f"{narrative}{quest_offer_note}", scene_type=session.dm_context.scene_type)
+
+    def _handle_accept_quest(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        offer = self._match_quest_offer(session, action.target or "")
+        if offer is None:
+            return ActionResult(
+                narrative="No available quest matches that request. Talk to a quest giver first or specify the quest title.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        giver = self._resolve_quest_giver(session)
+        giver_id = giver[0] if giver else None
+        giver_name = giver[1].get("name") if giver else None
+        accepted = self._accept_quest_offer(session, offer, giver_entity_id=giver_id, giver_name=giver_name)
+        if not accepted:
+            return ActionResult(
+                narrative=f"You are already tracking '{offer.get('title', 'that quest')}'.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        session.quest_offers = [candidate for candidate in session.quest_offers if candidate.get("id") != accepted]
+        return ActionResult(
+            narrative=f"Quest accepted: {offer.get('title', accepted)}.",
+            scene_type=session.dm_context.scene_type,
+            state_changes={"accepted_quest": accepted},
+        )
+
+    def _handle_turn_in_quest(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        resolved = self._turn_in_target_quest(session, action.target or "")
+        if resolved is None:
+            return ActionResult(
+                narrative="No active delivery quest matches that request.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        quest, meta = resolved
+        giver_id = meta.get("giver_entity_id")
+        giver_name = meta.get("giver_name") or "the quest giver"
+        if giver_id and giver_id in session.entities:
+            target_pos = session.entities[giver_id].get("position", [0, 0])
+            ok, msg = check_proximity(session.position, target_pos, "talk")
+            if not ok:
+                return ActionResult(
+                    narrative=f"{msg} {giver_name} is at position {target_pos}.",
+                    scene_type=session.dm_context.scene_type,
+                )
+
+        target_item = meta.get("target_item")
+        required_qty = int(meta.get("required_qty", 1))
+        current_qty = self._count_inventory_item(session, target_item) if target_item else 0
+        if not target_item or current_qty < required_qty:
+            item_name = str(target_item or "the required item").replace("_", " ")
+            return ActionResult(
+                narrative=f"You still need {required_qty - current_qty} more {item_name}.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        for _ in range(required_qty):
+            session.remove_item(target_item)
+
+        current_hour = self._current_game_hour(session)
+        session.quest_tracker.complete_quest(quest.quest_id, current_hour)
+        reward_gold = int(meta.get("reward_gold", 25))
+        reward_xp = int(meta.get("reward_xp", 40))
+        session.player.gold += reward_gold
+        self.progression.add_xp(session.player, reward_xp)
+        completed = session.campaign_state.setdefault("completed_quests", [])
+        if quest.quest_id not in completed:
+            completed.append(quest.quest_id)
+        completed_ids = session.campaign_state.setdefault("completed_quest_ids", [])
+        if quest.quest_id not in completed_ids:
+            completed_ids.append(quest.quest_id)
+        accepted = session.campaign_state.setdefault("accepted_quests", [])
+        if quest.quest_id in accepted:
+            accepted.remove(quest.quest_id)
+        event = {
+            "type": "quest_complete",
+            "quest_id": quest.quest_id,
+            "title": quest.title,
+            "reward_gold": reward_gold,
+            "reward_xp": reward_xp,
+        }
+        return ActionResult(
+            narrative=(
+                f"You turn in '{quest.title}' to {giver_name}. "
+                f"+{reward_gold} gold, +{reward_xp} XP."
+            ),
+            scene_type=session.dm_context.scene_type,
+            state_changes={"turned_in_quest": quest.quest_id, "world_events": [event]},
+        )
 
     def _get_npc_personality(self, target_name: str) -> dict:
         """Find NPC template by partial name match."""
@@ -1631,16 +1739,6 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
 
-        if session.ap_tracker and session.ap_tracker.current_ap <= 0:
-            return ActionResult(
-                narrative=f"Not enough action points to start crafting. (AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap})",
-                scene_type=session.dm_context.scene_type,
-            )
-        turns_required = 1
-        if session.ap_tracker:
-            turns_required = max(1, (recipe.ap_cost + session.ap_tracker.max_ap - 1) // session.ap_tracker.max_ap)
-            session.ap_tracker.current_ap = 0 if recipe.ap_cost > session.ap_tracker.current_ap else max(0, session.ap_tracker.current_ap - recipe.ap_cost)
-
         # Check for nearby workstation
         crafting = CraftingSystem()
         workstation_ok = True
@@ -1658,6 +1756,22 @@ class GameEngine:
             item_id = item.get("id", item.get("name", "unknown")).lower().replace(" ", "_")
             inv_dict[item_id] = inv_dict.get(item_id, 0) + item.get("qty", 1)
         inventory_before = dict(inv_dict)
+
+        if not workstation_ok:
+            return ActionResult(
+                narrative=f"You need a {recipe.workstation} to craft {recipe.name}.",
+                scene_type=session.dm_context.scene_type,
+            )
+        if not crafting.check_ingredients(recipe, inv_dict):
+            return ActionResult(
+                narrative=f"You lack the materials to craft {recipe.name}.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        world_minutes = 15
+        ap_after_world_tick = None
+        if session.ap_tracker:
+            world_minutes, ap_after_world_tick = self._simulate_long_action_ap(session, recipe.ap_cost)
 
         # Map crafting skill to ability
         skill_ability_map = {
@@ -1718,7 +1832,8 @@ class GameEngine:
             state_changes={
                 "xp_gained": craft_result.xp_gained,
                 "crafted": craft_result.products,
-                "_world_minutes": turns_required * 15,
+                "_world_minutes": world_minutes,
+                "_ap_after_world_tick": ap_after_world_tick,
             },
         )
 
@@ -1863,7 +1978,120 @@ class GameEngine:
                 total += int(item.get("qty", 1))
         return total
 
-    def _accept_quest_offer(self, session: GameSession, offer: Dict[str, Any]) -> Optional[str]:
+    def _get_nearby_quest_givers(self, session: GameSession, max_dist: int = 1) -> List[tuple[str, Dict[str, Any]]]:
+        givers: List[tuple[str, Dict[str, Any]]] = []
+        for entity_id, entity in session.entities.items():
+            if entity.get("role") not in {"quest_giver", "guard", "merchant"}:
+                continue
+            target_pos = entity.get("position", [0, 0])
+            if max(abs(session.position[0] - target_pos[0]), abs(session.position[1] - target_pos[1])) <= max_dist:
+                givers.append((entity_id, entity))
+        return givers
+
+    def _match_quest_offer(self, session: GameSession, query: str) -> Optional[Dict[str, Any]]:
+        offers = list(session.quest_offers or [])
+        if not offers:
+            return None
+
+        query_lower = (query or "").strip().lower()
+        generic_queries = {"", "quest", "the quest", "a quest", "görev", "görevi"}
+        if query_lower and query_lower not in generic_queries:
+            for offer in offers:
+                title = str(offer.get("title", "")).lower()
+                offer_id = str(offer.get("id", "")).lower()
+                if query_lower == title or query_lower == offer_id or query_lower in title:
+                    return offer
+
+        last_offer_ids = list(session.narration_context.get("last_shown_quest_offer_ids", []))
+        if last_offer_ids:
+            prioritized = [offer for offer in offers if offer.get("id") in last_offer_ids]
+            if len(prioritized) == 1:
+                return prioritized[0]
+            if query_lower in generic_queries and prioritized:
+                return prioritized[0]
+
+        if len(offers) == 1 or query_lower in generic_queries:
+            return offers[0]
+        return None
+
+    def _resolve_quest_giver(self, session: GameSession) -> Optional[tuple[str, Dict[str, Any]]]:
+        giver_id = session.narration_context.get("last_quest_giver_id")
+        if giver_id and giver_id in session.entities:
+            return giver_id, session.entities[giver_id]
+        nearby = self._get_nearby_quest_givers(session)
+        if len(nearby) == 1:
+            return nearby[0]
+        return None
+
+    def _turn_in_target_quest(self, session: GameSession, query: str) -> Optional[tuple[Any, Dict[str, Any]]]:
+        active_quests = session.quest_tracker.get_active_quests()
+        quest_meta = session.campaign_state.get("quest_meta", {})
+        query_lower = (query or "").strip().lower()
+        candidates = []
+        for quest in active_quests:
+            meta = quest_meta.get(quest.quest_id, {})
+            if meta.get("kind") != "delivery":
+                continue
+            if query_lower and query_lower not in {"quest", "the quest", "a quest", "görev", "görevi"}:
+                if query_lower not in quest.title.lower() and query_lower not in quest.quest_id.lower():
+                    continue
+            candidates.append((quest, meta))
+
+        if not candidates:
+            return None
+
+        if len(candidates) == 1:
+            return candidates[0]
+
+        giver_id = session.narration_context.get("last_quest_giver_id")
+        if giver_id:
+            giver_matches = [candidate for candidate in candidates if candidate[1].get("giver_entity_id") == giver_id]
+            if len(giver_matches) == 1:
+                return giver_matches[0]
+
+        nearby = self._get_nearby_quest_givers(session)
+        nearby_ids = {entity_id for entity_id, _ in nearby}
+        giver_matches = [candidate for candidate in candidates if candidate[1].get("giver_entity_id") in nearby_ids]
+        if len(giver_matches) == 1:
+            return giver_matches[0]
+        return None
+
+    def _simulate_long_action_ap(self, session: GameSession, total_cost: int) -> tuple[int, Optional[int]]:
+        tracker = session.ap_tracker
+        if tracker is None:
+            return 15, None
+
+        cost = max(0, int(total_cost))
+        if cost == 0:
+            return 15, tracker.current_ap
+
+        if cost <= tracker.current_ap:
+            tracker.spend(cost)
+            return 15, None
+
+        remaining_cost = cost
+        if tracker.current_ap > 0:
+            remaining_cost -= tracker.current_ap
+            tracker.current_ap = 0
+
+        current_minute = session.game_time.minute if getattr(session, "game_time", None) else 0
+        minutes_until_refresh = 60 - current_minute if current_minute else 60
+        elapsed_minutes = minutes_until_refresh
+
+        while remaining_cost > tracker.max_ap:
+            remaining_cost -= tracker.max_ap
+            elapsed_minutes += 60
+
+        ap_after_action = tracker.max_ap - remaining_cost
+        return elapsed_minutes, ap_after_action
+
+    def _accept_quest_offer(
+        self,
+        session: GameSession,
+        offer: Dict[str, Any],
+        giver_entity_id: Optional[str] = None,
+        giver_name: Optional[str] = None,
+    ) -> Optional[str]:
         quest_id = offer.get("id")
         if not quest_id or session.quest_tracker.get_quest(quest_id):
             return None
@@ -1877,36 +2105,17 @@ class GameEngine:
             deadline_hour=deadline_hour,
             timeout_consequence=offer.get("timeout_consequence", "quest_failed"),
         )
-        session.campaign_state.setdefault("quest_meta", {})[quest_id] = copy.deepcopy(offer)
-        session.campaign_state.setdefault("accepted_quests", []).append(quest_id)
+        quest_meta = copy.deepcopy(offer)
+        quest_meta["giver_entity_id"] = giver_entity_id
+        quest_meta["giver_name"] = giver_name
+        session.campaign_state.setdefault("quest_meta", {})[quest_id] = quest_meta
+        accepted_quests = session.campaign_state.setdefault("accepted_quests", [])
+        if quest_id not in accepted_quests:
+            accepted_quests.append(quest_id)
         return quest_id
 
     def _update_quest_progress_for_inventory(self, session: GameSession) -> List[Dict[str, Any]]:
-        events: List[Dict[str, Any]] = []
-        quest_meta = session.campaign_state.get("quest_meta", {})
-        current_hour = self._current_game_hour(session)
-        for quest in session.quest_tracker.get_active_quests():
-            meta = quest_meta.get(quest.quest_id, {})
-            if meta.get("kind") != "delivery":
-                continue
-            target_item = meta.get("target_item")
-            required_qty = int(meta.get("required_qty", 1))
-            if target_item and self._count_inventory_item(session, target_item) >= required_qty:
-                for _ in range(required_qty):
-                    session.remove_item(target_item)
-                session.quest_tracker.complete_quest(quest.quest_id, current_hour)
-                reward_gold = int(meta.get("reward_gold", 25))
-                reward_xp = int(meta.get("reward_xp", 40))
-                session.player.gold += reward_gold
-                self.progression.add_xp(session.player, reward_xp)
-                events.append({
-                    "type": "quest_complete",
-                    "quest_id": quest.quest_id,
-                    "title": quest.title,
-                    "reward_gold": reward_gold,
-                    "reward_xp": reward_xp,
-                })
-        return events
+        return []
 
     def _update_quest_progress_for_kill(self, session: GameSession, enemy_name: str) -> List[Dict[str, Any]]:
         events: List[Dict[str, Any]] = []
@@ -1928,6 +2137,15 @@ class GameEngine:
                 reward_xp = int(meta.get("reward_xp", 60))
                 session.player.gold += reward_gold
                 self.progression.add_xp(session.player, reward_xp)
+                completed = session.campaign_state.setdefault("completed_quests", [])
+                if quest.quest_id not in completed:
+                    completed.append(quest.quest_id)
+                completed_ids = session.campaign_state.setdefault("completed_quest_ids", [])
+                if quest.quest_id not in completed_ids:
+                    completed_ids.append(quest.quest_id)
+                accepted = session.campaign_state.setdefault("accepted_quests", [])
+                if quest.quest_id in accepted:
+                    accepted.remove(quest.quest_id)
                 events.append({
                     "type": "quest_complete",
                     "quest_id": quest.quest_id,
@@ -2310,14 +2528,7 @@ class GameEngine:
         else:
             if check_result.critical == "failure":
                 # Lockpick breaks on critical failure
-                for i, item in enumerate(session.inventory):
-                    if "lockpick" in item.get("id", "").lower() or "lockpick" in item.get("name", "").lower():
-                        qty = item.get("qty", 1)
-                        if qty <= 1:
-                            session.inventory.pop(i)
-                        else:
-                            item["qty"] = qty - 1
-                        break
+                session.remove_item("lockpick")
                 narrative = f"Your lockpick snaps inside {target}! The lockpick is lost."
             else:
                 narrative = f"The lock on {target} resists your attempts."
@@ -2437,9 +2648,9 @@ class GameEngine:
         check_text = self._format_skill_check(check_result, ability, dc)
 
         if check_result.success:
-            session.inventory.append({"id": "raw_fish", "name": "Raw Fish", "qty": 1})
+            session.add_item({"id": "raw_fish", "name": "Raw Fish", "qty": 1})
             if check_result.critical == "success":
-                session.inventory.append({"id": "raw_fish", "name": "Raw Fish", "qty": 1})
+                session.add_item({"id": "raw_fish", "name": "Raw Fish", "qty": 1})
                 narrative = "You feel a strong tug and pull out two beautiful fish!"
             else:
                 narrative = "After a patient wait, you catch a fine fish!"
@@ -2480,9 +2691,9 @@ class GameEngine:
         check_text = self._format_skill_check(check_result, ability, dc)
 
         if check_result.success:
-            session.inventory.append({"id": "iron_ore", "name": "Iron Ore", "qty": 1})
+            session.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 1})
             if check_result.critical == "success":
-                session.inventory.append({"id": "iron_ore", "name": "Iron Ore", "qty": 1})
+                session.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 1})
                 narrative = "You strike a rich vein and extract two chunks of quality ore!"
             else:
                 narrative = "You chip away at the rock and extract some usable ore."
@@ -2524,9 +2735,9 @@ class GameEngine:
         check_text = self._format_skill_check(check_result, ability, dc)
 
         if check_result.success:
-            session.inventory.append({"id": "wood_plank", "name": "Wood Plank", "qty": 1})
+            session.add_item({"id": "wood_plank", "name": "Wood Plank", "qty": 1})
             if check_result.critical == "success":
-                session.inventory.append({"id": "wood_plank", "name": "Wood Plank", "qty": 1})
+                session.add_item({"id": "wood_plank", "name": "Wood Plank", "qty": 1})
                 narrative = f"You fell {target} with powerful strokes, yielding plenty of timber!"
             else:
                 narrative = f"You chop {target} into usable planks."
@@ -2546,109 +2757,133 @@ class GameEngine:
 
     # --- Living World Helpers ---
 
+    def _run_hourly_world_updates(self, session: GameSession, hour_marker: int, events: List[Dict[str, Any]]) -> None:
+        for entity in session.entities.values():
+            role = entity.get("role")
+            for recipe_key in ROLE_PRODUCTION.get(role, ()):
+                try:
+                    session.location_stock.produce(recipe_key)
+                except Exception:
+                    continue
+
+        caravan_events = session.caravan_manager.tick(hour_marker)
+        for ce in caravan_events:
+            if ce.get("type") == "arrival" and ce.get("goods_delivered"):
+                for item, qty in ce["goods_delivered"].items():
+                    session.location_stock.add_stock(item, qty)
+                ce = dict(ce)
+                ce["type"] = "caravan_arrival"
+            events.append(ce)
+
+        session.rumor_network.decay(hours=1.0)
+        session.rumor_network.prune_expired()
+
     def _world_tick(self, session: GameSession, minutes: int = 15, refresh_ap: bool = False) -> list:
         """Advance game time and run all Living World subsystems."""
         events: List[Dict[str, Any]] = []
         if not getattr(session, "game_time", None):
             return events
 
-        before_hour = self._current_game_hour(session)
-        previous_period = session.game_time.period
-        session.game_time.advance(minutes)
-        after_hour = self._current_game_hour(session)
-        hours_passed = max(minutes / 60.0, after_hour - before_hour)
-        current_period = session.game_time.period
-        crossed_hour = int(before_hour) != int(after_hour)
+        remaining_minutes = max(0, int(minutes))
+        if remaining_minutes == 0:
+            return events
 
-        if session.ap_tracker and (refresh_ap or crossed_hour):
-            session.ap_tracker.refresh()
+        world_period_changed = False
+        final_hour = self._current_game_hour(session)
+        step_size = 15
 
-        for entity_id, entity in session.entities.items():
-            needs = entity.get("needs")
-            if isinstance(needs, NPCNeeds):
-                needs.tick(hours=hours_passed)
-            schedule = entity.get("schedule")
-            if isinstance(schedule, NPCSchedule):
-                entity["scheduled_location"] = schedule.get_location(current_period)
+        while remaining_minutes > 0:
+            step_minutes = min(step_size, remaining_minutes)
+            before_hour = self._current_game_hour(session)
+            previous_period = session.game_time.period
+            session.game_time.advance(step_minutes)
+            after_hour = self._current_game_hour(session)
+            final_hour = after_hour
+            hours_passed = step_minutes / 60.0
+            current_period = session.game_time.period
+            world_period_changed = world_period_changed or (previous_period != current_period)
 
-        if session.spatial_index:
-            npc_entities = session.spatial_index.entities_of_type(EntityType.NPC)
-            for npc in npc_entities:
-                if npc.id == "player" or not npc.is_alive():
-                    continue
-                tree = create_npc_behavior_tree(is_guard=(npc.job == "guard"))
-                hostiles = [session.player_entity] if npc.is_hostile() and session.player_entity else []
-                ctx = BehaviorContext(
-                    entity=npc,
-                    spatial_index=session.spatial_index,
-                    game_time=session.game_time,
-                    map_data=session.map_data,
-                    hostiles=hostiles,
-                )
-                tree.tick(ctx)
-                action_type = ctx.blackboard.get("action")
-                target_pos = ctx.blackboard.get("target_pos")
+            for entity_id, entity in session.entities.items():
+                needs = entity.get("needs")
+                if isinstance(needs, NPCNeeds):
+                    needs.tick(hours=hours_passed)
+                schedule = entity.get("schedule")
+                if isinstance(schedule, NPCSchedule):
+                    entity["scheduled_location"] = schedule.get_location(current_period)
 
-                if action_type == "follow_schedule" and isinstance(npc.schedule, NPCSchedule):
-                    scheduled_pos = npc.schedule.get_position(current_period)
-                    if scheduled_pos:
-                        target_pos = tuple(scheduled_pos)
-
-                if target_pos and action_type in {"wander", "flee", "patrol", "move_toward_hostile", "follow_schedule"}:
-                    target_pos = tuple(target_pos)
-                    step_target = self._step_toward(tuple(npc.position), target_pos)
-                    moved = self._move_entity_if_possible(session, npc, step_target)
-                    if moved:
-                        if npc.id in session.entities:
-                            session.entities[npc.id]["position"] = [npc.position[0], npc.position[1]]
-                            session.entities[npc.id]["scheduled_location"] = session.entities[npc.id].get("scheduled_location")
-                            session.entities[npc.id]["entity_ref"] = npc
-                        if action_type == "follow_schedule":
-                            destination = getattr(npc.schedule, "get_location", lambda _period: "their post")(current_period)
-                        else:
-                            destination = action_type.replace("_", " ")
-                        events.append({
-                            "type": "npc_move",
-                            "npc_id": npc.id,
-                            "npc_name": npc.name,
-                            "position": [npc.position[0], npc.position[1]],
-                            "destination": destination,
-                        })
-
-        if crossed_hour or refresh_ap:
-            for entity in session.entities.values():
-                role = entity.get("role")
-                for recipe_key in ROLE_PRODUCTION.get(role, ()):
-                    try:
-                        session.location_stock.produce(recipe_key)
-                    except Exception:
+            if session.spatial_index:
+                npc_entities = session.spatial_index.entities_of_type(EntityType.NPC)
+                for npc in npc_entities:
+                    if npc.id == "player" or not npc.is_alive():
                         continue
+                    tree = create_npc_behavior_tree(is_guard=(npc.job == "guard"))
+                    hostiles = [session.player_entity] if npc.is_hostile() and session.player_entity else []
+                    ctx = BehaviorContext(
+                        entity=npc,
+                        spatial_index=session.spatial_index,
+                        game_time=session.game_time,
+                        map_data=session.map_data,
+                        hostiles=hostiles,
+                    )
+                    tree.tick(ctx)
+                    action_type = ctx.blackboard.get("action")
+                    target_pos = ctx.blackboard.get("target_pos")
 
-            caravan_events = session.caravan_manager.tick(int(after_hour))
-            for ce in caravan_events:
-                if ce.get("type") == "arrival" and ce.get("goods_delivered"):
-                    for item, qty in ce["goods_delivered"].items():
-                        session.location_stock.add_stock(item, qty)
-                    ce = dict(ce)
-                    ce["type"] = "caravan_arrival"
-                events.append(ce)
+                    if action_type == "follow_schedule" and isinstance(npc.schedule, NPCSchedule):
+                        scheduled_pos = npc.schedule.get_position(current_period)
+                        if scheduled_pos:
+                            target_pos = tuple(scheduled_pos)
 
-            session.rumor_network.decay(hours=max(1.0, hours_passed))
-            session.rumor_network.prune_expired()
+                    if target_pos and action_type in {"wander", "flee", "patrol", "move_toward_hostile", "follow_schedule"}:
+                        target_pos = tuple(target_pos)
+                        step_target = self._step_toward(tuple(npc.position), target_pos)
+                        moved = self._move_entity_if_possible(session, npc, step_target)
+                        if moved:
+                            if npc.id in session.entities:
+                                session.entities[npc.id]["position"] = [npc.position[0], npc.position[1]]
+                                session.entities[npc.id]["scheduled_location"] = session.entities[npc.id].get("scheduled_location")
+                                session.entities[npc.id]["entity_ref"] = npc
+                            if action_type == "follow_schedule":
+                                destination = getattr(npc.schedule, "get_location", lambda _period: "their post")(current_period)
+                            else:
+                                destination = action_type.replace("_", " ")
+                            events.append({
+                                "type": "npc_move",
+                                "npc_id": npc.id,
+                                "npc_name": npc.name,
+                                "position": [npc.position[0], npc.position[1]],
+                                "destination": destination,
+                            })
 
-        quest_result = session.quest_tracker.tick(after_hour)
-        if quest_result.get("expired"):
-            events.extend(quest_result["expired"])
-        if quest_result.get("reminders"):
-            events.extend(quest_result["reminders"])
+            crossed_hours = list(range(int(before_hour) + 1, int(after_hour) + 1))
+            for hour_marker in crossed_hours:
+                if session.ap_tracker is not None:
+                    session.ap_tracker.refresh()
+                self._run_hourly_world_updates(session, hour_marker, events)
+                quest_result = session.quest_tracker.tick(float(hour_marker))
+                expired = list(quest_result.get("expired") or [])
+                reminders = list(quest_result.get("reminders") or [])
+                if expired:
+                    failed = session.campaign_state.setdefault("failed_quests", [])
+                    failed_ids = session.campaign_state.setdefault("failed_quest_ids", [])
+                    accepted = session.campaign_state.setdefault("accepted_quests", [])
+                    for event in expired:
+                        quest_id = event.get("quest_id")
+                        if quest_id and quest_id not in failed:
+                            failed.append(quest_id)
+                        if quest_id and quest_id not in failed_ids:
+                            failed_ids.append(quest_id)
+                        if quest_id in accepted:
+                            accepted.remove(quest_id)
+                    events.extend(expired)
+                if reminders:
+                    events.extend(reminders)
 
-        quest_progress_events = self._update_quest_progress_for_inventory(session)
-        if quest_progress_events:
-            events.extend(quest_progress_events)
+            session.quest_offers = self._generate_emergent_quests(session)
+            remaining_minutes -= step_minutes
 
-        session.quest_offers = self._generate_emergent_quests(session)
-        session.campaign_state["last_world_tick_hour"] = after_hour
-        session.narration_context["world_period_changed"] = previous_period != current_period
+        session.campaign_state["last_world_tick_hour"] = final_hour
+        session.narration_context["world_period_changed"] = world_period_changed
         return events
 
     def _build_world_context(self, session: GameSession) -> str:

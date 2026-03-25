@@ -24,6 +24,23 @@ def _talk_to_npc(session_id, npc="innkeeper"):
     return resp
 
 
+def _memory_for_target(session, target="innkeeper"):
+    found = None
+    try:
+        found = session.engine._find_entity_by_name(session, target)  # type: ignore[attr-defined]
+    except Exception:
+        found = None
+    if found:
+        entity_id, _ = found
+        return session.npc_memory.get_memory(entity_id)
+    for entity_id, entity in session.entities.items():
+        name = str(entity.get("name", "")).lower()
+        role = str(entity.get("role", "")).lower()
+        if target.lower() in name or target.lower() == role:
+            return session.npc_memory.get_memory(entity_id)
+    return session.npc_memory.get_memory(target)
+
+
 def test_npc_memory_created_after_talk():
     sid = _create_session()
     with patch("engine.llm.LLMRouter.complete", return_value=MOCK_NARRATIVE):
@@ -32,7 +49,7 @@ def test_npc_memory_created_after_talk():
     from engine.api.routes import _sessions
     session = _sessions.get(sid)
     if session:
-        mem = session.npc_memory.get_memory("innkeeper")
+        mem = _memory_for_target(session, "innkeeper")
         # After one talk, memory should exist
         assert mem is not None
 
@@ -45,7 +62,7 @@ def test_npc_memory_records_interaction():
     from engine.api.routes import _sessions
     session = _sessions.get(sid)
     if session:
-        mem = session.npc_memory.get_memory("innkeeper")
+        mem = _memory_for_target(session, "innkeeper")
         # Interaction count should be >= 1 after talking
         assert len(mem.conversations) >= 1
 

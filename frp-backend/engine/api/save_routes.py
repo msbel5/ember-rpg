@@ -199,16 +199,17 @@ def delete_save(save_id: str):
 def load_session(save_id: str):
     """Load a session from a save file."""
     try:
-        save_file = save_manager.load(save_id)
+        save_manager.load(save_id)
         session = save_manager.restore_session(save_id)
         from engine.api.routes import _sessions
 
         _sessions[session.session_id] = session
+        metadata = save_manager.save_system.get_save_metadata(save_id) or {}
         return LoadResponse(
             save_id=save_id,
-            slot_name=save_id,
+            slot_name=metadata.get("slot_name", save_id),
             status="loaded",
-            session_data=save_file.session_data,
+            session_data=session.to_dict(),
         )
     except SaveNotFoundError as exc:
         raise HTTPException(status_code=404, detail=f"Save not found: {save_id}") from exc

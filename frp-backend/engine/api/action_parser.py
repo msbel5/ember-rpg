@@ -49,6 +49,8 @@ class ActionIntent(Enum):
     LOAD_GAME = "load_game"
     LIST_SAVES = "list_saves"
     DELETE_SAVE = "delete_save"
+    ACCEPT_QUEST = "accept_quest"
+    TURN_IN_QUEST = "turn_in_quest"
     UNKNOWN = "unknown"
 
 
@@ -91,6 +93,38 @@ def _normalize(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
+    # ACCEPT_QUEST: "accept quest bread shortage" / "start the quest" / "görevi kabul et"
+    (ActionIntent.ACCEPT_QUEST, [
+        re.compile(
+            r"^(?:accept|start|begin|take)\s+(?:(?:the|a)\s+)?quest(?:\s+(?P<target>[\w\s]+))?$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?:(?P<target>[\w\s]+)\s+)?quest\s+(?:accept|start|begin)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?:görevi?\s+kabul\s+et|görev\s+al)\s*(?P<target>[\w\s]*)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # TURN_IN_QUEST: "turn in quest bread shortage" / "deliver quest" / "görevi teslim et"
+    (ActionIntent.TURN_IN_QUEST, [
+        re.compile(
+            r"^(?:turn\s+in|hand\s+in|deliver|submit)\s+(?:(?:the|a)\s+)?quest(?:\s+(?P<target>[\w\s]+))?$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?:(?P<target>[\w\s]+)\s+)?quest\s+(?:turn\s+in|hand\s+in|deliver|submit)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?:görevi?\s+teslim\s+et|görevi?\s+bitir)\s*(?P<target>[\w\s]*)$",
+            re.IGNORECASE
+        ),
+    ]),
+
     # CAST_SPELL: "cast fireball at goblin" / "büyü ateş topu gobline"
     (ActionIntent.CAST_SPELL, [
         re.compile(
@@ -426,6 +460,8 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
 
 # Fallback keyword map (used when no regex matches)
 _KEYWORD_FALLBACK: list[tuple[ActionIntent, list[str]]] = [
+    (ActionIntent.ACCEPT_QUEST, ["accept quest", "start quest", "begin quest", "take quest", "görevi kabul et", "görev al"]),
+    (ActionIntent.TURN_IN_QUEST, ["turn in quest", "hand in quest", "deliver quest", "submit quest", "görevi teslim et", "görevi bitir"]),
     (ActionIntent.SAVE_GAME, ["save", "save game", "quick save", "kaydet"]),
     (ActionIntent.LOAD_GAME, ["load", "load game", "restore", "yükle"]),
     (ActionIntent.LIST_SAVES, ["saves", "list saves", "show saves", "kayıtlar"]),

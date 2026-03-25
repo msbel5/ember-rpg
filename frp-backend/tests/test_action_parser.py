@@ -197,6 +197,26 @@ def test_sleep(parser):
     assert result.intent == ActionIntent.REST
 
 
+# --- QUESTS ---
+def test_accept_quest_with_title(parser):
+    result = parser.parse("accept quest bread shortage")
+    assert result.intent == ActionIntent.ACCEPT_QUEST
+    assert result.target == "bread shortage"
+
+def test_accept_quest_turkish(parser):
+    result = parser.parse("görevi kabul et ekmek kıtlığı")
+    assert result.intent == ActionIntent.ACCEPT_QUEST
+
+def test_turn_in_quest_with_title(parser):
+    result = parser.parse("turn in quest bread shortage")
+    assert result.intent == ActionIntent.TURN_IN_QUEST
+    assert result.target == "bread shortage"
+
+def test_turn_in_quest_turkish(parser):
+    result = parser.parse("görevi teslim et ekmek kıtlığı")
+    assert result.intent == ActionIntent.TURN_IN_QUEST
+
+
 # --- UNKNOWN ---
 def test_unknown(parser):
     result = parser.parse("xyzzy plugh foo bar")
