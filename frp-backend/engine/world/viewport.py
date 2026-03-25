@@ -19,11 +19,19 @@ class Viewport:
         Screen: (sx, sy) — position relative to the viewport's top-left corner.
 
     The viewport is centred on a world position. Scrolling moves the centre.
+    Supports 3 zoom levels: close (40x20), medium (80x40), overview (full map).
     """
+
+    ZOOM_LEVELS = {
+        1: {"width": 40, "height": 20, "fov_radius": 8},
+        2: {"width": 80, "height": 40, "fov_radius": 16},
+        3: {"width": 160, "height": 80, "fov_radius": 999},  # full map
+    }
 
     def __init__(self, width: int = 40, height: int = 20) -> None:
         self.width = width
         self.height = height
+        self.zoom_level: int = 1
         # Centre of the viewport in world coordinates
         self.center_x: int = 0
         self.center_y: int = 0
@@ -45,6 +53,19 @@ class Viewport:
         """Scroll the viewport by (dx, dy) tiles."""
         self.center_x += dx
         self.center_y += dy
+
+    def cycle_zoom(self, direction: int = 1) -> int:
+        """Cycle zoom level (1/2/3). Returns new zoom level."""
+        self.zoom_level = ((self.zoom_level - 1 + direction) % 3) + 1
+        config = self.ZOOM_LEVELS[self.zoom_level]
+        self.width = config["width"]
+        self.height = config["height"]
+        return self.zoom_level
+
+    @property
+    def fov_radius(self) -> int:
+        """Field of view radius for current zoom level."""
+        return self.ZOOM_LEVELS.get(self.zoom_level, self.ZOOM_LEVELS[1])["fov_radius"]
 
     # ------------------------------------------------------------------
     # Coordinate transforms
@@ -100,6 +121,7 @@ class Viewport:
             "height": self.height,
             "center_x": self.center_x,
             "center_y": self.center_y,
+            "zoom_level": self.zoom_level,
             "fog_of_war": [list(p) for p in self.fog_of_war],
         }
 
@@ -109,6 +131,7 @@ class Viewport:
         vp = cls(width=data.get("width", 40), height=data.get("height", 20))
         vp.center_x = data.get("center_x", 0)
         vp.center_y = data.get("center_y", 0)
+        vp.zoom_level = data.get("zoom_level", 1)
         vp.fog_of_war = {tuple(p) for p in data.get("fog_of_war", [])}
         # visible is recomputed each turn, so we don't persist it
         return vp

@@ -169,6 +169,13 @@ def render_header(session: GameSession) -> Panel:
     sp_text = f"SP: {p.spell_points}/{p.max_spell_points}" if p.max_spell_points > 0 else ""
     ap_text = f"AP: {getattr(p, 'ap', 4)}/{getattr(p, 'max_ap', 4)}"
 
+    # Weight display
+    weight_text = ""
+    if getattr(session, "physical_inventory", None):
+        pi = session.physical_inventory
+        str_mod = session._get_strength_modifier()
+        weight_text = f"  Wt: {pi.total_carried_weight():.1f}/{pi.max_carry_weight(str_mod):.1f} kg"
+
     line1 = (
         f"[bold bright_white]{p.name}[/bold bright_white]  "
         f"[bright_cyan]{char_class} Lv{p.level}[/bright_cyan]  "
@@ -178,7 +185,7 @@ def render_header(session: GameSession) -> Panel:
         f"[dim]XP: {p.xp}[/dim]  "
         f"[bright_yellow]Gold: {p.gold}[/bright_yellow]  "
         f"[bright_magenta]{sp_text}[/bright_magenta]  "
-        f"[dim]{ap_text}  AC: {p.ac}  Wpn: {weapon}  Arm: {armor}[/dim]  "
+        f"[dim]{ap_text}  AC: {p.ac}  Wpn: {weapon}  Arm: {armor}{weight_text}[/dim]  "
         f"[bright_yellow]{format_game_time(session)}[/bright_yellow]"
     )
 
@@ -356,6 +363,12 @@ def read_input() -> str:
             sys.stdout.write(f"\033[32m> \033[0mmove {direction}\n")
             sys.stdout.flush()
             return f"__arrow__{direction}"
+
+        # Zoom keys: +/- or =/_ to cycle zoom
+        if key in ("+", "="):
+            return "__zoom_in__"
+        if key in ("-", "_"):
+            return "__zoom_out__"
 
         # Enter
         if key in ("\r", "\n", readchar.key.ENTER):
@@ -538,6 +551,16 @@ def game_loop(engine: GameEngine, session: GameSession, ms: MapState,
             except Exception as e:
                 narrative_history.append(f"Engine error: {e}")
             # Trim
+            narrative_history = narrative_history[-MAX_NARRATIVES:]
+            continue
+
+        # Zoom commands
+        if cmd in ("__zoom_in__", "__zoom_out__"):
+            if session.viewport:
+                direction = 1 if cmd == "__zoom_in__" else -1
+                new_level = session.viewport.cycle_zoom(direction)
+                narrative_history.append(f"[Zoom level {new_level}]")
+                ms.sync_from_session()
             narrative_history = narrative_history[-MAX_NARRATIVES:]
             continue
 

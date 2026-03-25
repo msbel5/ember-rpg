@@ -51,6 +51,13 @@ class ActionIntent(Enum):
     DELETE_SAVE = "delete_save"
     ACCEPT_QUEST = "accept_quest"
     TURN_IN_QUEST = "turn_in_quest"
+    # --- Physical inventory intents ---
+    FILL = "fill"
+    POUR = "pour"
+    EMPTY = "empty"
+    STASH = "stash"
+    ROTATE_ITEM = "rotate_item"
+    GO_TO = "go_to"
     UNKNOWN = "unknown"
 
 
@@ -353,6 +360,46 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
         ),
     ]),
 
+    # FILL: "fill waterskin" / "fill bottle at well" / "fill canteen from river"
+    (ActionIntent.FILL, [
+        re.compile(
+            r"^(?:fill|refill|doldur)\s+(?P<target>[\w\s]+?)(?:\s+(?:at|from|in|with|dan|den)\s+(?P<direction>[\w\s]+))?$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # POUR: "pour water into bottle" / "pour potion on ground"
+    (ActionIntent.POUR, [
+        re.compile(
+            r"^(?:pour|dump|dök|boşalt)\s+(?P<target>[\w\s]+?)(?:\s+(?:into|on|onto|in|to|içine)\s+(?P<direction>[\w\s]+))?$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # EMPTY: "empty bottle" / "empty waterskin"
+    (ActionIntent.EMPTY, [
+        re.compile(
+            r"^(?:empty|drain|boşalt)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # STASH: "stash gem in sock" / "hide ring in boot"
+    (ActionIntent.STASH, [
+        re.compile(
+            r"^(?:stash|hide|conceal|sakla|gizle)\s+(?P<target>[\w\s]+?)(?:\s+(?:in|inside|into|içine)\s+(?P<direction>[\w\s]+))?$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # ROTATE_ITEM: "rotate sword" / "turn item"
+    (ActionIntent.ROTATE_ITEM, [
+        re.compile(
+            r"^(?:rotate|flip|turn)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
     # CHOP: "chop tree" / "cut wood" / "fell tree"
     (ActionIntent.CHOP, [
         re.compile(
@@ -446,6 +493,15 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
         ),
     ]),
 
+    # GO_TO: "go to merchant" / "walk to guard" / "approach innkeeper"
+    # Only matches known NPC roles or "approach" — general "move to X" falls through to MOVE
+    (ActionIntent.GO_TO, [
+        re.compile(
+            r"^approach\s+(?:the\s+)?(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
     # MOVE: "go north" / "move north" / "move to dungeon" / "enter cave" / "git kuzey"
     (ActionIntent.MOVE, [
         re.compile(
@@ -486,6 +542,12 @@ _KEYWORD_FALLBACK: list[tuple[ActionIntent, list[str]]] = [
     (ActionIntent.READ_ITEM, ["read", "decipher", "study", "oku"]),
     (ActionIntent.FISH, ["fish", "cast line", "go fishing", "balık"]),
     (ActionIntent.MINE, ["mine", "dig", "excavate", "kaz", "maden"]),
+    (ActionIntent.FILL, ["fill", "refill", "doldur"]),
+    (ActionIntent.POUR, ["pour", "dump", "dök"]),
+    (ActionIntent.EMPTY, ["empty", "drain", "boşalt"]),
+    (ActionIntent.STASH, ["stash", "hide", "conceal", "sakla", "gizle"]),
+    (ActionIntent.ROTATE_ITEM, ["rotate", "flip"]),
+    (ActionIntent.GO_TO, ["approach"]),
     (ActionIntent.CHOP, ["chop", "cut", "fell", "kes", "balta"]),
     (ActionIntent.SEARCH, ["search", "look for", "investigate", "rummage"]),
     (ActionIntent.DROP, ["drop", "discard", "throw away", "toss", "bırak"]),

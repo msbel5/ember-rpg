@@ -163,7 +163,10 @@ class SaveSystem:
         if session.ap_tracker is not None:
             data["ap_tracker"] = session.ap_tracker.to_dict()
 
-        # Inventory and equipment (deep copy to avoid mutation)
+        # Physical Inventory (full grid-based system)
+        if getattr(session, "physical_inventory", None) is not None:
+            data["physical_inventory"] = session.physical_inventory.to_dict()
+        # Legacy fallback fields for backward compatibility
         data["inventory"] = list(session.inventory) if session.inventory else []
         data["equipment"] = dict(session.equipment) if session.equipment else {}
 
@@ -417,15 +420,22 @@ class SaveSystem:
         session.viewport = viewport
         session.player_entity = player_entity
         session.ap_tracker = ap_tracker
-        session.inventory = data.get("inventory", [])
-        # Merge saved equipment with defaults so all 8 slots always exist
-        _default_equipment = {
-            "weapon": None, "armor": None, "shield": None, "helmet": None,
-            "boots": None, "gloves": None, "ring": None, "amulet": None,
-        }
-        saved_equip = data.get("equipment", {})
-        _default_equipment.update(saved_equip)
-        session.equipment = _default_equipment
+
+        # Physical Inventory system
+        from engine.world.inventory import PhysicalInventory
+        if "physical_inventory" in data:
+            session.physical_inventory = PhysicalInventory.from_dict(data["physical_inventory"])
+        else:
+            # Migrate from legacy flat inventory/equipment format
+            session.physical_inventory = PhysicalInventory()
+            session.inventory = data.get("inventory", [])
+            _default_equipment = {
+                "weapon": None, "armor": None, "shield": None, "helmet": None,
+                "boots": None, "gloves": None, "ring": None, "amulet": None,
+            }
+            saved_equip = data.get("equipment", {})
+            _default_equipment.update(saved_equip)
+            session.equipment = _default_equipment
 
         # Lazy-init subsystems that were None
         if session.world_state is None:

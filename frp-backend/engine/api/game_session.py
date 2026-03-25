@@ -1,6 +1,7 @@
 """
 Ember RPG - API Layer
 GameSession: per-player game state container
+Physical Inventory system (RE4-style grid + Dark Souls passive management).
 """
 from dataclasses import dataclass, field
 from typing import Optional, Dict, List, Any
@@ -32,6 +33,11 @@ from engine.world.viewport import Viewport
 from engine.world.action_points import ActionPointTracker, CLASS_AP
 from engine.map import MapData, TownGenerator, DungeonGenerator, WildernessGenerator
 
+# Physical Inventory system
+from engine.world.inventory import (
+    PhysicalInventory, ItemStack, Container, get_item_shape,
+    DEFAULT_EQUIPMENT_SLOTS as PHYS_EQUIPMENT_SLOTS,
+)
 
 DEFAULT_EQUIPMENT_SLOTS = {
     "weapon": None,
@@ -97,8 +103,7 @@ class GameSession:
     viewport: Optional[Viewport] = None
     player_entity: Optional[Entity] = None
     ap_tracker: Optional[ActionPointTracker] = None
-    inventory: List[Dict] = field(default_factory=list)
-    equipment: Dict[str, Optional[Dict]] = field(default_factory=lambda: dict(DEFAULT_EQUIPMENT_SLOTS))
+    physical_inventory: Optional[PhysicalInventory] = None
 
     def __post_init__(self):
         if self.world_state is None:
@@ -185,6 +190,35 @@ class GameSession:
                 player_class = next(iter(self.player.classes), "warrior") if self.player.classes else "warrior"
             max_ap = CLASS_AP.get(player_class, 4)
             self.ap_tracker = ActionPointTracker(max_ap=max_ap)
+        if self.physical_inventory is None:
+            self.physical_inventory = PhysicalInventory()
+            # Snapshot player data before any sync_player_state calls can clear it
+            _player_inv = list(getattr(self.player, "inventory", None) or [])
+            _player_equip = dict(getattr(self.player, "equipment", None) or {})
+            # Migrate from player's inventory if they have items
+            for item in _player_inv:
+                if isinstance(item, str):
+                    normalized = self._normalize_item_record({"id": item, "name": self._display_name(item)})
+                    stack = ItemStack.from_legacy_dict(normalized)
+                    self.physical_inventory.add_item_auto(stack)
+                elif isinstance(item, dict):
+                    normalized = self._normalize_item_record(item)
+                    stack = ItemStack.from_legacy_dict(normalized)
+                    self.physical_inventory.add_item_auto(stack)
+            # Migrate from player's equipment
+            for slot, item in _player_equip.items():
+                if item is None:
+                    continue
+                canon_slot = self._canonical_slot(slot)
+                if canon_slot not in DEFAULT_EQUIPMENT_SLOTS:
+                    continue
+                if isinstance(item, str):
+                    normalized = self._normalize_item_record({"id": item, "slot": canon_slot})
+                else:
+                    normalized = self._normalize_item_record(item)
+                    normalized["slot"] = canon_slot
+                stack = ItemStack.from_legacy_dict(normalized)
+                self.physical_inventory.equipment[canon_slot] = stack
         if not self.campaign_state:
             self.campaign_state = {
                 "active_quests": [],
@@ -203,6 +237,91 @@ class GameSession:
     def in_combat(self) -> bool:
         """Return True if session has active combat."""
         return self.combat is not None and not self.combat.combat_ended
+
+    # --- Physical Inventory property bridges ---
+    @property
+    def inventory(self) -> List[Dict]:
+        """Legacy read accessor: returns flat list of dicts from PhysicalInventory."""
+        if self.physical_inventory is None:
+            return []
+        return self.physical_inventory.all_items_flat()
+
+    @inventory.setter
+    def inventory(self, value: List[Dict]) -> None:
+        """Legacy write accessor: replaces contents of PhysicalInventory from flat dicts."""
+        if self.physical_inventory is None:
+            self.physical_inventory = PhysicalInventory()
+        # Clear all containers
+        for container in self.physical_inventory.all_containers():
+            for inst_id in list(container.placed_items.keys()):
+                container.remove_item(inst_id)
+        # Add items from flat list
+        for item_dict in (value or []):
+            normalized = self._normalize_item_record(item_dict)
+            stack = ItemStack.from_legacy_dict(normalized)
+            self.physical_inventory.add_item_auto(stack)
+
+    @property
+    def equipment(self) -> Dict[str, Optional[Dict]]:
+        """Legacy read accessor: returns equipment as dict of slot->item_dict."""
+        if self.physical_inventory is None:
+            return dict(DEFAULT_EQUIPMENT_SLOTS)
+        result = {}
+        for slot in DEFAULT_EQUIPMENT_SLOTS:
+            stack = self.physical_inventory.equipment.get(slot)
+            if stack is not None:
+                result[slot] = stack.to_legacy_dict()
+            else:
+                result[slot] = None
+        return result
+
+    @equipment.setter
+    def equipment(self, value: Dict[str, Optional[Dict]]) -> None:
+        """Legacy write accessor: sets equipment from dict of slot->item_dict."""
+        if self.physical_inventory is None:
+            self.physical_inventory = PhysicalInventory()
+        for slot in DEFAULT_EQUIPMENT_SLOTS:
+            item = (value or {}).get(slot)
+            if item is None:
+                self.physical_inventory.equipment[slot] = None
+            elif isinstance(item, dict):
+                normalized = self._normalize_item_record(item)
+                stack = ItemStack.from_legacy_dict(normalized)
+                self.physical_inventory.equipment[slot] = stack
+            elif isinstance(item, str):
+                # String item id — create minimal stack
+                normalized = self._normalize_item_record({"id": item, "slot": slot})
+                stack = ItemStack.from_legacy_dict(normalized)
+                self.physical_inventory.equipment[slot] = stack
+
+    def set_equipment_slot(self, slot: str, item: Any) -> None:
+        """Set a single equipment slot. Accepts dict, str, or None."""
+        if self.physical_inventory is None:
+            self.physical_inventory = PhysicalInventory()
+        canon = self._canonical_slot(slot) or slot
+        if canon not in DEFAULT_EQUIPMENT_SLOTS and canon not in self.physical_inventory.equipment:
+            return
+        if item is None:
+            self.physical_inventory.equipment[canon] = None
+        elif isinstance(item, dict):
+            normalized = self._normalize_item_record(item)
+            normalized["slot"] = canon
+            stack = ItemStack.from_legacy_dict(normalized)
+            self.physical_inventory.equipment[canon] = stack
+        elif isinstance(item, str):
+            normalized = self._normalize_item_record({"id": item, "slot": canon})
+            stack = ItemStack.from_legacy_dict(normalized)
+            self.physical_inventory.equipment[canon] = stack
+
+    def get_equipment_slot(self, slot: str) -> Optional[Dict[str, Any]]:
+        """Get a single equipment slot as a legacy dict or None."""
+        if self.physical_inventory is None:
+            return None
+        canon = self._canonical_slot(slot) or slot
+        stack = self.physical_inventory.equipment.get(canon)
+        if stack is None:
+            return None
+        return stack.to_legacy_dict()
 
     @staticmethod
     def _canonical_slot(slot: Optional[str]) -> Optional[str]:
@@ -448,41 +567,8 @@ class GameSession:
         return equipment_ids
 
     def ensure_consistency(self) -> None:
-        raw_inventory = list(self.inventory or [])
-        if not raw_inventory and hasattr(self.player, "inventory"):
-            raw_inventory = list(getattr(self.player, "inventory", []) or [])
-        normalized_inventory: List[Dict[str, Any]] = []
-        for item in raw_inventory:
-            normalized = self._normalize_item_record(item)
-            if self._is_stackable(normalized):
-                existing = next(
-                    (entry for entry in normalized_inventory if self._item_stack_key(entry) == self._item_stack_key(normalized)),
-                    None,
-                )
-                if existing is not None:
-                    existing["qty"] += normalized.get("qty", 1)
-                    continue
-            normalized_inventory.append(normalized)
-        self.inventory = normalized_inventory
-
-        merged_equipment = dict(DEFAULT_EQUIPMENT_SLOTS)
-        raw_equipment = dict(self.equipment or {})
-        if not any(raw_equipment.values()) and hasattr(self.player, "equipment"):
-            raw_equipment.update(getattr(self.player, "equipment", {}) or {})
-        for slot_name, item in raw_equipment.items():
-            slot = self._canonical_slot(slot_name)
-            if slot not in merged_equipment:
-                continue
-            if item is None:
-                merged_equipment[slot] = None
-            elif isinstance(item, str):
-                inv_item = next((entry for entry in self.inventory if entry.get("id") == item), None)
-                merged_equipment[slot] = copy.deepcopy(inv_item) if inv_item else self._normalize_item_record({"id": item, "slot": slot})
-            else:
-                normalized = self._normalize_item_record(item)
-                normalized["slot"] = slot
-                merged_equipment[slot] = normalized
-        self.equipment = merged_equipment
+        if self.physical_inventory is None:
+            self.physical_inventory = PhysicalInventory()
         self.quest_offers = self.normalize_quest_offers(self.quest_offers, default_source="authored")
         self.reattach_entity_refs()
         self.sync_player_state()
@@ -517,18 +603,17 @@ class GameSession:
         if self.dm_context is not None:
             self.dm_context.party = [self.player]
 
+    def _get_strength_modifier(self) -> int:
+        """Get player's MIG-based strength modifier for carry weight."""
+        if self.player is None:
+            return 0
+        mig = (getattr(self.player, "stats", None) or {}).get("MIG", 10)
+        return (mig - 10) // 2
+
     def add_item(self, item: Any, merge: bool = True) -> Dict[str, Any]:
         normalized = self._normalize_item_record(item)
-        if merge and self._is_stackable(normalized):
-            existing = next(
-                (entry for entry in self.inventory if self._item_stack_key(entry) == self._item_stack_key(normalized)),
-                None,
-            )
-            if existing is not None:
-                existing["qty"] += normalized.get("qty", 1)
-                self.sync_player_state()
-                return existing
-        self.inventory.append(normalized)
+        stack = ItemStack.from_legacy_dict(normalized)
+        success, msg = self.physical_inventory.add_item_auto(stack)
         self.sync_player_state()
         return normalized
 
@@ -536,6 +621,10 @@ class GameSession:
         query_lower = (query or "").lower().strip()
         if not query_lower:
             return None
+        stack = self.physical_inventory.find_item(query_lower)
+        if stack is not None:
+            return stack.to_legacy_dict()
+        # Also search by legacy fields
         for item in self.inventory:
             if query_lower in {
                 str(item.get("id", "")).lower(),
@@ -548,49 +637,46 @@ class GameSession:
         return None
 
     def remove_item(self, query: str, quantity: int = 1) -> Optional[Dict[str, Any]]:
-        item = self.find_inventory_item(query)
-        if item is None:
+        stack = self.physical_inventory.remove_item(query, quantity)
+        if stack is None:
             return None
-        qty = max(1, quantity)
-        if item.get("qty", 1) > qty:
-            item["qty"] -= qty
-            detached = copy.deepcopy(item)
-            detached["qty"] = qty
-            detached["instance_id"] = f"{detached['id']}-{uuid.uuid4().hex[:8]}"
-            self.sync_player_state()
-            return detached
-        self.inventory.remove(item)
         self.sync_player_state()
-        return item
+        return stack.to_legacy_dict()
 
     def equip_item(self, query: str) -> Optional[Dict[str, Any]]:
-        item = self.remove_item(query)
-        if item is None:
+        # Find item in containers first
+        removed_dict = self.remove_item(query)
+        if removed_dict is None:
             return None
-        slot = self._infer_slot(item)
-        if slot not in self.equipment:
-            self.add_item(item)
+        slot = self._infer_slot(removed_dict)
+        if slot not in DEFAULT_EQUIPMENT_SLOTS:
+            self.add_item(removed_dict)
             return None
-        previous = self.equipment.get(slot)
+        # Unequip previous item in that slot
+        previous = self.physical_inventory.equipment.get(slot)
         if previous is not None:
-            self.add_item(previous)
-        item["slot"] = slot
-        self.equipment[slot] = item
+            self.physical_inventory.equipment[slot] = None
+            self.add_item(previous.to_legacy_dict())
+        # Equip new item
+        removed_dict["slot"] = slot
+        stack = ItemStack.from_legacy_dict(removed_dict)
+        self.physical_inventory.equipment[slot] = stack
         self.sync_player_state()
-        return item
+        return removed_dict
 
     def unequip_item(self, query: str) -> Optional[Dict[str, Any]]:
         query_lower = (query or "").lower().strip()
         if not query_lower:
             return None
-        for slot, item in self.equipment.items():
-            if item is None:
+        for slot, stack in self.physical_inventory.equipment.items():
+            if stack is None:
                 continue
-            if query_lower == slot or query_lower in str(item.get("id", "")).lower() or query_lower in str(item.get("name", "")).lower():
-                self.equipment[slot] = None
-                self.add_item(item)
+            if query_lower == slot or query_lower in stack.item_id.lower() or query_lower in stack.name.lower():
+                self.physical_inventory.equipment[slot] = None
+                item_dict = stack.to_legacy_dict()
+                self.add_item(item_dict)
                 self.sync_player_state()
-                return item
+                return item_dict
         return None
 
     def replace_with(self, other: "GameSession", preserve_session_id: bool = False) -> None:
@@ -657,6 +743,15 @@ class GameSession:
             equipped = {slot: item for slot, item in self.equipment.items() if item is not None}
             if equipped:
                 result["equipment"] = copy.deepcopy(equipped)
+
+        # --- Weight / Encumbrance ---
+        if self.physical_inventory:
+            str_mod = self._get_strength_modifier()
+            result["weight"] = {
+                "current": round(self.physical_inventory.total_carried_weight(), 1),
+                "max": round(self.physical_inventory.max_carry_weight(str_mod), 1),
+                "encumbrance_penalty": self.physical_inventory.encumbrance_ap_penalty(str_mod),
+            }
 
         # --- Living World state ---
         if self.game_time:

@@ -17,7 +17,7 @@ from engine.api.action_parser import ActionParser, ActionIntent, ParsedAction
 from engine.api.game_session import GameSession
 
 # Living World imports
-from engine.world.proximity import check_proximity, move_cardinal, distance
+from engine.world.proximity import check_proximity, move_cardinal, distance, astar_path
 from engine.world.schedules import GameTime as LivingGameTime, hour_to_period, DEFAULT_SCHEDULES, NPCSchedule
 from engine.world.tick_scheduler import WorldTickScheduler
 from engine.world.naming import NameGenerator
@@ -257,7 +257,7 @@ class GameEngine:
             slot = item.get("slot")
             # Auto-equip weapon/armor/shield
             if slot and session.equipment.get(slot) is None:
-                session.equipment[slot] = item
+                session.set_equipment_slot(slot, item)
                 # Update AP tracker armor type for armor items
                 if slot == "armor" and session.ap_tracker:
                     material = item.get("material", "none")
@@ -483,6 +483,23 @@ class GameEngine:
             )
             session.spatial_index.add(entity)
 
+    def _encumbrance_penalty(self, session: GameSession) -> int:
+        """Get current encumbrance AP penalty from physical inventory."""
+        if session.physical_inventory is None:
+            return 0
+        str_mod = session._get_strength_modifier()
+        return session.physical_inventory.encumbrance_ap_penalty(str_mod)
+
+    def _auto_end_turn(self, session: GameSession) -> str:
+        """If AP <= 0 and not in combat, auto-end turn (world tick + AP refresh).
+        Returns narrative fragment if auto-turn happened, empty string otherwise."""
+        if session.in_combat():
+            return ""
+        if session.ap_tracker is None or session.ap_tracker.current_ap > 0:
+            return ""
+        session.ap_tracker.refresh()
+        return " (New turn — AP refreshed)"
+
     def _current_game_hour(self, session: GameSession) -> float:
         if not getattr(session, "game_time", None):
             return 0.0
@@ -550,6 +567,12 @@ class GameEngine:
             ActionIntent.FISH:       self._handle_fish,
             ActionIntent.MINE:       self._handle_mine,
             ActionIntent.CHOP:       self._handle_chop,
+            ActionIntent.FILL:       self._handle_fill,
+            ActionIntent.POUR:       self._handle_pour,
+            ActionIntent.EMPTY:      self._handle_pour,   # empty = pour out
+            ActionIntent.STASH:      self._handle_stash,
+            ActionIntent.ROTATE_ITEM: self._handle_rotate_item,
+            ActionIntent.GO_TO:      self._handle_go_to,
             ActionIntent.UNKNOWN:    self._handle_unknown,
         }
 
@@ -1351,6 +1374,12 @@ class GameEngine:
         )
 
     def _handle_move(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        enc_penalty = self._encumbrance_penalty(session)
+        if enc_penalty >= 999:
+            return ActionResult(
+                narrative="You're too overencumbered to move! Drop some items first.",
+                scene_type=session.dm_context.scene_type,
+            )
         # --- Bug 3: Block movement during combat, allow flee ---
         if session.dm_context.scene_type == SceneType.COMBAT:
             flee_words = ["flee", "run", "escape", "retreat"]
@@ -1406,14 +1435,14 @@ class GameEngine:
                 else:
                     blocked_msg = "Something blocks your path."
             else:
-                # Check AP cost
+                # Check AP cost (including encumbrance)
                 move_cost = ACTION_COSTS.get("move_flat", 1)
-                if session.ap_tracker and not session.ap_tracker.can_move(move_cost):
+                if session.ap_tracker and not session.ap_tracker.can_move(move_cost, enc_penalty):
                     blocked_msg = f"Not enough action points to move. (AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap})"
                 else:
                     # Spend AP
                     if session.ap_tracker:
-                        session.ap_tracker.spend_movement(move_cost)
+                        session.ap_tracker.spend_movement(move_cost, enc_penalty)
                     # Move player in spatial index
                     if session.spatial_index and session.player_entity:
                         session.spatial_index.move(session.player_entity, new_x, new_y)
@@ -1432,7 +1461,7 @@ class GameEngine:
                 blocked_msg = "Something blocks your path."
             else:
                 if session.ap_tracker:
-                    if not session.ap_tracker.spend_movement(ACTION_COSTS.get("move_flat", 1)):
+                    if not session.ap_tracker.spend_movement(ACTION_COSTS.get("move_flat", 1), enc_penalty):
                         blocked_msg = "Not enough action points to move."
                     else:
                         if session.spatial_index and session.player_entity:
@@ -1460,11 +1489,11 @@ class GameEngine:
                         blocked_msg = "Something blocks your path."
                     else:
                         move_cost = ACTION_COSTS.get("move_flat", 1)
-                        if session.ap_tracker and not session.ap_tracker.can_move(move_cost):
+                        if session.ap_tracker and not session.ap_tracker.can_move(move_cost, enc_penalty):
                             blocked_msg = f"Not enough action points to move. (AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap})"
                         else:
                             if session.ap_tracker:
-                                session.ap_tracker.spend_movement(move_cost)
+                                session.ap_tracker.spend_movement(move_cost, enc_penalty)
                             if session.spatial_index and session.player_entity:
                                 session.spatial_index.move(session.player_entity, x, y)
                             session.position = [x, y]
@@ -1472,6 +1501,13 @@ class GameEngine:
                 except Exception:
                     pass
             else:
+                # Check if named destination matches an NPC — auto-pathfind
+                target_entity = self._find_entity_by_name(session, dest)
+                if target_entity is not None:
+                    # Delegate to go_to handler
+                    from engine.api.action_parser import ParsedAction as _PA, ActionIntent as _AI
+                    goto_action = _PA(intent=_AI.GO_TO, raw_input=action.raw_input, target=dest)
+                    return self._handle_go_to(session, goto_action)
                 # Named destination — just update location name
                 session.dm_context.location = dest
 
@@ -1711,8 +1747,9 @@ class GameEngine:
     # --- Inventory / Equipment Handlers ---
 
     def _handle_inventory(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        """Show the player's inventory and equipped items."""
+        """Show the player's inventory with containers, weight, and equipment."""
         lines = []
+        pi = session.physical_inventory
 
         # Equipment
         equipped_items = {slot: item for slot, item in session.equipment.items() if item is not None}
@@ -1726,19 +1763,38 @@ class GameEngine:
                     extra += f" (AC+{item['ac_bonus']})"
                 lines.append(f"  [{slot}] {item['name']}{extra}")
 
-        # Inventory
-        if session.inventory:
-            lines.append("== Backpack ==")
-            for i, item in enumerate(session.inventory):
-                qty = item.get("qty", 1)
-                qty_str = f" x{qty}" if qty > 1 else ""
-                lines.append(f"  {i+1}. {item['name']}{qty_str}")
-        elif not equipped_items:
+        # Containers
+        if pi:
+            for container in pi.all_containers():
+                items = container.all_items()
+                if items:
+                    lines.append(f"== {container.container_id.replace('_', ' ').title()} ({container.used_slots()}/{container.slot_count()} slots, {container.total_weight():.1f}/{container.max_weight:.1f} kg) ==")
+                    for i, stack in enumerate(items):
+                        qty_str = f" x{stack.quantity}" if stack.quantity > 1 else ""
+                        lines.append(f"  {i+1}. {stack.name}{qty_str} ({stack.weight:.1f} kg)")
+            # Hidden stashes (only show non-empty ones)
+            for stash_name, stash in pi.hidden_stashes.items():
+                items = stash.all_items()
+                if items:
+                    lines.append(f"== {stash_name.replace('_', ' ').title()} (hidden) ==")
+                    for stack in items:
+                        lines.append(f"  - {stack.name}")
+
+        if not equipped_items and not session.inventory:
             lines.append("Your inventory is empty.")
+
+        # Weight
+        if pi:
+            str_mod = session._get_strength_modifier()
+            total = pi.total_carried_weight()
+            max_w = pi.max_carry_weight(str_mod)
+            enc = pi.encumbrance_ap_penalty(str_mod)
+            enc_str = f" [ENCUMBERED +{enc} AP/move]" if enc > 0 and enc < 999 else (" [CANNOT MOVE]" if enc >= 999 else "")
+            lines.append(f"\nWeight: {total:.1f}/{max_w:.1f} kg{enc_str}")
 
         # AP status
         if session.ap_tracker:
-            lines.append(f"\nAP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap}")
+            lines.append(f"AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap}")
 
         return ActionResult(
             narrative="\n".join(lines),
@@ -1774,15 +1830,30 @@ class GameEngine:
                     scene_type=session.dm_context.scene_type,
                 )
 
-        if session.spatial_index:
-            session.spatial_index.remove(match)
         item_dict = {"id": match.id, "name": match.name, "type": "item", "entity_id": match.id}
         if match.inventory:
             item_dict.update(copy.deepcopy(match.inventory[0]))
         item_dict["ground_instance_id"] = match.id
-        session.add_item(item_dict, merge=True)
+
+        # Check weight limit before picking up
+        if session.physical_inventory:
+            from engine.world.inventory import ItemStack as _IS
+            test_stack = _IS.from_legacy_dict(session._normalize_item_record(item_dict))
+            str_mod = session._get_strength_modifier()
+            new_weight = session.physical_inventory.total_carried_weight() + test_stack.weight
+            max_weight = session.physical_inventory.max_carry_weight(str_mod)
+            if new_weight > max_weight * 1.5:
+                return ActionResult(
+                    narrative=f"Too heavy! {match.name} would bring you to {new_weight:.1f}/{max_weight:.1f} kg.",
+                    scene_type=session.dm_context.scene_type,
+                )
+
+        if session.spatial_index:
+            session.spatial_index.remove(match)
+        added = session.add_item(item_dict, merge=True)
+        auto_turn = self._auto_end_turn(session)
         return ActionResult(
-            narrative=f"You pick up {match.name}.",
+            narrative=f"You pick up {match.name}.{auto_turn}",
             scene_type=session.dm_context.scene_type,
         )
 
@@ -2067,6 +2138,198 @@ class GameEngine:
         """Unequip handler (delegates to _handle_unequip_item)."""
         target = (action.target or "").lower()
         return self._handle_unequip_item(session, target)
+
+    def _handle_fill(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Fill a liquid container (waterskin, bottle) at a water source."""
+        target = (action.target or "").lower()
+        if not target:
+            return ActionResult(
+                narrative="Fill what? Specify a container name (e.g., 'fill waterskin').",
+                scene_type=session.dm_context.scene_type,
+            )
+        # Check if near water source
+        has_water = False
+        if session.map_data:
+            px, py = session.position
+            for dx in range(-1, 2):
+                for dy in range(-1, 2):
+                    from engine.map import TileType
+                    if session.map_data.get_tile(px + dx, py + dy) == TileType.WATER:
+                        has_water = True
+                        break
+        # Also check for well/fountain entities
+        if not has_water and session.spatial_index:
+            nearby = session.spatial_index.in_radius(session.position[0], session.position[1], 2)
+            for e in nearby:
+                if any(w in e.name.lower() for w in ["well", "fountain", "spring"]):
+                    has_water = True
+                    break
+        if not has_water:
+            return ActionResult(
+                narrative="There's no water source nearby. Move closer to water, a well, or a fountain.",
+                scene_type=session.dm_context.scene_type,
+            )
+        if session.physical_inventory:
+            success, msg = session.physical_inventory.fill_liquid_container(target, "water", 500)
+            if success:
+                return ActionResult(narrative=msg, scene_type=session.dm_context.scene_type)
+            return ActionResult(narrative=msg, scene_type=session.dm_context.scene_type)
+        return ActionResult(
+            narrative="You don't have a container to fill.",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_pour(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Pour liquid out of a container or between containers."""
+        target = (action.target or "").lower()
+        if not target:
+            return ActionResult(
+                narrative="Pour what? Specify a container (e.g., 'pour waterskin').",
+                scene_type=session.dm_context.scene_type,
+            )
+        if session.physical_inventory:
+            stack = session.physical_inventory.find_item(target)
+            if stack and stack.contained_matter:
+                liquid = stack.contained_matter.get("item_id", "liquid")
+                amount = stack.contained_matter.get("amount_ml", 0)
+                stack.contained_matter = None
+                return ActionResult(
+                    narrative=f"You pour out {amount}ml of {liquid} from the {stack.name}.",
+                    scene_type=session.dm_context.scene_type,
+                )
+        return ActionResult(
+            narrative=f"You don't have '{target}' or it doesn't contain any liquid.",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_stash(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Hide an item in a hidden stash (sock, boot lining)."""
+        target = (action.target or "").lower()
+        location = (action.direction or action.action_detail or "").lower().strip()
+        if not target:
+            return ActionResult(
+                narrative="Stash what? Specify an item (e.g., 'stash gem in sock').",
+                scene_type=session.dm_context.scene_type,
+            )
+        # Remove from inventory
+        removed = session.remove_item(target)
+        if removed is None:
+            return ActionResult(
+                narrative=f"You don't have '{target}' in your inventory.",
+                scene_type=session.dm_context.scene_type,
+            )
+        from engine.world.inventory import ItemStack as _IS
+        stack = _IS.from_legacy_dict(removed)
+        # Pick stash location
+        if not location:
+            location = "sock_left"
+        # Normalize location name
+        location = location.replace(" ", "_")
+        if session.physical_inventory:
+            success, msg = session.physical_inventory.stash_in(location, stack)
+            if success:
+                return ActionResult(narrative=msg, scene_type=session.dm_context.scene_type)
+            # Failed — put item back
+            session.add_item(removed)
+            return ActionResult(narrative=msg, scene_type=session.dm_context.scene_type)
+        session.add_item(removed)
+        return ActionResult(
+            narrative="No stash locations available.",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_rotate_item(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Rotate an item in the grid (90 degrees)."""
+        target = (action.target or "").lower()
+        if not target:
+            return ActionResult(
+                narrative="Rotate what? Specify an item name.",
+                scene_type=session.dm_context.scene_type,
+            )
+        if session.physical_inventory:
+            stack = session.physical_inventory.find_item(target)
+            if stack:
+                stack.orientation = (stack.orientation + 90) % 360
+                return ActionResult(
+                    narrative=f"You rotate {stack.name} to {stack.orientation} degrees.",
+                    scene_type=session.dm_context.scene_type,
+                )
+        return ActionResult(
+            narrative=f"You don't have '{target}' in your inventory.",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_go_to(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Auto-pathfind to a named NPC or location using A*."""
+        target = (action.target or "").strip()
+        if not target:
+            return ActionResult(
+                narrative="Go to whom? Specify an NPC or location name.",
+                scene_type=session.dm_context.scene_type,
+            )
+        # Find target entity
+        entity = self._find_entity_by_name(session, target)
+        if entity is None:
+            # Fall back to regular move
+            return self._handle_move(session, action)
+        entity_id, entity_data = entity
+        target_pos = entity_data.get("position", [0, 0])
+        # Use A* to find path
+        path = astar_path(session.map_data, session.position, target_pos, max_steps=20)
+        if not path:
+            return ActionResult(
+                narrative=f"Can't find a path to {entity_data.get('name', target)}.",
+                scene_type=session.dm_context.scene_type,
+            )
+        # Walk along path, spending AP per step, auto-turning when AP runs out
+        enc_penalty = self._encumbrance_penalty(session)
+        if enc_penalty >= 999:
+            return ActionResult(
+                narrative="You're too overencumbered to move!",
+                scene_type=session.dm_context.scene_type,
+            )
+        steps_taken = 0
+        for step_pos in path:
+            # Stop if adjacent to target (within melee range)
+            if distance(step_pos, target_pos) <= 1 and steps_taken > 0:
+                break
+            move_cost = ACTION_COSTS.get("move_flat", 1)
+            if session.ap_tracker:
+                if not session.ap_tracker.can_move(move_cost, enc_penalty):
+                    # Auto-turn: refresh AP and continue
+                    session.ap_tracker.refresh()
+                if not session.ap_tracker.spend_movement(move_cost, enc_penalty):
+                    break
+            # Check walkability and blocking
+            nx, ny = step_pos[0], step_pos[1]
+            if session.spatial_index and session.spatial_index.blocking_at(nx, ny):
+                break
+            if session.spatial_index and session.player_entity:
+                session.spatial_index.move(session.player_entity, nx, ny)
+            session.position = [nx, ny]
+            steps_taken += 1
+        # Update viewport
+        if session.viewport and session.map_data:
+            session.viewport.center_on(session.position[0], session.position[1])
+            session.viewport.compute_fov(
+                lambda x, y: not session.map_data.is_walkable(x, y),
+                session.position[0], session.position[1],
+                radius=session.viewport.fov_radius,
+            )
+        session.sync_player_state()
+        npc_name = entity_data.get("name", target)
+        dist_remaining = distance(session.position, target_pos)
+        if dist_remaining <= 1:
+            return ActionResult(
+                narrative=f"You walk to {npc_name} ({steps_taken} steps). You're now close enough to interact.",
+                scene_type=session.dm_context.scene_type,
+                state_changes={"position": list(session.position)},
+            )
+        return ActionResult(
+            narrative=f"You walk toward {npc_name} ({steps_taken} steps) but couldn't reach them. ({int(dist_remaining)} tiles away)",
+            scene_type=session.dm_context.scene_type,
+            state_changes={"position": list(session.position)},
+        )
 
     def _handle_save_game(self, session: GameSession, action: ParsedAction) -> ActionResult:
         slot_name = (action.target or "").strip() or (

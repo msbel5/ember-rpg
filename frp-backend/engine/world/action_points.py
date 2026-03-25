@@ -111,20 +111,22 @@ class ActionPointTracker:
         """Return True if the entity has enough AP for the given cost."""
         return self.current_ap >= cost
 
-    def movement_cost(self, base_cost: int) -> int:
-        """Compute actual movement cost including armor weight penalty.
+    def movement_cost(self, base_cost: int, encumbrance_penalty: int = 0) -> int:
+        """Compute actual movement cost including armor weight and encumbrance penalties.
 
         Parameters
         ----------
         base_cost : int
             Terrain-based cost (1 for flat, 2 for rough, etc.).
+        encumbrance_penalty : int
+            Extra cost from PhysicalInventory weight ratio (0/1/2/999).
         """
         penalty = ARMOR_WEIGHT_PENALTY.get(self.armor_type, 0)
-        return base_cost + penalty
+        return base_cost + penalty + encumbrance_penalty
 
-    def can_move(self, base_cost: int) -> bool:
+    def can_move(self, base_cost: int, encumbrance_penalty: int = 0) -> bool:
         """Return True if the entity can afford to move on terrain with *base_cost*."""
-        return self.can_afford(self.movement_cost(base_cost))
+        return self.can_afford(self.movement_cost(base_cost, encumbrance_penalty))
 
     # ── Mutations ────────────────────────────────────────────────
 
@@ -137,9 +139,9 @@ class ActionPointTracker:
         self.current_ap -= cost
         return True
 
-    def spend_movement(self, base_cost: int) -> bool:
-        """Deduct movement AP including armor penalty.  Returns True on success."""
-        return self.spend(self.movement_cost(base_cost))
+    def spend_movement(self, base_cost: int, encumbrance_penalty: int = 0) -> bool:
+        """Deduct movement AP including armor and encumbrance penalties.  Returns True on success."""
+        return self.spend(self.movement_cost(base_cost, encumbrance_penalty))
 
     def refresh(self) -> None:
         """Restore AP to maximum (called at the start of each turn)."""

@@ -193,7 +193,7 @@ def test_require_session_preserves_canonical_inventory_and_equipment():
             "slot": "weapon",
         }
     ]
-    session.equipment["weapon"] = {
+    session.set_equipment_slot("weapon", {
         "id": "iron_sword",
         "name": "Iron Sword",
         "material": "iron",
@@ -202,7 +202,7 @@ def test_require_session_preserves_canonical_inventory_and_equipment():
         "instance_id": "iron_sword-special",
         "type": "weapon",
         "slot": "weapon",
-    }
+    })
     session.ensure_consistency()
 
     inventory_before = [dict(item) for item in session.inventory]
