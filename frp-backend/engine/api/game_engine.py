@@ -13,6 +13,22 @@ from engine.core.dm_agent import DMAIAgent, DMContext, DMEvent, SceneType, Event
 from engine.api.action_parser import ActionParser, ActionIntent, ParsedAction
 from engine.api.game_session import GameSession
 
+# Living World imports
+from engine.world.proximity import check_proximity, move_cardinal, distance
+from engine.world.schedules import GameTime as LivingGameTime, hour_to_period, DEFAULT_SCHEDULES
+from engine.world.tick_scheduler import WorldTickScheduler
+from engine.world.naming import NameGenerator
+from engine.world.npc_needs import NPCNeeds
+from engine.world.need_satisfaction import NeedSatisfactionEngine
+from engine.world.ethics import evaluate_action, get_faction_context, FACTION_ETHICS
+from engine.world.history import HistorySeed, get_history_context, get_npc_known_facts
+from engine.world.economy import LocationStock
+from engine.world.rumors import RumorNetwork, NPCInfo
+from engine.world.quest_timeout import QuestTracker
+from engine.world.body_parts import BodyPartTracker, roll_hit_location, calculate_armor_reduction
+from engine.world.caravans import CaravanManager
+from engine.world.materials import apply_material, MATERIALS
+
 
 # XP rewards for killing enemies (by level)
 XP_REWARDS = {1: 100, 2: 200, 3: 450, 4: 700, 5: 1100}
@@ -73,6 +89,9 @@ class GameEngine:
         self.dm = DMAIAgent()
         self.progression = ProgressionSystem()
         self.llm = llm
+        # Living World shared systems
+        self.tick_scheduler = WorldTickScheduler()
+        self.need_satisfaction = NeedSatisfactionEngine()
 
     def new_session(
         self,
@@ -124,7 +143,74 @@ class GameEngine:
             party=[player],
         )
 
-        return GameSession(player=player, dm_context=dm_context)
+        session = GameSession(player=player, dm_context=dm_context)
+
+        # --- Initialize Living World systems ---
+        # Generate world history from session seed
+        seed = hash(session.session_id) % 1000000
+        session.history_seed = HistorySeed().generate(seed=seed)
+        session.name_gen = NameGenerator(seed=seed)
+
+        # Scale body tracker HP to player's max_hp
+        hp_scale = player.max_hp / 20.0  # 20 is baseline warrior HP
+        for part in session.body_tracker.max_hp:
+            session.body_tracker.max_hp[part] = max(1, int(session.body_tracker.max_hp[part] * hp_scale))
+            session.body_tracker.current_hp[part] = session.body_tracker.max_hp[part]
+
+        # Update location stock ID to match starting location
+        session.location_stock = LocationStock(
+            location_id=loc.lower().replace(" ", "_"),
+            baseline={"food": 20, "ale": 10, "iron_bar": 5, "bread": 15,
+                      "healing_potion": 3, "leather": 8, "cloth": 10},
+        )
+
+        # Populate initial entities with procedural names
+        self._populate_scene_entities(session, loc)
+
+        return session
+
+    def _populate_scene_entities(self, session: GameSession, location: str) -> None:
+        """Populate session.entities with NPCs appropriate for the location."""
+        session.entities = {}
+        loc_lower = location.lower()
+
+        # Define NPC archetypes by location type
+        if any(w in loc_lower for w in ["tavern", "inn"]):
+            roles = [("innkeeper", "merchant_guild"), ("guard", "harbor_guard"),
+                     ("quest_giver", "merchant_guild"), ("beggar", "thieves_guild")]
+        elif any(w in loc_lower for w in ["market", "harbor", "town", "city"]):
+            roles = [("merchant", "merchant_guild"), ("guard", "harbor_guard"),
+                     ("blacksmith", "mountain_dwarves"), ("beggar", "thieves_guild"),
+                     ("priest", "temple_order")]
+        elif any(w in loc_lower for w in ["forest", "road", "path"]):
+            roles = [("spy", "thieves_guild"), ("guard", "harbor_guard")]
+        else:
+            roles = [("merchant", "merchant_guild"), ("guard", "harbor_guard")]
+
+        for role, faction in roles:
+            npc_id = f"{role}_{len(session.entities) + 1}"
+            # Pick gender randomly
+            gender = random.choice(["male", "female"])
+            # Choose faction-appropriate name generation faction
+            name_faction = "human"
+            if faction == "mountain_dwarves":
+                name_faction = "dwarf"
+            elif faction == "forest_elves":
+                name_faction = "elf"
+            name = session.name_gen.generate_name(faction=name_faction, gender=gender, npc_id=npc_id)
+            # Assign a position near the player
+            pos = [session.position[0] + random.randint(-2, 2),
+                   session.position[1] + random.randint(-2, 2)]
+            needs = NPCNeeds()
+            session.entities[npc_id] = {
+                "name": name,
+                "type": "npc",
+                "position": pos,
+                "faction": faction,
+                "role": role,
+                "needs": needs,
+                "gender": gender,
+            }
 
     def process_action(self, session: GameSession, input_text: str) -> ActionResult:
         """
@@ -139,6 +225,9 @@ class GameEngine:
         """
         session.touch()
         session.dm_context.advance_turn()
+
+        # --- Living World: advance time and run world tick ---
+        world_events = self._world_tick(session)
 
         action = self.parser.parse(input_text)
 
@@ -165,6 +254,12 @@ class GameEngine:
     # --- Intent Handlers ---
 
     def _handle_attack(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        # Proximity check for attack (melee range)
+        if action.target:
+            prox_fail = self._check_entity_proximity(session, action.target, "attack_melee")
+            if prox_fail:
+                return prox_fail
+
         # --- Bug 1: Non-hostile target handling (route to DM for funny response) ---
         hostile_keywords = ["goblin", "orc", "bandit", "wolf", "skeleton", "zombie",
                             "enemy", "monster", "troll", "guard", "militia", "watchman",
@@ -314,13 +409,43 @@ class GameEngine:
         crit = result.get("crit", False)
         fumble = result.get("fumble", False)
 
+        # --- Body part + material system ---
+        hit_part = None
+        armor_reduction = 0
+        material_bonus = ""
+        if hit or crit:
+            # Roll hit location
+            hit_part = roll_hit_location()
+            # Check armor (player has no equipped armor list by default, but support it)
+            equipped_armor = getattr(session.player, 'equipped_armor', [])
+            armor_reduction = calculate_armor_reduction(hit_part, equipped_armor)
+            # Apply weapon material bonus (default iron)
+            weapon_material = getattr(session.player, 'weapon_material', 'iron')
+            if weapon_material in MATERIALS:
+                mat = MATERIALS[weapon_material]
+                damage = max(1, int(damage * mat.damage_mult))
+                material_bonus = f" ({weapon_material})"
+            # Reduce damage by armor
+            effective_damage = max(0, damage - armor_reduction)
+            # Apply body part damage to tracker (for the target if it's an enemy)
+            state_changes["hit_location"] = hit_part
+            state_changes["armor_reduction"] = armor_reduction
+            state_changes["effective_damage"] = effective_damage
+            # Update the result damage
+            result["damage"] = effective_damage
+            damage = effective_damage
+
         if target_combatant:
+            hit_part_str = f" in the {hit_part}" if hit_part else ""
             narrative_parts.append(
                 self._build_combat_narrative(
                     session, session.player.name, target_combatant.character,
                     hit=hit or crit, damage=damage, crit=crit, fumble=fumble
                 )
             )
+            if hit_part and (hit or crit):
+                armor_str = f" (armor absorbed {armor_reduction})" if armor_reduction > 0 else ""
+                narrative_parts.append(f"[Hit: {hit_part}{material_bonus}{armor_str}]")
         else:
             # Fallback if no target
             if crit:
@@ -384,13 +509,23 @@ class GameEngine:
                     combat.current_turn = saved_turn
                     if enemy_result.get("hit"):
                         dmg = enemy_result.get("damage", 0)
-                        session.player.hp = max(0, session.player.hp - dmg)
+                        # Body part hit location for player damage
+                        player_hit_part = roll_hit_location()
+                        player_armor = getattr(session.player, 'equipped_armor', [])
+                        player_armor_red = calculate_armor_reduction(player_hit_part, player_armor)
+                        effective_dmg = max(0, dmg - player_armor_red)
+                        # Apply to body part tracker
+                        session.body_tracker.apply_damage(player_hit_part, effective_dmg)
+                        session.player.hp = max(0, session.player.hp - effective_dmg)
                         # Sync the combat combatant's hp too
                         player_combatant = combat.combatants[player_idx]
                         player_combatant.character.hp = session.player.hp
                         narrative_parts.append(
-                            self._build_enemy_combat_narrative(session, enemy_combatant, hit=True, damage=dmg)
+                            self._build_enemy_combat_narrative(session, enemy_combatant, hit=True, damage=effective_dmg)
                         )
+                        if player_armor_red > 0 or player_hit_part:
+                            armor_note = f" (armor absorbed {player_armor_red})" if player_armor_red > 0 else ""
+                            narrative_parts.append(f"[Hit your {player_hit_part}{armor_note}]")
                     elif enemy_result.get("fumble") or not enemy_result.get("hit"):
                         narrative_parts.append(
                             self._build_enemy_combat_narrative(session, enemy_combatant, hit=False, damage=0)
@@ -518,23 +653,33 @@ class GameEngine:
             return ActionResult(narrative=narrative, scene_type=SceneType.COMBAT)
 
         location = session.dm_context.location or "the area"
+        world_context = self._build_world_context(session)
         desc = (
             f"{session.player.name} surveys their surroundings in {location}. "
             f"Current location: {location}. "
-            f"They take in the sights, sounds, and atmosphere of {location} specifically."
+            f"They take in the sights, sounds, and atmosphere of {location} specifically.\n"
+            f"{world_context}"
         )
         event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
             "player_name": session.player.name,
             "location": location,
             "current_location": location,
             "action": "look around",
+            "world_context": world_context,
         })
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_examine(self, session: GameSession, action: ParsedAction) -> ActionResult:
         target = action.target or session.dm_context.location
-        desc = f"{session.player.name} examines {target} closely, looking for details."
+
+        # Proximity check for examining entities
+        prox_fail = self._check_entity_proximity(session, target, "examine")
+        if prox_fail:
+            return prox_fail
+
+        world_context = self._build_world_context(session)
+        desc = f"{session.player.name} examines {target} closely, looking for details.\n{world_context}"
         event = DMEvent(type=EventType.DISCOVERY, description=desc, data={
             "player_name": session.player.name,
             "location": session.dm_context.location,
@@ -547,6 +692,11 @@ class GameEngine:
     def _handle_talk(self, session: GameSession, action: ParsedAction) -> ActionResult:
         target = action.target or "a stranger"
 
+        # Proximity check
+        prox_fail = self._check_entity_proximity(session, target, "talk")
+        if prox_fail:
+            return prox_fail
+
         # Try to find NPC personality from templates
         npc_personality = self._get_npc_personality(target)
 
@@ -558,19 +708,40 @@ class GameEngine:
             prior_context["prior_interactions"] = len(memory.conversations)
             prior_context["npc_memory_summary"] = memory.build_context()
 
+        # Check NPC willingness to talk (from needs system)
+        found_entity = self._find_entity_by_name(session, target)
+        npc_mood = "content"
+        npc_behavior = {}
+        if found_entity:
+            _, entity = found_entity
+            needs = entity.get("needs")
+            if isinstance(needs, NPCNeeds):
+                npc_mood = needs.emotional_state()
+                npc_behavior = needs.behavior_modifiers()
+                if not npc_behavior.get("will_talk", True):
+                    return ActionResult(
+                        narrative=f"{entity['name']} looks too anxious to talk right now. Their eyes dart around nervously.",
+                        scene_type=session.dm_context.scene_type,
+                    )
+
+        world_context = self._build_world_context(session)
         desc = (
             f"{session.player.name} approaches {target} to speak. "
             f"{session.player.name} says: (initiate conversation). "
             f"Generate {target}'s response as they would actually speak, "
-            f"in character with their personality."
+            f"in character with their personality.\n"
+            f"NPC mood: {npc_mood}.\n"
+            f"{world_context}"
         )
         event_data = {
             "player_name": session.player.name,
             "location": session.dm_context.location,
             "npc_name": target,
             "npc_personality": npc_personality,
+            "npc_mood": npc_mood,
             "action": "talk",
             "player_input": action.raw_input,
+            "world_context": world_context,
         }
         event_data.update(prior_context)
 
@@ -624,6 +795,22 @@ class GameEngine:
         session.player.hp = min(session.player.hp + heal, session.player.max_hp)
         session.player.spell_points = session.player.max_spell_points
 
+        # Rest advances time by 8 hours (extra on top of the 15min from process_action)
+        for _ in range(32):  # 32 x 15min = 8 hours
+            session.game_time.advance(15)
+        # Run caravan/economy ticks for rest period
+        game_hour = session.game_time.hour + (session.game_time.day - 1) * 24
+        session.caravan_manager.tick(game_hour)
+        session.rumor_network.decay(hours=8)
+        # NPC needs decay during rest
+        for eid, entity in session.entities.items():
+            needs = entity.get("needs")
+            if isinstance(needs, NPCNeeds):
+                needs.tick(hours=8)
+        # Heal body parts during rest
+        for part in session.body_tracker.current_hp:
+            session.body_tracker.heal(part, max(1, session.body_tracker.max_hp[part] // 4))
+
         desc = f"{session.player.name} takes a short rest and recovers {heal} HP."
         event = DMEvent(type=EventType.REST, description=desc)
         self.dm.transition(session.dm_context, SceneType.REST)
@@ -652,7 +839,7 @@ class GameEngine:
         if dest and dest.startswith("to "):
             dest = dest[3:]
 
-        # --- Position tracking ---
+        # --- Position tracking (enhanced with proximity module) ---
         DIRECTION_DELTAS = {
             "north": (0, -1), "south": (0, 1),
             "east": (1, 0), "west": (-1, 0),
@@ -669,27 +856,30 @@ class GameEngine:
             }
             session.facing = turn_map[dest_lower].get(session.facing, session.facing)
         elif dest_lower in DIRECTION_DELTAS:
-            # Cardinal move: update facing and advance
+            # Cardinal move using proximity module
             session.facing = dest_lower
-            dx, dy = DIRECTION_DELTAS[dest_lower]
-            session.position = [
-                max(0, min(MAP_SIZE - 1, session.position[0] + dx)),
-                max(0, min(MAP_SIZE - 1, session.position[1] + dy)),
-            ]
+            new_pos, success, msg = move_cardinal(session.position, dest_lower)
+            if success:
+                # Clamp to map bounds
+                new_pos[0] = max(0, min(MAP_SIZE - 1, new_pos[0]))
+                new_pos[1] = max(0, min(MAP_SIZE - 1, new_pos[1]))
+                session.position = new_pos
+            elif msg:
+                return ActionResult(narrative=msg, scene_type=session.dm_context.scene_type)
             session.dm_context.location = dest
         elif dest_lower == "forward":
-            # Advance in current facing
-            dx, dy = DIRECTION_DELTAS.get(session.facing, (0, -1))
-            session.position = [
-                max(0, min(MAP_SIZE - 1, session.position[0] + dx)),
-                max(0, min(MAP_SIZE - 1, session.position[1] + dy)),
-            ]
+            # Advance in current facing using proximity module
+            new_pos, success, msg = move_cardinal(session.position, session.facing)
+            if success:
+                new_pos[0] = max(0, min(MAP_SIZE - 1, new_pos[0]))
+                new_pos[1] = max(0, min(MAP_SIZE - 1, new_pos[1]))
+                session.position = new_pos
             session.dm_context.location = dest
         else:
             # Named destination (tavern etc.) — update location name
             session.dm_context.location = dest
 
-        # --- New: coordinate support ("x,y") → set absolute position ---
+        # --- Coordinate support ("x,y") → set absolute position ---
         import re
         coord_match = re.match(r"^\s*(\d{1,3})\s*,\s*(\d{1,3})\s*$", str(dest))
         if coord_match:
@@ -700,15 +890,16 @@ class GameEngine:
                 x = max(0, min(MAP_SIZE - 1, x))
                 y = max(0, min(MAP_SIZE - 1, y))
                 session.position = [x, y]
-                # Optional: update facing toward previous position
             except Exception:
                 pass
 
-        desc = f"{session.player.name} moves toward {dest}."
+        world_context = self._build_world_context(session)
+        desc = f"{session.player.name} moves toward {dest}.\n{world_context}"
         event = DMEvent(type=EventType.DISCOVERY, description=desc, data={
             "player_name": session.player.name,
             "location": dest,
             "action": f"move to {dest}",
+            "world_context": world_context,
         })
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
@@ -738,10 +929,42 @@ class GameEngine:
 
     def _handle_trade(self, session: GameSession, action: ParsedAction) -> ActionResult:
         target = action.target or "a merchant"
+
+        # Proximity check
+        prox_fail = self._check_entity_proximity(session, target, "trade")
+        if prox_fail:
+            return prox_fail
+
+        # Check NPC willingness to trade (from needs)
+        found_entity = self._find_entity_by_name(session, target)
+        if found_entity:
+            _, entity = found_entity
+            needs = entity.get("needs")
+            if isinstance(needs, NPCNeeds):
+                behavior = needs.behavior_modifiers()
+                if not behavior.get("will_trade", True):
+                    return ActionResult(
+                        narrative=f"{entity['name']} shakes their head. 'Not now. Too dangerous to do business.'",
+                        scene_type=session.dm_context.scene_type,
+                    )
+
         npc_personality = self._get_npc_personality(target)
+
+        # Build price context from economy
+        price_info = []
+        for item in ["food", "ale", "iron_bar", "healing_potion", "bread"]:
+            stock = session.location_stock.get_stock(item)
+            price = session.location_stock.get_effective_price(item)
+            if stock > 0:
+                price_info.append(f"{item}: {stock} in stock, {price:.1f}g each")
+        stock_str = "; ".join(price_info) if price_info else "Limited stock available"
+
+        world_context = self._build_world_context(session)
         desc = (
             f"{session.player.name} wants to trade with {target}. "
-            f"Generate {target}'s response showing their wares and willingness to trade."
+            f"Generate {target}'s response showing their wares and willingness to trade.\n"
+            f"Available stock: {stock_str}\n"
+            f"{world_context}"
         )
         event = DMEvent(type=EventType.DIALOGUE, description=desc, data={
             "player_name": session.player.name,
@@ -750,6 +973,8 @@ class GameEngine:
             "npc_personality": npc_personality,
             "action": "trade",
             "player_input": action.raw_input,
+            "stock_info": stock_str,
+            "world_context": world_context,
         })
         self.dm.transition(session.dm_context, SceneType.DIALOGUE)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
@@ -771,6 +996,147 @@ class GameEngine:
         })
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+
+    # --- Living World Helpers ---
+
+    def _world_tick(self, session: GameSession) -> list:
+        """Advance game time and run all Living World subsystems."""
+        events = []
+
+        # Advance 15 minutes per action
+        period_changed = session.game_time.advance(15)
+
+        if period_changed:
+            current_period = session.game_time.period
+
+            # NPC schedule movements: update entity positions/locations
+            for eid, entity in session.entities.items():
+                role = entity.get("role", "merchant")
+                schedule = DEFAULT_SCHEDULES.get(role, DEFAULT_SCHEDULES["merchant"])
+                new_loc = schedule.get(current_period.value, "home")
+                entity["scheduled_location"] = new_loc
+
+            # NPC needs decay (all entities)
+            for eid, entity in session.entities.items():
+                needs = entity.get("needs")
+                if isinstance(needs, NPCNeeds):
+                    needs.tick(hours=1)
+
+            # Economy: caravan tick
+            game_hour = session.game_time.hour + (session.game_time.day - 1) * 24
+            caravan_events = session.caravan_manager.tick(game_hour)
+            for ce in caravan_events:
+                if ce.get("type") == "arrival" and ce.get("goods_delivered"):
+                    # Deliver goods to location stock
+                    for item, qty in ce["goods_delivered"].items():
+                        session.location_stock.add_stock(item, qty)
+            events.extend(caravan_events)
+
+            # Rumor decay
+            session.rumor_network.decay(hours=1)
+            session.rumor_network.prune_expired()
+
+        # Quest timeout check (every action, not just period changes)
+        game_hour = session.game_time.hour + (session.game_time.day - 1) * 24
+        quest_result = session.quest_tracker.tick(game_hour)
+        if quest_result.get("expired"):
+            events.extend(quest_result["expired"])
+        if quest_result.get("reminders"):
+            events.extend(quest_result["reminders"])
+
+        return events
+
+    def _build_world_context(self, session: GameSession) -> str:
+        """Assemble all Living World state into a context string for LLM prompts."""
+        parts = []
+
+        # Time
+        if session.game_time:
+            parts.append(f"[Time: {session.game_time.to_string()}]")
+
+        # NPCs at current location
+        nearby = []
+        for eid, entity in session.entities.items():
+            ent_pos = entity.get("position", [0, 0])
+            dist = max(abs(session.position[0] - ent_pos[0]),
+                       abs(session.position[1] - ent_pos[1]))
+            if dist <= 3:
+                needs = entity.get("needs")
+                mood = needs.emotional_state() if isinstance(needs, NPCNeeds) else "content"
+                nearby.append(f"  {entity['name']} ({entity['role']}, {entity['faction']}) — mood: {mood}")
+        if nearby:
+            parts.append("[Nearby NPCs]\n" + "\n".join(nearby))
+
+        # Faction context for nearby NPCs
+        factions_seen = set()
+        for eid, entity in session.entities.items():
+            faction = entity.get("faction", "")
+            if faction and faction in FACTION_ETHICS and faction not in factions_seen:
+                factions_seen.add(faction)
+                ctx = get_faction_context(faction)
+                parts.append(f"[Faction: {faction}] Values: {', '.join(ctx['top_values'])}. Personality: {ctx['personality']}")
+
+        # History context (abbreviated)
+        if session.history_seed:
+            tensions = session.history_seed.get_tensions()
+            if tensions:
+                tension_strs = [t.name for t in tensions[:3]]
+                parts.append("[Current Tensions] " + "; ".join(tension_strs))
+
+        # Active rumors at this location
+        active_rumors = session.rumor_network.get_all_active()
+        if active_rumors:
+            rumor_strs = [f"'{r.fact}' (confidence: {r.confidence:.0%})" for r in active_rumors[:3]]
+            parts.append("[Rumors] " + "; ".join(rumor_strs))
+
+        # Economy: notable prices
+        price_notes = []
+        for item in ["food", "iron_bar", "healing_potion"]:
+            mod = session.location_stock.get_price_modifier(item)
+            if mod != 1.0:
+                price_notes.append(f"{item}: {mod:.1f}x price")
+        if price_notes:
+            parts.append("[Economy] " + ", ".join(price_notes))
+
+        # Active quests
+        active_quests = session.quest_tracker.get_active_quests()
+        if active_quests:
+            quest_strs = [f"'{q.title}'" + (f" (deadline in {q.deadline_hour - (session.game_time.hour + (session.game_time.day-1)*24):.0f}h)" if q.deadline_hour else "")
+                          for q in active_quests[:3]]
+            parts.append("[Active Quests] " + "; ".join(quest_strs))
+
+        # Body injuries
+        injuries = session.body_tracker.get_injury_effects()
+        if injuries:
+            inj_strs = [f"{part}: {status}" for part, status in injuries.items()]
+            parts.append("[Player Injuries] " + ", ".join(inj_strs))
+
+        return "\n".join(parts)
+
+    def _find_entity_by_name(self, session: GameSession, target_name: str) -> Optional[tuple]:
+        """Find entity by partial name match. Returns (entity_id, entity_dict) or None."""
+        if not target_name:
+            return None
+        target_lower = target_name.lower()
+        for eid, entity in session.entities.items():
+            if target_lower in entity.get("name", "").lower() or target_lower in entity.get("role", "").lower():
+                return (eid, entity)
+        return None
+
+    def _check_entity_proximity(self, session: GameSession, target_name: str, action_type: str) -> Optional[ActionResult]:
+        """Check if target entity is in range for action. Returns ActionResult on failure, None if OK."""
+        found = self._find_entity_by_name(session, target_name)
+        if found is None:
+            return None  # No entity found, let the handler deal with it normally
+        eid, entity = found
+        target_pos = entity.get("position", [0, 0])
+        ok, msg = check_proximity(session.position, target_pos, action_type)
+        if not ok:
+            return ActionResult(
+                narrative=f"{msg} {entity['name']} is at position {target_pos}.",
+                scene_type=session.dm_context.scene_type,
+            )
+        return None
 
     # --- Helpers ---
 

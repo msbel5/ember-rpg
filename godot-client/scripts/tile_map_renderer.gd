@@ -18,6 +18,14 @@ const TILE_TEXTURES = {
 	"sand": "res://assets/tiles/sand.png",
 	"dark_stone": "res://assets/tiles/dark_stone.png",
 	"tavern_floor": "res://assets/tiles/tavern_floor.png",
+	# New zone tiles
+	"lava": "res://assets/tiles/lava.png",
+	"ice": "res://assets/tiles/ice.png",
+	"swamp": "res://assets/tiles/swamp.png",
+	"marble": "res://assets/tiles/marble.png",
+	"brick": "res://assets/tiles/brick.png",
+	"cave": "res://assets/tiles/cave.png",
+	"bridge": "res://assets/tiles/bridge.png",
 	# Fallbacks
 	"wall": "res://assets/tiles/stone_wall.png",
 	"floor": "res://assets/tiles/stone_floor.png",
@@ -25,6 +33,11 @@ const TILE_TEXTURES = {
 	"building_wall": "res://assets/tiles/stone_wall.png",
 	"building_floor": "res://assets/tiles/tavern_floor.png",
 	"dock_planks": "res://assets/tiles/wood_floor.png",
+	"frozen": "res://assets/tiles/ice.png",
+	"volcanic": "res://assets/tiles/lava.png",
+	"mud": "res://assets/tiles/swamp.png",
+	"stone_brick": "res://assets/tiles/brick.png",
+	"palace_floor": "res://assets/tiles/marble.png",
 }
 
 const SPRITE_TEXTURES = {
@@ -49,6 +62,17 @@ const SPRITE_TEXTURES = {
 	"bandit": "res://assets/sprites/bandit.png",
 	"dragon": "res://assets/sprites/dragon.png",
 	"zombie": "res://assets/sprites/zombie.png",
+	# New entity types
+	"bard": "res://assets/sprites/bard.png",
+	"witch": "res://assets/sprites/witch.png",
+	"knight": "res://assets/sprites/knight.png",
+	"thief": "res://assets/sprites/thief.png",
+	"necromancer": "res://assets/sprites/necromancer.png",
+	"troll": "res://assets/sprites/troll.png",
+	"rat": "res://assets/sprites/rat.png",
+	"ghost": "res://assets/sprites/ghost.png",
+	"mimic": "res://assets/sprites/mimic.png",
+	"fairy": "res://assets/sprites/fairy.png",
 }
 
 var tile_cache: Dictionary = {}

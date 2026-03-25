@@ -1,0 +1,268 @@
+{
+  "sprite_knight": {
+    "generated": "2026-03-24 17:40",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_knight_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\knight.png"
+  },
+  "sprite_ghost": {
+    "generated": "2026-03-24 17:40",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_ghost_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\ghost.png"
+  },
+  "sprite_mimic": {
+    "generated": "2026-03-24 17:40",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_mimic_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\mimic.png"
+  },
+  "sprite_bard": {
+    "generated": "2026-03-24 17:40",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_bard_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\bard.png"
+  },
+  "sprite_witch": {
+    "generated": "2026-03-24 17:40",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_witch_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\witch.png"
+  },
+  "sprite_thief": {
+    "generated": "2026-03-24 17:41",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_thief_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\thief.png"
+  },
+  "sprite_necromancer": {
+    "generated": "2026-03-24 17:41",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_necromancer_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\necromancer.png"
+  },
+  "sprite_troll": {
+    "generated": "2026-03-24 17:41",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_troll_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\troll.png"
+  },
+  "sprite_rat": {
+    "generated": "2026-03-24 17:41",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_rat_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\rat.png"
+  },
+  "sprite_fairy": {
+    "generated": "2026-03-24 17:41",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_fairy_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\fairy.png"
+  },
+  "sprite_warrior": {
+    "generated": "2026-03-24 17:42",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_warrior_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\warrior.png"
+  },
+  "sprite_mage": {
+    "generated": "2026-03-24 17:42",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_mage_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\mage.png"
+  },
+  "sprite_rogue": {
+    "generated": "2026-03-24 17:42",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_rogue_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\rogue.png"
+  },
+  "sprite_priest": {
+    "generated": "2026-03-24 17:42",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_priest_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\priest.png"
+  },
+  "sprite_merchant": {
+    "generated": "2026-03-24 17:42",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_merchant_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\merchant.png"
+  },
+  "sprite_quest_giver": {
+    "generated": "2026-03-24 17:42",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_quest_giver_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\quest_giver.png"
+  },
+  "sprite_innkeeper": {
+    "generated": "2026-03-24 17:43",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_innkeeper_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\innkeeper.png"
+  },
+  "sprite_guard": {
+    "generated": "2026-03-24 17:43",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_guard_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\guard.png"
+  },
+  "sprite_blacksmith": {
+    "generated": "2026-03-24 17:43",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_blacksmith_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\blacksmith.png"
+  },
+  "sprite_healer": {
+    "generated": "2026-03-24 17:43",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_healer_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\healer.png"
+  },
+  "sprite_beggar": {
+    "generated": "2026-03-24 17:43",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_beggar_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\beggar.png"
+  },
+  "sprite_spy": {
+    "generated": "2026-03-24 17:43",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_spy_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\spy.png"
+  },
+  "sprite_sage": {
+    "generated": "2026-03-24 17:43",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_sage_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\sage.png"
+  },
+  "sprite_goblin": {
+    "generated": "2026-03-24 17:43",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_goblin_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\goblin.png"
+  },
+  "sprite_skeleton": {
+    "generated": "2026-03-24 17:43",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_skeleton_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\skeleton.png"
+  },
+  "sprite_wolf": {
+    "generated": "2026-03-24 17:44",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_wolf_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\wolf.png"
+  },
+  "sprite_orc": {
+    "generated": "2026-03-24 17:44",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_orc_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\orc.png"
+  },
+  "sprite_spider": {
+    "generated": "2026-03-24 17:44",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_spider_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\spider.png"
+  },
+  "sprite_bandit": {
+    "generated": "2026-03-24 17:44",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_bandit_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\bandit.png"
+  },
+  "sprite_dragon": {
+    "generated": "2026-03-24 17:44",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_dragon_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\dragon.png"
+  },
+  "sprite_zombie": {
+    "generated": "2026-03-24 17:44",
+    "prompt": "pixel art RPG character sprite, 3/4 top-down view, single character centered, dark fantasy style, tr",
+    "raw": "C:\\Users\\msbel\\ember-rpg\\tools\\asset_raw\\sprite_zombie_raw.png",
+    "final": "C:\\Users\\msbel\\ember-rpg\\godot-client\\assets\\sprites\\zombie.png"
+  },
+  "tile_stone_floor": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, dun"
+  },
+  "tile_stone_wall": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, dun"
+  },
+  "tile_grass": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, gre"
+  },
+  "tile_dirt_path": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, bro"
+  },
+  "tile_water": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, blu"
+  },
+  "tile_door": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, woo"
+  },
+  "tile_chest": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, woo"
+  },
+  "tile_stairs": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, sto"
+  },
+  "tile_cobblestone": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, tow"
+  },
+  "tile_wood_floor": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, woo"
+  },
+  "tile_sand": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, des"
+  },
+  "tile_dark_stone": {
+    "generated": "2026-03-24 17:45",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, dar"
+  },
+  "tile_tavern_floor": {
+    "generated": "2026-03-24 17:46",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, tav"
+  },
+  "tile_lava": {
+    "generated": "2026-03-24 17:46",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, mol"
+  },
+  "tile_ice": {
+    "generated": "2026-03-24 17:46",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, fro"
+  },
+  "tile_swamp": {
+    "generated": "2026-03-24 17:46",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, mur"
+  },
+  "tile_marble": {
+    "generated": "2026-03-24 17:46",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, pol"
+  },
+  "tile_brick": {
+    "generated": "2026-03-24 17:46",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, red"
+  },
+  "tile_cave": {
+    "generated": "2026-03-24 17:46",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, nat"
+  },
+  "tile_bridge": {
+    "generated": "2026-03-24 17:46",
+    "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, woo"
+  }
+}
