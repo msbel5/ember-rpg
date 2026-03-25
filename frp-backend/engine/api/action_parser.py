@@ -264,10 +264,22 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
         ),
     ]),
 
-    # SNEAK: "sneak past guards" / "stealth" / "hide" / "creep"
+    # STASH must come before SNEAK so "hide gem in sock" → STASH not SNEAK
+    (ActionIntent.STASH, [
+        re.compile(
+            r"^(?:stash|hide|conceal|sakla|gizle)\s+(?P<target>[\w\s]+?)(?:\s+(?:in|inside|into|içine)\s+(?P<direction>[\w\s]+))$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # SNEAK: "sneak past guards" / "stealth" / "creep" (no "hide" — conflicts with STASH)
     (ActionIntent.SNEAK, [
         re.compile(
-            r"^(?:sneak(?:\s+past)?|stealth|hide|creep|skulk|gizlen|sızıl|sinsi)\s*(?P<target>[\w\s]*)$",
+            r"^(?:sneak(?:\s+past)?|stealth|creep|skulk|gizlen|sızıl|sinsi)\s*(?P<target>[\w\s]*)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^hide$",  # bare "hide" with no object = stealth
             re.IGNORECASE
         ),
     ]),
@@ -384,18 +396,10 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
         ),
     ]),
 
-    # STASH: "stash gem in sock" / "hide ring in boot"
-    (ActionIntent.STASH, [
-        re.compile(
-            r"^(?:stash|hide|conceal|sakla|gizle)\s+(?P<target>[\w\s]+?)(?:\s+(?:in|inside|into|içine)\s+(?P<direction>[\w\s]+))?$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # ROTATE_ITEM: "rotate sword" / "turn item"
+    # ROTATE_ITEM: "rotate sword" / "flip shield" (no "turn" — conflicts with INTERACT)
     (ActionIntent.ROTATE_ITEM, [
         re.compile(
-            r"^(?:rotate|flip|turn)\s+(?P<target>[\w\s]+)$",
+            r"^(?:rotate|flip)\s+(?P<target>[\w\s]+)$",
             re.IGNORECASE
         ),
     ]),

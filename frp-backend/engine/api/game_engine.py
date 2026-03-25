@@ -1866,19 +1866,7 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
 
-        # Search inventory
-        match_idx = None
-        for i, item in enumerate(session.inventory):
-            if target in item.get("name", "").lower() or target in item.get("id", "").lower():
-                match_idx = i
-                break
-
-        if match_idx is None:
-            return ActionResult(
-                narrative=f"You don't have '{target}' in your inventory.",
-                scene_type=session.dm_context.scene_type,
-            )
-
+        # Remove item from inventory
         item = session.remove_item(target)
         if item is None:
             return ActionResult(
@@ -1923,32 +1911,26 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
 
-        # Find item in inventory
-        match_idx = None
-        for i, item in enumerate(session.inventory):
-            if target in item.get("name", "").lower() or target in item.get("id", "").lower():
-                match_idx = i
-                break
+        # Check if already equipped
+        for slot, eq_item in session.equipment.items():
+            if eq_item and (target in eq_item.get("name", "").lower() or target in eq_item.get("id", "").lower()):
+                return ActionResult(
+                    narrative=f"{eq_item['name']} is already equipped in your {slot} slot.",
+                    scene_type=session.dm_context.scene_type,
+                )
 
-        if match_idx is None:
-            # Check if already equipped
-            for slot, eq_item in session.equipment.items():
-                if eq_item and (target in eq_item.get("name", "").lower() or target in eq_item.get("id", "").lower()):
-                    return ActionResult(
-                        narrative=f"{eq_item['name']} is already equipped in your {slot} slot.",
-                        scene_type=session.dm_context.scene_type,
-                    )
+        # Find item in inventory
+        candidate = session.find_inventory_item(target)
+        if candidate is None:
             return ActionResult(
                 narrative=f"You don't have '{target}' in your inventory.",
                 scene_type=session.dm_context.scene_type,
             )
-
-        candidate = session.find_inventory_item(target)
-        old_item = session.equipment.get(session._infer_slot(candidate)) if candidate else None
+        old_item = session.equipment.get(session._infer_slot(candidate))
         item = session.equip_item(target)
         if item is None:
             return ActionResult(
-                narrative=f"{session.find_inventory_item(target).get('name', target) if session.find_inventory_item(target) else target} cannot be equipped.",
+                narrative=f"{target} cannot be equipped.",
                 scene_type=session.dm_context.scene_type,
             )
 
