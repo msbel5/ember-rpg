@@ -90,6 +90,30 @@ class Viewport:
         return (x, y) in self.fog_of_war
 
     # ------------------------------------------------------------------
+    # Serialisation
+    # ------------------------------------------------------------------
+
+    def to_dict(self) -> Dict:
+        """Serialize viewport state for save/load."""
+        return {
+            "width": self.width,
+            "height": self.height,
+            "center_x": self.center_x,
+            "center_y": self.center_y,
+            "fog_of_war": [list(p) for p in self.fog_of_war],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "Viewport":
+        """Deserialize viewport from a dict."""
+        vp = cls(width=data.get("width", 40), height=data.get("height", 20))
+        vp.center_x = data.get("center_x", 0)
+        vp.center_y = data.get("center_y", 0)
+        vp.fog_of_war = {tuple(p) for p in data.get("fog_of_war", [])}
+        # visible is recomputed each turn, so we don't persist it
+        return vp
+
+    # ------------------------------------------------------------------
     # Field of View (FOV) computation
     # ------------------------------------------------------------------
 

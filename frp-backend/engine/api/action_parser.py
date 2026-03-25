@@ -25,6 +25,30 @@ class ActionIntent(Enum):
     INTERACT = "interact"
     INVENTORY = "inventory"
     FLEE = "flee"
+    # --- New intents (Sprint 5) ---
+    PICK_UP = "pick_up"
+    DROP = "drop"
+    EQUIP = "equip"
+    UNEQUIP = "unequip"
+    CRAFT = "craft"
+    SEARCH = "search"
+    STEAL = "steal"
+    PERSUADE = "persuade"
+    INTIMIDATE = "intimidate"
+    SNEAK = "sneak"
+    CLIMB = "climb"
+    LOCKPICK = "lockpick"
+    PRAY = "pray"
+    READ_ITEM = "read"
+    PUSH = "push"
+    FISH = "fish"
+    MINE = "mine"
+    CHOP = "chop"
+    # --- Save/Load intents ---
+    SAVE_GAME = "save_game"
+    LOAD_GAME = "load_game"
+    LIST_SAVES = "list_saves"
+    DELETE_SAVE = "delete_save"
     UNKNOWN = "unknown"
 
 
@@ -119,10 +143,186 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
         ),
     ]),
 
-    # PICKUP: "pick up health potion" / "take potion" / "al iksiri"
-    (ActionIntent.PICKUP, [
+    # PICKUP / PICK_UP: "pick up health potion" / "take potion" / "al iksiri"
+    (ActionIntent.PICK_UP, [
         re.compile(
-            r"^(?:pick\s+up|take|grab|collect|al|topla|kaldır)\s+(?P<target>[\w\s]+)$",
+            r"^(?:pick\s+up|grab|take|loot|collect|get|al|topla|kaldır)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # DROP: "drop sword" / "discard potion" / "throw away shield"
+    (ActionIntent.DROP, [
+        re.compile(
+            r"^(?:drop|discard|throw\s+away|toss|at|bırak)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # EQUIP: "equip iron sword" / "wear leather armor" / "wield staff"
+    (ActionIntent.EQUIP, [
+        re.compile(
+            r"^(?:equip|wear|wield|put\s+on|don|kuşan|giy)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # UNEQUIP: "unequip sword" / "remove helmet" / "take off armor"
+    (ActionIntent.UNEQUIP, [
+        re.compile(
+            r"^(?:unequip|remove|take\s+off|doff|çıkar|çıkart)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # CRAFT: "craft iron sword" / "forge steel bar" / "brew potion" / "cook stew"
+    (ActionIntent.CRAFT, [
+        re.compile(
+            r"^(?:craft|make|forge|brew|cook|build|create|smith|üret|yap|pişir|dök)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # SEARCH: "search the room" / "look for traps" / "investigate area"
+    (ActionIntent.SEARCH, [
+        re.compile(
+            r"^(?:search|look\s+for|investigate|rummage)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # STEAL: "steal from merchant" / "pickpocket guard" / "swipe ring"
+    (ActionIntent.STEAL, [
+        re.compile(
+            r"^(?:steal\s+(?:from\s+)?|pickpocket|swipe|pilfer|çal)\s*(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # PERSUADE: "persuade guard" / "convince merchant" / "negotiate with innkeeper"
+    (ActionIntent.PERSUADE, [
+        re.compile(
+            r"^(?:persuade|convince|negotiate\s+(?:with\s+)?|diplomat|ikna\s+et)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # INTIMIDATE: "intimidate guard" / "threaten bandit" / "scare merchant"
+    (ActionIntent.INTIMIDATE, [
+        re.compile(
+            r"^(?:intimidate|threaten|scare|bully|korkut|tehdit\s+et)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # SNEAK: "sneak past guards" / "stealth" / "hide" / "creep"
+    (ActionIntent.SNEAK, [
+        re.compile(
+            r"^(?:sneak(?:\s+past)?|stealth|hide|creep|skulk|gizlen|sızıl|sinsi)\s*(?P<target>[\w\s]*)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # CLIMB: "climb wall" / "scale cliff" / "ascend ladder"
+    (ActionIntent.CLIMB, [
+        re.compile(
+            r"^(?:climb|scale|ascend|tırman)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # LOCKPICK: "lockpick the door" / "pick lock" / "pick the lock"
+    (ActionIntent.LOCKPICK, [
+        re.compile(
+            r"^(?:lockpick|pick\s+(?:the\s+)?lock|maymuncuk)\s*(?:on\s+|of\s+)?(?P<target>[\w\s]*)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # PRAY: "pray" / "worship at altar" / "meditate"
+    (ActionIntent.PRAY, [
+        re.compile(
+            r"^(?:pray|worship|meditate|dua\s+et|ibadet)\s*(?:at\s+|in\s+)?(?P<target>[\w\s]*)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # READ_ITEM: "read scroll" / "decipher runes" / "study book"
+    (ActionIntent.READ_ITEM, [
+        re.compile(
+            r"^(?:read|decipher|study|oku|çöz)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # PUSH: "push boulder" / "shove crate" (NOT "move X" — that's handled by MOVE)
+    (ActionIntent.PUSH, [
+        re.compile(
+            r"^(?:push|shove)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # FISH: "fish" / "cast line" / "go fishing"
+    (ActionIntent.FISH, [
+        re.compile(
+            r"^(?:fish|cast\s+line|go\s+fishing|balık\s+tut)(?:\s+(?:in\s+|at\s+)?(?P<target>[\w\s]*))?$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # MINE: "mine ore" / "dig" / "excavate"
+    (ActionIntent.MINE, [
+        re.compile(
+            r"^(?:mine|dig|excavate|kaz|maden\s+kaz)\s*(?P<target>[\w\s]*)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # SAVE_GAME: "save" / "save game" / "save as mysave" / "kaydet"
+    (ActionIntent.SAVE_GAME, [
+        re.compile(
+            r"^(?:save\s+(?:game\s+)?as|save\s+as)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?:save\s+game|save|quick\s*save|kaydet|oyunu\s+kaydet)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # LOAD_GAME: "load" / "load game" / "load mysave" / "yükle"
+    (ActionIntent.LOAD_GAME, [
+        re.compile(
+            r"^(?:load\s+game|load|restore)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+        re.compile(
+            r"^(?:load\s+game|load|restore|yükle|oyunu\s+yükle)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # LIST_SAVES: "saves" / "list saves" / "show saves"
+    (ActionIntent.LIST_SAVES, [
+        re.compile(
+            r"^(?:saves|list\s+saves|show\s+saves|kayıtlar|kayıtları\s+göster)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # DELETE_SAVE: "delete save mysave"
+    (ActionIntent.DELETE_SAVE, [
+        re.compile(
+            r"^(?:delete\s+save|remove\s+save|kayıt\s+sil)\s+(?P<target>[\w\s]+)$",
+            re.IGNORECASE
+        ),
+    ]),
+
+    # CHOP: "chop tree" / "cut wood" / "fell tree"
+    (ActionIntent.CHOP, [
+        re.compile(
+            r"^(?:chop|cut|fell|kes|doğra|balta)\s+(?P<target>[\w\s]+)$",
             re.IGNORECASE
         ),
     ]),
@@ -186,7 +386,7 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
     # INVENTORY: "check inventory" / "show items" / "eşyalarım"
     (ActionIntent.INVENTORY, [
         re.compile(
-            r"^(?:check\s+inventory|show\s+inventory|open\s+inventory|inventory|show\s+items|list\s+items|my\s+items|eşyalarım|çantam|envanterim)$",
+            r"^(?:check\s+inventory|show\s+inventory|open\s+inventory|inventory|i|show\s+items|list\s+items|my\s+items|items|bag|backpack|equipment|gear|eşyalarım|çantam|envanterim)$",
             re.IGNORECASE
         ),
     ]),
@@ -207,10 +407,10 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
         ),
     ]),
 
-    # MOVE: "go north" / "move to dungeon" / "enter cave" / "git kuzey"
+    # MOVE: "go north" / "move north" / "move to dungeon" / "enter cave" / "git kuzey"
     (ActionIntent.MOVE, [
         re.compile(
-            r"^(?:go|move\s+to|travel\s+to|head\s+to|enter|walk\s+to|git|gidin|ilerle|gidiyorum|yürü)\s+(?P<direction>[\w\s]+)$",
+            r"^(?:go|move|move\s+to|travel\s+to|head\s+to|enter|walk\s+to|walk|git|gidin|ilerle|gidiyorum|yürü)\s+(?P<direction>[\w\s]+)$",
             re.IGNORECASE
         ),
         re.compile(
@@ -226,8 +426,32 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
 
 # Fallback keyword map (used when no regex matches)
 _KEYWORD_FALLBACK: list[tuple[ActionIntent, list[str]]] = [
+    (ActionIntent.SAVE_GAME, ["save", "save game", "quick save", "kaydet"]),
+    (ActionIntent.LOAD_GAME, ["load", "load game", "restore", "yükle"]),
+    (ActionIntent.LIST_SAVES, ["saves", "list saves", "show saves", "kayıtlar"]),
+    (ActionIntent.DELETE_SAVE, ["delete save", "remove save", "kayıt sil"]),
     (ActionIntent.FLEE, ["run away", "flee", "escape", "retreat", "kaç", "geri çekil"]),
-    (ActionIntent.INVENTORY, ["inventory", "items", "pack", "bag", "eşya", "envanter", "çanta"]),
+    (ActionIntent.INVENTORY, ["inventory", "items", "bag", "backpack", "equipment", "gear",
+                               "eşya", "envanter", "çanta"]),
+    (ActionIntent.CRAFT, ["craft", "make", "forge", "brew", "cook", "build", "create", "smith",
+                           "üret", "yap", "pişir"]),
+    (ActionIntent.LOCKPICK, ["lockpick", "pick lock", "pick the lock", "maymuncuk"]),
+    (ActionIntent.STEAL, ["steal", "pickpocket", "swipe", "pilfer", "çal"]),
+    (ActionIntent.PERSUADE, ["persuade", "convince", "negotiate", "diplomat", "ikna"]),
+    (ActionIntent.INTIMIDATE, ["intimidate", "threaten", "scare", "bully", "korkut", "tehdit"]),
+    (ActionIntent.SNEAK, ["sneak", "stealth", "hide", "creep", "skulk", "gizlen", "sinsi"]),
+    (ActionIntent.CLIMB, ["climb", "scale", "ascend", "tırman"]),
+    (ActionIntent.PRAY, ["pray", "worship", "meditate", "dua", "ibadet"]),
+    (ActionIntent.READ_ITEM, ["read", "decipher", "study", "oku"]),
+    (ActionIntent.FISH, ["fish", "cast line", "go fishing", "balık"]),
+    (ActionIntent.MINE, ["mine", "dig", "excavate", "kaz", "maden"]),
+    (ActionIntent.CHOP, ["chop", "cut", "fell", "kes", "balta"]),
+    (ActionIntent.SEARCH, ["search", "look for", "investigate", "rummage"]),
+    (ActionIntent.DROP, ["drop", "discard", "throw away", "toss", "bırak"]),
+    (ActionIntent.EQUIP, ["equip", "wear", "wield", "put on", "don", "kuşan", "giy"]),
+    (ActionIntent.UNEQUIP, ["unequip", "remove", "take off", "doff", "çıkar"]),
+    (ActionIntent.PUSH, ["push", "shove"]),
+    (ActionIntent.PICK_UP, ["pick up", "grab", "take", "loot", "collect", "get", "al", "topla"]),
     (ActionIntent.LOOK, ["look", "bak", "etraf"]),
     (ActionIntent.ATTACK, ["saldır", "vur", "öldür", "attack", "strike", "hit", "kill"]),
     (ActionIntent.CAST_SPELL, ["büyü", "sihir", "cast", "spell", "magic", "fireball", "heal"]),
@@ -237,8 +461,7 @@ _KEYWORD_FALLBACK: list[tuple[ActionIntent, list[str]]] = [
     (ActionIntent.REST, ["dinlen", "uyu", "rest", "sleep", "camp"]),
     (ActionIntent.OPEN, ["aç", "kır", "open", "unlock"]),
     (ActionIntent.MOVE, ["git", "go", "move", "walk", "enter", "travel"]),
-    (ActionIntent.EXAMINE, ["incele", "ara", "examine", "inspect", "search", "check"]),
-    (ActionIntent.PICKUP, ["al", "topla", "take", "pick up", "grab"]),
+    (ActionIntent.EXAMINE, ["incele", "examine", "inspect", "check"]),
 ]
 
 
@@ -301,10 +524,18 @@ class ActionParser:
                         action_detail=spell_name or weapon or direction,
                     )
 
-        # Fallback: keyword matching
+        # Fallback: keyword matching (word-boundary aware)
         for intent, keywords in _KEYWORD_FALLBACK:
             for kw in keywords:
-                if kw in normalized:
+                # Short ASCII keywords (<=4 chars) use word-boundary to avoid
+                # substring false positives (e.g. "mine" in "examine").
+                # Longer/Turkish keywords use substring match (Turkish is
+                # agglutinative: "saldır" appears in "saldırıyorum").
+                if " " not in kw and len(kw) <= 4 and kw.isascii():
+                    matched = bool(re.search(r'(?:^|\s)' + re.escape(kw) + r'(?:\s|$)', normalized))
+                else:
+                    matched = kw in normalized
+                if matched:
                     # Try simple target extraction after keyword
                     target = self._extract_after_keyword(normalized, kw)
                     return ParsedAction(

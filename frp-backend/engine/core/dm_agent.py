@@ -58,6 +58,7 @@ VALID_TRANSITIONS: Dict[SceneType, set] = {
         SceneType.DIALOGUE,
         SceneType.EXPLORATION,
         SceneType.COMBAT,
+        SceneType.REST,
     },
     SceneType.REST: {
         SceneType.REST,
@@ -257,6 +258,48 @@ class DMContext:
     def advance_turn(self):
         """Increment the global turn counter."""
         self.turn += 1
+
+    def to_dict(self) -> dict:
+        """Serialize DM context for save/load."""
+        return {
+            "scene_type": self.scene_type.value,
+            "location": self.location,
+            "turn": self.turn,
+            "max_history": self.max_history,
+            "history": [
+                {
+                    "type": e.type.value,
+                    "description": e.description,
+                    "data": e.data,
+                }
+                for e in self.history
+            ],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict, party: list) -> "DMContext":
+        """Deserialize DM context from a dict.
+
+        Args:
+            data: Serialized dict
+            party: List of Character objects (cannot be serialized inside DMContext)
+        """
+        history = [
+            DMEvent(
+                type=EventType(h["type"]),
+                description=h["description"],
+                data=h.get("data", {}),
+            )
+            for h in data.get("history", [])
+        ]
+        return cls(
+            scene_type=SceneType(data["scene_type"]),
+            location=data["location"],
+            party=party,
+            history=history,
+            turn=data.get("turn", 0),
+            max_history=data.get("max_history", 10),
+        )
 
     def party_summary(self) -> str:
         """

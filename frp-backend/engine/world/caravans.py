@@ -166,3 +166,40 @@ class CaravanManager:
             }
             for ac in self.active.values()
         ]
+
+    def to_dict(self) -> dict:
+        """Serialize caravan manager for save/load."""
+        return {
+            "next_id": self._next_id,
+            "last_departure": dict(self._last_departure),
+            "active": {
+                cid: {
+                    "caravan_id": ac.caravan_id,
+                    "route_key": ac.route_key,
+                    "departed_hour": ac.departed_hour,
+                    "arrival_hour": ac.arrival_hour,
+                    "goods": dict(ac.goods),
+                    "raided": ac.raided,
+                    "delayed_hours": ac.delayed_hours,
+                }
+                for cid, ac in self.active.items()
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "CaravanManager":
+        """Deserialize caravan manager from a dict."""
+        cm = cls()
+        cm._next_id = data.get("next_id", 1)
+        cm._last_departure = dict(data.get("last_departure", {}))
+        for cid, cd in data.get("active", {}).items():
+            cm.active[cid] = ActiveCaravan(
+                caravan_id=cd["caravan_id"],
+                route_key=cd["route_key"],
+                departed_hour=cd["departed_hour"],
+                arrival_hour=cd["arrival_hour"],
+                goods=dict(cd["goods"]),
+                raided=cd.get("raided", False),
+                delayed_hours=cd.get("delayed_hours", 0),
+            )
+        return cm

@@ -15,6 +15,9 @@ pythonpath = ["."]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
+markers = [
+    "playtest: chaotic FRP player integration/scenario tests",
+]
 
 [tool.mypy]
 python_version = "3.11"

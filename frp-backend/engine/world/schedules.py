@@ -164,6 +164,15 @@ class GameTime:
             "display": self.to_string(),
         }
 
+    @classmethod
+    def from_dict(cls, data: dict) -> "GameTime":
+        """Deserialize GameTime from a dict."""
+        return cls(
+            hour=data.get("hour", 8),
+            minute=data.get("minute", 0),
+            day=data.get("day", 1),
+        )
+
 
 class WorldTickScheduler:
     """

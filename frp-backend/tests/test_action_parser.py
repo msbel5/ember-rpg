@@ -98,17 +98,17 @@ def test_attack_turkish(parser):
 # --- PICKUP ---
 def test_pick_up_health_potion(parser):
     result = parser.parse("pick up health potion")
-    assert result.intent == ActionIntent.PICKUP
+    assert result.intent in (ActionIntent.PICKUP, ActionIntent.PICK_UP)
     assert "potion" in result.target
 
 def test_take_potion(parser):
     result = parser.parse("take potion")
-    assert result.intent == ActionIntent.PICKUP
+    assert result.intent in (ActionIntent.PICKUP, ActionIntent.PICK_UP)
     assert result.target == "potion"
 
 def test_pickup_turkish(parser):
     result = parser.parse("al iksir")
-    assert result.intent == ActionIntent.PICKUP
+    assert result.intent in (ActionIntent.PICKUP, ActionIntent.PICK_UP)
 
 
 # --- USE_ITEM ---

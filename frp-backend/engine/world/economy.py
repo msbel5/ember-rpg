@@ -223,3 +223,21 @@ class LocationStock:
                 base = recipe.base_price
                 break
         return round(base * self.get_price_modifier(item), 2)
+
+    def to_dict(self) -> dict:
+        """Serialize location stock for save/load."""
+        return {
+            "location_id": self.location_id,
+            "baseline": dict(self.baseline),
+            "stock": dict(self.stock),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "LocationStock":
+        """Deserialize location stock from a dict."""
+        ls = cls(
+            location_id=data.get("location_id", "default"),
+            baseline=data.get("baseline", {}),
+        )
+        ls.stock = dict(data.get("stock", ls.baseline))
+        return ls

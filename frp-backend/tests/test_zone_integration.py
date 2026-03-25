@@ -16,10 +16,24 @@ from engine.core.dm_agent import DMContext, SceneType
 import random
 
 
+def _make_open_map(width=32, height=32):
+    """Create a fully walkable map for movement tests."""
+    from engine.map import MapData, TileType
+    tiles = [[TileType.FLOOR for _ in range(width)] for _ in range(height)]
+    return MapData(
+        width=width, height=height, tiles=tiles, rooms=[],
+        spawn_point=(width // 2, height // 2),
+        metadata={"map_type": "test"},
+    )
+
+
 def _make_session(location="Town Square"):
     player = Character(name="Tester", hp=20, max_hp=20, level=1)
     dm_ctx = DMContext(scene_type=SceneType.EXPLORATION, location=location, party=[player])
-    return GameSession(player=player, dm_context=dm_ctx)
+    # Use a fully open map for predictable movement tests
+    open_map = _make_open_map()
+    session = GameSession(player=player, dm_context=dm_ctx, map_data=open_map)
+    return session
 
 
 def _make_engine():
@@ -107,7 +121,8 @@ def test_building_template_stamp():
 
 def test_player_position_starts_at_origin():
     session = _make_session()
-    assert session.position == [0, 0]
+    # Position starts at map spawn point (16, 16 for 32x32 open map)
+    assert session.position == [16, 16]
     assert session.facing == "north"
 
 

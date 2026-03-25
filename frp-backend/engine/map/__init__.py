@@ -145,6 +145,33 @@ class MapData:
             result["zones"] = self.zones
         return result
 
+    @classmethod
+    def from_dict(cls, data: dict) -> "MapData":
+        """Deserialize map from a dict (inverse of to_dict)."""
+        _TILE_MAP = {t.value: t for t in TileType}
+        tiles = [
+            [_TILE_MAP.get(c, TileType.WALL) for c in row]
+            for row in data["tiles"]
+        ]
+        rooms = [
+            Room(
+                x=r["x"], y=r["y"],
+                width=r["width"], height=r["height"],
+                room_type=r.get("type", "normal"),
+            )
+            for r in data.get("rooms", [])
+        ]
+        return cls(
+            width=data["width"],
+            height=data["height"],
+            tiles=tiles,
+            rooms=rooms,
+            spawn_point=tuple(data["spawn_point"]),
+            exit_points=[tuple(p) for p in data.get("exit_points", [])],
+            metadata=data.get("metadata", {}),
+            zones=data.get("zones"),
+        )
+
     def reachable_from_spawn(self) -> set:
         """BFS from spawn point; return set of reachable (x, y) positions."""
         visited = set()

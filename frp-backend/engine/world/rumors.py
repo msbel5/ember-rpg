@@ -145,3 +145,44 @@ class RumorNetwork:
 
     def get_all_active(self) -> List[Rumor]:
         return [r for r in self.rumors.values() if r.confidence > 0]
+
+    def to_dict(self) -> dict:
+        """Serialize rumor network for save/load."""
+        return {
+            "next_id": self._next_id,
+            "rumors": {
+                rid: {
+                    "rumor_id": r.rumor_id,
+                    "fact": r.fact,
+                    "source_npc": r.source_npc,
+                    "confidence": r.confidence,
+                    "timestamp": r.timestamp,
+                    "spread_radius": r.spread_radius,
+                    "faction_filter": r.faction_filter,
+                    "decay_rate": r.decay_rate,
+                    "locations": list(r.locations),
+                    "heard_by": list(r.heard_by),
+                }
+                for rid, r in self.rumors.items()
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "RumorNetwork":
+        """Deserialize rumor network from a dict."""
+        rn = cls()
+        rn._next_id = data.get("next_id", 1)
+        for rid, rd in data.get("rumors", {}).items():
+            rn.rumors[rid] = Rumor(
+                rumor_id=rd["rumor_id"],
+                fact=rd["fact"],
+                source_npc=rd["source_npc"],
+                confidence=rd["confidence"],
+                timestamp=rd["timestamp"],
+                spread_radius=rd.get("spread_radius", 1),
+                faction_filter=rd.get("faction_filter"),
+                decay_rate=rd.get("decay_rate", 0.02),
+                locations=set(rd.get("locations", [])),
+                heard_by=set(rd.get("heard_by", [])),
+            )
+        return rn

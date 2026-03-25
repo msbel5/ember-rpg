@@ -28,10 +28,65 @@ from engine.world.quest_timeout import QuestTracker
 from engine.world.body_parts import BodyPartTracker, roll_hit_location, calculate_armor_reduction
 from engine.world.caravans import CaravanManager
 from engine.world.materials import apply_material, MATERIALS
+from engine.world.entity import Entity, EntityType
+from engine.world.spatial_index import SpatialIndex
+from engine.world.viewport import Viewport
+from engine.world.action_points import ActionPointTracker, CLASS_AP, ACTION_COSTS
+from engine.world.skill_checks import roll_check, contested_check, SkillCheckResult, ability_modifier
+from engine.world.crafting import CraftingSystem, ALL_RECIPES, CraftingRecipe, determine_quality
+from engine.world.behavior_tree import (
+    BehaviorContext, create_npc_behavior_tree, Status as BTStatus,
+)
+from engine.map import MapData, TownGenerator
 
 
 # XP rewards for killing enemies (by level)
 XP_REWARDS = {1: 100, 2: 200, 3: 450, 4: 700, 5: 1100}
+
+# NPC visual mapping: role -> (glyph, color)
+NPC_VISUALS = {
+    "innkeeper":   ("I", "cyan"),
+    "guard":       ("G", "red"),
+    "merchant":    ("$", "yellow"),
+    "blacksmith":  ("B", "white"),
+    "quest_giver": ("Q", "magenta"),
+    "beggar":      ("b", "dim"),
+    "spy":         ("s", "blue"),
+    "priest":      ("P", "white"),
+    "healer":      ("H", "green"),
+    "sage":        ("S", "magenta"),
+    "bard":        ("♪", "yellow"),
+}
+
+# Starter inventory kits per class
+STARTER_KITS = {
+    "warrior": [
+        {"id": "iron_sword", "name": "Iron Sword", "type": "weapon", "damage": 6, "material": "iron", "slot": "weapon"},
+        {"id": "chain_mail", "name": "Chain Mail", "type": "armor", "ac_bonus": 4, "material": "iron", "slot": "armor"},
+        {"id": "torch", "name": "Torch", "type": "tool", "uses": 10},
+        {"id": "bread", "name": "Bread", "type": "consumable", "heal": 3, "qty": 3},
+    ],
+    "rogue": [
+        {"id": "daggers", "name": "Twin Daggers", "type": "weapon", "damage": 4, "material": "iron", "slot": "weapon"},
+        {"id": "leather_armor", "name": "Leather Armor", "type": "armor", "ac_bonus": 2, "material": "leather", "slot": "armor"},
+        {"id": "lockpick", "name": "Lockpick Set", "type": "tool", "uses": 5},
+        {"id": "rope", "name": "Rope (50ft)", "type": "tool"},
+        {"id": "bread", "name": "Bread", "type": "consumable", "heal": 3, "qty": 2},
+    ],
+    "mage": [
+        {"id": "staff", "name": "Oak Staff", "type": "weapon", "damage": 3, "material": "wood", "slot": "weapon"},
+        {"id": "robes", "name": "Mystic Robes", "type": "armor", "ac_bonus": 1, "material": "cloth", "slot": "armor"},
+        {"id": "mana_potion", "name": "Mana Potion", "type": "consumable", "restore_sp": 6, "qty": 2},
+        {"id": "scroll_fireball", "name": "Scroll of Fireball", "type": "scroll", "spell": "fireball"},
+    ],
+    "priest": [
+        {"id": "mace", "name": "Iron Mace", "type": "weapon", "damage": 5, "material": "iron", "slot": "weapon"},
+        {"id": "robes", "name": "Holy Robes", "type": "armor", "ac_bonus": 1, "material": "cloth", "slot": "armor"},
+        {"id": "shield", "name": "Wooden Shield", "type": "shield", "ac_bonus": 2, "material": "wood", "slot": "shield"},
+        {"id": "healing_potion", "name": "Healing Potion", "type": "consumable", "heal": 8, "qty": 2},
+        {"id": "holy_water", "name": "Holy Water", "type": "consumable", "damage_undead": 10},
+    ],
+}
 
 
 @dataclass
@@ -167,10 +222,31 @@ class GameEngine:
         # Populate initial entities with procedural names
         self._populate_scene_entities(session, loc)
 
+        # --- Give starter inventory based on class ---
+        pclass = player_class.lower()
+        kit = STARTER_KITS.get(pclass, STARTER_KITS["warrior"])
+        for item_template in kit:
+            item = dict(item_template)  # shallow copy
+            slot = item.get("slot")
+            # Auto-equip weapon/armor/shield
+            if slot and session.equipment.get(slot) is None:
+                session.equipment[slot] = item
+                # Update AP tracker armor type for armor items
+                if slot == "armor" and session.ap_tracker:
+                    material = item.get("material", "none")
+                    # Map material to armor weight category
+                    armor_weight_map = {
+                        "cloth": "cloth", "leather": "leather",
+                        "iron": "chain_mail", "steel": "plate_armor",
+                    }
+                    session.ap_tracker.set_armor(armor_weight_map.get(material, "none"))
+            else:
+                session.inventory.append(item)
+
         return session
 
     def _populate_scene_entities(self, session: GameSession, location: str) -> None:
-        """Populate session.entities with NPCs appropriate for the location."""
+        """Populate session with NPC Entity objects in the spatial index, plus backward-compat dict."""
         session.entities = {}
         loc_lower = location.lower()
 
@@ -198,19 +274,81 @@ class GameEngine:
             elif faction == "forest_elves":
                 name_faction = "elf"
             name = session.name_gen.generate_name(faction=name_faction, gender=gender, npc_id=npc_id)
-            # Assign a position near the player
-            pos = [session.position[0] + random.randint(-2, 2),
-                   session.position[1] + random.randint(-2, 2)]
+
+            # Find a walkable position near spawn
+            pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=5)
             needs = NPCNeeds()
+
+            # Determine glyph/color from NPC_VISUALS
+            glyph, color = NPC_VISUALS.get(role, ("?", "white"))
+
+            # Build NPC skills based on role
+            npc_skills = {}
+            if role == "guard":
+                npc_skills = {"melee": 3, "patrol": 2}
+            elif role == "merchant":
+                npc_skills = {"trade": 4, "appraisal": 3}
+            elif role == "blacksmith":
+                npc_skills = {"smithing": 5, "trade": 2}
+            elif role == "innkeeper":
+                npc_skills = {"trade": 3, "cooking": 4}
+            elif role == "healer":
+                npc_skills = {"healing": 5, "herbalism": 3}
+            elif role == "priest":
+                npc_skills = {"healing": 3, "divine_magic": 4}
+
+            # Create proper Entity object
+            entity = Entity(
+                id=npc_id,
+                entity_type=EntityType.NPC,
+                name=name,
+                position=tuple(pos),
+                glyph=glyph,
+                color=color,
+                blocking=True,
+                needs=needs,
+                skills=npc_skills if npc_skills else None,
+                faction=faction,
+                job=role,
+                disposition="friendly" if role != "spy" else "neutral",
+                hp=12 if role == "guard" else 8,
+                max_hp=12 if role == "guard" else 8,
+            )
+
+            # Add to spatial index
+            if session.spatial_index is not None:
+                session.spatial_index.add(entity)
+
+            # Backward-compatible dict representation in session.entities
             session.entities[npc_id] = {
                 "name": name,
                 "type": "npc",
-                "position": pos,
+                "position": list(pos),
                 "faction": faction,
                 "role": role,
                 "needs": needs,
                 "gender": gender,
+                "entity_ref": entity,  # reference to the Entity object
             }
+
+    def _find_walkable_near(self, session: GameSession, cx: int, cy: int, radius: int = 5) -> list:
+        """Find a walkable tile near (cx, cy) using map_data. Falls back to random offset."""
+        if session.map_data is not None:
+            # Try positions in expanding rings
+            for r in range(1, radius + 1):
+                candidates = []
+                for dx in range(-r, r + 1):
+                    for dy in range(-r, r + 1):
+                        if abs(dx) != r and abs(dy) != r:
+                            continue  # only ring edges
+                        nx, ny = cx + dx, cy + dy
+                        if session.map_data.is_walkable(nx, ny):
+                            if session.spatial_index is None or not session.spatial_index.blocking_at(nx, ny):
+                                candidates.append([nx, ny])
+                if candidates:
+                    return random.choice(candidates)
+        # Fallback: random offset
+        return [cx + random.randint(-2, 2), cy + random.randint(-2, 2)]
 
     def process_action(self, session: GameSession, input_text: str) -> ActionResult:
         """
@@ -226,7 +364,7 @@ class GameEngine:
         session.touch()
         session.dm_context.advance_turn()
 
-        # --- Living World: advance time and run world tick ---
+        # --- Living World: advance time and run world tick (includes AP refresh) ---
         world_events = self._world_tick(session)
 
         action = self.parser.parse(input_text)
@@ -242,11 +380,29 @@ class GameEngine:
             ActionIntent.MOVE:       self._handle_move,
             ActionIntent.OPEN:       self._handle_open,
             ActionIntent.TRADE:      self._handle_trade,
+            ActionIntent.FLEE:       self._handle_flee,
+            ActionIntent.INVENTORY:  self._handle_inventory,
+            ActionIntent.PICKUP:     self._handle_pickup,
+            ActionIntent.PICK_UP:    self._handle_pickup,
+            ActionIntent.DROP:       self._handle_drop,
+            ActionIntent.EQUIP:      self._handle_equip,
+            ActionIntent.UNEQUIP:    self._handle_unequip,
+            ActionIntent.CRAFT:      self._handle_craft,
+            ActionIntent.SEARCH:     self._handle_search,
+            ActionIntent.STEAL:      self._handle_steal,
+            ActionIntent.PERSUADE:   self._handle_persuade,
+            ActionIntent.INTIMIDATE: self._handle_intimidate,
+            ActionIntent.SNEAK:      self._handle_sneak,
+            ActionIntent.CLIMB:      self._handle_climb,
+            ActionIntent.LOCKPICK:   self._handle_lockpick,
+            ActionIntent.PRAY:       self._handle_pray,
+            ActionIntent.READ_ITEM:  self._handle_read_item,
+            ActionIntent.PUSH:       self._handle_push,
+            ActionIntent.FISH:       self._handle_fish,
+            ActionIntent.MINE:       self._handle_mine,
+            ActionIntent.CHOP:       self._handle_chop,
             ActionIntent.UNKNOWN:    self._handle_unknown,
         }
-        # Add FLEE if it exists in ActionIntent
-        if hasattr(ActionIntent, "FLEE"):
-            handlers[ActionIntent.FLEE] = self._handle_flee
 
         handler = handlers.get(action.intent, self._handle_unknown)
         return handler(session, action)
@@ -839,14 +995,17 @@ class GameEngine:
         if dest and dest.startswith("to "):
             dest = dest[3:]
 
-        # --- Position tracking (enhanced with proximity module) ---
         DIRECTION_DELTAS = {
             "north": (0, -1), "south": (0, 1),
             "east": (1, 0), "west": (-1, 0),
         }
-        MAP_SIZE = 32
-        raw = action.raw_input.lower() if action.raw_input else ""
+        has_map = session.map_data is not None
+        MAP_SIZE = session.map_data.width if has_map else 32
+        MAP_H = session.map_data.height if has_map else 32
         dest_lower = dest.lower()
+
+        moved = False
+        blocked_msg = None
 
         if dest_lower in ("left", "right"):
             # Turn only, don't move
@@ -856,42 +1015,107 @@ class GameEngine:
             }
             session.facing = turn_map[dest_lower].get(session.facing, session.facing)
         elif dest_lower in DIRECTION_DELTAS:
-            # Cardinal move using proximity module
             session.facing = dest_lower
-            new_pos, success, msg = move_cardinal(session.position, dest_lower)
-            if success:
-                # Clamp to map bounds
-                new_pos[0] = max(0, min(MAP_SIZE - 1, new_pos[0]))
-                new_pos[1] = max(0, min(MAP_SIZE - 1, new_pos[1]))
-                session.position = new_pos
-            elif msg:
-                return ActionResult(narrative=msg, scene_type=session.dm_context.scene_type)
-            session.dm_context.location = dest
-        elif dest_lower == "forward":
-            # Advance in current facing using proximity module
-            new_pos, success, msg = move_cardinal(session.position, session.facing)
-            if success:
-                new_pos[0] = max(0, min(MAP_SIZE - 1, new_pos[0]))
-                new_pos[1] = max(0, min(MAP_SIZE - 1, new_pos[1]))
-                session.position = new_pos
-            session.dm_context.location = dest
-        else:
-            # Named destination (tavern etc.) — update location name
-            session.dm_context.location = dest
+            dx, dy = DIRECTION_DELTAS[dest_lower]
+            new_x = session.position[0] + dx
+            new_y = session.position[1] + dy
+            # Clamp to map bounds
+            new_x = max(0, min(MAP_SIZE - 1, new_x))
+            new_y = max(0, min(MAP_H - 1, new_y))
 
-        # --- Coordinate support ("x,y") → set absolute position ---
-        import re
-        coord_match = re.match(r"^\s*(\d{1,3})\s*,\s*(\d{1,3})\s*$", str(dest))
-        if coord_match:
-            try:
-                x = int(coord_match.group(1))
-                y = int(coord_match.group(2))
-                # Clamp to map bounds
-                x = max(0, min(MAP_SIZE - 1, x))
-                y = max(0, min(MAP_SIZE - 1, y))
-                session.position = [x, y]
-            except Exception:
-                pass
+            # Check walkability via map_data
+            if has_map and not session.map_data.is_walkable(new_x, new_y):
+                blocked_msg = "A solid wall blocks your path."
+            # Check blocking entities via spatial_index
+            elif session.spatial_index and session.spatial_index.blocking_at(new_x, new_y):
+                blockers = session.spatial_index.at(new_x, new_y)
+                blocker_names = [e.name for e in blockers if e.blocking and e.id != "player"]
+                if blocker_names:
+                    blocked_msg = f"{blocker_names[0]} is blocking the way."
+                else:
+                    blocked_msg = "Something blocks your path."
+            else:
+                # Check AP cost
+                move_cost = ACTION_COSTS.get("move_flat", 1)
+                if session.ap_tracker and not session.ap_tracker.can_move(move_cost):
+                    blocked_msg = f"Not enough action points to move. (AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap})"
+                else:
+                    # Spend AP
+                    if session.ap_tracker:
+                        session.ap_tracker.spend_movement(move_cost)
+                    # Move player in spatial index
+                    if session.spatial_index and session.player_entity:
+                        session.spatial_index.move(session.player_entity, new_x, new_y)
+                    session.position = [new_x, new_y]
+                    moved = True
+        elif dest_lower == "forward":
+            dx, dy = DIRECTION_DELTAS.get(session.facing, (0, -1))
+            new_x = session.position[0] + dx
+            new_y = session.position[1] + dy
+            new_x = max(0, min(MAP_SIZE - 1, new_x))
+            new_y = max(0, min(MAP_H - 1, new_y))
+
+            if has_map and not session.map_data.is_walkable(new_x, new_y):
+                blocked_msg = "A solid wall blocks your path."
+            elif session.spatial_index and session.spatial_index.blocking_at(new_x, new_y):
+                blocked_msg = "Something blocks your path."
+            else:
+                if session.ap_tracker:
+                    if not session.ap_tracker.spend_movement(ACTION_COSTS.get("move_flat", 1)):
+                        blocked_msg = "Not enough action points to move."
+                    else:
+                        if session.spatial_index and session.player_entity:
+                            session.spatial_index.move(session.player_entity, new_x, new_y)
+                        session.position = [new_x, new_y]
+                        moved = True
+                else:
+                    if session.spatial_index and session.player_entity:
+                        session.spatial_index.move(session.player_entity, new_x, new_y)
+                    session.position = [new_x, new_y]
+                    moved = True
+        else:
+            # Named destination or coordinate
+            import re
+            coord_match = re.match(r"^\s*(\d{1,3})\s*,\s*(\d{1,3})\s*$", str(dest))
+            if coord_match:
+                try:
+                    x = int(coord_match.group(1))
+                    y = int(coord_match.group(2))
+                    x = max(0, min(MAP_SIZE - 1, x))
+                    y = max(0, min(MAP_H - 1, y))
+                    if has_map and not session.map_data.is_walkable(x, y):
+                        blocked_msg = "That position is not walkable."
+                    else:
+                        if session.spatial_index and session.player_entity:
+                            session.spatial_index.move(session.player_entity, x, y)
+                        session.position = [x, y]
+                        moved = True
+                except Exception:
+                    pass
+            else:
+                # Named destination — just update location name
+                session.dm_context.location = dest
+
+        if blocked_msg:
+            return ActionResult(narrative=blocked_msg, scene_type=session.dm_context.scene_type)
+
+        # Recompute FOV and center viewport after movement
+        if moved and session.viewport and has_map:
+            session.viewport.center_on(session.position[0], session.position[1])
+            session.viewport.compute_fov(
+                lambda x, y: not session.map_data.is_walkable(x, y),
+                session.position[0], session.position[1],
+                radius=8,
+            )
+
+        # Check for hostile entities in visible range -> report them
+        hostile_alert = ""
+        if moved and session.spatial_index and session.viewport:
+            nearby = session.spatial_index.in_radius(session.position[0], session.position[1], 5)
+            hostiles = [e for e in nearby if e.is_hostile() and e.is_alive() and e.id != "player"]
+            if hostiles:
+                names = ", ".join(e.name for e in hostiles)
+                hostile_alert = f" You spot hostile creatures nearby: {names}!"
 
         world_context = self._build_world_context(session)
         desc = f"{session.player.name} moves toward {dest}.\n{world_context}"
@@ -902,7 +1126,14 @@ class GameEngine:
             "world_context": world_context,
         })
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
-        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+        if hostile_alert:
+            narrative += hostile_alert
+
+        return ActionResult(
+            narrative=narrative,
+            scene_type=session.dm_context.scene_type,
+            state_changes={"position": list(session.position)} if moved else {},
+        )
 
     def _handle_flee(self, session: GameSession, action: ParsedAction) -> ActionResult:
         """Handle fleeing from combat."""
@@ -997,11 +1228,853 @@ class GameEngine:
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
+    # --- Inventory / Equipment Handlers ---
+
+    def _handle_inventory(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Show the player's inventory and equipped items."""
+        lines = []
+
+        # Equipment
+        equipped_items = {slot: item for slot, item in session.equipment.items() if item is not None}
+        if equipped_items:
+            lines.append("== Equipped ==")
+            for slot, item in equipped_items.items():
+                extra = ""
+                if item.get("damage"):
+                    extra += f" (dmg: {item['damage']})"
+                if item.get("ac_bonus"):
+                    extra += f" (AC+{item['ac_bonus']})"
+                lines.append(f"  [{slot}] {item['name']}{extra}")
+
+        # Inventory
+        if session.inventory:
+            lines.append("== Backpack ==")
+            for i, item in enumerate(session.inventory):
+                qty = item.get("qty", 1)
+                qty_str = f" x{qty}" if qty > 1 else ""
+                lines.append(f"  {i+1}. {item['name']}{qty_str}")
+        elif not equipped_items:
+            lines.append("Your inventory is empty.")
+
+        # AP status
+        if session.ap_tracker:
+            lines.append(f"\nAP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap}")
+
+        return ActionResult(
+            narrative="\n".join(lines),
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_pickup(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Pick up an item entity at the player's position."""
+        target = action.target or ""
+        px, py = session.position[0], session.position[1]
+
+        # Check AP
+        if session.ap_tracker:
+            cost = ACTION_COSTS.get("pick_up", 1)
+            if not session.ap_tracker.spend(cost):
+                return ActionResult(
+                    narrative=f"Not enough AP to pick up items. (AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap})",
+                    scene_type=session.dm_context.scene_type,
+                )
+
+        # Search spatial index for item entities at player position
+        if session.spatial_index:
+            entities_here = session.spatial_index.at(px, py)
+            items_here = [e for e in entities_here if e.entity_type == EntityType.ITEM]
+            if target:
+                target_lower = target.lower()
+                match = next((e for e in items_here if target_lower in e.name.lower()), None)
+            else:
+                match = items_here[0] if items_here else None
+
+            if match:
+                # Remove from spatial index and add to inventory
+                session.spatial_index.remove(match)
+                item_dict = {
+                    "id": match.id,
+                    "name": match.name,
+                    "type": "item",
+                }
+                # Copy any extra data from entity inventory
+                if match.inventory:
+                    item_dict.update(match.inventory[0] if match.inventory else {})
+                session.inventory.append(item_dict)
+                return ActionResult(
+                    narrative=f"You pick up {match.name}.",
+                    scene_type=session.dm_context.scene_type,
+                )
+
+        return ActionResult(
+            narrative=f"There's nothing to pick up here{' matching that name' if target else ''}.",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_drop(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Drop an item from inventory onto the ground."""
+        target = (action.target or "").lower()
+        if not target:
+            return ActionResult(
+                narrative="Drop what? Specify an item name.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # Search inventory
+        match_idx = None
+        for i, item in enumerate(session.inventory):
+            if target in item.get("name", "").lower() or target in item.get("id", "").lower():
+                match_idx = i
+                break
+
+        if match_idx is None:
+            return ActionResult(
+                narrative=f"You don't have '{target}' in your inventory.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        item = session.inventory.pop(match_idx)
+        px, py = session.position[0], session.position[1]
+
+        # Create an item Entity at the player's position
+        item_entity = Entity(
+            id=item.get("id", Entity.generate_id()),
+            entity_type=EntityType.ITEM,
+            name=item.get("name", "Unknown Item"),
+            position=(px, py),
+            glyph="!",
+            color="yellow",
+            blocking=False,
+        )
+        if session.spatial_index:
+            session.spatial_index.add(item_entity)
+
+        return ActionResult(
+            narrative=f"You drop {item['name']} on the ground.",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_equip(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Equip an item from inventory, or unequip if target starts with 'un'."""
+        raw = (action.raw_input or "").lower()
+        target = (action.target or "").lower()
+
+        # Check for unequip intent
+        is_unequip = any(w in raw for w in ["unequip", "remove", "take off", "doff"])
+
+        if is_unequip:
+            return self._handle_unequip_item(session, target)
+
+        if not target:
+            return ActionResult(
+                narrative="Equip what? Specify an item name.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # Find item in inventory
+        match_idx = None
+        for i, item in enumerate(session.inventory):
+            if target in item.get("name", "").lower() or target in item.get("id", "").lower():
+                match_idx = i
+                break
+
+        if match_idx is None:
+            return ActionResult(
+                narrative=f"You don't have '{target}' in your inventory.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        item = session.inventory[match_idx]
+        slot = item.get("slot")
+        if not slot:
+            return ActionResult(
+                narrative=f"{item['name']} cannot be equipped.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        if slot not in session.equipment:
+            return ActionResult(
+                narrative=f"No equipment slot '{slot}' available.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # If something is already in the slot, move it to inventory
+        old_item = session.equipment.get(slot)
+        if old_item is not None:
+            session.inventory.append(old_item)
+
+        # Equip the new item
+        session.equipment[slot] = item
+        session.inventory.pop(match_idx)
+
+        # Update armor type on AP tracker
+        if slot == "armor" and session.ap_tracker:
+            material = item.get("material", "none")
+            armor_weight_map = {
+                "cloth": "cloth", "leather": "leather",
+                "iron": "chain_mail", "steel": "plate_armor",
+            }
+            session.ap_tracker.set_armor(armor_weight_map.get(material, "none"))
+
+        narrative = f"You equip {item['name']}."
+        if old_item:
+            narrative += f" (Unequipped {old_item['name']})"
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+
+    def _handle_unequip_item(self, session: GameSession, target: str) -> ActionResult:
+        """Unequip an item from an equipment slot back to inventory."""
+        if not target:
+            return ActionResult(
+                narrative="Unequip what? Specify an item or slot name.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # Try to match by slot name or item name
+        matched_slot = None
+        for slot, item in session.equipment.items():
+            if item is None:
+                continue
+            if target in slot or target in item.get("name", "").lower() or target in item.get("id", "").lower():
+                matched_slot = slot
+                break
+
+        if matched_slot is None:
+            return ActionResult(
+                narrative=f"Nothing equipped matching '{target}'.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        item = session.equipment[matched_slot]
+        session.equipment[matched_slot] = None
+        session.inventory.append(item)
+
+        # Reset armor if unequipping armor
+        if matched_slot == "armor" and session.ap_tracker:
+            session.ap_tracker.set_armor("none")
+
+        return ActionResult(
+            narrative=f"You unequip {item['name']}.",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_craft(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Handle crafting attempts using the CraftingSystem."""
+        target = (action.target or "").lower().strip()
+        if not target:
+            recipe_names = [r.name for r in ALL_RECIPES.values()][:10]
+            return ActionResult(
+                narrative=f"Craft what? Available recipes: {', '.join(recipe_names)}...",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # Find recipe by name match
+        recipe: Optional[CraftingRecipe] = None
+        for r in ALL_RECIPES.values():
+            if target in r.name.lower() or target in r.id.lower():
+                recipe = r
+                break
+
+        if recipe is None:
+            return ActionResult(
+                narrative=f"No recipe found for '{target}'. Try 'craft' to see available recipes.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # Check AP (craft_complex for dc >= 14, craft_simple otherwise)
+        cost_key = "craft_complex" if recipe.skill_dc >= 14 else "craft_simple"
+        ap_fail = self._check_ap(session, cost_key)
+        if ap_fail:
+            return ap_fail
+
+        # Check for nearby workstation
+        crafting = CraftingSystem()
+        workstation_ok = True
+        if recipe.workstation != "any" and session.spatial_index:
+            ws = crafting.find_nearby_workstation(
+                session.spatial_index,
+                (session.position[0], session.position[1]),
+                recipe.workstation,
+            )
+            workstation_ok = ws is not None
+
+        # Build inventory dict from session.inventory list
+        inv_dict: dict = {}
+        for item in session.inventory:
+            item_id = item.get("id", item.get("name", "unknown")).lower().replace(" ", "_")
+            inv_dict[item_id] = inv_dict.get(item_id, 0) + item.get("qty", 1)
+
+        # Map crafting skill to ability
+        skill_ability_map = {
+            "smithing": "MIG", "alchemy": "MND", "cooking": "INS",
+            "carpentry": "AGI", "leatherworking": "AGI",
+        }
+        ability = skill_ability_map.get(recipe.skill, "MND")
+        ability_score = self._get_player_ability(session, ability)
+
+        # Roll skill check
+        check_result = roll_check(ability_score, recipe.skill_dc)
+        check_text = self._format_skill_check(check_result, ability, recipe.skill_dc)
+
+        # Attempt craft
+        craft_result = crafting.attempt_craft(
+            roll=check_result.total,
+            recipe=recipe,
+            inventory=inv_dict,
+            workstation_ok=workstation_ok,
+        )
+
+        # Sync inventory dict back to session.inventory list
+        if craft_result.success or craft_result.quality.value == "ruined":
+            session.inventory = []
+            for item_id, qty in inv_dict.items():
+                if qty > 0:
+                    session.inventory.append({
+                        "id": item_id,
+                        "name": item_id.replace("_", " ").title(),
+                        "qty": qty,
+                    })
+
+        narrative_parts = [check_text, craft_result.narrative]
+        if craft_result.xp_gained > 0:
+            self.progression.add_xp(session.player, craft_result.xp_gained)
+
+        return ActionResult(
+            narrative="\n".join(narrative_parts),
+            scene_type=session.dm_context.scene_type,
+            state_changes={"xp_gained": craft_result.xp_gained, "crafted": craft_result.products},
+        )
+
+    def _handle_unequip(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Unequip handler (delegates to _handle_unequip_item)."""
+        target = (action.target or "").lower()
+        return self._handle_unequip_item(session, target)
+
+    # --- AP & Skill Check Helpers ---
+
+    def _check_ap(self, session: GameSession, cost_key: str) -> Optional[ActionResult]:
+        """Check if player has enough AP. Returns ActionResult on failure, None on success."""
+        if session.ap_tracker is None:
+            return None  # backward compat
+        cost = ACTION_COSTS.get(cost_key, 1)
+        if not session.ap_tracker.can_afford(cost):
+            return ActionResult(
+                narrative=f"Not enough action points! ({session.ap_tracker.current_ap}/{session.ap_tracker.max_ap} AP, need {cost})",
+                scene_type=session.dm_context.scene_type,
+            )
+        session.ap_tracker.spend(cost)
+        return None
+
+    def _format_skill_check(self, result: SkillCheckResult, ability_name: str, dc: int) -> str:
+        """Format a skill check result for narrative."""
+        if result.critical == "success":
+            return f"[NATURAL 20! Critical Success on {ability_name} check (DC {dc})]"
+        elif result.critical == "failure":
+            return f"[NATURAL 1! Critical Failure on {ability_name} check (DC {dc})]"
+        elif result.success:
+            return f"[{ability_name} check: rolled {result.roll}+{result.modifier}={result.total} vs DC {dc} -- Success by {result.margin}]"
+        else:
+            return f"[{ability_name} check: rolled {result.roll}+{result.modifier}={result.total} vs DC {dc} -- Failed by {abs(result.margin)}]"
+
+    def _get_player_ability(self, session: GameSession, ability: str) -> int:
+        """Get a player's ability score by abbreviation (MIG, AGI, etc.)."""
+        return session.player.stats.get(ability, 10)
+
+    # --- Skill-Based Action Handlers ---
+
+    def _handle_search(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Search current area for hidden items/traps/secrets."""
+        ap_fail = self._check_ap(session, "search")
+        if ap_fail:
+            return ap_fail
+
+        dc = 13
+        ability = "INS"
+        ability_score = self._get_player_ability(session, ability)
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+        target = action.target or "the area"
+
+        if check_result.success:
+            if check_result.critical == "success":
+                narrative = f"Your keen eyes discover something remarkable hidden within {target}! A rare find."
+            else:
+                narrative = f"You carefully search {target} and notice something previously hidden."
+        else:
+            if check_result.critical == "failure":
+                narrative = f"You search {target} carelessly and accidentally trigger something!"
+            else:
+                narrative = f"You search {target} thoroughly but find nothing of interest."
+
+        desc = f"{session.player.name} searches {target}. {narrative}"
+        event = DMEvent(type=EventType.DISCOVERY, description=desc, data={
+            "player_name": session.player.name, "action": "search", "target": target,
+            "success": check_result.success, "roll": check_result.total,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_steal(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Attempt to steal from an NPC using contested check."""
+        ap_fail = self._check_ap(session, "steal")
+        if ap_fail:
+            return ap_fail
+
+        target = action.target or "someone"
+        prox_fail = self._check_entity_proximity(session, target, "steal")
+        if prox_fail:
+            return prox_fail
+
+        found = self._find_entity_by_name(session, target)
+        npc_ins = 12
+        if found:
+            _, entity = found
+            target = entity.get("name", target)
+
+        # Contested check: player AGI vs NPC INS
+        player_agi = self._get_player_ability(session, "AGI")
+        result_a, result_b, winner = contested_check(player_agi, npc_ins)
+        check_text = self._format_skill_check(result_a, "AGI", result_b.total)
+
+        if winner == "a":
+            if result_a.critical == "success":
+                narrative = f"With incredible sleight of hand, you deftly steal something valuable from {target}!"
+            else:
+                narrative = f"Your nimble fingers slip into {target}'s belongings unnoticed."
+        else:
+            if result_a.critical == "failure":
+                narrative = f"{target} catches your hand! They shout for the guards!"
+            else:
+                narrative = f"{target} notices your attempt and pulls away suspiciously."
+
+        desc = f"{session.player.name} attempts to steal from {target}. {'Success' if winner == 'a' else 'Failure'}."
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name, "action": "steal", "target": target,
+            "success": winner == "a",
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_persuade(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Persuade an NPC with a PRE skill check."""
+        ap_fail = self._check_ap(session, "persuade")
+        if ap_fail:
+            return ap_fail
+
+        target = action.target or "someone"
+        prox_fail = self._check_entity_proximity(session, target, "talk")
+        if prox_fail:
+            return prox_fail
+
+        found = self._find_entity_by_name(session, target)
+        if found:
+            _, entity = found
+            target = entity.get("name", target)
+
+        dc = 13
+        ability = "PRE"
+        ability_score = self._get_player_ability(session, ability)
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+
+        if check_result.success:
+            narrative = f"Your words ring true and {target} seems persuaded."
+        else:
+            narrative = f"{target} remains unconvinced by your plea."
+
+        desc = f"{session.player.name} tries to persuade {target}. {'Succeeds' if check_result.success else 'Fails'}."
+        event = DMEvent(type=EventType.DIALOGUE, description=desc, data={
+            "player_name": session.player.name, "action": "persuade", "target": target,
+            "success": check_result.success,
+        })
+        self.dm.transition(session.dm_context, SceneType.DIALOGUE)
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_intimidate(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Intimidate an NPC using higher of MIG or PRE."""
+        ap_fail = self._check_ap(session, "intimidate")
+        if ap_fail:
+            return ap_fail
+
+        target = action.target or "someone"
+        prox_fail = self._check_entity_proximity(session, target, "talk")
+        if prox_fail:
+            return prox_fail
+
+        found = self._find_entity_by_name(session, target)
+        if found:
+            _, entity = found
+            target = entity.get("name", target)
+
+        mig = self._get_player_ability(session, "MIG")
+        pre = self._get_player_ability(session, "PRE")
+        ability, ability_score = ("MIG", mig) if mig >= pre else ("PRE", pre)
+
+        dc = 14
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+
+        if check_result.success:
+            narrative = f"{target} cowers before your menacing presence."
+        else:
+            narrative = f"{target} stands firm, unimpressed by your threats."
+
+        desc = f"{session.player.name} tries to intimidate {target}."
+        event = DMEvent(type=EventType.DIALOGUE, description=desc, data={
+            "player_name": session.player.name, "action": "intimidate", "target": target,
+            "success": check_result.success,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_sneak(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Enter stealth mode with AGI check."""
+        ap_fail = self._check_ap(session, "sneak")
+        if ap_fail:
+            return ap_fail
+
+        dc = 13
+        ability = "AGI"
+        ability_score = self._get_player_ability(session, ability)
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+
+        if check_result.success:
+            narrative = "You melt into the shadows, moving silently. You are now sneaking."
+        else:
+            if check_result.critical == "failure":
+                narrative = "You stumble loudly! Everyone nearby notices you."
+            else:
+                narrative = "You try to move quietly, but you're spotted."
+
+        desc = f"{session.player.name} attempts to sneak. {'Success' if check_result.success else 'Failure'}."
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name, "action": "sneak", "success": check_result.success,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_climb(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Climb a surface using higher of AGI or MIG."""
+        ap_fail = self._check_ap(session, "climb")
+        if ap_fail:
+            return ap_fail
+
+        target = action.target or "the surface"
+        dc = 13
+        agi = self._get_player_ability(session, "AGI")
+        mig = self._get_player_ability(session, "MIG")
+        ability, ability_score = ("AGI", agi) if agi >= mig else ("MIG", mig)
+
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+
+        if check_result.success:
+            narrative = f"You skillfully climb {target}, finding handholds with ease."
+        else:
+            if check_result.critical == "failure":
+                narrative = f"You slip and fall from {target}! A bruising tumble."
+            else:
+                narrative = f"You struggle to grip {target} and slide back down."
+
+        desc = f"{session.player.name} attempts to climb {target}."
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name, "action": "climb", "target": target,
+            "success": check_result.success,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_lockpick(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Pick a lock with AGI check. Requires lockpick in inventory."""
+        ap_fail = self._check_ap(session, "lock_pick")
+        if ap_fail:
+            return ap_fail
+
+        target = action.target or "the lock"
+
+        has_lockpick = any(
+            "lockpick" in item.get("id", "").lower() or "lockpick" in item.get("name", "").lower()
+            for item in session.inventory
+        )
+        if not has_lockpick:
+            return ActionResult(
+                narrative="You need a lockpick to attempt this!",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        dc = 14
+        ability = "AGI"
+        ability_score = self._get_player_ability(session, ability)
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+
+        if check_result.success:
+            narrative = f"*Click!* The lock on {target} opens with a satisfying snap."
+        else:
+            if check_result.critical == "failure":
+                # Lockpick breaks on critical failure
+                for i, item in enumerate(session.inventory):
+                    if "lockpick" in item.get("id", "").lower() or "lockpick" in item.get("name", "").lower():
+                        qty = item.get("qty", 1)
+                        if qty <= 1:
+                            session.inventory.pop(i)
+                        else:
+                            item["qty"] = qty - 1
+                        break
+                narrative = f"Your lockpick snaps inside {target}! The lockpick is lost."
+            else:
+                narrative = f"The lock on {target} resists your attempts."
+
+        desc = f"{session.player.name} attempts to pick the lock on {target}."
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name, "action": "lockpick", "target": target,
+            "success": check_result.success,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_pray(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Pray at a shrine or temple. INS check for small heal on success."""
+        ap_fail = self._check_ap(session, "pray")
+        if ap_fail:
+            return ap_fail
+
+        target = action.target or "the gods"
+        dc = 10
+        ability = "INS"
+        ability_score = self._get_player_ability(session, ability)
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+
+        state_changes = {}
+        if check_result.success:
+            heal = max(1, session.player.max_hp // 8)
+            session.player.hp = min(session.player.hp + heal, session.player.max_hp)
+            state_changes["hp_restored"] = heal
+            if check_result.critical == "success":
+                narrative = f"A divine light washes over you! You feel blessed. (+{heal} HP)"
+            else:
+                narrative = f"You feel a warm sense of peace from your prayer. (+{heal} HP)"
+        else:
+            narrative = "You pray fervently, but the gods do not answer today."
+
+        desc = f"{session.player.name} prays to {target}."
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name, "action": "pray", "target": target,
+            "success": check_result.success,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+            state_changes=state_changes,
+        )
+
+    def _handle_read_item(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Read a book, scroll, sign, or other text."""
+        ap_fail = self._check_ap(session, "read")
+        if ap_fail:
+            return ap_fail
+
+        target = action.target or "the text"
+        desc = f"{session.player.name} carefully reads {target}, studying its contents."
+        event = DMEvent(type=EventType.DISCOVERY, description=desc, data={
+            "player_name": session.player.name, "action": "read", "target": target,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(narrative=dm_narrative, scene_type=session.dm_context.scene_type)
+
+    def _handle_push(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Push a heavy object with MIG check."""
+        ap_fail = self._check_ap(session, "push")
+        if ap_fail:
+            return ap_fail
+
+        target = action.target or "the object"
+        dc = 14
+        ability = "MIG"
+        ability_score = self._get_player_ability(session, ability)
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+
+        if check_result.success:
+            narrative = f"With a mighty heave, you push {target}! It grinds forward."
+        else:
+            narrative = f"You strain against {target}, but it won't budge."
+
+        desc = f"{session.player.name} attempts to push {target}."
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name, "action": "push", "target": target,
+            "success": check_result.success,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_fish(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Fish with INS check. Requires fishing rod."""
+        ap_fail = self._check_ap(session, "fish")
+        if ap_fail:
+            return ap_fail
+
+        has_rod = any(
+            "fishing" in item.get("id", "").lower() or "fishing" in item.get("name", "").lower()
+            or "rod" in item.get("id", "").lower()
+            for item in session.inventory
+        )
+        if not has_rod:
+            return ActionResult(
+                narrative="You need a fishing rod to fish!",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        dc = 12
+        ability = "INS"
+        ability_score = self._get_player_ability(session, ability)
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+
+        if check_result.success:
+            session.inventory.append({"id": "raw_fish", "name": "Raw Fish", "qty": 1})
+            if check_result.critical == "success":
+                session.inventory.append({"id": "raw_fish", "name": "Raw Fish", "qty": 1})
+                narrative = "You feel a strong tug and pull out two beautiful fish!"
+            else:
+                narrative = "After a patient wait, you catch a fine fish!"
+        else:
+            narrative = "You wait patiently, but the fish aren't biting today."
+
+        desc = f"{session.player.name} goes fishing."
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name, "action": "fish", "success": check_result.success,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_mine(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Mine ore with MIG check. Requires pickaxe."""
+        ap_fail = self._check_ap(session, "mine")
+        if ap_fail:
+            return ap_fail
+
+        has_pickaxe = any(
+            "pickaxe" in item.get("id", "").lower() or "pickaxe" in item.get("name", "").lower()
+            or "pick" in item.get("id", "").lower()
+            for item in session.inventory
+        )
+        if not has_pickaxe:
+            return ActionResult(
+                narrative="You need a pickaxe to mine!",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        dc = 12
+        ability = "MIG"
+        ability_score = self._get_player_ability(session, ability)
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+
+        if check_result.success:
+            session.inventory.append({"id": "iron_ore", "name": "Iron Ore", "qty": 1})
+            if check_result.critical == "success":
+                session.inventory.append({"id": "iron_ore", "name": "Iron Ore", "qty": 1})
+                narrative = "You strike a rich vein and extract two chunks of quality ore!"
+            else:
+                narrative = "You chip away at the rock and extract some usable ore."
+        else:
+            narrative = "You swing your pickaxe but only break off worthless rubble."
+
+        desc = f"{session.player.name} mines for ore."
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name, "action": "mine", "success": check_result.success,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_chop(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        """Chop a tree for wood with MIG check. Requires axe."""
+        ap_fail = self._check_ap(session, "chop")
+        if ap_fail:
+            return ap_fail
+
+        target = action.target or "a tree"
+
+        has_axe = any(
+            "axe" in item.get("id", "").lower() or "axe" in item.get("name", "").lower()
+            for item in session.inventory
+        )
+        if not has_axe:
+            return ActionResult(
+                narrative="You need an axe to chop wood!",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        dc = 10
+        ability = "MIG"
+        ability_score = self._get_player_ability(session, ability)
+        check_result = roll_check(ability_score, dc)
+        check_text = self._format_skill_check(check_result, ability, dc)
+
+        if check_result.success:
+            session.inventory.append({"id": "wood_plank", "name": "Wood Plank", "qty": 1})
+            if check_result.critical == "success":
+                session.inventory.append({"id": "wood_plank", "name": "Wood Plank", "qty": 1})
+                narrative = f"You fell {target} with powerful strokes, yielding plenty of timber!"
+            else:
+                narrative = f"You chop {target} into usable planks."
+        else:
+            narrative = f"You hack at {target} but can't fell it properly. No usable wood."
+
+        desc = f"{session.player.name} chops {target}."
+        event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
+            "player_name": session.player.name, "action": "chop", "target": target,
+            "success": check_result.success,
+        })
+        dm_narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(
+            narrative=f"{check_text}\n{dm_narrative}",
+            scene_type=session.dm_context.scene_type,
+        )
+
     # --- Living World Helpers ---
 
     def _world_tick(self, session: GameSession) -> list:
         """Advance game time and run all Living World subsystems."""
         events = []
+
+        # Refresh AP each turn
+        if session.ap_tracker:
+            session.ap_tracker.refresh()
 
         # Advance 15 minutes per action
         period_changed = session.game_time.advance(15)
@@ -1021,6 +2094,38 @@ class GameEngine:
                 needs = entity.get("needs")
                 if isinstance(needs, NPCNeeds):
                     needs.tick(hours=1)
+
+            # --- Run behavior trees for NPC entities in spatial index ---
+            if session.spatial_index:
+                npc_entities = session.spatial_index.entities_of_type(EntityType.NPC)
+                for npc in npc_entities:
+                    if npc.id == "player" or not npc.is_alive():
+                        continue
+                    # Build behavior context
+                    is_guard = (npc.job == "guard")
+                    tree = create_npc_behavior_tree(is_guard=is_guard)
+                    ctx = BehaviorContext(
+                        entity=npc,
+                        spatial_index=session.spatial_index,
+                        game_time=session.game_time,
+                        map_data=session.map_data,
+                    )
+                    result = tree.tick(ctx)
+                    bb = ctx.blackboard
+
+                    # Process behavior tree result
+                    action_type = bb.get("action")
+                    target_pos = bb.get("target_pos")
+
+                    if target_pos and action_type in ("wander", "flee", "patrol", "move_toward_hostile"):
+                        tx, ty = target_pos
+                        # Validate walkability
+                        if session.map_data and session.map_data.is_walkable(tx, ty):
+                            if not session.spatial_index.blocking_at(tx, ty):
+                                session.spatial_index.move(npc, tx, ty)
+                                # Sync backward-compat dict
+                                if npc.id in session.entities:
+                                    session.entities[npc.id]["position"] = [tx, ty]
 
             # Economy: caravan tick
             game_hour = session.game_time.hour + (session.game_time.day - 1) * 24

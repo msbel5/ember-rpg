@@ -117,6 +117,21 @@ class BodyPartTracker:
         vital = ("head", "neck", "chest", "torso")
         return all(self.current_hp.get(p, 0) > 0 for p in vital)
 
+    def to_dict(self) -> Dict:
+        """Serialize body tracker for save/load."""
+        return {
+            "max_hp": dict(self.max_hp),
+            "current_hp": dict(self.current_hp),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "BodyPartTracker":
+        """Deserialize body tracker from a dict."""
+        return cls(
+            max_hp=dict(data.get("max_hp", DEFAULT_PART_HP)),
+            current_hp=dict(data.get("current_hp", DEFAULT_PART_HP)),
+        )
+
 
 # ── Armor coverage ───────────────────────────────────────────────────
 

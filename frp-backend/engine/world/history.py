@@ -317,6 +317,48 @@ class HistorySeed:
                 },
             ))
 
+    # -- serialisation -------------------------------------------------------
+
+    def to_dict(self) -> dict:
+        """Serialize history seed for save/load.
+
+        Stores the full generated state so we don't need to re-run RNG.
+        """
+        return {
+            "current_year": self.current_year,
+            "events": [e.to_dict() for e in self.events],
+            "figures": [f.to_dict() for f in self.figures],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "HistorySeed":
+        """Deserialize history seed from a dict."""
+        hs = cls()
+        hs.current_year = data.get("current_year", 1000)
+        hs.events = [
+            HistoryEvent(
+                year=e["year"],
+                event_type=e["event_type"],
+                name=e["name"],
+                factions=e.get("factions", []),
+                outcome=e.get("outcome", ""),
+                consequences=e.get("consequences", {}),
+            )
+            for e in data.get("events", [])
+        ]
+        hs.figures = [
+            NotableFigure(
+                name=f["name"],
+                born_year=f["born_year"],
+                died_year=f.get("died_year"),
+                faction=f["faction"],
+                role=f["role"],
+                legacy=f["legacy"],
+            )
+            for f in data.get("figures", [])
+        ]
+        return hs
+
     # -- query API -----------------------------------------------------------
 
     def get_wars(self) -> list[HistoryEvent]:

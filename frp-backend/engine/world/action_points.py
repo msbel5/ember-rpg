@@ -148,3 +148,18 @@ class ActionPointTracker:
     def set_armor(self, armor_type: str) -> None:
         """Update the equipped armor type (affects future movement costs)."""
         self.armor_type = armor_type
+
+    def to_dict(self) -> dict:
+        """Serialize AP tracker for save/load."""
+        return {
+            "max_ap": self.max_ap,
+            "current_ap": self.current_ap,
+            "armor_type": self.armor_type,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ActionPointTracker":
+        """Deserialize AP tracker from a dict."""
+        tracker = cls(max_ap=data.get("max_ap", 4), armor_type=data.get("armor_type", "none"))
+        tracker.current_ap = data.get("current_ap", tracker.max_ap)
+        return tracker

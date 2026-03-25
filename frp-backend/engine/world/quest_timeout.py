@@ -139,3 +139,41 @@ class QuestTracker:
 
     def get_expired_quests(self) -> List[QuestEntry]:
         return [q for q in self.quests.values() if q.status == QuestStatus.EXPIRED]
+
+    def to_dict(self) -> dict:
+        """Serialize quest tracker for save/load."""
+        return {
+            "quests": {
+                qid: {
+                    "quest_id": q.quest_id,
+                    "title": q.title,
+                    "deadline_hour": q.deadline_hour,
+                    "timeout_consequence": q.timeout_consequence,
+                    "reminder_hours": q.reminder_hours,
+                    "status": q.status.value,
+                    "accepted_hour": q.accepted_hour,
+                    "completed_hour": q.completed_hour,
+                    "reminders_sent": list(q._reminders_sent),
+                }
+                for qid, q in self.quests.items()
+            }
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "QuestTracker":
+        """Deserialize quest tracker from a dict."""
+        qt = cls()
+        for qid, qd in data.get("quests", {}).items():
+            entry = QuestEntry(
+                quest_id=qd["quest_id"],
+                title=qd["title"],
+                deadline_hour=qd.get("deadline_hour"),
+                timeout_consequence=qd.get("timeout_consequence", "quest_failed"),
+                reminder_hours=qd.get("reminder_hours", [24.0, 8.0, 1.0]),
+                status=QuestStatus(qd.get("status", "active")),
+                accepted_hour=qd.get("accepted_hour", 0.0),
+                completed_hour=qd.get("completed_hour"),
+            )
+            entry._reminders_sent = qd.get("reminders_sent", [])
+            qt.quests[qid] = entry
+        return qt

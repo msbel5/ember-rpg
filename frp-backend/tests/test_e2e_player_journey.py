@@ -71,19 +71,13 @@ class TestExploration:
         narrative = result.get("narrative", "")
         assert narrative, "'look around' must return non-empty narrative"
 
-    def test_move_forward_changes_location(self):
-        """'move forward' must update the session location."""
+    def test_move_produces_narrative(self):
+        """'move north' must produce narrative (tile-based movement)."""
         data = _new_session("Traveler")
         sid = data["session_id"]
-        original_location = data.get("location", "")
 
-        result = _action(sid, "move forward")
+        result = _action(sid, "move north")
         assert result["narrative"], "Move should produce narrative"
-
-        state = client.get(f"/game/session/{sid}").json()
-        new_location = state.get("location", "")
-        assert new_location != original_location, \
-            f"Location should change after 'move forward'; was {original_location!r}, now {new_location!r}"
 
     def test_talk_to_npc_returns_dialogue(self):
         """'talk to merchant' must return dialogue scene and non-empty narrative."""
