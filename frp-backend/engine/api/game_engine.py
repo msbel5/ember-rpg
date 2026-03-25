@@ -310,9 +310,9 @@ class GameEngine:
                 name_faction = "elf"
             name = session.name_gen.generate_name(faction=name_faction, gender=gender, npc_id=npc_id)
 
-            # Keep key interaction NPCs meaningfully reachable from the spawn area.
+            # Keep key NPCs reachable but NOT adjacent to spawn (min_dist=2 prevents blocking)
             if role in {"merchant", "innkeeper"}:
-                pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=2, min_dist=1)
+                pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=4, min_dist=2)
             else:
                 role_anchor = {
                     "merchant": "shop",
@@ -325,9 +325,9 @@ class GameEngine:
                 }.get(role)
                 if role_anchor and role_anchor in anchors:
                     anchor_x, anchor_y = anchors[role_anchor]
-                    pos = self._find_walkable_near(session, anchor_x, anchor_y, radius=4, min_dist=1)
+                    pos = self._find_walkable_near(session, anchor_x, anchor_y, radius=6, min_dist=2)
                 else:
-                    pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=8, min_dist=2)
+                    pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=10, min_dist=3)
             needs = NPCNeeds()
 
             # Determine glyph/color from NPC_VISUALS
@@ -2180,13 +2180,12 @@ class GameEngine:
                 crafted_material = ingredient.item_id.split("_")[0]
                 break
 
+        dropped_products: List[str] = []
         if craft_result.success or craft_result.quality.value == "ruined":
             for item_id, before_qty in inventory_before.items():
                 delta = before_qty - inv_dict.get(item_id, 0)
                 if delta > 0:
                     session.remove_item(item_id, delta)
-
-            dropped_products: List[str] = []
             for product_id, qty in craft_result.products:
                 product_record = {
                     "id": product_id,
@@ -2200,12 +2199,11 @@ class GameEngine:
                     dropped_products.append(product_record["name"])
                 if getattr(session, "location_stock", None) is not None:
                     session.location_stock.add_stock(product_id, qty)
-            if dropped_products:
-                narrative_parts.append(
-                    f"No room to carry {', '.join(dropped_products)}. The item lands on the ground instead."
-                )
-
         narrative_parts = [check_text, craft_result.narrative]
+        if dropped_products:
+            narrative_parts.append(
+                f"No room to carry {', '.join(dropped_products)}. The item lands on the ground instead."
+            )
         if craft_result.xp_gained > 0:
             self.progression.add_xp(session.player, craft_result.xp_gained)
 
@@ -2269,26 +2267,90 @@ class GameEngine:
         )
 
     def _handle_pour(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        """Pour liquid out of a container or between containers."""
+        """Pour liquid out of a container, or transfer between containers.
+        Supports: 'pour waterskin' (dump), 'pour water into bottle' (transfer)."""
         target = (action.target or "").lower()
+        destination = (action.direction or action.action_detail or "").lower().strip()
         if not target:
             return ActionResult(
-                narrative="Pour what? Specify a container (e.g., 'pour waterskin').",
+                narrative="Pour what? Specify a container (e.g., 'pour waterskin' or 'pour water into bottle').",
                 scene_type=session.dm_context.scene_type,
             )
-        if session.physical_inventory:
-            stack = session.physical_inventory.find_item(target)
-            if stack and stack.contained_matter:
-                ap_fail = self._check_ap(session, "pour")
-                if ap_fail:
-                    return ap_fail
-                liquid = stack.contained_matter.get("item_id", "liquid")
-                amount = stack.contained_matter.get("amount_ml", 0)
-                stack.contained_matter = None
+        if not session.physical_inventory:
+            return ActionResult(
+                narrative=f"You don't have '{target}' or it doesn't contain any liquid.",
+                scene_type=session.dm_context.scene_type,
+            )
+
+        # Try to find source container by name
+        source = session.physical_inventory.find_item(target)
+        if source and source.contained_matter:
+            ap_fail = self._check_ap(session, "pour")
+            if ap_fail:
+                return ap_fail
+            liquid_id = source.contained_matter.get("item_id", "liquid")
+            amount = source.contained_matter.get("amount_ml", 0)
+
+            # If destination specified, transfer to another container
+            if destination:
+                dest_stack = session.physical_inventory.find_item(destination)
+                if dest_stack is None:
+                    return ActionResult(
+                        narrative=f"You don't have a '{destination}' to pour into.",
+                        scene_type=session.dm_context.scene_type,
+                    )
+                if dest_stack.contained_matter is not None:
+                    return ActionResult(
+                        narrative=f"The {dest_stack.name} already contains something.",
+                        scene_type=session.dm_context.scene_type,
+                    )
+                # Check if dest can hold liquid
+                from engine.world.matter_state import MatterState
+                if hasattr(dest_stack, 'allowed_matter') and dest_stack.allowed_matter:
+                    if MatterState.LIQUID not in dest_stack.allowed_matter:
+                        return ActionResult(
+                            narrative=f"The {dest_stack.name} can't hold liquids.",
+                            scene_type=session.dm_context.scene_type,
+                        )
+                dest_stack.contained_matter = dict(source.contained_matter)
+                source.contained_matter = None
                 return ActionResult(
-                    narrative=f"You pour out {amount}ml of {liquid} from the {stack.name}.",
+                    narrative=f"You pour {amount}ml of {liquid_id} from the {source.name} into the {dest_stack.name}.",
                     scene_type=session.dm_context.scene_type,
                 )
+            else:
+                # Dump on ground
+                source.contained_matter = None
+                return ActionResult(
+                    narrative=f"You pour out {amount}ml of {liquid_id} from the {source.name}.",
+                    scene_type=session.dm_context.scene_type,
+                )
+
+        # Maybe target is the liquid name, not the container
+        # Search all containers for liquid matching target
+        for container in session.physical_inventory.all_containers():
+            for stack in container.all_items():
+                if stack.contained_matter and target in stack.contained_matter.get("item_id", "").lower():
+                    ap_fail = self._check_ap(session, "pour")
+                    if ap_fail:
+                        return ap_fail
+                    liquid_id = stack.contained_matter.get("item_id", "liquid")
+                    amount = stack.contained_matter.get("amount_ml", 0)
+                    if destination:
+                        dest_stack = session.physical_inventory.find_item(destination)
+                        if dest_stack and dest_stack.contained_matter is None:
+                            dest_stack.contained_matter = dict(stack.contained_matter)
+                            stack.contained_matter = None
+                            return ActionResult(
+                                narrative=f"You pour {amount}ml of {liquid_id} from the {stack.name} into the {dest_stack.name}.",
+                                scene_type=session.dm_context.scene_type,
+                            )
+                    stack.contained_matter = None
+                    return ActionResult(
+                        narrative=f"You pour out {amount}ml of {liquid_id} from the {stack.name}.",
+                        scene_type=session.dm_context.scene_type,
+                    )
+
         return ActionResult(
             narrative=f"You don't have '{target}' or it doesn't contain any liquid.",
             scene_type=session.dm_context.scene_type,
