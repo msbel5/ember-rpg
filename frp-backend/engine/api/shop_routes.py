@@ -68,15 +68,6 @@ def _require_session(session_id: str):
     session = sessions.get(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    legacy_inventory = list(getattr(session.player, "inventory", []) or [])
-    if legacy_inventory:
-        session.inventory = [session._normalize_item_record(item) for item in legacy_inventory]
-    legacy_equipment = dict(getattr(session.player, "equipment", {}) or {})
-    if legacy_equipment:
-        merged = dict(session.equipment or {})
-        for slot, item in legacy_equipment.items():
-            merged[slot] = item
-        session.equipment = merged
     if hasattr(session, "ensure_consistency"):
         session.ensure_consistency()
     return session
@@ -176,13 +167,7 @@ def buy_item(npc_id: str, req: BuyRequest):
 
     purchased_item = copy.deepcopy(item)
     purchased_item["qty"] = req.quantity
-    if hasattr(session, "add_item"):
-        session.add_item(purchased_item)
-    else:
-        if not hasattr(player, "inventory"):
-            player.inventory = []
-        for _ in range(req.quantity):
-            player.inventory.append(req.item_id)
+    session.add_item(purchased_item)
 
     if getattr(session, "location_stock", None) is not None:
         removed = session.location_stock.remove_stock(req.item_id, req.quantity)
@@ -209,7 +194,11 @@ def sell_item(npc_id: str, req: SellRequest):
         session.ensure_consistency()
     player = session.player
 
-    owned_count = getattr(player, "inventory", []).count(req.item_id)
+    owned_count = sum(
+        int(entry.get("qty", 1))
+        for entry in getattr(session, "inventory", [])
+        if entry.get("id") == req.item_id
+    )
     if owned_count < req.quantity:
         raise HTTPException(
             status_code=400,
@@ -219,12 +208,8 @@ def sell_item(npc_id: str, req: SellRequest):
     sell_price_each = int(item.get("value", 0) * 0.6)
     total_earned = sell_price_each * req.quantity
 
-    if hasattr(session, "remove_item"):
-        for _ in range(req.quantity):
-            session.remove_item(req.item_id)
-    else:
-        for _ in range(req.quantity):
-            player.inventory.remove(req.item_id)
+    for _ in range(req.quantity):
+        session.remove_item(req.item_id)
 
     if not hasattr(player, 'gold'):
         player.gold = 0

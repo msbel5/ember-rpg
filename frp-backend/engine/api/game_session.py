@@ -637,6 +637,18 @@ class GameSession:
                 "max": self.ap_tracker.max_ap,
             }
             result["player"]["ap"] = dict(result["ap"])
+        if self.in_combat() and self.combat is not None:
+            player_combatant = next(
+                (combatant for combatant in self.combat.combatants if combatant.name == self.player.name),
+                None,
+            )
+            if player_combatant is not None:
+                combat_ap = {
+                    "current": int(player_combatant.ap),
+                    "max": 3,
+                }
+                result["ap"] = combat_ap
+                result["player"]["ap"] = dict(combat_ap)
 
         # --- Inventory & Equipment ---
         if self.inventory:

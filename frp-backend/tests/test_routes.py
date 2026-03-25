@@ -123,6 +123,21 @@ class TestSessionEndpoints:
         assert data["ground_items"] == snapshot.get("ground_items", [])
         assert data["campaign_state"] == snapshot.get("campaign_state", {})
 
+    def test_action_attack_response_player_ap_matches_combat_ap(self):
+        created = self._new_session()
+        sid = created["session_id"]
+
+        resp = client.post(f"/game/session/{sid}/action", json={"input": "saldır"})
+        assert resp.status_code == 200
+        data = resp.json()
+
+        assert data["combat"] is not None
+        player_name = data["player"]["name"]
+        combat_player = next(combatant for combatant in data["combat"]["combatants"] if combatant["name"] == player_name)
+
+        assert data["player"]["ap"]["current"] == combat_player["ap"]
+        assert data["player"]["ap"]["max"] == 3
+
     def test_custom_location(self):
         resp = client.post("/game/session/new", json={
             "player_name": "Aria",

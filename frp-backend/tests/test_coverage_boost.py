@@ -725,7 +725,8 @@ class TestShopEdgeCases:
 
         # Force inventory and remove gold
         item_id = "health_potion"
-        session.player.inventory = [item_id, item_id]
+        session.inventory = [{"id": item_id, "name": "Health Potion", "qty": 2}]
+        session.sync_player_state()
         if hasattr(session.player, 'gold'):
             del session.player.gold
 

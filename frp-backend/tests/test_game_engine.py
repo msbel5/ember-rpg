@@ -125,10 +125,12 @@ class TestNewSession:
 
 class TestHandleAttack:
     def test_attack_starts_combat(self, engine, warrior_session):
+        ap_before = warrior_session.ap_tracker.current_ap
         result = engine.process_action(warrior_session, "attack")
         assert result.combat_state is not None
         assert warrior_session.in_combat()
         assert result.combat_state["active"] == warrior_session.player.name
+        assert warrior_session.ap_tracker.current_ap == ap_before
 
     def test_attack_returns_narrative(self, engine, warrior_session):
         result = engine.process_action(warrior_session, "attack")
@@ -516,6 +518,34 @@ class TestCraftHardening:
 
 
 class TestCombatHardening:
+    def test_attack_world_target_does_not_spend_exploration_ap_on_combat_start(self, engine):
+        session = engine.new_session("Duelist", "warrior", location="Harbor Town")
+        merchant_id, merchant = _entity_by_role(session, "merchant")
+        _move_player_near_entity(session, merchant)
+        ap_before = session.ap_tracker.current_ap
+
+        result = engine.process_action(session, "attack merchant")
+
+        assert result.combat_state is not None
+        assert result.combat_state["active"] == session.player.name
+        assert session.in_combat()
+        assert session.ap_tracker.current_ap == ap_before
+        assert session.entities[merchant_id]["hp"] == session.entities[merchant_id]["max_hp"]
+
+    def test_combat_snapshot_player_ap_matches_combat_ap(self, engine, warrior_session):
+        result = engine.process_action(warrior_session, "attack")
+
+        snapshot = warrior_session.to_dict()
+        combat_player = next(
+            combatant for combatant in result.combat_state["combatants"]
+            if combatant["name"] == warrior_session.player.name
+        )
+
+        assert snapshot["player"]["ap"]["current"] == combat_player["ap"]
+        assert snapshot["player"]["ap"]["max"] == 3
+        assert snapshot["ap"]["current"] == combat_player["ap"]
+        assert snapshot["ap"]["max"] == 3
+
     def test_attack_updates_world_npc_body_tracker(self, engine, warrior_session):
         merchant_id, merchant = _entity_by_role(warrior_session, "merchant")
         _move_player_near_entity(warrior_session, merchant)

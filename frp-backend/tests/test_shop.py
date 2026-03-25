@@ -120,7 +120,8 @@ def test_sell_item_adds_gold():
     from engine.api.routes import _sessions
     session = _sessions[session_id]
     session.player.gold = 0
-    session.player.inventory = ["potion_of_healing"]
+    session.inventory = [{"id": "potion_of_healing", "name": "Potion Of Healing", "qty": 1}]
+    session.sync_player_state()
 
     # Get sell price from shop
     shop_resp = client.get("/game/shop/merchant_general_goods")
@@ -143,7 +144,8 @@ def test_sell_item_not_in_inventory():
     session_id = create_session()
     from engine.api.routes import _sessions
     session = _sessions[session_id]
-    session.player.inventory = []
+    session.inventory = []
+    session.sync_player_state()
 
     resp = client.post("/game/shop/merchant_general_goods/sell", json={
         "session_id": session_id,
@@ -169,3 +171,142 @@ def test_buy_invalid_session():
         "quantity": 1,
     })
     assert resp.status_code == 404
+
+
+def test_require_session_preserves_canonical_inventory_and_equipment():
+    """Shop session resolution must not rebuild canonical state from player mirrors."""
+    session_id = create_session()
+    from engine.api.routes import _sessions
+    from engine.api.shop_routes import _require_session
+
+    session = _sessions[session_id]
+    session.inventory = [
+        {
+            "id": "iron_sword",
+            "name": "Iron Sword",
+            "qty": 1,
+            "material": "iron",
+            "quality": "masterwork",
+            "damage": 9,
+            "instance_id": "iron_sword-special",
+            "type": "weapon",
+            "slot": "weapon",
+        }
+    ]
+    session.equipment["weapon"] = {
+        "id": "iron_sword",
+        "name": "Iron Sword",
+        "material": "iron",
+        "quality": "masterwork",
+        "damage": 9,
+        "instance_id": "iron_sword-special",
+        "type": "weapon",
+        "slot": "weapon",
+    }
+    session.ensure_consistency()
+
+    inventory_before = [dict(item) for item in session.inventory]
+    equipment_before = dict(session.equipment)
+    session.player.inventory = ["junk_item"]
+    session.player.equipment = {"weapon": "junk_sword"}
+
+    resolved = _require_session(session_id)
+
+    assert resolved is session
+    assert session.inventory == inventory_before
+    assert session.equipment["weapon"] == equipment_before["weapon"]
+    assert session.player.inventory == ["iron_sword"]
+    assert session.player.equipment["weapon"] == "iron_sword"
+
+
+def test_buy_item_preserves_existing_metadata():
+    """Buying another item must not corrupt canonical metadata already in inventory."""
+    session_id = create_session()
+    from engine.api.routes import _sessions
+
+    session = _sessions[session_id]
+    session.player.gold = 500
+    session.inventory = [
+        {
+            "id": "iron_sword",
+            "name": "Iron Sword",
+            "qty": 1,
+            "material": "iron",
+            "quality": "masterwork",
+            "damage": 9,
+            "instance_id": "iron_sword-special",
+            "type": "weapon",
+            "slot": "weapon",
+        }
+    ]
+    session.ensure_consistency()
+
+    with patch("engine.api.shop_routes._get_npc") as mock_npc, patch("engine.api.shop_routes._get_item") as mock_item:
+        mock_npc.return_value = {"id": "merchant", "name": "Merchant", "shop_inventory": ["healing_potion"]}
+        mock_item.return_value = {"id": "healing_potion", "name": "Healing Potion", "value": 25, "type": "consumable"}
+        resp = client.post("/game/shop/merchant/buy", json={
+            "session_id": session_id,
+            "item_id": "healing_potion",
+            "quantity": 1,
+        })
+
+    assert resp.status_code == 200
+    sword = next(item for item in session.inventory if item["id"] == "iron_sword")
+    assert sword["material"] == "iron"
+    assert sword["quality"] == "masterwork"
+    assert sword["damage"] == 9
+    assert sword["instance_id"] == "iron_sword-special"
+    assert sword["qty"] == 1
+    assert any(item["id"] == "healing_potion" for item in session.inventory)
+
+
+def test_sell_item_uses_canonical_stack_qty_and_preserves_metadata():
+    """Selling should count canonical stack qty, not player.inventory mirror, and preserve metadata."""
+    session_id = create_session()
+    from engine.api.routes import _sessions
+
+    session = _sessions[session_id]
+    session.player.gold = 0
+    session.inventory = [
+        {
+            "id": "iron_sword",
+            "name": "Iron Sword",
+            "qty": 1,
+            "material": "iron",
+            "quality": "masterwork",
+            "damage": 9,
+            "instance_id": "iron_sword-special",
+            "type": "weapon",
+            "slot": "weapon",
+        },
+        {
+            "id": "potion_of_healing",
+            "name": "Potion Of Healing",
+            "qty": 2,
+            "quality": "fine",
+            "instance_id": "potion-stack-special",
+            "type": "item",
+        },
+    ]
+    session.ensure_consistency()
+    session.player.inventory = []
+
+    with patch("engine.api.shop_routes._get_npc") as mock_npc, patch("engine.api.shop_routes._get_item") as mock_item:
+        mock_npc.return_value = {"id": "merchant", "name": "Merchant", "shop_inventory": ["potion_of_healing"]}
+        mock_item.return_value = {"id": "potion_of_healing", "name": "Potion Of Healing", "value": 50, "type": "consumable"}
+        resp = client.post("/game/shop/merchant/sell", json={
+            "session_id": session_id,
+            "item_id": "potion_of_healing",
+            "quantity": 1,
+        })
+
+    assert resp.status_code == 200
+    potion = next(item for item in session.inventory if item["id"] == "potion_of_healing")
+    sword = next(item for item in session.inventory if item["id"] == "iron_sword")
+    assert potion["qty"] == 1
+    assert potion["quality"] == "fine"
+    assert potion["instance_id"] == "potion-stack-special"
+    assert sword["material"] == "iron"
+    assert sword["quality"] == "masterwork"
+    assert sword["damage"] == 9
+    assert sword["instance_id"] == "iron_sword-special"

@@ -555,12 +555,6 @@ class GameEngine:
     # --- Intent Handlers ---
 
     def _handle_attack(self, session: GameSession, action: ParsedAction) -> ActionResult:
-        # --- AP check for initiating combat ---
-        if not session.in_combat():
-            ap_fail = self._check_ap(session, "attack_melee")
-            if ap_fail:
-                return ap_fail
-
         # Proximity check for attack (melee range)
         if action.target and not session.in_combat():
             prox_fail = self._check_entity_proximity(session, action.target, "attack_melee")

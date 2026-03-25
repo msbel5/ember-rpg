@@ -245,7 +245,7 @@ def render_map(ms: MapState) -> Panel:
     legend.append("Tree", style="dim")
     text.append_text(legend)
 
-    border = "red" if session.in_combat() else "bright_blue"
+    border = "red" if ms.session.in_combat() else "bright_blue"
     return Panel(text, title="[bold bright_white]Map[/bold bright_white]", border_style=border)
 
 
