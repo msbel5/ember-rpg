@@ -117,6 +117,23 @@ class GameEngine(
             session.ensure_consistency()
             return result
 
+        blocked_in_combat = {
+            ActionIntent.TALK,
+            ActionIntent.ADDRESS,
+            ActionIntent.PERSUADE,
+            ActionIntent.INTIMIDATE,
+            ActionIntent.DECEIVE,
+            ActionIntent.BRIBE,
+            ActionIntent.THINK,
+        }
+        if session.in_combat() and action.intent in blocked_in_combat:
+            return ActionResult(
+                narrative="You can't do that during combat!",
+                scene_type=session.dm_context.scene_type,
+                combat_state=self._combat_state(session.combat) if session.combat is not None else None,
+                state_changes={"_skip_world_tick": True},
+            )
+
         handlers = {
             ActionIntent.ATTACK: self._handle_attack,
             ActionIntent.CAST_SPELL: self._handle_spell,

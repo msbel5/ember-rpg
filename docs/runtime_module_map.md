@@ -23,8 +23,8 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/__init__.py` | 1 | - | - |
 | `frp-backend/engine/api/__init__.py` | 0 | - | - |
 | `frp-backend/engine/api/action_parser.py` | 439 | ActionIntent (0), ParsedAction (1), ActionParser (3) | _normalize, _looks_turkish, _restore_turkish_final_consonant, _strip_turkish_case_suffix |
-| `frp-backend/engine/api/game_engine.py` | 207 | ActionResult (0), GameEngine (2) | - |
-| `frp-backend/engine/api/game_engine_runtime.py` | 318 | GameEngineRuntimeMixin (3) | - |
+| `frp-backend/engine/api/game_engine.py` | 224 | ActionResult (0), GameEngine (2) | - |
+| `frp-backend/engine/api/game_engine_runtime.py` | 317 | GameEngineRuntimeMixin (3) | - |
 | `frp-backend/engine/api/game_session.py` | 15 | - | - |
 | `frp-backend/engine/api/handlers/__init__.py` | 1 | - | - |
 | `frp-backend/engine/api/handlers/combat_actions.py` | 353 | CombatActionsMixin (5) | - |
@@ -44,9 +44,9 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/handlers/inventory_management.py` | 244 | InventoryManagementMixin (9) | - |
 | `frp-backend/engine/api/handlers/quest_handlers.py` | 329 | QuestMixin (9) | - |
 | `frp-backend/engine/api/handlers/resource_handlers.py` | 401 | ResourceMixin (12) | - |
-| `frp-backend/engine/api/handlers/social_actions.py` | 409 | SocialActionsMixin (9) | - |
+| `frp-backend/engine/api/handlers/social_actions.py` | 412 | SocialActionsMixin (9) | - |
 | `frp-backend/engine/api/handlers/social_handlers.py` | 9 | SocialMixin (0) | - |
-| `frp-backend/engine/api/handlers/social_state.py` | 98 | SocialStateMixin (9) | - |
+| `frp-backend/engine/api/handlers/social_state.py` | 99 | SocialStateMixin (9) | - |
 | `frp-backend/engine/api/inventory_routes.py` | 131 | EquipRequest (0), DropRequest (0) | _get_sessions, _require_session, _legacy_inventory, _legacy_equipment |
 | `frp-backend/engine/api/models.py` | 115 | NewSessionRequest (0), NewSessionResponse (0), ActionRequest (0), CombatantState (0) | - |
 | `frp-backend/engine/api/npc_memory_routes.py` | 41 | FactRequest (0) | _get_session, get_npc_memory, add_npc_fact, get_npc_context |
@@ -70,7 +70,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/session/entity_state.py` | 82 | SessionEntityMixin (4) | - |
 | `frp-backend/engine/api/session/inventory_state.py` | 209 | SessionInventoryMixin (20) | - |
 | `frp-backend/engine/api/session/player_state.py` | 126 | SessionPlayerStateMixin (6) | - |
-| `frp-backend/engine/api/session/serialization.py` | 157 | SessionSerializationMixin (1) | - |
+| `frp-backend/engine/api/session/serialization.py` | 192 | SessionSerializationMixin (2) | - |
 | `frp-backend/engine/api/session/timed_conditions.py` | 76 | SessionTimedConditionMixin (7) | - |
 | `frp-backend/engine/api/session_utils.py` | 206 | - | make_conversation_state, normalize_conversation_state, canonical_slot, display_name |
 | `frp-backend/engine/api/shop_routes.py` | 233 | BuyRequest (0), SellRequest (0), ShopItemResponse (0), ShopInventoryResponse (0) | _load_npc_templates, _load_items, _get_npc, _get_item |

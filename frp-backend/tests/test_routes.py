@@ -49,6 +49,22 @@ class TestSessionEndpoints:
         assert "quest_offers" in data
         assert "campaign_state" in data
 
+    def test_get_session_includes_combat_snapshot_when_in_combat(self):
+        created = self._new_session("CombatPoll", "warrior")
+        sid = created["session_id"]
+
+        attack_resp = client.post(f"/game/session/{sid}/action", json={"input": "attack goblin"})
+        assert attack_resp.status_code == 200
+        attack_data = attack_resp.json()
+        assert attack_data["combat"] is not None
+
+        resp = client.get(f"/game/session/{sid}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["in_combat"] is True
+        assert data["combat"] is not None
+        assert data["combat"]["active"] == attack_data["combat"]["active"]
+
     def test_get_nonexistent_session(self):
         resp = client.get("/game/session/nonexistent-id")
         assert resp.status_code == 404
@@ -367,3 +383,26 @@ class TestSaveRouteErrors:
             assert "id" in player_inventory[0]
         finally:
             self.client.delete("/game/saves/canonical_load_slot")
+
+    def test_load_session_returns_combat_snapshot_when_saved_in_combat(self):
+        created = self.client.post(
+            "/game/session/new",
+            json={"player_name": "CombatLoad", "player_class": "warrior"},
+        )
+        sid = created.json()["session_id"]
+        attack_resp = self.client.post(f"/game/session/{sid}/action", json={"input": "attack goblin"})
+        assert attack_resp.status_code == 200
+        save_resp = self.client.post(
+            f"/game/session/{sid}/save",
+            json={"player_id": "combat_load_player", "slot_name": "combat_load_slot"},
+        )
+        assert save_resp.status_code == 200
+
+        try:
+            load_resp = self.client.post("/game/session/load/combat_load_slot")
+            assert load_resp.status_code == 200
+            data = load_resp.json()["session_data"]
+            assert data["in_combat"] is True
+            assert data["combat"] is not None
+        finally:
+            self.client.delete("/game/saves/combat_load_slot")

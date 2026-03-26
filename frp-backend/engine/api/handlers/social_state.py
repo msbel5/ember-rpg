@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Optional
 
 from engine.api.game_session import GameSession
+from engine.world.proximity import get_interaction_range
 
 from engine.api.runtime_constants import DEFAULT_NPC_ATTITUDE, INTERACTION_HOLD_TURNS, SOCIAL_ATTITUDE_DCS
 
@@ -68,7 +69,7 @@ class SocialStateMixin:
             session.clear_conversation_target()
             return
         pos = self._live_entity_position(session, entity_id, entity.get("position", [0, 0]))
-        if max(abs(session.position[0] - pos[0]), abs(session.position[1] - pos[1])) > 2:
+        if max(abs(session.position[0] - pos[0]), abs(session.position[1] - pos[1])) > get_interaction_range("social"):
             session.clear_conversation_target()
 
     def _record_eavesdroppers(self, session: GameSession, speaker_entity_id: Optional[str], transcript: str) -> None:

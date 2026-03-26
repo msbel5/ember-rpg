@@ -214,8 +214,7 @@ class GameEngineRuntimeMixin:
                                 }
                             )
 
-            start_hour = int(before_hour) if before_hour == int(before_hour) else int(before_hour) + 1
-            crossed_hours = list(range(start_hour, int(after_hour) + 1))
+            crossed_hours = list(range(int(before_hour) + 1, int(after_hour) + 1))
             for hour_marker in crossed_hours:
                 if session.ap_tracker is not None and refresh_ap:
                     session.ap_tracker.refresh()

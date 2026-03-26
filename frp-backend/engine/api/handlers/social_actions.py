@@ -180,29 +180,28 @@ class SocialActionsMixin:
     def _handle_persuade(self, session: GameSession, action: ParsedAction):
         from engine.api.game_engine import ActionResult
 
+        target = action.target or "someone"
+        found = self._find_entity_by_name(session, target)
+        if found is None:
+            return ActionResult(
+                narrative="There's no one here by that name.",
+                scene_type=session.dm_context.scene_type,
+            )
+        entity_id, entity = found
+        target = entity.get("name", target)
+        prox_fail = self._check_entity_proximity(session, target, "social")
+        if prox_fail:
+            return prox_fail
         ap_fail = self._check_ap(session, "persuade")
         if ap_fail:
             return ap_fail
 
-        target = action.target or "someone"
-        prox_fail = self._check_entity_proximity(session, target, "social")
-        if prox_fail:
-            return prox_fail
-
-        found = self._find_entity_by_name(session, target)
-        entity_id = None
-        entity = None
-        if found:
-            entity_id, entity = found
-            target = entity.get("name", target)
-
-        dc = self._social_dc(entity or {}, "minor_risk") if entity else 13
+        dc = self._social_dc(entity, "minor_risk")
         check_result = self._roll_player_skill_check(session, "persuasion", dc)
         check_text = self._format_skill_check(check_result, "Persuasion", dc)
         if check_result.success:
             narrative = f"Your words ring true and {target} seems persuaded."
-            if entity_id:
-                self._shift_attitude_step(session, entity_id, +1)
+            self._shift_attitude_step(session, entity_id, +1)
         else:
             narrative = f"{target} remains unconvinced by your plea."
         self._hold_interaction_target(session, entity_id, "social")
@@ -224,30 +223,29 @@ class SocialActionsMixin:
     def _handle_intimidate(self, session: GameSession, action: ParsedAction):
         from engine.api.game_engine import ActionResult
 
+        target = action.target or "someone"
+        found = self._find_entity_by_name(session, target)
+        if found is None:
+            return ActionResult(
+                narrative="There's no one here by that name.",
+                scene_type=session.dm_context.scene_type,
+            )
+        entity_id, entity = found
+        target = entity.get("name", target)
+        prox_fail = self._check_entity_proximity(session, target, "social")
+        if prox_fail:
+            return prox_fail
         ap_fail = self._check_ap(session, "intimidate")
         if ap_fail:
             return ap_fail
 
-        target = action.target or "someone"
-        prox_fail = self._check_entity_proximity(session, target, "social")
-        if prox_fail:
-            return prox_fail
-
-        found = self._find_entity_by_name(session, target)
-        entity_id = None
-        entity = None
-        if found:
-            entity_id, entity = found
-            target = entity.get("name", target)
-
-        advantage = bool(entity and self._get_player_ability(session, "MIG") >= int((entity.get("stats") or {}).get("MIG", 10)))
-        npc_insight = 10 + self._npc_skill_bonus(entity or {}, "insight")
+        advantage = self._get_player_ability(session, "MIG") >= int((entity.get("stats") or {}).get("MIG", 10))
+        npc_insight = 10 + self._npc_skill_bonus(entity, "insight")
         check_result = self._roll_player_skill_check(session, "intimidation", npc_insight, advantage=advantage)
         check_text = self._format_skill_check(check_result, "Intimidation", npc_insight)
         if check_result.success:
             narrative = f"{target} cowers before your menacing presence."
-            if entity_id:
-                self._set_entity_attitude(session, entity_id, "hostile")
+            self._set_entity_attitude(session, entity_id, "hostile")
         else:
             narrative = f"{target} stands firm, unimpressed by your threats."
         self._hold_interaction_target(session, entity_id, "social")
@@ -269,20 +267,23 @@ class SocialActionsMixin:
         from engine.api.game_engine import ActionResult
         import re
 
-        ap_fail = self._check_ap(session, "bribe")
-        if ap_fail:
-            return ap_fail
         raw_target = action.target or session.conversation_state.get("npc_name") or "someone"
         gift_value = next((int(token) for token in raw_target.split() if token.isdigit()), 10)
         target = re.sub(r"\s*\d+\s*(?:gold|gp|altın)?\s*$", "", raw_target, flags=re.IGNORECASE).strip() or raw_target
+        found = self._find_entity_by_name(session, target)
+        if found is None:
+            return ActionResult(
+                narrative="There's no one here by that name.",
+                scene_type=session.dm_context.scene_type,
+            )
+        entity_id, entity = found
+        target = entity.get("name", target)
         prox_fail = self._check_entity_proximity(session, target, "social")
         if prox_fail:
             return prox_fail
-        found = self._find_entity_by_name(session, target)
-        if found is None:
-            return ActionResult(narrative="There's no clear person here to bribe.", scene_type=session.dm_context.scene_type)
-        entity_id, entity = found
-        target = entity.get("name", target)
+        ap_fail = self._check_ap(session, "bribe")
+        if ap_fail:
+            return ap_fail
         if session.player.gold < gift_value:
             return ActionResult(
                 narrative=f"You do not have {gift_value} gold to offer as a bribe.",
@@ -307,20 +308,22 @@ class SocialActionsMixin:
     def _handle_deceive(self, session: GameSession, action: ParsedAction):
         from engine.api.game_engine import ActionResult
 
-        ap_fail = self._check_ap(session, "persuade")
-        if ap_fail:
-            return ap_fail
         target = action.target or session.conversation_state.get("npc_name") or "someone"
+        found = self._find_entity_by_name(session, target)
+        if found is None:
+            return ActionResult(
+                narrative="There's no one here by that name.",
+                scene_type=session.dm_context.scene_type,
+            )
+        entity_id, entity = found
+        target = entity.get("name", target)
         prox_fail = self._check_entity_proximity(session, target, "social")
         if prox_fail:
             return prox_fail
-        found = self._find_entity_by_name(session, target)
-        entity_id = None
-        entity = None
-        if found:
-            entity_id, entity = found
-            target = entity.get("name", target)
-        passive_insight = 10 + self._npc_skill_bonus(entity or {}, "insight")
+        ap_fail = self._check_ap(session, "persuade")
+        if ap_fail:
+            return ap_fail
+        passive_insight = 10 + self._npc_skill_bonus(entity, "insight")
         check_result = self._roll_player_skill_check(session, "deception", passive_insight)
         check_text = self._format_skill_check(check_result, "Deception", passive_insight)
         self._hold_interaction_target(session, entity_id, "social")

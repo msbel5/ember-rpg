@@ -772,6 +772,7 @@ class TestCombatHardening:
         result = engine.process_action(warrior_session, "attack")
 
         snapshot = warrior_session.to_dict()
+        assert snapshot["combat"] is not None
         combat_player = next(
             combatant for combatant in result.combat_state["combatants"]
             if combatant["name"] == warrior_session.player.name
@@ -781,6 +782,74 @@ class TestCombatHardening:
         assert snapshot["player"]["ap"]["max"] == 3
         assert snapshot["ap"]["current"] == combat_player["ap"]
         assert snapshot["ap"]["max"] == 3
+
+    @pytest.mark.parametrize("command", ["talk to goblin", "say to goblin hello", "persuade goblin", "intimidate goblin", "deceive goblin", "bribe goblin", "think about goblins"])
+    def test_social_intents_are_blocked_during_combat(self, engine, warrior_session, command):
+        result = engine.process_action(warrior_session, "attack goblin")
+        assert result.combat_state is not None
+
+        player_combatant = next(
+            combatant for combatant in warrior_session.combat.combatants
+            if combatant.name == warrior_session.player.name
+        )
+        ap_before = warrior_session.ap_tracker.current_ap
+        combat_ap_before = player_combatant.ap
+        action_before = player_combatant.action_available
+        scene_before = warrior_session.dm_context.scene_type
+        turn_before = warrior_session.dm_context.turn
+        time_before = (warrior_session.game_time.day, warrior_session.game_time.hour, warrior_session.game_time.minute)
+        conversation_before = dict(warrior_session.conversation_state)
+
+        blocked = engine.process_action(warrior_session, command)
+
+        assert "can't do that during combat" in blocked.narrative.lower()
+        assert warrior_session.ap_tracker.current_ap == ap_before
+        assert player_combatant.ap == combat_ap_before
+        assert player_combatant.action_available == action_before
+        assert warrior_session.dm_context.scene_type == scene_before
+        assert warrior_session.dm_context.turn == turn_before
+        assert (warrior_session.game_time.day, warrior_session.game_time.hour, warrior_session.game_time.minute) == time_before
+        assert warrior_session.conversation_state == conversation_before
+
+    def test_targeted_social_actions_fail_cleanly_when_target_missing(self, engine):
+        session = engine.new_session("Speaker", "priest", location="Harbor Town")
+        ap_before = session.ap_tracker.current_ap
+        gold_before = session.player.gold
+
+        for command in ("persuade dragon", "intimidate dragon", "deceive dragon", "bribe dragon"):
+            result = engine.process_action(session, command)
+            assert result.narrative == "There's no one here by that name."
+
+        assert session.ap_tracker.current_ap == ap_before
+        assert session.player.gold == gold_before
+
+    def test_exact_hour_tick_does_not_run_hourly_updates_early(self, engine):
+        session = engine.new_session("Tick", "warrior", location="Harbor Town")
+        session.game_time.day = 1
+        session.game_time.hour = 8
+        session.game_time.minute = 0
+        session.ap_tracker.current_ap = 1
+        hour_markers = []
+
+        with patch.object(engine, "_run_hourly_world_updates", side_effect=lambda s, hour, events: hour_markers.append(hour)):
+            engine._world_tick(session, minutes=15, refresh_ap=False)
+
+        assert hour_markers == []
+        assert session.ap_tracker.current_ap == 1
+
+    def test_hour_boundary_tick_runs_once_when_boundary_crossed(self, engine):
+        session = engine.new_session("Tick", "warrior", location="Harbor Town")
+        session.game_time.day = 1
+        session.game_time.hour = 8
+        session.game_time.minute = 45
+        session.ap_tracker.current_ap = 1
+        hour_markers = []
+
+        with patch.object(engine, "_run_hourly_world_updates", side_effect=lambda s, hour, events: hour_markers.append(hour)):
+            engine._world_tick(session, minutes=15, refresh_ap=False)
+
+        assert hour_markers == [9]
+        assert session.ap_tracker.current_ap == session.ap_tracker.max_ap
 
     def test_attack_updates_world_npc_body_tracker(self, engine, warrior_session):
         merchant_id, merchant = _entity_by_role(warrior_session, "merchant")
@@ -922,7 +991,7 @@ class TestGoToHardening:
         assert goto_session.position == [7, 1]
         assert goto_session.game_time.hour == 9
         assert goto_session.game_time.minute == 45
-        assert goto_session.ap_tracker.current_ap == 4
+        assert goto_session.ap_tracker.current_ap == 2
 
     def test_go_to_tracks_live_target_until_adjacent(self, engine):
         session = engine.new_session("Walker", "warrior", location="Forest Road")
@@ -1021,6 +1090,32 @@ class TestSocialRangeHardening:
         _move_player_to(session, gx, gy - 4)
         result = engine.process_action(session, "persuade guard")
         assert "too far away" in result.narrative.lower()
+
+    def test_conversation_target_stays_valid_at_social_range_edge(self, engine):
+        session = engine.new_session("Speaker", "priest", location="Harbor Town")
+        _guard_id, guard = _entity_by_role(session, "guard")
+        gx, gy = guard["position"]
+        _move_player_to(session, gx, gy - 3)
+
+        talk_result = engine.process_action(session, "talk to guard")
+        assert "too far away" not in talk_result.narrative.lower()
+        assert session.conversation_state["target_type"] == "npc"
+
+        follow_up = engine.process_action(session, "hello there")
+        assert session.conversation_state["target_type"] == "npc"
+        assert follow_up.scene_type == SceneType.DIALOGUE
+
+    def test_conversation_target_clears_beyond_social_range(self, engine):
+        session = engine.new_session("Speaker", "priest", location="Harbor Town")
+        _guard_id, guard = _entity_by_role(session, "guard")
+        gx, gy = guard["position"]
+        _move_player_to(session, gx, gy - 3)
+        engine.process_action(session, "talk to guard")
+        assert session.conversation_state["target_type"] == "npc"
+
+        _move_player_to(session, gx, gy - 4)
+        engine.process_action(session, "look")
+        assert session.conversation_state["target_type"] == "dm"
 
 
 class TestUtilityAPHardening:

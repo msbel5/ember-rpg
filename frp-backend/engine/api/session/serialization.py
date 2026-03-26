@@ -9,6 +9,40 @@ from engine.world.entity import EntityType
 class SessionSerializationMixin:
     """API serialization methods."""
 
+    def _combat_payload(self) -> dict | None:
+        if not self.in_combat() or self.combat is None:
+            return None
+        return {
+            "round": self.combat.round,
+            "active": self.combat.active_combatant.name if not self.combat.combat_ended else None,
+            "ended": self.combat.combat_ended,
+            "combatants": [
+                {
+                    "name": combatant.name,
+                    "hp": combatant.character.hp,
+                    "max_hp": combatant.character.max_hp,
+                    "ap": combatant.ap,
+                    "dead": combatant.is_dead,
+                    "initiative": combatant.initiative,
+                    "conditions": list(getattr(combatant.character, "conditions", [])),
+                    "resources": {
+                        "action_available": bool(getattr(combatant, "action_available", True)),
+                        "bonus_action_available": bool(getattr(combatant, "bonus_action_available", True)),
+                        "reaction_available": bool(getattr(combatant, "reaction_available", True)),
+                        "movement_remaining": int(getattr(combatant, "movement_remaining", 0)),
+                        "speed": int(getattr(combatant, "speed", 0)),
+                        "disengaged_until_turn_end": bool(getattr(combatant, "disengaged_until_turn_end", False)),
+                    },
+                    "death_saves": {
+                        "successes": int(getattr(combatant.character, "death_save_successes", 0)),
+                        "failures": int(getattr(combatant.character, "death_save_failures", 0)),
+                    },
+                    "stable": bool(getattr(combatant.character, "is_stable", False)),
+                }
+                for combatant in self.combat.combatants
+            ],
+        }
+
     def to_dict(self) -> dict:
         self.ensure_consistency()
         player_payload = {
@@ -55,6 +89,7 @@ class SessionSerializationMixin:
             "turn": self.dm_context.turn,
             "position": list(self.position),
             "facing": self.facing,
+            "combat": self._combat_payload(),
         }
 
         if self.ap_tracker:
