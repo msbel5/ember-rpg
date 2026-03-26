@@ -392,7 +392,7 @@ class HelperMixin:
 
             # Keep key NPCs reachable but NOT adjacent to spawn (min_dist=2 prevents blocking)
             if role in {"merchant", "innkeeper"}:
-                pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=4, min_dist=1)
+                pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=4, min_dist=2)
             else:
                 role_anchor = get_role_anchor_map().get(role)
                 if role_anchor and role_anchor in anchors:

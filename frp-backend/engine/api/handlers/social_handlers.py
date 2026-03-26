@@ -282,7 +282,12 @@ class SocialMixin:
         ap_fail = self._check_ap(session, "bribe")
         if ap_fail:
             return ap_fail
-        target = action.target or session.conversation_state.get("npc_name") or "someone"
+        raw_target = action.target or session.conversation_state.get("npc_name") or "someone"
+        # Extract gift value from target string (e.g., "merchant 5 gold" → merchant, 5)
+        gift_value = next((int(token) for token in raw_target.split() if token.isdigit()), 10)
+        # Strip numbers and "gold" from target to get clean NPC name
+        import re as _re
+        target = _re.sub(r'\s*\d+\s*(?:gold|gp|altın)?\s*$', '', raw_target, flags=_re.IGNORECASE).strip() or raw_target
         prox_fail = self._check_entity_proximity(session, target, "social")
         if prox_fail:
             return prox_fail
@@ -291,7 +296,6 @@ class SocialMixin:
             return ActionResult(narrative=f"There's no clear person here to bribe.", scene_type=session.dm_context.scene_type)
         entity_id, entity = found
         target = entity.get("name", target)
-        gift_value = next((int(token) for token in action.raw_input.split() if token.isdigit()), 10)
         if session.player.gold < gift_value:
             return ActionResult(
                 narrative=f"You do not have {gift_value} gold to offer as a bribe.",
