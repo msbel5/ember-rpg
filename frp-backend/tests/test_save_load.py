@@ -148,11 +148,11 @@ def test_load_corrupt_save_raises_error(manager, tmp_saves_dir):
 
 
 # ---------------------------------------------------------------------------
-# AC-08: Save files contain schema_version == "1.0"
+# AC-08: Save files contain schema_version == "2.0"
 # ---------------------------------------------------------------------------
 
 def test_save_versioning_field(manager, tmp_saves_dir):
-    """AC-08: Every save file contains schema_version == '1.0'."""
+    """AC-08: Every save file contains schema_version == '2.0'."""
     save_id = manager.save(player_id="player_001", session_data=SAMPLE_SESSION_DATA)
 
     # Read raw JSON from disk to verify the field is persisted
@@ -161,7 +161,7 @@ def test_save_versioning_field(manager, tmp_saves_dir):
     raw = json.loads(files[0].read_text())
 
     assert "schema_version" in raw
-    assert raw["schema_version"] == "1.0"
+    assert raw["schema_version"] == "2.0"
 
 
 # ---------------------------------------------------------------------------
@@ -203,7 +203,7 @@ def test_save_file_model_fields(manager):
     assert hasattr(sf, "session_data")
     assert hasattr(sf, "timestamp")
     assert hasattr(sf, "schema_version")
-    assert sf.schema_version == "1.0"
+    assert sf.schema_version == "2.0"
 
 
 # ---------------------------------------------------------------------------

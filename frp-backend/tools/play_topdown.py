@@ -35,6 +35,7 @@ from rich.markup import escape
 
 from engine.api.game_engine import GameEngine, ActionResult
 from engine.api.game_session import GameSession
+from engine.core.character_creation import CreationState, assign_stats_to_class
 from engine.core.dm_agent import SceneType
 from engine.map import TileType
 from engine.world.viewport import Viewport
@@ -175,6 +176,11 @@ def render_header(session: GameSession) -> Panel:
 
     sp_text = f"SP: {p.spell_points}/{p.max_spell_points}" if p.max_spell_points > 0 else ""
     ap_text = f"AP: {player_ap.get('current', 0)}/{player_ap.get('max', 0)}"
+    hit_dice = snapshot.get("player", {}).get("hit_dice", {})
+    alignment = snapshot.get("player", {}).get("alignment", "TN")
+    exhaustion = snapshot.get("player", {}).get("exhaustion_level", 0)
+    conversation = snapshot.get("conversation_state", {})
+    convo_target = conversation.get("npc_name") if conversation.get("target_type") == "npc" else conversation.get("target_type", "dm")
 
     # Weight display
     weight_text = ""
@@ -192,11 +198,13 @@ def render_header(session: GameSession) -> Panel:
         f"[dim]XP: {p.xp}[/dim]  "
         f"[bright_yellow]Gold: {p.gold}[/bright_yellow]  "
         f"[bright_magenta]{sp_text}[/bright_magenta]  "
-        f"[dim]{ap_text}  AC: {p.ac}  Wpn: {weapon}  Arm: {armor}{weight_text}[/dim]  "
+        f"[dim]{ap_text}  AC: {p.ac}  Align: {alignment}  Exhaust: {exhaustion}  "
+        f"HD: {hit_dice.get('remaining', 0)}/{hit_dice.get('total', 0)} "
+        f"Wpn: {weapon}  Arm: {armor}{weight_text}[/dim]  "
         f"[bright_yellow]{format_game_time(session)}[/bright_yellow]"
     )
-
-    return Panel(f"{line1}\n{line2}", style="on dark_blue", padding=(0, 1), height=4)
+    line3 = f"[dim]Conversation: {convo_target}[/dim]"
+    return Panel(f"{line1}\n{line2}\n{line3}", style="on dark_blue", padding=(0, 1), height=5)
 
 
 # ── Render: Map viewport ────────────────────────────────────────────
@@ -411,8 +419,8 @@ def read_input() -> str:
 
 
 # ── Character creation ───────────────────────────────────────────────
-def character_creation() -> tuple:
-    """Interactive character creation. Returns (name, class, map_type)."""
+def character_creation() -> dict:
+    """Interactive character creation using the shared creation-state flow."""
     console.print()
     console.print(Rule("[bold bright_yellow]EMBER RPG[/bold bright_yellow]", style="bright_yellow"))
     console.print()
@@ -441,33 +449,57 @@ def character_creation() -> tuple:
     if not name:
         name = "Stranger"
 
-    # Class selection
-    console.print()
-    classes_table = Table(title="Choose Your Class", show_header=True, expand=True)
-    classes_table.add_column("#", style="bold", justify="center", width=3)
-    classes_table.add_column("Class", style="bold bright_cyan")
-    classes_table.add_column("HP", justify="center", style="green")
-    classes_table.add_column("SP", justify="center", style="magenta")
-    classes_table.add_column("Starting Gear", style="bright_white")
+    creation = CreationState(player_name=name)
+    for question in creation.question_bank:
+        choices = [option["id"] for option in question["answers"]]
+        default = choices[0]
+        answer = Prompt.ask(
+            f"[bold green]{question['text']}[/bold green]",
+            choices=choices,
+            default=default,
+        )
+        creation.answer_question(question["id"], answer)
 
-    class_info = [
-        ("1", "Warrior", "20", "0",  "Iron Sword, Chain Mail, Wooden Shield"),
-        ("2", "Rogue",   "16", "0",  "Twin Daggers, Leather Armor, Lockpick Set"),
-        ("3", "Mage",    "12", "16", "Oak Staff, Cloth Robes, Spellbook"),
-        ("4", "Priest",  "16", "12", "Iron Mace, Chain Mail, Holy Symbol"),
-    ]
-    for row in class_info:
-        classes_table.add_row(*row)
-    console.print(classes_table)
-    console.print()
+    while True:
+        roll = creation.current_roll
+        console.print()
+        console.print(Panel(
+            f"[bright_white]Current roll:[/bright_white] {roll}\n"
+            f"[dim]Recommended class:[/dim] {creation.recommended_class().capitalize()}  "
+            f"[dim]Alignment:[/dim] {creation.recommended_alignment()}  "
+            f"[dim]Skills:[/dim] {', '.join(creation.recommended_skills())}",
+            border_style="bright_cyan",
+            title="[bold]Creation Profile[/bold]",
+        ))
+        action = Prompt.ask(
+            "[bold green]Roll options[/bold green]",
+            choices=["accept", "reroll", "save", "swap"],
+            default="accept",
+        )
+        if action == "reroll":
+            creation.reroll()
+            continue
+        if action == "save":
+            creation.save_current_roll()
+            continue
+        if action == "swap":
+            creation.swap_rolls()
+            continue
+        break
 
-    class_map = {"1": "warrior", "2": "rogue", "3": "mage", "4": "priest"}
-    choice = Prompt.ask(
-        "[bold green]Select class[/bold green]",
+    class_choices = {"1": "warrior", "2": "rogue", "3": "mage", "4": "priest"}
+    class_choice = Prompt.ask(
+        "[bold green]Select final class[/bold green]",
         choices=["1", "2", "3", "4"],
-        default="1",
+        default=str({"warrior": 1, "rogue": 2, "mage": 3, "priest": 4}.get(creation.recommended_class(), 1)),
     )
-    char_class = class_map[choice]
+    char_class = class_choices[class_choice]
+    default_alignment = creation.recommended_alignment()
+    alignment = Prompt.ask(
+        "[bold green]Select alignment[/bold green]",
+        choices=["LG", "NG", "CG", "LN", "TN", "CN", "LE", "NE", "CE"],
+        default=default_alignment,
+    )
 
     # Map type
     console.print()
@@ -485,7 +517,22 @@ def character_creation() -> tuple:
                   f"steps into the {map_type}...[/bold bright_yellow]")
     time.sleep(0.5)
 
-    return name, char_class, map_type
+    return {
+        "name": name,
+        "player_class": char_class,
+        "map_type": map_type,
+        "alignment": alignment,
+        "skill_proficiencies": creation.recommended_skills(),
+        "stats": assign_stats_to_class(creation.current_roll, char_class),
+        "creation_answers": list(creation.answers),
+        "creation_profile": {
+            "class_weights": dict(creation.class_weights),
+            "skill_weights": dict(creation.skill_weights),
+            "alignment_axes": dict(creation.alignment_axes),
+            "recommended_class": creation.recommended_class(),
+            "recommended_alignment": creation.recommended_alignment(),
+        },
+    }
 
 
 # ── Help ─────────────────────────────────────────────────────────────
@@ -497,9 +544,15 @@ def show_help(narrative_history: list) -> None:
         "move <dir>: Move north/south/east/west",
         "look around: Observe surroundings",
         "talk <npc>: Talk to an NPC",
+        "say to <npc> <words>: Speak to the current NPC target",
+        "think <topic>: Private knowledge/internal monologue check",
         "attack <target>: Attack a creature",
+        "disengage: Withdraw safely in combat",
         "examine <object>: Examine closely",
-        "rest: Rest and recover HP",
+        "short rest: Recover with hit dice",
+        "long rest: Sleep and fully recover",
+        "bribe <npc>: Offer coin to sway attitude",
+        "deceive <npc>: Attempt a lie",
         "trade with <npc>: Open trade",
         "inventory: Check your items",
         "cast <spell>: Cast a spell",
@@ -674,7 +727,7 @@ def main():
     console.clear()
 
     try:
-        name, char_class, map_type = character_creation()
+        creation = character_creation()
     except (KeyboardInterrupt, EOFError):
         console.print(f"\n[{STYLE_SYSTEM}]Cancelled.[/{STYLE_SYSTEM}]")
         return
@@ -684,13 +737,19 @@ def main():
         "dungeon": "Ancient Dungeon",
         "wilderness": "Forest Road",
     }
+    map_type = creation["map_type"]
 
     # Create engine and session
     engine = GameEngine()
     session = engine.new_session(
-        player_name=name,
-        player_class=char_class,
+        player_name=creation["name"],
+        player_class=creation["player_class"],
         location=location_by_map.get(map_type),
+        alignment=creation["alignment"],
+        skill_proficiencies=creation["skill_proficiencies"],
+        stats=creation["stats"],
+        creation_answers=creation["creation_answers"],
+        creation_profile=creation["creation_profile"],
     )
 
     # Create map state (generates map, places entities, sets up viewport)

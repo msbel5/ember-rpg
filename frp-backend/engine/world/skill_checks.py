@@ -67,6 +67,41 @@ class SkillCheckResult:
     success: bool         # total >= dc (or critical override)
     margin: int           # total - dc (positive = beat, negative = failed by)
     critical: Literal["success", "failure", None]  # nat 20 / nat 1
+    advantage: bool = False
+    disadvantage: bool = False
+    rolls: Tuple[int, ...] = ()
+
+
+def passive_score(
+    ability_score: int,
+    *,
+    proficiency_bonus: int = 0,
+    expertise: bool = False,
+    modifier_bonus: int = 0,
+) -> int:
+    """Compute passive score using D&D's 10 + modifiers formula."""
+    prof = proficiency_bonus * 2 if expertise else proficiency_bonus
+    return 10 + ability_modifier(ability_score) + prof + modifier_bonus
+
+
+def roll_d20(
+    *,
+    advantage: bool = False,
+    disadvantage: bool = False,
+    _rng: random.Random | None = None,
+) -> Tuple[int, Tuple[int, ...]]:
+    """Roll a d20 with optional advantage/disadvantage."""
+    rng = _rng or random.Random()
+    if advantage and disadvantage:
+        advantage = False
+        disadvantage = False
+
+    if advantage or disadvantage:
+        rolls = (rng.randint(1, 20), rng.randint(1, 20))
+        return (max(rolls), rolls) if advantage else (min(rolls), rolls)
+
+    roll = rng.randint(1, 20)
+    return roll, (roll,)
 
 
 # ── Core roll function ───────────────────────────────────────────────
@@ -75,6 +110,12 @@ def roll_check(
     ability_score: int,
     dc: int,
     *,
+    proficiency_bonus: int = 0,
+    expertise: bool = False,
+    modifier_bonus: int = 0,
+    advantage: bool = False,
+    disadvantage: bool = False,
+    auto_crit: bool = True,
     _rng: random.Random | None = None,
 ) -> SkillCheckResult:
     """Roll a d20 + ability modifier against a DC.
@@ -93,15 +134,20 @@ def roll_check(
     SkillCheckResult
     """
     rng = _rng or random.Random()
-    roll = rng.randint(1, 20)
-    mod = ability_modifier(ability_score)
+    roll, rolls = roll_d20(
+        advantage=advantage,
+        disadvantage=disadvantage,
+        _rng=rng,
+    )
+    prof = proficiency_bonus * 2 if expertise else proficiency_bonus
+    mod = ability_modifier(ability_score) + prof + modifier_bonus
     total = roll + mod
 
     # Determine critical status
     critical: Literal["success", "failure", None] = None
-    if roll == 20:
+    if auto_crit and roll == 20:
         critical = "success"
-    elif roll == 1:
+    elif auto_crit and roll == 1:
         critical = "failure"
 
     # Nat 20 always succeeds, nat 1 always fails, else compare total vs dc
@@ -122,6 +168,9 @@ def roll_check(
         success=success,
         margin=margin,
         critical=critical,
+        advantage=advantage and not disadvantage,
+        disadvantage=disadvantage and not advantage,
+        rolls=rolls,
     )
 
 
@@ -131,6 +180,16 @@ def contested_check(
     score_a: int,
     score_b: int,
     *,
+    proficiency_bonus_a: int = 0,
+    proficiency_bonus_b: int = 0,
+    expertise_a: bool = False,
+    expertise_b: bool = False,
+    modifier_bonus_a: int = 0,
+    modifier_bonus_b: int = 0,
+    advantage_a: bool = False,
+    disadvantage_a: bool = False,
+    advantage_b: bool = False,
+    disadvantage_b: bool = False,
     _rng: random.Random | None = None,
 ) -> Tuple[SkillCheckResult, SkillCheckResult, Literal["a", "b", "tie"]]:
     """Two entities roll opposing checks.  Higher total wins; tie = status quo.
@@ -149,11 +208,19 @@ def contested_check(
     """
     rng = _rng or random.Random()
 
-    roll_a = rng.randint(1, 20)
-    roll_b = rng.randint(1, 20)
+    roll_a, rolls_a = roll_d20(
+        advantage=advantage_a,
+        disadvantage=disadvantage_a,
+        _rng=rng,
+    )
+    roll_b, rolls_b = roll_d20(
+        advantage=advantage_b,
+        disadvantage=disadvantage_b,
+        _rng=rng,
+    )
 
-    mod_a = ability_modifier(score_a)
-    mod_b = ability_modifier(score_b)
+    mod_a = ability_modifier(score_a) + (proficiency_bonus_a * 2 if expertise_a else proficiency_bonus_a) + modifier_bonus_a
+    mod_b = ability_modifier(score_b) + (proficiency_bonus_b * 2 if expertise_b else proficiency_bonus_b) + modifier_bonus_b
 
     total_a = roll_a + mod_a
     total_b = roll_b + mod_b
@@ -184,11 +251,40 @@ def contested_check(
         roll=roll_a, modifier=mod_a, total=total_a,
         dc=total_b, success=(winner == "a"),
         margin=total_a - total_b, critical=crit_a,
+        advantage=advantage_a and not disadvantage_a,
+        disadvantage=disadvantage_a and not advantage_a,
+        rolls=rolls_a,
     )
     result_b = SkillCheckResult(
         roll=roll_b, modifier=mod_b, total=total_b,
         dc=total_a, success=(winner == "b"),
         margin=total_b - total_a, critical=crit_b,
+        advantage=advantage_b and not disadvantage_b,
+        disadvantage=disadvantage_b and not advantage_b,
+        rolls=rolls_b,
     )
 
     return result_a, result_b, winner
+
+
+def saving_throw(
+    ability_score: int,
+    dc: int,
+    *,
+    proficiency_bonus: int = 0,
+    proficient: bool = False,
+    advantage: bool = False,
+    disadvantage: bool = False,
+    modifier_bonus: int = 0,
+    _rng: random.Random | None = None,
+) -> SkillCheckResult:
+    """Saving throw wrapper over roll_check for semantic clarity."""
+    return roll_check(
+        ability_score,
+        dc,
+        proficiency_bonus=proficiency_bonus if proficient else 0,
+        modifier_bonus=modifier_bonus,
+        advantage=advantage,
+        disadvantage=disadvantage,
+        _rng=_rng,
+    )

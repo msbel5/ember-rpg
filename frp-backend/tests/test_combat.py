@@ -151,7 +151,7 @@ class TestAttackResolution:
     
     def test_critical_hit_doubles_damage(self):
         """Natural 20 should double damage dice."""
-        attacker = Character(name="Crit", stats={'MIG': 18, 'AGI': 10, 'END': 10, 'MND': 10, 'INS': 10, 'PRE': 10})
+        attacker = Character(name="Crit", stats={'MIG': 18, 'AGI': 10, 'END': 10, 'MND': 10, 'INS': 10, 'PRE': 10}, initiative_bonus=100)
         target = Character(name="Target", hp=100, max_hp=100, ac=5)
         
         weapon = Item(
@@ -166,9 +166,10 @@ class TestAttackResolution:
         # Run multiple combats to hit a natural 20
         for seed in range(1, 1000):
             target.hp = 100  # Reset
-            combat = CombatManager([attacker, Character(name="T", hp=100, max_hp=100, ac=5)], seed=seed)
+            combat = CombatManager([attacker, target], seed=seed)
             combat.start_turn()
-            result = combat.attack(target_index=1, weapon=weapon)
+            target_index = next(i for i, c in enumerate(combat.combatants) if c.name == "Target")
+            result = combat.attack(target_index=target_index, weapon=weapon)
             
             if result.get('crit'):
                 # Crit: (damage_roll × 2) + stat_mod

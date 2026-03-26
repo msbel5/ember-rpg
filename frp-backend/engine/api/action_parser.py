@@ -1,11 +1,11 @@
 """
 Ember RPG - API Layer
-Action Parser: natural language → structured game intent
+Action Parser: natural language -> structured game intent.
 Supports Turkish and English input.
 """
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 import re
 
 
@@ -25,7 +25,6 @@ class ActionIntent(Enum):
     INTERACT = "interact"
     INVENTORY = "inventory"
     FLEE = "flee"
-    # --- New intents (Sprint 5) ---
     PICK_UP = "pick_up"
     DROP = "drop"
     EQUIP = "equip"
@@ -35,6 +34,10 @@ class ActionIntent(Enum):
     STEAL = "steal"
     PERSUADE = "persuade"
     INTIMIDATE = "intimidate"
+    BRIBE = "bribe"
+    DECEIVE = "deceive"
+    THINK = "think"
+    ADDRESS = "address"
     SNEAK = "sneak"
     CLIMB = "climb"
     LOCKPICK = "lockpick"
@@ -44,37 +47,26 @@ class ActionIntent(Enum):
     FISH = "fish"
     MINE = "mine"
     CHOP = "chop"
-    # --- Save/Load intents ---
     SAVE_GAME = "save_game"
     LOAD_GAME = "load_game"
     LIST_SAVES = "list_saves"
     DELETE_SAVE = "delete_save"
     ACCEPT_QUEST = "accept_quest"
     TURN_IN_QUEST = "turn_in_quest"
-    # --- Physical inventory intents ---
     FILL = "fill"
     POUR = "pour"
     EMPTY = "empty"
     STASH = "stash"
     ROTATE_ITEM = "rotate_item"
     GO_TO = "go_to"
+    SHORT_REST = "short_rest"
+    LONG_REST = "long_rest"
+    DISENGAGE = "disengage"
     UNKNOWN = "unknown"
 
 
 @dataclass
 class ParsedAction:
-    """
-    Structured representation of a player's natural language input.
-
-    Attributes:
-        intent: What the player wants to do
-        target: Target entity name (extracted from input)
-        spell_name: Spell name if CAST_SPELL
-        weapon: Weapon name if ATTACK with weapon
-        direction: Direction/location if MOVE
-        action_detail: Legacy field (weapon, spell name, or other detail)
-        raw_input: Original player text (also accessible as raw_text)
-    """
     intent: ActionIntent
     raw_input: str
     target: Optional[str] = None
@@ -85,12 +77,10 @@ class ParsedAction:
 
     @property
     def raw_text(self) -> str:
-        """Alias for raw_input."""
         return self.raw_input
 
 
 def _normalize(text: str) -> str:
-    """Lowercase and strip punctuation."""
     normalized = re.sub(r"[^\w\s]", " ", text.lower()).strip()
     return re.sub(r"\s+", " ", normalized)
 
@@ -99,7 +89,10 @@ def _looks_turkish(text: str) -> bool:
     lowered = (text or "").lower()
     return (
         any(ch in lowered for ch in "çğıöşü")
-        or any(keyword in lowered for keyword in ("konuş", "saldır", "incele", "aç", "çal", "görev", "git", "bak"))
+        or any(keyword in lowered for keyword in (
+            "konuş", "saldır", "incele", "aç", "çal", "görev", "git",
+            "bak", "dinlen", "düşün", "hatırla", "rüşvet", "kandır",
+        ))
     )
 
 
@@ -118,8 +111,7 @@ def _restore_turkish_final_consonant(stem: str) -> str:
 def _strip_turkish_case_suffix(token: str) -> str:
     lowered = token.lower().strip()
     suffixes = (
-        "lardan", "lerden", "ların", "lerin", "lardan", "lerden",
-        "lardan", "lerden", "lerin", "ların", "lardan", "lerden",
+        "lardan", "lerden", "ların", "lerin",
         "yla", "yle", "dan", "den", "tan", "ten", "la", "le",
         "yı", "yi", "yu", "yü", "ya", "ye", "nı", "ni", "nu", "nü",
         "ı", "i", "u", "ü", "a", "e",
@@ -138,473 +130,209 @@ def _normalize_turkish_target(target: str) -> str:
     return " ".join(_strip_turkish_case_suffix(token) for token in tokens)
 
 
-# ---------------------------------------------------------------------------
-# Regex-based patterns (priority order: most specific first)
-# Named capture groups: target, spell, weapon, direction
-# ---------------------------------------------------------------------------
+def _compile(*patterns: str) -> list[re.Pattern]:
+    return [re.compile(pattern, re.IGNORECASE) for pattern in patterns]
+
 
 _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
-    # ACCEPT_QUEST: "accept quest bread shortage" / "start the quest" / "görevi kabul et"
-    (ActionIntent.ACCEPT_QUEST, [
-        re.compile(
-            r"^(?:accept|start|begin|take)\s+(?:(?:the|a)\s+)?quest(?:\s+(?P<target>[\w\s]+))?$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:(?P<target>[\w\s]+)\s+)?quest\s+(?:accept|start|begin)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:görevi?\s+kabul\s+et|görev\s+al)\s*(?P<target>[\w\s]*)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # TURN_IN_QUEST: "turn in quest bread shortage" / "deliver quest" / "görevi teslim et"
-    (ActionIntent.TURN_IN_QUEST, [
-        re.compile(
-            r"^(?:turn\s+in|hand\s+in|deliver|submit)\s+(?:(?:the|a)\s+)?quest(?:\s+(?P<target>[\w\s]+))?$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:(?P<target>[\w\s]+)\s+)?quest\s+(?:turn\s+in|hand\s+in|deliver|submit)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:görevi?\s+teslim\s+et|görevi?\s+bitir)\s*(?P<target>[\w\s]*)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # FISH must come before CAST_SPELL so "cast line" is not swallowed
-    (ActionIntent.FISH, [
-        re.compile(
-            r"^(?:fish|cast\s+line|go\s+fishing|balık\s+tut)(?:\s+(?:in\s+|at\s+)?(?P<target>[\w\s]*))?$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # CAST_SPELL: "cast fireball at goblin" / "büyü ateş topu gobline"
-    (ActionIntent.CAST_SPELL, [
-        re.compile(
-            r"^(?:cast|use spell|büyü yap|büyü at)\s+(?P<spell>[\w\s]+?)\s+(?:at|on|üzerinde|üstüne|hedef)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:cast|sihir|büyü)\s+(?P<spell>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?P<spell>fireball|lightning bolt|heal|icebolt|şimşek|ateş topu|buz oku)\s+(?:at|on|üzerinde)?\s*(?P<target>[\w\s]*)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # ATTACK with weapon: "attack orc with sword"
-    (ActionIntent.ATTACK, [
-        re.compile(
-            r"^(?:attack|saldır|vur|hit|strike|slash|stab|fight)\s+(?P<target>[\w\s]+?)\s+(?:with|using|ile)\s+(?P<weapon>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?P<target>[\w\s]+?)\s+(?:saldır(?:ıyorum|iyorum|uyorum|yorum|ıyom|iyom)?|vur|öldür)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:attack|saldır|vur|hit|strike|slash|stab|fight|öldür|kesivur|çarp|hücum)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # TALK: "talk to guard" / "speak with innkeeper" / "hey merchant" / "konuş muhafızla"
-    (ActionIntent.TALK, [
-        re.compile(
-            r"^(?:talk\s+to|talk|speak\s+(?:to|with)|chat\s+with|greet|konuş|selamla|söyle|sor|pazarlık|hey|excuse\s+me|what\s+does)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?P<target>[\w\s]+?)\s+konuş(?:uyorum|uyom|urum|uruz)?$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:innkeeper|merchant|guard|blacksmith|priest|wizard|elder|captain|barkeep|tavernkeeper)(?:\s+[\w\s]*)?$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # TRADE: "trade with merchant" / "barter" / "buy something" / "show me your wares"
-    (ActionIntent.TRADE, [
-        re.compile(
-            r"^(?:trade\s+(?:with\s+)?|barter\s+(?:with\s+)?|buy\s+from\s+|shop\s+(?:with\s+)?)(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:show\s+me\s+(?:your\s+)?wares|what\s+do\s+you\s+have|what\s+are\s+you\s+selling|buy\s+something|i\s+want\s+to\s+buy|alışveriş|satın\s+al)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # PICKUP / PICK_UP: "pick up health potion" / "take potion" / "al iksiri"
-    (ActionIntent.PICK_UP, [
-        re.compile(
-            r"^(?:pick\s+up|grab|take|loot|collect|get|al|topla|kaldır)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # DROP: "drop sword" / "discard potion" / "throw away shield"
-    (ActionIntent.DROP, [
-        re.compile(
-            r"^(?:drop|discard|throw\s+away|toss|at|bırak)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # EQUIP: "equip iron sword" / "wear leather armor" / "wield staff"
-    (ActionIntent.EQUIP, [
-        re.compile(
-            r"^(?:equip|wear|wield|put\s+on|don|kuşan|giy)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # UNEQUIP: "unequip sword" / "remove helmet" / "take off armor"
-    (ActionIntent.UNEQUIP, [
-        re.compile(
-            r"^(?:unequip|remove|take\s+off|doff|çıkar|çıkart)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # CRAFT: "craft iron sword" / "forge steel bar" / "brew potion" / "cook stew"
-    (ActionIntent.CRAFT, [
-        re.compile(
-            r"^(?:craft|make|forge|brew|cook|build|create|smith|üret|yap|pişir|dök)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # SEARCH: "search the room" / "look for traps" / "investigate area"
-    (ActionIntent.SEARCH, [
-        re.compile(
-            r"^(?:search|look\s+for|investigate|rummage)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # STEAL: "steal from merchant" / "pickpocket guard" / "swipe ring"
-    (ActionIntent.STEAL, [
-        re.compile(
-            r"^(?:steal\s+(?:from\s+)?|pickpocket|swipe|pilfer|çal)\s*(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?P<target>[\w\s]+?)\s+çal$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # PERSUADE: "persuade guard" / "convince merchant" / "negotiate with innkeeper"
-    (ActionIntent.PERSUADE, [
-        re.compile(
-            r"^(?:persuade|convince|negotiate\s+(?:with\s+)?|diplomat|ikna\s+et)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # INTIMIDATE: "intimidate guard" / "threaten bandit" / "scare merchant"
-    (ActionIntent.INTIMIDATE, [
-        re.compile(
-            r"^(?:intimidate|threaten|scare|bully|korkut|tehdit\s+et)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # STASH must come before SNEAK so "hide gem in sock" → STASH not SNEAK
-    (ActionIntent.STASH, [
-        re.compile(
-            r"^(?:stash|hide|conceal|sakla|gizle)\s+(?P<target>[\w\s]+?)(?:\s+(?:in|inside|into|içine)\s+(?P<direction>[\w\s]+))$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # SNEAK: "sneak past guards" / "stealth" / "creep" (no "hide" — conflicts with STASH)
-    (ActionIntent.SNEAK, [
-        re.compile(
-            r"^(?:sneak(?:\s+past)?|stealth|creep|skulk|gizlen|sızıl|sinsi)\s*(?P<target>[\w\s]*)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^hide$",  # bare "hide" with no object = stealth
-            re.IGNORECASE
-        ),
-    ]),
-
-    # CLIMB: "climb wall" / "scale cliff" / "ascend ladder"
-    (ActionIntent.CLIMB, [
-        re.compile(
-            r"^(?:climb|scale|ascend|tırman)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # LOCKPICK: "lockpick the door" / "pick lock" / "pick the lock"
-    (ActionIntent.LOCKPICK, [
-        re.compile(
-            r"^(?:lockpick|pick\s+(?:the\s+)?lock|maymuncuk)\s*(?:on\s+|of\s+)?(?P<target>[\w\s]*)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # PRAY: "pray" / "worship at altar" / "meditate"
-    (ActionIntent.PRAY, [
-        re.compile(
-            r"^(?:pray|worship|meditate|dua\s+et|ibadet)\s*(?:at\s+|in\s+)?(?P<target>[\w\s]*)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # READ_ITEM: "read scroll" / "decipher runes" / "study book"
-    (ActionIntent.READ_ITEM, [
-        re.compile(
-            r"^(?:read|decipher|study|oku|çöz)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # PUSH: "push boulder" / "shove crate" (NOT "move X" — that's handled by MOVE)
-    (ActionIntent.PUSH, [
-        re.compile(
-            r"^(?:push|shove)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # MINE: "mine ore" / "dig" / "excavate"
-    (ActionIntent.MINE, [
-        re.compile(
-            r"^(?:mine|dig|excavate|kaz|maden\s+kaz)\s*(?P<target>[\w\s]*)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # SAVE_GAME: "save" / "save game" / "save as mysave" / "kaydet"
-    (ActionIntent.SAVE_GAME, [
-        re.compile(
-            r"^(?:save\s+(?:game\s+)?as|save\s+as)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:save\s+game|save|quick\s*save|kaydet|oyunu\s+kaydet)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # LOAD_GAME: "load" / "load game" / "load mysave" / "yükle"
-    (ActionIntent.LOAD_GAME, [
-        re.compile(
-            r"^(?:load\s+game|load|restore|yükle|oyunu\s+yükle)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:load\s+game|load|restore)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # LIST_SAVES: "saves" / "list saves" / "show saves"
-    (ActionIntent.LIST_SAVES, [
-        re.compile(
-            r"^(?:saves|list\s+saves|show\s+saves|kayıtlar|kayıtları\s+göster)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # DELETE_SAVE: "delete save mysave"
-    (ActionIntent.DELETE_SAVE, [
-        re.compile(
-            r"^(?:delete\s+save|remove\s+save|kayıt\s+sil)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # FILL: "fill waterskin" / "fill bottle at well" / "fill canteen from river"
-    (ActionIntent.FILL, [
-        re.compile(
-            r"^(?:fill|refill|doldur)\s+(?P<target>[\w\s]+?)(?:\s+(?:at|from|in|with|dan|den)\s+(?P<direction>[\w\s]+))?$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # POUR: "pour water into bottle" / "pour potion on ground"
-    (ActionIntent.POUR, [
-        re.compile(
-            r"^(?:pour|dump|dök|boşalt)\s+(?P<target>[\w\s]+?)(?:\s+(?:into|on|onto|in|to|içine)\s+(?P<direction>[\w\s]+))?$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # EMPTY: "empty bottle" / "empty waterskin"
-    (ActionIntent.EMPTY, [
-        re.compile(
-            r"^(?:empty|drain|boşalt)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # ROTATE_ITEM: "rotate sword" / "flip shield" (no "turn" — conflicts with INTERACT)
-    (ActionIntent.ROTATE_ITEM, [
-        re.compile(
-            r"^(?:rotate|flip)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # CHOP: "chop tree" / "cut wood" / "fell tree"
-    (ActionIntent.CHOP, [
-        re.compile(
-            r"^(?:chop|cut|fell|kes|doğra|balta)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # INTERACT must come before USE_ITEM so "use lever" → INTERACT not USE_ITEM
-    # Matches mechanical/world objects: lever, switch, button, altar, well, fountain, etc.
-    (ActionIntent.INTERACT, [
-        re.compile(
-            r"^(?:interact\s+with|push|pull|turn|activate|press|etkileş|it|çek|çevir|aktive)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:use|kullan)\s+(?P<target>(?:lever|switch|button|handle|crank|wheel|altar|well|fountain|gate|portal|mechanism|statue|shrine|pedestal|rope|chain|pulley|valve|dial|panel|door|hatch|trap|bridge)[\w\s]*)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # USE_ITEM: "use healing potion" / "drink potion" / "eat food" / "içtim iksiri"
-    (ActionIntent.USE_ITEM, [
-        re.compile(
-            r"^(?:use|drink|eat|consume|apply|kullan|iç|ye|uygula)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # LOOK: "look around" / "look" / "etrafına bak"
-    (ActionIntent.LOOK, [
-        re.compile(
-            r"^(?:look(?:\s+around)?|gaze|survey|etrafına?\s+bak|bak(?:\s+etraf)?|çevreye\s+bak)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # EXAMINE: "look around the room" / "examine door" / "inspect chest" / "search room" / "incele"
-    (ActionIntent.EXAMINE, [
-        re.compile(
-            r"^(?:look\s+around\s+the)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:examine|inspect|study|check\s+out|search|investigate|incele|ara|kontrol\s+et|gözlemle)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:[\w\s]+\s+)?(?:inceliyorum|bakıyorum|arıyorum)\s*(?P<target>[\w\s]*)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?P<target>[\w\s]+?)\s+incele$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # OPEN: "open chest" / "unlock door" / "aç sandığı"
-    (ActionIntent.OPEN, [
-        re.compile(
-            r"^(?:open|unlock|force\s+open|break\s+open|aç|kır|zorla|sök)\s+(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?P<target>[\w\s]+?)\s+aç(?:ıyorum|iyorum|ar mısın|)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # FLEE: "run away" / "flee" / "escape" / "kaç"
-    (ActionIntent.FLEE, [
-        re.compile(
-            r"^(?:run\s+away|flee|escape|retreat|withdraw|bolt|kaç|geri\s+çekil|çekil|kaçmak)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # INVENTORY: "check inventory" / "show items" / "eşyalarım"
-    (ActionIntent.INVENTORY, [
-        re.compile(
-            r"^(?:check\s+inventory|show\s+inventory|open\s+inventory|inventory|i|show\s+items|list\s+items|my\s+items|items|bag|backpack|equipment|gear|eşyalarım|çantam|envanterim)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # REST: "rest" / "sleep" / "camp" / "dinlen"
-    (ActionIntent.REST, [
-        re.compile(
-            r"^(?:rest(?:\s+and\s+recover)?|sleep|camp|make\s+camp|wait|dinlen|uyu|kamp\s+kur|mola\s+ver)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:[\w\s]+\s+)?(?:dinlenmek|uyumak)\s+(?:istiyorum|istiyom)?$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^rest\s+and\s+[\w\s]+$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # GO_TO: "go to merchant" / "walk to guard" / "approach innkeeper"
-    # Only matches known NPC roles or "approach" — general "move to X" falls through to MOVE
-    (ActionIntent.GO_TO, [
-        re.compile(
-            r"^approach\s+(?:the\s+)?(?P<target>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-    ]),
-
-    # MOVE: "go north" / "move north" / "move to dungeon" / "enter cave" / "git kuzey"
-    (ActionIntent.MOVE, [
-        re.compile(
-            r"^(?:go|move|move\s+to|travel\s+to|head\s+to|enter|walk\s+to|walk|git|gidin|ilerle|gidiyorum|yürü)\s+(?P<direction>[\w\s]+)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?:[\w\s]+\s+)?(?:gidiyorum|gidelim|gidecek)\s*(?P<direction>[\w\s]*)$",
-            re.IGNORECASE
-        ),
-        re.compile(
-            r"^(?P<direction>north|south|east|west|up|down|kuzey|güney|doğu|batı|yukarı|aşağı)$",
-            re.IGNORECASE
-        ),
-    ]),
+    (ActionIntent.ACCEPT_QUEST, _compile(
+        r"^(?:accept|start|begin|take)\s+(?:(?:the|a)\s+)?quest(?:\s+(?P<target>[\w\s]+))?$",
+        r"^(?:görevi?\s+kabul\s+et|görev\s+al)\s*(?P<target>[\w\s]*)$",
+    )),
+    (ActionIntent.TURN_IN_QUEST, _compile(
+        r"^(?:turn\s+in|hand\s+in|deliver|submit)\s+(?:(?:the|a)\s+)?quest(?:\s+(?P<target>[\w\s]+))?$",
+        r"^(?:görevi?\s+teslim\s+et|görevi?\s+bitir)\s*(?P<target>[\w\s]*)$",
+    )),
+    (ActionIntent.SHORT_REST, _compile(
+        r"^(?:short\s+rest|take\s+a\s+breather|kısa\s+dinlenme)$",
+    )),
+    (ActionIntent.LONG_REST, _compile(
+        r"^(?:long\s+rest|sleep|camp|make\s+camp|full\s+rest|uzun\s+dinlenme|uyu|kamp\s+kur)$",
+        r"^(?:[\w\s]+\s+)?uyumak\s+(?:istiyorum|istiyom)?$",
+    )),
+    (ActionIntent.REST, _compile(
+        r"^(?:rest|dinlen)$",
+        r"^(?:[\w\s]+\s+)?dinlenmek\s+(?:istiyorum|istiyom)?$",
+        r"^(?:rest\s+and\s+recover)$",
+    )),
+    (ActionIntent.DISENGAGE, _compile(
+        r"^(?:disengage|withdraw\s+carefully|defensive\s+retreat|temkinli\s+çekil|ayrıl)$",
+    )),
+    (ActionIntent.SAVE_GAME, _compile(
+        r"^(?:save\s+(?:game\s+)?as|save\s+as)\s+(?P<target>[\w\s]+)$",
+        r"^(?:save\s+game|save|quick\s*save|kaydet|oyunu\s+kaydet)$",
+    )),
+    (ActionIntent.LOAD_GAME, _compile(
+        r"^(?:load\s+game|load|restore)\s+(?P<target>[\w\s]+)$",
+        r"^(?:load\s+game|load|restore|yükle|oyunu\s+yükle)$",
+    )),
+    (ActionIntent.LIST_SAVES, _compile(
+        r"^(?:saves|list\s+saves|show\s+saves|kayıtlar|kayıtları\s+göster)$",
+    )),
+    (ActionIntent.DELETE_SAVE, _compile(
+        r"^(?:delete\s+save|remove\s+save|kayıt\s+sil)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.FISH, _compile(
+        r"^(?:fish|cast\s+line|go\s+fishing|balık\s+tut)(?:\s+(?:in\s+|at\s+)?(?P<target>[\w\s]*))?$",
+    )),
+    (ActionIntent.CAST_SPELL, _compile(
+        r"^(?:cast|use\s+spell|büyü\s+yap|büyü\s+at)\s+(?P<spell>[\w\s]+?)\s+(?:at|on|üzerinde|üstüne|hedef)\s+(?P<target>[\w\s]+)$",
+        r"^(?:cast|sihir|büyü)\s+(?P<spell>[\w\s]+)$",
+        r"^(?P<spell>fireball|lightning bolt|heal|icebolt|şimşek|ateş topu|buz oku)\s+(?:at|on|üzerinde)?\s*(?P<target>[\w\s]*)$",
+    )),
+    (ActionIntent.ATTACK, _compile(
+        r"^(?:attack|saldır|vur|hit|strike|slash|stab|fight)\s+(?P<target>[\w\s]+?)\s+(?:with|using|ile)\s+(?P<weapon>[\w\s]+)$",
+        r"^(?P<target>[\w\s]+?)\s+(?:saldır(?:ıyorum|iyorum|uyorum|yorum|ıyom|iyom)?|vur|öldür)$",
+        r"^(?:attack|saldır|vur|hit|strike|slash|stab|fight|öldür|kesivur|çarp|hücum)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.ADDRESS, _compile(
+        r"^(?:say\s+to|tell|ask)\s+(?P<target>[\w\s]+?)\s+(?P<direction>.+)$",
+    )),
+    (ActionIntent.THINK, _compile(
+        r"^(?:think(?:\s+about)?|recall|remember|what\s+do\s+i\s+know(?:\s+about)?|to\s+self|düşün|hatırla)\s*(?P<target>[\w\s]*)$",
+    )),
+    (ActionIntent.TALK, _compile(
+        r"^(?:talk\s+to|talk|speak\s+(?:to|with)|chat\s+with|greet|konuş|selamla|söyle|sor|pazarlık|hey|excuse\s+me|what\s+does)\s+(?P<target>[\w\s]+)$",
+        r"^(?P<target>[\w\s]+?)\s+konuş(?:uyorum|uyom|urum|uruz|)$",
+        r"^(?:innkeeper|merchant|guard|blacksmith|priest|wizard|elder|captain|barkeep|tavernkeeper)(?:\s+[\w\s]*)?$",
+    )),
+    (ActionIntent.TRADE, _compile(
+        r"^(?:trade\s+(?:with\s+)?|barter\s+(?:with\s+)?|buy\s+from\s+|shop\s+(?:with\s+)?)(?P<target>[\w\s]+)$",
+        r"^(?:show\s+me\s+(?:your\s+)?wares|what\s+do\s+you\s+have|what\s+are\s+you\s+selling|buy\s+something|i\s+want\s+to\s+buy|alışveriş|satın\s+al)$",
+    )),
+    (ActionIntent.PICK_UP, _compile(
+        r"^(?:pick\s+up|grab|take|loot|collect|get|al|topla|kaldır)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.DROP, _compile(
+        r"^(?:drop|discard|throw\s+away|toss|at|bırak)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.EQUIP, _compile(
+        r"^(?:equip|wear|wield|put\s+on|don|kuşan|giy)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.UNEQUIP, _compile(
+        r"^(?:unequip|remove|take\s+off|doff|çıkar|çıkart)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.CRAFT, _compile(
+        r"^(?:craft|make|forge|brew|cook|build|create|smith|üret|yap|pişir|dök)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.SEARCH, _compile(
+        r"^(?:search|look\s+for|investigate|rummage)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.STEAL, _compile(
+        r"^(?:steal\s+(?:from\s+)?|pickpocket|swipe|pilfer|çal)\s*(?P<target>[\w\s]+)$",
+        r"^(?P<target>[\w\s]+?)\s+çal$",
+    )),
+    (ActionIntent.PERSUADE, _compile(
+        r"^(?:persuade|convince|negotiate\s+(?:with\s+)?|diplomat|ikna\s+et)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.INTIMIDATE, _compile(
+        r"^(?:intimidate|threaten|scare|bully|korkut|tehdit\s+et)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.BRIBE, _compile(
+        r"^(?:bribe|pay\s+off|slip\s+coin\s+to|rüşvet\s+ver)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.DECEIVE, _compile(
+        r"^(?:deceive|lie\s+to|bluff|trick|kandır|yalan\s+söyle)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.STASH, _compile(
+        r"^(?:stash|hide|conceal|sakla|gizle)\s+(?P<target>[\w\s]+?)(?:\s+(?:in|inside|into|içine)\s+(?P<direction>[\w\s]+))$",
+    )),
+    (ActionIntent.SNEAK, _compile(
+        r"^(?:sneak(?:\s+past)?|stealth|creep|skulk|gizlen|sızıl|sinsi)\s*(?P<target>[\w\s]*)$",
+        r"^hide$",
+    )),
+    (ActionIntent.CLIMB, _compile(
+        r"^(?:climb|scale|ascend|tırman)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.LOCKPICK, _compile(
+        r"^(?:lockpick|pick\s+(?:the\s+)?lock|maymuncuk)\s*(?:on\s+|of\s+)?(?P<target>[\w\s]*)$",
+    )),
+    (ActionIntent.PRAY, _compile(
+        r"^(?:pray|worship|meditate|dua\s+et|ibadet)\s*(?:at\s+|in\s+)?(?P<target>[\w\s]*)$",
+    )),
+    (ActionIntent.READ_ITEM, _compile(
+        r"^(?:read|decipher|study|oku|çöz)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.PUSH, _compile(
+        r"^(?:push|shove)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.MINE, _compile(
+        r"^(?:mine|dig|excavate|kaz|maden\s+kaz)\s*(?P<target>[\w\s]*)$",
+    )),
+    (ActionIntent.FILL, _compile(
+        r"^(?:fill|refill|doldur)\s+(?P<target>[\w\s]+?)(?:\s+(?:at|from|in|with|dan|den)\s+(?P<direction>[\w\s]+))?$",
+    )),
+    (ActionIntent.POUR, _compile(
+        r"^(?:pour|dump|dök|boşalt)\s+(?P<target>[\w\s]+?)(?:\s+(?:into|on|onto|in|to|içine)\s+(?P<direction>[\w\s]+))?$",
+    )),
+    (ActionIntent.EMPTY, _compile(
+        r"^(?:empty|drain|boşalt)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.ROTATE_ITEM, _compile(
+        r"^(?:rotate|flip)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.CHOP, _compile(
+        r"^(?:chop|cut|fell|kes|doğra|balta)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.INTERACT, _compile(
+        r"^(?:interact\s+with|push|pull|turn|activate|press|etkileş|it|çek|çevir|aktive)\s+(?P<target>[\w\s]+)$",
+        r"^(?:use|kullan)\s+(?P<target>(?:lever|switch|button|handle|crank|wheel|altar|well|fountain|gate|portal|mechanism|statue|shrine|pedestal|rope|chain|pulley|valve|dial|panel|door|hatch|trap|bridge)[\w\s]*)$",
+    )),
+    (ActionIntent.USE_ITEM, _compile(
+        r"^(?:use|drink|eat|consume|apply|kullan|iç|ye|uygula)\s+(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.LOOK, _compile(
+        r"^(?:look(?:\s+around)?|gaze|survey|etrafına?\s+bak|bak(?:\s+etraf)?|çevreye\s+bak)$",
+    )),
+    (ActionIntent.EXAMINE, _compile(
+        r"^(?:look\s+around\s+the)\s+(?P<target>[\w\s]+)$",
+        r"^(?:examine|inspect|study|check\s+out|search|investigate|incele|ara|kontrol\s+et|gözlemle)\s+(?P<target>[\w\s]+)$",
+        r"^(?:[\w\s]+\s+)?(?:inceliyorum|bakıyorum|arıyorum)\s*(?P<target>[\w\s]*)$",
+        r"^(?P<target>[\w\s]+?)\s+incele$",
+    )),
+    (ActionIntent.OPEN, _compile(
+        r"^(?:open|unlock|force\s+open|break\s+open|aç|kır|zorla|sök)\s+(?P<target>[\w\s]+)$",
+        r"^(?P<target>[\w\s]+?)\s+aç(?:ıyorum|iyorum|ar\s+mısın|)$",
+    )),
+    (ActionIntent.FLEE, _compile(
+        r"^(?:run\s+away|flee|escape|retreat|withdraw|bolt|kaç|geri\s+çekil|çekil|kaçmak)$",
+    )),
+    (ActionIntent.INVENTORY, _compile(
+        r"^(?:check\s+inventory|show\s+inventory|open\s+inventory|inventory|i|show\s+items|list\s+items|my\s+items|items|bag|backpack|equipment|gear|eşyalarım|çantam|envanterim)$",
+    )),
+    (ActionIntent.GO_TO, _compile(
+        r"^approach\s+(?:the\s+)?(?P<target>[\w\s]+)$",
+    )),
+    (ActionIntent.MOVE, _compile(
+        r"^(?:go|move|move\s+to|travel\s+to|head\s+to|enter|walk\s+to|walk|git|gidin|ilerle|gidiyorum|yürü)\s+(?P<direction>[\w\s]+)$",
+        r"^(?:[\w\s]+\s+)?(?:gidiyorum|gidelim|gidecek)\s*(?P<direction>[\w\s]*)$",
+        r"^(?P<direction>north|south|east|west|up|down|kuzey|güney|doğu|batı|yukarı|aşağı)$",
+    )),
 ]
 
-# Fallback keyword map (used when no regex matches)
 _KEYWORD_FALLBACK: list[tuple[ActionIntent, list[str]]] = [
-    (ActionIntent.ACCEPT_QUEST, ["accept quest", "start quest", "begin quest", "take quest", "görevi kabul et", "görev al"]),
-    (ActionIntent.TURN_IN_QUEST, ["turn in quest", "hand in quest", "deliver quest", "submit quest", "görevi teslim et", "görevi bitir"]),
-    (ActionIntent.SAVE_GAME, ["save", "save game", "quick save", "kaydet"]),
-    (ActionIntent.LOAD_GAME, ["load", "load game", "restore", "yükle"]),
+    (ActionIntent.ACCEPT_QUEST, ["accept quest", "start quest", "take quest", "görevi kabul et", "görev al"]),
+    (ActionIntent.TURN_IN_QUEST, ["turn in quest", "hand in quest", "deliver quest", "görevi teslim et"]),
+    (ActionIntent.SHORT_REST, ["short rest", "kısa dinlenme"]),
+    (ActionIntent.LONG_REST, ["long rest", "sleep", "camp", "uyu", "kamp kur", "uzun dinlenme"]),
+    (ActionIntent.REST, ["rest", "dinlen"]),
+    (ActionIntent.DISENGAGE, ["disengage", "withdraw carefully", "temkinli çekil"]),
+    (ActionIntent.SAVE_GAME, ["save", "quick save", "kaydet"]),
+    (ActionIntent.LOAD_GAME, ["load", "restore", "yükle"]),
     (ActionIntent.LIST_SAVES, ["saves", "list saves", "show saves", "kayıtlar"]),
     (ActionIntent.DELETE_SAVE, ["delete save", "remove save", "kayıt sil"]),
-    (ActionIntent.FLEE, ["run away", "flee", "escape", "retreat", "kaç", "geri çekil"]),
-    (ActionIntent.INVENTORY, ["inventory", "items", "bag", "backpack", "equipment", "gear",
-                               "eşya", "envanter", "çanta"]),
-    (ActionIntent.CRAFT, ["craft", "make", "forge", "brew", "cook", "build", "create", "smith",
-                           "üret", "yap", "pişir"]),
-    (ActionIntent.LOCKPICK, ["lockpick", "pick lock", "pick the lock", "maymuncuk"]),
-    (ActionIntent.STEAL, ["steal", "pickpocket", "swipe", "pilfer", "çal"]),
-    (ActionIntent.PERSUADE, ["persuade", "convince", "negotiate", "diplomat", "ikna"]),
-    (ActionIntent.INTIMIDATE, ["intimidate", "threaten", "scare", "bully", "korkut", "tehdit"]),
-    (ActionIntent.SNEAK, ["sneak", "stealth", "hide", "creep", "skulk", "gizlen", "sinsi"]),
+    (ActionIntent.FLEE, ["run away", "flee", "escape", "retreat", "kaç"]),
+    (ActionIntent.INVENTORY, ["inventory", "items", "bag", "backpack", "equipment", "gear", "eşya", "envanter", "çanta"]),
+    (ActionIntent.CRAFT, ["craft", "make", "forge", "brew", "cook", "üret", "yap", "pişir"]),
+    (ActionIntent.LOCKPICK, ["lockpick", "pick lock", "maymuncuk"]),
+    (ActionIntent.STEAL, ["steal", "pickpocket", "swipe", "çal"]),
+    (ActionIntent.PERSUADE, ["persuade", "convince", "negotiate", "ikna"]),
+    (ActionIntent.INTIMIDATE, ["intimidate", "threaten", "scare", "korkut", "tehdit"]),
+    (ActionIntent.BRIBE, ["bribe", "pay off", "rüşvet"]),
+    (ActionIntent.DECEIVE, ["deceive", "bluff", "lie", "trick", "kandır"]),
+    (ActionIntent.THINK, ["think", "recall", "remember", "what do i know", "düşün", "hatırla", "to self"]),
+    (ActionIntent.ADDRESS, ["say to", "tell", "ask"]),
+    (ActionIntent.SNEAK, ["sneak", "stealth", "hide", "creep", "gizlen", "sinsi"]),
     (ActionIntent.CLIMB, ["climb", "scale", "ascend", "tırman"]),
     (ActionIntent.PRAY, ["pray", "worship", "meditate", "dua", "ibadet"]),
     (ActionIntent.READ_ITEM, ["read", "decipher", "study", "oku"]),
@@ -629,7 +357,6 @@ _KEYWORD_FALLBACK: list[tuple[ActionIntent, list[str]]] = [
     (ActionIntent.USE_ITEM, ["kullan", "iç", "ye", "use", "drink", "eat", "consume", "potion"]),
     (ActionIntent.TRADE, ["trade", "barter", "buy", "sell", "wares", "shop", "alışveriş"]),
     (ActionIntent.TALK, ["konuş", "söyle", "talk", "speak", "greet"]),
-    (ActionIntent.REST, ["dinlen", "uyu", "rest", "sleep", "camp"]),
     (ActionIntent.OPEN, ["aç", "kır", "open", "unlock"]),
     (ActionIntent.MOVE, ["git", "go", "move", "walk", "enter", "travel"]),
     (ActionIntent.EXAMINE, ["incele", "examine", "inspect", "check"]),
@@ -637,108 +364,75 @@ _KEYWORD_FALLBACK: list[tuple[ActionIntent, list[str]]] = [
 
 
 class ActionParser:
-    """
-    Parse natural language player input into structured game actions.
-
-    Supports Turkish and English. Uses regex patterns with named capture groups.
-    Unknown inputs return ActionIntent.UNKNOWN for DM fallback handling.
-
-    Usage:
-        parser = ActionParser()
-        action = parser.parse("attack orc with sword")
-        # action.intent == ActionIntent.ATTACK
-        # action.target == "orc"
-        # action.weapon == "sword"
-    """
+    """Parse player input into a structured action."""
 
     def parse(self, text: str) -> ParsedAction:
-        """
-        Parse player input into a ParsedAction.
-
-        Args:
-            text: Raw player input string
-
-        Returns:
-            ParsedAction with intent, target, spell_name, weapon, direction, raw_input
-        """
         stripped = text.strip()
         normalized = _normalize(stripped)
 
-        # Try regex patterns in priority order
         for intent, patterns in _PATTERNS:
             for pattern in patterns:
-                m = pattern.match(normalized)
-                if m:
-                    groups = m.groupdict()
-                    target = groups.get("target") or None
-                    spell_name = groups.get("spell") or None
-                    weapon = groups.get("weapon") or None
-                    direction = groups.get("direction") or None
+                match = pattern.match(normalized)
+                if not match:
+                    continue
+                groups = match.groupdict()
+                target = groups.get("target") or None
+                spell_name = groups.get("spell") or None
+                weapon = groups.get("weapon") or None
+                direction = groups.get("direction") or None
 
-                    # Clean up captured groups
-                    if target:
-                        target = target.strip()
-                        if _looks_turkish(stripped):
-                            target = _normalize_turkish_target(target)
-                    if spell_name:
-                        spell_name = spell_name.strip()
-                    if weapon:
-                        weapon = weapon.strip()
-                    if direction:
-                        direction = direction.strip()
-
-                    return ParsedAction(
-                        intent=intent,
-                        raw_input=stripped,
-                        target=target if target else None,
-                        spell_name=spell_name,
-                        weapon=weapon,
-                        direction=direction,
-                        action_detail=spell_name or weapon or direction,
-                    )
-
-        # Fallback: keyword matching (word-boundary aware)
-        for intent, keywords in _KEYWORD_FALLBACK:
-            for kw in keywords:
-                # Short ASCII keywords (<=4 chars) use word-boundary to avoid
-                # substring false positives (e.g. "mine" in "examine").
-                # Longer/Turkish keywords use substring match (Turkish is
-                # agglutinative: "saldır" appears in "saldırıyorum").
-                if " " not in kw and len(kw) <= 4 and kw.isascii():
-                    matched = bool(re.search(r'(?:^|\s)' + re.escape(kw) + r'(?:\s|$)', normalized))
-                else:
-                    matched = kw in normalized
-                if matched:
-                    # Try simple target extraction after keyword
-                    target = self._extract_after_keyword(normalized, kw)
-                    if target and _looks_turkish(stripped):
+                if target:
+                    target = target.strip()
+                    if _looks_turkish(stripped):
                         target = _normalize_turkish_target(target)
-                    return ParsedAction(
-                        intent=intent,
-                        raw_input=stripped,
-                        target=target,
-                        action_detail=target,
-                    )
+                if spell_name:
+                    spell_name = spell_name.strip()
+                if weapon:
+                    weapon = weapon.strip()
+                if direction:
+                    direction = direction.strip()
+
+                return ParsedAction(
+                    intent=intent,
+                    raw_input=stripped,
+                    target=target or None,
+                    spell_name=spell_name,
+                    weapon=weapon,
+                    direction=direction,
+                    action_detail=spell_name or weapon or direction,
+                )
+
+        for intent, keywords in _KEYWORD_FALLBACK:
+            for keyword in keywords:
+                if " " not in keyword and len(keyword) <= 4 and keyword.isascii():
+                    matched = bool(re.search(r"(?:^|\s)" + re.escape(keyword) + r"(?:\s|$)", normalized))
+                else:
+                    matched = keyword in normalized
+                if not matched:
+                    continue
+                target = self._extract_after_keyword(normalized, keyword)
+                if target and _looks_turkish(stripped):
+                    target = _normalize_turkish_target(target)
+                return ParsedAction(
+                    intent=intent,
+                    raw_input=stripped,
+                    target=target,
+                    action_detail=target,
+                )
 
         return ParsedAction(intent=ActionIntent.UNKNOWN, raw_input=stripped)
 
     def _extract_after_keyword(self, normalized: str, keyword: str) -> Optional[str]:
-        """Extract the word(s) after a keyword as target."""
         idx = normalized.find(keyword)
         if idx == -1:
             return None
         after = normalized[idx + len(keyword):].strip()
-        # Remove common prepositions
         after = re.sub(r"^(the|a|an|to|at|on|with|from|bir|bu|şu|o)\s+", "", after)
         return after if after else None
 
     def _detect_intent(self, normalized_text: str) -> ActionIntent:
-        """
-        Legacy method: detect intent from normalized text using keyword matching.
-        Kept for backward compatibility.
-        """
         for intent, keywords in _KEYWORD_FALLBACK:
-            for kw in keywords:
-                if kw in normalized_text:
+            for keyword in keywords:
+                if keyword in normalized_text:
                     return intent
         return ActionIntent.UNKNOWN

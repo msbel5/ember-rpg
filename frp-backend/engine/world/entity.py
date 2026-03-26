@@ -60,6 +60,12 @@ class Entity:
     hp: int = 10
     max_hp: int = 10
     disposition: str = "neutral"          # friendly / neutral / hostile / afraid
+    attitude: str = "indifferent"         # friendly / indifferent / hostile
+    alignment: str = "TN"
+    alignment_axes: Dict[str, int] = field(default_factory=lambda: {
+        "law_chaos": 0,
+        "good_evil": 0,
+    })
     ap: int = 4
     max_ap: int = 4
 
@@ -149,6 +155,9 @@ class Entity:
             "hp": self.hp,
             "max_hp": self.max_hp,
             "disposition": self.disposition,
+            "attitude": self.attitude,
+            "alignment": self.alignment,
+            "alignment_axes": dict(self.alignment_axes or {}),
             "ap": self.ap,
             "max_ap": self.max_ap,
         }
@@ -203,6 +212,9 @@ class Entity:
             hp=data.get("hp", 10),
             max_hp=data.get("max_hp", 10),
             disposition=data.get("disposition", "neutral"),
+            attitude=data.get("attitude", "indifferent"),
+            alignment=data.get("alignment", "TN"),
+            alignment_axes=dict(data.get("alignment_axes", {"law_chaos": 0, "good_evil": 0}) or {"law_chaos": 0, "good_evil": 0}),
             ap=data.get("ap", 4),
             max_ap=data.get("max_ap", 4),
         )

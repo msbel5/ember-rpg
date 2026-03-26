@@ -351,6 +351,60 @@ class TestSaveLoadRoundtrip:
         assert loaded.spatial_index is not None
         assert loaded.spatial_index.get_position("player") == tuple(loaded.position)
 
+    def test_dnd_fields_and_conversation_state_preserved(self, save_system):
+        engine = GameEngine()
+        session = engine.new_session(
+            "Scholar",
+            "rogue",
+            location="Market Town",
+            alignment="CN",
+            skill_proficiencies=["stealth", "deception", "perception", "investigation"],
+            creation_answers=[{"question_id": "origin", "answer_id": "work_back_alleys"}],
+            creation_profile={"recommended_class": "rogue", "recommended_alignment": "CN"},
+        )
+        session.player.expertise_skills = ["stealth", "deception"]
+        session.player.exhaustion_level = 2
+        session.player.hit_dice_remaining = max(0, session.player.hit_dice_total - 1)
+        session.player.death_save_successes = 1
+        session.player.death_save_failures = 2
+        session.player.is_stable = True
+        session.player.condition_states = [{"name": "poisoned", "remaining_rounds": 2}]
+        enemy = Character(
+            name="Bandit",
+            hp=10,
+            max_hp=10,
+            stats={"MIG": 10, "AGI": 12, "END": 10, "MND": 8, "INS": 10, "PRE": 8},
+        )
+        engine._start_combat(session, [enemy])
+        player_combatant = next(c for c in session.combat.combatants if c.character.name == session.player.name)
+        player_combatant.action_available = False
+        player_combatant.reaction_available = False
+        player_combatant.bonus_action_available = True
+        player_combatant.movement_remaining = 12
+        player_combatant.disengaged_until_turn_end = True
+        session.set_conversation_target("npc", npc_id="merchant_1", npc_name="Old Merchant")
+
+        save_system.save_game(session, "test_dnd_roundtrip")
+        loaded = save_system.load_game("test_dnd_roundtrip")
+
+        assert loaded.player.alignment == "CN"
+        assert loaded.player.skill_proficiencies == ["stealth", "deception", "perception", "investigation"]
+        assert loaded.player.expertise_skills == ["stealth", "deception"]
+        assert loaded.player.exhaustion_level == 2
+        assert loaded.player.hit_dice_total >= 1
+        assert loaded.player.hit_dice_remaining == session.player.hit_dice_remaining
+        assert loaded.player.death_save_successes == 1
+        assert loaded.player.death_save_failures == 2
+        assert loaded.player.is_stable is True
+        assert loaded.conversation_state["target_type"] == "npc"
+        assert loaded.conversation_state["npc_id"] == "merchant_1"
+        assert loaded.combat is not None
+        loaded_player = next(c for c in loaded.combat.combatants if c.character.name == loaded.player.name)
+        assert loaded_player.action_available is False
+        assert loaded_player.reaction_available is False
+        assert loaded_player.movement_remaining == 12
+        assert loaded_player.disengaged_until_turn_end is True
+
     def test_location_stock_preserved(self, save_system, sample_session):
         """Location stock survives roundtrip."""
         sample_session.location_stock.remove_stock("ale", 5)

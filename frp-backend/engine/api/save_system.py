@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import copy
+import random
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -67,6 +68,12 @@ class SaveSystem:
                     "ap": combatant.ap,
                     "conditions": [condition.__dict__ for condition in combatant.conditions],
                     "is_dead": combatant.is_dead,
+                    "action_available": bool(getattr(combatant, "action_available", True)),
+                    "bonus_action_available": bool(getattr(combatant, "bonus_action_available", True)),
+                    "reaction_available": bool(getattr(combatant, "reaction_available", True)),
+                    "movement_remaining": int(getattr(combatant, "movement_remaining", 0)),
+                    "speed": int(getattr(combatant, "speed", 0)),
+                    "disengaged_until_turn_end": bool(getattr(combatant, "disengaged_until_turn_end", False)),
                 }
                 for combatant in combat.combatants
             ],
@@ -105,10 +112,17 @@ class SaveSystem:
                     is_dead=combatant_data.get("is_dead", False),
                 )
             )
+            combat.combatants[-1].action_available = bool(combatant_data.get("action_available", True))
+            combat.combatants[-1].bonus_action_available = bool(combatant_data.get("bonus_action_available", True))
+            combat.combatants[-1].reaction_available = bool(combatant_data.get("reaction_available", True))
+            combat.combatants[-1].movement_remaining = int(combatant_data.get("movement_remaining", 0))
+            combat.combatants[-1].speed = int(combatant_data.get("speed", combat.combatants[-1].speed))
+            combat.combatants[-1].disengaged_until_turn_end = bool(combatant_data.get("disengaged_until_turn_end", False))
         combat.current_turn = data.get("current_turn", 0)
         combat.round = data.get("round", 1)
         combat.log = list(data.get("log", []))
         combat.combat_ended = data.get("combat_ended", False)
+        combat.rng = random.Random()
         return combat
 
     @staticmethod
@@ -232,6 +246,7 @@ class SaveSystem:
         )
         data["campaign_state"] = dict(getattr(session, "campaign_state", {}))
         data["narration_context"] = dict(getattr(session, "narration_context", {}))
+        data["conversation_state"] = dict(getattr(session, "conversation_state", {}))
         data["timed_conditions"] = copy.deepcopy(getattr(session, "timed_conditions", {}))
         data["last_save_slot"] = getattr(session, "last_save_slot", None)
 
@@ -416,6 +431,12 @@ class SaveSystem:
         )
         session.campaign_state = dict(data.get("campaign_state", {}))
         session.narration_context = dict(data.get("narration_context", {}))
+        session.conversation_state = dict(data.get("conversation_state", {
+            "target_type": "dm",
+            "npc_id": None,
+            "npc_name": None,
+            "started_turn": 0,
+        }))
         session.timed_conditions = copy.deepcopy(data.get("timed_conditions", {}))
         session.last_save_slot = data.get("last_save_slot")
 

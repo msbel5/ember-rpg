@@ -209,7 +209,34 @@ def test_rest(parser):
 
 def test_sleep(parser):
     result = parser.parse("sleep")
-    assert result.intent == ActionIntent.REST
+    assert result.intent == ActionIntent.LONG_REST
+
+def test_short_rest(parser):
+    result = parser.parse("short rest")
+    assert result.intent == ActionIntent.SHORT_REST
+
+def test_disengage(parser):
+    result = parser.parse("disengage")
+    assert result.intent == ActionIntent.DISENGAGE
+
+def test_bribe_guard(parser):
+    result = parser.parse("bribe guard")
+    assert result.intent == ActionIntent.BRIBE
+    assert result.target == "guard"
+
+def test_deceive_merchant(parser):
+    result = parser.parse("deceive merchant")
+    assert result.intent == ActionIntent.DECEIVE
+    assert result.target == "merchant"
+
+def test_think_history(parser):
+    result = parser.parse("what do i know about this town")
+    assert result.intent == ActionIntent.THINK
+
+def test_address_target(parser):
+    result = parser.parse("say to merchant keep this quiet")
+    assert result.intent == ActionIntent.ADDRESS
+    assert result.target == "merchant"
 
 
 # --- QUESTS ---

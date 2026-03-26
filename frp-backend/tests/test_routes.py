@@ -44,6 +44,10 @@ class TestSessionEndpoints:
         assert resp.status_code == 200
         data = resp.json()
         assert data["session_id"] == sid
+        assert "conversation_state" in data
+        assert "active_quests" in data
+        assert "quest_offers" in data
+        assert "campaign_state" in data
 
     def test_get_nonexistent_session(self):
         resp = client.get("/game/session/nonexistent-id")
@@ -122,6 +126,66 @@ class TestSessionEndpoints:
         assert data["quest_offers"] == snapshot.get("quest_offers", [])
         assert data["ground_items"] == snapshot.get("ground_items", [])
         assert data["campaign_state"] == snapshot.get("campaign_state", {})
+
+    def test_action_response_includes_conversation_state(self):
+        created = self._new_session("Speaker", "rogue")
+        sid = created["session_id"]
+
+        talk_resp = client.post(f"/game/session/{sid}/action", json={"input": "talk to merchant"})
+        assert talk_resp.status_code == 200
+        data = talk_resp.json()
+        snapshot = _sessions[sid].to_dict()
+
+        assert data["conversation_state"] == snapshot.get("conversation_state", {})
+        assert data["conversation_state"]["target_type"] == "npc"
+        assert data["conversation_state"]["npc_name"]
+
+    def test_creation_flow_endpoints(self):
+        start = client.post(
+            "/game/session/creation/start",
+            json={"player_name": "FinalPass", "location": "Market Town"},
+        )
+        assert start.status_code == 200
+        state = start.json()
+        creation_id = state["creation_id"]
+        assert len(state["questions"]) >= 3
+        assert len(state["current_roll"]) == 6
+
+        first_question = state["questions"][0]
+        answer = first_question["answers"][0]["id"]
+        answered = client.post(
+            f"/game/session/creation/{creation_id}/answer",
+            json={"question_id": first_question["id"], "answer_id": answer},
+        )
+        assert answered.status_code == 200
+        assert answered.json()["answers"]
+
+        saved = client.post(f"/game/session/creation/{creation_id}/save-roll")
+        assert saved.status_code == 200
+        assert saved.json()["saved_roll"] is not None
+
+        rerolled = client.post(f"/game/session/creation/{creation_id}/reroll")
+        assert rerolled.status_code == 200
+        assert rerolled.json()["current_roll"] != saved.json()["saved_roll"]
+
+        swapped = client.post(f"/game/session/creation/{creation_id}/swap-roll")
+        assert swapped.status_code == 200
+        assert swapped.json()["current_roll"] == saved.json()["saved_roll"]
+
+        final = client.post(
+            f"/game/session/creation/{creation_id}/finalize",
+            json={
+                "player_class": "rogue",
+                "alignment": "CN",
+                "skill_proficiencies": ["stealth", "deception", "perception", "investigation"],
+            },
+        )
+        assert final.status_code == 200
+        payload = final.json()
+        assert payload["player"]["alignment"] == "CN"
+        assert payload["player"]["skill_proficiencies"] == ["stealth", "deception", "perception", "investigation"]
+        assert payload["player"]["proficiency_bonus"] == 2
+        assert "passives" in payload["player"]
 
     def test_action_attack_response_player_ap_matches_combat_ap(self):
         created = self._new_session()

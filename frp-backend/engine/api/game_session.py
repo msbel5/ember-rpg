@@ -97,6 +97,12 @@ class GameSession:
     quest_offers: List[Dict[str, Any]] = field(default_factory=list)
     campaign_state: Dict[str, Any] = field(default_factory=dict)
     narration_context: Dict[str, Any] = field(default_factory=dict)
+    conversation_state: Dict[str, Any] = field(default_factory=lambda: {
+        "target_type": "dm",
+        "npc_id": None,
+        "npc_name": None,
+        "started_turn": 0,
+    })
     timed_conditions: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     last_save_slot: Optional[str] = None
 
@@ -494,6 +500,12 @@ class GameSession:
             record.setdefault("faction", live_entity.faction)
         if getattr(live_entity, "job", None) is not None:
             record.setdefault("role", live_entity.job)
+        if getattr(live_entity, "attitude", None) is not None:
+            record["attitude"] = live_entity.attitude
+        if getattr(live_entity, "alignment", None) is not None:
+            record["alignment"] = live_entity.alignment
+        if getattr(live_entity, "alignment_axes", None) is not None:
+            record["alignment_axes"] = dict(live_entity.alignment_axes or {})
 
         live_body = getattr(live_entity, "body", None)
         if live_body is not None:
@@ -581,6 +593,12 @@ class GameSession:
         if self.physical_inventory is None:
             self.physical_inventory = PhysicalInventory()
         self.quest_offers = self.normalize_quest_offers(self.quest_offers, default_source="authored")
+        if not isinstance(self.conversation_state, dict):
+            self.conversation_state = {"target_type": "dm", "npc_id": None, "npc_name": None, "started_turn": 0}
+        self.conversation_state.setdefault("target_type", "dm")
+        self.conversation_state.setdefault("npc_id", None)
+        self.conversation_state.setdefault("npc_name", None)
+        self.conversation_state.setdefault("started_turn", 0)
         self.clear_expired_timed_conditions()
         self.reattach_entity_refs()
         self.sync_player_state()
@@ -590,6 +608,7 @@ class GameSession:
             return
         self.player.inventory = self.inventory_item_ids()
         self.player.equipment = self.equipment_ids()
+        self.player.sync_derived_progression()
         active_timed = self.active_timed_conditions()
         persistent_conditions = [
             condition
@@ -870,6 +889,28 @@ class GameSession:
             self.session_id = current_session_id
         self.ensure_consistency()
 
+    def set_conversation_target(
+        self,
+        target_type: str,
+        *,
+        npc_id: Optional[str] = None,
+        npc_name: Optional[str] = None,
+    ) -> None:
+        self.conversation_state = {
+            "target_type": target_type,
+            "npc_id": npc_id,
+            "npc_name": npc_name,
+            "started_turn": self.dm_context.turn if self.dm_context is not None else 0,
+        }
+
+    def clear_conversation_target(self) -> None:
+        self.conversation_state = {
+            "target_type": "dm",
+            "npc_id": None,
+            "npc_name": None,
+            "started_turn": self.dm_context.turn if self.dm_context is not None else 0,
+        }
+
     def to_dict(self) -> dict:
         """Serialize session state for API responses."""
         self.ensure_consistency()
@@ -888,6 +929,25 @@ class GameSession:
             "position": list(self.position),
             "facing": self.facing,
             "conditions": list(self.player.conditions),
+            "skill_proficiencies": list(getattr(self.player, "skill_proficiencies", [])),
+            "expertise_skills": list(getattr(self.player, "expertise_skills", [])),
+            "proficiency_bonus": int(getattr(self.player, "proficiency_bonus", 2)),
+            "passives": dict(getattr(self.player, "passives", {})),
+            "alignment": getattr(self.player, "alignment", "TN"),
+            "alignment_axes": dict(getattr(self.player, "alignment_axes", {})),
+            "hit_dice": {
+                "size": int(getattr(self.player, "hit_die_size", 8)),
+                "total": int(getattr(self.player, "hit_dice_total", 0)),
+                "remaining": int(getattr(self.player, "hit_dice_remaining", 0)),
+            },
+            "exhaustion_level": int(getattr(self.player, "exhaustion_level", 0)),
+            "death_saves": {
+                "successes": int(getattr(self.player, "death_save_successes", 0)),
+                "failures": int(getattr(self.player, "death_save_failures", 0)),
+                "stable": bool(getattr(self.player, "is_stable", False)),
+            },
+            "creation_answers": copy.deepcopy(getattr(self.player, "creation_answers", [])),
+            "creation_profile": copy.deepcopy(getattr(self.player, "creation_profile", {})),
         }
         result = {
             "session_id": self.session_id,
@@ -983,6 +1043,7 @@ class GameSession:
         result["quest_offers"] = copy.deepcopy(self.quest_offers) if self.quest_offers else []
         result["campaign_state"] = copy.deepcopy(self.campaign_state) if self.campaign_state else {}
         result["timed_conditions"] = self.timed_condition_payload()
+        result["conversation_state"] = copy.deepcopy(self.conversation_state)
 
         if self.body_tracker:
             injuries = self.body_tracker.get_injury_effects()

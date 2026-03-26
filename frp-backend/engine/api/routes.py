@@ -12,7 +12,12 @@ from engine.api.models import (
     NewSessionRequest, NewSessionResponse,
     ActionRequest, ActionResponse,
     SessionStateResponse,
+    CreationStartRequest,
+    CreationAnswerRequest,
+    CreationFinalizeRequest,
+    CreationStateResponse,
 )
+from engine.core.character_creation import CreationState, assign_stats_to_class
 from engine.core.dm_agent import DMEvent, EventType, SceneType
 
 router = APIRouter()
@@ -52,6 +57,7 @@ engine = GameEngine(llm=_make_llm_callable())
 
 # In-memory session store
 _sessions: Dict[str, GameSession] = {}
+_creation_states: Dict[str, CreationState] = {}
 
 
 def _autosave_slot_name(session_id: str) -> str:
@@ -92,6 +98,11 @@ def new_session(req: NewSessionRequest):
         player_name=req.player_name,
         player_class=req.player_class,
         location=req.location,
+        alignment=req.alignment,
+        skill_proficiencies=req.skill_proficiencies,
+        stats=req.stats,
+        creation_answers=req.creation_answers,
+        creation_profile=req.creation_profile,
     )
     _sessions[session.session_id] = session
 
@@ -107,6 +118,112 @@ def new_session(req: NewSessionRequest):
     return NewSessionResponse(
         session_id=session.session_id,
         narrative=narrative,
+        player=session.to_dict()["player"],
+        scene=session.dm_context.scene_type.value,
+        location=session.dm_context.location,
+    )
+
+
+def _creation_state_response(state: CreationState, player_name: str, location: Optional[str]) -> CreationStateResponse:
+    effective_player_name = player_name or str(state.creation_profile.get("_player_name", "") or "")
+    effective_location = location or state.creation_profile.get("_location")
+    payload = state.to_dict()
+    return CreationStateResponse(
+        creation_id=payload["creation_id"],
+        player_name=effective_player_name,
+        location=effective_location,
+        questions=payload["questions"],
+        answers=payload["answers"],
+        class_weights=payload["class_weights"],
+        skill_weights=payload["skill_weights"],
+        alignment_axes=payload["alignment_axes"],
+        recommended_class=payload["recommended_class"],
+        recommended_alignment=payload["recommended_alignment"],
+        recommended_skills=payload["recommended_skills"],
+        current_roll=payload["current_roll"],
+        saved_roll=payload["saved_roll"],
+    )
+
+
+@router.post("/session/creation/start", response_model=CreationStateResponse)
+def start_creation(req: CreationStartRequest):
+    state = CreationState(player_name=req.player_name, location=req.location)
+    state.ensure_roll()
+    state.creation_profile["_player_name"] = req.player_name
+    state.creation_profile["_location"] = req.location
+    _creation_states[state.creation_id] = state
+    return _creation_state_response(state, req.player_name, req.location)
+
+
+@router.post("/session/creation/{creation_id}/answer", response_model=CreationStateResponse)
+def answer_creation(creation_id: str, req: CreationAnswerRequest):
+    state = _creation_states.get(creation_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Creation flow not found")
+    state.answer_question(req.question_id, req.answer_id)
+    return _creation_state_response(state, "", None)
+
+
+@router.post("/session/creation/{creation_id}/reroll", response_model=CreationStateResponse)
+def reroll_creation(creation_id: str):
+    state = _creation_states.get(creation_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Creation flow not found")
+    state.reroll()
+    return _creation_state_response(state, "", None)
+
+
+@router.post("/session/creation/{creation_id}/save-roll", response_model=CreationStateResponse)
+def save_creation_roll(creation_id: str):
+    state = _creation_states.get(creation_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Creation flow not found")
+    state.save_current_roll()
+    return _creation_state_response(state, "", None)
+
+
+@router.post("/session/creation/{creation_id}/swap-roll", response_model=CreationStateResponse)
+def swap_creation_roll(creation_id: str):
+    state = _creation_states.get(creation_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Creation flow not found")
+    state.swap_rolls()
+    return _creation_state_response(state, "", None)
+
+
+@router.post("/session/creation/{creation_id}/finalize", response_model=NewSessionResponse)
+def finalize_creation(creation_id: str, req: CreationFinalizeRequest):
+    state = _creation_states.get(creation_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Creation flow not found")
+    chosen_class = (req.player_class or state.recommended_class() or "warrior").lower()
+    chosen_alignment = req.alignment or state.recommended_alignment()
+    proficiencies = req.skill_proficiencies or state.recommended_skills()
+    stats = assign_stats_to_class(state.current_roll, chosen_class)
+    player_name = str(state.creation_profile.get("_player_name", "") or "Adventurer")
+    location = req.location or state.creation_profile.get("_location")
+    session = engine.new_session(
+        player_name=player_name,
+        player_class=chosen_class,
+        location=location,
+        alignment=chosen_alignment,
+        skill_proficiencies=proficiencies,
+        stats=stats,
+        creation_answers=list(state.answers),
+        creation_profile={
+            "class_weights": dict(state.class_weights),
+            "skill_weights": dict(state.skill_weights),
+            "alignment_axes": dict(state.alignment_axes),
+            "recommended_class": state.recommended_class(),
+            "recommended_alignment": state.recommended_alignment(),
+            "player_name": player_name,
+        },
+    )
+    _sessions[session.session_id] = session
+    _creation_states.pop(creation_id, None)
+    return NewSessionResponse(
+        session_id=session.session_id,
+        narrative=f"{session.player.name} the {chosen_class.capitalize()} enters {session.dm_context.location}.",
         player=session.to_dict()["player"],
         scene=session.dm_context.scene_type.value,
         location=session.dm_context.location,
@@ -157,6 +274,7 @@ def take_action(session_id: str, req: ActionRequest):
         quest_offers=snapshot.get("quest_offers", []),
         ground_items=snapshot.get("ground_items", []),
         campaign_state=snapshot.get("campaign_state", {}),
+        conversation_state=snapshot.get("conversation_state", {}),
     )
 
 

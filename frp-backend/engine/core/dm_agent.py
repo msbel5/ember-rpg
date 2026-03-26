@@ -85,7 +85,7 @@ NARRATIVE_TEMPLATES: dict = {
     EventType.DISCOVERY: [
         "{player_name} examines the area carefully, noting every detail of {location}.",
         "Something catches {player_name}'s eye — there is more here than first appeared.",
-        "Careful inspection of {location} reveals hidden details that most would miss.",
+        "Careful inspection of {location} reveals a few grounded details worth noting.",
     ],
     EventType.DIALOGUE: [
         "{npc_name} regards {player_name} with guarded curiosity, choosing their words carefully.",
@@ -396,6 +396,16 @@ class DMAIAgent:
                 building = event.data.get("building", "open area")
                 context_parts.append(f"Current zone: {event.data['zone_type']} ({building})")
         enriched_description = "\n".join(context_parts)
+        passive_lines = "Passive scores unavailable."
+        if context.party:
+            primary = context.party[0]
+            passives = dict(getattr(primary, "passives", {}) or {})
+            passive_lines = (
+                f"Primary player: {primary.name}\n"
+                f"Passive Perception: {int(passives.get('perception', 0))}\n"
+                f"Passive Investigation: {int(passives.get('investigation', 0))}\n"
+                f"Passive Insight: {int(passives.get('insight', 0))}"
+            )
 
         prompt = (
             f"You are the Dungeon Master of Ember RPG, a dark fantasy world.\n\n"
@@ -405,6 +415,11 @@ class DMAIAgent:
             f"Turn: {context.turn}\n\n"
             f"## Party\n"
             f"{context.party_summary()}\n\n"
+            f"## Passive Senses\n"
+            f"{passive_lines}\n"
+            f"Only mention hidden details if the relevant hidden DC is less than or equal to the matching passive score "
+            f"or the event/location data explicitly says the detail has been revealed.\n"
+            f"Do not fabricate secret passages, hidden items, traps, or clues unless structured game data explicitly marks them.\n\n"
             f"## Recent History\n"
             f"{history_lines if history_lines else '(no recent events)'}\n\n"
             f"## Event\n"

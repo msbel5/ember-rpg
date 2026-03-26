@@ -1,12 +1,14 @@
 """
 Ember RPG - Core Engine
-Turn-based combat system
+Turn-based combat system with D&D-style turn resources layered over the
+existing AP-compatible interface.
 """
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 from engine.core.character import Character
 from engine.core.item import Item, ItemType
 from engine.core.enemy_ai import EnemyAI, CombatAction
+from engine.world.skill_checks import roll_d20
 import random
 
 
@@ -16,6 +18,7 @@ class Condition:
     name: str
     duration: int  # turns remaining
     effect: str  # description
+    source_id: Optional[str] = None
     
     def apply_turn_effect(self, combatant: 'Combatant') -> Optional[str]:
         """
@@ -50,10 +53,22 @@ class Combatant:
     ap: int = 3  # Action points per turn
     conditions: List[Condition] = field(default_factory=list)
     is_dead: bool = False
-    
+    action_available: bool = True
+    bonus_action_available: bool = True
+    reaction_available: bool = True
+    movement_remaining: int = 6
+    speed: int = 6
+    disengaged_until_turn_end: bool = False
+
     @property
     def name(self) -> str:
         return self.character.name
+
+    def has_condition(self, name: str) -> bool:
+        lowered = name.lower()
+        if lowered in {condition.name.lower() for condition in self.conditions}:
+            return True
+        return lowered in {condition.lower() for condition in getattr(self.character, "conditions", [])}
 
 
 class CombatManager:
@@ -67,8 +82,7 @@ class CombatManager:
             combatants: List of characters participating in combat
             seed: Random seed for deterministic dice rolls (testing)
         """
-        if seed is not None:
-            random.seed(seed)
+        self.rng = random.Random(seed)
         
         self.combatants: List[Combatant] = []
         self.current_turn: int = 0
@@ -100,7 +114,7 @@ class CombatManager:
             Initiative value
         """
         from engine.core.rules import roll_dice
-        roll = roll_dice("1d20")
+        roll = self.rng.randint(1, 20)
         agi_mod = char.stat_modifier('AGI')
         return roll + agi_mod + char.initiative_bonus
     
@@ -113,7 +127,14 @@ class CombatManager:
         """Start a new turn for the active combatant."""
         combatant = self.active_combatant
         combatant.ap = 3  # Reset AP
-        
+        combatant.action_available = True
+        combatant.bonus_action_available = True
+        combatant.reaction_available = True
+        combatant.disengaged_until_turn_end = False
+        combatant.speed = self._movement_speed(combatant)
+        combatant.movement_remaining = combatant.speed
+        self._sync_character_condition_names(combatant)
+
         # Apply condition turn effects (poison, burning, etc.)
         for condition in combatant.conditions[:]:  # Copy to allow removal
             msg = condition.apply_turn_effect(combatant)
@@ -131,20 +152,33 @@ class CombatManager:
                     "combatant": combatant.name,
                     "condition": condition.name
                 })
-        
+        self._sync_character_condition_names(combatant)
+
         # Check death after conditions
         if combatant.character.hp <= 0 and not combatant.is_dead:
-            combatant.is_dead = True
-            self._log_event("death", {"combatant": combatant.name})
-            self._check_combat_end()
-        
+            if getattr(combatant.character, "use_death_saves", False):
+                death_event = self._resolve_death_save(combatant)
+                if death_event:
+                    self._log_event("death_save", death_event)
+            else:
+                combatant.is_dead = True
+                self._log_event("death", {"combatant": combatant.name})
+                self._check_combat_end()
+
+        if self._cannot_act(combatant):
+            combatant.ap = 0
+            combatant.action_available = False
+            combatant.bonus_action_available = False
+            combatant.movement_remaining = 0
+
         self._log_event("turn_start", {
             "combatant": combatant.name,
             "round": self.round,
             "hp": combatant.character.hp,
-            "ap": combatant.ap
+            "ap": combatant.ap,
+            "resources": self._resources_payload(combatant),
         })
-    
+
     def attack(self, target_index: int, weapon: Optional[Item] = None) -> Dict:
         """
         Perform an attack action.
@@ -158,15 +192,18 @@ class CombatManager:
         """
         attacker = self.active_combatant
         target = self.combatants[target_index]
-        
+
         # Validation
         if attacker.ap < 1:
             return {"error": "Insufficient AP"}
+        if not attacker.action_available or self._cannot_act(attacker):
+            return {"error": "No action available"}
         if target.is_dead:
             return {"error": "Target is dead"}
-        
+
         attacker.ap -= 1
-        
+        attacker.action_available = False
+
         # Default weapon: unarmed strike
         if weapon is None:
             weapon = Item(
@@ -180,7 +217,12 @@ class CombatManager:
         
         # Attack roll: d20 + skill_bonus
         from engine.core.rules import roll_dice
-        roll = roll_dice("1d20")
+        advantage, disadvantage = self._attack_roll_state(attacker, target)
+        roll, rolls = roll_d20(
+            advantage=advantage,
+            disadvantage=disadvantage,
+            _rng=self.rng,
+        )
         skill_bonus = attacker.character.skill_bonus("melee")
         attack_roll = roll + skill_bonus
         
@@ -199,7 +241,10 @@ class CombatManager:
             "hit": hit,
             "crit": crit,
             "fumble": fumble,
-            "weapon": weapon.name
+            "weapon": weapon.name,
+            "advantage": advantage and not disadvantage,
+            "disadvantage": disadvantage and not advantage,
+            "rolls": list(rolls),
         }
         
         if hit:
@@ -214,18 +259,31 @@ class CombatManager:
                 damage = damage_roll + stat_mod
             
             # Apply damage
+            previous_hp = target.character.hp
             target.character.hp -= damage
             result["damage_roll"] = damage_roll
             result["stat_modifier"] = stat_mod
             result["damage"] = damage
             result["damage_type"] = weapon.damage_type
-            
+
             # Check death
             if target.character.hp <= 0 and not target.is_dead:
-                target.is_dead = True
-                result["killed"] = True
-                self._log_event("death", {"combatant": target.name})
-        
+                if getattr(target.character, "use_death_saves", False):
+                    target.character.hp = 0
+                    self._apply_named_condition(target, "unconscious")
+                    result["downed"] = True
+                    if previous_hp <= 0:
+                        failures = 2 if crit else 1
+                        target.character.death_save_failures += failures
+                    if target.character.death_save_failures >= 3:
+                        target.is_dead = True
+                        result["killed"] = True
+                        self._log_event("death", {"combatant": target.name})
+                else:
+                    target.is_dead = True
+                    result["killed"] = True
+                    self._log_event("death", {"combatant": target.name})
+
         self._log_event("attack", result)
         self._check_combat_end()
         return result
@@ -241,11 +299,14 @@ class CombatManager:
             Result dictionary with effect messages
         """
         combatant = self.active_combatant
-        
+
         if combatant.ap < 1:
             return {"error": "Insufficient AP"}
-        
+        if not combatant.action_available or self._cannot_act(combatant):
+            return {"error": "No action available"}
+
         combatant.ap -= 1
+        combatant.action_available = False
         messages = item.apply_effects(combatant.character)
         
         result = {
@@ -269,7 +330,8 @@ class CombatManager:
         """
         target = self.combatants[target_index]
         target.conditions.append(condition)
-        
+        self._sync_character_condition_names(target)
+
         result = {
             "target": target.name,
             "condition": condition.name,
@@ -282,7 +344,10 @@ class CombatManager:
     def end_turn(self):
         """End the current turn and advance to next combatant."""
         self.active_combatant.ap = 0  # Spend remaining AP
-        
+        self.active_combatant.action_available = False
+        self.active_combatant.bonus_action_available = False
+        self.active_combatant.disengaged_until_turn_end = False
+
         # Advance turn
         self.current_turn += 1
         if self.current_turn >= len(self.combatants):
@@ -319,10 +384,12 @@ class CombatManager:
         from engine.core.spell import TargetType
         
         caster = self.active_combatant
-        
+
         # Check AP
         if caster.ap < 2:
             return {"error": "Insufficient AP (casting costs 2 AP)"}
+        if not caster.action_available or self._cannot_act(caster):
+            return {"error": "No action available"}
         
         # Get target
         target = None
@@ -335,10 +402,30 @@ class CombatManager:
         try:
             result = spell.cast(caster.character, target)
             caster.ap -= 2  # Deduct AP after successful cast
+            caster.action_available = False
             self._log_event("spell_cast", result)
             return result
         except ValueError as e:
             return {"error": str(e)}
+
+    def disengage(self) -> Dict:
+        combatant = self.active_combatant
+        if self._cannot_act(combatant) or not combatant.action_available:
+            return {"error": "No action available"}
+        combatant.action_available = False
+        combatant.disengaged_until_turn_end = True
+        combatant.ap = max(0, combatant.ap - 1)
+        result = {"action": "disengage", "combatant": combatant.name}
+        self._log_event("disengage", result)
+        return result
+
+    def move_combatant(self, dx: int, dy: int) -> Dict:
+        combatant = self.active_combatant
+        if combatant.movement_remaining <= 0 or self._cannot_move(combatant):
+            return {"error": "No movement remaining"}
+        combatant.movement_remaining = max(0, combatant.movement_remaining - max(abs(dx), abs(dy)))
+        self._log_event("move", {"combatant": combatant.name, "dx": dx, "dy": dy})
+        return {"action": "move", "combatant": combatant.name, "movement_remaining": combatant.movement_remaining}
     
     def _check_combat_end(self):
         """Check if combat has ended (one side eliminated)."""
@@ -359,6 +446,106 @@ class CombatManager:
             "round": self.round,
             "data": data
         })
+
+    def _sync_character_condition_names(self, combatant: Combatant) -> None:
+        names: List[str] = []
+        for condition in combatant.conditions:
+            if condition.name not in names:
+                names.append(condition.name)
+        for existing in list(getattr(combatant.character, "conditions", [])):
+            if existing not in names and existing not in {"unconscious"}:
+                names.append(existing)
+        combatant.character.conditions = names
+
+    def _apply_named_condition(self, combatant: Combatant, name: str, duration: int = 999) -> None:
+        if not combatant.has_condition(name):
+            combatant.conditions.append(Condition(name=name, duration=duration, effect=name))
+        self._sync_character_condition_names(combatant)
+
+    def _remove_named_condition(self, combatant: Combatant, name: str) -> None:
+        combatant.conditions = [condition for condition in combatant.conditions if condition.name.lower() != name.lower()]
+        combatant.character.conditions = [condition for condition in combatant.character.conditions if condition.lower() != name.lower()]
+
+    def _movement_speed(self, combatant: Combatant) -> int:
+        speed = 6
+        exhaustion = int(getattr(combatant.character, "exhaustion_level", 0) or 0)
+        if exhaustion >= 5 or combatant.has_condition("grappled") or combatant.has_condition("restrained"):
+            return 0
+        if exhaustion >= 2 or combatant.has_condition("prone"):
+            return max(0, speed // 2)
+        return speed
+
+    def _cannot_move(self, combatant: Combatant) -> bool:
+        return self._movement_speed(combatant) <= 0 or self._cannot_act(combatant)
+
+    def _cannot_act(self, combatant: Combatant) -> bool:
+        if combatant.is_dead:
+            return True
+        if combatant.character.hp <= 0:
+            return True
+        for blocked in ("incapacitated", "paralyzed", "stunned", "unconscious", "petrified"):
+            if combatant.has_condition(blocked):
+                return True
+        return False
+
+    def _attack_roll_state(self, attacker: Combatant, target: Combatant) -> Tuple[bool, bool]:
+        advantage = False
+        disadvantage = False
+        if attacker.has_condition("blinded") or attacker.has_condition("poisoned") or attacker.has_condition("frightened") or getattr(attacker.character, "exhaustion_level", 0) >= 3:
+            disadvantage = True
+        if attacker.has_condition("invisible"):
+            advantage = True
+        if target.has_condition("blinded") or target.has_condition("restrained") or target.has_condition("stunned") or target.has_condition("paralyzed") or target.has_condition("unconscious") or target.has_condition("prone"):
+            advantage = True
+        if target.has_condition("invisible"):
+            disadvantage = True
+        return advantage, disadvantage
+
+    def _resolve_death_save(self, combatant: Combatant) -> Dict:
+        if combatant.character.death_save_failures >= 3:
+            combatant.is_dead = True
+            return {"combatant": combatant.name, "result": "dead"}
+        if combatant.character.death_save_successes >= 3 or combatant.character.is_stable:
+            combatant.character.is_stable = True
+            return {"combatant": combatant.name, "result": "stable"}
+
+        roll = self.rng.randint(1, 20)
+        payload = {"combatant": combatant.name, "roll": roll}
+        if roll == 20:
+            combatant.character.hp = 1
+            combatant.character.death_save_successes = 0
+            combatant.character.death_save_failures = 0
+            combatant.character.is_stable = False
+            self._remove_named_condition(combatant, "unconscious")
+            payload["result"] = "revived"
+            return payload
+        if roll == 1:
+            combatant.character.death_save_failures += 2
+        elif roll >= 10:
+            combatant.character.death_save_successes += 1
+        else:
+            combatant.character.death_save_failures += 1
+
+        if combatant.character.death_save_failures >= 3:
+            combatant.is_dead = True
+            payload["result"] = "dead"
+        elif combatant.character.death_save_successes >= 3:
+            combatant.character.is_stable = True
+            payload["result"] = "stable"
+        else:
+            payload["result"] = "pending"
+        self._apply_named_condition(combatant, "unconscious")
+        return payload
+
+    def _resources_payload(self, combatant: Combatant) -> Dict[str, object]:
+        return {
+            "action_available": combatant.action_available,
+            "bonus_action_available": combatant.bonus_action_available,
+            "reaction_available": combatant.reaction_available,
+            "movement_remaining": combatant.movement_remaining,
+            "speed": combatant.speed,
+            "disengaged_until_turn_end": combatant.disengaged_until_turn_end,
+        }
     
     def enemy_turn(self, ai: Optional['EnemyAI'] = None) -> Dict:
         """

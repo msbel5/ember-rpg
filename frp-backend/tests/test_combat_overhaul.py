@@ -72,30 +72,36 @@ def test_attack_hostile_keyword_starts_combat():
 # --- Bug 2: Enemy fights back ---
 
 def test_enemy_attacks_back():
-    """After player attacks in combat, player hp may decrease (enemy counterattacks)."""
+    """After the player spends an action, the combat loop advances to enemy turns."""
     engine = make_engine()
     session = make_session(engine)
-    initial_hp = session.player.hp
+    session.player.ac = 1
 
     # Force a combat with a strong enemy that will likely hit back
     enemy = Character(
         name="StrongOrc", hp=50, max_hp=50,
         stats={"MIG": 18, "AGI": 14, "END": 16, "MND": 6, "INS": 8, "PRE": 6}
     )
+    enemy.initiative_bonus = -10
     engine._start_combat(session, [enemy])
+    engine._advance_combat_until_player_turn(session)
 
-    # Run several attacks — at least once, enemy should damage player
+    # Run several attacks — the enemy turn loop should eventually connect
     hp_decreased = False
     for _ in range(10):
         if not session.in_combat():
             break
+        if session.combat and session.combat.active_combatant.name != session.player.name:
+            engine._advance_combat_until_player_turn(session)
+            if not session.in_combat():
+                break
         pre_hp = session.player.hp
         engine.process_action(session, "attack")
         if session.player.hp < pre_hp:
             hp_decreased = True
             break
 
-    assert hp_decreased, "Enemy should hit back at least once in 10 rounds"
+    assert hp_decreased, "Enemy turn loop should be able to damage the player after their action"
 
 
 def test_combat_lasts_multiple_rounds():
@@ -125,7 +131,7 @@ def test_combat_lasts_multiple_rounds():
 # --- Bug 3: Movement blocked in combat ---
 
 def test_movement_blocked_in_combat():
-    """'move forward' during combat → returns combat warning, stays in combat."""
+    """Combat movement stays in combat and resolves through the combat movement rules."""
     engine = make_engine()
     session = make_session(engine)
 
@@ -138,10 +144,9 @@ def test_movement_blocked_in_combat():
 
     assert result.scene_type == SceneType.COMBAT, "Should stay in combat scene"
     assert session.dm_context.scene_type == SceneType.COMBAT, "Context should stay COMBAT"
-    # Should contain a warning about being in combat
-    warning_words = ["combat", "fight", "can't", "cannot", "middle"]
-    assert any(w in result.narrative.lower() for w in warning_words), \
-        f"Should warn about combat, got: {result.narrative}"
+    outcome_words = ["position", "blocking", "turn", "move", "reposition", "wall", "path"]
+    assert any(w in result.narrative.lower() for w in outcome_words), \
+        f"Should resolve combat movement through combat rules, got: {result.narrative}"
 
 
 def test_flee_allowed_in_combat():

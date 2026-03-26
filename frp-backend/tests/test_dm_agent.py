@@ -147,6 +147,14 @@ class TestPromptBuilder:
         prompt = agent.build_prompt(event, exploration_context)
         assert "Ancient inscription found." in prompt
 
+    def test_prompt_includes_passive_scores_and_non_fabrication_rule(self, exploration_context):
+        agent = DMAIAgent()
+        event = DMEvent(type=EventType.DISCOVERY, description="The corridor is quiet.")
+        prompt = agent.build_prompt(event, exploration_context)
+        assert "Passive Perception" in prompt
+        assert "Passive Investigation" in prompt
+        assert "Do not fabricate secret passages" in prompt
+
 
 class TestNarrate:
     """Test narrative generation."""

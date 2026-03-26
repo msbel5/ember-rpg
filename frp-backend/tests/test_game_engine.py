@@ -147,12 +147,12 @@ class TestHandleAttack:
         # Narrative is LLM-generated; verify it's non-empty and combat started
         assert len(result.narrative) > 10
 
-    def test_attack_starts_combat_without_resolving_opening_round(self, engine, warrior_session):
+    def test_attack_starts_combat_with_initiative_before_damage_to_enemies(self, engine, warrior_session):
         result = engine.process_action(warrior_session, "attack")
         enemies = [c for c in result.combat_state["combatants"] if c["name"] != warrior_session.player.name]
         assert enemies
         assert all(enemy["hp"] == enemy["max_hp"] for enemy in enemies)
-        assert warrior_session.player.hp == warrior_session.player.max_hp
+        assert result.combat_state["active"] in {warrior_session.player.name, *[enemy["name"] for enemy in enemies]}
 
     def test_attack_no_valid_target(self, engine, warrior_session):
         """When _find_target returns None, narrative says no target."""

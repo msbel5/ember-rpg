@@ -10,6 +10,17 @@ import random
 from engine.api.save_system import SaveSystem
 from engine.core.character import Character
 from engine.core.combat import CombatManager
+from engine.core.character_creation import (
+    CLASS_DEFAULT_SKILLS,
+    CLASS_SKILL_COUNTS,
+    CLASS_SKILL_OPTIONS,
+    CLASS_STAT_PRIORITIES,
+    CreationState,
+    assign_stats_to_class,
+    recommended_alignment_from_axes,
+    recommended_skills_for_class,
+    roll_stat_array,
+)
 from engine.core.progression import ProgressionSystem
 from engine.core.dm_agent import DMAIAgent, DMContext, DMEvent, SceneType, EventType
 from engine.core.item import Item, ItemType
@@ -35,7 +46,14 @@ from engine.world.entity import Entity, EntityType
 from engine.world.spatial_index import SpatialIndex
 from engine.world.viewport import Viewport
 from engine.world.action_points import ActionPointTracker, CLASS_AP, ACTION_COSTS
-from engine.world.skill_checks import roll_check, contested_check, SkillCheckResult, ability_modifier
+from engine.world.skill_checks import (
+    roll_check,
+    contested_check,
+    SkillCheckResult,
+    ability_modifier,
+    passive_score,
+    saving_throw,
+)
 from engine.world.crafting import CraftingSystem, ALL_RECIPES, CraftingRecipe, determine_quality
 from engine.world.behavior_tree import (
     BehaviorContext, create_npc_behavior_tree, Status as BTStatus,
@@ -75,6 +93,58 @@ WORKSTATION_ANCHORS = {
     "workbench": "shop",
     "kitchen": "tavern",
     "campfire": "campfire",
+}
+
+SOCIAL_ATTITUDE_DCS = {
+    "friendly": {
+        "no_risk": 5,
+        "minor_risk": 10,
+        "significant_sacrifice": 20,
+    },
+    "indifferent": {
+        "no_risk": 10,
+        "minor_risk": 15,
+        "significant_sacrifice": 20,
+    },
+    "hostile": {
+        "no_risk": 20,
+        "minor_risk": 25,
+        "significant_sacrifice": 999,
+    },
+}
+
+DEFAULT_NPC_ATTITUDE = {
+    "merchant": "indifferent",
+    "blacksmith": "indifferent",
+    "innkeeper": "indifferent",
+    "guard": "indifferent",
+    "quest_giver": "indifferent",
+    "priest": "friendly",
+    "healer": "friendly",
+    "sage": "friendly",
+    "beggar": "indifferent",
+    "spy": "hostile",
+}
+
+DEFAULT_NPC_ALIGNMENT = {
+    "merchant": "LN",
+    "blacksmith": "LN",
+    "innkeeper": "NG",
+    "guard": "LG",
+    "quest_giver": "NG",
+    "priest": "LG",
+    "healer": "NG",
+    "sage": "TN",
+    "beggar": "CN",
+    "spy": "NE",
+}
+
+THINK_TOPIC_SKILLS = {
+    "history": {"king", "empire", "war", "ruin", "lord", "queen", "history", "geçmiş", "tarih"},
+    "arcana": {"magic", "spell", "glyph", "arcane", "rune", "mana", "büyü", "tılsım", "rün"},
+    "religion": {"god", "saint", "temple", "holy", "prayer", "faith", "tanrı", "tapınak", "kutsal"},
+    "nature": {"forest", "beast", "wolf", "herb", "road", "river", "tree", "orman", "kurt", "nehir"},
+    "investigation": {"clue", "murder", "crime", "who", "why", "how", "ipuç", "cinayet", "neden"},
 }
 
 ROLE_PRODUCTION = {
@@ -180,6 +250,12 @@ class GameEngine:
         player_name: str,
         player_class: str = "warrior",
         location: Optional[str] = None,
+        *,
+        alignment: Optional[str] = None,
+        skill_proficiencies: Optional[List[str]] = None,
+        stats: Optional[Dict[str, int]] = None,
+        creation_answers: Optional[List[Dict[str, Any]]] = None,
+        creation_profile: Optional[Dict[str, Any]] = None,
     ) -> GameSession:
         """
         Create a new game session for a player.
@@ -201,21 +277,61 @@ class GameEngine:
         class_hp = {"warrior": 20, "rogue": 16, "mage": 12, "priest": 16}
         class_sp = {"warrior": 0,  "rogue": 0,  "mage": 16, "priest": 12}
 
-        stats = class_stats.get(player_class.lower(), class_stats["warrior"])
-        hp    = class_hp.get(player_class.lower(), 16)
-        sp    = class_sp.get(player_class.lower(), 0)
+        requested_class = str(player_class or "warrior").lower()
+        player_class = {
+            "fighter": "warrior",
+            "cleric": "priest",
+            "thief": "rogue",
+            "wizard": "mage",
+        }.get(requested_class, requested_class)
+        unknown_class = player_class not in class_stats
+        if unknown_class:
+            player_class = "warrior"
+        class_stats_template = class_stats.get(player_class, class_stats["warrior"])
+        assigned_stats = dict(stats or {})
+        if assigned_stats:
+            for key in ("MIG", "AGI", "END", "MND", "INS", "PRE"):
+                assigned_stats.setdefault(key, 10)
+        else:
+            assigned_stats = dict(class_stats_template)
+        hp    = 16 if unknown_class else class_hp.get(player_class, 16)
+        sp    = class_sp.get(player_class, 0)
+
+        creation_profile = dict(creation_profile or {})
+        recommended_axes = dict(creation_profile.get("alignment_axes") or {})
+        effective_alignment = alignment or recommended_alignment_from_axes(recommended_axes) if recommended_axes else (alignment or "TN")
+        default_skills = recommended_skills_for_class(
+            {"skill_weights": creation_profile.get("skill_weights", {})},
+            player_class,
+        )
+        selected_skills = list(skill_proficiencies or default_skills or CLASS_DEFAULT_SKILLS.get(player_class, []))
+        allowed_skills = set(CLASS_SKILL_OPTIONS.get(player_class, []))
+        selected_skills = [skill for skill in selected_skills if skill in allowed_skills][: CLASS_SKILL_COUNTS.get(player_class, 2)]
+        if len(selected_skills) < CLASS_SKILL_COUNTS.get(player_class, 2):
+            for fallback in CLASS_DEFAULT_SKILLS.get(player_class, []):
+                if fallback in allowed_skills and fallback not in selected_skills:
+                    selected_skills.append(fallback)
+                if len(selected_skills) >= CLASS_SKILL_COUNTS.get(player_class, 2):
+                    break
 
         player = Character(
             name=player_name,
-            classes={player_class.lower(): 1},
-            stats=stats,
+            classes={player_class: 1},
+            stats=assigned_stats,
             hp=hp, max_hp=hp,
             spell_points=sp, max_spell_points=sp,
             level=1, xp=0,
+            skill_proficiencies=selected_skills,
+            alignment=effective_alignment or "TN",
+            creation_answers=list(creation_answers or []),
+            creation_profile=creation_profile,
+            use_death_saves=True,
         )
+        player.set_alignment_from_axes() if not alignment and recommended_axes else None
+        player.sync_derived_progression()
 
         if location is None:
-            loc, _ = random.choice(_OPENING_SCENES)
+            loc, _ = _OPENING_SCENES[0]
         else:
             loc = location
 
@@ -287,10 +403,12 @@ class GameEngine:
 
         # Define NPC archetypes by location type
         if any(w in loc_lower for w in ["tavern", "inn"]):
-            roles = [("innkeeper", "merchant_guild"), ("guard", "harbor_guard"),
-                     ("quest_giver", "merchant_guild"), ("beggar", "thieves_guild")]
+            roles = [("innkeeper", "merchant_guild"), ("merchant", "merchant_guild"),
+                     ("guard", "harbor_guard"), ("quest_giver", "merchant_guild"),
+                     ("beggar", "thieves_guild")]
         elif any(w in loc_lower for w in ["market", "harbor", "town", "city"]):
-            roles = [("merchant", "merchant_guild"), ("guard", "harbor_guard"),
+            roles = [("merchant", "merchant_guild"), ("innkeeper", "merchant_guild"),
+                     ("guard", "harbor_guard"),
                      ("blacksmith", "mountain_dwarves"), ("beggar", "thieves_guild"),
                      ("priest", "temple_order")]
         elif any(w in loc_lower for w in ["forest", "road", "path"]):
@@ -312,7 +430,7 @@ class GameEngine:
 
             # Keep key NPCs reachable but NOT adjacent to spawn (min_dist=2 prevents blocking)
             if role in {"merchant", "innkeeper"}:
-                pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=4, min_dist=2)
+                pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=4, min_dist=1)
             else:
                 role_anchor = {
                     "merchant": "shop",
@@ -385,6 +503,8 @@ class GameEngine:
                 schedule=schedule,
                 job=role,
                 disposition="friendly" if role != "spy" else "neutral",
+                attitude=DEFAULT_NPC_ATTITUDE.get(role, "indifferent"),
+                alignment=DEFAULT_NPC_ALIGNMENT.get(role, "TN"),
                 hp=12 if role == "guard" else 8,
                 max_hp=12 if role == "guard" else 8,
             )
@@ -408,6 +528,9 @@ class GameEngine:
                 "max_hp": entity.max_hp,
                 "alive": entity.alive,
                 "blocking": entity.blocking,
+                "attitude": entity.attitude,
+                "alignment": entity.alignment,
+                "alignment_axes": dict(getattr(entity, "alignment_axes", {}) or {}),
                 "entity_ref": entity,  # reference to the Entity object
             }
             session.sync_entity_record(npc_id, entity)
@@ -514,6 +637,264 @@ class GameEngine:
             return 0.0
         return ((session.game_time.day - 1) * 24) + session.game_time.hour + (session.game_time.minute / 60.0)
 
+    def _player_skill_bonus(self, session: GameSession, skill: str) -> int:
+        try:
+            return session.player.skill_bonus(skill)
+        except Exception:
+            fallback_ability = Character.SKILL_STATS.get(skill, "MIG")
+            return ability_modifier(session.player.stats.get(fallback_ability, 10))
+
+    def _roll_player_skill_check(
+        self,
+        session: GameSession,
+        skill: str,
+        dc: int,
+        *,
+        advantage: bool = False,
+        disadvantage: bool = False,
+    ) -> SkillCheckResult:
+        governing_stat = Character.SKILL_STATS.get(skill, "MIG")
+        ability_score = session.player.stats.get(governing_stat, 10)
+        legacy_bonus = int((session.player.skills or {}).get(skill, 0))
+        proficient = session.player.has_proficiency(skill)
+        expertise = session.player.has_expertise(skill)
+        modifier_bonus = legacy_bonus if skill in Character.DND_SKILL_STATS else 0
+        result = roll_check(
+            ability_score,
+            dc,
+            proficiency_bonus=session.player.proficiency_bonus if proficient or expertise else 0,
+            expertise=expertise,
+            modifier_bonus=modifier_bonus,
+            advantage=advantage,
+            disadvantage=disadvantage,
+        )
+        if governing_stat == "AGI":
+            result = self._apply_check_penalty(result, session.agi_check_penalty())
+        if session.player.exhaustion_level >= 1 and result.critical not in {"success", "failure"}:
+            result = roll_check(
+                ability_score,
+                dc,
+                proficiency_bonus=session.player.proficiency_bonus if proficient or expertise else 0,
+                expertise=expertise,
+                modifier_bonus=modifier_bonus,
+                advantage=False,
+                disadvantage=True,
+            )
+            if governing_stat == "AGI":
+                result = self._apply_check_penalty(result, session.agi_check_penalty())
+        return result
+
+    def _npc_skill_bonus(self, entity: Dict[str, Any], skill: str) -> int:
+        skill_lower = str(skill or "").lower().replace(" ", "_")
+        if skill_lower in {"insight", "perception", "investigation"}:
+            stat_key = Character.DND_SKILL_STATS.get(skill_lower, "INS")
+            base = ability_modifier(int(entity.get("stats", {}).get(stat_key, 10)))
+            legacy = int((entity.get("skills") or {}).get(skill_lower, 0))
+            return base + legacy
+        return int((entity.get("skills") or {}).get(skill_lower, 0))
+
+    def _entity_attitude(self, entity: Dict[str, Any]) -> str:
+        return str(entity.get("attitude") or DEFAULT_NPC_ATTITUDE.get(entity.get("role", ""), "indifferent")).lower()
+
+    def _set_entity_attitude(self, session: GameSession, entity_id: str, attitude: str) -> None:
+        if entity_id not in session.entities:
+            return
+        canonical = attitude.lower()
+        session.entities[entity_id]["attitude"] = canonical
+        if canonical == "hostile":
+            session.entities[entity_id]["disposition"] = "hostile"
+        elif canonical == "friendly" and session.entities[entity_id].get("disposition") != "hostile":
+            session.entities[entity_id]["disposition"] = "friendly"
+        entity_ref = session.entities[entity_id].get("entity_ref")
+        if entity_ref is not None:
+            entity_ref.attitude = canonical
+            if canonical == "hostile":
+                entity_ref.disposition = "hostile"
+            elif canonical == "friendly" and getattr(entity_ref, "disposition", "friendly") != "hostile":
+                entity_ref.disposition = "friendly"
+            session.sync_entity_record(entity_id, entity_ref)
+
+    def _social_dc(self, entity: Dict[str, Any], severity: str = "minor_risk") -> int:
+        attitude = self._entity_attitude(entity)
+        return SOCIAL_ATTITUDE_DCS.get(attitude, SOCIAL_ATTITUDE_DCS["indifferent"]).get(severity, 15)
+
+    def _shift_attitude_step(self, session: GameSession, entity_id: str, delta: int) -> str:
+        order = ["hostile", "indifferent", "friendly"]
+        current = self._entity_attitude(session.entities.get(entity_id, {}))
+        index = order.index(current) if current in order else 1
+        index = max(0, min(len(order) - 1, index + delta))
+        updated = order[index]
+        self._set_entity_attitude(session, entity_id, updated)
+        return updated
+
+    def _conversation_target_entity(self, session: GameSession) -> Optional[tuple[str, Dict[str, Any]]]:
+        npc_id = session.conversation_state.get("npc_id")
+        if npc_id and npc_id in session.entities:
+            return npc_id, session.entities[npc_id]
+        npc_name = session.conversation_state.get("npc_name")
+        if npc_name:
+            return self._find_entity_by_name(session, npc_name)
+        return None
+
+    def _clear_conversation_if_invalid(self, session: GameSession) -> None:
+        if session.in_combat():
+            session.clear_conversation_target()
+            return
+        target = self._conversation_target_entity(session)
+        if target is None:
+            session.clear_conversation_target()
+            return
+        entity_id, entity = target
+        if not entity.get("alive", True):
+            session.clear_conversation_target()
+            return
+        pos = entity.get("position", [0, 0])
+        if max(abs(session.position[0] - pos[0]), abs(session.position[1] - pos[1])) > 2:
+            session.clear_conversation_target()
+
+    def _record_eavesdroppers(self, session: GameSession, speaker_entity_id: Optional[str], transcript: str) -> None:
+        if not transcript:
+            return
+        for entity_id, entity in session.entities.items():
+            if entity_id == speaker_entity_id:
+                continue
+            if not entity.get("alive", True):
+                continue
+            pos = entity.get("position", [0, 0])
+            if max(abs(session.position[0] - pos[0]), abs(session.position[1] - pos[1])) > 2:
+                continue
+            session.npc_memory.record_interaction(
+                entity_id,
+                f"Overheard: {transcript[:120]}",
+                "neutral",
+                session.game_time.to_string() if session.game_time else "Day 1, 08:00 (morning)",
+            )
+            session.npc_memory.get_memory(entity_id).add_known_fact(f"Overheard the player say: {transcript[:120]}")
+
+    def _apply_alignment_shift(self, session: GameSession, law_delta: int = 0, good_delta: int = 0) -> None:
+        axes = dict(getattr(session.player, "alignment_axes", {}) or {})
+        axes["law_chaos"] = max(-100, min(100, int(axes.get("law_chaos", 0)) + int(law_delta)))
+        axes["good_evil"] = max(-100, min(100, int(axes.get("good_evil", 0)) + int(good_delta)))
+        session.player.alignment_axes = axes
+        session.player.set_alignment_from_axes()
+
+    def _apply_hidden_reveals(self, session: GameSession, mode: str) -> List[str]:
+        reveals: List[str] = []
+        passives = getattr(session.player, "passives", {})
+        for entity_id, entity in session.entities.items():
+            if entity.get("revealed"):
+                continue
+            hidden_kind = entity.get("hidden_kind")
+            if not hidden_kind:
+                continue
+            target_pos = entity.get("position", [0, 0])
+            if max(abs(session.position[0] - target_pos[0]), abs(session.position[1] - target_pos[1])) > 2:
+                continue
+            if mode == "passive":
+                if entity.get("perception_dc") is not None and passives.get("perception", 0) >= int(entity["perception_dc"]):
+                    entity["revealed"] = True
+                    reveals.append(f"You passively notice {entity.get('name', 'something hidden')}.")
+            elif mode == "search":
+                if entity.get("investigation_dc") is not None and passives.get("investigation", 0) >= int(entity["investigation_dc"]):
+                    entity["revealed"] = True
+                    reveals.append(f"Your search reveals {entity.get('name', 'a hidden detail')}.")
+        return reveals
+
+    def _combat_player_index(self, combat: CombatManager, player_name: str) -> Optional[int]:
+        return next((index for index, combatant in enumerate(combat.combatants) if combatant.name == player_name), None)
+
+    def _combat_entity_id(self, combatant) -> Optional[str]:
+        return getattr(combatant.character, "_entity_id", None)
+
+    def _sync_combatant_world_state(self, session: GameSession, combatant) -> None:
+        entity_id = self._combat_entity_id(combatant)
+        if not entity_id or entity_id not in session.entities:
+            return
+        entity = session.entities[entity_id]
+        entity["hp"] = combatant.character.hp
+        entity["max_hp"] = combatant.character.max_hp
+        entity["alive"] = not combatant.is_dead
+        entity["blocking"] = not combatant.is_dead
+        entity["conditions"] = list(getattr(combatant.character, "conditions", []))
+        entity_ref = entity.get("entity_ref")
+        if entity_ref is not None:
+            entity_ref.hp = combatant.character.hp
+            entity_ref.max_hp = combatant.character.max_hp
+            entity_ref.alive = not combatant.is_dead
+            entity_ref.blocking = not combatant.is_dead
+            session.sync_entity_record(entity_id, entity_ref)
+
+    def _sync_all_combat_world_state(self, session: GameSession, combat: Optional[CombatManager]) -> None:
+        if combat is None:
+            return
+        for combatant in combat.combatants:
+            self._sync_combatant_world_state(session, combatant)
+        session.sync_player_state()
+
+    def _advance_combat_until_player_turn(self, session: GameSession) -> List[str]:
+        if not session.in_combat() or session.combat is None:
+            return []
+        combat = session.combat
+        narrative_parts: List[str] = []
+        player_name = session.player.name
+        safety = 0
+        while not combat.combat_ended and combat.active_combatant.name != player_name:
+            enemy = combat.active_combatant
+            result = combat.enemy_turn()
+            if result.get("action") == "attack" or "hit" in result:
+                if result.get("hit"):
+                    narrative_parts.append(self._build_enemy_combat_narrative(session, enemy.character, True, result.get("damage", 0)))
+                else:
+                    narrative_parts.append(self._build_enemy_combat_narrative(session, enemy.character, False, 0))
+            elif result.get("action") == "flee":
+                narrative_parts.append(f"{enemy.name} flees the battle.")
+            combat.end_turn()
+            safety += 1
+            if safety > 20:
+                break
+        self._sync_all_combat_world_state(session, combat)
+        return narrative_parts
+
+    def _combatant_position(self, session: GameSession, combatant) -> tuple[int, int]:
+        entity_id = self._combat_entity_id(combatant)
+        if entity_id and entity_id in session.entities:
+            pos = session.entities[entity_id].get("position", session.position)
+            return int(pos[0]), int(pos[1])
+        if combatant.name == session.player.name:
+            return int(session.position[0]), int(session.position[1])
+        return int(session.position[0]), int(session.position[1])
+
+    def _opportunity_attack_messages(self, session: GameSession, old_pos: tuple[int, int], new_pos: tuple[int, int]) -> List[str]:
+        if not session.combat:
+            return []
+        combat = session.combat
+        player_idx = self._combat_player_index(combat, session.player.name)
+        if player_idx is None:
+            return []
+        messages: List[str] = []
+        for combatant in combat.combatants:
+            if combatant.name == session.player.name or combatant.is_dead:
+                continue
+            if not getattr(combatant, "reaction_available", True):
+                continue
+            if getattr(combat.active_combatant, "disengaged_until_turn_end", False):
+                continue
+            cpos = self._combatant_position(session, combatant)
+            old_adj = max(abs(old_pos[0] - cpos[0]), abs(old_pos[1] - cpos[1])) <= 1
+            new_adj = max(abs(new_pos[0] - cpos[0]), abs(new_pos[1] - cpos[1])) <= 1
+            if old_adj and not new_adj:
+                combatant.reaction_available = False
+                saved_turn = combat.current_turn
+                combat.current_turn = combat.combatants.index(combatant)
+                result = combat.attack(player_idx)
+                combat.current_turn = saved_turn
+                if result.get("hit"):
+                    messages.append(f"{combatant.name} lashes out with an opportunity attack for {result.get('damage', 0)} damage.")
+                else:
+                    messages.append(f"{combatant.name} swings as you withdraw, but misses.")
+        self._sync_all_combat_world_state(session, combat)
+        return messages
+
     def process_action(self, session: GameSession, input_text: str) -> ActionResult:
         """
         Process a player's natural language action.
@@ -527,6 +908,22 @@ class GameEngine:
         """
         session.ensure_consistency()
         action = self.parser.parse(input_text)
+        if action.intent == ActionIntent.UNKNOWN:
+            target_type = session.conversation_state.get("target_type")
+            if target_type == "npc" and input_text.strip():
+                action = ParsedAction(
+                    intent=ActionIntent.ADDRESS,
+                    raw_input=input_text.strip(),
+                    target=session.conversation_state.get("npc_name"),
+                    action_detail=input_text.strip(),
+                )
+            elif target_type == "self" and input_text.strip():
+                action = ParsedAction(
+                    intent=ActionIntent.THINK,
+                    raw_input=input_text.strip(),
+                    target=input_text.strip(),
+                    action_detail=input_text.strip(),
+                )
 
         system_handlers = {
             ActionIntent.SAVE_GAME: self._handle_save_game,
@@ -546,13 +943,17 @@ class GameEngine:
             ActionIntent.EXAMINE:    self._handle_examine,
             ActionIntent.LOOK:       self._handle_look,
             ActionIntent.TALK:       self._handle_talk,
+            ActionIntent.ADDRESS:    self._handle_address,
             ActionIntent.ACCEPT_QUEST: self._handle_accept_quest,
             ActionIntent.TURN_IN_QUEST: self._handle_turn_in_quest,
             ActionIntent.REST:       self._handle_rest,
+            ActionIntent.SHORT_REST: self._handle_short_rest,
+            ActionIntent.LONG_REST:  self._handle_long_rest,
             ActionIntent.MOVE:       self._handle_move,
             ActionIntent.OPEN:       self._handle_open,
             ActionIntent.TRADE:      self._handle_trade,
             ActionIntent.FLEE:       self._handle_flee,
+            ActionIntent.DISENGAGE:  self._handle_disengage,
             ActionIntent.INVENTORY:  self._handle_inventory,
             ActionIntent.PICK_UP:    self._handle_pickup,
             ActionIntent.DROP:       self._handle_drop,
@@ -563,6 +964,9 @@ class GameEngine:
             ActionIntent.STEAL:      self._handle_steal,
             ActionIntent.PERSUADE:   self._handle_persuade,
             ActionIntent.INTIMIDATE: self._handle_intimidate,
+            ActionIntent.BRIBE:      self._handle_bribe,
+            ActionIntent.DECEIVE:    self._handle_deceive,
+            ActionIntent.THINK:      self._handle_think,
             ActionIntent.SNEAK:      self._handle_sneak,
             ActionIntent.CLIMB:      self._handle_climb,
             ActionIntent.LOCKPICK:   self._handle_lockpick,
@@ -597,7 +1001,11 @@ class GameEngine:
         skip_world_tick = bool(result.state_changes.pop("_skip_world_tick", False)) if result.state_changes else False
 
         if not skip_world_tick:
-            world_events = self._world_tick(session, minutes=world_minutes, refresh_ap=(action.intent == ActionIntent.REST))
+            world_events = self._world_tick(
+                session,
+                minutes=world_minutes,
+                refresh_ap=(action.intent in {ActionIntent.REST, ActionIntent.SHORT_REST, ActionIntent.LONG_REST}),
+            )
             self._merge_world_events(session, result, world_events)
 
         pending_ap_after = result.state_changes.pop("_ap_after_world_tick", None) if result.state_changes else None
@@ -615,6 +1023,7 @@ class GameEngine:
             session.ap_tracker.refresh()
             result.narrative = f"{result.narrative} (New turn — AP refreshed)"
 
+        self._clear_conversation_if_invalid(session)
         session.sync_player_state()
         return result
 
@@ -637,6 +1046,13 @@ class GameEngine:
         # If already in combat, target existing enemy instead of spawning new.
         if session.in_combat() and session.combat:
             combat = session.combat
+            if combat.active_combatant.name != session.player.name:
+                return ActionResult(
+                    narrative=f"It is {combat.active_combatant.name}'s turn.",
+                    scene_type=session.dm_context.scene_type,
+                    combat_state=self._combat_state(combat),
+                    state_changes={"_skip_world_tick": True},
+                )
             target_idx = self._find_target(combat, action.target, exclude=session.player.name)
             if target_idx is None:
                 return ActionResult(
@@ -650,7 +1066,12 @@ class GameEngine:
             enemy = self._character_from_world_entity(world_target_id, world_target)
             if enemy is not None:
                 self._start_combat(session, [enemy])
-                return self._build_combat_start_result(session, [enemy])
+                start_result = self._build_combat_start_result(session, [enemy])
+                enemy_turns = self._advance_combat_until_player_turn(session)
+                if enemy_turns:
+                    start_result.narrative = f"{start_result.narrative}\n" + "\n".join(enemy_turns)
+                    start_result.combat_state = self._combat_state(session.combat)
+                return start_result
 
         if not in_active_combat and action.target and found_world_target is None and not any(kw in target_lower for kw in hostile_keywords):
             # Non-hostile target → creative DM response
@@ -677,7 +1098,12 @@ class GameEngine:
         if not action.target or any(kw in target_lower for kw in hostile_keywords):
             enemy = self._spawn_enemy(session.player.level, preferred_name=action.target)
             self._start_combat(session, [enemy])
-            return self._build_combat_start_result(session, [enemy])
+            start_result = self._build_combat_start_result(session, [enemy])
+            enemy_turns = self._advance_combat_until_player_turn(session)
+            if enemy_turns:
+                start_result.narrative = f"{start_result.narrative}\n" + "\n".join(enemy_turns)
+                start_result.combat_state = self._combat_state(session.combat)
+            return start_result
 
         return ActionResult(
             narrative=f"There's no '{action.target}' here to attack.",
@@ -769,11 +1195,12 @@ class GameEngine:
 
     def _build_combat_start_result(self, session: GameSession, enemies: List[Character]) -> ActionResult:
         enemy_names = ", ".join(enemy.name for enemy in enemies) or "an enemy"
-        fallback = f"Combat begins against {enemy_names}. You act first."
+        active_name = session.combat.active_combatant.name if session.combat and not session.combat.combat_ended else session.player.name
+        fallback = f"Combat begins against {enemy_names}. Initiative is rolled; {active_name} acts first."
         try:
             desc = (
                 f"{session.player.name} enters combat with {enemy_names} in {session.dm_context.location}. "
-                f"The fight starts now, and {session.player.name} has the first turn."
+                f"The fight starts now. Initiative is rolled and {active_name} has the first turn."
             )
             event = DMEvent(
                 type=EventType.COMBAT_START,
@@ -796,7 +1223,7 @@ class GameEngine:
         )
 
     def _execute_attack_round(self, session: GameSession, combat: CombatManager, target_idx: int) -> ActionResult:
-        """Execute player's attack and then all living enemy counterattacks."""
+        """Execute the player's attack, then advance combat until the player's next turn."""
         weapon = self._build_weapon_item(session.equipment.get("weapon"))
         try:
             result = combat.attack(target_idx, weapon=weapon) if weapon else combat.attack(target_idx)
@@ -925,58 +1352,11 @@ class GameEngine:
                         "Nearby guards heard the commotion! Two more guards rush toward you, weapons drawn!"
                     )
 
-        # --- Bug 2: Enemy counterattack after player's action ---
-        if not combat.combat_ended:
-            from engine.core.enemy_ai import EnemyAI
-            enemy_ai = EnemyAI()
-            living_enemies = [
-                c for c in combat.combatants
-                if not c.is_dead and c.name != session.player.name
-            ]
-            player_idx = next(
-                (i for i, c in enumerate(combat.combatants) if c.name == session.player.name), None
-            )
-            if player_idx is not None:
-                for enemy_combatant in living_enemies:
-                    if combat.combat_ended:
-                        break
-                    # Temporarily set active turn to enemy for attack resolution
-                    saved_turn = combat.current_turn
-                    combat.current_turn = combat.combatants.index(enemy_combatant)
-                    enemy_combatant.ap = 3  # Give enemy AP for this counterattack
-                    enemy_result = combat.attack(player_idx)
-                    combat.current_turn = saved_turn
-                    if enemy_result.get("hit"):
-                        raw_enemy_damage = enemy_result.get("damage", 0)
-                        # Body part hit location for player damage
-                        player_hit_part = roll_hit_location()
-                        player_armor = getattr(session.player, 'equipped_armor', [])
-                        player_armor_red = calculate_armor_reduction(player_hit_part, player_armor)
-                        effective_dmg = max(0, raw_enemy_damage - player_armor_red)
-                        # Apply to body part tracker
-                        session.body_tracker.apply_damage(player_hit_part, effective_dmg)
-                        session.player.hp = max(
-                            0,
-                            min(session.player.max_hp, session.player.hp + raw_enemy_damage - effective_dmg),
-                        )
-                        # Sync the combat combatant's hp too
-                        player_combatant = combat.combatants[player_idx]
-                        player_combatant.character.hp = session.player.hp
-                        narrative_parts.append(
-                            self._build_enemy_combat_narrative(session, enemy_combatant, hit=True, damage=effective_dmg)
-                        )
-                        if player_armor_red > 0 or player_hit_part:
-                            armor_note = f" (armor absorbed {player_armor_red})" if player_armor_red > 0 else ""
-                            narrative_parts.append(f"[Hit your {player_hit_part}{armor_note}]")
-                    elif enemy_result.get("fumble") or not enemy_result.get("hit"):
-                        narrative_parts.append(
-                            self._build_enemy_combat_narrative(session, enemy_combatant, hit=False, damage=0)
-                        )
-
-                    if session.player.hp <= 0:
-                        narrative_parts.append("You have fallen in combat... darkness closes in.")
-                        combat.combat_ended = True
-                        break
+        self._sync_all_combat_world_state(session, combat)
+        if not combat.combat_ended and combat.active_combatant.name == session.player.name:
+            combat.end_turn()
+        narrative_parts.extend(self._advance_combat_until_player_turn(session))
+        self._sync_all_combat_world_state(session, combat)
 
         narrative_text = " ".join(narrative_parts)
         combat_state = self._combat_state(combat)
@@ -1151,8 +1531,10 @@ class GameEngine:
             "world_context": world_context,
         })
         dm_flavor = self.dm.narrate(event, session.dm_context, self.llm)
-
+        reveal_lines = self._apply_hidden_reveals(session, "passive")
         narrative = f"{deterministic_scene}\n\n{dm_flavor}"
+        if reveal_lines:
+            narrative = f"{narrative}\n" + "\n".join(reveal_lines)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_examine(self, session: GameSession, action: ParsedAction) -> ActionResult:
@@ -1175,6 +1557,9 @@ class GameEngine:
             "target": target,
         })
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        reveal_lines = self._apply_hidden_reveals(session, "search")
+        if reveal_lines:
+            narrative = f"{narrative}\n" + "\n".join(reveal_lines)
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_talk(self, session: GameSession, action: ParsedAction) -> ActionResult:
@@ -1201,9 +1586,11 @@ class GameEngine:
         npc_behavior = {}
         quest_offer_note = ""
         resolved_name = target
+        attitude = "indifferent"
         if found_entity:
             npc_id, entity = found_entity
             resolved_name = entity.get("name", target)
+            attitude = self._entity_attitude(entity)
             memory = session.npc_memory.get_memory(npc_id, npc_name=resolved_name)
             if memory and len(memory.conversations) > 0:
                 prior_context["prior_interactions"] = len(memory.conversations)
@@ -1237,6 +1624,7 @@ class GameEngine:
             f"Generate {resolved_name}'s response as they would actually speak, "
             f"in character with their personality.\n"
             f"NPC mood: {npc_mood}.\n"
+            f"NPC attitude: {attitude}.\n"
             f"{world_context}"
         )
         event_data = {
@@ -1254,6 +1642,7 @@ class GameEngine:
         event = DMEvent(type=EventType.DIALOGUE, description=desc, data=event_data)
         self.dm.transition(session.dm_context, SceneType.DIALOGUE)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        session.set_conversation_target("npc", npc_id=npc_id, npc_name=resolved_name)
 
         # Record this interaction against in-game time for deterministic memory ordering.
         memory_time = session.game_time.to_string() if session.game_time else "Day 1, 08:00 (morning)"
@@ -1262,9 +1651,83 @@ class GameEngine:
             action.raw_input[:200],
             "neutral",
             memory_time,
+            facts=[f"Attitude: {attitude}", f"Conversation target: {resolved_name}"],
         )
+        self._record_eavesdroppers(session, npc_id, action.raw_input[:200])
 
         return ActionResult(narrative=f"{narrative}{quest_offer_note}", scene_type=session.dm_context.scene_type)
+
+    def _handle_address(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        target = action.target or session.conversation_state.get("npc_name")
+        if not target:
+            session.set_conversation_target("dm")
+            return self._handle_unknown(session, ParsedAction(ActionIntent.UNKNOWN, action.raw_input))
+        prox_fail = self._check_entity_proximity(session, target, "talk")
+        if prox_fail:
+            session.clear_conversation_target()
+            return prox_fail
+        ap_fail = self._check_ap(session, "talk")
+        if ap_fail:
+            return ap_fail
+        found = self._find_entity_by_name(session, target)
+        if found is None:
+            session.clear_conversation_target()
+            return ActionResult(
+                narrative=f"{target} is no longer close enough to hear you.",
+                scene_type=session.dm_context.scene_type,
+            )
+        npc_id, entity = found
+        resolved_name = entity.get("name", target)
+        session.set_conversation_target("npc", npc_id=npc_id, npc_name=resolved_name)
+        memory_time = session.game_time.to_string() if session.game_time else "Day 1, 08:00 (morning)"
+        session.npc_memory.record_interaction(
+            npc_id,
+            action.raw_input[:200],
+            "neutral",
+            memory_time,
+            facts=[f"Conversation target: {resolved_name}"],
+        )
+        self._record_eavesdroppers(session, npc_id, action.raw_input[:200])
+        event = DMEvent(
+            type=EventType.DIALOGUE,
+            description=f"{session.player.name} says to {resolved_name}: {action.raw_input}",
+            data={
+                "player_name": session.player.name,
+                "npc_name": resolved_name,
+                "player_input": action.raw_input,
+                "conversation_target": resolved_name,
+                "world_context": self._build_world_context(session),
+            },
+        )
+        self.dm.transition(session.dm_context, SceneType.DIALOGUE)
+        narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+
+    def _handle_think(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        topic = (action.target or action.action_detail or "your situation").strip()
+        ap_fail = self._check_ap(session, "examine")
+        if ap_fail:
+            return ap_fail
+        session.set_conversation_target("self", npc_name="self")
+        lowered = topic.lower()
+        chosen_skill = "history"
+        for skill, keywords in THINK_TOPIC_SKILLS.items():
+            if any(keyword in lowered for keyword in keywords):
+                chosen_skill = skill
+                break
+        dc = 5 if any(word in lowered for word in ("town", "road", "guard", "merchant", "common", "bread")) else 15
+        if any(word in lowered for word in ("secret", "cult", "artifact", "true name", "gizli", "sır")):
+            dc = 25
+        result = self._roll_player_skill_check(session, chosen_skill, dc)
+        check_text = self._format_skill_check(result, chosen_skill.title(), dc)
+        if result.success:
+            deterministic = f"You think through what you know about {topic}. Fragments of {chosen_skill} knowledge align into a useful conclusion."
+        else:
+            deterministic = f"You search your memory about {topic}, but nothing certain comes to mind."
+        return ActionResult(
+            narrative=f"{check_text}\n{deterministic}",
+            scene_type=session.dm_context.scene_type,
+        )
 
     def _handle_accept_quest(self, session: GameSession, action: ParsedAction) -> ActionResult:
         offer = self._match_quest_offer(session, action.target or "")
@@ -1389,20 +1852,30 @@ class GameEngine:
         return {}
 
     def _handle_rest(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        return self._handle_short_rest(session, action)
+
+    def _handle_short_rest(self, session: GameSession, action: ParsedAction) -> ActionResult:
         if session.in_combat():
             return ActionResult(
                 narrative="You cannot rest in the middle of a fight!",
                 scene_type=session.dm_context.scene_type,
             )
 
-        heal = max(1, session.player.max_hp // 4)
-        session.player.hp = min(session.player.hp + heal, session.player.max_hp)
+        total_healed = 0
+        end_mod = session.player.stat_modifier("END")
+        spent_dice = 0
+        while session.player.hp < session.player.max_hp and session.player.hit_dice_remaining > 0:
+            roll = random.randint(1, session.player.hit_die_size)
+            heal = max(1, roll + end_mod)
+            session.player.hp = min(session.player.max_hp, session.player.hp + heal)
+            total_healed += heal
+            session.player.hit_dice_remaining -= 1
+            spent_dice += 1
         session.player.spell_points = session.player.max_spell_points
-        # Heal body parts during rest
         for part in session.body_tracker.current_hp:
-            session.body_tracker.heal(part, max(1, session.body_tracker.max_hp[part] // 4))
+            session.body_tracker.heal(part, max(1, session.body_tracker.max_hp[part] // 6))
 
-        desc = f"{session.player.name} takes a short rest and recovers {heal} HP."
+        desc = f"{session.player.name} takes a short rest and recovers {total_healed} HP using {spent_dice} hit dice."
         event = DMEvent(type=EventType.REST, description=desc)
         self.dm.transition(session.dm_context, SceneType.REST)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
@@ -1410,7 +1883,49 @@ class GameEngine:
 
         return ActionResult(
             narrative=narrative,
-            state_changes={"hp_restored": heal, "_world_minutes": 480},
+            state_changes={
+                "hp_restored": total_healed,
+                "hit_dice_spent": spent_dice,
+                "_world_minutes": 60,
+            },
+            scene_type=session.dm_context.scene_type,
+        )
+
+    def _handle_long_rest(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        if session.in_combat():
+            return ActionResult(
+                narrative="You cannot sleep soundly with blades drawn.",
+                scene_type=session.dm_context.scene_type,
+            )
+        current_hour = self._current_game_hour(session)
+        last_rest = getattr(session.player, "last_long_rest_hour", None)
+        if last_rest is not None and (current_hour - float(last_rest)) < 24.0:
+            remaining = max(0, int(round(24.0 - (current_hour - float(last_rest)))))
+            return ActionResult(
+                narrative=f"You are not ready for another full long rest yet. Try again in about {remaining} more hours.",
+                scene_type=session.dm_context.scene_type,
+            )
+        session.player.hp = session.player.max_hp
+        session.player.spell_points = session.player.max_spell_points
+        restore = max(1, session.player.hit_dice_total // 2)
+        session.player.hit_dice_remaining = min(session.player.hit_dice_total, session.player.hit_dice_remaining + restore)
+        session.player.exhaustion_level = max(0, int(session.player.exhaustion_level) - 1)
+        session.player.last_long_rest_hour = current_hour + 8.0
+        for part in session.body_tracker.current_hp:
+            session.body_tracker.heal(part, session.body_tracker.max_hp[part])
+        desc = f"{session.player.name} settles in for a long rest and wakes fully restored."
+        event = DMEvent(type=EventType.REST, description=desc)
+        self.dm.transition(session.dm_context, SceneType.REST)
+        narrative = self.dm.narrate(event, session.dm_context, self.llm)
+        self.dm.transition(session.dm_context, SceneType.EXPLORATION)
+        return ActionResult(
+            narrative=narrative,
+            state_changes={
+                "hp_restored": session.player.max_hp,
+                "hit_dice_restored": restore,
+                "exhaustion_level": session.player.exhaustion_level,
+                "_world_minutes": 480,
+            },
             scene_type=session.dm_context.scene_type,
         )
 
@@ -1421,15 +1936,17 @@ class GameEngine:
                 narrative="You're too overencumbered to move! Drop some items first.",
                 scene_type=session.dm_context.scene_type,
             )
-        # --- Bug 3: Block movement during combat, allow flee ---
-        if session.dm_context.scene_type == SceneType.COMBAT:
+        if session.dm_context.scene_type == SceneType.COMBAT and session.combat is not None:
             flee_words = ["flee", "run", "escape", "retreat"]
             if action.raw_input and any(w in action.raw_input.lower() for w in flee_words):
                 return self._handle_flee(session, action)
-            return ActionResult(
-                narrative="You can't simply walk away — you're in the middle of combat! Fight, cast a spell, or flee if you must.",
-                scene_type=SceneType.COMBAT,
-            )
+            if session.combat.active_combatant.name != session.player.name:
+                return ActionResult(
+                    narrative=f"It is {session.combat.active_combatant.name}'s turn.",
+                    scene_type=SceneType.COMBAT,
+                    combat_state=self._combat_state(session.combat),
+                    state_changes={"_skip_world_tick": True},
+                )
 
         dest = action.direction or action.target or action.action_detail or "forward"
         # Clean direction strings like "to the tavern" -> "the tavern"
@@ -1447,6 +1964,40 @@ class GameEngine:
 
         moved = False
         blocked_msg = None
+
+        if session.dm_context.scene_type == SceneType.COMBAT and session.combat is not None and dest_lower in DIRECTION_DELTAS:
+            dx, dy = DIRECTION_DELTAS[dest_lower]
+            old_pos = tuple(session.position)
+            new_x = session.position[0] + dx
+            new_y = session.position[1] + dy
+            if has_map and not session.map_data.is_walkable(new_x, new_y):
+                blocked_msg = "A solid wall blocks your path."
+            elif session.spatial_index and session.spatial_index.blocking_at(new_x, new_y):
+                blockers = [e for e in session.spatial_index.at(new_x, new_y) if e.blocking and e.id != "player"]
+                if blockers:
+                    blocked_msg = f"{blockers[0].name} is blocking the way."
+                else:
+                    blocked_msg = "Something blocks your path."
+            else:
+                move_result = session.combat.move_combatant(dx, dy)
+                if move_result.get("error"):
+                    blocked_msg = move_result["error"]
+                else:
+                    if session.spatial_index and session.player_entity:
+                        session.spatial_index.move(session.player_entity, new_x, new_y)
+                    session.position = [new_x, new_y]
+                    moved = True
+                    hostile_alert = ""
+                    oa_messages = self._opportunity_attack_messages(session, old_pos, (new_x, new_y))
+                    narrative = f"You reposition in combat. (Position: {new_x},{new_y})"
+                    if oa_messages:
+                        narrative = f"{narrative}\n" + "\n".join(oa_messages)
+                    return ActionResult(
+                        narrative=narrative,
+                        scene_type=session.dm_context.scene_type,
+                        combat_state=self._combat_state(session.combat),
+                        state_changes={"position": list(session.position), "_skip_world_tick": True},
+                    )
 
         if dest_lower in ("left", "right"):
             # Turn only, don't move
@@ -1613,6 +2164,11 @@ class GameEngine:
                 scene_type=session.dm_context.scene_type,
             )
 
+        old_pos = tuple(session.position)
+        oa_messages = []
+        if not session.combat.active_combatant.disengaged_until_turn_end:
+            oa_messages = self._opportunity_attack_messages(session, old_pos, (session.position[0] + 3, session.position[1] + 3))
+
         # AGI check to escape (DC 10)
         flee_check = self._roll_ability_check(session, "AGI", 10)
 
@@ -1625,7 +2181,7 @@ class GameEngine:
             event = DMEvent(type=EventType.COMBAT, description=desc)
             narrative = self.dm.narrate(event, session.dm_context, self.llm)
             return ActionResult(
-                narrative=narrative,
+                narrative="\n".join(oa_messages + [narrative]) if oa_messages else narrative,
                 scene_type=session.dm_context.scene_type,
             )
 
@@ -1638,7 +2194,42 @@ class GameEngine:
         )
         event = DMEvent(type=EventType.EXPLORATION, description=desc)
         narrative = self.dm.narrate(event, session.dm_context, self.llm)
-        return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
+        return ActionResult(
+            narrative="\n".join(oa_messages + [narrative]) if oa_messages else narrative,
+            scene_type=session.dm_context.scene_type,
+            state_changes={"_skip_world_tick": True},
+        )
+
+    def _handle_disengage(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        if not session.combat:
+            return ActionResult(
+                narrative="You are not in combat.",
+                scene_type=session.dm_context.scene_type,
+            )
+        if session.combat.active_combatant.name != session.player.name:
+            return ActionResult(
+                narrative=f"It is {session.combat.active_combatant.name}'s turn.",
+                scene_type=session.dm_context.scene_type,
+                combat_state=self._combat_state(session.combat),
+                state_changes={"_skip_world_tick": True},
+            )
+        result = session.combat.disengage()
+        if result.get("error"):
+            return ActionResult(
+                narrative=result["error"],
+                scene_type=session.dm_context.scene_type,
+                combat_state=self._combat_state(session.combat),
+                state_changes={"_skip_world_tick": True},
+            )
+        session.combat.end_turn()
+        narrative_parts = ["You disengage and keep every hostile blade at bay as you retreat."]
+        narrative_parts.extend(self._advance_combat_until_player_turn(session))
+        return ActionResult(
+            narrative="\n".join(narrative_parts),
+            scene_type=session.dm_context.scene_type,
+            combat_state=self._combat_state(session.combat),
+            state_changes={"_skip_world_tick": True},
+        )
 
     def _handle_open(self, session: GameSession, action: ParsedAction) -> ActionResult:
         ap_fail = self._check_ap(session, "open")
@@ -2928,6 +3519,8 @@ class GameEngine:
         """Check if player has enough AP. Returns ActionResult on failure, None on success."""
         if session.ap_tracker is None:
             return None  # backward compat
+        if session.in_combat():
+            return None
         cost = ACTION_COSTS.get(cost_key, 1)
         if not session.ap_tracker.can_afford(cost):
             return ActionResult(
@@ -3076,11 +3669,23 @@ class GameEngine:
                 narrative = f"With incredible sleight of hand, you deftly steal something valuable from {target}!"
             else:
                 narrative = f"Your nimble fingers slip into {target}'s belongings unnoticed."
+            self._apply_alignment_shift(session, law_delta=-10, good_delta=-5)
         else:
             if result_a.critical == "failure":
                 narrative = f"{target} catches your hand! They shout for the guards!"
             else:
                 narrative = f"{target} notices your attempt and pulls away suspiciously."
+            if found:
+                entity_id, entity = found
+                self._set_entity_attitude(session, entity_id, "hostile")
+                for witness_id, witness in session.entities.items():
+                    if witness_id == entity_id:
+                        continue
+                    witness_pos = witness.get("position", [0, 0])
+                    if max(abs(session.position[0] - witness_pos[0]), abs(session.position[1] - witness_pos[1])) <= 2:
+                        if witness.get("role") == "guard":
+                            self._set_entity_attitude(session, witness_id, "hostile")
+            self._apply_alignment_shift(session, law_delta=-12, good_delta=-8)
 
         desc = f"{session.player.name} attempts to steal from {target}. {'Success' if winner == 'a' else 'Failure'}."
         event = DMEvent(type=EventType.EXPLORATION, description=desc, data={
@@ -3105,18 +3710,20 @@ class GameEngine:
             return prox_fail
 
         found = self._find_entity_by_name(session, target)
+        entity_id = None
+        entity = None
         if found:
-            _, entity = found
+            entity_id, entity = found
             target = entity.get("name", target)
 
-        dc = 13
-        ability = "PRE"
-        ability_score = self._get_player_ability(session, ability)
-        check_result = roll_check(ability_score, dc)
-        check_text = self._format_skill_check(check_result, ability, dc)
+        dc = self._social_dc(entity or {}, "minor_risk") if entity else 13
+        check_result = self._roll_player_skill_check(session, "persuasion", dc)
+        check_text = self._format_skill_check(check_result, "Persuasion", dc)
 
         if check_result.success:
             narrative = f"Your words ring true and {target} seems persuaded."
+            if entity_id:
+                self._shift_attitude_step(session, entity_id, +1)
         else:
             narrative = f"{target} remains unconvinced by your plea."
 
@@ -3144,20 +3751,21 @@ class GameEngine:
             return prox_fail
 
         found = self._find_entity_by_name(session, target)
+        entity_id = None
+        entity = None
         if found:
-            _, entity = found
+            entity_id, entity = found
             target = entity.get("name", target)
 
-        mig = self._get_player_ability(session, "MIG")
-        pre = self._get_player_ability(session, "PRE")
-        ability, ability_score = ("MIG", mig) if mig >= pre else ("PRE", pre)
-
-        dc = 14
-        check_result = roll_check(ability_score, dc)
-        check_text = self._format_skill_check(check_result, ability, dc)
+        advantage = bool(entity and self._get_player_ability(session, "MIG") >= int((entity.get("stats") or {}).get("MIG", 10)))
+        npc_insight = 10 + self._npc_skill_bonus(entity or {}, "insight")
+        check_result = self._roll_player_skill_check(session, "intimidation", npc_insight, advantage=advantage)
+        check_text = self._format_skill_check(check_result, "Intimidation", npc_insight)
 
         if check_result.success:
             narrative = f"{target} cowers before your menacing presence."
+            if entity_id:
+                self._set_entity_attitude(session, entity_id, "hostile")
         else:
             narrative = f"{target} stands firm, unimpressed by your threats."
 
@@ -3171,6 +3779,67 @@ class GameEngine:
             narrative=f"{check_text}\n{dm_narrative}",
             scene_type=session.dm_context.scene_type,
         )
+
+    def _handle_bribe(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        ap_fail = self._check_ap(session, "bribe")
+        if ap_fail:
+            return ap_fail
+        target = action.target or session.conversation_state.get("npc_name") or "someone"
+        prox_fail = self._check_entity_proximity(session, target, "talk")
+        if prox_fail:
+            return prox_fail
+        found = self._find_entity_by_name(session, target)
+        if found is None:
+            return ActionResult(narrative=f"There's no clear person here to bribe.", scene_type=session.dm_context.scene_type)
+        entity_id, entity = found
+        target = entity.get("name", target)
+        gift_value = next((int(token) for token in action.raw_input.split() if token.isdigit()), 10)
+        if session.player.gold < gift_value:
+            return ActionResult(
+                narrative=f"You do not have {gift_value} gold to offer as a bribe.",
+                scene_type=session.dm_context.scene_type,
+            )
+        susceptibility = 1.0
+        needs = entity.get("needs")
+        if isinstance(needs, NPCNeeds):
+            susceptibility = 1.0 + float(needs.behavior_modifiers().get("bribe_susceptibility", 0.0))
+        dc = max(5, int(self._social_dc(entity, "minor_risk") - (gift_value / 10.0) * susceptibility))
+        check_result = self._roll_player_skill_check(session, "persuasion", dc)
+        check_text = self._format_skill_check(check_result, "Bribe", dc)
+        session.player.gold -= gift_value
+        if check_result.success:
+            new_attitude = self._shift_attitude_step(session, entity_id, +1)
+            narrative = f"You quietly offer {gift_value} gold. {target} accepts and softens to {new_attitude}."
+        else:
+            narrative = f"{target} eyes the coin, but the offer fails to sway them."
+        return ActionResult(narrative=f"{check_text}\n{narrative}", scene_type=session.dm_context.scene_type)
+
+    def _handle_deceive(self, session: GameSession, action: ParsedAction) -> ActionResult:
+        ap_fail = self._check_ap(session, "persuade")
+        if ap_fail:
+            return ap_fail
+        target = action.target or session.conversation_state.get("npc_name") or "someone"
+        prox_fail = self._check_entity_proximity(session, target, "talk")
+        if prox_fail:
+            return prox_fail
+        found = self._find_entity_by_name(session, target)
+        entity_id = None
+        entity = None
+        if found:
+            entity_id, entity = found
+            target = entity.get("name", target)
+        passive_insight = 10 + self._npc_skill_bonus(entity or {}, "insight")
+        check_result = self._roll_player_skill_check(session, "deception", passive_insight)
+        check_text = self._format_skill_check(check_result, "Deception", passive_insight)
+        if check_result.success:
+            narrative = f"Your lie lands cleanly. {target} seems to believe you."
+            self._apply_alignment_shift(session, law_delta=-3, good_delta=-2)
+        else:
+            narrative = f"{target} narrows their eyes. They do not believe your story."
+            if entity_id:
+                self._shift_attitude_step(session, entity_id, -1)
+            self._apply_alignment_shift(session, law_delta=-5, good_delta=-4)
+        return ActionResult(narrative=f"{check_text}\n{narrative}", scene_type=session.dm_context.scene_type)
 
     def _handle_sneak(self, session: GameSession, action: ParsedAction) -> ActionResult:
         """Enter stealth mode with AGI check."""
@@ -3755,14 +4424,63 @@ class GameEngine:
 
     def _start_combat(self, session: GameSession, enemies: List[Character]) -> None:
         """Initialize a combat encounter."""
-        combatants = [session.player] + enemies
+        combatants = [session.player]
+        adjacent_positions = [
+            (session.position[0] + 1, session.position[1]),
+            (session.position[0] - 1, session.position[1]),
+            (session.position[0], session.position[1] + 1),
+            (session.position[0], session.position[1] - 1),
+        ]
+        for enemy in enemies:
+            entity_id = getattr(enemy, "_entity_id", None)
+            if not entity_id:
+                entity_id = f"combat_enemy_{len(session.entities) + 1}"
+                enemy._entity_id = entity_id
+            if entity_id not in session.entities:
+                spawn_pos = list(session.position)
+                for candidate in adjacent_positions:
+                    if session.map_data is not None and not session.map_data.is_walkable(*candidate):
+                        continue
+                    blockers = session.spatial_index.at(*candidate) if session.spatial_index is not None else []
+                    if any(getattr(blocker, "blocking", False) for blocker in blockers):
+                        continue
+                    spawn_pos = [candidate[0], candidate[1]]
+                    break
+                live_entity = Entity(
+                    id=entity_id,
+                    entity_type=EntityType.NPC,
+                    name=enemy.name,
+                    position=tuple(spawn_pos),
+                    glyph="g",
+                    color="red",
+                    blocking=True,
+                    hp=enemy.hp,
+                    max_hp=enemy.max_hp,
+                    disposition="hostile",
+                    attitude="hostile",
+                    alignment="CE",
+                )
+                if session.spatial_index is not None and session.spatial_index.get_position(entity_id) is None:
+                    session.spatial_index.add(live_entity)
+                session.entities[entity_id] = {
+                    "name": enemy.name,
+                    "type": "npc",
+                    "position": list(spawn_pos),
+                    "role": getattr(enemy, "role", "monster"),
+                    "faction": "hostile",
+                    "hp": enemy.hp,
+                    "max_hp": enemy.max_hp,
+                    "alive": True,
+                    "blocking": True,
+                    "attitude": "hostile",
+                    "alignment": "CE",
+                    "alignment_axes": {"law_chaos": -40, "good_evil": -40},
+                    "entity_ref": live_entity,
+                }
+            combatants.append(enemy)
         session.combat = CombatManager(combatants, seed=random.randint(0, 9999))
-        player_idx = next(
-            (idx for idx, combatant in enumerate(session.combat.combatants) if combatant.name == session.player.name),
-            0,
-        )
-        session.combat.current_turn = player_idx
         session.combat.start_turn()
+        session.clear_conversation_target()
         self.dm.transition(session.dm_context, SceneType.COMBAT)
 
     def _find_target(
@@ -3800,6 +4518,21 @@ class GameEngine:
                     "max_hp": c.character.max_hp,
                     "ap": c.ap,
                     "dead": c.is_dead,
+                    "initiative": c.initiative,
+                    "conditions": list(getattr(c.character, "conditions", [])),
+                    "resources": {
+                        "action_available": bool(getattr(c, "action_available", True)),
+                        "bonus_action_available": bool(getattr(c, "bonus_action_available", True)),
+                        "reaction_available": bool(getattr(c, "reaction_available", True)),
+                        "movement_remaining": int(getattr(c, "movement_remaining", 0)),
+                        "speed": int(getattr(c, "speed", 0)),
+                        "disengaged_until_turn_end": bool(getattr(c, "disengaged_until_turn_end", False)),
+                    },
+                    "death_saves": {
+                        "successes": int(getattr(c.character, "death_save_successes", 0)),
+                        "failures": int(getattr(c.character, "death_save_failures", 0)),
+                    },
+                    "stable": bool(getattr(c.character, "is_stable", False)),
                 }
                 for c in combat.combatants
             ],

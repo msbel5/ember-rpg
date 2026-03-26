@@ -97,18 +97,21 @@ def test_combat_ends_when_enemy_dies():
     context = DMContext(location="dungeon", scene_type=SceneType.COMBAT, party=[])
     session = GameSession(player=player, dm_context=context)
     
-    combat = CombatManager([player, goblin])
-    session.combat = combat
-    
     engine = GameEngine(llm=lambda p: "You defeat the goblin!")
-    
+    engine._start_combat(session, [goblin])
+    engine._advance_combat_until_player_turn(session)
+
     for _ in range(20):
         if not session.in_combat():
             break
+        if session.combat and session.combat.active_combatant.name != session.player.name:
+            engine._advance_combat_until_player_turn(session)
+            if not session.in_combat():
+                break
         action = ParsedAction(intent=ActionIntent.ATTACK, target="goblin", raw_input="attack goblin")
         engine._handle_attack(session, action)
-    
-    assert goblin.hp <= 0 or not session.in_combat() or combat.combat_ended
+
+    assert goblin.hp <= 0 or not session.in_combat() or session.combat.combat_ended
 
 
 def test_flee_via_action_endpoint():
