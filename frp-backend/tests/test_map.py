@@ -184,6 +184,18 @@ class TestDungeonGenerator:
         json_str = json.dumps(d)
         assert len(json_str) > 0
 
+    @pytest.mark.parametrize("seed", [1, 7, 13, 21, 42])
+    def test_spawn_has_two_cardinal_walkable_neighbors(self, seed):
+        gen = DungeonGenerator(seed=seed)
+        m = gen.generate(50, 30)
+        sx, sy = m.spawn_point
+        cardinal_neighbors = sum(
+            1
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+            if m.is_walkable(sx + dx, sy + dy)
+        )
+        assert cardinal_neighbors >= 2
+
 
 class TestTownGenerator:
     def test_generate_returns_map(self):
@@ -219,6 +231,17 @@ class TestTownGenerator:
         m = TownGenerator(seed=5).generate(40, 30)
         assert m.metadata["map_type"] == "town"
 
+    @pytest.mark.parametrize("seed", [1, 7, 13, 21, 42])
+    def test_spawn_has_two_cardinal_walkable_neighbors(self, seed):
+        m = TownGenerator(seed=seed).generate(60, 40)
+        sx, sy = m.spawn_point
+        cardinal_neighbors = sum(
+            1
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+            if m.is_walkable(sx + dx, sy + dy)
+        )
+        assert cardinal_neighbors >= 2
+
 
 class TestWildernessGenerator:
     def test_generate_returns_map(self):
@@ -239,6 +262,17 @@ class TestWildernessGenerator:
         ascii_str = m.to_ascii()
         assert TileType.TREE.value in ascii_str
         assert TileType.WATER.value in ascii_str
+
+    @pytest.mark.parametrize("seed", [1, 7, 13, 21, 42])
+    def test_spawn_has_two_cardinal_walkable_neighbors(self, seed):
+        m = WildernessGenerator(seed=seed).generate(40, 30)
+        sx, sy = m.spawn_point
+        cardinal_neighbors = sum(
+            1
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+            if m.is_walkable(sx + dx, sy + dy)
+        )
+        assert cardinal_neighbors >= 2
 
     def test_has_road(self):
         gen = WildernessGenerator(seed=42)

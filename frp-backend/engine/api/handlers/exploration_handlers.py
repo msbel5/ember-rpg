@@ -8,7 +8,7 @@ from engine.api.action_parser import ParsedAction, ActionIntent
 from engine.core.dm_agent import DMEvent, EventType, SceneType
 from engine.world.entity import EntityType
 from engine.world.action_points import ACTION_COSTS
-from engine.world.proximity import distance, astar_path, check_proximity
+from engine.world.proximity import distance, manhattan_distance, astar_path, check_proximity
 from engine.world.skill_checks import roll_check
 
 if TYPE_CHECKING:
@@ -17,6 +17,38 @@ if TYPE_CHECKING:
 
 class ExplorationMixin:
     """Exploration handler methods: look, examine, move, search, open, sneak, climb, lockpick, pray, push, go_to, unknown."""
+
+    def _live_entity_position(self, session: GameSession, entity_id: str, fallback: Optional[List[int]] = None) -> List[int]:
+        record = session.entities.get(entity_id, {})
+        entity_ref = record.get("entity_ref")
+        if entity_ref is not None:
+            return [int(entity_ref.position[0]), int(entity_ref.position[1])]
+        position = record.get("position")
+        if isinstance(position, (list, tuple)) and len(position) >= 2:
+            return [int(position[0]), int(position[1])]
+        return list(fallback or [0, 0])
+
+    def _approach_goal_candidates(self, session: GameSession, target_pos: List[int]) -> List[List[int]]:
+        candidates: List[List[int]] = []
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            gx = int(target_pos[0]) + dx
+            gy = int(target_pos[1]) + dy
+            if [gx, gy] == session.position:
+                candidates.append([gx, gy])
+                continue
+            if session.map_data is not None and not session.map_data.is_walkable(gx, gy):
+                continue
+            if session.spatial_index and session.spatial_index.blocking_at(gx, gy):
+                blockers = [
+                    entity
+                    for entity in session.spatial_index.at(gx, gy)
+                    if entity.id != "player" and entity.blocking
+                ]
+                if blockers:
+                    continue
+            candidates.append([gx, gy])
+        candidates.sort(key=lambda pos: manhattan_distance(session.position, pos))
+        return candidates
 
     def _handle_look(self, session: GameSession, action: ParsedAction) -> "ActionResult":
         """Handle 'look around', 'look', 'observe' — deterministic scene + DM flavor."""
@@ -599,60 +631,74 @@ class ExplorationMixin:
             # Fall back to regular move
             return self._handle_move(session, action)
         entity_id, entity_data = entity
-        target_pos = entity_data.get("position", [0, 0])
-        # Use A* to find path
-        path = astar_path(session.map_data, session.position, target_pos, max_steps=20)
-        if not path:
-            return ActionResult(
-                narrative=f"Can't find a path to {entity_data.get('name', target)}.",
-                scene_type=session.dm_context.scene_type,
-            )
-        # Walk along path, simulating the same AP/time cadence as repeated move actions.
         enc_penalty = self._encumbrance_penalty(session)
         if enc_penalty >= 999:
             return ActionResult(
                 narrative="You're too overencumbered to move!",
                 scene_type=session.dm_context.scene_type,
             )
-        local_ap = session.ap_tracker.current_ap if session.ap_tracker is not None else 0
-        max_ap = session.ap_tracker.max_ap if session.ap_tracker is not None else 0
-        simulated_hour = session.game_time.hour if session.game_time else 8
-        simulated_minute = session.game_time.minute if session.game_time else 0
-        elapsed_minutes = 0
+
+        npc_name = entity_data.get("name", target)
         steps_taken = 0
-        for step_pos in path:
-            # Stop if adjacent to target (within melee range)
-            if distance(step_pos, target_pos) <= 1 and steps_taken > 0:
+        refresh_count = 0
+        blocked_reason: Optional[str] = None
+        world_events: List[Dict[str, Any]] = []
+
+        while steps_taken < 40:
+            current_target = session.entities.get(entity_id)
+            if current_target is None:
+                blocked_reason = f"{npc_name} is no longer here."
                 break
+            if not current_target.get("alive", True):
+                blocked_reason = f"{npc_name} can no longer respond to your approach."
+                break
+
+            target_pos = self._live_entity_position(session, entity_id, current_target.get("position", [0, 0]))
+            if manhattan_distance(session.position, target_pos) <= 1:
+                blocked_reason = None
+                break
+
+            goal_candidates = self._approach_goal_candidates(session, target_pos)
+            best_path: List[List[int]] = []
+            for candidate in goal_candidates:
+                if candidate == session.position:
+                    best_path = []
+                    break
+                candidate_path = astar_path(session.map_data, session.position, candidate, max_steps=40)
+                if candidate_path and (not best_path or len(candidate_path) < len(best_path)):
+                    best_path = candidate_path
+
+            if not goal_candidates or not best_path:
+                blocked_reason = f"Can't find a path to {npc_name}."
+                break
+
             move_cost = ACTION_COSTS.get("move_flat", 1)
             if session.ap_tracker:
-                actual_cost = session.ap_tracker.movement_cost(move_cost, enc_penalty)
-                if max_ap < actual_cost:
+                if not session.ap_tracker.can_move(move_cost, enc_penalty):
+                    blocked_reason = (
+                        f"Not enough action points to keep moving toward {npc_name}. "
+                        f"(AP: {session.ap_tracker.current_ap}/{session.ap_tracker.max_ap})"
+                    )
                     break
-                while local_ap < actual_cost:
-                    elapsed_minutes += 15
-                    simulated_minute += 15
-                    while simulated_minute >= 60:
-                        simulated_minute -= 60
-                        simulated_hour += 1
-                        local_ap = max_ap
-                if local_ap < actual_cost:
-                    break
-                local_ap -= actual_cost
+                session.ap_tracker.spend_movement(move_cost, enc_penalty)
             # Check walkability and blocking
-            nx, ny = step_pos[0], step_pos[1]
+            nx, ny = best_path[0][0], best_path[0][1]
             if session.spatial_index and session.spatial_index.blocking_at(nx, ny):
+                blockers = [
+                    candidate
+                    for candidate in session.spatial_index.at(nx, ny)
+                    if candidate.id != "player" and candidate.blocking
+                ]
+                blocked_reason = f"{blockers[0].name} blocks the way to {npc_name}." if blockers else f"Something blocks the way to {npc_name}."
                 break
             if session.spatial_index and session.player_entity:
                 session.spatial_index.move(session.player_entity, nx, ny)
             session.position = [nx, ny]
             steps_taken += 1
-            elapsed_minutes += 15
-            simulated_minute += 15
-            while simulated_minute >= 60:
-                simulated_minute -= 60
-                simulated_hour += 1
-                local_ap = max_ap
+            world_events.extend(self._world_tick(session, minutes=15, refresh_ap=False))
+            if session.ap_tracker is not None and not session.in_combat() and session.ap_tracker.current_ap <= 0:
+                session.ap_tracker.refresh()
+                refresh_count += 1
         # Update viewport
         if session.viewport and session.map_data:
             session.viewport.center_on(session.position[0], session.position[1])
@@ -662,25 +708,27 @@ class ExplorationMixin:
                 radius=session.viewport.fov_radius,
             )
         session.sync_player_state()
-        npc_name = entity_data.get("name", target)
-        dist_remaining = distance(session.position, target_pos)
-        state_changes = {
-            "position": list(session.position),
-            "_world_minutes": elapsed_minutes,
-        }
-        if session.ap_tracker is not None:
-            state_changes["_ap_after_world_tick"] = local_ap
+        target_pos = self._live_entity_position(session, entity_id, entity_data.get("position", [0, 0]))
+        dist_remaining = manhattan_distance(session.position, target_pos)
+        refresh_note = " (New turn — AP refreshed)" if refresh_count else ""
         if dist_remaining <= 1:
-            return ActionResult(
-                narrative=f"You walk to {npc_name} ({steps_taken} steps). You're now close enough to interact.",
+            result = ActionResult(
+                narrative=f"You walk to {npc_name} ({steps_taken} steps). You're now close enough to interact.{refresh_note}",
                 scene_type=session.dm_context.scene_type,
-                state_changes=state_changes,
+                state_changes={"position": list(session.position), "_skip_world_tick": True},
             )
-        return ActionResult(
-            narrative=f"You walk toward {npc_name} ({steps_taken} steps) but couldn't reach them. ({int(dist_remaining)} tiles away)",
+            self._merge_world_events(session, result, world_events)
+            return result
+        result = ActionResult(
+            narrative=(
+                f"You walk toward {npc_name} ({steps_taken} steps) but couldn't end close enough to interact. "
+                f"{blocked_reason or f'({int(dist_remaining)} tiles away)'}{refresh_note}"
+            ),
             scene_type=session.dm_context.scene_type,
-            state_changes=state_changes,
+            state_changes={"position": list(session.position), "_skip_world_tick": True},
         )
+        self._merge_world_events(session, result, world_events)
+        return result
 
     def _handle_unknown(self, session: GameSession, action: ParsedAction) -> "ActionResult":
         from engine.api.game_engine import ActionResult

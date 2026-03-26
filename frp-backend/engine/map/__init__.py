@@ -8,6 +8,7 @@ from enum import Enum
 import random
 from collections import deque
 
+from engine.data_loader import get_town_building_types
 
 class TileType(Enum):
     """Map tile types."""
@@ -166,7 +167,7 @@ class MapData:
             height=data["height"],
             tiles=tiles,
             rooms=rooms,
-            spawn_point=tuple(data["spawn_point"]),
+            spawn_point=_repair_spawn_point(tiles, data["width"], data["height"], tuple(data["spawn_point"])),
             exit_points=[tuple(p) for p in data.get("exit_points", [])],
             metadata=data.get("metadata", {}),
             zones=data.get("zones"),
@@ -191,6 +192,46 @@ class MapData:
 def _empty_map(width: int, height: int, fill: TileType = TileType.WALL) -> List[List[TileType]]:
     """Create a 2D tile grid filled with `fill`."""
     return [[fill for _ in range(width)] for _ in range(height)]
+
+
+def _count_cardinal_walkable_neighbors(tiles: List[List[TileType]], width: int, height: int, pos: Tuple[int, int]) -> int:
+    x, y = pos
+    count = 0
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        nx, ny = x + dx, y + dy
+        if 0 <= nx < width and 0 <= ny < height and tiles[ny][nx] in WALKABLE_TILES:
+            count += 1
+    return count
+
+
+def _repair_spawn_point(tiles: List[List[TileType]], width: int, height: int, spawn: Tuple[int, int]) -> Tuple[int, int]:
+    sx, sy = spawn
+    if 0 <= sx < width and 0 <= sy < height and tiles[sy][sx] in WALKABLE_TILES:
+        if _count_cardinal_walkable_neighbors(tiles, width, height, spawn) >= 2:
+            return spawn
+
+    queue = deque([spawn])
+    visited = {spawn}
+    best_walkable: Optional[Tuple[int, int]] = None
+
+    while queue:
+        x, y = queue.popleft()
+        if not (0 <= x < width and 0 <= y < height):
+            continue
+        if tiles[y][x] in WALKABLE_TILES:
+            if best_walkable is None:
+                best_walkable = (x, y)
+            if _count_cardinal_walkable_neighbors(tiles, width, height, (x, y)) >= 2:
+                return (x, y)
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if (nx, ny) not in visited and 0 <= nx < width and 0 <= ny < height:
+                visited.add((nx, ny))
+                queue.append((nx, ny))
+
+    if best_walkable is not None:
+        return best_walkable
+    return spawn
 
 
 class DungeonGenerator:
@@ -249,7 +290,7 @@ class DungeonGenerator:
 
         # Spawn at entrance room center
         entrance = next((r for r in rooms if r.room_type == "entrance"), rooms[0])
-        spawn = entrance.center()
+        spawn = _repair_spawn_point(tiles, width, height, entrance.center())
 
         # Exit at boss room center
         boss = next((r for r in rooms if r.room_type == "boss"), rooms[-1])
@@ -356,7 +397,7 @@ class TownGenerator:
         map_data = gen.generate(width=60, height=40)
     """
 
-    BUILDING_TYPES = ["inn", "shop", "blacksmith", "temple", "house", "house", "house"]
+    BUILDING_TYPES = get_town_building_types() or ["inn", "shop", "blacksmith", "temple", "house", "house", "house"]
 
     def __init__(self, seed: int = 0):
         self.seed = seed
@@ -401,7 +442,7 @@ class TownGenerator:
                                 tiles[by + dy][bx + dx] = TileType.FLOOR
                     rooms.append(building)
 
-        spawn = (width // 2, height // 2)
+        spawn = _repair_spawn_point(tiles, width, height, (width // 2, height // 2))
 
         # Zone integration
         from engine.map.zones import create_zone_map
@@ -473,7 +514,7 @@ class WildernessGenerator:
                     tiles[ny][nx] = TileType.WATER
 
         # Spawn on road
-        spawn = (width // 4, road_y)
+        spawn = _repair_spawn_point(tiles, width, height, (width // 4, road_y))
         tiles[road_y][width // 4] = TileType.FLOOR
 
         # Zone integration

@@ -8,7 +8,8 @@ from engine.map import MapData, TileType
 
 
 # Interaction range constants (in tiles)
-RANGE_MELEE = 1       # talk, examine, trade, pickup, melee attack
+RANGE_MELEE = 1       # examine, trade, pickup, melee attack
+RANGE_SOCIAL = 2      # talk, persuade, bribe, deceive, intimidate
 RANGE_SHOUT = 3       # yell, shout
 RANGE_RANGED = 5      # ranged attack (bow, spell)
 RANGE_LOOK = 999      # look has unlimited range
@@ -33,7 +34,8 @@ def in_range(player_pos: list, target_pos: list, max_range: int) -> bool:
 def get_interaction_range(action_type: str) -> int:
     """Return required range for an action type."""
     ranges = {
-        "talk": RANGE_MELEE,
+        "talk": RANGE_SOCIAL,
+        "social": RANGE_SOCIAL,
         "examine": RANGE_MELEE,
         "trade": RANGE_MELEE,
         "pickup": RANGE_MELEE,

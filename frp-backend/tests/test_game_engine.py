@@ -11,8 +11,9 @@ from engine.api.save_system import SaveSystem
 from engine.core.character import Character
 from engine.core.combat import CombatManager
 from engine.core.dm_agent import SceneType
+from engine.data_loader import list_monsters
 from engine.world.skill_checks import SkillCheckResult
-from engine.world.proximity import astar_path, distance
+from engine.world.proximity import astar_path, distance, manhattan_distance
 from engine.world.spatial_index import SpatialIndex
 from engine.map import MapData, TileType
 
@@ -747,10 +748,68 @@ class TestGoToHardening:
 
         goto_result = engine.process_action(goto_session, "approach target npc")
         assert "walk" in goto_result.narrative.lower()
-        assert goto_session.position == [6, 1]
-        assert goto_session.game_time.hour == 10
-        assert goto_session.game_time.minute == 15
-        assert goto_session.ap_tracker.current_ap == 2
+        assert goto_session.position == [7, 1]
+        assert goto_session.game_time.hour == 9
+        assert goto_session.game_time.minute == 45
+        assert goto_session.ap_tracker.current_ap == 4
+
+    def test_go_to_tracks_live_target_until_adjacent(self, engine):
+        session = engine.new_session("Walker", "warrior", location="Forest Road")
+        tiles = [[TileType.FLOOR for _ in range(12)] for _ in range(12)]
+        for i in range(12):
+            tiles[0][i] = TileType.WALL
+            tiles[11][i] = TileType.WALL
+            tiles[i][0] = TileType.WALL
+            tiles[i][11] = TileType.WALL
+        session.map_data = MapData(width=12, height=12, tiles=tiles, rooms=[], spawn_point=(1, 1))
+        session.position = [1, 1]
+        session.entities = {
+            "target_npc": {
+                "name": "Target NPC",
+                "type": "npc",
+                "position": [6, 1],
+                "role": "merchant",
+                "faction": "merchant_guild",
+            }
+        }
+        session.spatial_index = SpatialIndex()
+        session.player_entity.position = (1, 1)
+        session.spatial_index.add(session.player_entity)
+
+        original_world_tick = engine._world_tick
+        tick_calls = {"count": 0}
+
+        def moving_world_tick(target_session, minutes=15, refresh_ap=False):
+            tick_calls["count"] += 1
+            if tick_calls["count"] == 1:
+                target_session.entities["target_npc"]["position"] = [7, 1]
+            return original_world_tick(target_session, minutes=minutes, refresh_ap=refresh_ap)
+
+        with patch.object(engine, "_world_tick", side_effect=moving_world_tick):
+            result = engine.process_action(session, "approach target npc")
+
+        assert "close enough" in result.narrative.lower()
+        assert manhattan_distance(session.position, session.entities["target_npc"]["position"]) <= 1
+
+
+class TestSocialRangeHardening:
+    @pytest.mark.parametrize("command", ["talk to guard", "persuade guard", "intimidate guard", "bribe guard", "deceive guard"])
+    def test_social_actions_work_at_two_tiles(self, engine, command):
+        session = engine.new_session("Speaker", "priest", location="Harbor Town")
+        guard_id, guard = _entity_by_role(session, "guard")
+        gx, gy = guard["position"]
+        _move_player_to(session, gx, gy - 2)
+        with patch("engine.api.game_engine.roll_check", return_value=SkillCheckResult(roll=14, modifier=2, total=16, dc=12, success=True, margin=4, critical=None)):
+            result = engine.process_action(session, command)
+        assert "too far away" not in result.narrative.lower()
+
+    def test_social_actions_still_fail_beyond_two_tiles(self, engine):
+        session = engine.new_session("Speaker", "priest", location="Harbor Town")
+        _guard_id, guard = _entity_by_role(session, "guard")
+        gx, gy = guard["position"]
+        _move_player_to(session, gx, gy - 3)
+        result = engine.process_action(session, "persuade guard")
+        assert "too far away" in result.narrative.lower()
 
 
 class TestUtilityAPHardening:
@@ -848,7 +907,7 @@ class TestLLMIntegration:
 class TestSpawnEnemy:
     def test_spawns_known_enemy(self, engine):
         enemy = engine._spawn_enemy(1)
-        assert enemy.name in ["Goblin", "Orc", "Skeleton"]
+        assert enemy.name in {monster["name"] for monster in list_monsters()}
 
     def test_enemy_has_stats(self, engine):
         enemy = engine._spawn_enemy(1)

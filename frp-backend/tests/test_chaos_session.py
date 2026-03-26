@@ -1,9 +1,11 @@
 """
 Seeded 100-turn chaos session smoke test for the final D&D pass.
 """
+import random
 from pathlib import Path
 
 from engine.api.game_engine import GameEngine
+from engine.api.routes import _sessions
 
 
 def _entity_by_role(session, role):
@@ -28,11 +30,18 @@ def _log_entry(session, command, narrative):
 
 
 def test_seeded_100_turn_chaos_session(tmp_path):
+    random.seed(1337)
+    _sessions.clear()
     engine = GameEngine()
     engine.save_system.save_dir = Path(tmp_path) / "saves"
     engine.save_system.save_dir.mkdir(parents=True, exist_ok=True)
 
     session = engine.new_session("Chaos", "rogue", location="Market Town", alignment="CN")
+    session.session_id = "chaos-session-fixed"
+    if session.world_state is not None:
+        session.world_state.game_id = session.session_id
+    if session.npc_memory is not None:
+        session.npc_memory.session_id = session.session_id
     merchant_id, merchant = _entity_by_role(session, "merchant")
     _guard_id, _guard = _entity_by_role(session, "guard")
     _blacksmith_id, _blacksmith = _entity_by_role(session, "blacksmith")

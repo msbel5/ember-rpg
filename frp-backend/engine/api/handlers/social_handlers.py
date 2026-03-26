@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from engine.api.game_session import GameSession
 from engine.api.action_parser import ParsedAction, ActionIntent
 from engine.core.dm_agent import DMEvent, EventType, SceneType
+from engine.data_loader import list_npc_templates
 from engine.world.npc_needs import NPCNeeds
 
 if TYPE_CHECKING:
@@ -27,7 +28,7 @@ class SocialMixin:
         target = action.target or "a stranger"
 
         # Proximity check
-        prox_fail = self._check_entity_proximity(session, target, "talk")
+        prox_fail = self._check_entity_proximity(session, target, "social")
         if prox_fail:
             return prox_fail
         ap_fail = self._check_ap(session, "talk")
@@ -124,7 +125,7 @@ class SocialMixin:
         if not target:
             session.set_conversation_target("dm")
             return self._handle_unknown(session, ParsedAction(ActionIntent.UNKNOWN, action.raw_input))
-        prox_fail = self._check_entity_proximity(session, target, "talk")
+        prox_fail = self._check_entity_proximity(session, target, "social")
         if prox_fail:
             session.clear_conversation_target()
             return prox_fail
@@ -200,7 +201,7 @@ class SocialMixin:
             return ap_fail
 
         target = action.target or "someone"
-        prox_fail = self._check_entity_proximity(session, target, "talk")
+        prox_fail = self._check_entity_proximity(session, target, "social")
         if prox_fail:
             return prox_fail
 
@@ -242,7 +243,7 @@ class SocialMixin:
             return ap_fail
 
         target = action.target or "someone"
-        prox_fail = self._check_entity_proximity(session, target, "talk")
+        prox_fail = self._check_entity_proximity(session, target, "social")
         if prox_fail:
             return prox_fail
 
@@ -282,7 +283,7 @@ class SocialMixin:
         if ap_fail:
             return ap_fail
         target = action.target or session.conversation_state.get("npc_name") or "someone"
-        prox_fail = self._check_entity_proximity(session, target, "talk")
+        prox_fail = self._check_entity_proximity(session, target, "social")
         if prox_fail:
             return prox_fail
         found = self._find_entity_by_name(session, target)
@@ -317,7 +318,7 @@ class SocialMixin:
         if ap_fail:
             return ap_fail
         target = action.target or session.conversation_state.get("npc_name") or "someone"
-        prox_fail = self._check_entity_proximity(session, target, "talk")
+        prox_fail = self._check_entity_proximity(session, target, "social")
         if prox_fail:
             return prox_fail
         found = self._find_entity_by_name(session, target)
@@ -398,25 +399,18 @@ class SocialMixin:
 
     def _get_npc_personality(self, target_name: str) -> dict:
         """Find NPC template by partial name match."""
-        try:
-            import json, os
-            data_dir = os.path.join(os.path.dirname(__file__), "../../../data")
-            with open(os.path.join(data_dir, "npc_templates.json")) as f:
-                npcs = json.load(f)["npc_templates"]
-            target_lower = target_name.lower()
-            for npc in npcs:
-                if (target_lower in npc.get("name", "").lower() or
-                    target_lower in npc.get("id", "").lower() or
-                    target_lower in npc.get("role", "").lower()):
-                    return {
-                        "name": npc.get("name"),
-                        "role": npc.get("role"),
-                        "personality": npc.get("personality", []),
-                        "speech_style": npc.get("speech_style"),
-                        "greeting": npc.get("dialogue", {}).get("greeting", []),
-                    }
-        except Exception:
-            pass
+        target_lower = target_name.lower()
+        for npc in list_npc_templates():
+            if (target_lower in npc.get("name", "").lower() or
+                target_lower in npc.get("id", "").lower() or
+                target_lower in npc.get("role", "").lower()):
+                return {
+                    "name": npc.get("name"),
+                    "role": npc.get("role"),
+                    "personality": npc.get("personality", []),
+                    "speech_style": npc.get("speech_style"),
+                    "greeting": npc.get("dialogue", {}).get("greeting", []),
+                }
         return {}
 
     # --- Social helpers ---
