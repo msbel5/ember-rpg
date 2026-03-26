@@ -1,84 +1,315 @@
 {
-  "warrior": {
-    "name": "Warrior",
-    "description": "A strong frontline fighter skilled with weapons and armor.",
-    "hit_die": "d10",
-    "hit_die_size": 10,
-    "ap_per_turn": 4,
-    "ability_priority": ["MIG", "END", "AGI", "PRE", "INS", "MND"],
-    "save_proficiencies": ["MIG", "END"],
-    "skill_pool": ["athletics", "intimidation", "perception", "survival"],
-    "skill_pick_count": 2,
-    "default_skills": ["athletics", "perception"],
-    "starting_equipment": [
-      {"id": "iron_sword", "name": "Iron Sword", "type": "weapon", "damage": 6, "material": "iron", "slot": "weapon"},
-      {"id": "chain_mail", "name": "Chain Mail", "type": "armor", "ac_bonus": 4, "material": "iron", "slot": "armor"},
-      {"id": "torch", "name": "Torch", "type": "tool", "uses": 10},
-      {"id": "bread", "name": "Bread", "type": "consumable", "heal": 3, "qty": 3}
-    ],
-    "starting_gold": 50,
-    "armor_type": "chain_mail"
-  },
-  "rogue": {
-    "name": "Rogue",
-    "description": "A nimble specialist in stealth, deception, and precision strikes.",
-    "hit_die": "d8",
-    "hit_die_size": 8,
-    "ap_per_turn": 6,
-    "ability_priority": ["AGI", "INS", "PRE", "MND", "END", "MIG"],
-    "save_proficiencies": ["AGI", "MND"],
-    "skill_pool": ["acrobatics", "deception", "stealth", "sleight_of_hand", "perception", "investigation"],
-    "skill_pick_count": 4,
-    "default_skills": ["stealth", "deception", "perception", "investigation"],
-    "starting_equipment": [
-      {"id": "daggers", "name": "Twin Daggers", "type": "weapon", "damage": 4, "material": "iron", "slot": "weapon"},
-      {"id": "leather_armor", "name": "Leather Armor", "type": "armor", "ac_bonus": 2, "material": "leather", "slot": "armor"},
-      {"id": "lockpick", "name": "Lockpick Set", "type": "tool", "uses": 5},
-      {"id": "rope", "name": "Rope (50ft)", "type": "tool"},
-      {"id": "bread", "name": "Bread", "type": "consumable", "heal": 3, "qty": 2}
-    ],
-    "starting_gold": 40,
-    "armor_type": "leather"
-  },
-  "mage": {
-    "name": "Mage",
-    "description": "A scholar who wields arcane magic through study and intellect.",
-    "hit_die": "d6",
-    "hit_die_size": 6,
-    "ap_per_turn": 3,
-    "ability_priority": ["MND", "INS", "AGI", "PRE", "END", "MIG"],
-    "save_proficiencies": ["MND", "INS"],
-    "skill_pool": ["arcana", "history", "investigation", "religion", "insight"],
-    "skill_pick_count": 2,
-    "default_skills": ["arcana", "investigation"],
-    "starting_equipment": [
-      {"id": "staff", "name": "Oak Staff", "type": "weapon", "damage": 3, "material": "wood", "slot": "weapon"},
-      {"id": "robes", "name": "Mystic Robes", "type": "armor", "ac_bonus": 1, "material": "cloth", "slot": "armor"},
-      {"id": "mana_potion", "name": "Mana Potion", "type": "consumable", "restore_sp": 6, "qty": 2},
-      {"id": "scroll_fireball", "name": "Scroll of Fireball", "type": "scroll", "spell": "fireball"}
-    ],
-    "starting_gold": 30,
-    "armor_type": "cloth"
-  },
-  "priest": {
-    "name": "Priest",
-    "description": "A divine servant who channels holy power to heal and protect.",
-    "hit_die": "d8",
-    "hit_die_size": 8,
-    "ap_per_turn": 4,
-    "ability_priority": ["INS", "PRE", "END", "MND", "MIG", "AGI"],
-    "save_proficiencies": ["INS", "PRE"],
-    "skill_pool": ["medicine", "insight", "persuasion", "religion", "history"],
-    "skill_pick_count": 2,
-    "default_skills": ["insight", "religion"],
-    "starting_equipment": [
-      {"id": "mace", "name": "Iron Mace", "type": "weapon", "damage": 5, "material": "iron", "slot": "weapon"},
-      {"id": "robes", "name": "Holy Robes", "type": "armor", "ac_bonus": 1, "material": "cloth", "slot": "armor"},
-      {"id": "shield", "name": "Wooden Shield", "type": "shield", "ac_bonus": 2, "material": "wood", "slot": "shield"},
-      {"id": "healing_potion", "name": "Healing Potion", "type": "consumable", "heal": 8, "qty": 2},
-      {"id": "holy_water", "name": "Holy Water", "type": "consumable", "damage_undead": 10}
-    ],
-    "starting_gold": 40,
-    "armor_type": "chain_mail"
+  "classes": {
+    "warrior": {
+      "name": "Warrior",
+      "description": "A strong frontline fighter skilled with weapons and armor.",
+      "hit_die": "d10",
+      "hit_die_size": 10,
+      "ap_per_turn": 4,
+      "ability_priority": [
+        "MIG",
+        "END",
+        "AGI",
+        "PRE",
+        "INS",
+        "MND"
+      ],
+      "save_proficiencies": [
+        "MIG",
+        "END"
+      ],
+      "skill_pool": [
+        "athletics",
+        "intimidation",
+        "perception",
+        "survival"
+      ],
+      "skill_pick_count": 2,
+      "default_skills": [
+        "athletics",
+        "perception"
+      ],
+      "starting_equipment": [
+        {
+          "id": "iron_sword",
+          "name": "Iron Sword",
+          "type": "weapon",
+          "damage": 6,
+          "material": "iron",
+          "slot": "weapon"
+        },
+        {
+          "id": "chain_mail",
+          "name": "Chain Mail",
+          "type": "armor",
+          "ac_bonus": 4,
+          "material": "iron",
+          "slot": "armor"
+        },
+        {
+          "id": "torch",
+          "name": "Torch",
+          "type": "tool",
+          "uses": 10
+        },
+        {
+          "id": "bread",
+          "name": "Bread",
+          "type": "consumable",
+          "heal": 3,
+          "qty": 3
+        }
+      ],
+      "starting_gold": 50,
+      "armor_type": "chain_mail",
+      "default_stats": {
+        "MIG": 16,
+        "AGI": 12,
+        "END": 14,
+        "MND": 8,
+        "INS": 10,
+        "PRE": 10
+      },
+      "default_hp": 20,
+      "default_spell_points": 0
+    },
+    "rogue": {
+      "name": "Rogue",
+      "description": "A nimble specialist in stealth, deception, and precision strikes.",
+      "hit_die": "d8",
+      "hit_die_size": 8,
+      "ap_per_turn": 6,
+      "ability_priority": [
+        "AGI",
+        "INS",
+        "PRE",
+        "MND",
+        "END",
+        "MIG"
+      ],
+      "save_proficiencies": [
+        "AGI",
+        "MND"
+      ],
+      "skill_pool": [
+        "acrobatics",
+        "deception",
+        "stealth",
+        "sleight_of_hand",
+        "perception",
+        "investigation"
+      ],
+      "skill_pick_count": 4,
+      "default_skills": [
+        "stealth",
+        "deception",
+        "perception",
+        "investigation"
+      ],
+      "starting_equipment": [
+        {
+          "id": "daggers",
+          "name": "Twin Daggers",
+          "type": "weapon",
+          "damage": 4,
+          "material": "iron",
+          "slot": "weapon"
+        },
+        {
+          "id": "leather_armor",
+          "name": "Leather Armor",
+          "type": "armor",
+          "ac_bonus": 2,
+          "material": "leather",
+          "slot": "armor"
+        },
+        {
+          "id": "lockpick",
+          "name": "Lockpick Set",
+          "type": "tool",
+          "uses": 5
+        },
+        {
+          "id": "rope",
+          "name": "Rope (50ft)",
+          "type": "tool"
+        },
+        {
+          "id": "bread",
+          "name": "Bread",
+          "type": "consumable",
+          "heal": 3,
+          "qty": 2
+        }
+      ],
+      "starting_gold": 40,
+      "armor_type": "leather",
+      "default_stats": {
+        "MIG": 10,
+        "AGI": 16,
+        "END": 10,
+        "MND": 10,
+        "INS": 14,
+        "PRE": 12
+      },
+      "default_hp": 16,
+      "default_spell_points": 0
+    },
+    "mage": {
+      "name": "Mage",
+      "description": "A scholar who wields arcane magic through study and intellect.",
+      "hit_die": "d6",
+      "hit_die_size": 6,
+      "ap_per_turn": 3,
+      "ability_priority": [
+        "MND",
+        "INS",
+        "AGI",
+        "PRE",
+        "END",
+        "MIG"
+      ],
+      "save_proficiencies": [
+        "MND",
+        "INS"
+      ],
+      "skill_pool": [
+        "arcana",
+        "history",
+        "investigation",
+        "religion",
+        "insight"
+      ],
+      "skill_pick_count": 2,
+      "default_skills": [
+        "arcana",
+        "investigation"
+      ],
+      "starting_equipment": [
+        {
+          "id": "staff",
+          "name": "Oak Staff",
+          "type": "weapon",
+          "damage": 3,
+          "material": "wood",
+          "slot": "weapon"
+        },
+        {
+          "id": "robes",
+          "name": "Mystic Robes",
+          "type": "armor",
+          "ac_bonus": 1,
+          "material": "cloth",
+          "slot": "armor"
+        },
+        {
+          "id": "mana_potion",
+          "name": "Mana Potion",
+          "type": "consumable",
+          "restore_sp": 6,
+          "qty": 2
+        },
+        {
+          "id": "scroll_fireball",
+          "name": "Scroll of Fireball",
+          "type": "scroll",
+          "spell": "fireball"
+        }
+      ],
+      "starting_gold": 30,
+      "armor_type": "cloth",
+      "default_stats": {
+        "MIG": 8,
+        "AGI": 12,
+        "END": 10,
+        "MND": 16,
+        "INS": 14,
+        "PRE": 10
+      },
+      "default_hp": 12,
+      "default_spell_points": 16
+    },
+    "priest": {
+      "name": "Priest",
+      "description": "A divine servant who channels holy power to heal and protect.",
+      "hit_die": "d8",
+      "hit_die_size": 8,
+      "ap_per_turn": 4,
+      "ability_priority": [
+        "INS",
+        "PRE",
+        "END",
+        "MND",
+        "MIG",
+        "AGI"
+      ],
+      "save_proficiencies": [
+        "INS",
+        "PRE"
+      ],
+      "skill_pool": [
+        "medicine",
+        "insight",
+        "persuasion",
+        "religion",
+        "history"
+      ],
+      "skill_pick_count": 2,
+      "default_skills": [
+        "insight",
+        "religion"
+      ],
+      "starting_equipment": [
+        {
+          "id": "mace",
+          "name": "Iron Mace",
+          "type": "weapon",
+          "damage": 5,
+          "material": "iron",
+          "slot": "weapon"
+        },
+        {
+          "id": "robes",
+          "name": "Holy Robes",
+          "type": "armor",
+          "ac_bonus": 1,
+          "material": "cloth",
+          "slot": "armor"
+        },
+        {
+          "id": "shield",
+          "name": "Wooden Shield",
+          "type": "shield",
+          "ac_bonus": 2,
+          "material": "wood",
+          "slot": "shield"
+        },
+        {
+          "id": "healing_potion",
+          "name": "Healing Potion",
+          "type": "consumable",
+          "heal": 8,
+          "qty": 2
+        },
+        {
+          "id": "holy_water",
+          "name": "Holy Water",
+          "type": "consumable",
+          "damage_undead": 10
+        }
+      ],
+      "starting_gold": 40,
+      "armor_type": "chain_mail",
+      "default_stats": {
+        "MIG": 10,
+        "AGI": 10,
+        "END": 12,
+        "MND": 14,
+        "INS": 16,
+        "PRE": 12
+      },
+      "default_hp": 16,
+      "default_spell_points": 12
+    }
   }
 }

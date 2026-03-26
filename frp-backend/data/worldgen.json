@@ -1,0 +1,1546 @@
+{
+  "worldgen": {
+    "town_building_types": [
+      "inn",
+      "shop",
+      "blacksmith",
+      "temple",
+      "house",
+      "house",
+      "house"
+    ],
+    "zone_tile_palettes": {
+      "market": {
+        "ground": [
+          [
+            "cobblestone",
+            70
+          ],
+          [
+            "dirt_path",
+            20
+          ],
+          [
+            "cobblestone",
+            10
+          ]
+        ],
+        "accent": [
+          "market_stall",
+          "barrel",
+          "crate"
+        ]
+      },
+      "residential": {
+        "ground": [
+          [
+            "cobblestone",
+            50
+          ],
+          [
+            "dirt_path",
+            30
+          ],
+          [
+            "grass",
+            20
+          ]
+        ],
+        "accent": [
+          "flower_pot",
+          "barrel"
+        ]
+      },
+      "docks": {
+        "ground": [
+          [
+            "dock_planks",
+            60
+          ],
+          [
+            "sand",
+            25
+          ],
+          [
+            "cobblestone",
+            15
+          ]
+        ],
+        "accent": [
+          "crate",
+          "barrel",
+          "rope"
+        ]
+      },
+      "gate": {
+        "ground": [
+          [
+            "cobblestone",
+            80
+          ],
+          [
+            "dirt_path",
+            20
+          ]
+        ],
+        "accent": []
+      },
+      "tavern": {
+        "ground": [
+          [
+            "wood_floor",
+            70
+          ],
+          [
+            "tavern_floor",
+            30
+          ]
+        ],
+        "accent": [
+          "table",
+          "chair"
+        ]
+      },
+      "temple": {
+        "ground": [
+          [
+            "stone_floor",
+            80
+          ],
+          [
+            "cobblestone",
+            20
+          ]
+        ],
+        "accent": [
+          "altar",
+          "candle"
+        ]
+      },
+      "road": {
+        "ground": [
+          [
+            "cobblestone",
+            90
+          ],
+          [
+            "dirt_path",
+            10
+          ]
+        ],
+        "accent": []
+      },
+      "water": {
+        "ground": [
+          [
+            "water",
+            100
+          ]
+        ],
+        "accent": []
+      },
+      "plaza": {
+        "ground": [
+          [
+            "cobblestone",
+            85
+          ],
+          [
+            "stone_floor",
+            15
+          ]
+        ],
+        "accent": [
+          "fountain",
+          "bench"
+        ]
+      },
+      "garden": {
+        "ground": [
+          [
+            "grass",
+            60
+          ],
+          [
+            "dirt_path",
+            25
+          ],
+          [
+            "flower_bed",
+            15
+          ]
+        ],
+        "accent": [
+          "tree",
+          "bush"
+        ]
+      },
+      "entrance": {
+        "ground": [
+          [
+            "stone_floor",
+            70
+          ],
+          [
+            "cracked_stone",
+            30
+          ]
+        ],
+        "accent": [
+          "torch_wall"
+        ]
+      },
+      "corridor": {
+        "ground": [
+          [
+            "stone_floor",
+            60
+          ],
+          [
+            "wet_stone",
+            30
+          ],
+          [
+            "cracked_stone",
+            10
+          ]
+        ],
+        "accent": [
+          "torch_wall"
+        ]
+      },
+      "treasure": {
+        "ground": [
+          [
+            "stone_floor",
+            80
+          ],
+          [
+            "gold_tile",
+            20
+          ]
+        ],
+        "accent": [
+          "treasure_chest",
+          "gold_pile"
+        ]
+      },
+      "boss": {
+        "ground": [
+          [
+            "dark_stone",
+            70
+          ],
+          [
+            "cracked_stone",
+            30
+          ]
+        ],
+        "accent": [
+          "throne",
+          "brazier"
+        ]
+      },
+      "clearing": {
+        "ground": [
+          [
+            "grass",
+            70
+          ],
+          [
+            "dirt",
+            20
+          ],
+          [
+            "rocky_ground",
+            10
+          ]
+        ],
+        "accent": [
+          "fallen_log",
+          "mushroom"
+        ]
+      },
+      "dense_forest": {
+        "ground": [
+          [
+            "grass",
+            40
+          ],
+          [
+            "dirt",
+            30
+          ],
+          [
+            "mud",
+            30
+          ]
+        ],
+        "accent": [
+          "tree",
+          "bush",
+          "vine"
+        ]
+      },
+      "path": {
+        "ground": [
+          [
+            "dirt_path",
+            80
+          ],
+          [
+            "grass",
+            20
+          ]
+        ],
+        "accent": []
+      },
+      "camp": {
+        "ground": [
+          [
+            "dirt",
+            60
+          ],
+          [
+            "grass",
+            30
+          ],
+          [
+            "rocky_ground",
+            10
+          ]
+        ],
+        "accent": [
+          "campfire_pit",
+          "tent"
+        ]
+      },
+      "cave_entrance": {
+        "ground": [
+          [
+            "cave_floor",
+            60
+          ],
+          [
+            "gravel",
+            40
+          ]
+        ],
+        "accent": [
+          "stalactite"
+        ]
+      },
+      "cavern": {
+        "ground": [
+          [
+            "cave_floor",
+            50
+          ],
+          [
+            "wet_cave_floor",
+            30
+          ],
+          [
+            "gravel",
+            20
+          ]
+        ],
+        "accent": [
+          "glowing_mushroom"
+        ]
+      },
+      "crystal": {
+        "ground": [
+          [
+            "cave_floor",
+            40
+          ],
+          [
+            "crystal_floor",
+            60
+          ]
+        ],
+        "accent": [
+          "crystal_formation",
+          "glowing_mushroom"
+        ]
+      }
+    },
+    "building_templates": {
+      "tavern_5x3": {
+        "size": [
+          5,
+          3
+        ],
+        "tiles": [
+          [
+            "stone_wall",
+            "door",
+            "stone_wall",
+            "stone_wall",
+            "stone_wall"
+          ],
+          [
+            "tavern_floor",
+            "tavern_floor",
+            "tavern_floor",
+            "bar_counter",
+            "stone_wall"
+          ],
+          [
+            "stone_wall",
+            "stone_wall",
+            "stone_wall",
+            "stone_wall",
+            "stone_wall"
+          ]
+        ],
+        "entity_slots": [
+          {
+            "offset": [
+              3,
+              1
+            ],
+            "role": "innkeeper",
+            "type": "npc",
+            "required": true
+          }
+        ],
+        "zone_affinity": [
+          "tavern",
+          "market"
+        ],
+        "is_indoor": true
+      },
+      "shop_3x3": {
+        "size": [
+          3,
+          3
+        ],
+        "tiles": [
+          [
+            "stone_wall",
+            "door",
+            "stone_wall"
+          ],
+          [
+            "wood_floor",
+            "wood_floor",
+            "stone_wall"
+          ],
+          [
+            "stone_wall",
+            "stone_wall",
+            "stone_wall"
+          ]
+        ],
+        "entity_slots": [
+          {
+            "offset": [
+              1,
+              1
+            ],
+            "role": "merchant",
+            "type": "npc",
+            "required": true
+          }
+        ],
+        "zone_affinity": [
+          "market",
+          "residential"
+        ],
+        "is_indoor": true
+      },
+      "market_stall_2x2": {
+        "size": [
+          2,
+          2
+        ],
+        "tiles": [
+          [
+            "cobblestone",
+            "cobblestone"
+          ],
+          [
+            "cobblestone",
+            "cobblestone"
+          ]
+        ],
+        "entity_slots": [
+          {
+            "offset": [
+              0,
+              0
+            ],
+            "role": "merchant",
+            "type": "npc",
+            "required": true
+          },
+          {
+            "offset": [
+              1,
+              0
+            ],
+            "role": "crate",
+            "type": "item",
+            "required": false
+          }
+        ],
+        "zone_affinity": [
+          "market"
+        ],
+        "is_indoor": false
+      },
+      "guard_post_2x2": {
+        "size": [
+          2,
+          2
+        ],
+        "tiles": [
+          [
+            "stone_wall",
+            "cobblestone"
+          ],
+          [
+            "cobblestone",
+            "cobblestone"
+          ]
+        ],
+        "entity_slots": [
+          {
+            "offset": [
+              1,
+              0
+            ],
+            "role": "guard",
+            "type": "npc",
+            "required": true
+          }
+        ],
+        "zone_affinity": [
+          "gate"
+        ],
+        "is_indoor": false
+      },
+      "well_1x1": {
+        "size": [
+          1,
+          1
+        ],
+        "tiles": [
+          [
+            "cobblestone"
+          ]
+        ],
+        "entity_slots": [
+          {
+            "offset": [
+              0,
+              0
+            ],
+            "role": "well",
+            "type": "item",
+            "required": true
+          }
+        ],
+        "zone_affinity": [
+          "plaza",
+          "market",
+          "residential"
+        ],
+        "is_indoor": false
+      },
+      "notice_board_1x1": {
+        "size": [
+          1,
+          1
+        ],
+        "tiles": [
+          [
+            "cobblestone"
+          ]
+        ],
+        "entity_slots": [
+          {
+            "offset": [
+              0,
+              0
+            ],
+            "role": "notice_board",
+            "type": "item",
+            "required": true
+          }
+        ],
+        "zone_affinity": [
+          "market",
+          "plaza",
+          "gate"
+        ],
+        "is_indoor": false
+      },
+      "temple_4x3": {
+        "size": [
+          4,
+          3
+        ],
+        "tiles": [
+          [
+            "stone_wall",
+            "door",
+            "stone_wall",
+            "stone_wall"
+          ],
+          [
+            "stone_floor",
+            "stone_floor",
+            "stone_floor",
+            "stone_wall"
+          ],
+          [
+            "stone_wall",
+            "stone_wall",
+            "stone_wall",
+            "stone_wall"
+          ]
+        ],
+        "entity_slots": [
+          {
+            "offset": [
+              2,
+              1
+            ],
+            "role": "healer",
+            "type": "npc",
+            "required": false
+          }
+        ],
+        "zone_affinity": [
+          "temple"
+        ],
+        "is_indoor": true
+      }
+    },
+    "map_generator_tile_sets": {
+      "town": {
+        "ground": [
+          "cobblestone",
+          "dirt_path",
+          "grass"
+        ],
+        "walls": [
+          "stone_wall",
+          "wooden_fence"
+        ],
+        "special": [
+          "door",
+          "window",
+          "chest",
+          "barrel"
+        ]
+      },
+      "dungeon": {
+        "ground": [
+          "stone_floor",
+          "cracked_stone",
+          "wet_stone"
+        ],
+        "walls": [
+          "dungeon_wall",
+          "reinforced_wall"
+        ],
+        "special": [
+          "torch_wall",
+          "secret_door",
+          "pit",
+          "treasure_chest"
+        ]
+      },
+      "tavern": {
+        "ground": [
+          "wooden_floor",
+          "rug"
+        ],
+        "walls": [
+          "wooden_wall",
+          "stone_wall"
+        ],
+        "special": [
+          "fireplace",
+          "table",
+          "bar_counter",
+          "stairs"
+        ]
+      },
+      "wilderness": {
+        "ground": [
+          "grass",
+          "dirt",
+          "mud",
+          "rocky_ground"
+        ],
+        "walls": [
+          "tree",
+          "large_rock",
+          "cliff"
+        ],
+        "special": [
+          "campfire_pit",
+          "fallen_log",
+          "cave_entrance"
+        ]
+      },
+      "cave": {
+        "ground": [
+          "cave_floor",
+          "wet_cave_floor",
+          "gravel"
+        ],
+        "walls": [
+          "cave_wall",
+          "stalactite"
+        ],
+        "special": [
+          "glowing_mushroom",
+          "underground_pool",
+          "crystal_formation"
+        ]
+      }
+    },
+    "map_generator_room_templates": {
+      "town": [
+        {
+          "id": "market",
+          "name": "Market Square",
+          "type": "outdoor",
+          "bounds_rel": [
+            0.3,
+            0.3,
+            0.7,
+            0.7
+          ]
+        },
+        {
+          "id": "tavern_building",
+          "name": "The Rusty Anchor Tavern",
+          "type": "building",
+          "bounds_rel": [
+            0.1,
+            0.1,
+            0.4,
+            0.4
+          ]
+        },
+        {
+          "id": "docks",
+          "name": "Harbor Docks",
+          "type": "water_edge",
+          "bounds_rel": [
+            0.0,
+            0.7,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "id": "north_gate",
+          "name": "Town Gate",
+          "type": "entrance",
+          "bounds_rel": [
+            0.4,
+            0.0,
+            0.6,
+            0.1
+          ]
+        }
+      ],
+      "dungeon": [
+        {
+          "id": "entrance_hall",
+          "name": "Entrance Hall",
+          "type": "corridor",
+          "bounds_rel": [
+            0.3,
+            0.0,
+            0.7,
+            0.3
+          ]
+        },
+        {
+          "id": "main_chamber",
+          "name": "Main Chamber",
+          "type": "chamber",
+          "bounds_rel": [
+            0.2,
+            0.3,
+            0.8,
+            0.7
+          ]
+        },
+        {
+          "id": "side_passage",
+          "name": "Side Passage",
+          "type": "corridor",
+          "bounds_rel": [
+            0.0,
+            0.3,
+            0.2,
+            0.6
+          ]
+        },
+        {
+          "id": "boss_room",
+          "name": "Inner Sanctum",
+          "type": "boss_chamber",
+          "bounds_rel": [
+            0.3,
+            0.7,
+            0.7,
+            1.0
+          ]
+        }
+      ],
+      "tavern": [
+        {
+          "id": "common_room",
+          "name": "Common Room",
+          "type": "interior",
+          "bounds_rel": [
+            0.1,
+            0.1,
+            0.9,
+            0.7
+          ]
+        },
+        {
+          "id": "bar",
+          "name": "Bar Counter",
+          "type": "interior",
+          "bounds_rel": [
+            0.1,
+            0.1,
+            0.4,
+            0.3
+          ]
+        },
+        {
+          "id": "back_room",
+          "name": "Back Room",
+          "type": "private",
+          "bounds_rel": [
+            0.7,
+            0.1,
+            0.9,
+            0.5
+          ]
+        },
+        {
+          "id": "cellar_stairs",
+          "name": "Cellar Stairs",
+          "type": "transition",
+          "bounds_rel": [
+            0.8,
+            0.6,
+            0.9,
+            0.7
+          ]
+        }
+      ],
+      "wilderness": [
+        {
+          "id": "clearing",
+          "name": "Forest Clearing",
+          "type": "outdoor",
+          "bounds_rel": [
+            0.3,
+            0.3,
+            0.7,
+            0.7
+          ]
+        },
+        {
+          "id": "path_north",
+          "name": "Northern Path",
+          "type": "path",
+          "bounds_rel": [
+            0.45,
+            0.0,
+            0.55,
+            0.35
+          ]
+        },
+        {
+          "id": "dense_forest",
+          "name": "Dense Forest",
+          "type": "obstacle",
+          "bounds_rel": [
+            0.0,
+            0.0,
+            0.3,
+            1.0
+          ]
+        }
+      ],
+      "cave": [
+        {
+          "id": "cave_entrance",
+          "name": "Cave Entrance",
+          "type": "entrance",
+          "bounds_rel": [
+            0.4,
+            0.0,
+            0.6,
+            0.2
+          ]
+        },
+        {
+          "id": "main_cavern",
+          "name": "Main Cavern",
+          "type": "chamber",
+          "bounds_rel": [
+            0.2,
+            0.2,
+            0.8,
+            0.8
+          ]
+        },
+        {
+          "id": "crystal_grotto",
+          "name": "Crystal Grotto",
+          "type": "special",
+          "bounds_rel": [
+            0.6,
+            0.5,
+            0.9,
+            0.9
+          ]
+        }
+      ]
+    },
+    "entity_templates_by_location": {
+      "npcs": {
+        "town": [
+          "merchant",
+          "guard",
+          "innkeeper",
+          "quest_giver",
+          "beggar"
+        ],
+        "dungeon": [
+          "skeleton_guard",
+          "dungeon_prisoner",
+          "trapped_adventurer"
+        ],
+        "tavern": [
+          "innkeeper",
+          "merchant",
+          "bard",
+          "drunk_patron",
+          "mysterious_stranger"
+        ],
+        "wilderness": [
+          "traveling_merchant",
+          "ranger",
+          "bandit"
+        ],
+        "cave": [
+          "cave_hermit",
+          "goblin_scout"
+        ]
+      },
+      "items": {
+        "town": [
+          "notice_board",
+          "market_stall",
+          "barrel",
+          "crate",
+          "well"
+        ],
+        "dungeon": [
+          "treasure_chest",
+          "torch",
+          "skeleton_remains",
+          "locked_door"
+        ],
+        "tavern": [
+          "fireplace",
+          "notice_board",
+          "locked_chest",
+          "bookshelf"
+        ],
+        "wilderness": [
+          "campfire_remains",
+          "abandoned_cart",
+          "mysterious_altar"
+        ],
+        "cave": [
+          "glowing_crystal",
+          "old_bones",
+          "treasure_cache"
+        ]
+      },
+      "enemies": {
+        "dungeon": [
+          "skeleton",
+          "zombie",
+          "giant_spider",
+          "orc"
+        ],
+        "wilderness": [
+          "wolf",
+          "bandit",
+          "goblin"
+        ],
+        "cave": [
+          "cave_bat",
+          "cave_troll",
+          "goblin"
+        ],
+        "town": [],
+        "tavern": []
+      },
+      "context_actions": {
+        "npc": {
+          "merchant": [
+            "examine",
+            "talk",
+            "trade"
+          ],
+          "guard": [
+            "examine",
+            "talk"
+          ],
+          "innkeeper": [
+            "examine",
+            "talk",
+            "trade",
+            "rest"
+          ],
+          "quest_giver": [
+            "examine",
+            "talk"
+          ],
+          "default": [
+            "examine",
+            "talk"
+          ]
+        },
+        "item": {
+          "treasure_chest": [
+            "examine",
+            "open",
+            "lock_pick"
+          ],
+          "notice_board": [
+            "examine",
+            "read"
+          ],
+          "barrel": [
+            "examine",
+            "open",
+            "kick"
+          ],
+          "default": [
+            "examine",
+            "pick_up"
+          ]
+        },
+        "enemy": {
+          "default": [
+            "examine",
+            "attack",
+            "flee"
+          ]
+        },
+        "interactive": {
+          "default": [
+            "examine",
+            "interact"
+          ]
+        }
+      }
+    },
+    "zone_entity_rules": {
+      "market": {
+        "npcs": [
+          "merchant",
+          "beggar",
+          "quest_giver"
+        ],
+        "items": [
+          "barrel",
+          "crate",
+          "notice_board"
+        ],
+        "enemies": []
+      },
+      "gate": {
+        "npcs": [
+          "guard"
+        ],
+        "items": [],
+        "enemies": []
+      },
+      "docks": {
+        "npcs": [
+          "merchant",
+          "beggar"
+        ],
+        "items": [
+          "crate",
+          "barrel"
+        ],
+        "enemies": []
+      },
+      "tavern": {
+        "npcs": [
+          "innkeeper",
+          "bard",
+          "drunk_patron",
+          "mysterious_stranger"
+        ],
+        "items": [
+          "fireplace",
+          "notice_board"
+        ],
+        "enemies": []
+      },
+      "residential": {
+        "npcs": [
+          "quest_giver",
+          "beggar"
+        ],
+        "items": [
+          "barrel",
+          "crate"
+        ],
+        "enemies": []
+      },
+      "temple": {
+        "npcs": [
+          "healer",
+          "sage"
+        ],
+        "items": [
+          "altar",
+          "bookshelf"
+        ],
+        "enemies": []
+      },
+      "entrance": {
+        "npcs": [
+          "trapped_adventurer"
+        ],
+        "items": [
+          "torch"
+        ],
+        "enemies": []
+      },
+      "corridor": {
+        "npcs": [],
+        "items": [
+          "torch"
+        ],
+        "enemies": [
+          "skeleton",
+          "giant_spider"
+        ]
+      },
+      "treasure": {
+        "npcs": [],
+        "items": [
+          "treasure_chest",
+          "gold_pile"
+        ],
+        "enemies": [
+          "skeleton"
+        ]
+      },
+      "boss": {
+        "npcs": [],
+        "items": [
+          "treasure_chest"
+        ],
+        "enemies": [
+          "orc",
+          "necromancer"
+        ]
+      },
+      "clearing": {
+        "npcs": [
+          "ranger",
+          "traveling_merchant"
+        ],
+        "items": [
+          "campfire_remains"
+        ],
+        "enemies": []
+      },
+      "dense_forest": {
+        "npcs": [],
+        "items": [],
+        "enemies": [
+          "wolf",
+          "bandit",
+          "goblin"
+        ]
+      },
+      "camp": {
+        "npcs": [
+          "traveling_merchant"
+        ],
+        "items": [
+          "campfire_pit",
+          "abandoned_cart"
+        ],
+        "enemies": []
+      }
+    },
+    "zone_layouts": {
+      "town": [
+        {
+          "id": "market_1",
+          "zone_type": "market",
+          "name": "Market Square",
+          "bounds": [
+            6,
+            5,
+            14,
+            10
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "gate_1",
+          "zone_type": "gate",
+          "name": "Town Gate",
+          "bounds": [
+            8,
+            0,
+            12,
+            3
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "tavern_1",
+          "zone_type": "tavern",
+          "name": "Tavern District",
+          "bounds": [
+            1,
+            1,
+            6,
+            6
+          ],
+          "is_indoor": true,
+          "danger_level": 0
+        },
+        {
+          "id": "docks_1",
+          "zone_type": "docks",
+          "name": "Harbor Docks",
+          "bounds": [
+            0,
+            12,
+            20,
+            15
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "residential_1",
+          "zone_type": "residential",
+          "name": "East Quarter",
+          "bounds": [
+            14,
+            1,
+            19,
+            6
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "temple_1",
+          "zone_type": "temple",
+          "name": "Temple of Light",
+          "bounds": [
+            14,
+            7,
+            19,
+            11
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "plaza_1",
+          "zone_type": "plaza",
+          "name": "Town Square",
+          "bounds": [
+            6,
+            10,
+            14,
+            12
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        }
+      ],
+      "dungeon": [
+        {
+          "id": "entrance_1",
+          "zone_type": "entrance",
+          "name": "Entrance Hall",
+          "bounds": [
+            7,
+            0,
+            13,
+            4
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "corridor_1",
+          "zone_type": "corridor",
+          "name": "Main Corridor",
+          "bounds": [
+            8,
+            4,
+            12,
+            8
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "corridor_2",
+          "zone_type": "corridor",
+          "name": "Side Passage",
+          "bounds": [
+            1,
+            5,
+            8,
+            8
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "treasure_1",
+          "zone_type": "treasure",
+          "name": "Treasure Room",
+          "bounds": [
+            1,
+            9,
+            6,
+            13
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "boss_1",
+          "zone_type": "boss",
+          "name": "Inner Sanctum",
+          "bounds": [
+            7,
+            9,
+            14,
+            14
+          ],
+          "is_indoor": false,
+          "danger_level": 3
+        }
+      ],
+      "wilderness": [
+        {
+          "id": "clearing_1",
+          "zone_type": "clearing",
+          "name": "Forest Clearing",
+          "bounds": [
+            6,
+            5,
+            14,
+            10
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "path_1",
+          "zone_type": "path",
+          "name": "Forest Path",
+          "bounds": [
+            9,
+            0,
+            11,
+            15
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "forest_1",
+          "zone_type": "dense_forest",
+          "name": "Dense Woods",
+          "bounds": [
+            0,
+            0,
+            6,
+            7
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "forest_2",
+          "zone_type": "dense_forest",
+          "name": "Dark Thicket",
+          "bounds": [
+            14,
+            0,
+            20,
+            7
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "camp_1",
+          "zone_type": "camp",
+          "name": "Abandoned Camp",
+          "bounds": [
+            2,
+            10,
+            6,
+            14
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "river_1",
+          "zone_type": "river",
+          "name": "Forest Stream",
+          "bounds": [
+            14,
+            8,
+            20,
+            15
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        }
+      ],
+      "cave": [
+        {
+          "id": "cave_ent_1",
+          "zone_type": "cave_entrance",
+          "name": "Cave Mouth",
+          "bounds": [
+            8,
+            0,
+            12,
+            4
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "cavern_1",
+          "zone_type": "cavern",
+          "name": "Main Cavern",
+          "bounds": [
+            4,
+            4,
+            16,
+            10
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "crystal_1",
+          "zone_type": "crystal",
+          "name": "Crystal Grotto",
+          "bounds": [
+            10,
+            10,
+            16,
+            14
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "corridor_1",
+          "zone_type": "corridor",
+          "name": "Narrow Passage",
+          "bounds": [
+            1,
+            6,
+            4,
+            14
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        }
+      ],
+      "tavern": [
+        {
+          "id": "common_1",
+          "zone_type": "tavern",
+          "name": "Common Room",
+          "bounds": [
+            2,
+            2,
+            18,
+            10
+          ],
+          "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "bar_1",
+          "zone_type": "tavern",
+          "name": "Bar Counter",
+          "bounds": [
+            2,
+            2,
+            8,
+            5
+          ],
+          "is_indoor": true,
+          "danger_level": 0
+        },
+        {
+          "id": "back_1",
+          "zone_type": "residential",
+          "name": "Back Room",
+          "bounds": [
+            14,
+            2,
+            18,
+            7
+          ],
+          "is_indoor": true,
+          "danger_level": 0
+        }
+      ]
+    },
+    "scene_narration": {
+      "system_prompt": "You are the Dungeon Master for Ember RPG, a dark fantasy tabletop RPG.\nYour role: narrate the scene as a player enters it. Build atmosphere.\n\nRules:\n- Start with a vivid opening sentence that sets the mood\n- Reveal key map elements naturally (market, guards, items)\n- Keep total narrative to 3-5 sentences\n- Each sentence should optionally reveal a specific entity (use [REVEAL:entity_id] marker)\n- Use second person: \"Before you...\" \"You see...\" \"To your left...\"\n- Match tone to location: tense in dungeons, lively in towns, eerie in caves\n- Reference world state context when relevant\n- End with a subtle hook or unresolved detail that invites exploration",
+      "fallback_narratives": {
+        "town": "The town square bustles with morning activity. Merchants call out their wares while guards patrol the cobblestone streets. [REVEAL:merchant_1] A weathered notice board near the market square catches your eye. [REVEAL:notice_board_1]",
+        "dungeon": "Cold air greets you as you descend into the darkness. [REVEAL:torch_1] Torchlight flickers off damp stone walls, revealing a corridor stretching deeper underground. The silence is broken only by distant dripping water — and something else. Something breathing.",
+        "tavern": "Warm firelight and the smell of ale wash over you. [REVEAL:innkeeper_1] The innkeeper looks up from polishing a glass, nodding in greeting. A half-dozen patrons occupy the common room, conversations dropping to murmurs as you enter.",
+        "wilderness": "The forest path widens into a clearing bathed in diffused light. [REVEAL:traveling_merchant_1] Birdsong fills the air, though you notice it stops suddenly near the treeline to the east. The undergrowth shows signs of recent disturbance.",
+        "cave": "Darkness swallows you as you enter the cave mouth. [REVEAL:glowing_crystal_1] Faintly glowing crystals embedded in the rock provide just enough light to navigate. The air is cold and carries the faint smell of sulfur."
+      }
+    }
+  }
+}

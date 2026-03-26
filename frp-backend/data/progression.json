@@ -1,0 +1,222 @@
+{
+  "progression": {
+    "xp_thresholds": [
+      0,
+      300,
+      900,
+      2700,
+      6500,
+      14000,
+      23000,
+      34000,
+      48000,
+      64000,
+      85000,
+      100000,
+      120000,
+      140000,
+      165000,
+      195000,
+      225000,
+      265000,
+      305000,
+      355000
+    ],
+    "hp_per_level": {
+      "warrior": 10,
+      "rogue": 8,
+      "priest": 8,
+      "mage": 6
+    },
+    "sp_per_level": {
+      "mage": 4,
+      "priest": 3,
+      "warrior": 0,
+      "rogue": 0
+    },
+    "stat_bonus_by_class": {
+      "warrior": "MIG",
+      "rogue": "AGI",
+      "mage": "MND",
+      "priest": "INS",
+      "null": "MIG"
+    },
+    "xp_rewards": {
+      "1": 100,
+      "2": 200,
+      "3": 450,
+      "4": 700,
+      "5": 1100
+    },
+    "class_abilities": {
+      "warrior": [
+        {
+          "name": "Combat Stance",
+          "description": "+2 to MIG skill checks in combat. Passive combat training.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Second Wind",
+          "description": "Once per rest, regain 1d10 + level HP as a bonus action.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "warrior",
+          "cost": 1
+        },
+        {
+          "name": "Extra Attack",
+          "description": "Make one additional attack per turn for 1 AP (instead of 2).",
+          "passive": true,
+          "required_level": 3,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Battle Hardened",
+          "description": "Years of combat have toughened your hide. Gain +2 AC permanently.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Mighty Blow",
+          "description": "Once per turn, make a strike that deals double damage on hit.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "warrior",
+          "cost": 1
+        }
+      ],
+      "rogue": [
+        {
+          "name": "Sneak Attack",
+          "description": "Deal +1d6 bonus damage when attacking with advantage.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Nimble Escape",
+          "description": "Disengage or hide as a free action once per turn.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Cunning Action",
+          "description": "Dash, Disengage, or Hide costs only 1 AP instead of 2.",
+          "passive": true,
+          "required_level": 3,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Uncanny Dodge",
+          "description": "When an attacker you can see hits you, halve the damage once per round.",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Evasion",
+          "description": "When you succeed on a DEX saving throw, you take 0 damage.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "rogue",
+          "cost": 0
+        }
+      ],
+      "mage": [
+        {
+          "name": "Arcane Recovery",
+          "description": "Once per rest, recover level/2 spell points.",
+          "passive": false,
+          "required_level": 1,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Spellcraft",
+          "description": "Your mastery of spell theory increases your spell save DC by 1.",
+          "passive": true,
+          "required_level": 2,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Expanded Spells",
+          "description": "You learn 2 additional spells of your choice.",
+          "passive": true,
+          "required_level": 3,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Metamagic: Quicken",
+          "description": "Spend 2 spell points to cast a spell as a bonus action (1 AP instead of 2).",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "mage",
+          "cost": 2
+        },
+        {
+          "name": "Potent Cantrip",
+          "description": "Your cantrips deal bonus damage equal to your MND modifier.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "mage",
+          "cost": 0
+        }
+      ],
+      "priest": [
+        {
+          "name": "Divine Favor",
+          "description": "Once per rest, add +1d4 to all rolls for 1 minute.",
+          "passive": false,
+          "required_level": 1,
+          "class_name": "priest",
+          "cost": 1
+        },
+        {
+          "name": "Healing Touch",
+          "description": "Cure Wounds and similar spells heal additional HP equal to your level.",
+          "passive": true,
+          "required_level": 2,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Channel Divinity",
+          "description": "Once per rest, turn undead or restore 2d6 HP to allies in 30ft.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "priest",
+          "cost": 2
+        },
+        {
+          "name": "Sacred Flame",
+          "description": "Your fire damage ignores resistance. Sacred attacks bypass normal defenses.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Greater Heal",
+          "description": "Channel 4 spell points to restore 4d8+5 HP to one target.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "priest",
+          "cost": 4
+        }
+      ]
+    }
+  }
+}

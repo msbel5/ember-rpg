@@ -1,0 +1,278 @@
+{
+  "locations": {
+    "opening_scenes": [
+      {
+        "location": "Stone Bridge Tavern",
+        "description": "Low rafters, the smell of pipe smoke. A fire crackles in the hearth. The door creaks open — someone has arrived."
+      },
+      {
+        "location": "Forest Road",
+        "description": "Morning mist parts as you push forward. Branches arch overhead. A wolf howls somewhere in the distance."
+      },
+      {
+        "location": "Harbor Town",
+        "description": "Salt air fills your lungs. Fishermen haul nets at the dock. A northern-flag ship sways in the harbor."
+      }
+    ],
+    "scene_anchor_offsets": {
+      "home": [
+        -6,
+        -3
+      ],
+      "shop": [
+        5,
+        -1
+      ],
+      "market_square": [
+        0,
+        4
+      ],
+      "tavern": [
+        6,
+        5
+      ],
+      "gate": [
+        0,
+        -7
+      ],
+      "forge": [
+        8,
+        1
+      ],
+      "temple": [
+        -8,
+        1
+      ],
+      "alley": [
+        -6,
+        5
+      ],
+      "docks": [
+        9,
+        6
+      ],
+      "campfire": [
+        -4,
+        7
+      ]
+    },
+    "scene_role_sets": {
+      "tavern_inn": [
+        {
+          "role": "innkeeper",
+          "faction": "merchant_guild"
+        },
+        {
+          "role": "merchant",
+          "faction": "merchant_guild"
+        },
+        {
+          "role": "guard",
+          "faction": "harbor_guard"
+        },
+        {
+          "role": "quest_giver",
+          "faction": "merchant_guild"
+        },
+        {
+          "role": "beggar",
+          "faction": "thieves_guild"
+        }
+      ],
+      "settlement": [
+        {
+          "role": "merchant",
+          "faction": "merchant_guild"
+        },
+        {
+          "role": "innkeeper",
+          "faction": "merchant_guild"
+        },
+        {
+          "role": "guard",
+          "faction": "harbor_guard"
+        },
+        {
+          "role": "blacksmith",
+          "faction": "mountain_dwarves"
+        },
+        {
+          "role": "beggar",
+          "faction": "thieves_guild"
+        },
+        {
+          "role": "priest",
+          "faction": "temple_order"
+        }
+      ],
+      "road_wilds": [
+        {
+          "role": "spy",
+          "faction": "thieves_guild"
+        },
+        {
+          "role": "guard",
+          "faction": "harbor_guard"
+        }
+      ],
+      "default": [
+        {
+          "role": "merchant",
+          "faction": "merchant_guild"
+        },
+        {
+          "role": "guard",
+          "faction": "harbor_guard"
+        }
+      ]
+    },
+    "role_anchor_map": {
+      "merchant": "shop",
+      "blacksmith": "forge",
+      "priest": "temple",
+      "quest_giver": "market_square",
+      "guard": "gate",
+      "beggar": "alley",
+      "spy": "alley"
+    },
+    "npc_visuals": {
+      "innkeeper": [
+        "I",
+        "cyan"
+      ],
+      "guard": [
+        "G",
+        "red"
+      ],
+      "merchant": [
+        "$",
+        "yellow"
+      ],
+      "blacksmith": [
+        "B",
+        "white"
+      ],
+      "quest_giver": [
+        "Q",
+        "magenta"
+      ],
+      "beggar": [
+        "b",
+        "dim"
+      ],
+      "spy": [
+        "s",
+        "blue"
+      ],
+      "priest": [
+        "P",
+        "white"
+      ],
+      "healer": [
+        "H",
+        "green"
+      ],
+      "sage": [
+        "S",
+        "magenta"
+      ],
+      "bard": [
+        "♪",
+        "yellow"
+      ]
+    },
+    "workstation_specs": {
+      "forge": {
+        "name": "Forge",
+        "glyph": "F",
+        "color": "bright_white"
+      },
+      "alchemy_bench": {
+        "name": "Alchemy Bench",
+        "glyph": "A",
+        "color": "bright_green"
+      },
+      "workbench": {
+        "name": "Workbench",
+        "glyph": "W",
+        "color": "bright_yellow"
+      },
+      "kitchen": {
+        "name": "Kitchen",
+        "glyph": "K",
+        "color": "yellow"
+      },
+      "campfire": {
+        "name": "Campfire",
+        "glyph": "C",
+        "color": "red"
+      }
+    },
+    "workstation_anchors": {
+      "forge": "forge",
+      "alchemy_bench": "temple",
+      "workbench": "shop",
+      "kitchen": "tavern",
+      "campfire": "campfire"
+    },
+    "role_production": {
+      "blacksmith": [
+        "iron_bar",
+        "iron_sword"
+      ],
+      "innkeeper": [
+        "bread",
+        "ale"
+      ],
+      "merchant": [
+        "torch"
+      ],
+      "priest": [
+        "healing_potion"
+      ]
+    },
+    "role_skill_profiles": {
+      "guard": {
+        "melee": 3,
+        "patrol": 2
+      },
+      "merchant": {
+        "trade": 4,
+        "appraisal": 3
+      },
+      "blacksmith": {
+        "smithing": 5,
+        "trade": 2
+      },
+      "innkeeper": {
+        "trade": 3,
+        "cooking": 4
+      },
+      "healer": {
+        "healing": 5,
+        "herbalism": 3
+      },
+      "priest": {
+        "healing": 3,
+        "divine_magic": 4
+      }
+    },
+    "role_stats": {
+      "default": {
+        "hp": 8,
+        "max_hp": 8,
+        "disposition": "friendly"
+      },
+      "guard": {
+        "hp": 12,
+        "max_hp": 12,
+        "disposition": "friendly"
+      },
+      "spy": {
+        "hp": 8,
+        "max_hp": 8,
+        "disposition": "neutral"
+      }
+    }
+  }
+}

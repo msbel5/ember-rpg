@@ -1,0 +1,19 @@
+{
+  "loot_tables": {
+    "rarity_drop_chances": {
+      "COMMON": 0.5,
+      "UNCOMMON": 0.35,
+      "RARE": 0.2,
+      "EPIC": 0.1,
+      "LEGENDARY": 0.05
+    },
+    "rarity_order": [
+      "COMMON",
+      "UNCOMMON",
+      "RARE",
+      "EPIC",
+      "LEGENDARY"
+    ],
+    "base_drop_chance": 0.4
+  }
+}

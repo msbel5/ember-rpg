@@ -1,0 +1,1777 @@
+{
+  "recipes": [
+    {
+      "id": "iron_bar",
+      "name": "Iron Bar",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 10,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "iron_ore",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "coal",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "hammer",
+        "tongs"
+      ],
+      "failure_result": "slag",
+      "xp_reward": 8
+    },
+    {
+      "id": "steel_bar",
+      "name": "Steel Bar",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 14,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "coal",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "flux",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "steel_bar",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "hammer",
+        "tongs"
+      ],
+      "failure_result": "slag",
+      "xp_reward": 15
+    },
+    {
+      "id": "iron_sword",
+      "name": "Iron Sword",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 12,
+      "ap_cost": 10,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 2,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "iron_sword",
+          "quantity": 1,
+          "inherit_material": true
+        }
+      ],
+      "tools": [
+        "hammer",
+        "tongs"
+      ],
+      "failure_result": "ruined_blade",
+      "xp_reward": 20
+    },
+    {
+      "id": "steel_sword",
+      "name": "Steel Sword",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 16,
+      "ap_cost": 15,
+      "ingredients": [
+        {
+          "item_id": "steel_bar",
+          "quantity": 2,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "steel_sword",
+          "quantity": 1,
+          "inherit_material": true
+        }
+      ],
+      "tools": [
+        "hammer",
+        "tongs"
+      ],
+      "failure_result": "ruined_blade",
+      "xp_reward": 30
+    },
+    {
+      "id": "iron_shield",
+      "name": "Iron Shield",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 13,
+      "ap_cost": 12,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 3,
+          "material_class": null
+        },
+        {
+          "item_id": "leather",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "iron_shield",
+          "quantity": 1,
+          "inherit_material": true
+        }
+      ],
+      "tools": [
+        "hammer"
+      ],
+      "failure_result": "scrap_metal",
+      "xp_reward": 22
+    },
+    {
+      "id": "chain_mail",
+      "name": "Chain Mail",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 15,
+      "ap_cost": 20,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 5,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "chain_mail",
+          "quantity": 1,
+          "inherit_material": true
+        }
+      ],
+      "tools": [
+        "hammer",
+        "tongs",
+        "wire_draw"
+      ],
+      "failure_result": "scrap_metal",
+      "xp_reward": 35
+    },
+    {
+      "id": "plate_armor",
+      "name": "Plate Armor",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 18,
+      "ap_cost": 25,
+      "ingredients": [
+        {
+          "item_id": "steel_bar",
+          "quantity": 4,
+          "material_class": null
+        },
+        {
+          "item_id": "leather",
+          "quantity": 2,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "plate_armor",
+          "quantity": 1,
+          "inherit_material": true
+        }
+      ],
+      "tools": [
+        "hammer",
+        "tongs"
+      ],
+      "failure_result": "scrap_metal",
+      "xp_reward": 50
+    },
+    {
+      "id": "arrowheads",
+      "name": "Arrowheads",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 10,
+      "ap_cost": 3,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "iron_arrowhead",
+          "quantity": 10,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "hammer"
+      ],
+      "failure_result": "slag",
+      "xp_reward": 6
+    },
+    {
+      "id": "iron_nails",
+      "name": "Iron Nails",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 8,
+      "ap_cost": 2,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "iron_nail",
+          "quantity": 20,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "hammer"
+      ],
+      "failure_result": null,
+      "xp_reward": 4
+    },
+    {
+      "id": "horseshoe",
+      "name": "Horseshoe",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 10,
+      "ap_cost": 4,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "horseshoe",
+          "quantity": 2,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "hammer",
+        "tongs"
+      ],
+      "failure_result": null,
+      "xp_reward": 6
+    },
+    {
+      "id": "iron_helm",
+      "name": "Iron Helm",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 13,
+      "ap_cost": 10,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "leather",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "iron_helm",
+          "quantity": 1,
+          "inherit_material": true
+        }
+      ],
+      "tools": [
+        "hammer"
+      ],
+      "failure_result": "scrap_metal",
+      "xp_reward": 18
+    },
+    {
+      "id": "steel_dagger",
+      "name": "Steel Dagger",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 14,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "steel_bar",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "steel_dagger",
+          "quantity": 1,
+          "inherit_material": true
+        }
+      ],
+      "tools": [
+        "hammer",
+        "tongs"
+      ],
+      "failure_result": "ruined_blade",
+      "xp_reward": 18
+    },
+    {
+      "id": "mace",
+      "name": "Mace",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 13,
+      "ap_cost": 10,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "wood_plank",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "mace",
+          "quantity": 1,
+          "inherit_material": true
+        }
+      ],
+      "tools": [
+        "hammer"
+      ],
+      "failure_result": "scrap_metal",
+      "xp_reward": 20
+    },
+    {
+      "id": "war_hammer",
+      "name": "War Hammer",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 15,
+      "ap_cost": 14,
+      "ingredients": [
+        {
+          "item_id": "steel_bar",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "wood_plank",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "war_hammer",
+          "quantity": 1,
+          "inherit_material": true
+        }
+      ],
+      "tools": [
+        "hammer",
+        "tongs"
+      ],
+      "failure_result": "scrap_metal",
+      "xp_reward": 28
+    },
+    {
+      "id": "healing_potion",
+      "name": "Healing Potion",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 12,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "herb_heal",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "water",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "healing_potion",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 12
+    },
+    {
+      "id": "mana_potion",
+      "name": "Mana Potion",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 14,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "moonflower",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "spring_water",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "mana_potion",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 15
+    },
+    {
+      "id": "poison_vial",
+      "name": "Poison Vial",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 15,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "nightshade",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "venom_sac",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "poison_vial",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 18
+    },
+    {
+      "id": "antidote",
+      "name": "Antidote",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 13,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "herb_cure",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "honey",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "antidote",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 14
+    },
+    {
+      "id": "fire_bomb",
+      "name": "Fire Bomb",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 16,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "oil",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "sulfur",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "fire_bomb",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 20
+    },
+    {
+      "id": "smoke_bomb",
+      "name": "Smoke Bomb",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 12,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "charcoal",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "saltpeter",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "cloth",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "smoke_bomb",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": null,
+      "xp_reward": 10
+    },
+    {
+      "id": "strength_elixir",
+      "name": "Strength Elixir",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 17,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "ogre_moss",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "iron_dust",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "strength_elixir",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 22
+    },
+    {
+      "id": "speed_potion",
+      "name": "Speed Potion",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 15,
+      "ap_cost": 6,
+      "ingredients": [
+        {
+          "item_id": "windleaf",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "spring_water",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "speed_potion",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 18
+    },
+    {
+      "id": "invisibility_potion",
+      "name": "Invisibility Potion",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 20,
+      "ap_cost": 10,
+      "ingredients": [
+        {
+          "item_id": "ghost_lichen",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "moonflower",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "invisibility_potion",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar",
+        "alembic"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 30
+    },
+    {
+      "id": "resistance_potion",
+      "name": "Resistance Potion",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 14,
+      "ap_cost": 6,
+      "ingredients": [
+        {
+          "item_id": "stonecap",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "water",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "resistance_potion",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 15
+    },
+    {
+      "id": "bread",
+      "name": "Bread",
+      "workstation": "kitchen",
+      "skill": "cooking",
+      "skill_dc": 8,
+      "ap_cost": 3,
+      "ingredients": [
+        {
+          "item_id": "flour",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "water",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "bread",
+          "quantity": 2,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": "burnt_food",
+      "xp_reward": 5
+    },
+    {
+      "id": "stew",
+      "name": "Stew",
+      "workstation": "kitchen",
+      "skill": "cooking",
+      "skill_dc": 10,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "meat",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "vegetable",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "water",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "stew",
+          "quantity": 2,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": "burnt_food",
+      "xp_reward": 8
+    },
+    {
+      "id": "ale",
+      "name": "Ale",
+      "workstation": "kitchen",
+      "skill": "cooking",
+      "skill_dc": 12,
+      "ap_cost": 10,
+      "ingredients": [
+        {
+          "item_id": "grain",
+          "quantity": 3,
+          "material_class": null
+        },
+        {
+          "item_id": "water",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "yeast",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "ale",
+          "quantity": 3,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": "spoiled_brew",
+      "xp_reward": 12
+    },
+    {
+      "id": "dried_meat",
+      "name": "Dried Meat",
+      "workstation": "campfire",
+      "skill": "cooking",
+      "skill_dc": 8,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "meat",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "salt",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "dried_meat",
+          "quantity": 3,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": null,
+      "xp_reward": 6
+    },
+    {
+      "id": "trail_rations",
+      "name": "Trail Rations",
+      "workstation": "kitchen",
+      "skill": "cooking",
+      "skill_dc": 10,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "bread",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "dried_meat",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "fruit",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "trail_rations",
+          "quantity": 3,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": null,
+      "xp_reward": 8
+    },
+    {
+      "id": "fish_fillet",
+      "name": "Fish Fillet",
+      "workstation": "campfire",
+      "skill": "cooking",
+      "skill_dc": 9,
+      "ap_cost": 4,
+      "ingredients": [
+        {
+          "item_id": "raw_fish",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "salt",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "fish_fillet",
+          "quantity": 2,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": "burnt_food",
+      "xp_reward": 7
+    },
+    {
+      "id": "mushroom_soup",
+      "name": "Mushroom Soup",
+      "workstation": "kitchen",
+      "skill": "cooking",
+      "skill_dc": 10,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "mushroom",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "water",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "salt",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "mushroom_soup",
+          "quantity": 2,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": "burnt_food",
+      "xp_reward": 8
+    },
+    {
+      "id": "honey_cake",
+      "name": "Honey Cake",
+      "workstation": "kitchen",
+      "skill": "cooking",
+      "skill_dc": 12,
+      "ap_cost": 6,
+      "ingredients": [
+        {
+          "item_id": "flour",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "honey",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "egg",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "honey_cake",
+          "quantity": 2,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": "burnt_food",
+      "xp_reward": 10
+    },
+    {
+      "id": "herbal_tea",
+      "name": "Herbal Tea",
+      "workstation": "campfire",
+      "skill": "cooking",
+      "skill_dc": 6,
+      "ap_cost": 2,
+      "ingredients": [
+        {
+          "item_id": "herb_heal",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "water",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "herbal_tea",
+          "quantity": 2,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": null,
+      "xp_reward": 4
+    },
+    {
+      "id": "roast_boar",
+      "name": "Roast Boar",
+      "workstation": "campfire",
+      "skill": "cooking",
+      "skill_dc": 14,
+      "ap_cost": 10,
+      "ingredients": [
+        {
+          "item_id": "boar_meat",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "salt",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "herb_heal",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "roast_boar",
+          "quantity": 3,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": "burnt_food",
+      "xp_reward": 15
+    },
+    {
+      "id": "wooden_shield",
+      "name": "Wooden Shield",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 10,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "wood_plank",
+          "quantity": 3,
+          "material_class": null
+        },
+        {
+          "item_id": "iron_nail",
+          "quantity": 5,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "wooden_shield",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "saw"
+      ],
+      "failure_result": "scrap_wood",
+      "xp_reward": 12
+    },
+    {
+      "id": "bow",
+      "name": "Bow",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 12,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "wood_plank",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "sinew",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "bow",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": "scrap_wood",
+      "xp_reward": 14
+    },
+    {
+      "id": "arrows",
+      "name": "Arrows",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 8,
+      "ap_cost": 2,
+      "ingredients": [
+        {
+          "item_id": "wood_stick",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "iron_arrowhead",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "feather",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "arrow",
+          "quantity": 5,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": null,
+      "xp_reward": 4
+    },
+    {
+      "id": "lockpick",
+      "name": "Lockpick",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 14,
+      "ap_cost": 3,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "lockpick",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": null,
+      "xp_reward": 10
+    },
+    {
+      "id": "torch",
+      "name": "Torch",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 6,
+      "ap_cost": 2,
+      "ingredients": [
+        {
+          "item_id": "wood_stick",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "cloth",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "oil",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "torch",
+          "quantity": 3,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": null,
+      "xp_reward": 3
+    },
+    {
+      "id": "wooden_chest",
+      "name": "Wooden Chest",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 12,
+      "ap_cost": 10,
+      "ingredients": [
+        {
+          "item_id": "wood_plank",
+          "quantity": 4,
+          "material_class": null
+        },
+        {
+          "item_id": "iron_nail",
+          "quantity": 10,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "wooden_chest",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "saw"
+      ],
+      "failure_result": "scrap_wood",
+      "xp_reward": 15
+    },
+    {
+      "id": "bed",
+      "name": "Bed",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 10,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "wood_plank",
+          "quantity": 3,
+          "material_class": null
+        },
+        {
+          "item_id": "cloth",
+          "quantity": 2,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "bed",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "saw"
+      ],
+      "failure_result": "scrap_wood",
+      "xp_reward": 12
+    },
+    {
+      "id": "table",
+      "name": "Table",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 10,
+      "ap_cost": 6,
+      "ingredients": [
+        {
+          "item_id": "wood_plank",
+          "quantity": 3,
+          "material_class": null
+        },
+        {
+          "item_id": "iron_nail",
+          "quantity": 4,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "table",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "saw"
+      ],
+      "failure_result": "scrap_wood",
+      "xp_reward": 10
+    },
+    {
+      "id": "chair",
+      "name": "Chair",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 8,
+      "ap_cost": 4,
+      "ingredients": [
+        {
+          "item_id": "wood_plank",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "iron_nail",
+          "quantity": 4,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "chair",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "saw"
+      ],
+      "failure_result": "scrap_wood",
+      "xp_reward": 6
+    },
+    {
+      "id": "door",
+      "name": "Door",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 10,
+      "ap_cost": 6,
+      "ingredients": [
+        {
+          "item_id": "wood_plank",
+          "quantity": 3,
+          "material_class": null
+        },
+        {
+          "item_id": "iron_nail",
+          "quantity": 6,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "door",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "saw"
+      ],
+      "failure_result": "scrap_wood",
+      "xp_reward": 10
+    },
+    {
+      "id": "ladder",
+      "name": "Ladder",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 8,
+      "ap_cost": 4,
+      "ingredients": [
+        {
+          "item_id": "wood_plank",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "iron_nail",
+          "quantity": 4,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "ladder",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": null,
+      "xp_reward": 6
+    },
+    {
+      "id": "wooden_fence",
+      "name": "Wooden Fence",
+      "workstation": "workbench",
+      "skill": "carpentry",
+      "skill_dc": 6,
+      "ap_cost": 3,
+      "ingredients": [
+        {
+          "item_id": "wood_plank",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "iron_nail",
+          "quantity": 3,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "wooden_fence",
+          "quantity": 2,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": null,
+      "xp_reward": 4
+    },
+    {
+      "id": "leather",
+      "name": "Leather",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 10,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "hide",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "tanning_agent",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "leather",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": "ruined_hide",
+      "xp_reward": 8
+    },
+    {
+      "id": "leather_armor",
+      "name": "Leather Armor",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 13,
+      "ap_cost": 15,
+      "ingredients": [
+        {
+          "item_id": "leather",
+          "quantity": 4,
+          "material_class": null
+        },
+        {
+          "item_id": "sinew",
+          "quantity": 2,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "leather_armor",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "needle"
+      ],
+      "failure_result": "scrap_leather",
+      "xp_reward": 25
+    },
+    {
+      "id": "backpack",
+      "name": "Backpack",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 11,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "leather",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "sinew",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "backpack",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "needle"
+      ],
+      "failure_result": null,
+      "xp_reward": 12
+    },
+    {
+      "id": "waterskin",
+      "name": "Waterskin",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 8,
+      "ap_cost": 3,
+      "ingredients": [
+        {
+          "item_id": "leather",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "waterskin",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "needle"
+      ],
+      "failure_result": null,
+      "xp_reward": 5
+    },
+    {
+      "id": "quiver",
+      "name": "Quiver",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 8,
+      "ap_cost": 3,
+      "ingredients": [
+        {
+          "item_id": "leather",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "quiver",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "needle"
+      ],
+      "failure_result": null,
+      "xp_reward": 5
+    },
+    {
+      "id": "boots",
+      "name": "Boots",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 11,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "leather",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "sinew",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "boots",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "needle"
+      ],
+      "failure_result": null,
+      "xp_reward": 10
+    },
+    {
+      "id": "gloves",
+      "name": "Gloves",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 10,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "leather",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "sinew",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "gloves",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "needle"
+      ],
+      "failure_result": null,
+      "xp_reward": 8
+    },
+    {
+      "id": "belt",
+      "name": "Belt",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 8,
+      "ap_cost": 3,
+      "ingredients": [
+        {
+          "item_id": "leather",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "belt",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [],
+      "failure_result": null,
+      "xp_reward": 4
+    },
+    {
+      "id": "satchel",
+      "name": "Satchel",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 10,
+      "ap_cost": 5,
+      "ingredients": [
+        {
+          "item_id": "leather",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "sinew",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "satchel",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "needle"
+      ],
+      "failure_result": null,
+      "xp_reward": 8
+    }
+  ]
+}

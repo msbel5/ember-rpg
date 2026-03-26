@@ -1,0 +1,123 @@
+{
+  "social_rules": {
+    "attitude_dcs": {
+      "friendly": {
+        "no_risk": 5,
+        "minor_risk": 10,
+        "significant_sacrifice": 20
+      },
+      "indifferent": {
+        "no_risk": 10,
+        "minor_risk": 15,
+        "significant_sacrifice": 20
+      },
+      "hostile": {
+        "no_risk": 20,
+        "minor_risk": 25,
+        "significant_sacrifice": 999
+      }
+    },
+    "default_npc_attitude": {
+      "merchant": "indifferent",
+      "blacksmith": "indifferent",
+      "innkeeper": "indifferent",
+      "guard": "indifferent",
+      "quest_giver": "indifferent",
+      "priest": "friendly",
+      "healer": "friendly",
+      "sage": "friendly",
+      "beggar": "indifferent",
+      "spy": "hostile"
+    },
+    "default_npc_alignment": {
+      "merchant": "LN",
+      "blacksmith": "LN",
+      "innkeeper": "NG",
+      "guard": "LG",
+      "quest_giver": "NG",
+      "priest": "LG",
+      "healer": "NG",
+      "sage": "TN",
+      "beggar": "CN",
+      "spy": "NE"
+    },
+    "think_topic_skills": {
+      "history": [
+        "empire",
+        "geçmiş",
+        "history",
+        "king",
+        "lord",
+        "queen",
+        "ruin",
+        "tarih",
+        "war"
+      ],
+      "arcana": [
+        "arcane",
+        "büyü",
+        "glyph",
+        "magic",
+        "mana",
+        "rune",
+        "rün",
+        "spell",
+        "tılsım"
+      ],
+      "religion": [
+        "faith",
+        "god",
+        "holy",
+        "kutsal",
+        "prayer",
+        "saint",
+        "tanrı",
+        "tapınak",
+        "temple"
+      ],
+      "nature": [
+        "beast",
+        "forest",
+        "herb",
+        "kurt",
+        "nehir",
+        "orman",
+        "river",
+        "road",
+        "tree",
+        "wolf"
+      ],
+      "investigation": [
+        "cinayet",
+        "clue",
+        "crime",
+        "how",
+        "ipuç",
+        "murder",
+        "neden",
+        "who",
+        "why"
+      ]
+    },
+    "hostile_keywords": [
+      "bandit",
+      "cultist",
+      "dragon",
+      "enemy",
+      "goblin",
+      "guard",
+      "militia",
+      "monster",
+      "ogre",
+      "orc",
+      "rat",
+      "skeleton",
+      "spider",
+      "thug",
+      "troll",
+      "watchman",
+      "wolf",
+      "zombie"
+    ]
+  }
+}
