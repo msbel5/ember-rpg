@@ -27,7 +27,10 @@ from PIL import Image, ImageFilter, ImageEnhance
 # Config
 # ---------------------------------------------------------------------------
 HF_API_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
+
+
+def get_hf_token() -> str:
+    return os.environ.get("HF_TOKEN", "") or os.environ.get("HUGGINGFACE_API_KEY", "")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = PROJECT_ROOT / "tools" / "asset_raw"          # AI output (512x512)
@@ -125,11 +128,12 @@ TILE_DEFS = {
 # ---------------------------------------------------------------------------
 def generate_image(prompt: str, retries: int = 3) -> Image.Image | None:
     """Call HF Flux Schnell to generate an image."""
-    if not HF_TOKEN:
-        print("[ERROR] HF_TOKEN not set. Export it or pass via env.")
+    token = get_hf_token()
+    if not token:
+        print("[ERROR] HF_TOKEN/HUGGINGFACE_API_KEY not set. Export one of them or pass via env.")
         return None
 
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    headers = {"Authorization": f"Bearer {token}"}
     payload = {"inputs": prompt}
 
     for attempt in range(retries):

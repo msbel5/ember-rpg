@@ -112,11 +112,11 @@ func _populate_class_options(data: Dictionary) -> void:
 	if class_ids.is_empty():
 		class_ids = [str(data.get("recommended_class", "warrior"))]
 	for class_id in class_ids:
-		var class_name := str(class_id)
-		class_option.add_item(class_name.capitalize())
+		var selected_class_id := str(class_id)
+		class_option.add_item(selected_class_id.capitalize())
 		var index := class_option.item_count - 1
-		class_option.set_item_metadata(index, class_name)
-		if class_name == str(data.get("recommended_class", "")):
+		class_option.set_item_metadata(index, selected_class_id)
+		if selected_class_id == str(data.get("recommended_class", "")):
 			class_option.select(index)
 
 func _selected_class_id() -> String:

@@ -52,7 +52,7 @@ func _ready() -> void:
 
 	# Auto-enter the starting scene
 	if GameState.session_id != "":
-		_enter_scene("harbor_town")
+		_enter_scene(GameState.location if not GameState.location.is_empty() else "Harbor Town")
 
 	text_input.grab_focus()
 
@@ -146,9 +146,6 @@ func _submit_action(text: String) -> void:
 	_append_narrative("[color=cyan]> %s[/color]" % text)
 	text_input.text = ""
 
-	# Parse move commands to update player position for POV
-	_parse_move_command(text)
-
 	Backend.submit_action(GameState.session_id, text, _on_action_response)
 
 	# Timeout indicator
@@ -235,11 +232,6 @@ func _on_state_updated() -> void:
 func _refresh_pov() -> void:
 	if tile_map_renderer:
 		tile_map_renderer.queue_redraw()
-
-func _parse_move_command(text: String) -> void:
-	var predicted = GameSessionHelpers.predict_move(text, GameState.player_map_pos, GameState.player_facing)
-	GameState.player_map_pos = predicted["position"]
-	GameState.player_facing = int(predicted["facing"])
 
 func _refresh_player_status() -> void:
 	var p = GameState.player
