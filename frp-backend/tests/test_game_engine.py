@@ -1013,11 +1013,12 @@ class TestSocialRangeHardening:
             result = engine.process_action(session, command)
         assert "too far away" not in result.narrative.lower()
 
-    def test_social_actions_still_fail_beyond_two_tiles(self, engine):
+    def test_social_actions_still_fail_beyond_social_range(self, engine):
+        """Social range is 3 tiles — distance 4+ should fail."""
         session = engine.new_session("Speaker", "priest", location="Harbor Town")
         _guard_id, guard = _entity_by_role(session, "guard")
         gx, gy = guard["position"]
-        _move_player_to(session, gx, gy - 3)
+        _move_player_to(session, gx, gy - 4)
         result = engine.process_action(session, "persuade guard")
         assert "too far away" in result.narrative.lower()
 

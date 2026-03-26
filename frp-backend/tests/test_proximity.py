@@ -49,9 +49,15 @@ class TestCheckProximity:
         assert msg == ""
 
     def test_talk_too_far(self):
-        ok, msg = check_proximity([5, 5], [5, 8], "talk")
+        # RANGE_SOCIAL is 3, so distance 4+ should fail
+        ok, msg = check_proximity([5, 5], [5, 9], "talk")
         assert ok is False
         assert "Too far away" in msg
+
+    def test_talk_at_social_range(self):
+        # Distance 3 is within social range
+        ok, msg = check_proximity([5, 5], [5, 8], "talk")
+        assert ok is True
 
     def test_look_always_ok(self):
         ok, _ = check_proximity([0, 0], [99, 99], "look")

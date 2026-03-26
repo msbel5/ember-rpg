@@ -9,8 +9,8 @@ from engine.map import MapData, TileType
 
 # Interaction range constants (in tiles)
 RANGE_MELEE = 1       # examine, trade, pickup, melee attack
-RANGE_SOCIAL = 2      # talk, persuade, bribe, deceive, intimidate
-RANGE_SHOUT = 3       # yell, shout
+RANGE_SOCIAL = 3      # talk, persuade, bribe, deceive, intimidate (3 tiles = conversation distance)
+RANGE_SHOUT = 5       # yell, shout (across a room)
 RANGE_RANGED = 5      # ranged attack (bow, spell)
 RANGE_LOOK = 999      # look has unlimited range
 MAX_MOVE_PER_TURN = 5 # max tiles per click-to-move

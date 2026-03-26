@@ -134,6 +134,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/world/tick_scheduler.py` | 123 | WorldEvent (1), WorldTickScheduler (7) | - |
 | `frp-backend/engine/world/viewport.py` | 318 | Viewport (18) | - |
 | `frp-backend/engine/world/world_routes.py` | 63 | - | _get_sessions, _get_session, get_world_state, get_history |
+| `frp-backend/tools/chaos_playtest.py` | 322 | - | log_bug, play, run_chaos |
 | `frp-backend/tools/play.py` | 459 | - | hp_style, hp_bar, format_game_time, render_header |
 | `frp-backend/tools/play_topdown.py` | 788 | MapState (4) | hp_style, hp_bar, format_game_time, render_header |
 | `frp-backend/tools/runtime_audit.py` | 192 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
