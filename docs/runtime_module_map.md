@@ -23,7 +23,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/__init__.py` | 1 | - | - |
 | `frp-backend/engine/api/__init__.py` | 0 | - | - |
 | `frp-backend/engine/api/action_parser.py` | 439 | ActionIntent (0), ParsedAction (1), ActionParser (3) | _normalize, _looks_turkish, _restore_turkish_final_consonant, _strip_turkish_case_suffix |
-| `frp-backend/engine/api/game_engine.py` | 223 | ActionResult (0), GameEngine (2) | - |
+| `frp-backend/engine/api/game_engine.py` | 233 | ActionResult (0), GameEngine (2) | - |
 | `frp-backend/engine/api/game_engine_runtime.py` | 317 | GameEngineRuntimeMixin (3) | - |
 | `frp-backend/engine/api/game_session.py` | 15 | - | - |
 | `frp-backend/engine/api/handlers/__init__.py` | 1 | - | - |
@@ -35,7 +35,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/handlers/exploration_handlers.py` | 9 | ExplorationMixin (0) | - |
 | `frp-backend/engine/api/handlers/exploration_interaction.py` | 364 | ExplorationInteractionMixin (11) | - |
 | `frp-backend/engine/api/handlers/exploration_navigation.py` | 414 | ExplorationNavigationMixin (6) | - |
-| `frp-backend/engine/api/handlers/helper_checks.py` | 197 | HelperChecksMixin (12) | - |
+| `frp-backend/engine/api/handlers/helper_checks.py` | 199 | HelperChecksMixin (12) | - |
 | `frp-backend/engine/api/handlers/helper_world.py` | 441 | HelperWorldMixin (11) | - |
 | `frp-backend/engine/api/handlers/helpers.py` | 9 | HelperMixin (0) | - |
 | `frp-backend/engine/api/handlers/inventory_crafting.py` | 147 | InventoryCraftingMixin (1) | - |
@@ -44,7 +44,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/handlers/inventory_management.py` | 244 | InventoryManagementMixin (9) | - |
 | `frp-backend/engine/api/handlers/quest_handlers.py` | 329 | QuestMixin (9) | - |
 | `frp-backend/engine/api/handlers/resource_handlers.py` | 401 | ResourceMixin (12) | - |
-| `frp-backend/engine/api/handlers/social_actions.py` | 412 | SocialActionsMixin (9) | - |
+| `frp-backend/engine/api/handlers/social_actions.py` | 410 | SocialActionsMixin (9) | - |
 | `frp-backend/engine/api/handlers/social_handlers.py` | 9 | SocialMixin (0) | - |
 | `frp-backend/engine/api/handlers/social_state.py` | 99 | SocialStateMixin (9) | - |
 | `frp-backend/engine/api/inventory_routes.py` | 131 | EquipRequest (0), DropRequest (0) | _get_sessions, _require_session, _legacy_inventory, _legacy_equipment |

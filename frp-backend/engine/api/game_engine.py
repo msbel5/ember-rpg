@@ -190,6 +190,16 @@ class GameEngine(
 
         session.touch()
         session.dm_context.advance_turn()
+
+        # Auto-turn: if AP is 0 outside combat, refresh and tick world forward
+        if (
+            session.ap_tracker is not None
+            and session.ap_tracker.current_ap <= 0
+            and not session.in_combat()
+        ):
+            session.ap_tracker.refresh()
+            self._world_tick(session, minutes=60, refresh_ap=True)
+
         handler = handlers.get(action.intent, self._handle_unknown)
         result = handler(session, action)
 

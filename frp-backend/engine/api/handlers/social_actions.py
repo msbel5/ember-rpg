@@ -152,12 +152,10 @@ class SocialActionsMixin:
         return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
     def _handle_think(self, session: GameSession, action: ParsedAction):
+        """Internal monologue / knowledge check — costs no AP (thinking is free)."""
         from engine.api.game_engine import ActionResult
 
         topic = (action.target or action.action_detail or "your situation").strip()
-        ap_fail = self._check_ap(session, "examine")
-        if ap_fail:
-            return ap_fail
         session.set_conversation_target("self", npc_name="self")
         lowered = topic.lower()
         chosen_skill = "history"

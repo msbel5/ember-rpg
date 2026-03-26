@@ -86,7 +86,11 @@ class HelperChecksMixin:
         return int((entity.get("skills") or {}).get(skill_lower, 0))
 
     def _check_ap(self, session: GameSession, cost_key: str):
-        """Check if player has enough AP. Returns ActionResult on failure, None on success."""
+        """Check if player has enough AP. Returns ActionResult on failure, None on success.
+
+        Note: Auto-refresh when AP=0 is handled in process_action() BEFORE
+        handlers are called, so _check_ap never sees AP=0 outside combat.
+        """
         from engine.api.game_engine import ActionResult
 
         if session.ap_tracker is None:
@@ -100,8 +104,6 @@ class HelperChecksMixin:
                 scene_type=session.dm_context.scene_type,
             )
         session.ap_tracker.spend(cost)
-        if session.ap_tracker.current_ap <= 0 and not session.in_combat():
-            session.narration_context["_auto_refresh_after_action"] = True
         return None
 
     def _format_skill_check(self, result: SkillCheckResult, ability_name: str, dc: int) -> str:

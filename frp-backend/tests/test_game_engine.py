@@ -945,13 +945,23 @@ class TestInventoryHardening:
         assert warrior_session.has_timed_condition("back_strain")
         assert any(entity.name == "Anvil" for entity in warrior_session.spatial_index.at(*warrior_session.position))
 
-    def test_search_auto_refreshes_ap_when_action_hits_zero(self, engine, warrior_session):
+    def test_search_auto_refreshes_ap_on_next_action_when_zero(self, engine, warrior_session):
+        """AP auto-refreshes at the START of the next action when pool hits 0."""
         warrior_session.game_time.minute = 15
         warrior_session.ap_tracker.current_ap = 1
 
         engine.process_action(warrior_session, "search area")
+        # AP is 0 after search spends the last 1 AP
+        assert warrior_session.ap_tracker.current_ap == 0
 
+        # Next action triggers auto-refresh before handler runs
+        # look doesn't cost AP, so AP stays at max after refresh
+        engine.process_action(warrior_session, "look around")
         assert warrior_session.ap_tracker.current_ap == warrior_session.ap_tracker.max_ap
+
+        # Now do an action that costs AP (move) — should work without "not enough AP"
+        result = engine.process_action(warrior_session, "move south")
+        assert "not enough" not in result.narrative.lower()
 
 
 class TestGoToHardening:
