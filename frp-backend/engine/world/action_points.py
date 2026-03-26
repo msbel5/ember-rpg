@@ -13,12 +13,12 @@ from typing import Dict
 
 # ── Class AP pools ───────────────────────────────────────────────────
 
-CLASS_AP: Dict[str, int] = {
-    "warrior": 4,
-    "rogue": 6,
-    "mage": 3,
-    "priest": 4,
-}
+# Loaded from data/classes.json — expandable, no hardcoded classes
+try:
+    from engine.data_loader import get_class_ap_map
+    CLASS_AP: Dict[str, int] = get_class_ap_map()
+except ImportError:
+    CLASS_AP: Dict[str, int] = {"warrior": 4, "rogue": 6, "mage": 3, "priest": 4}
 
 # ── Action costs ─────────────────────────────────────────────────────
 # Keys match the canonical action identifiers used by the interaction system.

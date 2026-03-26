@@ -160,6 +160,7 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
     )),
     (ActionIntent.SAVE_GAME, _compile(
         r"^(?:save\s+(?:game\s+)?as|save\s+as)\s+(?P<target>[\w\s]+)$",
+        r"^(?:save\s+game|save)\s+(?P<target>[\w\s]+)$",
         r"^(?:save\s+game|save|quick\s*save|kaydet|oyunu\s+kaydet)$",
     )),
     (ActionIntent.LOAD_GAME, _compile(

@@ -154,35 +154,18 @@ ROLE_PRODUCTION = {
     "priest": ("healing_potion",),
 }
 
-# Starter inventory kits per class
-STARTER_KITS = {
-    "warrior": [
-        {"id": "iron_sword", "name": "Iron Sword", "type": "weapon", "damage": 6, "material": "iron", "slot": "weapon"},
-        {"id": "chain_mail", "name": "Chain Mail", "type": "armor", "ac_bonus": 4, "material": "iron", "slot": "armor"},
-        {"id": "torch", "name": "Torch", "type": "tool", "uses": 10},
-        {"id": "bread", "name": "Bread", "type": "consumable", "heal": 3, "qty": 3},
-    ],
-    "rogue": [
-        {"id": "daggers", "name": "Twin Daggers", "type": "weapon", "damage": 4, "material": "iron", "slot": "weapon"},
-        {"id": "leather_armor", "name": "Leather Armor", "type": "armor", "ac_bonus": 2, "material": "leather", "slot": "armor"},
-        {"id": "lockpick", "name": "Lockpick Set", "type": "tool", "uses": 5},
-        {"id": "rope", "name": "Rope (50ft)", "type": "tool"},
-        {"id": "bread", "name": "Bread", "type": "consumable", "heal": 3, "qty": 2},
-    ],
-    "mage": [
-        {"id": "staff", "name": "Oak Staff", "type": "weapon", "damage": 3, "material": "wood", "slot": "weapon"},
-        {"id": "robes", "name": "Mystic Robes", "type": "armor", "ac_bonus": 1, "material": "cloth", "slot": "armor"},
-        {"id": "mana_potion", "name": "Mana Potion", "type": "consumable", "restore_sp": 6, "qty": 2},
-        {"id": "scroll_fireball", "name": "Scroll of Fireball", "type": "scroll", "spell": "fireball"},
-    ],
-    "priest": [
-        {"id": "mace", "name": "Iron Mace", "type": "weapon", "damage": 5, "material": "iron", "slot": "weapon"},
-        {"id": "robes", "name": "Holy Robes", "type": "armor", "ac_bonus": 1, "material": "cloth", "slot": "armor"},
-        {"id": "shield", "name": "Wooden Shield", "type": "shield", "ac_bonus": 2, "material": "wood", "slot": "shield"},
-        {"id": "healing_potion", "name": "Healing Potion", "type": "consumable", "heal": 8, "qty": 2},
-        {"id": "holy_water", "name": "Holy Water", "type": "consumable", "damage_undead": 10},
-    ],
-}
+# Starter inventory kits loaded from data/classes.json
+from engine.data_loader import get_class_starting_equipment, get_class_ap_map
+
+def _build_starter_kits() -> dict:
+    """Build STARTER_KITS from data/classes.json."""
+    from engine.data_loader import CLASSES
+    kits = {}
+    for class_id, cdata in CLASSES.items():
+        kits[class_id] = cdata.get("starting_equipment", [])
+    return kits
+
+STARTER_KITS = _build_starter_kits()
 
 
 @dataclass
