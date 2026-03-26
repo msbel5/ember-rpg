@@ -43,20 +43,50 @@ class LLMRouter:
         return normalized if normalized in NARRATION_MODES else DEFAULT_NARRATION_MODE
 
     def _get_client(self, force_refresh: bool = False) -> openai.OpenAI:
+        import os
         settings = get_runtime_settings()
+
+        # Priority 1: copilot-api proxy (free models via GitHub Copilot)
+        copilot_api_url = os.getenv("EMBER_COPILOT_API_URL", "http://localhost:4141/v1")
+        try:
+            # Quick check if copilot-api is running
+            import urllib.request
+            urllib.request.urlopen(copilot_api_url.replace("/v1", "") + "/v1/models", timeout=2)
+            signature = ("copilot-api", copilot_api_url)
+            if self._client is None or force_refresh or signature != self._client_signature:
+                self._client = self._client_factory(base_url=copilot_api_url, api_key="copilot")
+                self._client_signature = signature
+                self._last_auth_source = "copilot_api_proxy"
+            return self._client
+        except Exception:
+            pass  # copilot-api not running, fall through
+
+        # Priority 2: Direct OpenAI API key
+        openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+        if openai_key:
+            signature = ("openai_direct", openai_key[:8])
+            if self._client is None or force_refresh or signature != self._client_signature:
+                self._client = self._client_factory(api_key=openai_key)
+                self._client_signature = signature
+                self._last_auth_source = "env:OPENAI_API_KEY"
+            return self._client
+
+        # Priority 3: Copilot token resolution (original path)
         resolution = self._token_resolver(settings.token_path_default)
+        effective_base_url = settings.base_url or None
         signature = (
-            settings.base_url,
+            effective_base_url,
             tuple(sorted(settings.default_headers.items())),
             resolution.token,
         )
         if self._client is None or force_refresh or signature != self._client_signature:
             try:
-                self._client = self._client_factory(
-                    base_url=settings.base_url,
-                    api_key=resolution.token,
-                    default_headers=settings.default_headers,
-                )
+                kwargs = {"api_key": resolution.token}
+                if effective_base_url:
+                    kwargs["base_url"] = effective_base_url
+                if settings.default_headers:
+                    kwargs["default_headers"] = settings.default_headers
+                self._client = self._client_factory(**kwargs)
                 self._client_signature = signature
                 self._last_auth_source = resolution.source
             except Exception as exc:

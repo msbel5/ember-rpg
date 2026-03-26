@@ -613,17 +613,21 @@ class TestLLMRouter:
         from engine.llm import CopilotAuthError, LLMRouter
 
         router = LLMRouter()
-        with patch.object(router, "_token_resolver", side_effect=CopilotAuthError("no token")):
-            with pytest.raises(CopilotAuthError):
-                router._get_client()
+        with patch("urllib.request.urlopen", side_effect=Exception("no proxy")):
+            with patch.dict("os.environ", {"OPENAI_API_KEY": ""}, clear=False):
+                with patch.object(router, "_token_resolver", side_effect=CopilotAuthError("no token")):
+                    with pytest.raises(CopilotAuthError):
+                        router._get_client()
 
     def test_get_client_raises_on_bad_json(self):
         from engine.llm import CopilotAuthError, LLMRouter
 
         router = LLMRouter()
-        with patch.object(router, "_token_resolver", side_effect=CopilotAuthError("bad token file")):
-            with pytest.raises(CopilotAuthError):
-                router._get_client()
+        with patch("urllib.request.urlopen", side_effect=Exception("no proxy")):
+            with patch.dict("os.environ", {"OPENAI_API_KEY": ""}, clear=False):
+                with patch.object(router, "_token_resolver", side_effect=CopilotAuthError("bad token file")):
+                    with pytest.raises(CopilotAuthError):
+                        router._get_client()
 
     def test_is_available_returns_true_when_client_works(self):
         from engine.llm import LLMRouter

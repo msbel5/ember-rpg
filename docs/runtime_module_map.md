@@ -96,7 +96,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/llm/auth.py` | 86 | CopilotAuthError (0), TokenResolution (0) | _resolve_env_token, _resolve_gh_token, _resolve_token_file, resolve_copilot_token |
 | `frp-backend/engine/llm/builders.py` | 35 | - | build_game_narrator |
 | `frp-backend/engine/llm/cli_provider.py` | 51 | CopilotCLIError (0) | _render_prompt, complete_with_copilot_cli |
-| `frp-backend/engine/llm/router.py` | 207 | LiveNarrationRequiredError (0), LLMRouter (10) | get_llm_router |
+| `frp-backend/engine/llm/router.py` | 237 | LiveNarrationRequiredError (0), LLMRouter (10) | get_llm_router |
 | `frp-backend/engine/llm/settings.py` | 93 | LLMRuntimeSettings (0) | _normalize_mode, get_runtime_settings, get_live_model_name, get_fast_model_name |
 | `frp-backend/engine/map/__init__.py` | 565 | TileType (0), Room (3), MapData (7), DungeonGenerator (8) | _empty_map, _count_cardinal_walkable_neighbors, _repair_spawn_point |
 | `frp-backend/engine/map/zones.py` | 318 | ZoneType (0), Zone (4), ZoneMap (5) | _zone_type, _load_zone_tile_palettes, _load_building_templates, _load_zone_entity_rules |
