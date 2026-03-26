@@ -1,6 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://cgamesession"]
+[gd_scene load_steps=6 format=3 uid="uid://cgamesession"]
 
 [ext_resource type="Script" path="res://scenes/game_session.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/world/world_view.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/world/tilemap_controller.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/world/entity_layer.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/world/camera_controller.gd" id="5"]
 
 [node name="GameSession" type="Control"]
 layout_mode = 3
@@ -16,110 +20,243 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.06, 0.05, 0.1, 1)
+color = Color(0.0823529, 0.0862745, 0.117647, 1)
 
-[node name="MainLayout" type="VBoxContainer" parent="."]
+[node name="MainMargin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 8.0
-offset_top = 8.0
-offset_right = -8.0
-offset_bottom = -8.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="PlayerStatus" type="HBoxContainer" parent="MainLayout"]
+[node name="MainVBox" type="VBoxContainer" parent="MainMargin"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 32)
 
-[node name="PlayerInfo" type="Label" parent="MainLayout/PlayerStatus"]
+[node name="StatusBar" type="PanelContainer" parent="MainMargin/MainVBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(250, 0)
-text = "Lv.1 Warrior  Hero"
+custom_minimum_size = Vector2(0, 58)
 
-[node name="HPBar" type="ProgressBar" parent="MainLayout/PlayerStatus"]
+[node name="StatusRow" type="HBoxContainer" parent="MainMargin/MainVBox/StatusBar"]
 layout_mode = 2
-custom_minimum_size = Vector2(150, 0)
+
+[node name="PlayerInfo" type="Label" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 0)
+text = "Hero  Lv.1 Adventurer"
+
+[node name="HPBar" type="ProgressBar" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(170, 0)
 max_value = 20.0
 value = 20.0
 show_percentage = false
 
-[node name="HPLabel" type="Label" parent="MainLayout/PlayerStatus"]
+[node name="HPLabel" type="Label" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
 layout_mode = 2
 text = "20/20"
 
-[node name="XPBar" type="ProgressBar" parent="MainLayout/PlayerStatus"]
+[node name="XPBar" type="ProgressBar" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(120, 0)
 show_percentage = false
 
-[node name="ContentSplit" type="HSplitContainer" parent="MainLayout"]
+[node name="Spacer" type="Control" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LocationLabel" type="Label" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
+layout_mode = 2
+text = "Unknown"
+horizontal_alignment = 2
+
+[node name="ContentSplit" type="HSplitContainer" parent="MainMargin/MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 772
+
+[node name="WorldPane" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit"]
+layout_mode = 2
+custom_minimum_size = Vector2(720, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.9
+
+[node name="WorldViewportContainer" type="SubViewportContainer" parent="MainMargin/MainVBox/ContentSplit/WorldPane"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+mouse_target = true
+script = ExtResource("2")
+
+[node name="WorldViewport" type="SubViewport" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer"]
+handle_input_locally = false
+size = Vector2i(960, 640)
+
+[node name="WorldRoot" type="Node2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport"]
+
+[node name="TerrainLayer" type="TileMapLayer" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
+texture_filter = 1
+script = ExtResource("3")
+
+[node name="EntityLayer" type="Node2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
+texture_filter = 1
+script = ExtResource("4")
+
+[node name="SelectionLayer" type="Node2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
+
+[node name="WorldCamera" type="Camera2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
+enabled = true
+position_smoothing_enabled = true
+position_smoothing_speed = 10.0
+script = ExtResource("5")
+
+[node name="Sidebar" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit"]
+layout_mode = 2
+custom_minimum_size = Vector2(340, 0)
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.95
+
+[node name="NarrativePanel" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="MapPanel" type="Panel" parent="MainLayout/ContentSplit"]
+[node name="NarrativeMargin" type="MarginContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel"]
 layout_mode = 2
-custom_minimum_size = Vector2(600, 0)
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="NarrativeVBox" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel/NarrativeMargin"]
+layout_mode = 2
+
+[node name="NarrativeTitle" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel/NarrativeMargin/NarrativeVBox"]
+layout_mode = 2
+text = "Narrative"
+
+[node name="NarrativeLog" type="RichTextLabel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel/NarrativeMargin/NarrativeVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+
+[node name="InventoryPanel" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 112)
+
+[node name="InventoryMargin" type="MarginContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="InventoryVBox" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel/InventoryMargin"]
+layout_mode = 2
+
+[node name="InventoryTitle" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel/InventoryMargin/InventoryVBox"]
+layout_mode = 2
+text = "Inventory"
+
+[node name="InventorySummary" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel/InventoryMargin/InventoryVBox"]
+layout_mode = 2
+text = "0 item(s), 0 gold"
+autowrap_mode = 2
+
+[node name="MinimapPanel" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 112)
+
+[node name="MinimapMargin" type="MarginContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="MinimapVBox" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin"]
+layout_mode = 2
+
+[node name="MinimapTitle" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin/MinimapVBox"]
+layout_mode = 2
+text = "Minimap"
+
+[node name="MinimapSummary" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin/MinimapVBox"]
+layout_mode = 2
+text = "Viewport online"
+autowrap_mode = 2
+
+[node name="QuestPanel" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 112)
+
+[node name="QuestMargin" type="MarginContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="QuestVBox" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin"]
+layout_mode = 2
+
+[node name="QuestTitle" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox"]
+layout_mode = 2
+text = "Quests"
+
+[node name="QuestSummary" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox"]
+layout_mode = 2
+text = "0 active, 0 available"
+autowrap_mode = 2
+
+[node name="CommandBar" type="PanelContainer" parent="MainMargin/MainVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 48)
+
+[node name="InputRow" type="HBoxContainer" parent="MainMargin/MainVBox/CommandBar"]
+layout_mode = 2
+
+[node name="PromptLabel" type="Label" parent="MainMargin/MainVBox/CommandBar/InputRow"]
+layout_mode = 2
+text = ">"
+
+[node name="TextInput" type="LineEdit" parent="MainMargin/MainVBox/CommandBar/InputRow"]
+layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 2.5
+placeholder_text = "What do you do?"
 
-[node name="LocationLabel" type="Label" parent="MainLayout/ContentSplit/MapPanel"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -100.0
-offset_top = 5.0
-offset_right = 100.0
-offset_bottom = 25.0
-grow_horizontal = 2
-text = "Unknown Location"
-horizontal_alignment = 1
+[node name="SendButton" type="Button" parent="MainMargin/MainVBox/CommandBar/InputRow"]
+layout_mode = 2
+text = "Send"
 
-[node name="CombatHUD" type="PanelContainer" parent="MainLayout/ContentSplit/MapPanel"]
+[node name="OverlayCanvas" type="CanvasLayer" parent="."]
+
+[node name="CombatHUD" type="PanelContainer" parent="OverlayCanvas"]
 visible = false
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -320.0
-offset_top = 30.0
-offset_right = -10.0
-offset_bottom = 230.0
-grow_horizontal = 0
+offset_left = 936.0
+offset_top = 88.0
+offset_right = 1260.0
+offset_bottom = 316.0
 
-[node name="VBox" type="VBoxContainer" parent="MainLayout/ContentSplit/MapPanel/CombatHUD"]
+[node name="CombatMargin" type="MarginContainer" parent="OverlayCanvas/CombatHUD"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="CombatVBox" type="VBoxContainer" parent="OverlayCanvas/CombatHUD/CombatMargin"]
 layout_mode = 2
 
-[node name="RoundLabel" type="Label" parent="MainLayout/ContentSplit/MapPanel/CombatHUD/VBox"]
+[node name="RoundLabel" type="Label" parent="OverlayCanvas/CombatHUD/CombatMargin/CombatVBox"]
 layout_mode = 2
 text = "Round 1"
 
-[node name="CombatantList" type="VBoxContainer" parent="MainLayout/ContentSplit/MapPanel/CombatHUD/VBox"]
+[node name="CombatantList" type="VBoxContainer" parent="OverlayCanvas/CombatHUD/CombatMargin/CombatVBox"]
 layout_mode = 2
-
-[node name="NarrativePanel" type="RichTextLabel" parent="MainLayout/ContentSplit"]
-layout_mode = 2
-custom_minimum_size = Vector2(300, 0)
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
-bbcode_enabled = true
-text = ""
-scroll_following = true
-
-[node name="InputBar" type="HBoxContainer" parent="MainLayout"]
-layout_mode = 2
-custom_minimum_size = Vector2(0, 36)
-
-[node name="InputLabel" type="Label" parent="MainLayout/InputBar"]
-layout_mode = 2
-text = " > "
-
-[node name="TextInput" type="LineEdit" parent="MainLayout/InputBar"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "What do you do?..."
-
-[node name="SendButton" type="Button" parent="MainLayout/InputBar"]
-layout_mode = 2
-text = "Send"

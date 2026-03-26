@@ -2,6 +2,9 @@ extends SceneTree
 
 const BackendProbe = preload("res://tests/doubles/backend_probe.gd")
 const AssetBootstrap = preload("res://scripts/asset/asset_bootstrap.gd")
+const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
+const TilemapController = preload("res://scripts/world/tilemap_controller.gd")
+const CameraController = preload("res://scripts/world/camera_controller.gd")
 
 var failures: int = 0
 
@@ -17,6 +20,7 @@ func _run_tests() -> void:
 	_test_backend_routes()
 	_test_game_state_normalization()
 	await _test_scene_instantiation()
+	await _test_world_shell()
 	_test_asset_bootstrap()
 	await _cleanup_test_nodes()
 
@@ -134,8 +138,38 @@ func _test_scene_instantiation() -> void:
 		root.add_child(session_instance)
 		await process_frame
 		_assert_true(is_instance_valid(session_instance), "GameSession instantiates without session bootstrap")
+		_assert_true(session_instance.get_node_or_null("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer") != null, "GameSession exposes the world viewport container")
+		_assert_true(session_instance.get_node_or_null("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot/TerrainLayer") != null, "GameSession exposes a TileMapLayer terrain node")
+		_assert_true(session_instance.get_node_or_null("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot/WorldCamera") != null, "GameSession exposes a Camera2D world camera")
 		session_instance.free()
 		await process_frame
+
+
+func _test_world_shell() -> void:
+	var placeholder_map = TileCatalog.build_placeholder_map(12, 8)
+	_assert_true(int(placeholder_map.get("width", 0)) == 12 and placeholder_map.get("tiles", []).size() == 8, "TileCatalog builds placeholder maps")
+
+	var terrain = TilemapController.new()
+	root.add_child(terrain)
+	await process_frame
+	terrain.render_map({})
+	_assert_true(terrain.get_used_cells().size() > 0, "TileMapLayer populates placeholder cells")
+	terrain.free()
+	await process_frame
+
+	var camera = CameraController.new()
+	root.add_child(camera)
+	await process_frame
+	var initial_zoom = camera.zoom
+	camera.zoom_in()
+	_assert_true(camera.zoom != initial_zoom, "CameraController zoom_in changes zoom")
+	for _index in range(16):
+		camera.zoom_out()
+	_assert_true(camera.get_zoom_index() == 0, "CameraController clamps zoom_out to minimum")
+	camera.focus_on_tile(Vector2i(5, 6))
+	_assert_true(is_equal_approx(camera.position.x, 88.0) and is_equal_approx(camera.position.y, 104.0), "CameraController centers on the tile midpoint")
+	camera.free()
+	await process_frame
 
 
 func _test_asset_bootstrap() -> void:
