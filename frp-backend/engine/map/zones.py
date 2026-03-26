@@ -11,6 +11,13 @@ from enum import Enum
 from typing import Optional
 import random
 
+from engine.data_loader import (
+    get_building_templates,
+    get_zone_entity_rules,
+    get_zone_layouts,
+    get_zone_tile_palettes,
+)
+
 
 class ZoneType(str, Enum):
     # Town zones
@@ -72,296 +79,98 @@ class Zone:
         return self.x1 <= x < self.x2 and self.y1 <= y < self.y2
 
 
-# --- Zone Tile Palettes ---
-# Each zone type has weighted tile options for ground
-ZONE_TILE_PALETTES = {
-    ZoneType.MARKET: {
-        "ground": [("cobblestone", 70), ("dirt_path", 20), ("cobblestone", 10)],
-        "accent": ["market_stall", "barrel", "crate"],
-    },
-    ZoneType.RESIDENTIAL: {
-        "ground": [("cobblestone", 50), ("dirt_path", 30), ("grass", 20)],
-        "accent": ["flower_pot", "barrel"],
-    },
-    ZoneType.DOCKS: {
-        "ground": [("dock_planks", 60), ("sand", 25), ("cobblestone", 15)],
-        "accent": ["crate", "barrel", "rope"],
-    },
-    ZoneType.GATE: {
-        "ground": [("cobblestone", 80), ("dirt_path", 20)],
-        "accent": [],
-    },
-    ZoneType.TAVERN: {
-        "ground": [("wood_floor", 70), ("tavern_floor", 30)],
-        "accent": ["table", "chair"],
-    },
-    ZoneType.TEMPLE: {
-        "ground": [("stone_floor", 80), ("cobblestone", 20)],
-        "accent": ["altar", "candle"],
-    },
-    ZoneType.ROAD: {
-        "ground": [("cobblestone", 90), ("dirt_path", 10)],
-        "accent": [],
-    },
-    ZoneType.WATER: {
-        "ground": [("water", 100)],
-        "accent": [],
-    },
-    ZoneType.PLAZA: {
-        "ground": [("cobblestone", 85), ("stone_floor", 15)],
-        "accent": ["fountain", "bench"],
-    },
-    ZoneType.GARDEN: {
-        "ground": [("grass", 60), ("dirt_path", 25), ("flower_bed", 15)],
-        "accent": ["tree", "bush"],
-    },
-    # Dungeon
-    ZoneType.ENTRANCE: {
-        "ground": [("stone_floor", 70), ("cracked_stone", 30)],
-        "accent": ["torch_wall"],
-    },
-    ZoneType.CORRIDOR: {
-        "ground": [("stone_floor", 60), ("wet_stone", 30), ("cracked_stone", 10)],
-        "accent": ["torch_wall"],
-    },
-    ZoneType.TREASURE: {
-        "ground": [("stone_floor", 80), ("gold_tile", 20)],
-        "accent": ["treasure_chest", "gold_pile"],
-    },
-    ZoneType.BOSS: {
-        "ground": [("dark_stone", 70), ("cracked_stone", 30)],
-        "accent": ["throne", "brazier"],
-    },
-    # Wilderness
-    ZoneType.CLEARING: {
-        "ground": [("grass", 70), ("dirt", 20), ("rocky_ground", 10)],
-        "accent": ["fallen_log", "mushroom"],
-    },
-    ZoneType.DENSE_FOREST: {
-        "ground": [("grass", 40), ("dirt", 30), ("mud", 30)],
-        "accent": ["tree", "bush", "vine"],
-    },
-    ZoneType.PATH: {
-        "ground": [("dirt_path", 80), ("grass", 20)],
-        "accent": [],
-    },
-    ZoneType.CAMP: {
-        "ground": [("dirt", 60), ("grass", 30), ("rocky_ground", 10)],
-        "accent": ["campfire_pit", "tent"],
-    },
-    # Cave
-    ZoneType.CAVE_ENTRANCE: {
-        "ground": [("cave_floor", 60), ("gravel", 40)],
-        "accent": ["stalactite"],
-    },
-    ZoneType.CAVERN: {
-        "ground": [("cave_floor", 50), ("wet_cave_floor", 30), ("gravel", 20)],
-        "accent": ["glowing_mushroom"],
-    },
-    ZoneType.CRYSTAL: {
-        "ground": [("cave_floor", 40), ("crystal_floor", 60)],
-        "accent": ["crystal_formation", "glowing_mushroom"],
-    },
-}
+def _zone_type(value: str | ZoneType | None) -> Optional[ZoneType]:
+    if isinstance(value, ZoneType):
+        return value
+    if value is None:
+        return None
+    try:
+        return ZoneType(str(value))
+    except ValueError:
+        return None
 
 
-# --- Building Templates (DF "stamp" pattern) ---
-# Each template defines a small tile grid that gets stamped onto the map
-BUILDING_TEMPLATES = {
-    "tavern_5x3": {
-        "size": (5, 3),
-        "tiles": [
-            ["stone_wall", "door", "stone_wall", "stone_wall", "stone_wall"],
-            ["tavern_floor", "tavern_floor", "tavern_floor", "bar_counter", "stone_wall"],
-            ["stone_wall", "stone_wall", "stone_wall", "stone_wall", "stone_wall"],
-        ],
-        "entity_slots": [
-            {"offset": (3, 1), "role": "innkeeper", "type": "npc", "required": True},
-        ],
-        "zone_affinity": [ZoneType.TAVERN, ZoneType.MARKET],
-        "is_indoor": True,
-    },
-    "shop_3x3": {
-        "size": (3, 3),
-        "tiles": [
-            ["stone_wall", "door", "stone_wall"],
-            ["wood_floor", "wood_floor", "stone_wall"],
-            ["stone_wall", "stone_wall", "stone_wall"],
-        ],
-        "entity_slots": [
-            {"offset": (1, 1), "role": "merchant", "type": "npc", "required": True},
-        ],
-        "zone_affinity": [ZoneType.MARKET, ZoneType.RESIDENTIAL],
-        "is_indoor": True,
-    },
-    "market_stall_2x2": {
-        "size": (2, 2),
-        "tiles": [
-            ["cobblestone", "cobblestone"],
-            ["cobblestone", "cobblestone"],
-        ],
-        "entity_slots": [
-            {"offset": (0, 0), "role": "merchant", "type": "npc", "required": True},
-            {"offset": (1, 0), "role": "crate", "type": "item", "required": False},
-        ],
-        "zone_affinity": [ZoneType.MARKET],
-        "is_indoor": False,
-    },
-    "guard_post_2x2": {
-        "size": (2, 2),
-        "tiles": [
-            ["stone_wall", "cobblestone"],
-            ["cobblestone", "cobblestone"],
-        ],
-        "entity_slots": [
-            {"offset": (1, 0), "role": "guard", "type": "npc", "required": True},
-        ],
-        "zone_affinity": [ZoneType.GATE],
-        "is_indoor": False,
-    },
-    "well_1x1": {
-        "size": (1, 1),
-        "tiles": [["cobblestone"]],
-        "entity_slots": [
-            {"offset": (0, 0), "role": "well", "type": "item", "required": True},
-        ],
-        "zone_affinity": [ZoneType.PLAZA, ZoneType.MARKET, ZoneType.RESIDENTIAL],
-        "is_indoor": False,
-    },
-    "notice_board_1x1": {
-        "size": (1, 1),
-        "tiles": [["cobblestone"]],
-        "entity_slots": [
-            {"offset": (0, 0), "role": "notice_board", "type": "item", "required": True},
-        ],
-        "zone_affinity": [ZoneType.MARKET, ZoneType.PLAZA, ZoneType.GATE],
-        "is_indoor": False,
-    },
-    "temple_4x3": {
-        "size": (4, 3),
-        "tiles": [
-            ["stone_wall", "door", "stone_wall", "stone_wall"],
-            ["stone_floor", "stone_floor", "stone_floor", "stone_wall"],
-            ["stone_wall", "stone_wall", "stone_wall", "stone_wall"],
-        ],
-        "entity_slots": [
-            {"offset": (2, 1), "role": "healer", "type": "npc", "required": False},
-        ],
-        "zone_affinity": [ZoneType.TEMPLE],
-        "is_indoor": True,
-    },
-}
-
-# --- Zone Entity Rules (which entities belong in which zones) ---
-ZONE_ENTITY_RULES = {
-    ZoneType.MARKET: {
-        "npcs": ["merchant", "beggar", "quest_giver"],
-        "items": ["barrel", "crate", "notice_board"],
-        "enemies": [],
-    },
-    ZoneType.GATE: {
-        "npcs": ["guard"],
-        "items": [],
-        "enemies": [],
-    },
-    ZoneType.DOCKS: {
-        "npcs": ["merchant", "beggar"],
-        "items": ["crate", "barrel"],
-        "enemies": [],
-    },
-    ZoneType.TAVERN: {
-        "npcs": ["innkeeper", "bard", "drunk_patron", "mysterious_stranger"],
-        "items": ["fireplace", "notice_board"],
-        "enemies": [],
-    },
-    ZoneType.RESIDENTIAL: {
-        "npcs": ["quest_giver", "beggar"],
-        "items": ["barrel", "crate"],
-        "enemies": [],
-    },
-    ZoneType.TEMPLE: {
-        "npcs": ["healer", "sage"],
-        "items": ["altar", "bookshelf"],
-        "enemies": [],
-    },
-    # Dungeon
-    ZoneType.ENTRANCE: {
-        "npcs": ["trapped_adventurer"],
-        "items": ["torch"],
-        "enemies": [],
-    },
-    ZoneType.CORRIDOR: {
-        "npcs": [],
-        "items": ["torch"],
-        "enemies": ["skeleton", "giant_spider"],
-    },
-    ZoneType.TREASURE: {
-        "npcs": [],
-        "items": ["treasure_chest", "gold_pile"],
-        "enemies": ["skeleton"],
-    },
-    ZoneType.BOSS: {
-        "npcs": [],
-        "items": ["treasure_chest"],
-        "enemies": ["orc", "necromancer"],
-    },
-    # Wilderness
-    ZoneType.CLEARING: {
-        "npcs": ["ranger", "traveling_merchant"],
-        "items": ["campfire_remains"],
-        "enemies": [],
-    },
-    ZoneType.DENSE_FOREST: {
-        "npcs": [],
-        "items": [],
-        "enemies": ["wolf", "bandit", "goblin"],
-    },
-    ZoneType.CAMP: {
-        "npcs": ["traveling_merchant"],
-        "items": ["campfire_pit", "abandoned_cart"],
-        "enemies": [],
-    },
-}
+def _load_zone_tile_palettes() -> dict[ZoneType, dict]:
+    palettes = {}
+    for key, value in get_zone_tile_palettes().items():
+        zone_type = _zone_type(key)
+        if zone_type is None:
+            continue
+        palettes[zone_type] = {
+            "ground": [(str(tile), int(weight)) for tile, weight in value.get("ground", [])],
+            "accent": list(value.get("accent", [])),
+        }
+    return palettes
 
 
-# --- Zone Layouts (pre-defined zone arrangements per location type) ---
-ZONE_LAYOUTS = {
-    "town": [
-        Zone("market_1", ZoneType.MARKET, "Market Square", 6, 5, 14, 10),
-        Zone("gate_1", ZoneType.GATE, "Town Gate", 8, 0, 12, 3),
-        Zone("tavern_1", ZoneType.TAVERN, "Tavern District", 1, 1, 6, 6, is_indoor=True),
-        Zone("docks_1", ZoneType.DOCKS, "Harbor Docks", 0, 12, 20, 15),
-        Zone("residential_1", ZoneType.RESIDENTIAL, "East Quarter", 14, 1, 19, 6),
-        Zone("temple_1", ZoneType.TEMPLE, "Temple of Light", 14, 7, 19, 11),
-        Zone("plaza_1", ZoneType.PLAZA, "Town Square", 6, 10, 14, 12),
-    ],
-    "dungeon": [
-        Zone("entrance_1", ZoneType.ENTRANCE, "Entrance Hall", 7, 0, 13, 4),
-        Zone("corridor_1", ZoneType.CORRIDOR, "Main Corridor", 8, 4, 12, 8),
-        Zone("corridor_2", ZoneType.CORRIDOR, "Side Passage", 1, 5, 8, 8),
-        Zone("treasure_1", ZoneType.TREASURE, "Treasure Room", 1, 9, 6, 13),
-        Zone("boss_1", ZoneType.BOSS, "Inner Sanctum", 7, 9, 14, 14, danger_level=3),
-    ],
-    "wilderness": [
-        Zone("clearing_1", ZoneType.CLEARING, "Forest Clearing", 6, 5, 14, 10),
-        Zone("path_1", ZoneType.PATH, "Forest Path", 9, 0, 11, 15),
-        Zone("forest_1", ZoneType.DENSE_FOREST, "Dense Woods", 0, 0, 6, 7),
-        Zone("forest_2", ZoneType.DENSE_FOREST, "Dark Thicket", 14, 0, 20, 7),
-        Zone("camp_1", ZoneType.CAMP, "Abandoned Camp", 2, 10, 6, 14),
-        Zone("river_1", ZoneType.RIVER, "Forest Stream", 14, 8, 20, 15),
-    ],
-    "cave": [
-        Zone("cave_ent_1", ZoneType.CAVE_ENTRANCE, "Cave Mouth", 8, 0, 12, 4),
-        Zone("cavern_1", ZoneType.CAVERN, "Main Cavern", 4, 4, 16, 10),
-        Zone("crystal_1", ZoneType.CRYSTAL, "Crystal Grotto", 10, 10, 16, 14),
-        Zone("corridor_1", ZoneType.CORRIDOR, "Narrow Passage", 1, 6, 4, 14),
-    ],
-    "tavern": [
-        Zone("common_1", ZoneType.TAVERN, "Common Room", 2, 2, 18, 10),
-        Zone("bar_1", ZoneType.TAVERN, "Bar Counter", 2, 2, 8, 5, is_indoor=True),
-        Zone("back_1", ZoneType.RESIDENTIAL, "Back Room", 14, 2, 18, 7, is_indoor=True),
-    ],
-}
+def _load_building_templates() -> dict[str, dict]:
+    templates = {}
+    for name, template in get_building_templates().items():
+        templates[name] = {
+            "size": tuple(template.get("size", (0, 0))),
+            "tiles": [list(row) for row in template.get("tiles", [])],
+            "entity_slots": [
+                {
+                    "offset": tuple(slot.get("offset", (0, 0))),
+                    "role": slot.get("role"),
+                    "type": slot.get("type"),
+                    "required": bool(slot.get("required", False)),
+                }
+                for slot in template.get("entity_slots", [])
+            ],
+            "zone_affinity": [
+                zone_type
+                for zone_type in (_zone_type(value) for value in template.get("zone_affinity", []))
+                if zone_type is not None
+            ],
+            "is_indoor": bool(template.get("is_indoor", False)),
+        }
+    return templates
+
+
+def _load_zone_entity_rules() -> dict[ZoneType, dict]:
+    rules = {}
+    for key, value in get_zone_entity_rules().items():
+        zone_type = _zone_type(key)
+        if zone_type is None:
+            continue
+        rules[zone_type] = {
+            "npcs": list(value.get("npcs", [])),
+            "items": list(value.get("items", [])),
+            "enemies": list(value.get("enemies", [])),
+        }
+    return rules
+
+
+def _load_zone_layouts() -> dict[str, list[Zone]]:
+    layouts = {}
+    for location_type, zone_entries in get_zone_layouts().items():
+        layouts[location_type] = []
+        for entry in zone_entries:
+            zone_type = _zone_type(entry.get("zone_type"))
+            bounds = entry.get("bounds", [0, 0, 1, 1])
+            if zone_type is None or len(bounds) != 4:
+                continue
+            layouts[location_type].append(
+                Zone(
+                    id=str(entry.get("id", f"{location_type}_{zone_type.value}")),
+                    zone_type=zone_type,
+                    name=str(entry.get("name", zone_type.value.title())),
+                    x1=int(bounds[0]),
+                    y1=int(bounds[1]),
+                    x2=int(bounds[2]),
+                    y2=int(bounds[3]),
+                    is_indoor=bool(entry.get("is_indoor", False)),
+                    danger_level=int(entry.get("danger_level", 0)),
+                )
+            )
+    return layouts
+
+
+ZONE_TILE_PALETTES = _load_zone_tile_palettes()
+BUILDING_TEMPLATES = _load_building_templates()
+ZONE_ENTITY_RULES = _load_zone_entity_rules()
+ZONE_LAYOUTS = _load_zone_layouts()
 
 
 class ZoneMap:

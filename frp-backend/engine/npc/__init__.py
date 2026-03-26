@@ -297,16 +297,13 @@ class NPCManager:
         Returns:
             List of instantiated NPC objects.
         """
-        import json
+        from engine.data_loader import load_registry_list_from_path
 
         path = Path(filepath)
         if not path.exists():
             path = Path(__file__).resolve().parents[2] / filepath
 
-        with path.open("r", encoding="utf-8") as fh:
-            data = json.load(fh)
-
-        templates = data.get("npc_templates", [])
+        templates = load_registry_list_from_path(path, "npc_templates")
         loaded: List[NPC] = []
 
         for tmpl in templates:

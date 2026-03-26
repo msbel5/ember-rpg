@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 from enum import Enum
 
+from engine.data_loader import get_default_schedules
+
 
 class TimePeriod(Enum):
     """Five time periods in a game day."""
@@ -85,65 +87,7 @@ class NPCSchedule:
         return schedule
 
 
-# Default NPC schedules by role
-DEFAULT_SCHEDULES = {
-    "merchant": {
-        "dawn": "home",
-        "morning": "shop",
-        "afternoon": "market_square",
-        "evening": "tavern",
-        "night": "home",
-    },
-    "innkeeper": {
-        "dawn": "tavern",
-        "morning": "tavern",
-        "afternoon": "tavern",
-        "evening": "tavern",
-        "night": "tavern",
-    },
-    "guard": {
-        "dawn": "gate",
-        "morning": "market_square",
-        "afternoon": "gate",
-        "evening": "tavern",
-        "night": "gate",
-    },
-    "blacksmith": {
-        "dawn": "home",
-        "morning": "forge",
-        "afternoon": "forge",
-        "evening": "tavern",
-        "night": "home",
-    },
-    "beggar": {
-        "dawn": "market_square",
-        "morning": "market_square",
-        "afternoon": "tavern",
-        "evening": "tavern",
-        "night": "alley",
-    },
-    "priest": {
-        "dawn": "temple",
-        "morning": "temple",
-        "afternoon": "market_square",
-        "evening": "temple",
-        "night": "temple",
-    },
-    "quest_giver": {
-        "dawn": "tavern",
-        "morning": "tavern",
-        "afternoon": "tavern",
-        "evening": "tavern",
-        "night": "home",
-    },
-    "spy": {
-        "dawn": "home",
-        "morning": "market_square",
-        "afternoon": "docks",
-        "evening": "tavern",
-        "night": "alley",
-    },
-}
+DEFAULT_SCHEDULES = get_default_schedules()
 
 
 @dataclass

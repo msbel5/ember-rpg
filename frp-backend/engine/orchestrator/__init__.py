@@ -10,6 +10,17 @@ from dataclasses import dataclass, field
 from typing import AsyncGenerator, Optional
 from datetime import datetime
 
+from engine.data_loader import (
+    get_context_actions,
+    get_location_enemy_templates,
+    get_location_item_templates,
+    get_location_npc_templates,
+    get_map_generator_room_templates,
+    get_map_generator_tile_sets,
+    get_scene_fallback_narratives,
+    get_scene_system_prompt,
+)
+
 
 @dataclass
 class SceneRequest:
@@ -68,64 +79,8 @@ class SceneResponse:
 class MapGenerator:
     """Deterministic map generation. No LLM involved."""
 
-    TILE_SETS = {
-        "town": {
-            "ground": ["cobblestone", "dirt_path", "grass"],
-            "walls": ["stone_wall", "wooden_fence"],
-            "special": ["door", "window", "chest", "barrel"]
-        },
-        "dungeon": {
-            "ground": ["stone_floor", "cracked_stone", "wet_stone"],
-            "walls": ["dungeon_wall", "reinforced_wall"],
-            "special": ["torch_wall", "secret_door", "pit", "treasure_chest"]
-        },
-        "tavern": {
-            "ground": ["wooden_floor", "rug"],
-            "walls": ["wooden_wall", "stone_wall"],
-            "special": ["fireplace", "table", "bar_counter", "stairs"]
-        },
-        "wilderness": {
-            "ground": ["grass", "dirt", "mud", "rocky_ground"],
-            "walls": ["tree", "large_rock", "cliff"],
-            "special": ["campfire_pit", "fallen_log", "cave_entrance"]
-        },
-        "cave": {
-            "ground": ["cave_floor", "wet_cave_floor", "gravel"],
-            "walls": ["cave_wall", "stalactite"],
-            "special": ["glowing_mushroom", "underground_pool", "crystal_formation"]
-        }
-    }
-
-    ROOM_TEMPLATES = {
-        "town": [
-            {"id": "market", "name": "Market Square", "type": "outdoor", "bounds_rel": [0.3, 0.3, 0.7, 0.7]},
-            {"id": "tavern_building", "name": "The Rusty Anchor Tavern", "type": "building", "bounds_rel": [0.1, 0.1, 0.4, 0.4]},
-            {"id": "docks", "name": "Harbor Docks", "type": "water_edge", "bounds_rel": [0.0, 0.7, 1.0, 1.0]},
-            {"id": "north_gate", "name": "Town Gate", "type": "entrance", "bounds_rel": [0.4, 0.0, 0.6, 0.1]},
-        ],
-        "dungeon": [
-            {"id": "entrance_hall", "name": "Entrance Hall", "type": "corridor", "bounds_rel": [0.3, 0.0, 0.7, 0.3]},
-            {"id": "main_chamber", "name": "Main Chamber", "type": "chamber", "bounds_rel": [0.2, 0.3, 0.8, 0.7]},
-            {"id": "side_passage", "name": "Side Passage", "type": "corridor", "bounds_rel": [0.0, 0.3, 0.2, 0.6]},
-            {"id": "boss_room", "name": "Inner Sanctum", "type": "boss_chamber", "bounds_rel": [0.3, 0.7, 0.7, 1.0]},
-        ],
-        "tavern": [
-            {"id": "common_room", "name": "Common Room", "type": "interior", "bounds_rel": [0.1, 0.1, 0.9, 0.7]},
-            {"id": "bar", "name": "Bar Counter", "type": "interior", "bounds_rel": [0.1, 0.1, 0.4, 0.3]},
-            {"id": "back_room", "name": "Back Room", "type": "private", "bounds_rel": [0.7, 0.1, 0.9, 0.5]},
-            {"id": "cellar_stairs", "name": "Cellar Stairs", "type": "transition", "bounds_rel": [0.8, 0.6, 0.9, 0.7]},
-        ],
-        "wilderness": [
-            {"id": "clearing", "name": "Forest Clearing", "type": "outdoor", "bounds_rel": [0.3, 0.3, 0.7, 0.7]},
-            {"id": "path_north", "name": "Northern Path", "type": "path", "bounds_rel": [0.45, 0.0, 0.55, 0.35]},
-            {"id": "dense_forest", "name": "Dense Forest", "type": "obstacle", "bounds_rel": [0.0, 0.0, 0.3, 1.0]},
-        ],
-        "cave": [
-            {"id": "cave_entrance", "name": "Cave Entrance", "type": "entrance", "bounds_rel": [0.4, 0.0, 0.6, 0.2]},
-            {"id": "main_cavern", "name": "Main Cavern", "type": "chamber", "bounds_rel": [0.2, 0.2, 0.8, 0.8]},
-            {"id": "crystal_grotto", "name": "Crystal Grotto", "type": "special", "bounds_rel": [0.6, 0.5, 0.9, 0.9]},
-        ]
-    }
+    TILE_SETS = get_map_generator_tile_sets()
+    ROOM_TEMPLATES = get_map_generator_room_templates()
 
     def generate(self, location_type: str, width: int = 20, height: int = 15, seed: int = None) -> TileMapData:
         if seed is None:
@@ -180,51 +135,10 @@ class MapGenerator:
 class EntityPlacer:
     """Deterministic entity placement based on location type + templates."""
 
-    NPC_TEMPLATES_BY_LOCATION = {
-        "town": ["merchant", "guard", "innkeeper", "quest_giver", "beggar"],
-        "dungeon": ["skeleton_guard", "dungeon_prisoner", "trapped_adventurer"],
-        "tavern": ["innkeeper", "merchant", "bard", "drunk_patron", "mysterious_stranger"],
-        "wilderness": ["traveling_merchant", "ranger", "bandit"],
-        "cave": ["cave_hermit", "goblin_scout"],
-    }
-
-    ITEM_TEMPLATES_BY_LOCATION = {
-        "town": ["notice_board", "market_stall", "barrel", "crate", "well"],
-        "dungeon": ["treasure_chest", "torch", "skeleton_remains", "locked_door"],
-        "tavern": ["fireplace", "notice_board", "locked_chest", "bookshelf"],
-        "wilderness": ["campfire_remains", "abandoned_cart", "mysterious_altar"],
-        "cave": ["glowing_crystal", "old_bones", "treasure_cache"],
-    }
-
-    ENEMY_TEMPLATES_BY_LOCATION = {
-        "dungeon": ["skeleton", "zombie", "giant_spider", "orc"],
-        "wilderness": ["wolf", "bandit", "goblin"],
-        "cave": ["cave_bat", "cave_troll", "goblin"],
-        "town": [],  # peaceful
-        "tavern": [],  # peaceful
-    }
-
-    CONTEXT_ACTIONS = {
-        "npc": {
-            "merchant": ["examine", "talk", "trade"],
-            "guard": ["examine", "talk"],
-            "innkeeper": ["examine", "talk", "trade", "rest"],
-            "quest_giver": ["examine", "talk"],
-            "default": ["examine", "talk"],
-        },
-        "item": {
-            "treasure_chest": ["examine", "open", "lock_pick"],
-            "notice_board": ["examine", "read"],
-            "barrel": ["examine", "open", "kick"],
-            "default": ["examine", "pick_up"],
-        },
-        "enemy": {
-            "default": ["examine", "attack", "flee"],
-        },
-        "interactive": {
-            "default": ["examine", "interact"],
-        }
-    }
+    NPC_TEMPLATES_BY_LOCATION = get_location_npc_templates()
+    ITEM_TEMPLATES_BY_LOCATION = get_location_item_templates()
+    ENEMY_TEMPLATES_BY_LOCATION = get_location_enemy_templates()
+    CONTEXT_ACTIONS = get_context_actions()
 
     def place(self, location_type: str, map_data: TileMapData, max_npcs: int = 4, seed: int = None) -> dict:
         rng = random.Random(seed or map_data.seed + 1)
@@ -293,26 +207,8 @@ class EntityPlacer:
 class DMNarrator:
     """LLM-powered scene narrative. NEVER modifies game state."""
 
-    SCENE_SYSTEM_PROMPT = """You are the Dungeon Master for Ember RPG, a dark fantasy tabletop RPG.
-Your role: narrate the scene as a player enters it. Build atmosphere.
-
-Rules:
-- Start with a vivid opening sentence that sets the mood
-- Reveal key map elements naturally (market, guards, items)
-- Keep total narrative to 3-5 sentences
-- Each sentence should optionally reveal a specific entity (use [REVEAL:entity_id] marker)
-- Use second person: "Before you..." "You see..." "To your left..."
-- Match tone to location: tense in dungeons, lively in towns, eerie in caves
-- Reference world state context when relevant
-- End with a subtle hook or unresolved detail that invites exploration"""
-
-    FALLBACK_NARRATIVES = {
-        "town": "The town square bustles with morning activity. Merchants call out their wares while guards patrol the cobblestone streets. [REVEAL:merchant_1] A weathered notice board near the market square catches your eye. [REVEAL:notice_board_1]",
-        "dungeon": "Cold air greets you as you descend into the darkness. [REVEAL:torch_1] Torchlight flickers off damp stone walls, revealing a corridor stretching deeper underground. The silence is broken only by distant dripping water — and something else. Something breathing.",
-        "tavern": "Warm firelight and the smell of ale wash over you. [REVEAL:innkeeper_1] The innkeeper looks up from polishing a glass, nodding in greeting. A half-dozen patrons occupy the common room, conversations dropping to murmurs as you enter.",
-        "wilderness": "The forest path widens into a clearing bathed in diffused light. [REVEAL:traveling_merchant_1] Birdsong fills the air, though you notice it stops suddenly near the treeline to the east. The undergrowth shows signs of recent disturbance.",
-        "cave": "Darkness swallows you as you enter the cave mouth. [REVEAL:glowing_crystal_1] Faintly glowing crystals embedded in the rock provide just enough light to navigate. The air is cold and carries the faint smell of sulfur.",
-    }
+    SCENE_SYSTEM_PROMPT = get_scene_system_prompt()
+    FALLBACK_NARRATIVES = get_scene_fallback_narratives()
 
     def __init__(self):
         self._llm = None

@@ -4,10 +4,10 @@ Loads and validates campaign templates from data/campaigns/.
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from engine.data_loader import load_json_path
 
 # Default path relative to this file: engine/core/campaign.py → ../../data/campaigns
 _DEFAULT_CAMPAIGNS_DIR = Path(__file__).parent.parent.parent / "data" / "campaigns"
@@ -47,8 +47,8 @@ class CampaignLoader:
         self._campaigns.clear()
         for path in sorted(self._dir.glob("*.json")):
             try:
-                data = json.loads(path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError as exc:
+                data = load_json_path(path)
+            except Exception as exc:
                 raise ValueError(f"Failed to parse campaign file {path.name}: {exc}") from exc
 
             campaign_id = data.get("id") or path.stem

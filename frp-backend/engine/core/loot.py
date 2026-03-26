@@ -5,24 +5,19 @@ Handles item drops when enemies die in combat.
 from typing import List, Optional, TYPE_CHECKING
 import random
 
+from engine.data_loader import (
+    get_base_drop_chance,
+    get_loot_rarity_drop_chances,
+    get_loot_rarity_order,
+)
+
 if TYPE_CHECKING:
     from engine.core.item import Item
     from engine.api.game_session import GameSession
 
-# Rarity → base drop chance (0.0 - 1.0)
-RARITY_DROP_CHANCES = {
-    "COMMON": 0.50,
-    "UNCOMMON": 0.35,
-    "RARE": 0.20,
-    "EPIC": 0.10,
-    "LEGENDARY": 0.05,
-}
-
-# Rarity order (lowest first) for guaranteed drop
-RARITY_ORDER = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY"]
-
-# Base drop chance for items without rarity
-BASE_DROP_CHANCE = 0.40
+RARITY_DROP_CHANCES = get_loot_rarity_drop_chances()
+RARITY_ORDER = get_loot_rarity_order()
+BASE_DROP_CHANCE = get_base_drop_chance()
 
 
 class LootSystem:

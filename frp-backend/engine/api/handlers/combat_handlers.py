@@ -14,11 +14,12 @@ from engine.api.action_parser import ParsedAction
 from engine.world.entity import Entity, EntityType
 from engine.world.body_parts import BodyPartTracker, calculate_armor_reduction
 from engine.world.materials import MATERIALS
+from engine.data_loader import list_monsters
 
 if TYPE_CHECKING:
     from engine.api.game_engine import ActionResult
 
-from engine.api.game_engine import XP_REWARDS
+from engine.api.game_engine import XP_REWARDS, HOSTILE_KEYWORDS
 
 
 class CombatMixin:
@@ -32,9 +33,6 @@ class CombatMixin:
             if prox_fail:
                 return prox_fail
 
-        hostile_keywords = ["goblin", "orc", "bandit", "wolf", "skeleton", "zombie",
-                            "enemy", "monster", "troll", "guard", "militia", "watchman",
-                            "ogre", "dragon", "rat", "spider", "cultist", "thug"]
         target_lower = (action.target or "").lower()
         in_active_combat = session.in_combat() and session.dm_context.scene_type == SceneType.COMBAT
         found_world_target = self._find_entity_by_name(session, action.target) if action.target else None
@@ -69,7 +67,7 @@ class CombatMixin:
                     start_result.combat_state = self._combat_state(session.combat)
                 return start_result
 
-        if not in_active_combat and action.target and found_world_target is None and not any(kw in target_lower for kw in hostile_keywords):
+        if not in_active_combat and action.target and found_world_target is None and not any(kw in target_lower for kw in HOSTILE_KEYWORDS):
             # Non-hostile target -> creative DM response
             target_name = action.target or "something"
             desc = (
@@ -91,7 +89,7 @@ class CombatMixin:
             return ActionResult(narrative=narrative, scene_type=session.dm_context.scene_type)
 
         # Spawn random enemy if no target specified (bare "attack") or target matches hostile keyword
-        if not action.target or any(kw in target_lower for kw in hostile_keywords):
+        if not action.target or any(kw in target_lower for kw in HOSTILE_KEYWORDS):
             enemy = self._spawn_enemy(session.player.level, preferred_name=action.target)
             self._start_combat(session, [enemy])
             start_result = self._build_combat_start_result(session, [enemy])
@@ -602,21 +600,57 @@ class CombatMixin:
         self.dm.transition(session.dm_context, SceneType.COMBAT)
 
     def _spawn_enemy(self, player_level: int, preferred_name: Optional[str] = None) -> Character:
-        """Spawn a level-appropriate enemy."""
-        enemies = [
-            Character(name="Goblin",   hp=8,  max_hp=8,
-                      stats={"MIG": 8,  "AGI": 14, "END": 8,  "MND": 6, "INS": 8, "PRE": 6}),
-            Character(name="Orc",      hp=15, max_hp=15,
-                      stats={"MIG": 14, "AGI": 8,  "END": 12, "MND": 6, "INS": 8, "PRE": 6}),
-            Character(name="Skeleton", hp=10, max_hp=10,
-                      stats={"MIG": 10, "AGI": 10, "END": 10, "MND": 4, "INS": 6, "PRE": 4}),
-        ]
-        target_lower = (preferred_name or "").strip().lower()
-        if target_lower:
-            for enemy in enemies:
-                if target_lower in enemy.name.lower():
-                    return enemy
-        return random.choice(enemies)
+        """Spawn a level-appropriate enemy from ``monsters.json``."""
+        monsters = list_monsters()
+        query = str(preferred_name or "").strip().lower()
+
+        selected: Optional[Dict[str, Any]] = None
+        if query:
+            for monster in monsters:
+                monster_id = str(monster.get("id", "")).lower()
+                monster_name = str(monster.get("name", "")).lower()
+                if query in monster_id or query in monster_name:
+                    selected = monster
+                    break
+
+        if selected is None:
+            target_cr = max(0.25, float(player_level) * 0.5)
+            ranked = sorted(
+                monsters,
+                key=lambda monster: (
+                    abs(float(monster.get("cr", 0.25)) - target_cr),
+                    str(monster.get("name", "")),
+                ),
+            )
+            pool = ranked[: max(1, min(6, len(ranked)))]
+            selected = random.choice(pool) if pool else (monsters[0] if monsters else {})
+
+        stats = dict(selected.get("stats", {}))
+        ember_stats = {
+            "MIG": int(stats.get("str", 10)),
+            "AGI": int(stats.get("dex", 10)),
+            "END": int(stats.get("con", 10)),
+            "MND": int(stats.get("int", 10)),
+            "INS": int(stats.get("wis", 10)),
+            "PRE": int(stats.get("cha", 10)),
+        }
+        first_attack = next(iter(selected.get("attacks", [])), {})
+        melee_bonus = int(first_attack.get("attack_bonus", 2))
+        mig_mod = (ember_stats["MIG"] - 10) // 2
+        dex_mod = (ember_stats["AGI"] - 10) // 2
+        enemy = Character(
+            name=str(selected.get("name", preferred_name or "Hostile Foe")),
+            hp=int(selected.get("hp", 10)),
+            max_hp=int(selected.get("hp", 10)),
+            ac=int(selected.get("armor_class", 10)),
+            initiative_bonus=dex_mod,
+            stats=ember_stats,
+            skills={"melee": melee_bonus - mig_mod},
+        )
+        setattr(enemy, "monster_id", selected.get("id"))
+        setattr(enemy, "role", str(selected.get("type", "monster")))
+        setattr(enemy, "loot_table", list(selected.get("loot_table", [])))
+        return enemy
 
     def _combat_state(self, combat: Optional[CombatManager]) -> Optional[dict]:
         """Serialize combat state for API response."""

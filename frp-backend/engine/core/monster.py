@@ -2,10 +2,11 @@
 Ember RPG - Core Engine
 Monster bestiary (MonsterDatabase, Monster dataclass)
 """
-import json
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 from enum import Enum
+
+from engine.data_loader import load_registry_list_from_path
 
 
 class MonsterType(Enum):
@@ -215,10 +216,7 @@ class MonsterDatabase:
         Args:
             filepath: Path to JSON file containing monster definitions.
         """
-        with open(filepath, "r") as f:
-            data = json.load(f)
-
-        for monster_data in data["monsters"]:
+        for monster_data in load_registry_list_from_path(filepath, "monsters"):
             monster = Monster.from_dict(monster_data)
             self.monsters.append(monster)
 

@@ -9,141 +9,21 @@ import copy
 import random
 import uuid
 
+from engine.data_loader import (
+    get_creation_ability_order,
+    get_creation_class_default_skills,
+    get_creation_class_skill_counts,
+    get_creation_class_skill_options,
+    get_creation_class_stat_priorities,
+    get_creation_questions,
+)
 
-CLASS_SKILL_OPTIONS: Dict[str, List[str]] = {
-    "warrior": ["athletics", "intimidation", "perception", "survival"],
-    "rogue": ["acrobatics", "deception", "stealth", "sleight_of_hand", "perception", "investigation"],
-    "mage": ["arcana", "history", "investigation", "religion", "insight"],
-    "priest": ["medicine", "insight", "persuasion", "religion", "history"],
-}
-
-CLASS_SKILL_COUNTS: Dict[str, int] = {
-    "warrior": 2,
-    "rogue": 4,
-    "mage": 2,
-    "priest": 2,
-}
-
-CLASS_DEFAULT_SKILLS: Dict[str, List[str]] = {
-    "warrior": ["athletics", "perception"],
-    "rogue": ["stealth", "deception", "perception", "investigation"],
-    "mage": ["arcana", "investigation"],
-    "priest": ["insight", "religion"],
-}
-
-CLASS_STAT_PRIORITIES: Dict[str, List[str]] = {
-    "warrior": ["MIG", "END", "AGI", "PRE", "INS", "MND"],
-    "rogue": ["AGI", "INS", "PRE", "MND", "END", "MIG"],
-    "mage": ["MND", "INS", "AGI", "PRE", "END", "MIG"],
-    "priest": ["INS", "PRE", "END", "MND", "MIG", "AGI"],
-}
-
-ABILITY_ORDER = ["MIG", "AGI", "END", "MND", "INS", "PRE"]
-
-CREATION_QUESTIONS: List[Dict[str, Any]] = [
-    {
-        "id": "origin",
-        "text": "When your village needed help, what did you do first?",
-        "answers": [
-            {
-                "id": "stand_guard",
-                "text": "Took up a spear and stood watch.",
-                "class_weights": {"warrior": 3, "priest": 1},
-                "skill_weights": {"athletics": 2, "perception": 1, "survival": 1},
-                "alignment_axes": {"law_chaos": 10, "good_evil": 6},
-            },
-            {
-                "id": "work_back_alleys",
-                "text": "Moved quietly, listened, and learned who was lying.",
-                "class_weights": {"rogue": 3, "mage": 1},
-                "skill_weights": {"stealth": 2, "deception": 1, "investigation": 2},
-                "alignment_axes": {"law_chaos": -8, "good_evil": 0},
-            },
-            {
-                "id": "study_old_records",
-                "text": "Went for books, records, and old clues.",
-                "class_weights": {"mage": 3, "priest": 1},
-                "skill_weights": {"arcana": 1, "history": 2, "investigation": 1, "religion": 1},
-                "alignment_axes": {"law_chaos": 2, "good_evil": 2},
-            },
-            {
-                "id": "comfort_people",
-                "text": "Stayed with the frightened and kept people steady.",
-                "class_weights": {"priest": 3, "warrior": 1},
-                "skill_weights": {"insight": 2, "medicine": 1, "persuasion": 2},
-                "alignment_axes": {"law_chaos": 4, "good_evil": 10},
-            },
-        ],
-    },
-    {
-        "id": "temptation",
-        "text": "A powerful patron offers wealth for a dirty job. What wins out?",
-        "answers": [
-            {
-                "id": "refuse_on_principle",
-                "text": "Refuse. Some lines should not be crossed.",
-                "class_weights": {"priest": 2, "warrior": 1},
-                "skill_weights": {"insight": 1, "persuasion": 1},
-                "alignment_axes": {"law_chaos": 8, "good_evil": 12},
-            },
-            {
-                "id": "take_and_control",
-                "text": "Take the job, but on your terms and with a plan.",
-                "class_weights": {"rogue": 2, "mage": 1},
-                "skill_weights": {"deception": 1, "investigation": 1, "stealth": 1},
-                "alignment_axes": {"law_chaos": -2, "good_evil": -2},
-            },
-            {
-                "id": "serve_order",
-                "text": "Ask who gave the order and whether it serves stability.",
-                "class_weights": {"warrior": 1, "priest": 1, "mage": 1},
-                "skill_weights": {"history": 1, "persuasion": 1},
-                "alignment_axes": {"law_chaos": 12, "good_evil": 0},
-            },
-            {
-                "id": "take_the_money",
-                "text": "If the pay is good enough, morals can wait.",
-                "class_weights": {"rogue": 2},
-                "skill_weights": {"deception": 2, "sleight_of_hand": 1, "intimidation": 1},
-                "alignment_axes": {"law_chaos": -6, "good_evil": -12},
-            },
-        ],
-    },
-    {
-        "id": "fear",
-        "text": "What frightens you most when the night is quiet?",
-        "answers": [
-            {
-                "id": "failing_comrades",
-                "text": "Letting others die because I hesitated.",
-                "class_weights": {"warrior": 2, "priest": 2},
-                "skill_weights": {"medicine": 1, "perception": 1, "survival": 1},
-                "alignment_axes": {"good_evil": 8},
-            },
-            {
-                "id": "being_controlled",
-                "text": "Chains, vows, and any hand trying to steer me.",
-                "class_weights": {"rogue": 2, "mage": 1},
-                "skill_weights": {"acrobatics": 1, "stealth": 1, "deception": 1},
-                "alignment_axes": {"law_chaos": -12},
-            },
-            {
-                "id": "ignorance",
-                "text": "Not understanding what is really happening.",
-                "class_weights": {"mage": 3},
-                "skill_weights": {"arcana": 1, "history": 1, "investigation": 2},
-                "alignment_axes": {"law_chaos": 2},
-            },
-            {
-                "id": "losing_faith",
-                "text": "Waking one day with nothing worth believing in.",
-                "class_weights": {"priest": 3},
-                "skill_weights": {"religion": 2, "insight": 1, "persuasion": 1},
-                "alignment_axes": {"good_evil": 8, "law_chaos": 4},
-            },
-        ],
-    },
-]
+CLASS_SKILL_OPTIONS: Dict[str, List[str]] = get_creation_class_skill_options()
+CLASS_SKILL_COUNTS: Dict[str, int] = get_creation_class_skill_counts()
+CLASS_DEFAULT_SKILLS: Dict[str, List[str]] = get_creation_class_default_skills()
+CLASS_STAT_PRIORITIES: Dict[str, List[str]] = get_creation_class_stat_priorities()
+ABILITY_ORDER = get_creation_ability_order()
+CREATION_QUESTIONS: List[Dict[str, Any]] = get_creation_questions()
 
 
 def roll_stat_array(rng: Optional[random.Random] = None) -> List[int]:

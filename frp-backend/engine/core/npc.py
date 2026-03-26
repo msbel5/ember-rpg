@@ -6,10 +6,11 @@ provides dialogue retrieval and relationship management.
 
 from __future__ import annotations
 
-import json
 import random
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from engine.data_loader import load_registry_list_from_path
 
 # Default path relative to this file's package root
 _DEFAULT_NPC_PATH = Path(__file__).parent.parent.parent / "data" / "npcs" / "npcs.json"
@@ -113,10 +114,7 @@ class NPCManager:
         if not path.exists():
             raise FileNotFoundError(f"NPC data file not found: {path}")
 
-        with path.open("r", encoding="utf-8") as fh:
-            raw = json.load(fh)
-
-        npcs_list: List[Dict[str, Any]] = raw.get("npcs", [])
+        npcs_list: List[Dict[str, Any]] = load_registry_list_from_path(path, "npcs")
         loaded: Dict[str, Dict[str, Any]] = {}
         for npc in npcs_list:
             _validate_npc(npc)

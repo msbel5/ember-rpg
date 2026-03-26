@@ -2,11 +2,11 @@
 Ember RPG - Core Engine
 Universal Item class for all objects
 """
-import json
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import List, Optional, TYPE_CHECKING
 from enum import Enum
+
+from engine.data_loader import load_registry_list_from_path
 
 if TYPE_CHECKING:
     from engine.core.character import Character
@@ -196,15 +196,8 @@ class ItemDatabase:
         Raises:
             ValueError: If duplicate item ids are detected.
         """
-        path = Path(filepath)
-        if not path.exists():
-            path = Path(__file__).resolve().parents[2] / filepath
-
-        with path.open('r', encoding='utf-8') as f:
-            data = json.load(f)
-
         seen_ids: set = set()
-        for item_data in data['items']:
+        for item_data in load_registry_list_from_path(filepath, "items"):
             item = self._item_from_json(item_data)
             if item.id is not None:
                 if item.id in seen_ids:

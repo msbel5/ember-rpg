@@ -7,6 +7,13 @@ from typing import Optional, List, Dict, Any, TYPE_CHECKING
 
 from engine.api.game_session import GameSession
 from engine.core.character import Character
+from engine.data_loader import (
+    get_role_anchor_map,
+    get_role_skill_profiles,
+    get_role_stats,
+    get_scene_anchor_offsets,
+    get_scene_role_sets,
+)
 from engine.world.proximity import distance, astar_path, check_proximity
 from engine.world.entity import Entity, EntityType
 from engine.world.action_points import ACTION_COSTS
@@ -322,28 +329,14 @@ class HelperMixin:
         return [cx + random.randint(-3, 3), cy + random.randint(-3, 3)]
 
     def _scene_anchor_positions(self, session: GameSession) -> Dict[str, List[int]]:
+        anchor_offsets = get_scene_anchor_offsets()
         if not session.map_data:
             px, py = session.position[0], session.position[1]
-            return {name: [px, py] for name in {
-                "home", "shop", "market_square", "tavern", "gate",
-                "forge", "temple", "alley", "docks", "campfire",
-            }}
+            return {name: [px, py] for name in anchor_offsets}
 
         spawn_x, spawn_y = session.map_data.spawn_point
-        offsets = {
-            "home": (-6, -3),
-            "shop": (5, -1),
-            "market_square": (0, 4),
-            "tavern": (6, 5),
-            "gate": (0, -7),
-            "forge": (8, 1),
-            "temple": (-8, 1),
-            "alley": (-6, 5),
-            "docks": (9, 6),
-            "campfire": (-4, 7),
-        }
         anchors: Dict[str, List[int]] = {}
-        for name, (dx, dy) in offsets.items():
+        for name, (dx, dy) in anchor_offsets.items():
             anchors[name] = self._find_walkable_near(session, spawn_x + dx, spawn_y + dy, radius=4)
         return anchors
 
@@ -375,20 +368,15 @@ class HelperMixin:
         loc_lower = location.lower()
         anchors = self._scene_anchor_positions(session)
 
-        # Define NPC archetypes by location type
+        scene_role_sets = get_scene_role_sets()
         if any(w in loc_lower for w in ["tavern", "inn"]):
-            roles = [("innkeeper", "merchant_guild"), ("merchant", "merchant_guild"),
-                     ("guard", "harbor_guard"), ("quest_giver", "merchant_guild"),
-                     ("beggar", "thieves_guild")]
+            roles = [(entry["role"], entry["faction"]) for entry in scene_role_sets.get("tavern_inn", [])]
         elif any(w in loc_lower for w in ["market", "harbor", "town", "city"]):
-            roles = [("merchant", "merchant_guild"), ("innkeeper", "merchant_guild"),
-                     ("guard", "harbor_guard"),
-                     ("blacksmith", "mountain_dwarves"), ("beggar", "thieves_guild"),
-                     ("priest", "temple_order")]
+            roles = [(entry["role"], entry["faction"]) for entry in scene_role_sets.get("settlement", [])]
         elif any(w in loc_lower for w in ["forest", "road", "path"]):
-            roles = [("spy", "thieves_guild"), ("guard", "harbor_guard")]
+            roles = [(entry["role"], entry["faction"]) for entry in scene_role_sets.get("road_wilds", [])]
         else:
-            roles = [("merchant", "merchant_guild"), ("guard", "harbor_guard")]
+            roles = [(entry["role"], entry["faction"]) for entry in scene_role_sets.get("default", [])]
 
         for role, faction in roles:
             npc_id = f"{role}_{len(session.entities) + 1}"
@@ -406,15 +394,7 @@ class HelperMixin:
             if role in {"merchant", "innkeeper"}:
                 pos = self._find_walkable_near(session, session.position[0], session.position[1], radius=4, min_dist=1)
             else:
-                role_anchor = {
-                    "merchant": "shop",
-                    "blacksmith": "forge",
-                    "priest": "temple",
-                    "quest_giver": "market_square",
-                    "guard": "gate",
-                    "beggar": "alley",
-                    "spy": "alley",
-                }.get(role)
+                role_anchor = get_role_anchor_map().get(role)
                 if role_anchor and role_anchor in anchors:
                     anchor_x, anchor_y = anchors[role_anchor]
                     pos = self._find_walkable_near(session, anchor_x, anchor_y, radius=6, min_dist=2)
@@ -447,19 +427,13 @@ class HelperMixin:
             )
 
             # Build NPC skills based on role
-            npc_skills = {}
-            if role == "guard":
-                npc_skills = {"melee": 3, "patrol": 2}
-            elif role == "merchant":
-                npc_skills = {"trade": 4, "appraisal": 3}
-            elif role == "blacksmith":
-                npc_skills = {"smithing": 5, "trade": 2}
-            elif role == "innkeeper":
-                npc_skills = {"trade": 3, "cooking": 4}
-            elif role == "healer":
-                npc_skills = {"healing": 5, "herbalism": 3}
-            elif role == "priest":
-                npc_skills = {"healing": 3, "divine_magic": 4}
+            npc_skills = dict(get_role_skill_profiles().get(role, {}))
+            role_stats = get_role_stats()
+            stat_profile = dict(role_stats.get("default", {}))
+            stat_profile.update(role_stats.get(role, {}))
+            disposition = stat_profile.get("disposition", "friendly")
+            hp_value = int(stat_profile.get("hp", 8))
+            max_hp_value = int(stat_profile.get("max_hp", hp_value))
 
             # Create proper Entity object
             entity = Entity(
@@ -476,11 +450,11 @@ class HelperMixin:
                 faction=faction,
                 schedule=schedule,
                 job=role,
-                disposition="friendly" if role != "spy" else "neutral",
+                disposition=disposition,
                 attitude=DEFAULT_NPC_ATTITUDE.get(role, "indifferent"),
                 alignment=DEFAULT_NPC_ALIGNMENT.get(role, "TN"),
-                hp=12 if role == "guard" else 8,
-                max_hp=12 if role == "guard" else 8,
+                hp=hp_value,
+                max_hp=max_hp_value,
             )
 
             # Add to spatial index

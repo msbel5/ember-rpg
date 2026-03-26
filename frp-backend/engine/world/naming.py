@@ -5,83 +5,9 @@ Generates faction-specific NPC names with per-session caching.
 import random
 from typing import Optional, Dict
 
+from engine.data_loader import get_name_banks
 
-# Name banks organized by faction and gender
-NAME_BANKS = {
-    "human": {
-        "male_first": [
-            "Aldric", "Bram", "Cedric", "Dorian", "Edmund", "Felix", "Gareth",
-            "Hugo", "Ivan", "Jasper", "Kael", "Leander", "Marcus", "Nolan",
-            "Osric", "Percival", "Quinn", "Roland", "Silas", "Theron",
-            "Ulric", "Victor", "Wyatt", "Xander", "York", "Zephyr",
-        ],
-        "female_first": [
-            "Aria", "Brenna", "Celeste", "Diana", "Elara", "Freya", "Gwen",
-            "Helena", "Iris", "Juno", "Kira", "Luna", "Mira", "Nadia",
-            "Ophelia", "Petra", "Quinn", "Rosalind", "Selene", "Thalia",
-            "Uma", "Viola", "Wren", "Xena", "Yara", "Zara",
-        ],
-        "surnames": [
-            "Ashford", "Blackwood", "Cromwell", "Drayton", "Everett",
-            "Fairfax", "Greystone", "Hawthorne", "Ironside", "Jarrett",
-            "Kingsley", "Lancaster", "Montague", "Northcott", "Oakley",
-            "Pemberton", "Ravencroft", "Stonebridge", "Thornwall", "Whitmore",
-        ],
-    },
-    "dwarf": {
-        "male_first": [
-            "Balin", "Dain", "Durin", "Farin", "Gimli", "Groin", "Kili",
-            "Nori", "Oin", "Thorin", "Bofur", "Dwalin", "Fundin", "Gloin",
-            "Hammerhand", "Ironfist", "Jorin", "Kragg", "Magni", "Ragnar",
-        ],
-        "female_first": [
-            "Bruni", "Dagny", "Edda", "Freydis", "Grida", "Hilda",
-            "Inga", "Kelda", "Lofn", "Marda", "Nessa", "Ragna",
-            "Sigrid", "Thora", "Ulla", "Vala", "Wilda", "Ylva",
-        ],
-        "clan_names": [
-            "Deepdelve", "Ironforge", "Stonehammer", "Goldvein", "Firebeard",
-            "Bronzeshield", "Oakenshield", "Battleborn", "Frostaxe", "Steelgrip",
-            "Darkmine", "Copperkettle", "Runecarver", "Anvilbreaker", "Gemcutter",
-        ],
-    },
-    "elf": {
-        "male_first": [
-            "Aelindor", "Caelion", "Elowen", "Faenor", "Galadrim",
-            "Ithilion", "Lorien", "Miriel", "Naeron", "Orophin",
-            "Rilindel", "Silvan", "Thalion", "Vanyar", "Celeborn",
-        ],
-        "female_first": [
-            "Aranel", "Celebrian", "Elanor", "Finduilas", "Galadriel",
-            "Idril", "Luthien", "Melian", "Nienor", "Nimrodel",
-            "Rivanel", "Silmarien", "Tinuviel", "Undome", "Vanima",
-        ],
-        "house_names": [
-            "of the Silver Wood", "of the Starlight Vale", "of the Moonwell",
-            "of the Eternal Spring", "of the Crystal Shore", "of the Whisperwind",
-            "of the Dawnpeak", "of the Twilight Glade", "of the Golden Leaf",
-            "of the Emerald Song", "of the Sapphire Tower", "of the Ancient Oak",
-        ],
-    },
-    "orc": {
-        "male_first": [
-            "Grak", "Thog", "Murg", "Drek", "Korg", "Brug", "Zog",
-            "Harg", "Skag", "Thrak", "Grom", "Narg", "Vog", "Warg",
-        ],
-        "female_first": [
-            "Grisha", "Moga", "Shara", "Theka", "Urga", "Breka",
-            "Kasha", "Naga", "Rogha", "Vorga", "Zagra", "Drekka",
-        ],
-        "clan_names": [
-            "Bloodfang", "Skullcrusher", "Ironjaw", "Bonesnapper",
-            "Goreclaw", "Doomhammer", "Warfist", "Deathbringer",
-            "Shadowmaw", "Fleshrender", "Darkblade", "Stormrage",
-        ],
-    },
-}
-
-# Default fallback for unknown factions
-NAME_BANKS["default"] = NAME_BANKS["human"]
+NAME_BANKS = get_name_banks()
 
 
 class NameGenerator:

@@ -59,107 +59,41 @@ from engine.world.behavior_tree import (
     BehaviorContext, create_npc_behavior_tree, Status as BTStatus,
 )
 from engine.map import MapData, TownGenerator
+from engine.data_loader import (
+    CLASSES,
+    get_class_ap_map,
+    get_class_default_hp,
+    get_class_default_spell_points,
+    get_class_default_stats,
+    get_default_npc_alignment_map,
+    get_default_npc_attitude_map,
+    get_hostile_keywords,
+    get_npc_visuals,
+    get_opening_scenes,
+    get_role_production_map,
+    get_social_attitude_dcs,
+    get_think_topic_skills,
+    get_workstation_anchors,
+    get_workstation_specs,
+    get_xp_rewards,
+)
 
 
-# XP rewards for killing enemies (by level)
-XP_REWARDS = {1: 100, 2: 200, 3: 450, 4: 700, 5: 1100}
-
-# NPC visual mapping: role -> (glyph, color)
-NPC_VISUALS = {
-    "innkeeper":   ("I", "cyan"),
-    "guard":       ("G", "red"),
-    "merchant":    ("$", "yellow"),
-    "blacksmith":  ("B", "white"),
-    "quest_giver": ("Q", "magenta"),
-    "beggar":      ("b", "dim"),
-    "spy":         ("s", "blue"),
-    "priest":      ("P", "white"),
-    "healer":      ("H", "green"),
-    "sage":        ("S", "magenta"),
-    "bard":        ("♪", "yellow"),
-}
-
-WORKSTATION_SPECS = {
-    "forge": {"name": "Forge", "glyph": "F", "color": "bright_white"},
-    "alchemy_bench": {"name": "Alchemy Bench", "glyph": "A", "color": "bright_green"},
-    "workbench": {"name": "Workbench", "glyph": "W", "color": "bright_yellow"},
-    "kitchen": {"name": "Kitchen", "glyph": "K", "color": "yellow"},
-    "campfire": {"name": "Campfire", "glyph": "C", "color": "red"},
-}
-
-WORKSTATION_ANCHORS = {
-    "forge": "forge",
-    "alchemy_bench": "temple",
-    "workbench": "shop",
-    "kitchen": "tavern",
-    "campfire": "campfire",
-}
-
-SOCIAL_ATTITUDE_DCS = {
-    "friendly": {
-        "no_risk": 5,
-        "minor_risk": 10,
-        "significant_sacrifice": 20,
-    },
-    "indifferent": {
-        "no_risk": 10,
-        "minor_risk": 15,
-        "significant_sacrifice": 20,
-    },
-    "hostile": {
-        "no_risk": 20,
-        "minor_risk": 25,
-        "significant_sacrifice": 999,
-    },
-}
-
-DEFAULT_NPC_ATTITUDE = {
-    "merchant": "indifferent",
-    "blacksmith": "indifferent",
-    "innkeeper": "indifferent",
-    "guard": "indifferent",
-    "quest_giver": "indifferent",
-    "priest": "friendly",
-    "healer": "friendly",
-    "sage": "friendly",
-    "beggar": "indifferent",
-    "spy": "hostile",
-}
-
-DEFAULT_NPC_ALIGNMENT = {
-    "merchant": "LN",
-    "blacksmith": "LN",
-    "innkeeper": "NG",
-    "guard": "LG",
-    "quest_giver": "NG",
-    "priest": "LG",
-    "healer": "NG",
-    "sage": "TN",
-    "beggar": "CN",
-    "spy": "NE",
-}
-
-THINK_TOPIC_SKILLS = {
-    "history": {"king", "empire", "war", "ruin", "lord", "queen", "history", "geçmiş", "tarih"},
-    "arcana": {"magic", "spell", "glyph", "arcane", "rune", "mana", "büyü", "tılsım", "rün"},
-    "religion": {"god", "saint", "temple", "holy", "prayer", "faith", "tanrı", "tapınak", "kutsal"},
-    "nature": {"forest", "beast", "wolf", "herb", "road", "river", "tree", "orman", "kurt", "nehir"},
-    "investigation": {"clue", "murder", "crime", "who", "why", "how", "ipuç", "cinayet", "neden"},
-}
-
-ROLE_PRODUCTION = {
-    "blacksmith": ("iron_bar", "iron_sword"),
-    "innkeeper": ("bread", "ale"),
-    "merchant": ("torch",),
-    "priest": ("healing_potion",),
-}
+XP_REWARDS = get_xp_rewards()
+NPC_VISUALS = {role: tuple(spec) for role, spec in get_npc_visuals().items()}
+WORKSTATION_SPECS = get_workstation_specs()
+WORKSTATION_ANCHORS = get_workstation_anchors()
+SOCIAL_ATTITUDE_DCS = get_social_attitude_dcs()
+DEFAULT_NPC_ATTITUDE = get_default_npc_attitude_map()
+DEFAULT_NPC_ALIGNMENT = get_default_npc_alignment_map()
+THINK_TOPIC_SKILLS = {skill: set(keywords) for skill, keywords in get_think_topic_skills().items()}
+ROLE_PRODUCTION = {role: tuple(values) for role, values in get_role_production_map().items()}
+HOSTILE_KEYWORDS = get_hostile_keywords()
 
 # Starter inventory kits loaded from data/classes.json
-from engine.data_loader import get_class_starting_equipment, get_class_ap_map
 
 def _build_starter_kits() -> dict:
     """Build STARTER_KITS from data/classes.json."""
-    from engine.data_loader import CLASSES
     kits = {}
     for class_id, cdata in CLASSES.items():
         kits[class_id] = cdata.get("starting_equipment", [])
@@ -190,11 +124,11 @@ class ActionResult:
     loot_dropped: list = field(default_factory=list)
 
 
-# Default opening scenes (location, opening description)
 _OPENING_SCENES = [
+    (scene.get("location", "Stone Bridge Tavern"), scene.get("description", ""))
+    for scene in get_opening_scenes()
+] or [
     ("Stone Bridge Tavern", "Low rafters, the smell of pipe smoke. A fire crackles in the hearth. The door creaks open — someone has arrived."),
-    ("Forest Road", "Morning mist parts as you push forward. Branches arch overhead. A wolf howls somewhere in the distance."),
-    ("Harbor Town", "Salt air fills your lungs. Fishermen haul nets at the dock. A northern-flag ship sways in the harbor."),
 ]
 
 
@@ -269,15 +203,6 @@ class GameEngine(
         Returns:
             Initialized GameSession
         """
-        class_stats = {
-            "warrior": {"MIG": 16, "AGI": 12, "END": 14, "MND": 8,  "INS": 10, "PRE": 10},
-            "rogue":   {"MIG": 10, "AGI": 16, "END": 10, "MND": 10, "INS": 14, "PRE": 12},
-            "mage":    {"MIG": 8,  "AGI": 12, "END": 10, "MND": 16, "INS": 14, "PRE": 10},
-            "priest":  {"MIG": 10, "AGI": 10, "END": 12, "MND": 14, "INS": 16, "PRE": 12},
-        }
-        class_hp = {"warrior": 20, "rogue": 16, "mage": 12, "priest": 16}
-        class_sp = {"warrior": 0,  "rogue": 0,  "mage": 16, "priest": 12}
-
         requested_class = str(player_class or "warrior").lower()
         player_class = {
             "fighter": "warrior",
@@ -285,18 +210,19 @@ class GameEngine(
             "thief": "rogue",
             "wizard": "mage",
         }.get(requested_class, requested_class)
-        unknown_class = player_class not in class_stats
+        class_stats_template = get_class_default_stats(player_class)
+        unknown_class = not class_stats_template
         if unknown_class:
             player_class = "warrior"
-        class_stats_template = class_stats.get(player_class, class_stats["warrior"])
+            class_stats_template = get_class_default_stats(player_class)
         assigned_stats = dict(stats or {})
         if assigned_stats:
             for key in ("MIG", "AGI", "END", "MND", "INS", "PRE"):
                 assigned_stats.setdefault(key, 10)
         else:
             assigned_stats = dict(class_stats_template)
-        hp    = 16 if unknown_class else class_hp.get(player_class, 16)
-        sp    = class_sp.get(player_class, 0)
+        hp = 16 if unknown_class else get_class_default_hp(player_class)
+        sp = get_class_default_spell_points(player_class)
 
         creation_profile = dict(creation_profile or {})
         recommended_axes = dict(creation_profile.get("alignment_axes") or {})

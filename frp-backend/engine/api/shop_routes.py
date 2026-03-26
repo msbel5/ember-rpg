@@ -3,57 +3,36 @@ Ember RPG - Shop/Merchant Endpoints (Deliverable 5)
 Players can buy/sell items through NPC merchants.
 """
 import copy
-import json
-import os
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from engine.data_loader import get_item, get_npc_template, list_items, list_npc_templates
 
 router = APIRouter()
 
-# ── Path helpers ──────────────────────────────────────────────────────────────
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_DATA_DIR = os.path.join(_HERE, "../../data")
-
-# Lazy-loaded caches
-_npc_templates: Optional[list] = None
-_item_db: Optional[dict] = None  # id -> item dict
-
-
 def _load_npc_templates() -> list:
-    global _npc_templates
-    if _npc_templates is None:
-        path = os.path.join(_DATA_DIR, "npc_templates.json")
-        with open(path) as f:
-            _npc_templates = json.load(f)["npc_templates"]
-    return _npc_templates
+    return list_npc_templates()
 
 
 def _load_items() -> dict:
-    global _item_db
-    if _item_db is None:
-        path = os.path.join(_DATA_DIR, "items.json")
-        with open(path) as f:
-            raw = json.load(f)["items"]
-        _item_db = {item["id"]: item for item in raw if "id" in item}
-    return _item_db
+    return {item["id"]: item for item in list_items() if "id" in item}
 
 
 def _get_npc(npc_id: str) -> dict:
     """Find NPC template by id. Raises 404 if not found."""
-    for npc in _load_npc_templates():
-        if npc["id"] == npc_id:
-            return npc
+    npc = get_npc_template(npc_id)
+    if npc is not None:
+        return npc
     raise HTTPException(status_code=404, detail=f"NPC '{npc_id}' not found")
 
 
 def _get_item(item_id: str) -> dict:
     """Find item by id. Raises 404 if not found."""
-    items = _load_items()
-    if item_id not in items:
+    item = get_item(item_id)
+    if item is None:
         raise HTTPException(status_code=404, detail=f"Item '{item_id}' not found")
-    return items[item_id]
+    return item
 
 
 # ── In-memory session store (shared with routes.py) ───────────────────────────
