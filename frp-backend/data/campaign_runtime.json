@@ -1,0 +1,113 @@
+{
+  "campaign_runtime": {
+    "arc_titles": [
+      "Dark Forest",
+      "Forgotten Tower",
+      "Lost Treasure",
+      "The Deceiver's Legacy",
+      "Ruined Temple",
+      "Threat from the North"
+    ],
+    "arc_premises": [
+      "Dangerous events are unfolding in {location}. Someone must act.",
+      "An old prophecy is about to come true in {location}.",
+      "A stranger has arrived from {location} seeking help."
+    ],
+    "kill_quests": [
+      {
+        "title": "Goblin Problem",
+        "description": "Villagers are reporting goblin raids near the road.",
+        "target": "goblin",
+        "count": 3
+      },
+      {
+        "title": "Bone Pile",
+        "description": "The dead are walking in the old cemetery.",
+        "target": "skeleton",
+        "count": 5
+      },
+      {
+        "title": "Wolf Hunt",
+        "description": "A pack of dire wolves prowls the northern forest.",
+        "target": "wolf",
+        "count": 2
+      }
+    ],
+    "fetch_quests": [
+      {
+        "title": "Lost Letter",
+        "description": "Bandits stole a merchant's important correspondence.",
+        "item": "letter",
+        "count": 1
+      },
+      {
+        "title": "Alchemist's Herbs",
+        "description": "The alchemist needs rare herbs from the forest.",
+        "item": "herb",
+        "count": 4
+      },
+      {
+        "title": "Sacred Relic",
+        "description": "A temple relic has gone missing - retrieve it.",
+        "item": "relic",
+        "count": 1
+      }
+    ],
+    "explore_quest": {
+      "title": "Exploration Mission",
+      "description": "Scout the {location} area and report back.",
+      "giver": "Guild Master",
+      "objective": "Map the {location} area"
+    },
+    "dialogue_quest": {
+      "title": "The Elder's Secret",
+      "description": "The village elder knows something. Find out what.",
+      "giver": "Villagers",
+      "objective": "Speak with the Elder",
+      "target": "Elder"
+    },
+    "world_events": [
+      {
+        "event_type": "ambush",
+        "title": "Roadside Ambush",
+        "description": "Three bandits leap from the shadows!",
+        "options": ["Fight", "Flee", "Negotiate"],
+        "outcomes": {
+          "0": "Your courage sends them running.",
+          "1": "You escape into the dark.",
+          "2": "You pay 10 gold to pass."
+        }
+      },
+      {
+        "event_type": "discovery",
+        "title": "Hidden Passage",
+        "description": "You find a concealed passage behind the wall.",
+        "options": ["Enter", "Pass by"],
+        "outcomes": {
+          "0": "Inside: an old chest with 25 gold!",
+          "1": "You move on."
+        }
+      },
+      {
+        "event_type": "weather",
+        "title": "Sudden Storm",
+        "description": "A storm rolls in without warning.",
+        "options": ["Take shelter", "Push through"],
+        "outcomes": {
+          "0": "You find a nearby cave and wait it out.",
+          "1": "You press on, soaked and weary. -5 HP."
+        }
+      },
+      {
+        "event_type": "trap",
+        "title": "Trapped!",
+        "description": "A hidden pressure plate triggers beneath your foot!",
+        "options": ["Jump clear", "Roll AGI"],
+        "outcomes": {
+          "0": "You leap aside just in time!",
+          "1": "The mechanism catches you. -8 HP."
+        }
+      }
+    ]
+  }
+}

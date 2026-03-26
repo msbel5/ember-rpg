@@ -297,6 +297,22 @@ class TestSaveLoadRoundtrip:
         assert loaded.ap_tracker.max_ap == sample_session.ap_tracker.max_ap
         assert loaded.ap_tracker.armor_type == "chain_mail"
 
+    def test_generated_session_load_preserves_base_ac(self, save_system):
+        engine = GameEngine()
+        session = engine.new_session("Bulwark", "warrior", location="Harbor Town", alignment="LN")
+
+        base_ac_before = session.player.base_ac
+        ac_before = session.player.ac
+        armor_before = session.equipment["armor"]["id"]
+
+        save_system.save_game(session, "test_base_ac")
+        loaded = save_system.load_game("test_base_ac")
+
+        assert loaded.player.base_ac == base_ac_before
+        assert loaded.player._base_ac == base_ac_before
+        assert loaded.player.ac == ac_before
+        assert loaded.equipment["armor"]["id"] == armor_before
+
     def test_timed_conditions_roundtrip_and_expiry(self, save_system, sample_session):
         sample_session.game_time.day = 1
         sample_session.game_time.hour = 8

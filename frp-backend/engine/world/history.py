@@ -8,10 +8,13 @@ import random
 from dataclasses import dataclass, field
 from typing import Optional
 
-
-# ---------------------------------------------------------------------------
-# Data model
-# ---------------------------------------------------------------------------
+from engine.data_loader import (
+    get_history_all_factions,
+    get_history_present_year,
+    get_history_scholarly_roles,
+    get_history_severity_levels,
+    get_history_table,
+)
 
 @dataclass
 class HistoryEvent:
@@ -55,102 +58,19 @@ class NotableFigure:
         }
 
 
-# ---------------------------------------------------------------------------
-# Name pools for procedural generation
-# ---------------------------------------------------------------------------
-
-_WAR_NAMES = [
-    "War of the Broken Crown",
-    "The Ember Crusade",
-    "Siege of the Iron Reach",
-    "The Tide Wars",
-    "War of the Scorched Plains",
-    "The Shadow Campaign",
-    "Conflict of the Twin Rivers",
-    "The Red Harvest War",
-    "Battle of the Hollow Gate",
-    "The Salt Rebellion",
-]
-
-_KINGDOM_NAMES = [
-    "Kingdom of Valdris",
-    "The Sunken Throne of Marath",
-    "Principality of Erathel",
-    "Dominion of Kael",
-    "The Glimmering Republic",
-    "Archonate of Thessen",
-]
-
-_CATASTROPHE_NAMES = [
-    "The Great Unraveling",
-    "Ashfall of the Third Age",
-    "The Blight of Sorrow",
-    "The Sundering Storm",
-    "The Night of Falling Stars",
-    "The Frostbite Plague",
-]
-
-_FIGURE_FIRST_NAMES = [
-    "Aldric", "Brenna", "Cassiel", "Dorin", "Elara",
-    "Fendrel", "Gwynneth", "Halvard", "Isolde", "Jorik",
-    "Kaelen", "Liora", "Maldric", "Nerys", "Orin",
-    "Petra", "Quillan", "Rowan", "Sylvar", "Thalion",
-]
-
-_FIGURE_LAST_NAMES = [
-    "Ironforge", "Stormveil", "Ashwood", "Brightwater", "Darkhollow",
-    "Flamecrest", "Greymane", "Hawkridge", "Iceborne", "Thornwall",
-    "Blackthorn", "Silverleaf", "Stoneheart", "Windwalker", "Dawnbringer",
-]
-
-_FIGURE_ROLES = [
-    "general", "queen", "king", "prophet", "rebel leader",
-    "archmage", "merchant prince", "warlord", "saint", "traitor",
-    "hero", "scholar", "assassin", "diplomat", "pirate lord",
-]
-
-_LEGACY_TEMPLATES = [
-    "Remembered for uniting {faction} against overwhelming odds.",
-    "Infamous for the betrayal that shattered {faction}.",
-    "Credited with founding the great library of {faction}.",
-    "Martyred defending the people from the {event}.",
-    "Rose from nothing to lead {faction} through its darkest hour.",
-    "Whispered about in taverns as the architect of {event}.",
-    "Celebrated as the greatest strategist {faction} ever produced.",
-    "Reviled for plunging {faction} into a century of debt.",
-]
-
-_TENSION_TEMPLATES = [
-    "Border disputes between {a} and {b} over the Ashlands.",
-    "Trade embargo imposed by {a} against {b}.",
-    "Religious tensions between {a} missionaries and {b} traditions.",
-    "Disputed succession claim involving {a} and {b} nobles.",
-    "Refugee crisis caused by {a} driving settlers into {b} territory.",
-    "Assassination of a {a} diplomat blamed on {b}.",
-    "Competition between {a} and {b} for control of the northern mines.",
-]
-
-_WAR_OUTCOMES = [
-    "{winner} prevailed after a devastating three-year campaign.",
-    "Ended in a fragile truce with {loser} ceding the eastern provinces.",
-    "{winner} crushed {loser} forces at the Battle of the Crossing.",
-    "Mutual exhaustion forced both sides to the negotiation table.",
-    "{winner} achieved a pyrrhic victory, losing a generation of soldiers.",
-]
-
-_FALL_CAUSES = [
-    "internal revolt and civil war",
-    "plague and famine",
-    "invasion by nomadic hordes",
-    "magical catastrophe",
-    "betrayal by its own ruling council",
-    "economic collapse",
-]
-
-ALL_FACTIONS = [
-    "harbor_guard", "thieves_guild", "merchant_guild",
-    "forest_elves", "mountain_dwarves", "temple_order",
-]
+_WAR_NAMES = get_history_table("war_names")
+_KINGDOM_NAMES = get_history_table("kingdom_names")
+_CATASTROPHE_NAMES = get_history_table("catastrophe_names")
+_FIGURE_FIRST_NAMES = get_history_table("figure_first_names")
+_FIGURE_LAST_NAMES = get_history_table("figure_last_names")
+_FIGURE_ROLES = get_history_table("figure_roles")
+_LEGACY_TEMPLATES = get_history_table("legacy_templates")
+_TENSION_TEMPLATES = get_history_table("tension_templates")
+_WAR_OUTCOMES = get_history_table("war_outcomes")
+_FALL_CAUSES = get_history_table("fall_causes")
+_ALL_FACTIONS = get_history_all_factions()
+_SCHOLARLY_ROLES = {role.lower() for role in get_history_scholarly_roles()}
+_SEVERITY_LEVELS = get_history_severity_levels()
 
 
 # ---------------------------------------------------------------------------
@@ -163,7 +83,7 @@ class HistorySeed:
     def __init__(self) -> None:
         self.events: list[HistoryEvent] = []
         self.figures: list[NotableFigure] = []
-        self.current_year: int = 1000  # "present day"
+        self.current_year: int = get_history_present_year()
 
     def generate(self, seed: int) -> "HistorySeed":
         """Generate full world history. Returns self for chaining."""
@@ -189,7 +109,7 @@ class HistorySeed:
         for _ in range(num_wars):
             name = rng.choice([n for n in _WAR_NAMES if n not in used_names] or _WAR_NAMES)
             used_names.add(name)
-            factions_involved = rng.sample(ALL_FACTIONS, k=2)
+            factions_involved = rng.sample(_ALL_FACTIONS, k=2)
             year = rng.randint(400, 950)
             winner = rng.choice(factions_involved)
             loser = [f for f in factions_involved if f != winner][0]
@@ -217,7 +137,7 @@ class HistorySeed:
             used_names.add(name)
             year = rng.randint(200, 800)
             cause = rng.choice(_FALL_CAUSES)
-            successor_faction = rng.choice(ALL_FACTIONS)
+            successor_faction = rng.choice(_ALL_FACTIONS)
             self.events.append(HistoryEvent(
                 year=year,
                 event_type="fall",
@@ -234,7 +154,7 @@ class HistorySeed:
     def _generate_catastrophe(self, rng: random.Random) -> None:
         name = rng.choice(_CATASTROPHE_NAMES)
         year = rng.randint(500, 900)
-        affected = rng.sample(ALL_FACTIONS, k=rng.randint(3, len(ALL_FACTIONS)))
+        affected = rng.sample(_ALL_FACTIONS, k=rng.randint(3, len(_ALL_FACTIONS)))
         self.events.append(HistoryEvent(
             year=year,
             event_type="catastrophe",
@@ -264,7 +184,7 @@ class HistorySeed:
                 full_name = f"{first} {last}"
             used_names.add(full_name)
 
-            faction = rng.choice(ALL_FACTIONS)
+            faction = rng.choice(_ALL_FACTIONS)
             role = rng.choice(_FIGURE_ROLES)
             born = rng.randint(300, 950)
             lifespan = rng.randint(25, 90)
@@ -296,10 +216,10 @@ class HistorySeed:
         num_tensions = rng.randint(2, 4)
         used_pairs: set[tuple[str, str]] = set()
         for _ in range(num_tensions):
-            pair = tuple(sorted(rng.sample(ALL_FACTIONS, k=2)))
+            pair = tuple(sorted(rng.sample(_ALL_FACTIONS, k=2)))
             attempts = 0
             while pair in used_pairs and attempts < 20:
-                pair = tuple(sorted(rng.sample(ALL_FACTIONS, k=2)))
+                pair = tuple(sorted(rng.sample(_ALL_FACTIONS, k=2)))
                 attempts += 1
             used_pairs.add(pair)
             a, b = pair
@@ -312,7 +232,7 @@ class HistorySeed:
                 factions=[a, b],
                 outcome="Ongoing -- no resolution in sight.",
                 consequences={
-                    "severity": rng.choice(["low", "moderate", "high", "critical"]),
+                    "severity": rng.choice(_SEVERITY_LEVELS),
                     "war_risk": round(rng.uniform(0.05, 0.6), 2),
                 },
             ))
@@ -334,7 +254,7 @@ class HistorySeed:
     def from_dict(cls, data: dict) -> "HistorySeed":
         """Deserialize history seed from a dict."""
         hs = cls()
-        hs.current_year = data.get("current_year", 1000)
+        hs.current_year = data.get("current_year", get_history_present_year())
         hs.events = [
             HistoryEvent(
                 year=e["year"],
@@ -399,8 +319,7 @@ def get_npc_known_facts(
     present = history.current_year
     earliest_personal = present - npc_age
 
-    scholarly_roles = {"scholar", "sage", "priest", "archmage", "historian", "elder", "lorekeeper"}
-    is_scholarly = npc_role.lower() in scholarly_roles
+    is_scholarly = npc_role.lower() in _SCHOLARLY_ROLES
     general_horizon = present - 500 if is_scholarly else present - 50
 
     known: list[HistoryEvent] = []

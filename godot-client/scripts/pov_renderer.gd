@@ -1,5 +1,7 @@
 extends Control
 
+const PovRendererConfig = preload("res://scripts/pov_renderer_config.gd")
+
 ## Storyboard POV Renderer — first-person view of the game world
 ## Deterministic: same position + facing + entities = same image
 ## Layered rendering with caching:
@@ -9,83 +11,9 @@ extends Control
 ##   Layer 3: Entities (cached sprites/silhouettes at tile positions)
 ##   Layer 4: Labels (entity names)
 
-# --- Location color palettes ---
-const PALETTES = {
-	"tavern": {
-		"sky": Color(0.12, 0.08, 0.05),      # dark wood ceiling
-		"wall": Color(0.25, 0.18, 0.10),      # warm brown walls
-		"floor": Color(0.20, 0.14, 0.08),     # dark wood floor
-		"ambient": Color(0.9, 0.7, 0.3, 0.15) # warm candlelight
-	},
-	"forest": {
-		"sky": Color(0.15, 0.25, 0.35),       # sky through canopy
-		"wall": Color(0.10, 0.20, 0.08),      # dark green trees
-		"floor": Color(0.18, 0.22, 0.10),     # forest floor
-		"ambient": Color(0.4, 0.8, 0.3, 0.08) # green light filter
-	},
-	"dungeon": {
-		"sky": Color(0.04, 0.04, 0.06),       # dark ceiling
-		"wall": Color(0.15, 0.14, 0.16),      # grey stone
-		"floor": Color(0.10, 0.09, 0.11),     # dark stone floor
-		"ambient": Color(0.3, 0.3, 0.5, 0.10) # cold blue tint
-	},
-	"harbor": {
-		"sky": Color(0.35, 0.55, 0.75),       # open sky
-		"wall": Color(0.30, 0.25, 0.18),      # wooden buildings
-		"floor": Color(0.45, 0.40, 0.30),     # cobblestone/sand
-		"ambient": Color(0.9, 0.85, 0.6, 0.1) # warm sun
-	},
-	"cave": {
-		"sky": Color(0.03, 0.03, 0.04),       # pitch black
-		"wall": Color(0.12, 0.10, 0.08),      # rough stone
-		"floor": Color(0.08, 0.07, 0.06),     # cave floor
-		"ambient": Color(0.2, 0.15, 0.1, 0.05)# dim torchlight
-	},
-	"default": {
-		"sky": Color(0.20, 0.25, 0.35),       # neutral sky
-		"wall": Color(0.25, 0.22, 0.18),      # neutral walls
-		"floor": Color(0.22, 0.20, 0.16),     # neutral floor
-		"ambient": Color(0.5, 0.5, 0.5, 0.08) # neutral
-	}
-}
-
-# Entity type colors for silhouettes
-const ENTITY_COLORS = {
-	"warrior": Color(0.2, 0.4, 0.8),
-	"mage": Color(0.6, 0.2, 0.8),
-	"rogue": Color(0.3, 0.3, 0.3),
-	"priest": Color(0.9, 0.85, 0.5),
-	"merchant": Color(0.8, 0.6, 0.2),
-	"guard": Color(0.5, 0.5, 0.6),
-	"innkeeper": Color(0.7, 0.5, 0.3),
-	"quest_giver": Color(0.9, 0.8, 0.1),
-	"blacksmith": Color(0.6, 0.3, 0.1),
-	"beggar": Color(0.4, 0.35, 0.3),
-	"goblin": Color(0.3, 0.5, 0.2),
-	"skeleton": Color(0.85, 0.85, 0.8),
-	"wolf": Color(0.4, 0.35, 0.3),
-	"orc": Color(0.3, 0.4, 0.2),
-	"spider": Color(0.2, 0.15, 0.2),
-	"bandit": Color(0.4, 0.2, 0.2),
-	"dragon": Color(0.7, 0.15, 0.1),
-	"zombie": Color(0.3, 0.4, 0.3),
-	# Items / Objects
-	"notice_board": Color(0.5, 0.35, 0.15),
-	"well": Color(0.3, 0.4, 0.5),
-	"crate": Color(0.45, 0.35, 0.2),
-	"barrel": Color(0.4, 0.3, 0.15),
-	"chest": Color(0.6, 0.5, 0.1),
-	"market_stall": Color(0.5, 0.4, 0.2),
-	"fountain": Color(0.3, 0.5, 0.7),
-	"campfire": Color(0.8, 0.4, 0.1),
-	"default": Color(0.5, 0.5, 0.5),
-}
-
-# Templates that are objects/items (not humanoid NPCs)
-const OBJECT_TEMPLATES = [
-	"notice_board", "well", "crate", "barrel", "chest",
-	"market_stall", "fountain", "campfire",
-]
+const PALETTES = PovRendererConfig.PALETTES
+const ENTITY_COLORS = PovRendererConfig.ENTITY_COLORS
+const OBJECT_TEMPLATES = PovRendererConfig.OBJECT_TEMPLATES
 
 # Render state
 var current_palette: Dictionary = {}
@@ -99,16 +27,9 @@ var _entity_hit_boxes: Array = []  # [{rect: Rect2, id: String, data: Dictionary
 var _bg_texture: Texture2D = null  # AI-generated background (if available)
 var _bg_alpha: float = 0.0        # crossfade alpha for background
 
-# Facing direction vectors
-const FACING_VECTORS = [
-	Vector2i(0, -1),  # North
-	Vector2i(1, 0),   # East
-	Vector2i(0, 1),   # South
-	Vector2i(-1, 0),  # West
-]
-
-const VIEW_DEPTH = 5  # how many tiles ahead we can see
-const VIEW_WIDTH = 3  # tiles to left/right at closest distance
+const FACING_VECTORS = PovRendererConfig.FACING_VECTORS
+const VIEW_DEPTH = PovRendererConfig.VIEW_DEPTH
+const VIEW_WIDTH = PovRendererConfig.VIEW_WIDTH
 
 signal entity_clicked_pov(entity_id: String, entity_data: Dictionary)
 
@@ -139,22 +60,13 @@ func set_location_type(location: String) -> void:
 	queue_redraw()
 
 func _load_ai_background(location: String) -> void:
-	# Map location names to generated asset files
-	var bg_map = {
-		"harbor": "res://assets/generated/test_harbor_bg.jpg",
-		"town": "res://assets/generated/test_harbor_bg.jpg",
-		"dungeon": "res://assets/generated/test_dungeon_bg.jpg",
-		"cave": "res://assets/generated/test_dungeon_bg.jpg",
-	}
 	_bg_texture = null
 	_bg_alpha = 0.0
-	for key in bg_map:
-		if location.contains(key):
-			if ResourceLoader.exists(bg_map[key]):
-				_bg_texture = load(bg_map[key])
-				_bg_alpha = 0.0  # Will crossfade in
-				_fade_active = true
-			break
+	var bg_path = PovRendererConfig.resolve_background(location)
+	if bg_path != "" and ResourceLoader.exists(bg_path):
+		_bg_texture = load(bg_path)
+		_bg_alpha = 0.0
+		_fade_active = true
 
 func update_player(pos: Vector2i, facing: int) -> void:
 	var moved = (pos != player_pos)

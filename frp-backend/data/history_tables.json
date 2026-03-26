@@ -1,0 +1,141 @@
+{
+  "history_tables": {
+    "present_year": 1000,
+    "all_factions": [
+      "harbor_guard",
+      "thieves_guild",
+      "merchant_guild",
+      "forest_elves",
+      "mountain_dwarves",
+      "temple_order"
+    ],
+    "scholarly_roles": [
+      "scholar",
+      "sage",
+      "priest",
+      "archmage",
+      "historian",
+      "elder",
+      "lorekeeper"
+    ],
+    "severity_levels": ["low", "moderate", "high", "critical"],
+    "war_names": [
+      "War of the Broken Crown",
+      "The Ember Crusade",
+      "Siege of the Iron Reach",
+      "The Tide Wars",
+      "War of the Scorched Plains",
+      "The Shadow Campaign",
+      "Conflict of the Twin Rivers",
+      "The Red Harvest War",
+      "Battle of the Hollow Gate",
+      "The Salt Rebellion"
+    ],
+    "kingdom_names": [
+      "Kingdom of Valdris",
+      "The Sunken Throne of Marath",
+      "Principality of Erathel",
+      "Dominion of Kael",
+      "The Glimmering Republic",
+      "Archonate of Thessen"
+    ],
+    "catastrophe_names": [
+      "The Great Unraveling",
+      "Ashfall of the Third Age",
+      "The Blight of Sorrow",
+      "The Sundering Storm",
+      "The Night of Falling Stars",
+      "The Frostbite Plague"
+    ],
+    "figure_first_names": [
+      "Aldric",
+      "Brenna",
+      "Cassiel",
+      "Dorin",
+      "Elara",
+      "Fendrel",
+      "Gwynneth",
+      "Halvard",
+      "Isolde",
+      "Jorik",
+      "Kaelen",
+      "Liora",
+      "Maldric",
+      "Nerys",
+      "Orin",
+      "Petra",
+      "Quillan",
+      "Rowan",
+      "Sylvar",
+      "Thalion"
+    ],
+    "figure_last_names": [
+      "Ironforge",
+      "Stormveil",
+      "Ashwood",
+      "Brightwater",
+      "Darkhollow",
+      "Flamecrest",
+      "Greymane",
+      "Hawkridge",
+      "Iceborne",
+      "Thornwall",
+      "Blackthorn",
+      "Silverleaf",
+      "Stoneheart",
+      "Windwalker",
+      "Dawnbringer"
+    ],
+    "figure_roles": [
+      "general",
+      "queen",
+      "king",
+      "prophet",
+      "rebel leader",
+      "archmage",
+      "merchant prince",
+      "warlord",
+      "saint",
+      "traitor",
+      "hero",
+      "scholar",
+      "assassin",
+      "diplomat",
+      "pirate lord"
+    ],
+    "legacy_templates": [
+      "Remembered for uniting {faction} against overwhelming odds.",
+      "Infamous for the betrayal that shattered {faction}.",
+      "Credited with founding the great library of {faction}.",
+      "Martyred defending the people from the {event}.",
+      "Rose from nothing to lead {faction} through its darkest hour.",
+      "Whispered about in taverns as the architect of {event}.",
+      "Celebrated as the greatest strategist {faction} ever produced.",
+      "Reviled for plunging {faction} into a century of debt."
+    ],
+    "tension_templates": [
+      "Border disputes between {a} and {b} over the Ashlands.",
+      "Trade embargo imposed by {a} against {b}.",
+      "Religious tensions between {a} missionaries and {b} traditions.",
+      "Disputed succession claim involving {a} and {b} nobles.",
+      "Refugee crisis caused by {a} driving settlers into {b} territory.",
+      "Assassination of a {a} diplomat blamed on {b}.",
+      "Competition between {a} and {b} for control of the northern mines."
+    ],
+    "war_outcomes": [
+      "{winner} prevailed after a devastating three-year campaign.",
+      "Ended in a fragile truce with {loser} ceding the eastern provinces.",
+      "{winner} crushed {loser} forces at the Battle of the Crossing.",
+      "Mutual exhaustion forced both sides to the negotiation table.",
+      "{winner} achieved a pyrrhic victory, losing a generation of soldiers."
+    ],
+    "fall_causes": [
+      "internal revolt and civil war",
+      "plague and famine",
+      "invasion by nomadic hordes",
+      "magical catastrophe",
+      "betrayal by its own ruling council",
+      "economic collapse"
+    ]
+  }
+}

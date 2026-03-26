@@ -36,7 +36,8 @@ from rich.markup import escape
 from engine.api.game_engine import GameEngine, ActionResult
 from engine.api.game_session import GameSession
 from engine.core.character_creation import CreationState, assign_stats_to_class
-from engine.core.dm_agent import SceneType
+from engine.core.dm_agent import DMEvent, EventType, SceneType
+from engine.llm import LiveNarrationRequiredError, build_game_narrator
 from engine.map import TileType
 from engine.world.viewport import Viewport
 
@@ -608,6 +609,11 @@ def game_loop(engine: GameEngine, session: GameSession, ms: MapState,
                             narrative_history.append(line)
                 _process_result_extras(result, narrative_history)
                 ms.sync_from_session()
+            except LiveNarrationRequiredError as e:
+                narrative_history.append(f"Narrator error: {e}")
+                console.clear()
+                console.print(render_full(session, ms, narrative_history))
+                break
             except Exception as e:
                 narrative_history.append(f"Engine error: {e}")
             # Trim
@@ -653,6 +659,11 @@ def game_loop(engine: GameEngine, session: GameSession, ms: MapState,
                             narrative_history.append(line)
                 _process_result_extras(result, narrative_history)
                 ms.sync_from_session()
+            except LiveNarrationRequiredError as e:
+                narrative_history.append(f"Narrator error: {e}")
+                console.clear()
+                console.print(render_full(session, ms, narrative_history))
+                break
             except Exception as e:
                 narrative_history.append(f"Engine error: {e}")
             narrative_history = narrative_history[-MAX_NARRATIVES:]
@@ -661,6 +672,11 @@ def game_loop(engine: GameEngine, session: GameSession, ms: MapState,
         # All other commands go through the engine
         try:
             result = engine.process_action(session, cmd)
+        except LiveNarrationRequiredError as e:
+            narrative_history.append(f"Narrator error: {e}")
+            console.clear()
+            console.print(render_full(session, ms, narrative_history))
+            break
         except Exception as e:
             narrative_history.append(f"Engine error: {e}")
             continue
@@ -739,28 +755,31 @@ def main():
     }
     map_type = creation["map_type"]
 
-    # Create engine and session
-    engine = GameEngine()
-    session = engine.new_session(
-        player_name=creation["name"],
-        player_class=creation["player_class"],
-        location=location_by_map.get(map_type),
-        alignment=creation["alignment"],
-        skill_proficiencies=creation["skill_proficiencies"],
-        stats=creation["stats"],
-        creation_answers=creation["creation_answers"],
-        creation_profile=creation["creation_profile"],
-    )
-
-    # Create map state (generates map, places entities, sets up viewport)
-    ms = MapState(session, map_type=map_type)
-
-    # Build opening narrative
-    loc = session.dm_context.location
-    opening_event = session.dm_context.history[-1] if session.dm_context.history else None
-    opening = getattr(opening_event, "description", opening_event) if opening_event else (
-        f"You arrive at {loc}. The air is thick with possibility."
-    )
+    llm = build_game_narrator()
+    try:
+        engine = GameEngine(llm=llm)
+        session = engine.new_session(
+            player_name=creation["name"],
+            player_class=creation["player_class"],
+            location=location_by_map.get(map_type),
+            alignment=creation["alignment"],
+            skill_proficiencies=creation["skill_proficiencies"],
+            stats=creation["stats"],
+            creation_answers=creation["creation_answers"],
+            creation_profile=creation["creation_profile"],
+        )
+        ms = MapState(session, map_type=map_type)
+        opening = engine.dm.narrate(
+            DMEvent(
+                type=EventType.DISCOVERY,
+                description=f"{creation['name']} begins their adventure.",
+            ),
+            session.dm_context,
+            llm=llm,
+        )
+    except LiveNarrationRequiredError as exc:
+        console.print(f"[{STYLE_SYSTEM}]Narrator error: {exc}[/{STYLE_SYSTEM}]")
+        return
 
     game_loop(engine, session, ms, opening)
 

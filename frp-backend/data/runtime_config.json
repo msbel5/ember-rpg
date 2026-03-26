@@ -1,0 +1,27 @@
+{
+  "runtime_config": {
+    "llm": {
+      "narration_mode_default": "prefer_live",
+      "copilot": {
+        "base_url": "https://api.githubcopilot.com",
+        "token_path_default": "",
+        "cli_command_default": "copilot",
+        "default_headers": {
+          "Editor-Version": "vscode/1.95.0",
+          "Editor-Plugin-Version": "copilot/1.240.0",
+          "User-Agent": "GithubCopilot/1.240.0",
+          "Copilot-Integration-Id": "vscode-chat"
+        }
+      },
+      "models": {
+        "live": "gpt-4.1",
+        "fast": "gpt-5-mini",
+        "smart": "gpt-4.1",
+        "fallback": "gpt-5-mini"
+      }
+    },
+    "godot_client": {
+      "backend_url_default": "http://127.0.0.1:8765"
+    }
+  }
+}

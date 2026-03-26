@@ -1,5 +1,12 @@
 {
   "social_rules": {
+    "interaction_hold_turns": {
+      "talk": 1,
+      "address": 1,
+      "trade": 1,
+      "social": 1,
+      "approach": 1
+    },
     "attitude_dcs": {
       "friendly": {
         "no_risk": 5,

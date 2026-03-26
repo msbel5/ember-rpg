@@ -23,35 +23,10 @@ from engine.core.dm_agent import DMEvent, EventType, SceneType
 router = APIRouter()
 _save_system = SaveSystem()
 
-# Wire LLM to GameEngine — narrative uses claude-haiku-4.5 via Copilot API
 def _make_llm_callable():
-    import re
-    from engine.llm import get_llm_router, MODEL_FAST
-    llm_router = get_llm_router()
+    from engine.llm import build_game_narrator
 
-    def _llm(prompt: str) -> str:
-        result = llm_router.complete(
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are the Dungeon Master for Ember RPG, a grounded dark-fantasy RPG. "
-                        "Respect the supplied game state and mechanics exactly; never invent extra outcomes "
-                        "or contradict deterministic results. Write concise second-person narration with a "
-                        "consistent, low-flourish tone. For NPC dialogue, let the NPC speak directly. For "
-                        "ambiguous input, acknowledge the uncertainty inside the fiction instead of claiming "
-                        "mechanics that did not happen. Use 2-4 sentences. No markdown headers."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
-            model=MODEL_FAST,
-        )
-        if result:
-            result = re.sub(r'^#+\s+[^\n]*\n+', '', result, flags=re.MULTILINE).strip()
-        return result  # None → GameEngine falls back to template
-
-    return _llm
+    return build_game_narrator()
 
 engine = GameEngine(llm=_make_llm_callable())
 
@@ -345,14 +320,32 @@ def _get_session(session_id: str) -> GameSession:
 @router.get("/llm/status")
 def llm_status():
     """Check LLM availability and return a test response."""
-    from engine.llm import get_llm_router, MODEL_FAST
-    router = get_llm_router()
-    test_response = router.narrative(
-        "You are a fantasy game DM. Keep responses to 1 sentence.",
-        "Player looks around a dark dungeon corridor."
+    from engine.llm import (
+        LiveNarrationRequiredError,
+        get_fallback_model_name,
+        get_live_model_name,
+        get_llm_router,
+        get_narration_mode,
     )
+
+    router = get_llm_router()
+    mode = get_narration_mode()
+    error = None
+    try:
+        test_response = router.narrative(
+            "You are a fantasy game DM. Keep responses to 1 sentence.",
+            "Player looks around a dark dungeon corridor.",
+            narration_mode=mode,
+        )
+    except LiveNarrationRequiredError as exc:
+        test_response = None
+        error = str(exc)
     return {
         "available": test_response is not None,
-        "model": MODEL_FAST,
+        "mode": mode,
+        "model": get_live_model_name(),
+        "fallback_model": get_fallback_model_name(),
+        "auth_source": router.last_auth_source,
         "test_response": test_response or "(LLM unavailable — templates active)",
+        "error": error,
     }

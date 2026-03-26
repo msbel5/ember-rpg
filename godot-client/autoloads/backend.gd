@@ -2,23 +2,38 @@ extends Node
 
 # Backend HTTP Client — all API calls to FastAPI server
 
-const DEFAULT_URL = "http://192.168.1.55:8765"
+const BACKEND_SETTING := "ember_rpg/backend_url"
+const BACKEND_ENV := "EMBER_RPG_BACKEND_URL"
 
-var base_url: String = DEFAULT_URL
+var base_url: String = ""
 
 signal request_started
 signal request_finished
 signal request_error(message: String)
 
 func _ready() -> void:
-	if ProjectSettings.has_setting("ember_rpg/backend_url"):
-		base_url = ProjectSettings.get_setting("ember_rpg/backend_url")
+	base_url = _resolve_base_url()
 
 # --- API Methods ---
 
 func create_session(player_name: String, player_class: String, callback: Callable) -> void:
 	var body = JSON.stringify({"player_name": player_name, "player_class": player_class})
 	_post("/game/session/new", body, callback)
+
+func start_creation(player_name: String, callback: Callable, location: String = "") -> void:
+	var body = JSON.stringify({
+		"player_name": player_name,
+		"location": location if not location.is_empty() else null
+	})
+	_post("/game/session/creation/start", body, callback)
+
+func finalize_creation(creation_id: String, player_class: String, alignment: String, callback: Callable, location: String = "") -> void:
+	var body = JSON.stringify({
+		"player_class": player_class,
+		"alignment": alignment,
+		"location": location if not location.is_empty() else null
+	})
+	_post("/game/session/creation/%s/finalize" % creation_id, body, callback)
 
 func submit_action(session_id: String, input_text: String, callback: Callable) -> void:
 	var body = JSON.stringify({"input": input_text})
@@ -56,7 +71,24 @@ func list_saves(callback: Callable) -> void:
 
 # --- Internal HTTP ---
 
+func _resolve_base_url() -> String:
+	var env_url := OS.get_environment(BACKEND_ENV).strip_edges()
+	if not env_url.is_empty():
+		return env_url
+	if ProjectSettings.has_setting(BACKEND_SETTING):
+		return str(ProjectSettings.get_setting(BACKEND_SETTING)).strip_edges()
+	return ""
+
+func _ensure_base_url(callback: Callable) -> bool:
+	if not base_url.is_empty():
+		return true
+	request_error.emit("Backend URL is not configured. Set %s or %s." % [BACKEND_ENV, BACKEND_SETTING])
+	callback.call(null)
+	return false
+
 func _post(path: String, body: String, callback: Callable) -> void:
+	if not _ensure_base_url(callback):
+		return
 	var http = HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_request_completed.bind(http, callback))
@@ -71,6 +103,8 @@ func _post(path: String, body: String, callback: Callable) -> void:
 		http.queue_free()
 
 func _http_get(path: String, callback: Callable) -> void:
+	if not _ensure_base_url(callback):
+		return
 	var http = HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_request_completed.bind(http, callback))
@@ -82,6 +116,8 @@ func _http_get(path: String, callback: Callable) -> void:
 		http.queue_free()
 
 func _http_delete(path: String, callback: Callable) -> void:
+	if not _ensure_base_url(callback):
+		return
 	var http = HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_request_completed.bind(http, callback))

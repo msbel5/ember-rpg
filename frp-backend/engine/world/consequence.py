@@ -5,6 +5,8 @@ Phase 3c
 from dataclasses import dataclass, field
 import random
 
+from engine.data_loader import get_consequence_rule_specs
+
 
 @dataclass
 class Effect:
@@ -56,78 +58,15 @@ class CascadeEngine:
     def _load_default_rules(self):
         self.rules = [
             ConsequenceRule(
-                rule_id="merchant_killed_price_rise",
-                trigger_type="npc_killed",
-                conditions={"npc_role": "merchant"},
-                effects=[{"type": "update_location_price", "target": "current", "params": {"delta_pct": 30}, "description": "Merchant killed — local prices rise 30%"}],
-                delay_hours=0,
-                probability=1.0,
-                description="Killing a merchant raises local prices",
-            ),
-            ConsequenceRule(
-                rule_id="merchant_killed_reputation",
-                trigger_type="npc_killed",
-                conditions={"npc_role": "merchant"},
-                effects=[{"type": "update_faction_rep", "target": "merchants_guild", "params": {"delta": -20}, "description": "Merchants guild reputation -20"}],
-                delay_hours=0,
-                probability=1.0,
-            ),
-            ConsequenceRule(
-                rule_id="witnessed_kill_guards_alert",
-                trigger_type="npc_killed",
-                conditions={"witnessed": True},
-                effects=[{"type": "alert_guards", "target": "current_location", "params": {}, "description": "Guards alerted to the killing"}],
-                delay_hours=1,
-                probability=0.8,
-            ),
-            ConsequenceRule(
-                rule_id="witnessed_kill_bounty",
-                trigger_type="npc_killed",
-                conditions={"witnessed": True},
-                effects=[{"type": "set_flag", "target": "player_has_bounty", "params": {"value": True}, "description": "Bounty placed on player"}],
-                delay_hours=24,
-                probability=0.9,
-            ),
-            ConsequenceRule(
-                rule_id="quest_giver_killed",
-                trigger_type="npc_killed",
-                conditions={"npc_role": "quest_giver"},
-                effects=[{"type": "fail_related_quests", "target": "npc_quests", "params": {}, "description": "Quest giver dead — related quests fail"}],
-                delay_hours=0,
-                probability=1.0,
-            ),
-            ConsequenceRule(
-                rule_id="helped_npc_disposition",
-                trigger_type="npc_helped",
-                conditions={},
-                effects=[{"type": "update_npc_disposition", "target": "target_npc", "params": {"delta": 15}, "description": "NPC disposition +15"}],
-                delay_hours=0,
-                probability=1.0,
-            ),
-            ConsequenceRule(
-                rule_id="helped_merchant_discount",
-                trigger_type="npc_helped",
-                conditions={"npc_role": "merchant"},
-                effects=[{"type": "set_npc_flag", "target": "target_npc", "params": {"flag": "discount_10pct", "value": True}, "description": "Merchant offers 10% discount"}],
-                delay_hours=0,
-                probability=1.0,
-            ),
-            ConsequenceRule(
-                rule_id="steal_detected_guards",
-                trigger_type="item_stolen",
-                conditions={"detected": True},
-                effects=[{"type": "alert_guards", "target": "current_location", "params": {}, "description": "Theft detected — guards alerted"}],
-                delay_hours=0,
-                probability=1.0,
-            ),
-            ConsequenceRule(
-                rule_id="quest_completed_faction_rep",
-                trigger_type="quest_completed",
-                conditions={"reward_type": "faction"},
-                effects=[{"type": "update_faction_rep", "target": "quest_faction", "params": {"delta": 15}, "description": "Faction reputation +15 for quest completion"}],
-                delay_hours=0,
-                probability=1.0,
-            ),
+                rule_id=str(spec.get("rule_id", "")),
+                trigger_type=str(spec.get("trigger_type", "")),
+                conditions=dict(spec.get("conditions", {})),
+                effects=list(spec.get("effects", [])),
+                delay_hours=float(spec.get("delay_hours", 0.0)),
+                probability=float(spec.get("probability", 1.0)),
+                description=str(spec.get("description", "")),
+            )
+            for spec in get_consequence_rule_specs()
         ]
 
     def process_trigger(self, trigger: dict, world_state, depth: int = 0) -> list:

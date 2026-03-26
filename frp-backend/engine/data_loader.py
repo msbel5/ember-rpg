@@ -116,6 +116,10 @@ LOOT_TABLES = _unwrap(_load_json("loot_tables.json"), "loot_tables") or {}
 NAME_BANKS = _unwrap(_load_json("name_banks.json"), "name_banks") or {}
 SCHEDULES = _unwrap(_load_json("schedules.json"), "schedules") or {}
 CHARACTER_CREATION = _unwrap(_load_json("character_creation.json"), "character_creation") or {}
+CONSEQUENCE_RULES = _normalize_list(_load_json("consequence_rules.json"), "consequence_rules")
+CAMPAIGN_RUNTIME = _unwrap(_load_json("campaign_runtime.json"), "campaign_runtime") or {}
+HISTORY_TABLES = _unwrap(_load_json("history_tables.json"), "history_tables") or {}
+RUNTIME_CONFIG = _unwrap(_load_json("runtime_config.json"), "runtime_config") or {}
 
 
 # Classes
@@ -186,6 +190,17 @@ def get_class_default_spell_points(class_id: str) -> int:
     return int(get_class(class_id).get("default_spell_points", 0))
 
 
+def get_creation_default_class() -> str:
+    return str(CHARACTER_CREATION.get("default_class", "warrior"))
+
+
+def get_creation_class_aliases() -> Dict[str, str]:
+    return {
+        str(alias): str(class_id)
+        for alias, class_id in CHARACTER_CREATION.get("class_aliases", {}).items()
+    }
+
+
 # Generic id registries
 def get_item(item_id: str) -> Optional[Dict[str, Any]]:
     item = ITEMS.get(str(item_id or ""))
@@ -245,6 +260,17 @@ def recipes_by_skill(skill: str) -> List[Dict[str, Any]]:
 # Location / worldgen registries
 def get_opening_scenes() -> List[Dict[str, Any]]:
     return [dict(scene) for scene in LOCATIONS.get("opening_scenes", [])]
+
+
+def get_default_opening_scene() -> Dict[str, Any]:
+    return dict(LOCATIONS.get("default_opening_scene", {}))
+
+
+def get_location_stock_baseline() -> Dict[str, int]:
+    return {
+        str(item_id): int(quantity)
+        for item_id, quantity in LOCATIONS.get("location_stock_baseline", {}).items()
+    }
 
 
 def get_scene_anchor_offsets() -> Dict[str, List[int]]:
@@ -385,6 +411,13 @@ def get_hostile_keywords() -> List[str]:
     return list(SOCIAL_RULES.get("hostile_keywords", []))
 
 
+def get_interaction_hold_turns() -> Dict[str, int]:
+    return {
+        str(action): int(turns)
+        for action, turns in SOCIAL_RULES.get("interaction_hold_turns", {}).items()
+    }
+
+
 # Progression / loot / names / schedules
 def get_xp_thresholds() -> List[int]:
     return list(PROGRESSION.get("xp_thresholds", []))
@@ -453,3 +486,68 @@ def get_creation_class_stat_priorities() -> Dict[str, List[str]]:
 
 def get_creation_questions() -> List[Dict[str, Any]]:
     return [dict(question) for question in CHARACTER_CREATION.get("questions", [])]
+
+
+# Runtime gameplay/config registries
+def get_consequence_rule_specs() -> List[Dict[str, Any]]:
+    return [dict(rule) for rule in CONSEQUENCE_RULES]
+
+
+def get_campaign_arc_titles() -> List[str]:
+    return list(CAMPAIGN_RUNTIME.get("arc_titles", []))
+
+
+def get_campaign_arc_premises() -> List[str]:
+    return list(CAMPAIGN_RUNTIME.get("arc_premises", []))
+
+
+def get_campaign_kill_quests() -> List[Dict[str, Any]]:
+    return [dict(entry) for entry in CAMPAIGN_RUNTIME.get("kill_quests", [])]
+
+
+def get_campaign_fetch_quests() -> List[Dict[str, Any]]:
+    return [dict(entry) for entry in CAMPAIGN_RUNTIME.get("fetch_quests", [])]
+
+
+def get_campaign_explore_template() -> Dict[str, Any]:
+    return dict(CAMPAIGN_RUNTIME.get("explore_quest", {}))
+
+
+def get_campaign_dialogue_template() -> Dict[str, Any]:
+    return dict(CAMPAIGN_RUNTIME.get("dialogue_quest", {}))
+
+
+def get_campaign_world_events() -> List[Dict[str, Any]]:
+    return [dict(entry) for entry in CAMPAIGN_RUNTIME.get("world_events", [])]
+
+
+def get_history_present_year() -> int:
+    return int(HISTORY_TABLES.get("present_year", 1000))
+
+
+def get_history_all_factions() -> List[str]:
+    return list(HISTORY_TABLES.get("all_factions", []))
+
+
+def get_history_scholarly_roles() -> List[str]:
+    return list(HISTORY_TABLES.get("scholarly_roles", []))
+
+
+def get_history_severity_levels() -> List[str]:
+    return list(HISTORY_TABLES.get("severity_levels", []))
+
+
+def get_history_table(table_name: str) -> List[str]:
+    return list(HISTORY_TABLES.get(table_name, []))
+
+
+def get_runtime_config() -> Dict[str, Any]:
+    return dict(RUNTIME_CONFIG)
+
+
+def get_llm_runtime_config() -> Dict[str, Any]:
+    return dict(RUNTIME_CONFIG.get("llm", {}))
+
+
+def get_godot_runtime_config() -> Dict[str, Any]:
+    return dict(RUNTIME_CONFIG.get("godot_client", {}))

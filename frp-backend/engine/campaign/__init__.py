@@ -7,6 +7,16 @@ from typing import List, Optional, Dict, Callable
 from enum import Enum
 import random
 
+from engine.data_loader import (
+    get_campaign_arc_premises,
+    get_campaign_arc_titles,
+    get_campaign_dialogue_template,
+    get_campaign_explore_template,
+    get_campaign_fetch_quests,
+    get_campaign_kill_quests,
+    get_campaign_world_events,
+)
+
 
 class QuestStatus(Enum):
     """Current state of a quest."""
@@ -202,50 +212,13 @@ class StoryArc:
         return event
 
 
-# --- Campaign Templates ---
-
-_KILL_QUESTS = [
-    ("Goblin Problem", "Villagers are reporting goblin raids near the road.", "goblin", 3),
-    ("Bone Pile", "The dead are walking in the old cemetery.", "skeleton", 5),
-    ("Wolf Hunt", "A pack of dire wolves prowls the northern forest.", "wolf", 2),
-]
-
-_FETCH_QUESTS = [
-    ("Lost Letter", "Bandits stole a merchant's important correspondence.", "letter", 1),
-    ("Alchemist's Herbs", "The alchemist needs rare herbs from the forest.", "herb", 4),
-    ("Sacred Relic", "A temple relic has gone missing — retrieve it.", "relic", 1),
-]
-
-_WORLD_EVENTS = [
-    WorldEvent(
-        event_type=EventType.AMBUSH,
-        title="Roadside Ambush",
-        description="Three bandits leap from the shadows!",
-        options=["Fight", "Flee", "Negotiate"],
-        outcomes={0: "Your courage sends them running.", 1: "You escape into the dark.", 2: "You pay 10 gold to pass."},
-    ),
-    WorldEvent(
-        event_type=EventType.DISCOVERY,
-        title="Hidden Passage",
-        description="You find a concealed passage behind the wall.",
-        options=["Enter", "Pass by"],
-        outcomes={0: "Inside: an old chest with 25 gold!", 1: "You move on."},
-    ),
-    WorldEvent(
-        event_type=EventType.WEATHER,
-        title="Sudden Storm",
-        description="A storm rolls in without warning.",
-        options=["Take shelter", "Push through"],
-        outcomes={0: "You find a nearby cave and wait it out.", 1: "You press on, soaked and weary. -5 HP."},
-    ),
-    WorldEvent(
-        event_type=EventType.TRAP,
-        title="Trapped!",
-        description="A hidden pressure plate triggers beneath your foot!",
-        options=["Jump clear", "Roll AGI"],
-        outcomes={0: "You leap aside just in time!", 1: "The mechanism catches you. -8 HP."},
-    ),
-]
+_ARC_TITLES = get_campaign_arc_titles()
+_ARC_PREMISES = get_campaign_arc_premises()
+_KILL_QUESTS = get_campaign_kill_quests()
+_FETCH_QUESTS = get_campaign_fetch_quests()
+_EXPLORE_QUEST = get_campaign_explore_template()
+_DIALOGUE_QUEST = get_campaign_dialogue_template()
+_WORLD_EVENTS = get_campaign_world_events()
 
 
 class CampaignGenerator:
@@ -284,16 +257,9 @@ class CampaignGenerator:
         arc_id = f"arc_{self._arc_counter:03d}"
 
         if title is None:
-            title = self.rng.choice([
-                "Dark Forest", "Forgotten Tower", "Lost Treasure",
-                "The Deceiver's Legacy", "Ruined Temple", "Threat from the North",
-            ])
+            title = self.rng.choice(_ARC_TITLES)
 
-        premise = self.rng.choice([
-            f"Dangerous events are unfolding in {location}. Someone must act.",
-            f"An old prophecy is about to come true in {location}.",
-            f"A stranger has arrived from {location} seeking help.",
-        ])
+        premise = self.rng.choice(_ARC_PREMISES).format(location=location)
 
         # Generate quests
         quests = []
@@ -307,13 +273,20 @@ class CampaignGenerator:
             quests.append(quest)
 
         # Add world events
-        events = [WorldEvent(
-            event_type=e.event_type,
-            title=e.title,
-            description=e.description,
-            options=e.options.copy(),
-            outcomes=e.outcomes.copy(),
-        ) for e in self.rng.sample(_WORLD_EVENTS, min(2, len(_WORLD_EVENTS)))]
+        events = []
+        for event_spec in self.rng.sample(_WORLD_EVENTS, min(2, len(_WORLD_EVENTS))):
+            event_type = EventType(str(event_spec.get("event_type", "discovery")))
+            outcomes = {
+                int(key): str(value)
+                for key, value in dict(event_spec.get("outcomes", {})).items()
+            }
+            events.append(WorldEvent(
+                event_type=event_type,
+                title=str(event_spec.get("title", "Unknown Event")),
+                description=str(event_spec.get("description", "")),
+                options=list(event_spec.get("options", [])),
+                outcomes=outcomes,
+            ))
 
         return StoryArc(
             id=arc_id,
@@ -330,14 +303,13 @@ class CampaignGenerator:
         # Kill quest
         kill_data = self.rng.choice(_KILL_QUESTS)
         def make_kill(idx, loc, d=kill_data):
-            title, desc, target, count = d
             return Quest(
                 id=f"q_{idx:03d}_kill",
-                title=title,
-                description=desc,
+                title=str(d["title"]),
+                description=str(d["description"]),
                 quest_type=QuestType.KILL,
                 giver="Village Elder",
-                objectives=[QuestObjective(f"Kill {count} {target}s", target, count)],
+                objectives=[QuestObjective(f"Kill {int(d['count'])} {d['target']}s", str(d["target"]), int(d["count"]))],
                 rewards={"gold": 50 * idx, "xp": 100 * idx},
                 location=loc,
                 difficulty=idx,
@@ -347,14 +319,13 @@ class CampaignGenerator:
         # Fetch quest
         fetch_data = self.rng.choice(_FETCH_QUESTS)
         def make_fetch(idx, loc, d=fetch_data):
-            title, desc, item, count = d
             return Quest(
                 id=f"q_{idx:03d}_fetch",
-                title=title,
-                description=desc,
+                title=str(d["title"]),
+                description=str(d["description"]),
                 quest_type=QuestType.FETCH,
                 giver="Merchant",
-                objectives=[QuestObjective(f"Find {count} {item}(s)", item, count)],
+                objectives=[QuestObjective(f"Find {int(d['count'])} {d['item']}(s)", str(d["item"]), int(d["count"]))],
                 rewards={"gold": 40 * idx, "xp": 80 * idx},
                 location=loc,
                 difficulty=max(1, idx - 1),
@@ -365,11 +336,11 @@ class CampaignGenerator:
         def make_explore(idx, loc):
             return Quest(
                 id=f"q_{idx:03d}_explore",
-                title="Exploration Mission",
-                description=f"Scout the {loc} area and report back.",
+                title=str(_EXPLORE_QUEST.get("title", "Exploration Mission")),
+                description=str(_EXPLORE_QUEST.get("description", "Scout the {location} area and report back.")).format(location=loc),
                 quest_type=QuestType.EXPLORE,
-                giver="Guild Master",
-                objectives=[QuestObjective(f"Map the {loc} area", loc, 1)],
+                giver=str(_EXPLORE_QUEST.get("giver", "Guild Master")),
+                objectives=[QuestObjective(str(_EXPLORE_QUEST.get("objective", "Map the {location} area")).format(location=loc), loc, 1)],
                 rewards={"gold": 30 * idx, "xp": 60 * idx},
                 location=loc,
                 difficulty=1,
@@ -380,11 +351,11 @@ class CampaignGenerator:
         def make_dialogue(idx, loc):
             return Quest(
                 id=f"q_{idx:03d}_talk",
-                title="The Elder's Secret",
-                description="The village elder knows something. Find out what.",
+                title=str(_DIALOGUE_QUEST.get("title", "The Elder's Secret")),
+                description=str(_DIALOGUE_QUEST.get("description", "The village elder knows something. Find out what.")),
                 quest_type=QuestType.DIALOGUE,
-                giver="Villagers",
-                objectives=[QuestObjective("Speak with the Elder", "Elder", 1)],
+                giver=str(_DIALOGUE_QUEST.get("giver", "Villagers")),
+                objectives=[QuestObjective(str(_DIALOGUE_QUEST.get("objective", "Speak with the Elder")), str(_DIALOGUE_QUEST.get("target", "Elder")), 1)],
                 rewards={"gold": 20, "xp": 50 * idx},
                 location=loc,
                 difficulty=1,

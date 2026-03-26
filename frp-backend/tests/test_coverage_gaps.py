@@ -610,26 +610,26 @@ class TestLLMRouter:
     """Cover _get_client exception path and is_available."""
 
     def test_get_client_raises_on_missing_token(self):
-        from engine.llm import LLMRouter
+        from engine.llm import CopilotAuthError, LLMRouter
+
         router = LLMRouter()
-        with patch("builtins.open", side_effect=FileNotFoundError("no token")):
-            with pytest.raises(Exception):
+        with patch.object(router, "_token_resolver", side_effect=CopilotAuthError("no token")):
+            with pytest.raises(CopilotAuthError):
                 router._get_client()
 
     def test_get_client_raises_on_bad_json(self):
-        from engine.llm import LLMRouter
-        import io
+        from engine.llm import CopilotAuthError, LLMRouter
+
         router = LLMRouter()
-        with patch("builtins.open", return_value=io.StringIO("not json")):
-            with pytest.raises(Exception):
+        with patch.object(router, "_token_resolver", side_effect=CopilotAuthError("bad token file")):
+            with pytest.raises(CopilotAuthError):
                 router._get_client()
 
     def test_is_available_returns_true_when_client_works(self):
         from engine.llm import LLMRouter
+
         router = LLMRouter()
-        mock_client = MagicMock()
-        mock_client.chat.completions.create.return_value = MagicMock()
-        with patch.object(router, '_get_client', return_value=mock_client):
+        with patch.object(router, "complete", return_value="pong"):
             result = router.is_available()
             assert result is True
             # Cached — second call doesn't re-test
@@ -637,34 +637,28 @@ class TestLLMRouter:
             assert result2 is True
 
     def test_is_available_returns_false_when_client_fails(self):
-        from engine.llm import LLMRouter
+        from engine.llm import LLMRouter, LiveNarrationRequiredError
+
         router = LLMRouter()
-        with patch.object(router, '_get_client', side_effect=Exception("fail")):
+        with patch.object(router, "complete", side_effect=LiveNarrationRequiredError("fail")):
             result = router.is_available()
             assert result is False
 
     def test_complete_success(self):
         from engine.llm import LLMRouter
+
         router = LLMRouter()
-        mock_client = MagicMock()
-        mock_resp = MagicMock()
-        mock_resp.choices[0].message.content = "  The sword bites deep.  "
-        mock_client.chat.completions.create.return_value = mock_resp
-        with patch.object(router, '_get_client', return_value=mock_client):
+        with patch.object(router, "_request", return_value="The sword bites deep."):
             result = router.complete([{"role": "user", "content": "narrate"}])
             assert result == "The sword bites deep."
 
     def test_complete_uses_model_smart_when_specified(self):
         from engine.llm import LLMRouter, MODEL_SMART
+
         router = LLMRouter()
-        mock_client = MagicMock()
-        mock_resp = MagicMock()
-        mock_resp.choices[0].message.content = "Epic"
-        mock_client.chat.completions.create.return_value = mock_resp
-        with patch.object(router, '_get_client', return_value=mock_client):
+        with patch.object(router, "_request", return_value="Epic") as request:
             router.complete([{"role": "user", "content": "test"}], model=MODEL_SMART)
-            call_kwargs = mock_client.chat.completions.create.call_args[1]
-            assert call_kwargs['model'] == MODEL_SMART
+            assert request.call_args.args[1] == MODEL_SMART
 
 
 # ── engine/world/__init__.py (91% → ~98%) ─────────────────────────────────────

@@ -35,7 +35,8 @@ import time
 
 from engine.api.game_engine import GameEngine, ActionResult
 from engine.api.game_session import GameSession
-from engine.core.dm_agent import SceneType
+from engine.core.dm_agent import DMEvent, EventType, SceneType
+from engine.llm import LiveNarrationRequiredError, build_game_narrator
 
 # ── Styles ──────────────────────────────────────────────────────────
 STYLE_NARRATIVE = "white"
@@ -383,6 +384,9 @@ def game_loop(engine: GameEngine, session: GameSession, opening_narrative: str) 
         # Process through engine
         try:
             result: ActionResult = engine.process_action(session, cmd)
+        except LiveNarrationRequiredError as e:
+            console.print(f"  [{STYLE_SYSTEM}]Narrator error: {e}[/{STYLE_SYSTEM}]")
+            break
         except Exception as e:
             console.print(f"  [{STYLE_SYSTEM}]Engine error: {e}[/{STYLE_SYSTEM}]")
             continue
@@ -435,15 +439,18 @@ def main():
         console.print(f"\n[{STYLE_SYSTEM}]Cancelled.[/{STYLE_SYSTEM}]")
         return
 
-    # Create engine and session
-    engine = GameEngine()
-    session = engine.new_session(player_name=name, player_class=char_class)
-
-    # Build opening narrative
-    loc = session.dm_context.location
-    opening = session.dm_context.history[-1] if session.dm_context.history else (
-        f"You arrive at {loc}. The air is thick with possibility."
-    )
+    llm = build_game_narrator()
+    try:
+        engine = GameEngine(llm=llm)
+        session = engine.new_session(player_name=name, player_class=char_class)
+        opening = engine.dm.narrate(
+            DMEvent(type=EventType.DISCOVERY, description=f"{name} begins their adventure."),
+            session.dm_context,
+            llm=llm,
+        )
+    except LiveNarrationRequiredError as exc:
+        console.print(f"\n[{STYLE_SYSTEM}]Narrator error: {exc}[/{STYLE_SYSTEM}]")
+        return
 
     game_loop(engine, session, opening)
 

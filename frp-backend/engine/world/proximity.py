@@ -3,7 +3,7 @@ Module 10: Proximity Rules (FR-42..FR-45)
 Handles distance checks, interaction ranges, and A* pathfinding.
 """
 import math
-from typing import Optional, List, Tuple
+from typing import Optional, List, Set, Tuple
 from engine.map import MapData, TileType
 
 
@@ -138,7 +138,13 @@ def move_cardinal(position: list, direction: str, map_data: Optional[MapData] = 
     return [new_x, new_y], True, ""
 
 
-def astar_path(map_data: Optional[MapData], start: list, goal: list, max_steps: int = MAX_MOVE_PER_TURN) -> List[list]:
+def astar_path(
+    map_data: Optional[MapData],
+    start: list,
+    goal: list,
+    max_steps: int = MAX_MOVE_PER_TURN,
+    blocked_positions: Optional[Set[Tuple[int, int]]] = None,
+) -> List[list]:
     """
     A* pathfinding from start to goal.
     Returns list of positions to walk (excluding start), capped at max_steps.
@@ -172,6 +178,10 @@ def astar_path(map_data: Optional[MapData], start: list, goal: list, max_steps: 
     start_t = (start[0], start[1])
     goal_t = (goal[0], goal[1])
 
+    blocked = set(blocked_positions or set())
+
+    if goal_t in blocked:
+        return []
     if not map_data.is_walkable(goal_t[0], goal_t[1]):
         # Find nearest walkable tile to goal
         return []
@@ -200,6 +210,8 @@ def astar_path(map_data: Optional[MapData], start: list, goal: list, max_steps: 
             if not (0 <= nx < map_data.width and 0 <= ny < map_data.height):
                 continue
             if not map_data.is_walkable(nx, ny):
+                continue
+            if neighbor in blocked:
                 continue
 
             tentative_g = g_score[current] + 1

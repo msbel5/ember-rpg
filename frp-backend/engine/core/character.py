@@ -369,7 +369,7 @@ class Character:
             Dictionary containing all character data
         """
         self.sync_derived_progression()
-        return {
+        data = {
             'name': self.name,
             'race': self.race,
             'classes': self.classes,
@@ -406,6 +406,13 @@ class Character:
             'creation_answers': self.creation_answers,
             'creation_profile': self.creation_profile,
         }
+        base_ac = getattr(self, 'base_ac', None)
+        stored_base_ac = getattr(self, '_base_ac', base_ac)
+        if base_ac is not None:
+            data['base_ac'] = base_ac
+        if stored_base_ac is not None:
+            data['_base_ac'] = stored_base_ac
+        return data
     
     @classmethod
     def from_dict(cls, data: dict) -> 'Character':
@@ -422,7 +429,13 @@ class Character:
         payload.pop('proficiency_bonus', None)
         payload.pop('passives', None)
         payload.pop('hit_die_size', None)
+        base_ac = payload.pop('base_ac', None)
+        stored_base_ac = payload.pop('_base_ac', base_ac)
         character = cls(**payload)
+        if base_ac is not None:
+            character.base_ac = base_ac
+        if stored_base_ac is not None:
+            character._base_ac = stored_base_ac
         character.sync_derived_progression()
         return character
     

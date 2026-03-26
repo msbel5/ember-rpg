@@ -1,0 +1,140 @@
+{
+  "consequence_rules": [
+    {
+      "rule_id": "merchant_killed_price_rise",
+      "trigger_type": "npc_killed",
+      "conditions": {"npc_role": "merchant"},
+      "effects": [
+        {
+          "type": "update_location_price",
+          "target": "current",
+          "params": {"delta_pct": 30},
+          "description": "Merchant killed - local prices rise 30%"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0,
+      "description": "Killing a merchant raises local prices"
+    },
+    {
+      "rule_id": "merchant_killed_reputation",
+      "trigger_type": "npc_killed",
+      "conditions": {"npc_role": "merchant"},
+      "effects": [
+        {
+          "type": "update_faction_rep",
+          "target": "merchants_guild",
+          "params": {"delta": -20},
+          "description": "Merchants guild reputation -20"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0
+    },
+    {
+      "rule_id": "witnessed_kill_guards_alert",
+      "trigger_type": "npc_killed",
+      "conditions": {"witnessed": true},
+      "effects": [
+        {
+          "type": "alert_guards",
+          "target": "current_location",
+          "params": {},
+          "description": "Guards alerted to the killing"
+        }
+      ],
+      "delay_hours": 1,
+      "probability": 0.8
+    },
+    {
+      "rule_id": "witnessed_kill_bounty",
+      "trigger_type": "npc_killed",
+      "conditions": {"witnessed": true},
+      "effects": [
+        {
+          "type": "set_flag",
+          "target": "player_has_bounty",
+          "params": {"value": true},
+          "description": "Bounty placed on player"
+        }
+      ],
+      "delay_hours": 24,
+      "probability": 0.9
+    },
+    {
+      "rule_id": "quest_giver_killed",
+      "trigger_type": "npc_killed",
+      "conditions": {"npc_role": "quest_giver"},
+      "effects": [
+        {
+          "type": "fail_related_quests",
+          "target": "npc_quests",
+          "params": {},
+          "description": "Quest giver dead - related quests fail"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0
+    },
+    {
+      "rule_id": "helped_npc_disposition",
+      "trigger_type": "npc_helped",
+      "conditions": {},
+      "effects": [
+        {
+          "type": "update_npc_disposition",
+          "target": "target_npc",
+          "params": {"delta": 15},
+          "description": "NPC disposition +15"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0
+    },
+    {
+      "rule_id": "helped_merchant_discount",
+      "trigger_type": "npc_helped",
+      "conditions": {"npc_role": "merchant"},
+      "effects": [
+        {
+          "type": "set_npc_flag",
+          "target": "target_npc",
+          "params": {"flag": "discount_10pct", "value": true},
+          "description": "Merchant offers 10% discount"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0
+    },
+    {
+      "rule_id": "steal_detected_guards",
+      "trigger_type": "item_stolen",
+      "conditions": {"detected": true},
+      "effects": [
+        {
+          "type": "alert_guards",
+          "target": "current_location",
+          "params": {},
+          "description": "Theft detected - guards alerted"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0
+    },
+    {
+      "rule_id": "quest_completed_faction_rep",
+      "trigger_type": "quest_completed",
+      "conditions": {"reward_type": "faction"},
+      "effects": [
+        {
+          "type": "update_faction_rep",
+          "target": "quest_faction",
+          "params": {"delta": 15},
+          "description": "Faction reputation +15 for quest completion"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0
+    }
+  ]
+}

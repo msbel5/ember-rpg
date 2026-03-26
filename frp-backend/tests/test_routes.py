@@ -140,6 +140,19 @@ class TestSessionEndpoints:
         assert data["conversation_state"]["target_type"] == "npc"
         assert data["conversation_state"]["npc_name"]
 
+    def test_talk_conversation_state_stays_stable_across_random_sessions(self):
+        for idx in range(12):
+            created = self._new_session(f"Speaker{idx}", "rogue")
+            sid = created["session_id"]
+
+            talk_resp = client.post(f"/game/session/{sid}/action", json={"input": "talk to merchant"})
+            assert talk_resp.status_code == 200
+            data = talk_resp.json()
+
+            assert data["conversation_state"]["target_type"] == "npc", (
+                f"iteration={idx} narrative={data['narrative']!r}"
+            )
+
     def test_creation_flow_endpoints(self):
         start = client.post(
             "/game/session/creation/start",

@@ -1,9 +1,22 @@
 {
   "locations": {
+    "default_opening_scene": {
+      "location": "Stone Bridge Tavern",
+      "description": "Low rafters, the smell of pipe smoke. A fire crackles in the hearth. The door creaks open - someone has arrived."
+    },
+    "location_stock_baseline": {
+      "food": 20,
+      "ale": 10,
+      "iron_bar": 5,
+      "bread": 15,
+      "healing_potion": 3,
+      "leather": 8,
+      "cloth": 10
+    },
     "opening_scenes": [
       {
         "location": "Stone Bridge Tavern",
-        "description": "Low rafters, the smell of pipe smoke. A fire crackles in the hearth. The door creaks open — someone has arrived."
+        "description": "Low rafters, the smell of pipe smoke. A fire crackles in the hearth. The door creaks open - someone has arrived."
       },
       {
         "location": "Forest Road",

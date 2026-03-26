@@ -57,11 +57,12 @@ def test_npc_memory_created_after_talk():
 def test_npc_memory_records_interaction():
     sid = _create_session()
     with patch("engine.llm.LLMRouter.complete", return_value=MOCK_NARRATIVE):
-        client.post(f"/game/session/{sid}/action", json={"input": "talk to innkeeper"})
+        response = client.post(f"/game/session/{sid}/action", json={"input": "talk to innkeeper"})
     
     from engine.api.routes import _sessions
     session = _sessions.get(sid)
     if session:
+        assert "too far away" not in response.json()["narrative"].lower()
         mem = _memory_for_target(session, "innkeeper")
         # Interaction count should be >= 1 after talking
         assert len(mem.conversations) >= 1

@@ -1,5 +1,7 @@
 extends Control
 
+const GameSessionHelpers = preload("res://scripts/game_session_helpers.gd")
+
 @onready var narrative_panel: RichTextLabel = $MainLayout/ContentSplit/NarrativePanel
 @onready var text_input: LineEdit = $MainLayout/InputBar/TextInput
 @onready var send_btn: Button = $MainLayout/InputBar/SendButton
@@ -235,52 +237,9 @@ func _refresh_pov() -> void:
 		tile_map_renderer.queue_redraw()
 
 func _parse_move_command(text: String) -> void:
-	var lower = text.to_lower().strip_edges()
-
-	# Direction-based moves: "move north", "go south", "move forward"
-	var dir_map = {"north": Vector2i(0, -1), "south": Vector2i(0, 1),
-		"east": Vector2i(1, 0), "west": Vector2i(-1, 0),
-		"up": Vector2i(0, -1), "down": Vector2i(0, 1),
-		"left": Vector2i(-1, 0), "right": Vector2i(1, 0)}
-	var facing_map = {"north": 0, "south": 2, "east": 1, "west": 3,
-		"up": 0, "down": 2, "left": 3, "right": 1}
-
-	for dir_name in dir_map:
-		if lower.contains(dir_name):
-			var delta = dir_map[dir_name]
-			GameState.player_facing = facing_map[dir_name]
-			GameState.player_map_pos += delta
-			# Clamp to map bounds
-			GameState.player_map_pos.x = clampi(GameState.player_map_pos.x, 0, 19)
-			GameState.player_map_pos.y = clampi(GameState.player_map_pos.y, 0, 14)
-			return
-
-	# "forward" uses current facing
-	if lower.contains("forward"):
-		var fv = [Vector2i(0,-1), Vector2i(1,0), Vector2i(0,1), Vector2i(-1,0)]
-		GameState.player_map_pos += fv[GameState.player_facing]
-		GameState.player_map_pos.x = clampi(GameState.player_map_pos.x, 0, 19)
-		GameState.player_map_pos.y = clampi(GameState.player_map_pos.y, 0, 14)
-		return
-
-	# "move to X,Y" or "move to X Y"
-	if lower.begins_with("move to ") or lower.begins_with("move "):
-		var coord_str = lower.replace("move to ", "").replace("move ", "")
-		var parts = coord_str.split(",")
-		if parts.size() < 2:
-			parts = coord_str.split(" ")
-		if parts.size() >= 2:
-			var tx = parts[0].strip_edges().to_int()
-			var ty = parts[1].strip_edges().to_int()
-			if tx >= 0 and ty >= 0:
-				var new_pos = Vector2i(tx, ty)
-				# Calculate facing direction BEFORE updating position
-				var delta = new_pos - GameState.player_map_pos
-				if abs(delta.x) > abs(delta.y):
-					GameState.player_facing = 1 if delta.x > 0 else 3
-				elif delta.y != 0:
-					GameState.player_facing = 2 if delta.y > 0 else 0
-				GameState.player_map_pos = new_pos
+	var predicted = GameSessionHelpers.predict_move(text, GameState.player_map_pos, GameState.player_facing)
+	GameState.player_map_pos = predicted["position"]
+	GameState.player_facing = int(predicted["facing"])
 
 func _refresh_player_status() -> void:
 	var p = GameState.player
@@ -414,48 +373,13 @@ func _toggle_inventory() -> void:
 		_inventory_popup.hide()
 		return
 
-	# Fetch inventory from GameState
 	var inventory = GameState.player.get("inventory", [])
-	var gold = GameState.player.get("gold", 0)
+	var gold = int(GameState.player.get("gold", 0))
 
 	if _inventory_popup:
 		_inventory_popup.queue_free()
 
-	_inventory_popup = PopupPanel.new()
-	var vbox = VBoxContainer.new()
-	vbox.custom_minimum_size = Vector2(300, 200)
-
-	# Title
-	var title = Label.new()
-	title.text = "⚔ Inventory"
-	title.add_theme_font_size_override("font_size", 18)
-	title.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
-	vbox.add_child(title)
-
-	# Gold
-	var gold_label = Label.new()
-	gold_label.text = "💰 Gold: %d" % gold
-	gold_label.add_theme_color_override("font_color", Color(1, 0.9, 0.4))
-	vbox.add_child(gold_label)
-
-	# Separator
-	var sep = HSeparator.new()
-	vbox.add_child(sep)
-
-	# Items
-	if inventory.is_empty():
-		var empty_label = Label.new()
-		empty_label.text = "Your pack is empty."
-		empty_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-		vbox.add_child(empty_label)
-	else:
-		for item in inventory:
-			var item_label = Label.new()
-			var item_name = item if item is String else item.get("name", str(item))
-			item_label.text = "• %s" % item_name
-			vbox.add_child(item_label)
-
-	_inventory_popup.add_child(vbox)
+	_inventory_popup = GameSessionHelpers.build_inventory_popup(inventory, gold)
 	add_child(_inventory_popup)
 	_inventory_popup.popup_centered()
 

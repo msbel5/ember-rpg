@@ -1,5 +1,12 @@
 {
   "character_creation": {
+    "default_class": "warrior",
+    "class_aliases": {
+      "fighter": "warrior",
+      "cleric": "priest",
+      "thief": "rogue",
+      "wizard": "mage"
+    },
     "ability_order": [
       "MIG",
       "AGI",

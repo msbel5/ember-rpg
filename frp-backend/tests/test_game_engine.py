@@ -14,6 +14,7 @@ from engine.core.dm_agent import SceneType
 from engine.data_loader import list_monsters
 from engine.world.skill_checks import SkillCheckResult
 from engine.world.proximity import astar_path, distance, manhattan_distance
+from engine.world.entity import Entity, EntityType
 from engine.world.spatial_index import SpatialIndex
 from engine.map import MapData, TileType
 
@@ -117,8 +118,116 @@ class TestNewSession:
         session = engine.new_session("Wanderer", "warrior")
         assert session.dm_context.location != ""
 
+    def test_default_opening_supports_immediate_innkeeper_talk(self, engine):
+        for idx in range(8):
+            session = engine.new_session(f"Wanderer{idx}", "warrior")
+            innkeeper = next(
+                (
+                    entity
+                    for entity in session.entities.values()
+                    if entity.get("role") == "innkeeper"
+                ),
+                None,
+            )
+            assert innkeeper is not None
+            assert distance(session.position, innkeeper["position"]) <= 2
+            result = engine.process_action(session, "talk to innkeeper")
+            assert "too far away" not in result.narrative.lower()
+            merchant = next(
+                (
+                    entity
+                    for entity in session.entities.values()
+                    if entity.get("role") == "merchant"
+                ),
+                None,
+            )
+            assert merchant is not None
+            assert distance(session.position, merchant["position"]) <= 2
+            merchant_result = engine.process_action(session, "talk to merchant")
+            assert "too far away" not in merchant_result.narrative.lower()
+
+    def test_approach_forge_reaches_crafting_range_when_adjacent_tiles_are_blocked(self, engine):
+        session = engine.new_session("Smith", "warrior", location="Harbor Town")
+        forge_id = "workstation_forge"
+        forge = session.entities[forge_id]
+        fx, fy = forge["position"]
+
+        walkable_adjacent = []
+        for x, y in ((fx + 1, fy), (fx - 1, fy), (fx, fy + 1), (fx, fy - 1)):
+            if session.map_data and not session.map_data.is_walkable(x, y):
+                continue
+            walkable_adjacent.append((x, y))
+        assert len(walkable_adjacent) >= 2
+
+        movable_blockers = [
+            (entity_id, entity)
+            for entity_id, entity in session.entities.items()
+            if entity_id != forge_id and entity.get("blocking")
+        ]
+        assert len(movable_blockers) >= 2
+
+        for (entity_id, entity), (x, y) in zip(movable_blockers[:2], walkable_adjacent[:2]):
+            live_entity = entity["entity_ref"]
+            session.spatial_index.move(live_entity, x, y)
+            entity["position"] = [x, y]
+            session.sync_entity_record(entity_id, live_entity)
+
+        goal_candidates = engine._approach_goal_candidates(session, forge["position"], interaction_radius=2)
+        start_candidates = []
+        for dx in range(-5, 6):
+            for dy in range(-5, 6):
+                x, y = fx + dx, fy + dy
+                if abs(dx) + abs(dy) < 3:
+                    continue
+                if session.map_data and not session.map_data.is_walkable(x, y):
+                    continue
+                blockers = [
+                    candidate
+                    for candidate in session.spatial_index.at(x, y)
+                    if candidate.id != "player" and candidate.blocking
+                ]
+                if blockers:
+                    continue
+                if not any(
+                    astar_path(session.map_data, [x, y], goal, max_steps=40)
+                    for goal in goal_candidates
+                    if goal != [x, y]
+                ):
+                    continue
+                start_candidates.append((x, y))
+        assert start_candidates
+        start_x, start_y = max(start_candidates, key=lambda pos: abs(pos[0] - fx) + abs(pos[1] - fy))
+        _move_player_to(session, start_x, start_y)
+        session.ap_tracker.refresh()
+        session.add_item({"id": "iron_bar", "name": "Iron Bar", "qty": 2, "weight": 0.4}, merge=True)
+
+        approach_result = engine.process_action(session, "approach forge")
+        forge_pos = session.entities[forge_id]["position"]
+        assert "can't find a path" not in approach_result.narrative.lower()
+        assert distance(session.position, forge_pos) <= 2
+
+        craft_result = engine.process_action(session, "craft iron sword")
+        assert "need a forge" not in craft_result.narrative.lower()
+
     def test_explicit_location(self, warrior_session):
         assert warrior_session.dm_context.location == "Test Keep"
+
+    def test_town_sessions_start_next_to_merchant(self, engine):
+        session = engine.new_session("Starter", "rogue", location="Harbor Town")
+        merchant_id, merchant = _entity_by_role(session, "merchant")
+        merchant_pos = merchant["position"]
+        assert distance(session.position, merchant_pos) <= 2, (
+            f"expected opening position within talk range of merchant, got player={session.position} merchant={merchant_pos}"
+        )
+        assert session.entity_position_locked(merchant_id)
+
+    def test_workstations_are_registered_for_interaction(self, engine):
+        session = engine.new_session("Crafter", "warrior", location="Harbor Town")
+        workstation_names = {entity.get("name") for entity in session.entities.values() if entity.get("type") == "furniture"}
+        assert "Forge" in workstation_names
+
+        result = engine.process_action(session, "approach forge")
+        assert "don't know how" not in result.narrative.lower()
 
     def test_session_has_dm_context(self, warrior_session):
         assert warrior_session.dm_context.scene_type == SceneType.EXPLORATION
@@ -419,6 +528,35 @@ class TestQuestHardening:
         assert "missing a bound giver" in result.narrative.lower()
         assert mage_session.quest_tracker.get_active_quests()
 
+    def test_raw_delivery_offer_schema_normalizes_and_preserves_bound_giver(self, engine, mage_session):
+        merchant_id, merchant = _entity_by_role(mage_session, "merchant")
+        _guard_id, guard = _entity_by_role(mage_session, "guard")
+        _move_player_near_entity(mage_session, merchant)
+        mage_session.narration_context["last_quest_giver_id"] = guard["entity_ref"].id
+        mage_session.narration_context["last_quest_giver_name"] = guard["name"]
+        mage_session.quest_offers = [{
+            "id": "raw_delivery_offer",
+            "type": "delivery",
+            "title": "Bread Run",
+            "required_items": [{"id": "bread", "qty": 1}],
+            "rewards": {"gold": 5, "xp": 7},
+            "meta": {
+                "giver_entity_id": merchant_id,
+                "giver_name": merchant["name"],
+            },
+        }]
+        mage_session.add_item({"id": "bread", "name": "Bread", "qty": 1})
+
+        accept_result = engine.process_action(mage_session, "accept quest bread run")
+        turn_in_result = engine.process_action(mage_session, "turn in quest bread run")
+
+        assert "quest accepted" in accept_result.narrative.lower()
+        assert "you turn in" in turn_in_result.narrative.lower()
+        assert mage_session.quest_tracker.get_active_quests() == []
+        assert mage_session.campaign_state["quest_meta"]["raw_delivery_offer"]["kind"] == "delivery"
+        assert mage_session.campaign_state["quest_meta"]["raw_delivery_offer"]["giver_entity_id"] == merchant_id
+        assert all(item.get("id") != "bread" for item in mage_session.inventory)
+
     def test_trade_and_examine_spend_exploration_ap(self, engine, mage_session):
         _merchant_id, merchant = _entity_by_role(mage_session, "merchant")
         _move_player_near_entity(mage_session, merchant)
@@ -431,6 +569,39 @@ class TestQuestHardening:
 
         assert after_trade == ap_before - 1
         assert mage_session.ap_tracker.current_ap == after_trade - 1
+
+    def test_social_proximity_uses_live_entity_position(self, engine):
+        session = engine.new_session("Speaker", "rogue", location="Stone Bridge Tavern")
+        merchant_id, merchant = _entity_by_role(session, "merchant")
+        live_entity = merchant["entity_ref"]
+        assert live_entity is not None
+
+        target_x = session.position[0]
+        target_y = session.position[1] + 1
+        if session.spatial_index is not None:
+            session.spatial_index.move(live_entity, target_x, target_y)
+        live_entity.position = (target_x, target_y)
+        merchant["position"] = [target_x + 4, target_y + 4]
+
+        result = engine.process_action(session, "talk to merchant")
+
+        assert "too far away" not in result.narrative.lower()
+        assert session.conversation_state["target_type"] == "npc"
+        assert session.entity_position_locked(merchant_id)
+
+    def test_address_follow_up_keeps_active_npc_target(self, engine):
+        session = engine.new_session("Speaker", "rogue", location="Stone Bridge Tavern")
+        innkeeper_id, innkeeper = _entity_by_role(session, "innkeeper")
+        _move_player_near_entity(session, innkeeper)
+
+        talk_result = engine.process_action(session, "talk to innkeeper")
+        follow_result = engine.process_action(session, "ask about rumors and who got robbed")
+
+        assert "no longer close enough" not in follow_result.narrative.lower()
+        assert session.conversation_state["target_type"] == "npc"
+        assert session.conversation_state["npc_name"] == innkeeper["name"]
+        assert session.entity_position_locked(innkeeper_id)
+        assert talk_result.narrative
 
 
 class TestSaveCommands:
@@ -790,6 +961,45 @@ class TestGoToHardening:
 
         assert "close enough" in result.narrative.lower()
         assert manhattan_distance(session.position, session.entities["target_npc"]["position"]) <= 1
+
+    def test_go_to_routes_around_blocking_npc(self, engine):
+        session = engine.new_session("Walker", "warrior", location="Forest Road")
+        tiles = [[TileType.FLOOR for _ in range(12)] for _ in range(12)]
+        for i in range(12):
+            tiles[0][i] = TileType.WALL
+            tiles[11][i] = TileType.WALL
+            tiles[i][0] = TileType.WALL
+            tiles[i][11] = TileType.WALL
+        session.map_data = MapData(width=12, height=12, tiles=tiles, rooms=[], spawn_point=(1, 1))
+        session.position = [1, 1]
+        session.entities = {
+            "target_npc": {
+                "name": "Target NPC",
+                "type": "npc",
+                "position": [6, 1],
+                "role": "merchant",
+                "faction": "merchant_guild",
+            }
+        }
+        session.spatial_index = SpatialIndex()
+        session.player_entity.position = (1, 1)
+        session.spatial_index.add(session.player_entity)
+        blocker = Entity(
+            id="blocker",
+            entity_type=EntityType.NPC,
+            name="Blocker",
+            position=(2, 1),
+            glyph="B",
+            color="red",
+            blocking=True,
+        )
+        session.spatial_index.add(blocker)
+
+        result = engine.process_action(session, "approach target npc")
+
+        assert "walk" in result.narrative.lower()
+        assert session.position != [1, 1]
+        assert session.position != [2, 1]
 
 
 class TestSocialRangeHardening:

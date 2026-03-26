@@ -23,15 +23,26 @@ class QuestMixin:
                 narrative="No available quest matches that request. Talk to a quest giver first or specify the quest title.",
                 scene_type=session.dm_context.scene_type,
             )
+        offer = session.normalize_quest_offer(offer, default_source=offer.get("source", "authored"))
 
-        giver = self._resolve_quest_giver(session)
+        giver = None
+        bound_giver_id = offer.get("giver_entity_id")
+        bound_giver_name = offer.get("giver_name")
+        if bound_giver_id and bound_giver_id in session.entities:
+            giver = bound_giver_id, session.entities[bound_giver_id]
+        else:
+            giver = self._resolve_quest_giver(session)
         if offer.get("kind") == "delivery" and giver is None:
             return ActionResult(
                 narrative="That delivery quest is not bound to a real giver yet. Talk to the quest giver in person first.",
                 scene_type=session.dm_context.scene_type,
             )
-        giver_id = giver[0] if giver else None
-        giver_name = giver[1].get("name") if giver else None
+        giver_id = giver[0] if giver else bound_giver_id
+        giver_name = (
+            giver[1].get("name")
+            if giver
+            else bound_giver_name
+        )
         accepted = self._accept_quest_offer(session, offer, giver_entity_id=giver_id, giver_name=giver_name)
         if not accepted:
             return ActionResult(
@@ -155,12 +166,18 @@ class QuestMixin:
         return None
 
     def _resolve_quest_giver(self, session: GameSession) -> Optional[tuple[str, Dict[str, Any]]]:
-        giver_id = session.narration_context.get("last_quest_giver_id")
-        if giver_id and giver_id in session.entities:
-            return giver_id, session.entities[giver_id]
         nearby = self._get_nearby_quest_givers(session)
+        nearby_by_id = {entity_id: entity for entity_id, entity in nearby}
+        conversation_giver_id = session.conversation_state.get("npc_id")
+        if conversation_giver_id and conversation_giver_id in nearby_by_id:
+            return conversation_giver_id, nearby_by_id[conversation_giver_id]
+        giver_id = session.narration_context.get("last_quest_giver_id")
+        if giver_id and giver_id in nearby_by_id:
+            return giver_id, nearby_by_id[giver_id]
         if len(nearby) == 1:
             return nearby[0]
+        if giver_id and giver_id in session.entities:
+            return giver_id, session.entities[giver_id]
         return None
 
     def _turn_in_target_quest(self, session: GameSession, query: str) -> Optional[tuple[Any, Dict[str, Any]]]:
@@ -203,22 +220,25 @@ class QuestMixin:
         giver_entity_id: Optional[str] = None,
         giver_name: Optional[str] = None,
     ) -> Optional[str]:
-        quest_id = offer.get("id")
+        normalized_offer = session.normalize_quest_offer(offer, default_source=offer.get("source", "authored"))
+        quest_id = normalized_offer.get("id")
         if not quest_id or session.quest_tracker.get_quest(quest_id):
             return None
         current_hour = self._current_game_hour(session)
-        deadline_hours = offer.get("deadline_hours")
+        deadline_hours = normalized_offer.get("deadline_hours")
         deadline_hour = current_hour + deadline_hours if deadline_hours else None
         session.quest_tracker.add_quest(
             quest_id=quest_id,
-            title=offer.get("title", quest_id.replace("_", " ").title()),
+            title=normalized_offer.get("title", quest_id.replace("_", " ").title()),
             current_hour=current_hour,
             deadline_hour=deadline_hour,
-            timeout_consequence=offer.get("timeout_consequence", "quest_failed"),
+            timeout_consequence=normalized_offer.get("timeout_consequence", "quest_failed"),
         )
-        quest_meta = copy.deepcopy(offer)
-        quest_meta["giver_entity_id"] = giver_entity_id
-        quest_meta["giver_name"] = giver_name
+        quest_meta = copy.deepcopy(normalized_offer)
+        if not quest_meta.get("giver_entity_id"):
+            quest_meta["giver_entity_id"] = giver_entity_id
+        if not quest_meta.get("giver_name"):
+            quest_meta["giver_name"] = giver_name
         session.campaign_state.setdefault("quest_meta", {})[quest_id] = quest_meta
         accepted_quests = session.campaign_state.setdefault("accepted_quests", [])
         if quest_id not in accepted_quests:
