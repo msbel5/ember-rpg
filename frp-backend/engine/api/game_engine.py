@@ -117,16 +117,15 @@ class GameEngine(
             session.ensure_consistency()
             return result
 
-        blocked_in_combat = {
-            ActionIntent.TALK,
-            ActionIntent.ADDRESS,
-            ActionIntent.PERSUADE,
-            ActionIntent.INTIMIDATE,
-            ActionIntent.DECEIVE,
-            ActionIntent.BRIBE,
-            ActionIntent.THINK,
+        # Allowlist approach: only these intents are valid during combat
+        _COMBAT_ALLOWED = {
+            ActionIntent.ATTACK, ActionIntent.CAST_SPELL, ActionIntent.FLEE,
+            ActionIntent.DISENGAGE, ActionIntent.USE_ITEM, ActionIntent.INVENTORY,
+            ActionIntent.LOOK, ActionIntent.EXAMINE, ActionIntent.EQUIP,
+            ActionIntent.UNEQUIP, ActionIntent.MOVE, ActionIntent.PICK_UP,
+            ActionIntent.DROP,
         }
-        if session.in_combat() and action.intent in blocked_in_combat:
+        if session.in_combat() and action.intent not in _COMBAT_ALLOWED:
             return ActionResult(
                 narrative="You can't do that during combat!",
                 scene_type=session.dm_context.scene_type,

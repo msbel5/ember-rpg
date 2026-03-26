@@ -655,7 +655,7 @@ class TestHandleRest:
         engine.process_action(warrior_session, "attack")
         assert warrior_session.in_combat()
         result = engine.process_action(warrior_session, "rest")
-        assert "cannot rest" in result.narrative.lower()
+        assert "can't do that during combat" in result.narrative.lower() or "cannot rest" in result.narrative.lower()
 
     def test_rest_hp_capped_at_max(self, engine, warrior_session):
         warrior_session.player.hp = warrior_session.player.max_hp

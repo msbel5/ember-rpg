@@ -23,7 +23,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/__init__.py` | 1 | - | - |
 | `frp-backend/engine/api/__init__.py` | 0 | - | - |
 | `frp-backend/engine/api/action_parser.py` | 439 | ActionIntent (0), ParsedAction (1), ActionParser (3) | _normalize, _looks_turkish, _restore_turkish_final_consonant, _strip_turkish_case_suffix |
-| `frp-backend/engine/api/game_engine.py` | 224 | ActionResult (0), GameEngine (2) | - |
+| `frp-backend/engine/api/game_engine.py` | 223 | ActionResult (0), GameEngine (2) | - |
 | `frp-backend/engine/api/game_engine_runtime.py` | 317 | GameEngineRuntimeMixin (3) | - |
 | `frp-backend/engine/api/game_session.py` | 15 | - | - |
 | `frp-backend/engine/api/handlers/__init__.py` | 1 | - | - |

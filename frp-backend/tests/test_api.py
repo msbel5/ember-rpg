@@ -251,4 +251,4 @@ class TestGameEngine:
         enemy = Character(name="Goblin", hp=10, max_hp=10)
         self.engine._start_combat(session, [enemy])
         result = self.engine.process_action(session, "dinlenmek istiyorum")
-        assert "cannot rest" in result.narrative.lower()
+        assert "can't do that during combat" in result.narrative.lower() or "cannot rest" in result.narrative.lower()
