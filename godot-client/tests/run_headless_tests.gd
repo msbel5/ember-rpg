@@ -25,6 +25,7 @@ func _run_tests() -> void:
 	await _test_scene_instantiation()
 	await _test_world_shell()
 	await _test_entity_rendering()
+	await _test_ui_panels()
 	_test_asset_bootstrap()
 	await _cleanup_test_nodes()
 
@@ -221,6 +222,61 @@ func _test_entity_rendering() -> void:
 	_assert_true(session_world_view.command_for_entity({"bucket": "npc", "name": "Merchant"}) == "talk merchant", "World view synthesizes talk commands for npc clicks")
 	_assert_true(session_world_view.command_for_entity({"bucket": "enemy", "name": "Wolf"}) == "attack wolf", "World view synthesizes attack commands for enemy clicks")
 	_assert_true(session_world_view.command_for_entity({"bucket": "item", "name": "Bread"}) == "examine bread", "World view synthesizes examine commands for item clicks")
+	session_instance.free()
+	await process_frame
+
+
+func _test_ui_panels() -> void:
+	var game_state = _game_state()
+	_assert_true(game_state != null, "GameState autoload is available for UI panels")
+	if game_state == null:
+		return
+	game_state.reset()
+	var session_scene = load("res://scenes/game_session.tscn")
+	var session_instance = session_scene.instantiate()
+	root.add_child(session_instance)
+	await process_frame
+
+	game_state.update_from_response({
+		"player": {
+			"name": "Chaos",
+			"level": 3,
+			"classes": {"warrior": 3},
+			"hp": 18,
+			"max_hp": 20,
+			"spell_points": 5,
+			"max_spell_points": 8,
+			"xp": 45,
+			"gold": 12,
+		},
+		"location": "Harbor Town",
+		"map_data": TileCatalog.build_placeholder_map(16, 12),
+		"items": [{"name": "Bread"}, {"name": "Potion"}],
+		"narrative": "You steady your breath in the harbor square.",
+	})
+	await process_frame
+	await process_frame
+	for _index in range(20):
+		await process_frame
+
+	var player_info = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/PlayerInfo")
+	_assert_true(player_info.text.contains("Chaos"), "Status bar reflects player identity")
+
+	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
+	_assert_true(inventory_grid.get_child_count() >= 2, "Inventory panel populates grid items")
+
+	var minimap_texture = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin/MinimapVBox/MapTexture")
+	_assert_true(minimap_texture.texture != null, "Minimap panel renders a texture from map data")
+
+	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel")
+	_assert_true(narrative_widget.get_plain_text().contains("harbor square"), "Narrative panel shows backend narrative")
+
+	var command_bar = session_instance.get_node("MainMargin/MainVBox/CommandBar")
+	command_bar.submit_command("inventory")
+	await process_frame
+	var history_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel")
+	_assert_true(history_label.text.contains("inventory"), "Command bar tracks recent commands")
+
 	session_instance.free()
 	await process_frame
 

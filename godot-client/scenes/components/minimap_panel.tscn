@@ -1,0 +1,32 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/minimap_panel.gd" id="1"]
+
+[node name="MinimapPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 180)
+script = ExtResource("1")
+
+[node name="MinimapMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="MinimapVBox" type="VBoxContainer" parent="MinimapMargin"]
+layout_mode = 2
+
+[node name="MinimapTitle" type="Label" parent="MinimapMargin/MinimapVBox"]
+layout_mode = 2
+text = "Minimap"
+
+[node name="MapTexture" type="TextureRect" parent="MinimapMargin/MinimapVBox"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SummaryLabel" type="Label" parent="MinimapMargin/MinimapVBox"]
+layout_mode = 2
+text = "No map loaded"
+autowrap_mode = 2

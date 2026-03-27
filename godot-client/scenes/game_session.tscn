@@ -1,10 +1,15 @@
-[gd_scene load_steps=6 format=3 uid="uid://cgamesession"]
+[gd_scene load_steps=11 format=3 uid="uid://cgamesession"]
 
 [ext_resource type="Script" path="res://scenes/game_session.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/world/world_view.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/world/tilemap_controller.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/world/entity_layer.gd" id="4"]
 [ext_resource type="Script" path="res://scripts/world/camera_controller.gd" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/components/status_bar.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/components/narrative_panel.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://scenes/components/inventory_panel.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://scenes/components/minimap_panel.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/components/command_bar.tscn" id="10"]
 
 [node name="GameSession" type="Control"]
 layout_mode = 3
@@ -37,42 +42,8 @@ grow_vertical = 2
 [node name="MainVBox" type="VBoxContainer" parent="MainMargin"]
 layout_mode = 2
 
-[node name="StatusBar" type="PanelContainer" parent="MainMargin/MainVBox"]
+[node name="StatusBar" parent="MainMargin/MainVBox" instance=ExtResource("6")]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 58)
-
-[node name="StatusRow" type="HBoxContainer" parent="MainMargin/MainVBox/StatusBar"]
-layout_mode = 2
-
-[node name="PlayerInfo" type="Label" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
-layout_mode = 2
-custom_minimum_size = Vector2(280, 0)
-text = "Hero  Lv.1 Adventurer"
-
-[node name="HPBar" type="ProgressBar" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
-layout_mode = 2
-custom_minimum_size = Vector2(170, 0)
-max_value = 20.0
-value = 20.0
-show_percentage = false
-
-[node name="HPLabel" type="Label" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
-layout_mode = 2
-text = "20/20"
-
-[node name="XPBar" type="ProgressBar" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
-layout_mode = 2
-custom_minimum_size = Vector2(120, 0)
-show_percentage = false
-
-[node name="Spacer" type="Control" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="LocationLabel" type="Label" parent="MainMargin/MainVBox/StatusBar/StatusRow"]
-layout_mode = 2
-text = "Unknown"
-horizontal_alignment = 2
 
 [node name="ContentSplit" type="HSplitContainer" parent="MainMargin/MainVBox"]
 layout_mode = 2
@@ -122,75 +93,15 @@ custom_minimum_size = Vector2(340, 0)
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.95
 
-[node name="NarrativePanel" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
+[node name="NarrativePanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("7")]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="NarrativeMargin" type="MarginContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="NarrativeVBox" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel/NarrativeMargin"]
+[node name="InventoryPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("8")]
 layout_mode = 2
 
-[node name="NarrativeTitle" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel/NarrativeMargin/NarrativeVBox"]
+[node name="MinimapPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("9")]
 layout_mode = 2
-text = "Narrative"
-
-[node name="NarrativeLog" type="RichTextLabel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel/NarrativeMargin/NarrativeVBox"]
-layout_mode = 2
-size_flags_vertical = 3
-bbcode_enabled = true
-scroll_following = true
-
-[node name="InventoryPanel" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
-layout_mode = 2
-custom_minimum_size = Vector2(0, 112)
-
-[node name="InventoryMargin" type="MarginContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="InventoryVBox" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel/InventoryMargin"]
-layout_mode = 2
-
-[node name="InventoryTitle" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel/InventoryMargin/InventoryVBox"]
-layout_mode = 2
-text = "Inventory"
-
-[node name="InventorySummary" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel/InventoryMargin/InventoryVBox"]
-layout_mode = 2
-text = "0 item(s), 0 gold"
-autowrap_mode = 2
-
-[node name="MinimapPanel" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
-layout_mode = 2
-custom_minimum_size = Vector2(0, 112)
-
-[node name="MinimapMargin" type="MarginContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="MinimapVBox" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin"]
-layout_mode = 2
-
-[node name="MinimapTitle" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin/MinimapVBox"]
-layout_mode = 2
-text = "Minimap"
-
-[node name="MinimapSummary" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin/MinimapVBox"]
-layout_mode = 2
-text = "Viewport online"
-autowrap_mode = 2
 
 [node name="QuestPanel" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
 layout_mode = 2
@@ -215,25 +126,8 @@ layout_mode = 2
 text = "0 active, 0 available"
 autowrap_mode = 2
 
-[node name="CommandBar" type="PanelContainer" parent="MainMargin/MainVBox"]
+[node name="CommandBar" parent="MainMargin/MainVBox" instance=ExtResource("10")]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 48)
-
-[node name="InputRow" type="HBoxContainer" parent="MainMargin/MainVBox/CommandBar"]
-layout_mode = 2
-
-[node name="PromptLabel" type="Label" parent="MainMargin/MainVBox/CommandBar/InputRow"]
-layout_mode = 2
-text = ">"
-
-[node name="TextInput" type="LineEdit" parent="MainMargin/MainVBox/CommandBar/InputRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "What do you do?"
-
-[node name="SendButton" type="Button" parent="MainMargin/MainVBox/CommandBar/InputRow"]
-layout_mode = 2
-text = "Send"
 
 [node name="OverlayCanvas" type="CanvasLayer" parent="."]
 

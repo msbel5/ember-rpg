@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/status_bar.gd" id="1"]
+
+[node name="StatusBar" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 58)
+script = ExtResource("1")
+
+[node name="StatusRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="PlayerInfo" type="Label" parent="StatusRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+text = "Hero"
+
+[node name="HPBar" type="ProgressBar" parent="StatusRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 0)
+max_value = 20.0
+value = 20.0
+show_percentage = false
+
+[node name="HPLabel" type="Label" parent="StatusRow"]
+layout_mode = 2
+text = "20/20"
+
+[node name="SPBar" type="ProgressBar" parent="StatusRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(110, 0)
+max_value = 10.0
+value = 10.0
+show_percentage = false
+
+[node name="SPLabel" type="Label" parent="StatusRow"]
+layout_mode = 2
+text = "10/10"
+
+[node name="XPBar" type="ProgressBar" parent="StatusRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 0)
+show_percentage = false
+
+[node name="APLabel" type="Label" parent="StatusRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(88, 0)
+text = "Scene Exploration"
+
+[node name="Spacer" type="Control" parent="StatusRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LocationLabel" type="Label" parent="StatusRow"]
+layout_mode = 2
+text = "Unknown"
+horizontal_alignment = 2
