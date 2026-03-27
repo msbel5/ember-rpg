@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "standard": {
+      "id": "standard",
+      "title": "Standard Continental World",
+      "world_width": 32,
+      "world_height": 24,
+      "plate_count": 6,
+      "climate_bands": 3,
+      "region_size": 8,
+      "history_end_year": 1200
+    }
+  }
+}

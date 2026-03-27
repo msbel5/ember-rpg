@@ -1,0 +1,14 @@
+{
+  "furniture": {
+    "forge": {"id": "forge", "blocking": true, "interaction_type": "craft", "tile_size": [1, 1]},
+    "anvil": {"id": "anvil", "blocking": true, "interaction_type": "craft", "tile_size": [1, 1]},
+    "workbench": {"id": "workbench", "blocking": true, "interaction_type": "craft", "tile_size": [1, 1]},
+    "altar": {"id": "altar", "blocking": true, "interaction_type": "pray", "tile_size": [1, 1]},
+    "pew": {"id": "pew", "blocking": false, "interaction_type": "sit", "tile_size": [1, 1]},
+    "bar_counter": {"id": "bar_counter", "blocking": true, "interaction_type": "trade", "tile_size": [1, 1]},
+    "table": {"id": "table", "blocking": true, "interaction_type": "use", "tile_size": [1, 1]},
+    "chair": {"id": "chair", "blocking": false, "interaction_type": "sit", "tile_size": [1, 1]},
+    "bed": {"id": "bed", "blocking": false, "interaction_type": "rest", "tile_size": [1, 1]},
+    "fireplace": {"id": "fireplace", "blocking": true, "interaction_type": "warm", "tile_size": [1, 1]}
+  }
+}

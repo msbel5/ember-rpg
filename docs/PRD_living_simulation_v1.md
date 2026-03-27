@@ -1,146 +1,51 @@
-# PRD: Living World Simulation — Complete System
-## "DM narration olmadan bile oynanabilir" seviyesinde simülasyon
+# PRD: Living World Simulation v1 (Superseded)
+**Project:** Ember RPG  
+**Phase:** Legacy  
+**Author:** Alcyone (CAPTAIN)  
+**Date:** 2026-03-27  
+**Status:** Superseded  
 
 ---
 
-## Felsefe
+## 1. Purpose
+This document remains as a legacy reference for the first living-world slice. It is no longer the source of truth for new world simulation work.
 
-Rimworld'de "Play" tuşuna basarsın, dünya yaşamaya başlar. NPC'ler yemek yer, uyur, çalışır, birbiriyle konuşur, kavga eder. Oyuncu müdahale etmese bile dünya değişir. Bizim oyun da böyle olmalı.
+## 2. Scope
+- In scope: historical context for the old living-world plan.
+- Out of scope: current implementation guidance.
 
-**Kural:** DM narration SADECE süslemedir. Altındaki simülasyon deterministik ve tutarlıdır. DM çıkarılsa bile oyun çalışır.
+## 3. Functional Requirements (FR)
+FR-01: New work must not use this document as the implementation source of truth.
+FR-02: The canonical replacement set must live in the `PRD_world_*_v1.md` module family created on 2026-03-27.
 
----
-
-## Sprint Planı (Öncelik Sırasına Göre)
-
-### Sprint 1: Data Catalog Expansion (JSON only, no code)
-Yeni/genişletilmiş JSON dosyaları. Hiçbir Python kodu değişmez.
-
-#### `data/biomes.json`
-```json
-{
-  "biomes": {
-    "temperate_forest": {
-      "name": "Temperate Forest",
-      "terrain_weights": {"grass": 40, "tree": 30, "bush": 10, "dirt": 10, "rock": 5, "water": 5},
-      "animals": ["deer", "rabbit", "wolf", "bear", "fox", "boar"],
-      "resources": ["wood", "herbs", "berries", "mushrooms"],
-      "temperature_range": [5, 25],
-      "rainfall": "moderate"
-    },
-    "plains": { ... },
-    "mountain": { ... },
-    "coast": { ... },
-    "desert": { ... },
-    "swamp": { ... }
-  }
-}
+## 4. Data Structures
+```python
+class LegacyReference:
+    superseded_by: list[str]
+    retained_for: str
 ```
 
-#### `data/building_templates.json` (detailed)
-Each building: size range, wall material, required/optional furniture, NPC roles, door count, window count.
+## 5. Public API
+There is no public runtime API in this legacy reference. Use:
+- `docs/PRD_world_simulation_architecture_v1.md`
+- `docs/PRD_live_global_simulation_runtime_v1.md`
+- `docs/PRD_region_realization_and_settlement_generation_v1.md`
 
-#### `data/furniture.json`
-30+ furniture types: forge, anvil, workbench, altar, pew, bed, table, chair, barrel, crate, chest, bookshelf, weapon_rack, bar_counter, fireplace, oven, loom, tanning_rack, well, fountain, lamp_post, hitching_post, trough, cauldron, lectern, throne, jail_cell, stocks.
+## 6. Acceptance Criteria (AC)
+AC-01 [FR-01]: Engineers can identify this document as superseded from the header and Purpose section.
+AC-02 [FR-02]: The replacement PRD family exists and is discoverable from this file.
 
-Each with: sprite_id, blocking (bool), interaction_type, tile_size.
+## 7. Performance Requirements
+Not applicable. This document is not executable guidance.
 
-#### `data/animals.json`
-Domestic: chicken, cow, horse, donkey, dog, cat, pig, sheep, goat.
-Wild: deer, rabbit, fox, wolf, bear, boar, eagle, snake, rat.
-Each with: hp, speed, behavior (passive/aggressive/flee), drops (meat, hide, feather), tameable.
+## 8. Error Handling
+If this file conflicts with the new module PRDs, the new module PRDs win.
 
-#### `data/factions.json`
-Crown, Merchant Guild, Thieves Guild, Church, Mages Circle, Farmers Union.
-Each with: alignment, allies, enemies, controlled buildings, taxes, laws.
+## 9. Integration Points
+- Superseded by the 2026-03-27 world simulation PRD pack.
 
-### Sprint 2: Town Generator Rewrite
-Complete rewrite of `engine/map/__init__.py` TownGenerator.
+## 10. Test Coverage Target
+No direct runtime coverage target. Documentation review only.
 
-Algorithm:
-1. **Place terrain** — biome determines base tiles
-2. **Carve main road** — from edge to center, curves naturally (not straight)
-3. **Place town square** — well/fountain, open area
-4. **Plot building lots** — along roads, variable sizes
-5. **Generate buildings** — from templates, with doors facing roads, furniture inside
-6. **Branch roads** — connect buildings to main road
-7. **Detail pass** — trees, gardens, barrels, lamp posts
-8. **NPC placement** — each NPC in their building, with schedule
-
-Output: 80x60 map where every building has doors, every NPC has a home, every road connects.
-
-### Sprint 3: NPC Life Simulation
-NPCs live independently:
-- **Schedule**: wake up → go to work → lunch at tavern → back to work → evening at tavern → sleep at home
-- **Needs**: hunger, thirst, rest, social, safety (already exists, needs wiring)
-- **Movement**: A* pathfinding between schedule locations, visible on map
-- **Relationships**: like/dislike other NPCs based on faction, past interactions
-- **Economy**: merchants buy/sell based on stock, prices change with supply/demand (already partially exists)
-- **Animals**: wander in biome-appropriate areas, flee from combat, can be hunted
-
-### Sprint 4: World Events (tick-driven)
-- **Caravan arrives** — new goods, prices drop (exists, needs visual)
-- **Crime report** — guard investigates, witnesses talk
-- **Weather** — rain reduces visibility, cold increases fire need
-- **Night/Day** — torches matter, some NPCs sleep, thieves active
-- **Random encounter** — wolves attack farms, bandits on roads
-- **Festival/Market day** — NPCs gather, special prices
-
-### Sprint 5: Godot Rendering
-- All new tile types render with 16x16 sprites
-- Furniture sprites distinct and recognizable
-- NPCs have role-colored sprites
-- Animals have unique sprites
-- Doors visually distinct (openable)
-- Day/night lighting
-- Weather particles (rain, snow)
-
-### Sprint 6: Click & Interact
-- Click entity → highlight, tooltip, context menu
-- Click NPC → approach + talk options
-- Click furniture → use (forge → craft, bed → rest, chair → sit)
-- Click animal → approach (hunt/pet/ride depending on type)
-- Click door → open/close
-- Click ground item → pickup
-- Pathfind walk animation (not teleport)
-
----
-
-## What "Complete Simulation" Means
-
-When player presses start:
-1. World seed generates entire town
-2. Every building placed with correct architecture
-3. Every NPC spawned in their home/workplace
-4. Every animal in their habitat
-5. Clock starts ticking
-6. NPCs begin their schedules (go to work, eat, socialize)
-7. Economy starts (merchants stock up, prices set)
-8. **Player hasn't done anything yet — world is already alive**
-
-When player does nothing for 100 turns:
-- NPCs have moved between buildings
-- At least one caravan has arrived
-- Prices have changed
-- NPCs have had conversations (eavesdroppable)
-- Night has fallen, torches lit
-- Some animals have wandered
-
-THIS is what makes it feel like Dwarf Fortress.
-
----
-
-## File Count Targets
-
-| Category | Current | Target |
-|----------|---------|--------|
-| Biomes | 0 | 6 |
-| Building templates | 7 basic | 15 detailed |
-| Furniture types | 0 | 30 |
-| Animal types | 7 | 20 |
-| Faction definitions | 0 | 6 |
-| NPC schedules | rudimentary | per-role detailed |
-| Terrain tile types | 5 | 15 |
-| Total items | 198 | 250+ |
-| Monster types | 37 | 50+ |
-| Crafting recipes | 55 | 80+ |
+## Changelog
+- 2026-03-27: Marked superseded by the world simulation PRD pack.

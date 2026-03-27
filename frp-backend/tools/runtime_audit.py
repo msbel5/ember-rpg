@@ -20,6 +20,7 @@ ALLOWED_OVERSIZE: Dict[str, str] = {
     "frp-backend/engine/core/dm_agent.py": "DM agent still mixes prompting, fallback, and formatting.",
     "frp-backend/engine/map/__init__.py": "Map generation package still centralizes multiple generators.",
     "frp-backend/engine/world/institutions.py": "Institution simulation remains unsplit.",
+    "frp-backend/engine/worldgen/pipeline.py": "Initial worldgen vertical slice keeps pipeline stages together until the package is split by subsystem.",
     "frp-backend/engine/data_loader.py": "Pure data loader exception.",
     "frp-backend/tools/play_topdown.py": "Terminal renderer surface exception.",
     "frp-backend/tools/play.py": "CLI surface exception.",

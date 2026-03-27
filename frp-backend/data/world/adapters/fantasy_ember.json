@@ -1,0 +1,13 @@
+{
+  "id": "fantasy_ember",
+  "species_labels": {
+    "human": "Human",
+    "dwarf": "Dwarf",
+    "elf": "Elf",
+    "dragon": "Dragon",
+    "horse": "Horse",
+    "goat": "Goat",
+    "deer": "Deer",
+    "wolf": "Wolf"
+  }
+}

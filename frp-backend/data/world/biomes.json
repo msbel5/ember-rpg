@@ -1,0 +1,64 @@
+{
+  "biomes": {
+    "coast": {
+      "id": "coast",
+      "temperature_range": [0.25, 0.95],
+      "moisture_range": [0.35, 1.0],
+      "elevation_range": [0.2, 0.55],
+      "terrain_weights": {"sand": 25, "grass": 35, "rock": 10, "shallow_water": 30},
+      "resources": ["salt", "fish", "driftwood"],
+      "fauna": ["horse", "deer"],
+      "settlement_weight": 0.9
+    },
+    "desert": {
+      "id": "desert",
+      "temperature_range": [0.6, 1.0],
+      "moisture_range": [0.0, 0.25],
+      "elevation_range": [0.2, 0.7],
+      "terrain_weights": {"sand": 70, "rock": 20, "scrub": 10},
+      "resources": ["salt", "clay"],
+      "fauna": ["dragon"],
+      "settlement_weight": 0.2
+    },
+    "mountain": {
+      "id": "mountain",
+      "temperature_range": [0.0, 0.85],
+      "moisture_range": [0.0, 1.0],
+      "elevation_range": [0.68, 1.0],
+      "terrain_weights": {"stone": 70, "grass": 10, "snow": 20},
+      "resources": ["iron", "copper", "granite"],
+      "fauna": ["goat", "dragon"],
+      "settlement_weight": 0.55
+    },
+    "plains": {
+      "id": "plains",
+      "temperature_range": [0.35, 0.9],
+      "moisture_range": [0.25, 0.65],
+      "elevation_range": [0.25, 0.67],
+      "terrain_weights": {"grass": 65, "dirt": 20, "wildflowers": 15},
+      "resources": ["grain", "clay", "horses"],
+      "fauna": ["horse", "deer", "wolf"],
+      "settlement_weight": 1.0
+    },
+    "swamp": {
+      "id": "swamp",
+      "temperature_range": [0.35, 0.9],
+      "moisture_range": [0.7, 1.0],
+      "elevation_range": [0.18, 0.5],
+      "terrain_weights": {"mud": 45, "reed": 25, "shallow_water": 30},
+      "resources": ["peat", "reeds", "herbs"],
+      "fauna": ["wolf", "deer"],
+      "settlement_weight": 0.25
+    },
+    "temperate_forest": {
+      "id": "temperate_forest",
+      "temperature_range": [0.25, 0.8],
+      "moisture_range": [0.55, 1.0],
+      "elevation_range": [0.2, 0.7],
+      "terrain_weights": {"grass": 20, "tree": 55, "moss": 15, "stream": 10},
+      "resources": ["timber", "game", "herbs"],
+      "fauna": ["deer", "wolf", "horse"],
+      "settlement_weight": 0.7
+    }
+  }
+}

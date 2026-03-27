@@ -1,0 +1,32 @@
+{
+  "cultures": {
+    "civic_humans": {
+      "id": "civic_humans",
+      "values": {"law": 50, "commerce": 70, "craft": 45},
+      "ethics": {"theft": "crime", "murder": "capital", "trade": "valued"},
+      "governance_bias": "council",
+      "institution_bias": {"market": 0.9, "temple": 0.5, "fortification": 0.6}
+    },
+    "stone_clans": {
+      "id": "stone_clans",
+      "values": {"law": 55, "commerce": 35, "craft": 90},
+      "ethics": {"theft": "crime", "murder": "capital", "oathbreaking": "unthinkable"},
+      "governance_bias": "clan_council",
+      "institution_bias": {"forge": 1.0, "archive": 0.6, "fortification": 0.95}
+    },
+    "sylvan_courts": {
+      "id": "sylvan_courts",
+      "values": {"law": 35, "commerce": 25, "nature": 95},
+      "ethics": {"theft": "shunned", "murder": "taboo", "tree_felling": "crime"},
+      "governance_bias": "ritual_court",
+      "institution_bias": {"grove": 1.0, "market": 0.2, "fortification": 0.3}
+    },
+    "dragon_eyries": {
+      "id": "dragon_eyries",
+      "values": {"power": 95, "law": 15, "knowledge": 70},
+      "ethics": {"theft": "personal", "murder": "acceptable", "tribute": "required"},
+      "governance_bias": "warlord",
+      "institution_bias": {"hoard": 1.0, "fortification": 0.9, "market": 0.1}
+    }
+  }
+}

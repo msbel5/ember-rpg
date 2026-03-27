@@ -1,0 +1,45 @@
+{
+  "building_templates": {
+    "blacksmith": {
+      "id": "blacksmith",
+      "footprint": [10, 8],
+      "npc_roles": ["smith"],
+      "required_furniture": [
+        {"kind": "forge", "anchor": [2, 2]},
+        {"kind": "anvil", "anchor": [3, 2]},
+        {"kind": "workbench", "anchor": [6, 2]}
+      ]
+    },
+    "tavern": {
+      "id": "tavern",
+      "footprint": [12, 8],
+      "npc_roles": ["innkeeper", "bard"],
+      "required_furniture": [
+        {"kind": "bar_counter", "anchor": [2, 2]},
+        {"kind": "table", "anchor": [5, 3]},
+        {"kind": "chair", "anchor": [5, 4]},
+        {"kind": "fireplace", "anchor": [9, 2]}
+      ]
+    },
+    "temple": {
+      "id": "temple",
+      "footprint": [10, 9],
+      "npc_roles": ["priest"],
+      "required_furniture": [
+        {"kind": "altar", "anchor": [5, 2]},
+        {"kind": "pew", "anchor": [4, 5]},
+        {"kind": "pew", "anchor": [6, 5]}
+      ]
+    },
+    "house": {
+      "id": "house",
+      "footprint": [8, 7],
+      "npc_roles": ["resident"],
+      "required_furniture": [
+        {"kind": "bed", "anchor": [2, 2]},
+        {"kind": "table", "anchor": [4, 3]},
+        {"kind": "chair", "anchor": [4, 4]}
+      ]
+    }
+  }
+}
