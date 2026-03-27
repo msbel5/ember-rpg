@@ -16,6 +16,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 - `frp-backend/engine/worldgen/pipeline.py`: Initial worldgen vertical slice keeps pipeline stages together until the package is split by subsystem.
 - `frp-backend/tools/play.py`: CLI surface exception.
 - `frp-backend/tools/play_topdown.py`: Terminal renderer surface exception.
+- `godot-client/scenes/game_session.gd`: Godot campaign orchestration is still centralized while the client cutover settles.
 - `godot-client/tests/run_headless_tests.gd`: Godot smoke harness intentionally centralizes lightweight client contract checks.
 
 ## Module Map
@@ -29,7 +30,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/campaign_models.py` | 60 | CreateCampaignRequest (0), CampaignCommandRequest (0), CampaignSaveRequest (0), CampaignSaveSummary (0) | - |
 | `frp-backend/engine/api/campaign_routes.py` | 133 | - | _make_llm_callable, create_campaign, get_campaign, run_campaign_command |
 | `frp-backend/engine/api/campaign_runtime.py` | 225 | CampaignContext (0), CampaignRuntime (11) | - |
-| `frp-backend/engine/api/campaign_state.py` | 409 | - | build_world, region_payload, campaign_payload, persist_campaign_state |
+| `frp-backend/engine/api/campaign_state.py` | 431 | - | build_world, region_payload, map_payload_from_region, campaign_payload |
 | `frp-backend/engine/api/game_engine.py` | 233 | ActionResult (0), GameEngine (2) | - |
 | `frp-backend/engine/api/game_engine_runtime.py` | 317 | GameEngineRuntimeMixin (3) | - |
 | `frp-backend/engine/api/game_session.py` | 15 | - | - |
@@ -145,19 +146,20 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/worldgen/models.py` | 226 | WorldProfile (1), TectonicPlate (1), SpeciesLineage (1), FactionSeed (1) | _serialize |
 | `frp-backend/engine/worldgen/pipeline.py` | 815 | - | _clamp, _round_grid, _noise, _region_lookup |
 | `frp-backend/engine/worldgen/registries.py` | 108 | - | _normalized_map, load_world_profiles, load_world_biomes, load_species_templates |
+| `frp-backend/tools/campaign_client.py` | 76 | CampaignClient (10) | _default_llm |
 | `frp-backend/tools/chaos_playtest.py` | 322 | - | log_bug, play, run_chaos |
-| `frp-backend/tools/play.py` | 459 | - | hp_style, hp_bar, format_game_time, render_header |
-| `frp-backend/tools/play_topdown.py` | 788 | MapState (4) | hp_style, hp_bar, format_game_time, render_header |
-| `frp-backend/tools/runtime_audit.py` | 194 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
+| `frp-backend/tools/play.py` | 98 | - | _append, _print_scene, main |
+| `frp-backend/tools/play_topdown.py` | 460 | CampaignScreenState (2), MapState (6) | hp_bar, render_header, render_map, render_narrative |
+| `frp-backend/tools/runtime_audit.py` | 195 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
 | `frp-backend/tools/terminal_client.py` | 39 | - | run |
 | `godot-client/autoloads/backend.gd` | 254 | - | _ready, create_session, start_creation, finalize_creation |
-| `godot-client/autoloads/game_state.gd` | 231 | - | update_from_response, reset, is_in_combat, get_player_hp_ratio |
-| `godot-client/scenes/game_session.gd` | 427 | - | _ready, _enter_scene, _on_scene_entered, _on_scene_session_loaded |
-| `godot-client/scenes/title_screen.gd` | 200 | - | _ready, _on_new_game, _on_continue, _on_quit |
+| `godot-client/autoloads/game_state.gd` | 282 | - | update_from_response, reset, is_in_combat, has_active_campaign |
+| `godot-client/scenes/game_session.gd` | 534 | - | _ready, _enter_scene, _on_scene_entered, _on_scene_session_loaded |
+| `godot-client/scenes/title_screen.gd` | 199 | - | _ready, _on_new_game, _on_continue, _on_quit |
 | `godot-client/scripts/asset/asset_bootstrap.gd` | 38 | AssetBootstrap (0) | - |
 | `godot-client/scripts/asset/asset_manifest.gd` | 38 | AssetManifest (0) | - |
 | `godot-client/scripts/game_session_helpers.gd` | 96 | GameSessionHelpers (0) | - |
-| `godot-client/scripts/net/response_normalizer.gd` | 219 | ResponseNormalizer (0) | - |
+| `godot-client/scripts/net/response_normalizer.gd` | 319 | ResponseNormalizer (0) | - |
 | `godot-client/scripts/pov_renderer.gd` | 414 | - | _ready, set_location_type, _load_ai_background, update_player |
 | `godot-client/scripts/pov_renderer_config.gd` | 101 | PovRendererConfig (0) | - |
 | `godot-client/scripts/tile_map_renderer.gd` | 263 | - | _ready, _process, _create_player_marker, _on_map_loaded |
@@ -169,7 +171,8 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/scripts/ui/quest_panel.gd` | 131 | QuestPanelWidget (0) | _ready, set_waiting, _refresh, _build_active_row |
 | `godot-client/scripts/ui/save_load_panel.gd` | 131 | SaveLoadPanelWidget (0) | _ready, open_panel, close_panel, set_busy |
 | `godot-client/scripts/ui/screenshot_capture.gd` | 28 | - | - |
-| `godot-client/scripts/ui/status_bar.gd` | 68 | GameStatusBar (0) | _ready, _refresh, _on_map_loaded, _on_scene_changed |
+| `godot-client/scripts/ui/settlement_panel.gd` | 120 | SettlementPanelWidget (0) | _ready, set_waiting, _on_settlement_updated, _refresh |
+| `godot-client/scripts/ui/status_bar.gd` | 83 | GameStatusBar (0) | _ready, _refresh, _on_map_loaded, _on_scene_changed |
 | `godot-client/scripts/world/camera_controller.gd` | 36 | - | _ready, focus_on_tile, zoom_in, zoom_out |
 | `godot-client/scripts/world/entity_layer.gd` | 147 | - | _ready, render_entities, get_entity_at_tile, _with_bucket |
 | `godot-client/scripts/world/entity_sprite_catalog.gd` | 48 | EntitySpriteCatalog (0) | - |
@@ -178,4 +181,4 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/scripts/world/tilemap_controller.gd` | 46 | - | _ready, render_map, get_map_size, _ensure_tileset |
 | `godot-client/scripts/world/world_view.gd` | 153 | - | _ready, refresh_from_state, _refresh_from_state, _gui_input |
 | `godot-client/tests/doubles/backend_probe.gd` | 29 | - | _ensure_base_url, _post, _http_get, _http_delete |
-| `godot-client/tests/run_headless_tests.gd` | 456 | - | _initialize, _run_tests, _assert_true, _game_state |
+| `godot-client/tests/run_headless_tests.gd` | 490 | - | _initialize, _run_tests, _assert_true, _game_state |

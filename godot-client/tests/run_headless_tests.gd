@@ -166,6 +166,27 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.ground_items.size() == 1, "ground items are retained")
 	_assert_true(game_state.active_quests.size() == 1 and game_state.quest_offers.size() == 1, "quest payloads are retained")
 
+	game_state.reset()
+	game_state.update_from_response({
+		"campaign_id": "camp_1",
+		"adapter_id": "fantasy_ember",
+		"profile_id": "standard",
+		"narrative": "Chaos enters Dragon Eyrie.",
+		"campaign": {
+			"world": {"adapter_id": "fantasy_ember", "profile_id": "standard"},
+			"player": {"name": "Chaos", "position": [9, 9]},
+			"scene": "exploration",
+			"location": "",
+			"map_data": TileCatalog.build_placeholder_map(16, 12),
+			"world_entities": [],
+			"settlement": {"name": "Dragon Eyrie", "residents": []},
+			"recent_event_log": [],
+		},
+	})
+	_assert_true(game_state.has_active_campaign(), "GameState enters campaign runtime when campaign payload arrives")
+	_assert_true(game_state.location == "Dragon Eyrie", "GameState falls back to settlement name when campaign location is blank")
+	_assert_true(game_state.get_display_location() == "Dragon Eyrie", "display location falls back to settlement name for campaign payloads")
+
 
 func _test_response_normalizer() -> void:
 	var merged_map = ResponseNormalizer.normalize_map({
@@ -336,6 +357,7 @@ func _test_ui_panels() -> void:
 			"max_hp": 20,
 			"spell_points": 5,
 			"max_spell_points": 8,
+			"ap": {"current": 3, "max": 4},
 			"xp": 45,
 			"gold": 12,
 		},
@@ -354,13 +376,13 @@ func _test_ui_panels() -> void:
 	var location_label = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/LocationLabel")
 	_assert_true(location_label.text.contains("Harbor"), "Status bar reflects the current location")
 
-	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
+	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
 	_assert_true(inventory_grid.get_child_count() >= 2, "Inventory panel populates grid items")
 
-	var minimap_texture = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin/MinimapVBox/MapTexture")
+	var minimap_texture = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/MinimapPanel/MinimapMargin/MinimapVBox/MapTexture")
 	_assert_true(minimap_texture.texture != null, "Minimap panel renders a texture from map data")
 
-	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel")
+	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/NarrativePanel")
 	_assert_true(narrative_widget.get_plain_text().contains("harbor square"), "Narrative panel shows backend narrative")
 
 	var command_bar = session_instance.get_node("MainMargin/MainVBox/CommandBar")
@@ -388,6 +410,15 @@ func _test_ui_panels() -> void:
 		},
 		"active_quests": [{"quest_id": "q1", "title": "Bread Run", "status": "active", "deadline": 16}],
 		"quest_offers": [{"id": "offer_1", "title": "Clear The Roads", "description": "Drive goblins away.", "reward_gold": 60, "reward_xp": 75}],
+		"settlement_state": {
+			"name": "Dragon Eyrie",
+			"population": 6,
+			"defense_posture": "normal",
+			"residents": [{"name": "Chaos", "assignment": "command", "role": "commander", "mood": "focused"}],
+			"jobs": [{"kind": "forge", "status": "idle"}],
+			"stockpiles": [{"label": "Central Stockpile", "resource_tags": ["ore"]}],
+			"alerts": ["Raid warning"],
+		},
 	})
 	await process_frame
 
@@ -396,9 +427,12 @@ func _test_ui_panels() -> void:
 	var combat_rows = session_instance.get_node("OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/CombatantScroll/CombatantList")
 	_assert_true(combat_rows.get_child_count() >= 2, "Combat panel renders combatant rows")
 
-	var active_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/ActiveList")
-	var offer_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/OfferList")
+	var active_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/ActiveList")
+	var offer_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/OfferList")
 	_assert_true(active_list.get_child_count() >= 1 and offer_list.get_child_count() >= 1, "Quest panel renders active and available quest entries")
+
+	var settlement_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
+	_assert_true(settlement_summary.text.contains("Dragon Eyrie"), "Settlement panel reflects campaign settlement data")
 
 	var save_load_panel = session_instance.get_node("OverlayCanvas/SaveLoadPanel")
 	save_load_panel.open_panel()

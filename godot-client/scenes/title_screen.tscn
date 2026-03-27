@@ -130,6 +130,13 @@ text = "Class:"
 [node name="ClassOption" type="OptionButton" parent="CharacterCreation/VBox"]
 layout_mode = 2
 
+[node name="AdapterLabel" type="Label" parent="CharacterCreation/VBox"]
+layout_mode = 2
+text = "Adapter:"
+
+[node name="AdapterOption" type="OptionButton" parent="CharacterCreation/VBox"]
+layout_mode = 2
+
 [node name="StartButton" type="Button" parent="CharacterCreation/VBox"]
 layout_mode = 2
 text = "Start Adventure"

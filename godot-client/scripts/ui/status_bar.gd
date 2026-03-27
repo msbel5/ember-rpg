@@ -13,6 +13,7 @@ class_name GameStatusBar
 
 func _ready() -> void:
 	GameState.state_updated.connect(_refresh)
+	GameState.settlement_updated.connect(_on_settlement_updated)
 	GameState.map_loaded.connect(_on_map_loaded)
 	GameState.scene_changed.connect(_on_scene_changed)
 	_refresh()
@@ -49,14 +50,24 @@ func _refresh() -> void:
 	xp_bar.max_value = 100
 	xp_bar.value = int(player.get("xp", 0)) % 100
 
-	var action_points = int(player.get("action_points", player.get("ap", 0)))
-	var max_action_points = maxi(int(player.get("max_action_points", player.get("max_ap", 0))), 0)
+	var ap_payload = player.get("ap", null)
+	var action_points = int(player.get("action_points", 0))
+	var max_action_points = int(player.get("max_action_points", player.get("max_ap", 0)))
+	if ap_payload is Dictionary:
+		action_points = int(ap_payload.get("current", action_points))
+		max_action_points = int(ap_payload.get("max", max_action_points))
+	elif ap_payload != null:
+		action_points = int(ap_payload)
+	max_action_points = maxi(max_action_points, 0)
 	if max_action_points > 0:
 		ap_label.text = "AP %d/%d" % [action_points, max_action_points]
 	else:
 		ap_label.text = "Scene %s" % GameState.scene.capitalize()
 
-	location_label.text = GameState.get_display_location()
+	var display_location = GameState.get_display_location()
+	if display_location == "Unknown" and not GameState.settlement_state.is_empty():
+		display_location = str(GameState.settlement_state.get("name", "Unknown"))
+	location_label.text = display_location
 	location_label.queue_redraw()
 
 
@@ -65,4 +76,8 @@ func _on_map_loaded(_map_data: Dictionary) -> void:
 
 
 func _on_scene_changed(_new_scene: String) -> void:
+	call_deferred("_refresh")
+
+
+func _on_settlement_updated(_settlement: Dictionary) -> void:
 	call_deferred("_refresh")

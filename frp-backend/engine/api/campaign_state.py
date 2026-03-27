@@ -100,6 +100,23 @@ def region_payload(context: "CampaignContext") -> dict[str, Any]:
     return snapshot
 
 
+def map_payload_from_region(region_snapshot: RegionSnapshot) -> dict[str, Any]:
+    tiles: list[list[str]] = []
+    for row in region_snapshot.typed_tiles:
+        tiles.append([str(tile.get("terrain", "grass")) for tile in row])
+    return {
+        "width": region_snapshot.width,
+        "height": region_snapshot.height,
+        "spawn_point": list(choose_spawn_point(region_snapshot)),
+        "tiles": tiles,
+        "metadata": {
+            "map_type": "campaign_region",
+            "region_id": region_snapshot.region_id,
+            "biome_id": region_snapshot.biome_id,
+        },
+    }
+
+
 def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     session_data = context.session.to_dict()
     return {
@@ -118,6 +135,11 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "combat": session_data.get("combat"),
         "conversation_state": session_data.get("conversation_state", {}),
         "region": region_payload(context),
+        "map_data": map_payload_from_region(context.region_snapshot),
+        "world_entities": copy.deepcopy(session_data.get("world_entities", [])),
+        "ground_items": copy.deepcopy(session_data.get("ground_items", [])),
+        "active_quests": copy.deepcopy(session_data.get("active_quests", [])),
+        "quest_offers": copy.deepcopy(session_data.get("quest_offers", [])),
         "settlement": copy.deepcopy(context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-12:]),
     }

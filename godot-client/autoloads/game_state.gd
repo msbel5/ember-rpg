@@ -4,8 +4,12 @@ extends Node
 # Updated after every HTTP response from backend
 const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
 
-# Session
+# Session / Campaign
+var active_runtime: String = "session"
 var session_id: String = ""
+var campaign_id: String = ""
+var adapter_id: String = "fantasy_ember"
+var profile_id: String = "standard"
 var player: Dictionary = {}
 var scene: String = "exploration"  # exploration | combat | dialogue | rest
 var location: String = ""
@@ -21,6 +25,9 @@ var active_quests: Array = []
 var quest_offers: Array = []
 var narrative_stream: Array = []
 var last_save_slot: String = ""
+var world_state: Dictionary = {}
+var settlement_state: Dictionary = {}
+var recent_event_log: Array = []
 var player_map_pos: Vector2i = Vector2i(10, 7)  # Player position on tile map
 var player_facing: int = 2  # 0=N,1=E,2=S,3=W — default facing south
 
@@ -35,10 +42,38 @@ signal map_loaded(map_data: Dictionary)
 signal entities_loaded(entities: Dictionary)
 signal entity_revealed(entity_id: String)
 signal inventory_updated(items: Array)
+signal settlement_updated(settlement: Dictionary)
 
 func update_from_response(data: Dictionary) -> void:
+	if data.has("campaign") and data["campaign"] is Dictionary:
+		active_runtime = "campaign"
+		session_id = ""
+		campaign_id = str(data.get("campaign_id", campaign_id))
+		adapter_id = str(data.get("adapter_id", data["campaign"].get("world", {}).get("adapter_id", adapter_id)))
+		profile_id = str(data.get("profile_id", data["campaign"].get("world", {}).get("profile_id", profile_id)))
+		world_state = data["campaign"].get("world", {})
+		settlement_state = data["campaign"].get("settlement", {})
+		recent_event_log = data["campaign"].get("recent_event_log", [])
+		var flattened_campaign = ResponseNormalizer.flatten_campaign_response(data, map_data)
+		update_from_response(flattened_campaign)
+		return
+
 	if data.has("session_id"):
+		active_runtime = "session"
 		session_id = data["session_id"]
+	if data.has("campaign_id"):
+		campaign_id = str(data["campaign_id"])
+	if data.has("adapter_id"):
+		adapter_id = str(data["adapter_id"])
+	if data.has("profile_id"):
+		profile_id = str(data["profile_id"])
+	if data.has("world_state") and data["world_state"] is Dictionary:
+		world_state = data["world_state"]
+	if data.has("settlement_state") and data["settlement_state"] is Dictionary:
+		settlement_state = data["settlement_state"]
+		settlement_updated.emit(settlement_state)
+	if data.has("recent_event_log") and data["recent_event_log"] is Array:
+		recent_event_log = data["recent_event_log"]
 
 	if data.has("player"):
 		player = data["player"]
@@ -47,7 +82,9 @@ func update_from_response(data: Dictionary) -> void:
 			player_facing = ResponseNormalizer.facing_to_int(str(player["facing"]), player_facing)
 
 	if data.has("location"):
-		location = data["location"]
+		location = str(data["location"])
+	if location.is_empty() and not settlement_state.is_empty():
+		location = str(settlement_state.get("name", ""))
 
 	# Narrative
 	if data.has("narrative") and data["narrative"] != "":
@@ -129,7 +166,11 @@ func update_from_response(data: Dictionary) -> void:
 	state_updated.emit()
 
 func reset() -> void:
+	active_runtime = "session"
 	session_id = ""
+	campaign_id = ""
+	adapter_id = "fantasy_ember"
+	profile_id = "standard"
 	player = {}
 	scene = "exploration"
 	location = ""
@@ -145,11 +186,17 @@ func reset() -> void:
 	quest_offers = []
 	narrative_stream = []
 	last_save_slot = ""
+	world_state = {}
+	settlement_state = {}
+	recent_event_log = []
 	player_map_pos = Vector2i(10, 7)
 	player_facing = 2
 
 func is_in_combat() -> bool:
 	return scene == "combat" and not combat_state.is_empty()
+
+func has_active_campaign() -> bool:
+	return active_runtime == "campaign" and not campaign_id.is_empty()
 
 func get_player_hp_ratio() -> float:
 	var hp = player.get("hp", 0)
@@ -158,6 +205,10 @@ func get_player_hp_ratio() -> float:
 
 func get_display_location() -> String:
 	if location.is_empty():
+		if not settlement_state.is_empty():
+			var settlement_name = str(settlement_state.get("name", "")).strip_edges()
+			if not settlement_name.is_empty():
+				return settlement_name
 		return "Unknown"
 	return location.replace("_", " ").capitalize()
 

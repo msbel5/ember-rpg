@@ -31,6 +31,45 @@ static func normalize_combat(data: Dictionary) -> Dictionary:
 	return {}
 
 
+static func flatten_campaign_response(data: Dictionary, current_map: Dictionary = {}) -> Dictionary:
+	var flattened: Dictionary = {}
+	if not (data.has("campaign") and data["campaign"] is Dictionary):
+		return flattened
+
+	var campaign: Dictionary = data["campaign"]
+	var campaign_location := str(campaign.get("location", "")).strip_edges()
+	if campaign_location.is_empty():
+		var settlement = campaign.get("settlement", {})
+		if settlement is Dictionary:
+			campaign_location = str(settlement.get("name", "")).strip_edges()
+	if data.has("campaign_id"):
+		flattened["campaign_id"] = data["campaign_id"]
+	if data.has("adapter_id"):
+		flattened["adapter_id"] = data["adapter_id"]
+	if data.has("profile_id"):
+		flattened["profile_id"] = data["profile_id"]
+	if data.has("narrative"):
+		flattened["narrative"] = data["narrative"]
+
+	flattened["player"] = campaign.get("player", {})
+	flattened["scene"] = campaign.get("scene", "exploration")
+	flattened["location"] = campaign_location
+	flattened["combat"] = campaign.get("combat", {})
+	flattened["conversation_state"] = campaign.get("conversation_state", {})
+	flattened["world_state"] = campaign.get("world", {})
+	flattened["settlement_state"] = campaign.get("settlement", {})
+	flattened["recent_event_log"] = campaign.get("recent_event_log", [])
+	flattened["active_quests"] = campaign.get("active_quests", [])
+	flattened["quest_offers"] = campaign.get("quest_offers", [])
+	flattened["ground_items"] = campaign.get("ground_items", [])
+	flattened["world_entities"] = campaign.get("world_entities", _entities_from_region(campaign.get("region", {})))
+	if campaign.has("map_data") and campaign["map_data"] is Dictionary:
+		flattened["map_data"] = _merge_and_normalize_map(campaign["map_data"], current_map)
+	elif campaign.has("region") and campaign["region"] is Dictionary:
+		flattened["map_data"] = campaign_region_to_map(campaign["region"], current_map)
+	return flattened
+
+
 static func normalize_map(data: Dictionary, current_map: Dictionary = {}) -> Dictionary:
 	if data.has("map_data") and data["map_data"] is Dictionary:
 		return _merge_and_normalize_map(data["map_data"], current_map)
@@ -188,6 +227,59 @@ static func _normalize_tile_rows(rows: Array, map_type: String) -> Array:
 	return normalized_rows
 
 
+static func campaign_region_to_map(region_payload: Dictionary, current_map: Dictionary = {}) -> Dictionary:
+	var normalized = current_map.duplicate(true) if not current_map.is_empty() else {}
+	normalized["width"] = int(region_payload.get("width", current_map.get("width", 0)))
+	normalized["height"] = int(region_payload.get("height", current_map.get("height", 0)))
+	normalized["metadata"] = {
+		"map_type": "campaign_region",
+		"region_id": str(region_payload.get("region_id", "")),
+		"biome_id": str(region_payload.get("biome_id", "")),
+	}
+	var layout = region_payload.get("layout", {})
+	if layout is Dictionary:
+		var center_feature = layout.get("center_feature", {})
+		if center_feature is Dictionary and center_feature.has("x") and center_feature.has("y"):
+			normalized["spawn_point"] = [int(center_feature.get("x", 1)), mini(int(center_feature.get("y", 1)) + 2, normalized["height"] - 1)]
+	var typed_tiles = region_payload.get("typed_tiles", [])
+	if typed_tiles is Array and not typed_tiles.is_empty():
+		var tile_rows: Array = []
+		for row in typed_tiles:
+			if not (row is Array):
+				continue
+			var normalized_row: Array = []
+			for cell in row:
+				if cell is Dictionary:
+					normalized_row.append(str(cell.get("terrain", "grass")))
+				else:
+					normalized_row.append(_normalize_tile_symbol(cell, "campaign_region"))
+			tile_rows.append(normalized_row)
+		normalized["tiles"] = tile_rows
+	return normalized
+
+
+static func _entities_from_region(region_payload: Dictionary) -> Array:
+	var layout = region_payload.get("layout", {})
+	if not (layout is Dictionary):
+		return []
+	var npc_spawns = layout.get("npc_spawns", [])
+	if not (npc_spawns is Array):
+		return []
+	var entities: Array = []
+	for spawn in npc_spawns:
+		if not (spawn is Dictionary):
+			continue
+		entities.append({
+			"id": str(spawn.get("id", "")),
+			"entity_type": "npc",
+			"name": str(spawn.get("role", "Resident")).replace("_", " ").capitalize(),
+			"position": [int(spawn.get("x", 0)), int(spawn.get("y", 0))],
+			"role": str(spawn.get("role", "resident")),
+			"disposition": "friendly",
+		})
+	return entities
+
+
 static func _normalize_tile_symbol(raw_value, map_type: String) -> String:
 	var tile_name = str(raw_value).strip_edges().to_lower()
 	if tile_name.is_empty():
@@ -216,4 +308,12 @@ static func _normalize_tile_symbol(raw_value, map_type: String) -> String:
 			return "stone_floor"
 		"door":
 			return "wood_floor"
+		"road":
+			return "cobblestone"
+		"cobble", "cobblestone":
+			return "cobblestone"
+		"floor", "wood_floor", "stone_floor":
+			return tile_name
+		"well", "fountain":
+			return "stone_floor"
 	return tile_name

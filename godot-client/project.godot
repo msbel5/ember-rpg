@@ -30,7 +30,7 @@ window/stretch/aspect="expand"
 
 [ember_rpg]
 
-backend_url="http://127.0.0.1:8765"
+backend_url="http://127.0.0.1:8000"
 
 [physics]
 

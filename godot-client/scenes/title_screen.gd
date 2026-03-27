@@ -3,188 +3,187 @@ extends Control
 const PROFILE_PATH := "user://client_profile.cfg"
 const ScreenshotCapture = preload("res://scripts/ui/screenshot_capture.gd")
 
+const CLASS_OPTIONS := [
+	{"label": "Warrior", "id": "warrior"},
+	{"label": "Rogue", "id": "rogue"},
+	{"label": "Mage", "id": "mage"},
+	{"label": "Priest", "id": "priest"},
+]
+
+const ADAPTER_OPTIONS := [
+	{"label": "Fantasy Ember", "id": "fantasy_ember"},
+	{"label": "Sci-Fi Frontier", "id": "scifi_frontier"},
+]
+
 @onready var new_game_btn: Button = $VBoxContainer/NewGameButton
 @onready var continue_btn: Button = $VBoxContainer/ContinueButton
 @onready var quit_btn: Button = $VBoxContainer/QuitButton
 @onready var creation_panel: Panel = $CharacterCreation
 @onready var name_input: LineEdit = $CharacterCreation/VBox/NameInput
 @onready var class_option: OptionButton = $CharacterCreation/VBox/ClassOption
+@onready var adapter_option: OptionButton = $CharacterCreation/VBox/AdapterOption
 @onready var start_btn: Button = $CharacterCreation/VBox/StartButton
 @onready var back_btn: Button = $CharacterCreation/VBox/BackButton
 @onready var status_label: Label = $StatusLabel
 
-var current_creation_id: String = ""
-var current_creation_player_name: String = ""
-var recommended_alignment: String = "TN"
 
 func _ready() -> void:
 	creation_panel.visible = false
 	status_label.text = ""
-	continue_btn.disabled = _last_player_id().is_empty()
-	class_option.disabled = true
-	start_btn.text = "Prepare Character"
-
 	new_game_btn.pressed.connect(_on_new_game)
 	continue_btn.pressed.connect(_on_continue)
 	quit_btn.pressed.connect(_on_quit)
-	start_btn.pressed.connect(_on_start_adventure)
+	start_btn.pressed.connect(_on_start_campaign)
 	back_btn.pressed.connect(_on_back)
-	name_input.text_changed.connect(_on_name_changed)
-
 	Backend.request_error.connect(_on_backend_error)
+	_populate_class_options()
+	_populate_adapter_options()
+	continue_btn.disabled = _last_campaign_save_id().is_empty()
+
 
 func _on_new_game() -> void:
-	_reset_creation_state()
+	status_label.text = ""
 	creation_panel.visible = true
+	start_btn.disabled = false
+	start_btn.text = "Start Campaign"
 	name_input.grab_focus()
 
+
 func _on_continue() -> void:
-	var player_id = _last_player_id()
-	if player_id.is_empty():
-		status_label.text = "No previous adventurer profile found."
+	var save_id = _last_campaign_save_id()
+	if save_id.is_empty():
+		status_label.text = "No previous campaign save found."
 		continue_btn.disabled = true
 		return
-	status_label.text = "Finding saves for %s..." % player_id
 	continue_btn.disabled = true
-	Backend.list_saves(_on_continue_saves_loaded, player_id)
+	status_label.text = "Loading %s..." % save_id
+	Backend.load_campaign(save_id, _on_campaign_loaded.bind(save_id))
+
 
 func _on_quit() -> void:
 	get_tree().quit()
 
-func _on_back() -> void:
-	_reset_creation_state()
-	creation_panel.visible = false
 
-func _on_start_adventure() -> void:
+func _on_back() -> void:
+	creation_panel.visible = false
+	status_label.text = ""
+
+
+func _on_start_campaign() -> void:
 	var player_name = name_input.text.strip_edges()
 	if player_name.is_empty():
-		status_label.text = "Enter a character name!"
+		status_label.text = "Enter a character name."
 		return
-
 	start_btn.disabled = true
-	if current_creation_id.is_empty():
-		status_label.text = "Preparing your character..."
-		Backend.start_creation(player_name, _on_creation_started)
-		return
+	status_label.text = "Creating campaign..."
+	GameState.reset()
+	Backend.create_campaign(player_name, _selected_class_id(), _selected_adapter_id(), _on_campaign_created)
 
-	status_label.text = "Creating your adventure..."
-	var player_class = _selected_class_id()
-	Backend.finalize_creation(current_creation_id, player_class, recommended_alignment, _on_session_created)
 
-func _on_creation_started(data) -> void:
+func _on_campaign_created(data) -> void:
 	start_btn.disabled = false
 	if data == null:
-		status_label.text = "Failed to prepare character options!"
+		status_label.text = "Failed to create a campaign."
 		return
-	current_creation_id = str(data.get("creation_id", ""))
-	current_creation_player_name = name_input.text.strip_edges()
-	recommended_alignment = str(data.get("recommended_alignment", "TN"))
-	_populate_class_options(data)
-	class_option.disabled = false
-	start_btn.text = "Start Adventure"
-	status_label.text = "Class options loaded from backend. Review and continue."
-
-func _on_session_created(data) -> void:
-	start_btn.disabled = false
-	if data == null:
-		status_label.text = "Failed to connect to backend!"
-		return
-
+	GameState.reset()
 	GameState.update_from_response(data)
-	_store_last_player_id(str(GameState.player.get("name", current_creation_player_name)))
+	_store_last_player_id(str(GameState.player.get("name", name_input.text.strip_edges())))
+	_store_last_adapter_id(str(GameState.adapter_id))
 	get_tree().change_scene_to_file("res://scenes/game_session.tscn")
+
+
+func _on_campaign_loaded(data, requested_save_id: String) -> void:
+	continue_btn.disabled = false
+	if data == null:
+		status_label.text = "Failed to load %s." % requested_save_id
+		return
+	GameState.reset()
+	GameState.update_from_response(data)
+	GameState.last_save_slot = requested_save_id
+	_store_last_player_id(str(GameState.player.get("name", _last_player_id())))
+	_store_last_adapter_id(str(GameState.adapter_id))
+	_store_last_campaign_save_id(requested_save_id)
+	get_tree().change_scene_to_file("res://scenes/game_session.tscn")
+
 
 func _on_backend_error(message: String) -> void:
 	start_btn.disabled = false
-	continue_btn.disabled = _last_player_id().is_empty()
+	continue_btn.disabled = _last_campaign_save_id().is_empty()
 	status_label.text = message
 
-func _on_name_changed(_new_text: String) -> void:
-	if not current_creation_id.is_empty():
-		_reset_creation_state(false)
-		status_label.text = "Name changed. Character options will refresh on submit."
 
-func _reset_creation_state(clear_name: bool = false) -> void:
-	current_creation_id = ""
-	current_creation_player_name = ""
-	recommended_alignment = "TN"
+func _populate_class_options() -> void:
 	class_option.clear()
-	class_option.disabled = true
-	start_btn.disabled = false
-	start_btn.text = "Prepare Character"
-	if clear_name:
-		name_input.text = ""
+	for entry in CLASS_OPTIONS:
+		class_option.add_item(str(entry["label"]))
+		class_option.set_item_metadata(class_option.item_count - 1, str(entry["id"]))
+	class_option.select(0)
 
-func _populate_class_options(data: Dictionary) -> void:
-	class_option.clear()
-	var class_weights: Dictionary = data.get("class_weights", {})
-	var class_ids := class_weights.keys()
-	class_ids.sort()
-	if class_ids.is_empty():
-		class_ids = [str(data.get("recommended_class", "warrior"))]
-	for class_id in class_ids:
-		var selected_class_id := str(class_id)
-		class_option.add_item(selected_class_id.capitalize())
-		var index := class_option.item_count - 1
-		class_option.set_item_metadata(index, selected_class_id)
-		if selected_class_id == str(data.get("recommended_class", "")):
-			class_option.select(index)
+
+func _populate_adapter_options() -> void:
+	adapter_option.clear()
+	var preferred = _last_adapter_id()
+	var selected_index := 0
+	for index in range(ADAPTER_OPTIONS.size()):
+		var entry = ADAPTER_OPTIONS[index]
+		adapter_option.add_item(str(entry["label"]))
+		adapter_option.set_item_metadata(index, str(entry["id"]))
+		if preferred == str(entry["id"]):
+			selected_index = index
+	adapter_option.select(selected_index)
+
 
 func _selected_class_id() -> String:
 	if class_option.item_count == 0:
 		return "warrior"
-	var index := class_option.selected
-	var meta = class_option.get_item_metadata(index)
-	if meta == null:
-		return class_option.get_item_text(index).to_lower()
-	return str(meta)
+	return str(class_option.get_item_metadata(class_option.selected))
 
 
-func _on_continue_saves_loaded(data) -> void:
-	continue_btn.disabled = false
-	if data == null or not (data is Array) or data.is_empty():
-		status_label.text = "No save files found for the last adventurer."
-		return
-
-	var saves: Array = data.duplicate(true)
-	saves.sort_custom(func(a, b): return str(a.get("timestamp", "")) > str(b.get("timestamp", "")))
-	var latest_save = saves[0]
-	status_label.text = "Loading %s..." % str(latest_save.get("slot_name", latest_save.get("save_id", "latest save")))
-	Backend.load_game(str(latest_save.get("save_id", "")), _on_continue_loaded)
-
-
-func _on_continue_loaded(data) -> void:
-	continue_btn.disabled = false
-	if data == null:
-		status_label.text = "Failed to load the latest save."
-		return
-
-	var session_data = data.get("session_data", {})
-	if not (session_data is Dictionary):
-		status_label.text = "Loaded save payload was invalid."
-		return
-
-	GameState.reset()
-	GameState.update_from_response(session_data)
-	GameState.last_save_slot = str(data.get("slot_name", data.get("save_id", "")))
-	_store_last_player_id(str(GameState.player.get("name", _last_player_id())))
-	get_tree().change_scene_to_file("res://scenes/game_session.tscn")
+func _selected_adapter_id() -> String:
+	if adapter_option.item_count == 0:
+		return "fantasy_ember"
+	return str(adapter_option.get_item_metadata(adapter_option.selected))
 
 
 func _store_last_player_id(player_id: String) -> void:
-	player_id = player_id.strip_edges()
-	if player_id.is_empty():
-		return
-	var profile = ConfigFile.new()
-	profile.set_value("profile", "last_player_id", player_id)
-	profile.save(PROFILE_PATH)
+	_store_profile_value("last_player_id", player_id.strip_edges())
 
 
 func _last_player_id() -> String:
+	return str(_profile_value("last_player_id", "")).strip_edges()
+
+
+func _store_last_adapter_id(value: String) -> void:
+	_store_profile_value("last_adapter_id", value.strip_edges())
+
+
+func _last_adapter_id() -> String:
+	return str(_profile_value("last_adapter_id", "fantasy_ember")).strip_edges()
+
+
+func _store_last_campaign_save_id(save_id: String) -> void:
+	_store_profile_value("last_campaign_save_id", save_id.strip_edges())
+	continue_btn.disabled = save_id.strip_edges().is_empty()
+
+
+func _last_campaign_save_id() -> String:
+	return str(_profile_value("last_campaign_save_id", "")).strip_edges()
+
+
+func _store_profile_value(key: String, value) -> void:
+	if str(value).strip_edges().is_empty():
+		return
+	var profile = ConfigFile.new()
+	profile.load(PROFILE_PATH)
+	profile.set_value("profile", key, value)
+	profile.save(PROFILE_PATH)
+
+
+func _profile_value(key: String, fallback):
 	var profile = ConfigFile.new()
 	if profile.load(PROFILE_PATH) != OK:
-		return ""
-	return str(profile.get_value("profile", "last_player_id", "")).strip_edges()
+		return fallback
+	return profile.get_value("profile", key, fallback)
 
 
 func _input(event: InputEvent) -> void:

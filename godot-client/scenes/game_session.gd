@@ -6,9 +6,10 @@ const PROFILE_PATH := "user://client_profile.cfg"
 const QUICKSAVE_SLOT := "quicksave"
 
 @onready var world_view: SubViewportContainer = $MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer
-@onready var narrative_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel
+@onready var narrative_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/NarrativePanel
+@onready var settlement_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel
 @onready var command_bar = $MainMargin/MainVBox/CommandBar
-@onready var quest_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel
+@onready var quest_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/QuestPanel
 @onready var combat_panel = $OverlayCanvas/CombatPanel
 @onready var save_load_panel = $OverlayCanvas/SaveLoadPanel
 
@@ -21,6 +22,7 @@ func _ready() -> void:
 	command_bar.quick_save_requested.connect(_on_quick_save_requested)
 	command_bar.saves_requested.connect(_open_save_load_panel)
 	world_view.command_requested.connect(_on_world_command_requested)
+	settlement_panel.command_requested.connect(_submit_action)
 	quest_panel.command_requested.connect(_submit_action)
 	combat_panel.command_requested.connect(_submit_action)
 	save_load_panel.save_requested.connect(_on_save_requested)
@@ -37,7 +39,10 @@ func _ready() -> void:
 
 	_remember_player_id()
 
-	if GameState.session_id != "":
+	if GameState.has_active_campaign():
+		if GameState.map_data.is_empty() or not _map_has_tiles():
+			_resync_campaign()
+	elif GameState.session_id != "":
 		if GameState.map_data.is_empty():
 			_enter_scene(GameState.location if not GameState.location.is_empty() else "Harbor Town")
 		elif not _map_has_tiles():
@@ -90,8 +95,11 @@ func _submit_action(text: String) -> void:
 	if text.is_empty() or is_waiting:
 		return
 	command_bar.remember_command(text)
+	if GameState.has_active_campaign():
+		_submit_campaign_action(text)
+		return
 	if GameState.session_id.is_empty():
-		narrative_panel.append_system_text("[color=red]No active session. Start a new adventure.[/color]")
+		narrative_panel.append_system_text("[color=red]No active game. Start a new adventure.[/color]")
 		return
 
 	var hp = int(GameState.player.get("hp", 1))
@@ -103,6 +111,19 @@ func _submit_action(text: String) -> void:
 	narrative_panel.append_command(text)
 	command_bar.clear_input()
 	Backend.submit_action(GameState.session_id, text, _on_action_response.bind(text, GameState.location))
+	await get_tree().create_timer(3.0).timeout
+	if is_waiting:
+		narrative_panel.show_thinking_indicator()
+
+
+func _submit_campaign_action(text: String) -> void:
+	if GameState.campaign_id.is_empty():
+		narrative_panel.append_system_text("[color=red]No active campaign. Start a new campaign.[/color]")
+		return
+	_set_waiting(true)
+	narrative_panel.append_command(text)
+	command_bar.clear_input()
+	Backend.submit_campaign_command(GameState.campaign_id, text, _on_campaign_action_response.bind(text))
 	await get_tree().create_timer(3.0).timeout
 	if is_waiting:
 		narrative_panel.show_thinking_indicator()
@@ -136,6 +157,14 @@ func _on_session_resynced(data, issued_text: String, previous_location: String) 
 		_finish_turn_sync()
 
 
+func _on_campaign_action_response(data, _issued_text: String) -> void:
+	if data == null:
+		_finish_turn_sync()
+		return
+	GameState.update_from_response(data)
+	_finish_turn_sync()
+
+
 func _set_waiting(waiting: bool) -> void:
 	is_waiting = waiting
 	command_bar.set_waiting(waiting)
@@ -143,6 +172,8 @@ func _set_waiting(waiting: bool) -> void:
 		combat_panel.set_waiting(waiting)
 	if quest_panel.has_method("set_waiting"):
 		quest_panel.set_waiting(waiting)
+	if settlement_panel.has_method("set_waiting"):
+		settlement_panel.set_waiting(waiting)
 	save_load_panel.set_busy(waiting)
 
 
@@ -274,6 +305,15 @@ func _resync_existing_session() -> void:
 	Backend.get_inventory(GameState.session_id, _on_inventory_loaded)
 
 
+func _resync_campaign() -> void:
+	if GameState.campaign_id.is_empty():
+		return
+	_set_waiting(true)
+	_pending_sync_callbacks = 2
+	Backend.get_campaign(GameState.campaign_id, _on_campaign_snapshot_loaded)
+	Backend.get_campaign_settlement(GameState.campaign_id, _on_campaign_settlement_loaded)
+
+
 func _on_quick_save_requested() -> void:
 	_save_session(QUICKSAVE_SLOT, false)
 
@@ -289,6 +329,9 @@ func _on_save_requested(slot_name: String) -> void:
 
 
 func _save_session(slot_name: String, keep_panel_open: bool) -> void:
+	if GameState.has_active_campaign():
+		_save_campaign(slot_name, keep_panel_open)
+		return
 	if GameState.session_id.is_empty():
 		narrative_panel.append_system_text("[color=red]No active session to save.[/color]")
 		return
@@ -301,6 +344,19 @@ func _save_session(slot_name: String, keep_panel_open: bool) -> void:
 	Backend.save_game(GameState.session_id, _on_save_completed.bind(keep_panel_open), normalized_slot)
 
 
+func _save_campaign(slot_name: String, keep_panel_open: bool) -> void:
+	if GameState.campaign_id.is_empty():
+		narrative_panel.append_system_text("[color=red]No active campaign to save.[/color]")
+		return
+	var normalized_slot = slot_name.strip_edges()
+	if normalized_slot.is_empty():
+		normalized_slot = GameState.last_save_slot if not GameState.last_save_slot.is_empty() else QUICKSAVE_SLOT
+	if keep_panel_open:
+		save_load_panel.set_status("Saving %s..." % normalized_slot)
+	_set_waiting(true)
+	Backend.save_campaign(GameState.campaign_id, _on_save_completed.bind(keep_panel_open), normalized_slot)
+
+
 func _on_save_completed(data, keep_panel_open: bool) -> void:
 	_set_waiting(false)
 	if data == null:
@@ -311,11 +367,20 @@ func _on_save_completed(data, keep_panel_open: bool) -> void:
 	save_load_panel.set_status("Saved %s." % slot_name)
 	narrative_panel.append_system_text("[color=green]Saved to %s.[/color]" % slot_name)
 	_remember_player_id()
+	_remember_save_slot(slot_name)
 	if keep_panel_open and save_load_panel.visible:
 		_refresh_save_list()
 
 
 func _refresh_save_list() -> void:
+	if GameState.has_active_campaign():
+		if GameState.campaign_id.is_empty():
+			save_load_panel.set_status("No active campaign is available for save browsing.")
+			save_load_panel.set_save_summaries([])
+			return
+		save_load_panel.set_busy(true)
+		Backend.list_campaign_saves(GameState.campaign_id, _on_save_list_loaded)
+		return
 	if GameState.player.is_empty():
 		save_load_panel.set_status("No active adventurer is available for save browsing.")
 		save_load_panel.set_save_summaries([])
@@ -339,7 +404,10 @@ func _on_load_requested(save_id: String) -> void:
 		return
 	save_load_panel.set_status("Loading %s..." % save_id)
 	_set_waiting(true)
-	Backend.load_game(save_id, _on_load_completed.bind(save_id))
+	if GameState.has_active_campaign():
+		Backend.load_campaign(save_id, _on_campaign_load_completed.bind(save_id))
+	else:
+		Backend.load_game(save_id, _on_load_completed.bind(save_id))
 
 
 func _on_load_completed(data, requested_save_id: String) -> void:
@@ -401,7 +469,19 @@ func _remember_player_id() -> void:
 	if player_name.is_empty():
 		return
 	var profile = ConfigFile.new()
+	profile.load(PROFILE_PATH)
 	profile.set_value("profile", "last_player_id", player_name)
+	profile.set_value("profile", "last_adapter_id", GameState.adapter_id)
+	profile.save(PROFILE_PATH)
+
+
+func _remember_save_slot(save_id: String) -> void:
+	save_id = save_id.strip_edges()
+	if save_id.is_empty():
+		return
+	var profile = ConfigFile.new()
+	profile.load(PROFILE_PATH)
+	profile.set_value("profile", "last_campaign_save_id", save_id)
 	profile.save(PROFILE_PATH)
 
 
@@ -425,3 +505,30 @@ func _capture_visual_proof(folder: String, prefix: String, include_world: bool) 
 
 func _map_has_tiles() -> bool:
 	return GameState.map_data.has("tiles") and GameState.map_data.get("tiles", []) is Array and not GameState.map_data.get("tiles", []).is_empty()
+
+
+func _on_campaign_snapshot_loaded(data) -> void:
+	if data != null:
+		GameState.update_from_response(data)
+	_complete_followup_sync()
+
+
+func _on_campaign_settlement_loaded(data) -> void:
+	if data != null and data is Dictionary:
+		GameState.update_from_response({"settlement_state": data})
+	_complete_followup_sync()
+
+
+func _on_campaign_load_completed(data, requested_save_id: String) -> void:
+	if data == null:
+		_set_waiting(false)
+		return
+	GameState.reset()
+	narrative_panel.load_history([])
+	GameState.update_from_response(data)
+	GameState.last_save_slot = requested_save_id
+	_remember_player_id()
+	_remember_save_slot(requested_save_id)
+	save_load_panel.close_panel()
+	narrative_panel.append_system_text("[color=green]Loaded %s.[/color]" % GameState.last_save_slot)
+	_set_waiting(false)
