@@ -63,6 +63,8 @@ _ROLE_COLORS: dict[str, str] = {
     "researcher": "purple",
 }
 
+_ABILITY_ORDER: list[str] = ["MIG", "AGI", "END", "MND", "INS", "PRE"]
+
 
 def build_world(*, adapter_id: str, profile_id: str, seed: int) -> WorldBlueprint:
     adapter = load_adapter_pack(adapter_id)
@@ -141,6 +143,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "active_quests": copy.deepcopy(session_data.get("active_quests", [])),
         "quest_offers": copy.deepcopy(session_data.get("quest_offers", [])),
         "settlement": copy.deepcopy(context.settlement_state),
+        "character_sheet": build_character_sheet(context.session, context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-12:]),
     }
 
@@ -429,3 +432,74 @@ def alerts_from_events(events: list[dict[str, Any]]) -> list[str]:
         region_id = str(event.get("region_id", "unknown"))
         alerts.append(f"{event_type.replace('_', ' ').title()} in {region_id}")
     return alerts[:4]
+
+
+def build_character_sheet(session: GameSession, settlement_state: dict[str, Any] | None = None) -> dict[str, Any]:
+    player = session.player
+    player_data = player.to_dict()
+    dominant_class = str(player.dominant_class or "adventurer")
+    stats = []
+    for ability in _ABILITY_ORDER:
+        value = int(player.stats.get(ability, 10))
+        stats.append(
+            {
+                "id": ability,
+                "label": ability,
+                "value": value,
+                "modifier": player.stat_modifier(ability),
+            }
+        )
+
+    skill_names = sorted(set(player.skill_proficiencies) | set(player.skills.keys()) | set(player.expertise_skills))
+    skills = []
+    for skill in skill_names:
+        skills.append(
+            {
+                "id": skill,
+                "label": skill.replace("_", " ").title(),
+                "bonus": player.skill_bonus(skill),
+                "proficient": player.has_proficiency(skill),
+                "expertise": player.has_expertise(skill),
+            }
+        )
+
+    resources = {
+        "hp": {"current": int(player.hp), "max": int(player.max_hp)},
+        "sp": {"current": int(player.spell_points), "max": int(player.max_spell_points)},
+        "ap": {
+            "current": int(getattr(session.ap_tracker, "current_ap", 0) or 0),
+            "max": int(getattr(session.ap_tracker, "max_ap", 0) or 0),
+        },
+    }
+    creation_profile = dict(player.creation_profile or {})
+    creation_summary = {
+        "recommended_class": str(creation_profile.get("recommended_class", dominant_class)),
+        "recommended_alignment": str(creation_profile.get("recommended_alignment", player.alignment)),
+        "recommended_skills": list(creation_profile.get("recommended_skills", [])),
+        "selected_skills": list(player.skill_proficiencies),
+        "answers": copy.deepcopy(player.creation_answers),
+        "class_weights": copy.deepcopy(creation_profile.get("class_weights", {})),
+        "skill_weights": copy.deepcopy(creation_profile.get("skill_weights", {})),
+        "alignment_axes": copy.deepcopy(player.alignment_axes),
+        "stat_source": str(creation_profile.get("stat_source", "default")),
+        "rolled_values": list(creation_profile.get("rolled_values", [])),
+        "saved_roll": copy.deepcopy(creation_profile.get("saved_roll")),
+    }
+    return {
+        "name": player.name,
+        "race": player.race,
+        "class_name": dominant_class.capitalize(),
+        "level": int(player.level),
+        "alignment": player.alignment,
+        "stats": stats,
+        "skills": skills,
+        "resources": resources,
+        "armor_class": int(player_data.get("ac", 10)),
+        "initiative_bonus": int(player_data.get("initiative_bonus", 0)),
+        "gold": int(player.gold),
+        "equipment": copy.deepcopy(player.equipment),
+        "inventory_count": len(player.inventory),
+        "passives": copy.deepcopy(player_data.get("passives", {})),
+        "settlement_role": str((settlement_state or {}).get("player_role", "commander")),
+        "creation_summary": creation_summary,
+    }

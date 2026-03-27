@@ -4,6 +4,10 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from engine.api.campaign_models import (
+    CampaignCreationAnswerRequest,
+    CampaignCreationFinalizeRequest,
+    CampaignCreationStartRequest,
+    CampaignCreationStateResponse,
     CampaignCommandRequest,
     CampaignCommandResponse,
     CampaignSaveRequest,
@@ -27,6 +31,107 @@ def _make_llm_callable():
 campaign_runtime = CampaignRuntime(llm=_make_llm_callable())
 
 
+def _creation_response(context) -> CampaignCreationStateResponse:
+    payload = context.state.to_dict()
+    return CampaignCreationStateResponse(
+        creation_id=payload["creation_id"],
+        player_name=context.state.player_name,
+        adapter_id=context.adapter_id,
+        profile_id=context.profile_id,
+        seed=int(context.seed),
+        location=context.location,
+        questions=payload["questions"],
+        answers=payload["answers"],
+        class_weights=payload["class_weights"],
+        skill_weights=payload["skill_weights"],
+        alignment_axes=payload["alignment_axes"],
+        recommended_class=payload["recommended_class"],
+        recommended_alignment=payload["recommended_alignment"],
+        recommended_skills=payload["recommended_skills"],
+        current_roll=payload["current_roll"],
+        saved_roll=payload["saved_roll"],
+    )
+
+
+@router.post("/campaigns/creation/start", response_model=CampaignCreationStateResponse)
+def start_campaign_creation(req: CampaignCreationStartRequest):
+    context = campaign_runtime.start_creation(
+        player_name=req.player_name,
+        adapter_id=req.adapter_id,
+        profile_id=req.profile_id,
+        seed=req.seed,
+        location=req.location,
+    )
+    return _creation_response(context)
+
+
+@router.post("/campaigns/creation/{creation_id}/answer", response_model=CampaignCreationStateResponse)
+def answer_campaign_creation(creation_id: str, req: CampaignCreationAnswerRequest):
+    try:
+        context = campaign_runtime.answer_creation(creation_id, req.question_id, req.answer_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"Creation flow not found: {creation_id}") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _creation_response(context)
+
+
+@router.post("/campaigns/creation/{creation_id}/reroll", response_model=CampaignCreationStateResponse)
+def reroll_campaign_creation(creation_id: str):
+    try:
+        context = campaign_runtime.reroll_creation(creation_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"Creation flow not found: {creation_id}") from exc
+    return _creation_response(context)
+
+
+@router.post("/campaigns/creation/{creation_id}/save-roll", response_model=CampaignCreationStateResponse)
+def save_campaign_creation_roll(creation_id: str):
+    try:
+        context = campaign_runtime.save_creation_roll(creation_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"Creation flow not found: {creation_id}") from exc
+    return _creation_response(context)
+
+
+@router.post("/campaigns/creation/{creation_id}/swap-roll", response_model=CampaignCreationStateResponse)
+def swap_campaign_creation_roll(creation_id: str):
+    try:
+        context = campaign_runtime.swap_creation_roll(creation_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"Creation flow not found: {creation_id}") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _creation_response(context)
+
+
+@router.post("/campaigns/creation/{creation_id}/finalize", response_model=CampaignSnapshotResponse)
+def finalize_campaign_creation(creation_id: str, req: CampaignCreationFinalizeRequest):
+    try:
+        context = campaign_runtime.finalize_creation(
+            creation_id,
+            player_name=req.player_name,
+            adapter_id=req.adapter_id,
+            profile_id=req.profile_id,
+            seed=req.seed,
+            player_class=req.player_class,
+            alignment=req.alignment,
+            skill_proficiencies=req.skill_proficiencies,
+            assigned_stats=req.assigned_stats,
+            creation_answers=req.creation_answers,
+            creation_profile=req.creation_profile,
+            location=req.location,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"Creation flow not found: {creation_id}") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return campaign_runtime.snapshot(
+        context.campaign_id,
+        narrative=context.recent_event_log[0]["summary"] if context.recent_event_log else "",
+    )
+
+
 @router.post("/campaigns", response_model=CampaignSnapshotResponse)
 def create_campaign(req: CreateCampaignRequest):
     context = campaign_runtime.create_campaign(
@@ -35,6 +140,11 @@ def create_campaign(req: CreateCampaignRequest):
         adapter_id=req.adapter_id,
         profile_id=req.profile_id,
         seed=req.seed,
+        alignment=req.alignment,
+        skill_proficiencies=req.skill_proficiencies,
+        stats=req.stats,
+        creation_answers=req.creation_answers,
+        creation_profile=req.creation_profile,
     )
     return campaign_runtime.snapshot(
         context.campaign_id,
