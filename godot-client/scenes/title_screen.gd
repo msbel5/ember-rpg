@@ -1,6 +1,7 @@
 extends Control
 
 const PROFILE_PATH := "user://client_profile.cfg"
+const ScreenshotCapture = preload("res://scripts/ui/screenshot_capture.gd")
 
 @onready var new_game_btn: Button = $VBoxContainer/NewGameButton
 @onready var continue_btn: Button = $VBoxContainer/ContinueButton
@@ -184,3 +185,16 @@ func _last_player_id() -> String:
 	if profile.load(PROFILE_PATH) != OK:
 		return ""
 	return str(profile.get_value("profile", "last_player_id", "")).strip_edges()
+
+
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed):
+		return
+	if event.keycode != KEY_F12:
+		return
+	var screenshot_path = ScreenshotCapture.capture_viewport(get_viewport(), "phase2/title", "title_screen")
+	if screenshot_path.is_empty():
+		status_label.text = "Viewport capture failed."
+	else:
+		status_label.text = "Viewport capture saved: %s" % screenshot_path
+	get_viewport().set_input_as_handled()

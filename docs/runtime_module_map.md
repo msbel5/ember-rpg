@@ -34,7 +34,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/handlers/combat_state.py` | 185 | CombatStateMixin (11) | - |
 | `frp-backend/engine/api/handlers/exploration_handlers.py` | 9 | ExplorationMixin (0) | - |
 | `frp-backend/engine/api/handlers/exploration_interaction.py` | 364 | ExplorationInteractionMixin (11) | - |
-| `frp-backend/engine/api/handlers/exploration_navigation.py` | 414 | ExplorationNavigationMixin (6) | - |
+| `frp-backend/engine/api/handlers/exploration_navigation.py` | 440 | ExplorationNavigationMixin (6) | - |
 | `frp-backend/engine/api/handlers/helper_checks.py` | 199 | HelperChecksMixin (12) | - |
 | `frp-backend/engine/api/handlers/helper_world.py` | 441 | HelperWorldMixin (11) | - |
 | `frp-backend/engine/api/handlers/helpers.py` | 9 | HelperMixin (0) | - |
@@ -141,8 +141,8 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/tools/terminal_client.py` | 39 | - | run |
 | `godot-client/autoloads/backend.gd` | 207 | - | _ready, create_session, start_creation, finalize_creation |
 | `godot-client/autoloads/game_state.gd` | 231 | - | update_from_response, reset, is_in_combat, get_player_hp_ratio |
-| `godot-client/scenes/game_session.gd` | 399 | - | _ready, _enter_scene, _on_scene_entered, _on_scene_session_loaded |
-| `godot-client/scenes/title_screen.gd` | 186 | - | _ready, _on_new_game, _on_continue, _on_quit |
+| `godot-client/scenes/game_session.gd` | 426 | - | _ready, _enter_scene, _on_scene_entered, _on_scene_session_loaded |
+| `godot-client/scenes/title_screen.gd` | 200 | - | _ready, _on_new_game, _on_continue, _on_quit |
 | `godot-client/scripts/asset/asset_bootstrap.gd` | 38 | AssetBootstrap (0) | - |
 | `godot-client/scripts/asset/asset_manifest.gd` | 38 | AssetManifest (0) | - |
 | `godot-client/scripts/game_session_helpers.gd` | 96 | GameSessionHelpers (0) | - |
@@ -157,6 +157,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/scripts/ui/narrative_panel.gd` | 73 | NarrativePanelWidget (0) | _ready, load_history, append_system_text, append_command |
 | `godot-client/scripts/ui/quest_panel.gd` | 131 | QuestPanelWidget (0) | _ready, set_waiting, _refresh, _build_active_row |
 | `godot-client/scripts/ui/save_load_panel.gd` | 131 | SaveLoadPanelWidget (0) | _ready, open_panel, close_panel, set_busy |
+| `godot-client/scripts/ui/screenshot_capture.gd` | 28 | - | - |
 | `godot-client/scripts/ui/status_bar.gd` | 57 | GameStatusBar (0) | _ready, _refresh |
 | `godot-client/scripts/world/camera_controller.gd` | 36 | - | _ready, focus_on_tile, zoom_in, zoom_out |
 | `godot-client/scripts/world/entity_layer.gd` | 147 | - | _ready, render_entities, get_entity_at_tile, _with_bucket |
@@ -164,6 +165,6 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/scripts/world/selection_overlay.gd` | 44 | SelectionOverlay (0) | set_hover_tile, set_selected_tile, clear_hover, clear_selection |
 | `godot-client/scripts/world/tile_catalog.gd` | 133 | TileCatalog (0) | - |
 | `godot-client/scripts/world/tilemap_controller.gd` | 46 | - | _ready, render_map, get_map_size, _ensure_tileset |
-| `godot-client/scripts/world/world_view.gd` | 143 | - | _ready, refresh_from_state, _refresh_from_state, _gui_input |
+| `godot-client/scripts/world/world_view.gd` | 153 | - | _ready, refresh_from_state, _refresh_from_state, _gui_input |
 | `godot-client/tests/doubles/backend_probe.gd` | 29 | - | _ensure_base_url, _post, _http_get, _http_delete |
 | `godot-client/tests/run_headless_tests.gd` | 367 | - | _initialize, _run_tests, _assert_true, _game_state |

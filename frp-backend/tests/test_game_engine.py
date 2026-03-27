@@ -698,6 +698,23 @@ class TestHandleMove:
         assert "don't know" in result.narrative.lower() or "direction" in result.narrative.lower()
         assert warrior_session.dm_context.location != "the dungeon"
 
+    def test_move_to_coordinate_accepts_parser_normalized_spacing(self, engine, warrior_session):
+        warrior_session.map_data = MapData(
+            width=12,
+            height=12,
+            tiles=[[TileType.FLOOR for _ in range(12)] for _ in range(12)],
+            rooms=[],
+            spawn_point=(5, 5),
+            metadata={"map_type": "wilderness"},
+        )
+        warrior_session.position = [5, 5]
+        warrior_session.sync_player_state()
+
+        result = engine.process_action(warrior_session, "move to 7,4")
+
+        assert warrior_session.position == [7, 4]
+        assert "position: 7,4" in result.narrative.lower()
+
     def test_move_default_forward(self, engine, warrior_session):
         result = engine.process_action(warrior_session, "move")
         assert len(result.narrative) > 0
@@ -998,12 +1015,12 @@ class TestGoToHardening:
 
         goto_result = engine.process_action(goto_session, "approach target npc")
         assert "walk" in goto_result.narrative.lower()
-        assert goto_session.position == [7, 1]
+        assert goto_session.position == [5, 1]
         assert goto_session.game_time.hour == 9
-        assert goto_session.game_time.minute == 45
+        assert goto_session.game_time.minute == 15
         assert goto_session.ap_tracker.current_ap == 2
 
-    def test_go_to_tracks_live_target_until_adjacent(self, engine):
+    def test_go_to_tracks_live_target_until_social_range(self, engine):
         session = engine.new_session("Walker", "warrior", location="Forest Road")
         tiles = [[TileType.FLOOR for _ in range(12)] for _ in range(12)]
         for i in range(12):
@@ -1039,7 +1056,7 @@ class TestGoToHardening:
             result = engine.process_action(session, "approach target npc")
 
         assert "close enough" in result.narrative.lower()
-        assert manhattan_distance(session.position, session.entities["target_npc"]["position"]) <= 1
+        assert distance(session.position, session.entities["target_npc"]["position"]) <= 3
 
     def test_go_to_routes_around_blocking_npc(self, engine):
         session = engine.new_session("Walker", "warrior", location="Forest Road")
@@ -1079,6 +1096,51 @@ class TestGoToHardening:
         assert "walk" in result.narrative.lower()
         assert session.position != [1, 1]
         assert session.position != [2, 1]
+
+    def test_go_to_stops_within_social_range_when_adjacent_tiles_are_blocked(self, engine):
+        session = engine.new_session("Walker", "warrior", location="Forest Road")
+        tiles = [[TileType.FLOOR for _ in range(12)] for _ in range(12)]
+        for i in range(12):
+            tiles[0][i] = TileType.WALL
+            tiles[11][i] = TileType.WALL
+            tiles[i][0] = TileType.WALL
+            tiles[i][11] = TileType.WALL
+        session.map_data = MapData(width=12, height=12, tiles=tiles, rooms=[], spawn_point=(1, 1))
+        session.position = [1, 1]
+        session.entities = {
+            "target_npc": {
+                "name": "Counter Merchant",
+                "type": "npc",
+                "position": [6, 1],
+                "role": "merchant",
+                "faction": "merchant_guild",
+                "blocking": True,
+            }
+        }
+        session.spatial_index = SpatialIndex()
+        session.player_entity.position = (1, 1)
+        session.spatial_index.add(session.player_entity)
+        for blocker_id, pos in {
+            "north_wall": (6, 0),
+            "south_wall": (6, 2),
+            "left_blocker": (5, 1),
+            "right_blocker": (7, 1),
+        }.items():
+            blocker = Entity(
+                id=blocker_id,
+                entity_type=EntityType.NPC,
+                name=blocker_id,
+                position=pos,
+                glyph="B",
+                color="red",
+                blocking=True,
+            )
+            session.spatial_index.add(blocker)
+
+        result = engine.process_action(session, "approach counter merchant")
+
+        assert "close enough" in result.narrative.lower()
+        assert distance(session.position, session.entities["target_npc"]["position"]) <= 3
 
 
 class TestSocialRangeHardening:
@@ -1195,11 +1257,28 @@ class TestHandleUnknown:
         assert result.narrative
         assert len(result.narrative) > 0
 
+    def test_unknown_action_does_not_spend_ap(self, engine, warrior_session):
+        ap_before = warrior_session.ap_tracker.current_ap
+
+        engine.process_action(warrior_session, "address dm what am i missing")
+
+        assert warrior_session.ap_tracker.current_ap == ap_before
+
     def test_unknown_contains_input(self, engine, warrior_session):
         result = engine.process_action(warrior_session, "dance wildly")
         # narrative should reference the action in some way (via template or LLM)
         assert result.narrative
         assert len(result.narrative) > 0
+
+
+class TestMetaCommands:
+    def test_think_does_not_spend_ap(self, engine, warrior_session):
+        ap_before = warrior_session.ap_tracker.current_ap
+
+        result = engine.process_action(warrior_session, "think about the town history")
+
+        assert result.narrative
+        assert warrior_session.ap_tracker.current_ap == ap_before
 
 
 # ---------------------------------------------------------------------------
