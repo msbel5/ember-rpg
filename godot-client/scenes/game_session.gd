@@ -234,8 +234,9 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
-		command_bar.focus_input()
-		get_viewport().set_input_as_handled()
+		if _should_focus_command_bar_on_enter():
+			command_bar.focus_input()
+			get_viewport().set_input_as_handled()
 		return
 
 	var direction = ""
@@ -266,6 +267,12 @@ func _input(event: InputEvent) -> void:
 		if direction != "":
 			_submit_action("move %s" % direction)
 			get_viewport().set_input_as_handled()
+
+
+func _should_focus_command_bar_on_enter() -> bool:
+	if save_load_panel.visible:
+		return false
+	return not command_bar.has_input_focus()
 
 
 func _on_backend_error(message: String) -> void:

@@ -15,6 +15,7 @@ func _ready() -> void:
 func render_map(map_payload: Dictionary) -> void:
 	_ensure_tileset()
 	clear()
+	modulate = TileCatalog.adapter_world_tint(_current_adapter_id())
 
 	var payload = map_payload
 	if payload.is_empty() or not payload.has("tiles"):
@@ -44,3 +45,12 @@ func _ensure_tileset() -> void:
 	tile_set = built["tile_set"]
 	_source_id = int(built["source_id"])
 	_atlas = built["atlas"]
+
+
+func _current_adapter_id() -> String:
+	var loop = Engine.get_main_loop()
+	if loop is SceneTree:
+		var game_state = loop.root.get_node_or_null("GameState")
+		if game_state != null:
+			return str(game_state.adapter_id)
+	return "fantasy_ember"

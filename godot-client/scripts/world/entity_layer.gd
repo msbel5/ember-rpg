@@ -2,6 +2,20 @@ extends Node2D
 
 const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const EntitySpriteCatalog = preload("res://scripts/world/entity_sprite_catalog.gd")
+const ADAPTER_BUCKET_TINTS := {
+	"fantasy_ember": {
+		"player": Color(1.00, 0.95, 0.86),
+		"npc": Color(1.00, 0.90, 0.72),
+		"enemy": Color(0.96, 0.54, 0.42),
+		"item": Color(0.88, 1.00, 0.84),
+	},
+	"scifi_frontier": {
+		"player": Color(0.76, 0.95, 1.00),
+		"npc": Color(0.76, 1.00, 0.92),
+		"enemy": Color(1.00, 0.58, 0.76),
+		"item": Color(0.94, 1.00, 0.72),
+	},
+}
 
 var _marker_textures: Dictionary = {}
 var _entities_by_tile: Dictionary = {}
@@ -70,6 +84,7 @@ func _create_sprite_entity(entry: Dictionary) -> void:
 		sprite.texture = _marker_textures.get(bucket, _marker_textures["player"])
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.centered = true
+	sprite.modulate = adapter_bucket_tint(str(entry.get("bucket", "npc")), _current_adapter_id())
 	sprite.position = _tile_to_world(tile_position)
 	add_child(sprite)
 	_register_entity(tile_position, entry)
@@ -145,3 +160,19 @@ func _tile_to_world(tile_position: Vector2i) -> Vector2:
 		(tile_position.x + 0.5) * TileCatalog.TILE_SIZE,
 		(tile_position.y + 0.5) * TileCatalog.TILE_SIZE
 	)
+
+
+static func adapter_bucket_tint(bucket: String, adapter_id: String) -> Color:
+	var normalized_adapter = adapter_id.strip_edges().to_lower()
+	var normalized_bucket = bucket.strip_edges().to_lower()
+	var palette = ADAPTER_BUCKET_TINTS.get(normalized_adapter, ADAPTER_BUCKET_TINTS["fantasy_ember"])
+	return palette.get(normalized_bucket, Color.WHITE)
+
+
+func _current_adapter_id() -> String:
+	var loop = Engine.get_main_loop()
+	if loop is SceneTree:
+		var game_state = loop.root.get_node_or_null("GameState")
+		if game_state != null:
+			return str(game_state.adapter_id)
+	return "fantasy_ember"

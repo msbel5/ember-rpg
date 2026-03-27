@@ -35,6 +35,10 @@ const TILE_PALETTE := {
 	"wood_floor": Color(0.52, 0.36, 0.22),
 	"cobblestone": Color(0.40, 0.40, 0.43),
 }
+const ADAPTER_WORLD_TINT := {
+	"fantasy_ember": Color(1.00, 0.95, 0.90),
+	"scifi_frontier": Color(0.84, 0.96, 1.00),
+}
 
 
 static func build_tileset() -> Dictionary:
@@ -108,6 +112,13 @@ static func resolve_tile_name(raw_value) -> String:
 	if TILE_PALETTE.has(tile_name):
 		return tile_name
 	return "grass"
+
+
+static func adapter_world_tint(adapter_id: String) -> Color:
+	var normalized = adapter_id.strip_edges().to_lower()
+	if ADAPTER_WORLD_TINT.has(normalized):
+		return ADAPTER_WORLD_TINT[normalized]
+	return Color.WHITE
 
 
 static func _draw_tile(target_image: Image, offset_x: int, base_color: Color) -> void:

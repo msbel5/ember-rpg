@@ -287,6 +287,7 @@ func _test_scene_instantiation() -> void:
 func _test_world_shell() -> void:
 	var placeholder_map = TileCatalog.build_placeholder_map(12, 8)
 	_assert_true(int(placeholder_map.get("width", 0)) == 12 and placeholder_map.get("tiles", []).size() == 8, "TileCatalog builds placeholder maps")
+	_assert_true(TileCatalog.adapter_world_tint("fantasy_ember") != TileCatalog.adapter_world_tint("scifi_frontier"), "TileCatalog exposes adapter-specific world tints")
 
 	var terrain = TilemapController.new()
 	root.add_child(terrain)
@@ -322,6 +323,10 @@ func _test_entity_rendering() -> void:
 	})
 	_assert_true(layer.get_child_count() == 4, "EntityLayer renders player plus world entities as sprites")
 	_assert_true(layer.get_entity_at_tile(Vector2i(5, 4)).get("name", "") == "Merchant", "EntityLayer can look up entities by tile")
+	_assert_true(
+		EntityLayer.adapter_bucket_tint("player", "fantasy_ember") != EntityLayer.adapter_bucket_tint("player", "scifi_frontier"),
+		"EntityLayer exposes adapter-specific sprite tinting"
+	)
 	layer.free()
 	await process_frame
 
@@ -396,6 +401,12 @@ func _test_ui_panels() -> void:
 	var quick_save_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/QuickSaveButton")
 	var saves_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SavesButton")
 	_assert_true(quick_save_button != null and saves_button != null, "Command bar exposes save controls")
+	command_bar.focus_input()
+	await process_frame
+	_assert_true(not session_instance._should_focus_command_bar_on_enter(), "GameSession does not swallow Enter when the command bar already has focus")
+	quick_save_button.grab_focus()
+	await process_frame
+	_assert_true(session_instance._should_focus_command_bar_on_enter(), "GameSession focuses the command bar on Enter when input is not focused")
 
 	game_state.update_from_response({
 		"scene": "combat",
