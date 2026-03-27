@@ -1,6 +1,8 @@
 extends RefCounted
 class_name TileCatalog
 
+const AssetBootstrap = preload("res://scripts/asset/asset_bootstrap.gd")
+const AssetManifest = preload("res://scripts/asset/asset_manifest.gd")
 const TILE_SIZE := 16
 const DEFAULT_MAP_SIZE := Vector2i(48, 36)
 const TILE_ORDER := [
@@ -39,7 +41,13 @@ static func build_tileset() -> Dictionary:
 	var atlas_image = Image.create(TILE_SIZE * TILE_ORDER.size(), TILE_SIZE, false, Image.FORMAT_RGBA8)
 	for tile_index in range(TILE_ORDER.size()):
 		var tile_name = TILE_ORDER[tile_index]
-		_draw_tile(atlas_image, tile_index * TILE_SIZE, TILE_PALETTE[tile_name])
+		var tile_image = _load_tile_image(tile_name)
+		if tile_image != null:
+			if tile_image.get_width() != TILE_SIZE or tile_image.get_height() != TILE_SIZE:
+				tile_image.resize(TILE_SIZE, TILE_SIZE, Image.INTERPOLATE_NEAREST)
+			atlas_image.blit_rect(tile_image, Rect2i(0, 0, tile_image.get_width(), tile_image.get_height()), Vector2i(tile_index * TILE_SIZE, 0))
+		else:
+			_draw_tile(atlas_image, tile_index * TILE_SIZE, TILE_PALETTE[tile_name])
 
 	var atlas_texture = ImageTexture.create_from_image(atlas_image)
 	var tile_set = TileSet.new()
@@ -109,3 +117,17 @@ static func _draw_tile(target_image: Image, offset_x: int, base_color: Color) ->
 	for step_y in range(2, TILE_SIZE - 1, 4):
 		for step_x in range(2, TILE_SIZE - 1, 4):
 			target_image.set_pixel(offset_x + step_x, step_y, base_color.lightened(0.14))
+
+
+static func _load_tile_image(tile_name: String) -> Image:
+	var relative_path = AssetManifest.resolve_relative_path("tiles", tile_name)
+	if relative_path.is_empty():
+		relative_path = "tiles/%s.png" % tile_name
+	var asset_path = AssetBootstrap.resolve_asset(relative_path, "res://assets/tiles/%s.png" % tile_name)
+	if asset_path.is_empty() or not FileAccess.file_exists(asset_path):
+		return null
+
+	var image = Image.new()
+	if image.load(ProjectSettings.globalize_path(asset_path)) != OK:
+		return null
+	return image

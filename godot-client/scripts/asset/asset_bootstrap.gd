@@ -25,5 +25,14 @@ static func resolve_generated_asset(relative_path: String) -> String:
 	return ""
 
 
+static func resolve_asset(relative_path: String, fallback_res_path: String = "") -> String:
+	var generated_path = resolve_generated_asset(relative_path)
+	if not generated_path.is_empty():
+		return generated_path
+	if not fallback_res_path.is_empty() and FileAccess.file_exists(fallback_res_path):
+		return fallback_res_path
+	return ""
+
+
 static func can_generate_runtime() -> bool:
 	return not OS.has_feature("web") and not resolve_hf_token().is_empty()

@@ -2,11 +2,13 @@ extends SceneTree
 
 const BackendProbe = preload("res://tests/doubles/backend_probe.gd")
 const AssetBootstrap = preload("res://scripts/asset/asset_bootstrap.gd")
+const AssetManifest = preload("res://scripts/asset/asset_manifest.gd")
 const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
 const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const TilemapController = preload("res://scripts/world/tilemap_controller.gd")
 const CameraController = preload("res://scripts/world/camera_controller.gd")
 const EntityLayer = preload("res://scripts/world/entity_layer.gd")
+const EntitySpriteCatalog = preload("res://scripts/world/entity_sprite_catalog.gd")
 
 var failures: int = 0
 
@@ -26,6 +28,7 @@ func _run_tests() -> void:
 	await _test_world_shell()
 	await _test_entity_rendering()
 	await _test_ui_panels()
+	_test_generated_asset_resolution()
 	_test_asset_bootstrap()
 	await _cleanup_test_nodes()
 
@@ -286,6 +289,34 @@ func _test_asset_bootstrap() -> void:
 	if expected.is_empty():
 		expected = OS.get_environment("HUGGINGFACE_API_KEY").strip_edges()
 	_assert_true(AssetBootstrap.resolve_hf_token() == expected, "AssetBootstrap resolves HF token with fallback")
+
+
+func _test_generated_asset_resolution() -> void:
+	DirAccess.make_dir_recursive_absolute("user://assets/generated/sprites")
+	DirAccess.make_dir_recursive_absolute("user://assets/generated/tiles")
+
+	var sprite_image = Image.create(4, 4, false, Image.FORMAT_RGBA8)
+	sprite_image.fill(Color(0.9, 0.2, 0.2))
+	sprite_image.save_png("user://assets/generated/sprites/cache_test.png")
+
+	var tile_image = Image.create(4, 4, false, Image.FORMAT_RGBA8)
+	tile_image.fill(Color(0.2, 0.8, 0.2))
+	tile_image.save_png("user://assets/generated/tiles/cache_tile.png")
+
+	var manifest_file = FileAccess.open("user://assets/generated/manifest.json", FileAccess.WRITE)
+	manifest_file.store_string(JSON.stringify({
+		"sprites": {
+			"cache_test": {"relative_path": "sprites/cache_test.png"},
+		},
+		"tiles": {
+			"cache_tile": {"relative_path": "tiles/cache_tile.png"},
+		},
+	}))
+	manifest_file.close()
+
+	_assert_true(AssetBootstrap.resolve_generated_asset("sprites/cache_test.png").begins_with("user://"), "AssetBootstrap prefers user-generated sprite assets")
+	_assert_true(AssetManifest.resolve_relative_path("sprites", "cache_test") == "sprites/cache_test.png", "AssetManifest reads generated sprite manifest entries")
+	_assert_true(EntitySpriteCatalog.resolve_texture("cache_test") != null, "EntitySpriteCatalog resolves generated textures through manifest data")
 
 
 func _cleanup_test_nodes() -> void:
