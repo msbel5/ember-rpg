@@ -112,3 +112,57 @@ def test_play_meta_save_uses_snapshot_player(monkeypatch):
     assert new_snapshot is snapshot
     assert client.saved == ("camp_1", "demo_slot", "Chaos")
     assert history[-1] == "Saved to demo_slot."
+
+
+def test_play_meta_saves_uses_player_discovery(monkeypatch):
+    _install_play_stubs(monkeypatch)
+    sys.modules.pop("tools.play", None)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play = importlib.import_module("tools.play")
+
+    class DummyClient:
+        def __init__(self):
+            self.requested_player = None
+
+        def list_saves_for_player(self, player_id):
+            self.requested_player = player_id
+            return [{"slot_name": "demo", "save_id": "demo", "location": "Harbor Town", "timestamp": "2026-03-28T10:00:00"}]
+
+    client = DummyClient()
+    snapshot = {
+        "campaign_id": "camp_1",
+        "campaign": {"player": {"name": "Chaos"}},
+    }
+    history = []
+
+    handled, new_snapshot = play._handle_meta_command(client, snapshot, history, "saves")
+
+    assert handled is True
+    assert new_snapshot is snapshot
+    assert client.requested_player == "Chaos"
+    assert history[-1].startswith("demo | Harbor Town |")
+
+
+def test_play_meta_load_without_slot_uses_browser(monkeypatch):
+    _install_play_stubs(monkeypatch)
+    sys.modules.pop("tools.play", None)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play = importlib.import_module("tools.play")
+    monkeypatch.setattr(play, "browse_campaign_saves", lambda client, default_player_id="": {"campaign_id": "camp_loaded", "narrative": "Loaded."})
+
+    class DummyClient:
+        pass
+
+    snapshot = {
+        "campaign_id": "camp_1",
+        "campaign": {"player": {"name": "Chaos"}},
+    }
+    history = ["old line"]
+
+    handled, new_snapshot = play._handle_meta_command(DummyClient(), snapshot, history, "load")
+
+    assert handled is True
+    assert new_snapshot["campaign_id"] == "camp_loaded"
+    assert history == ["Loaded."]

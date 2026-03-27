@@ -61,7 +61,7 @@ func _gui_input(event: InputEvent) -> void:
 			if not entity.is_empty():
 				command_requested.emit(command_for_entity(entity))
 			else:
-				command_requested.emit("move to %d,%d" % [tile_position.x, tile_position.y])
+				command_requested.emit(command_for_tile(tile_position))
 			accept_event()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			world_camera.zoom_in()
@@ -72,17 +72,41 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func command_for_entity(entity: Dictionary) -> String:
-	var bucket = str(entity.get("bucket", "npc"))
 	var entity_name = str(entity.get("name", "")).strip_edges().to_lower()
 	if entity_name.is_empty():
 		entity_name = "target"
+	var actions = entity.get("context_actions", [])
+	if actions is Array and not actions.is_empty():
+		var primary_action = str(actions[0]).strip_edges().to_lower()
+		match primary_action:
+			"pick up":
+				return "pick up %s" % entity_name
+			"attack":
+				return "attack %s" % entity_name
+			"trade":
+				return "trade %s" % entity_name
+			"talk":
+				return "talk %s" % entity_name
+			"examine":
+				return "examine %s" % entity_name
+	var bucket = str(entity.get("bucket", "npc"))
 	match bucket:
 		"enemy":
 			return "attack %s" % entity_name
 		"item":
-			return "examine %s" % entity_name
+			return "pick up %s" % entity_name
 		_:
 			return "talk %s" % entity_name
+
+
+func command_for_tile(tile_position: Vector2i) -> String:
+	var tile_name = _tile_name_at(tile_position)
+	match tile_name:
+		"door":
+			return "open door"
+		"well", "fountain", "tree":
+			return "examine %s" % tile_name
+	return "move to %d,%d" % [tile_position.x, tile_position.y]
 
 
 func _resolve_player_template() -> String:
@@ -126,6 +150,9 @@ func _describe_hover(tile_position: Vector2i, entity: Dictionary) -> String:
 		if actions is Array and not actions.is_empty():
 			return "%s (%s)" % [str(entity.get("name", "Unknown")), ", ".join(actions)]
 		return str(entity.get("name", "Unknown"))
+	var tile_name = _tile_name_at(tile_position)
+	if tile_name in ["door", "well", "fountain", "tree"]:
+		return "%s (%s)" % [tile_name.capitalize(), command_for_tile(tile_position)]
 	return "Tile %d, %d" % [tile_position.x, tile_position.y]
 
 
@@ -135,6 +162,16 @@ func _tile_in_bounds(tile_position: Vector2i) -> bool:
 	if width <= 0 or height <= 0:
 		return tile_position.x >= 0 and tile_position.y >= 0
 	return tile_position.x >= 0 and tile_position.y >= 0 and tile_position.x < width and tile_position.y < height
+
+
+func _tile_name_at(tile_position: Vector2i) -> String:
+	var tiles = GameState.map_data.get("tiles", [])
+	if not (tiles is Array) or tile_position.y < 0 or tile_position.y >= tiles.size():
+		return ""
+	var row = tiles[tile_position.y]
+	if not (row is Array) or tile_position.x < 0 or tile_position.x >= row.size():
+		return ""
+	return TileCatalog.resolve_tile_name(row[tile_position.x])
 
 
 func capture_world_image() -> Image:

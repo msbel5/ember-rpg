@@ -217,7 +217,7 @@ func _post(path: String, body: String, callback: Callable) -> void:
 		return
 	var http = HTTPRequest.new()
 	add_child(http)
-	http.request_completed.connect(_on_request_completed.bind(http, callback))
+	http.request_completed.connect(_on_request_completed.bind(path, http, callback))
 	request_started.emit()
 
 	var full_url = base_url + path
@@ -233,7 +233,7 @@ func _http_get(path: String, callback: Callable) -> void:
 		return
 	var http = HTTPRequest.new()
 	add_child(http)
-	http.request_completed.connect(_on_request_completed.bind(http, callback))
+	http.request_completed.connect(_on_request_completed.bind(path, http, callback))
 	request_started.emit()
 
 	var error = http.request(base_url + path)
@@ -246,7 +246,7 @@ func _http_delete(path: String, callback: Callable) -> void:
 		return
 	var http = HTTPRequest.new()
 	add_child(http)
-	http.request_completed.connect(_on_request_completed.bind(http, callback))
+	http.request_completed.connect(_on_request_completed.bind(path, http, callback))
 	request_started.emit()
 
 	var error = http.request(base_url + path, [], HTTPClient.METHOD_DELETE)
@@ -254,14 +254,15 @@ func _http_delete(path: String, callback: Callable) -> void:
 		request_error.emit("HTTP request failed: %s" % error_string(error))
 		http.queue_free()
 
-func _on_request_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray, http: HTTPRequest, callback: Callable) -> void:
+func _on_request_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray, path: String, http: HTTPRequest, callback: Callable) -> void:
 	http.queue_free()
 	request_finished.emit()
 	print("[Backend] Response: result=%d, code=%d, body_size=%d" % [result, response_code, body.size()])
 
 	if result != HTTPRequest.RESULT_SUCCESS:
 		request_error.emit("Connection failed — is the backend running?")
-		callback.call(null)
+		if callback.is_valid():
+			callback.call(null)
 		return
 
 	if response_code >= 400:
@@ -271,18 +272,35 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 		if err_data and err_data.has("detail"):
 			err_msg = str(err_data["detail"])
 		if response_code == 404:
-			request_error.emit("Session not found. Start a new game?")
+			request_error.emit(_not_found_message_for(path))
 		else:
 			request_error.emit("Backend error: %s" % err_msg)
 		print("[Backend] Error %d: %s" % [response_code, err_msg])
-		callback.call(null)
+		if callback.is_valid():
+			callback.call(null)
 		return
 
 	var text = body.get_string_from_utf8()
 	var data = JSON.parse_string(text)
 	if data == null:
 		request_error.emit("Invalid response from backend")
-		callback.call(null)
+		if callback.is_valid():
+			callback.call(null)
 		return
 
-	callback.call(data)
+	if callback.is_valid():
+		callback.call(data)
+
+
+func _not_found_message_for(path: String) -> String:
+	if path.begins_with("/game/campaigns/load/"):
+		return "Save not found. Choose another save."
+	if path.begins_with("/game/campaigns/creation/"):
+		return "Character creation expired. Start a new campaign."
+	if path.begins_with("/game/campaigns/"):
+		return "Campaign not found. Start a new campaign or load a different save."
+	if path.begins_with("/game/saves/"):
+		return "No saves found for that player."
+	if path.begins_with("/game/session/"):
+		return "Session not found. Start a new game?"
+	return "Requested content was not found."

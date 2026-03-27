@@ -44,8 +44,10 @@ const CLASS_PRIORITIES := {
 
 @onready var name_input: LineEdit = $CharacterCreation/VBox/IdentitySection/NameInput
 @onready var adapter_option: OptionButton = $CharacterCreation/VBox/IdentitySection/AdapterOption
-@onready var profile_input: LineEdit = $CharacterCreation/VBox/IdentitySection/ProfileInput
-@onready var seed_input: LineEdit = $CharacterCreation/VBox/IdentitySection/SeedInput
+@onready var advanced_toggle_button: Button = $CharacterCreation/VBox/IdentitySection/AdvancedToggleButton
+@onready var advanced_section: VBoxContainer = $CharacterCreation/VBox/IdentitySection/AdvancedSection
+@onready var profile_input: LineEdit = $CharacterCreation/VBox/IdentitySection/AdvancedSection/ProfileInput
+@onready var seed_input: LineEdit = $CharacterCreation/VBox/IdentitySection/AdvancedSection/SeedInput
 
 @onready var question_progress_label: Label = $CharacterCreation/VBox/QuestionnaireSection/QuestionProgressLabel
 @onready var question_prompt: RichTextLabel = $CharacterCreation/VBox/QuestionnaireSection/QuestionPrompt
@@ -67,10 +69,17 @@ const CLASS_PRIORITIES := {
 @onready var next_button: Button = $CharacterCreation/VBox/ButtonRow/NextButton
 @onready var start_button: Button = $CharacterCreation/VBox/ButtonRow/StartButton
 @onready var cancel_button: Button = $CharacterCreation/VBox/ButtonRow/BackButton
+@onready var load_browser: Panel = $LoadBrowser
+@onready var load_player_input: LineEdit = $LoadBrowser/VBox/PlayerRow/PlayerInput
+@onready var load_refresh_button: Button = $LoadBrowser/VBox/PlayerRow/RefreshButton
+@onready var load_status_label: Label = $LoadBrowser/VBox/StatusLabel
+@onready var load_save_list: VBoxContainer = $LoadBrowser/VBox/SaveScroll/SaveList
+@onready var load_close_button: Button = $LoadBrowser/VBox/ButtonRow/CloseButton
 
 var wizard_step: int = STEP_IDENTITY
 var creation_payload: Dictionary = {}
 var is_busy: bool = false
+var load_browser_busy: bool = false
 var _build_touched: bool = false
 var _suppress_build_tracking: bool = false
 var _draft_build_state: Dictionary = {}
@@ -78,6 +87,7 @@ var _draft_build_state: Dictionary = {}
 
 func _ready() -> void:
 	creation_panel.visible = false
+	load_browser.visible = false
 	status_label.text = ""
 	new_game_btn.pressed.connect(_on_new_game)
 	continue_btn.pressed.connect(_on_continue)
@@ -90,17 +100,24 @@ func _ready() -> void:
 	save_roll_button.pressed.connect(_on_save_roll_pressed)
 	swap_roll_button.pressed.connect(_on_swap_roll_pressed)
 	auto_assign_button.pressed.connect(_on_auto_assign_pressed)
+	advanced_toggle_button.pressed.connect(_on_toggle_advanced)
+	load_refresh_button.pressed.connect(_refresh_load_browser)
+	load_close_button.pressed.connect(_close_load_browser)
+	load_player_input.text_submitted.connect(func(_text: String) -> void:
+		_refresh_load_browser()
+	)
 	Backend.request_error.connect(_on_backend_error)
 
 	_populate_adapter_options()
 	_populate_class_options()
 	_wire_build_tracking()
 	_reset_wizard_state()
-	continue_btn.disabled = _last_campaign_save_id().is_empty()
+	continue_btn.disabled = false
 
 
 func _on_new_game() -> void:
 	status_label.text = ""
+	load_browser.visible = false
 	creation_panel.visible = true
 	creation_payload = {}
 	wizard_step = STEP_IDENTITY
@@ -109,14 +126,7 @@ func _on_new_game() -> void:
 
 
 func _on_continue() -> void:
-	var save_id = _last_campaign_save_id()
-	if save_id.is_empty():
-		status_label.text = "No previous campaign save found."
-		continue_btn.disabled = true
-		return
-	continue_btn.disabled = true
-	status_label.text = "Loading %s..." % save_id
-	Backend.load_campaign(save_id, _on_campaign_loaded.bind(save_id))
+	_open_load_browser()
 
 
 func _on_quit() -> void:
@@ -302,9 +312,12 @@ func _on_campaign_created(data) -> void:
 
 
 func _on_campaign_loaded(data, requested_save_id: String) -> void:
-	continue_btn.disabled = false
+	_set_load_browser_busy(false, "")
 	if data == null:
-		status_label.text = "Failed to load %s." % requested_save_id
+		if load_browser.visible:
+			load_status_label.text = "Failed to load %s." % requested_save_id
+		else:
+			status_label.text = "Failed to load %s." % requested_save_id
 		return
 	GameState.reset()
 	GameState.update_from_response(data)
@@ -317,8 +330,12 @@ func _on_campaign_loaded(data, requested_save_id: String) -> void:
 
 func _on_backend_error(message: String) -> void:
 	_set_busy(false, "")
-	continue_btn.disabled = _last_campaign_save_id().is_empty()
-	status_label.text = message
+	_set_load_browser_busy(false, "")
+	continue_btn.disabled = false
+	if load_browser.visible:
+		load_status_label.text = message
+	else:
+		status_label.text = message
 
 
 func _set_busy(busy: bool, message: String) -> void:
@@ -364,6 +381,123 @@ func _refresh_creation_view() -> void:
 		_update_build_view()
 	elif wizard_step == STEP_SUMMARY:
 		_update_summary_preview()
+
+
+func _on_toggle_advanced() -> void:
+	advanced_section.visible = not advanced_section.visible
+	_update_advanced_toggle_text()
+
+
+func _update_advanced_toggle_text() -> void:
+	advanced_toggle_button.text = "Hide Advanced Settings" if advanced_section.visible else "Show Advanced Settings"
+
+
+func _open_load_browser() -> void:
+	creation_panel.visible = false
+	load_browser.visible = true
+	status_label.text = ""
+	load_player_input.text = _last_player_id()
+	load_status_label.text = "Choose a save slot to continue."
+	_clear_load_rows()
+	_update_advanced_toggle_text()
+	_refresh_load_browser()
+	load_player_input.grab_focus()
+
+
+func _close_load_browser() -> void:
+	load_browser.visible = false
+	load_status_label.text = "Choose a save slot to continue."
+	_clear_load_rows()
+	new_game_btn.grab_focus()
+
+
+func _refresh_load_browser() -> void:
+	var player_id = load_player_input.text.strip_edges()
+	if player_id.is_empty():
+		load_status_label.text = "Enter a player name to browse saves."
+		_clear_load_rows()
+		return
+	_set_load_browser_busy(true, "Loading saves for %s..." % player_id)
+	Backend.list_saves(_on_saves_listed, player_id)
+
+
+func _on_saves_listed(data) -> void:
+	_set_load_browser_busy(false, "")
+	_clear_load_rows()
+	if data == null:
+		return
+	var entries: Array = []
+	if data is Array:
+		entries = data
+	elif data is Dictionary and data.get("saves", []) is Array:
+		entries = data.get("saves", [])
+	if entries.is_empty():
+		load_status_label.text = "No saves found for this player."
+		return
+	var sorted_entries := entries.duplicate()
+	sorted_entries.sort_custom(func(left, right) -> bool:
+		return str(left.get("timestamp", "")) > str(right.get("timestamp", ""))
+	)
+	for entry in sorted_entries:
+		if entry is Dictionary:
+			load_save_list.add_child(_build_save_row(entry))
+	load_status_label.text = "Found %d save(s)." % sorted_entries.size()
+
+
+func _build_save_row(entry: Dictionary) -> Control:
+	var row = HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var info = VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var slot_name = str(entry.get("slot_name", entry.get("save_id", "Unnamed Save")))
+	var location = str(entry.get("location", "Unknown Location"))
+	var title = Label.new()
+	title.text = "%s — %s" % [slot_name, location]
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(title)
+
+	var meta = Label.new()
+	meta.text = "Saved %s" % str(entry.get("timestamp", "Unknown time"))
+	meta.modulate = Color(0.75, 0.75, 0.78)
+	meta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(meta)
+
+	row.add_child(info)
+
+	var load_button = Button.new()
+	var save_id = str(entry.get("save_id", slot_name))
+	load_button.text = "Load"
+	load_button.tooltip_text = "Load %s" % slot_name
+	load_button.pressed.connect(func() -> void:
+		_load_save_from_browser(save_id)
+	)
+	row.add_child(load_button)
+	return row
+
+
+func _load_save_from_browser(save_id: String) -> void:
+	if save_id.is_empty():
+		load_status_label.text = "This save is missing a save_id."
+		return
+	_set_load_browser_busy(true, "Loading %s..." % save_id)
+	Backend.load_campaign(save_id, _on_campaign_loaded.bind(save_id))
+
+
+func _clear_load_rows() -> void:
+	for child in load_save_list.get_children():
+		child.queue_free()
+
+
+func _set_load_browser_busy(busy: bool, message: String) -> void:
+	load_browser_busy = busy
+	continue_btn.disabled = busy
+	load_refresh_button.disabled = busy
+	load_close_button.disabled = busy
+	if not message.is_empty():
+		load_status_label.text = message
 
 
 func _update_question_view() -> void:
@@ -539,6 +673,7 @@ func _select_class_by_id(class_id: String) -> void:
 
 func _reset_wizard_state() -> void:
 	creation_panel.visible = false
+	load_browser.visible = false
 	creation_payload = {}
 	wizard_step = STEP_IDENTITY
 	_build_touched = false
@@ -547,13 +682,17 @@ func _reset_wizard_state() -> void:
 	name_input.text = _last_player_id()
 	profile_input.text = "standard"
 	seed_input.text = ""
+	advanced_section.visible = false
 	alignment_input.text = ""
 	skills_input.text = ""
 	for ability in ABILITY_ORDER:
 		_stat_input_for(ability).text = "10"
 	_suppress_build_tracking = false
 	status_label.text = ""
-	continue_btn.disabled = _last_campaign_save_id().is_empty()
+	continue_btn.disabled = false
+	load_status_label.text = "Choose a save slot to continue."
+	_clear_load_rows()
+	_update_advanced_toggle_text()
 	_refresh_creation_view()
 
 
@@ -644,7 +783,7 @@ func _last_adapter_id() -> String:
 
 func _store_last_campaign_save_id(save_id: String) -> void:
 	_store_profile_value("last_campaign_save_id", save_id.strip_edges())
-	continue_btn.disabled = save_id.strip_edges().is_empty()
+	continue_btn.disabled = false
 
 
 func _last_campaign_save_id() -> String:
@@ -652,11 +791,13 @@ func _last_campaign_save_id() -> String:
 
 
 func _store_profile_value(key: String, value) -> void:
-	if str(value).strip_edges().is_empty():
-		return
 	var profile = ConfigFile.new()
 	profile.load(PROFILE_PATH)
-	profile.set_value("profile", key, value)
+	if str(value).strip_edges().is_empty():
+		if profile.has_section_key("profile", key):
+			profile.erase_section_key("profile", key)
+	else:
+		profile.set_value("profile", key, value)
 	profile.save(PROFILE_PATH)
 
 

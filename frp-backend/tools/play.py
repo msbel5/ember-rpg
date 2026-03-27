@@ -23,7 +23,7 @@ from rich.prompt import Prompt
 from rich.rule import Rule
 
 from tools.campaign_client import CampaignClient
-from tools.play_topdown import render_character_sheet, render_header, start_or_load_campaign
+from tools.play_topdown import browse_campaign_saves, render_character_sheet, render_header, start_or_load_campaign
 
 console = Console(force_terminal=True)
 
@@ -72,15 +72,20 @@ def _current_player_id(snapshot: dict[str, object]) -> str:
 
 def _handle_meta_command(client: CampaignClient, snapshot: dict, history: list[str], command: str) -> tuple[bool, dict]:
     lower = command.lower().strip()
-    if lower.startswith("save"):
+    if lower == "save" or lower.startswith("save "):
         slot_name = command[4:].strip() or "quicksave"
         metadata = client.save_campaign(str(snapshot.get("campaign_id", "")), slot_name, _current_player_id(snapshot))
         _append(history, "Saved to %s." % metadata.get("slot_name", slot_name))
         return True, snapshot
-    if lower.startswith("load "):
+    if lower == "load" or lower.startswith("load "):
         save_id = command[5:].strip()
         if not save_id:
-            return True, snapshot
+            loaded = browse_campaign_saves(client, _current_player_id(snapshot))
+            if loaded is None:
+                return True, snapshot
+            history.clear()
+            _append(history, loaded.get("narrative", "Loaded."))
+            return True, loaded
         try:
             loaded = client.load_campaign(save_id)
             history.clear()
@@ -91,7 +96,7 @@ def _handle_meta_command(client: CampaignClient, snapshot: dict, history: list[s
             return True, snapshot
     if lower == "saves":
         try:
-            saves = client.list_saves(str(snapshot.get("campaign_id", "")))
+            saves = client.list_saves_for_player(_current_player_id(snapshot))
         except Exception as exc:
             _append(history, "Save listing failed: %s" % exc)
             return True, snapshot

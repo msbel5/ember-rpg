@@ -377,6 +377,18 @@ def render_character_sheet(snapshot: dict[str, Any]) -> Panel:
             int(sheet["ap"]["max"]),
         )
     )
+    creation_summary = dict(sheet.get("creation_summary") or {})
+    if creation_summary:
+        text.append("\n\nCreation\n", style="bold")
+        text.append(
+            "Recommended: %s / %s\n"
+            % (
+                str(creation_summary.get("recommended_class", sheet["class"])).capitalize(),
+                str(creation_summary.get("recommended_alignment", sheet["alignment"])),
+            )
+        )
+        text.append("Current roll: %s\n" % _roll_text(creation_summary.get("current_roll", [])))
+        text.append("Saved roll: %s" % _roll_text(creation_summary.get("saved_roll", [])))
     return Panel(text, title="[bold bright_white]Character[/bold bright_white]", border_style="bright_blue")
 
 
@@ -433,6 +445,103 @@ def _print_creation_snapshot(state: dict[str, Any]) -> None:
     summary.add_row("Saved roll", ", ".join(str(v) for v in state.get("saved_roll") or []))
     summary.add_row("Final class", f"{sheet['class']} / {sheet['alignment']}")
     console.print(summary)
+
+
+def _roll_text(values) -> str:
+    if values is None:
+        return "-"
+    if not isinstance(values, list):
+        values = list(values)
+    if not values:
+        return "-"
+    return ", ".join(str(value) for value in values)
+
+
+def _print_save_browser(player_id: str, saves: list[dict[str, Any]]) -> None:
+    table = Table(title=f"Recent Saves for {player_id}", show_header=True, expand=True)
+    table.add_column("#", justify="center", width=4)
+    table.add_column("Slot")
+    table.add_column("Save ID")
+    table.add_column("Location")
+    table.add_column("Updated")
+    for index, entry in enumerate(saves, start=1):
+        table.add_row(
+            str(index),
+            str(entry.get("slot_name", entry.get("save_id", "save"))),
+            str(entry.get("save_id", "")),
+            str(entry.get("location", "Unknown")),
+            str(entry.get("timestamp", "")),
+        )
+    console.print(table)
+
+
+def _resolve_save_choice(choice: str, saves: list[dict[str, Any]]) -> str:
+    cleaned = choice.strip()
+    if not cleaned:
+        return ""
+    if cleaned.isdigit():
+        index = int(cleaned) - 1
+        if 0 <= index < len(saves):
+            return str(saves[index].get("save_id") or saves[index].get("slot_name", ""))
+    for entry in saves:
+        save_id = str(entry.get("save_id", "")).strip()
+        slot_name = str(entry.get("slot_name", "")).strip()
+        if cleaned == save_id or cleaned == slot_name:
+            return save_id or slot_name
+    return ""
+
+
+def browse_campaign_saves(client: CampaignClient, default_player_id: str = "") -> dict[str, Any] | None:
+    player_id = default_player_id.strip() or "player"
+    while True:
+        try:
+            typed_player_id = Prompt.ask("[bold green]Player[/bold green]", default=player_id).strip()
+        except (EOFError, KeyboardInterrupt):
+            return None
+        player_id = typed_player_id or player_id or "player"
+        try:
+            saves = list(client.list_saves_for_player(player_id))
+        except Exception as exc:
+            console.print(Panel(str(exc), title="Load Failed", border_style="red"))
+            action = _ask_choice("Retry, New, or Quit?", ["retry", "new", "quit"], "retry")
+            if action == "retry":
+                continue
+            if action == "new":
+                return character_creation(client)
+            return None
+        if not saves:
+            console.print(Panel(f"No saves found for {player_id}.", title="Load", border_style="yellow"))
+            action = _ask_choice("Retry, New, or Quit?", ["retry", "new", "quit"], "retry")
+            if action == "retry":
+                continue
+            if action == "new":
+                return character_creation(client)
+            return None
+
+        _print_save_browser(player_id, saves)
+        while True:
+            try:
+                choice = Prompt.ask("[bold green]Select save number or id[/bold green]", default="1").strip()
+            except (EOFError, KeyboardInterrupt):
+                return None
+            if choice.lower() in {"new", "quit", "back"}:
+                if choice.lower() == "new":
+                    return character_creation(client)
+                return None
+            save_id = _resolve_save_choice(choice, saves)
+            if not save_id:
+                console.print(Panel("Unknown save selection. Enter a number or save id.", title="Load", border_style="yellow"))
+                continue
+            try:
+                return client.load_campaign(save_id)
+            except Exception as exc:
+                console.print(Panel(str(exc), title="Load Failed", border_style="red"))
+                action = _ask_choice("Retry, New, or Quit?", ["retry", "new", "quit"], "retry")
+                if action == "retry":
+                    break
+                if action == "new":
+                    return character_creation(client)
+                return None
 
 
 def _prompt_questionnaire(client: CampaignClient, creation_state: dict[str, Any]) -> dict[str, Any]:
@@ -554,21 +663,7 @@ def start_or_load_campaign(client: CampaignClient | None = None) -> dict[str, An
     if mode == "quit":
         return None
     if mode == "load":
-        while True:
-            save_id = Prompt.ask("[bold green]Save slot[/bold green]", default="").strip()
-            if not save_id:
-                console.print(Panel("Enter a save slot or choose New Game.", title="Load", border_style="yellow"))
-                return character_creation(client)
-            try:
-                return client.load_campaign(save_id)
-            except Exception as exc:
-                console.print(Panel(str(exc), title="Load Failed", border_style="red"))
-                retry = _ask_choice("Try again or start new?", ["retry", "new", "quit"], "retry")
-                if retry == "retry":
-                    continue
-                if retry == "quit":
-                    return None
-                return character_creation(client)
+        return browse_campaign_saves(client)
     return character_creation(client)
 
 
@@ -664,7 +759,7 @@ def _handle_meta_command(client: CampaignClient, screen_state: CampaignScreenSta
     if lower in {"help", "?"}:
         _append_history(screen_state.narrative_history, "[system] Use freeform RPG commands or settlement orders like 'assign Smith to hauling'.")
         return True
-    if lower.startswith("save"):
+    if lower == "save" or lower.startswith("save "):
         slot_name = command[4:].strip() or "quicksave"
         try:
             metadata = client.save_campaign(screen_state.campaign_id, slot_name, str(screen_state.campaign.get("player", {}).get("name", "player")))
@@ -673,7 +768,7 @@ def _handle_meta_command(client: CampaignClient, screen_state: CampaignScreenSta
             _append_history(screen_state.narrative_history, "[system] Save failed: %s" % exc)
         return True
     if lower == "saves":
-        saves = client.list_saves(screen_state.campaign_id)
+        saves = client.list_saves_for_player(_current_player_id(screen_state.snapshot))
         if not saves:
             _append_history(screen_state.narrative_history, "[system] No save slots found.")
         else:
@@ -688,15 +783,22 @@ def _handle_meta_command(client: CampaignClient, screen_state: CampaignScreenSta
                     ),
                 )
         return True
-    if lower.startswith("load "):
+    if lower == "load" or lower.startswith("load "):
         save_id = command[5:].strip()
-        if save_id:
-            try:
-                screen_state.snapshot = client.load_campaign(save_id)
-                screen_state.narrative_history = []
-                _append_history(screen_state.narrative_history, screen_state.snapshot.get("narrative", "Loaded."))
-            except Exception as exc:
-                _append_history(screen_state.narrative_history, "[system] Load failed: %s" % exc)
+        if not save_id:
+            loaded = browse_campaign_saves(client, _current_player_id(screen_state.snapshot))
+            if loaded is None:
+                return True
+            screen_state.snapshot = loaded
+            screen_state.narrative_history = []
+            _append_history(screen_state.narrative_history, screen_state.snapshot.get("narrative", "Loaded."))
+            return True
+        try:
+            screen_state.snapshot = client.load_campaign(save_id)
+            screen_state.narrative_history = []
+            _append_history(screen_state.narrative_history, screen_state.snapshot.get("narrative", "Loaded."))
+        except Exception as exc:
+            _append_history(screen_state.narrative_history, "[system] Load failed: %s" % exc)
         return True
     return False
 

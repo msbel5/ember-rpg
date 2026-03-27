@@ -265,7 +265,7 @@ func _test_response_normalizer() -> void:
 		and town_tiles[0][1] == "cobblestone"
 		and town_tiles[0][2] == "grass"
 		and town_tiles[1][0] == "water"
-		and town_tiles[1][1] == "wood_floor"
+		and town_tiles[1][1] == "door"
 		and town_tiles[1][2] == "stone_floor",
 		"ResponseNormalizer converts backend ASCII town symbols into named terrain tiles"
 	)
@@ -315,6 +315,10 @@ func _test_scene_instantiation() -> void:
 		title_instance._on_new_game()
 		await process_frame
 		_assert_true(title_instance.get_node("CharacterCreation").visible, "TitleScreen opens the creation wizard")
+		_assert_true(not title_instance.get_node("CharacterCreation/VBox/IdentitySection/AdvancedSection").visible, "TitleScreen hides advanced settings by default")
+		title_instance._on_continue()
+		await process_frame
+		_assert_true(title_instance.get_node("LoadBrowser").visible, "TitleScreen opens the save browser for continue flow")
 		title_instance._apply_creation_state({
 			"creation_id": "create_1",
 			"player_name": "Chaos",
@@ -428,9 +432,17 @@ func _test_entity_rendering() -> void:
 	root.add_child(session_instance)
 	await process_frame
 	var session_world_view = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer")
+	var game_state = _game_state()
 	_assert_true(session_world_view.command_for_entity({"bucket": "npc", "name": "Merchant"}) == "talk merchant", "World view synthesizes talk commands for npc clicks")
 	_assert_true(session_world_view.command_for_entity({"bucket": "enemy", "name": "Wolf"}) == "attack wolf", "World view synthesizes attack commands for enemy clicks")
-	_assert_true(session_world_view.command_for_entity({"bucket": "item", "name": "Bread"}) == "examine bread", "World view synthesizes examine commands for item clicks")
+	_assert_true(session_world_view.command_for_entity({"bucket": "item", "name": "Bread"}) == "pick up bread", "World view synthesizes pickup commands for item clicks")
+	game_state.map_data = {
+		"width": 3,
+		"height": 1,
+		"tiles": [["door", "well", "grass"]],
+	}
+	_assert_true(session_world_view.command_for_tile(Vector2i(0, 0)) == "open door", "World view synthesizes open commands for door tiles")
+	_assert_true(session_world_view.command_for_tile(Vector2i(1, 0)) == "examine well", "World view synthesizes examine commands for well tiles")
 	session_instance.free()
 	await process_frame
 
@@ -553,6 +565,21 @@ func _test_ui_panels() -> void:
 	_assert_true(combat_panel.visible, "Combat panel appears when combat state is active")
 	var combat_rows = session_instance.get_node("OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/CombatantScroll/CombatantList")
 	_assert_true(combat_rows.get_child_count() >= 2, "Combat panel renders combatant rows")
+	var combat_attack_button = session_instance.get_node("OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/QuickActions/AttackButton")
+	_assert_true(not combat_attack_button.disabled, "Combat attack stays enabled on the player's turn")
+	game_state.update_from_response({
+		"combat": {
+			"round": 3,
+			"active": "Wolf",
+			"ended": false,
+			"combatants": [
+				{"name": "Chaos", "hp": 18, "max_hp": 20, "ap": 2, "dead": false, "resources": {"movement_remaining": 3, "speed": 6}},
+				{"name": "Wolf", "hp": 7, "max_hp": 9, "ap": 2, "dead": false, "resources": {"movement_remaining": 4, "speed": 8}},
+			],
+		},
+	})
+	await process_frame
+	_assert_true(combat_attack_button.disabled, "Combat attack disables when it is not the player's turn")
 
 	var active_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/ActiveList")
 	var offer_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/OfferList")

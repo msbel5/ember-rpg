@@ -145,6 +145,10 @@ class CampaignClient:
     def list_saves(self, campaign_id: str) -> list[dict[str, Any]]:
         return self.runtime.list_campaign_saves(campaign_id)
 
+    def list_saves_for_player(self, player_id: str) -> list[dict[str, Any]]:
+        cleaned = player_id.strip() or "player"
+        return self.runtime.save_system.list_saves(player_name=cleaned)
+
     def load_campaign(self, save_id: str) -> dict[str, Any]:
         context = self.runtime.load_campaign(save_id)
         snapshot = self.runtime.snapshot(context.campaign_id, narrative=f"Loaded campaign from {save_id}.")

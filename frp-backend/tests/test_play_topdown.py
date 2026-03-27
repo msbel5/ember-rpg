@@ -156,6 +156,40 @@ def test_render_header_uses_combat_ap(monkeypatch):
     assert "AP: 3/3" in rendered
 
 
+def test_render_character_sheet_includes_creation_summary(monkeypatch):
+    _install_topdown_stubs(monkeypatch)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play_topdown = importlib.import_module("tools.play_topdown")
+
+    panel = play_topdown.render_character_sheet(
+        {
+            "character_sheet": {
+                "name": "Renderer",
+                "class": "warrior",
+                "alignment": "LG",
+                "stats": [
+                    {"ability": "MIG", "value": 16, "modifier": 3},
+                ],
+                "skills": ["athletics"],
+                "hp": {"current": 12, "max": 12},
+                "sp": {"current": 4, "max": 4},
+                "ap": {"current": 3, "max": 3},
+                "creation_summary": {
+                    "recommended_class": "warrior",
+                    "recommended_alignment": "LG",
+                    "current_roll": [16, 14, 12, 10, 8, 8],
+                    "saved_roll": [14, 12, 12, 10, 9, 8],
+                },
+            }
+        }
+    )
+
+    rendered = panel.args[0]
+    assert any("Creation" in part for part, _style in rendered.parts)
+    assert any("Recommended" in part for part, _style in rendered.parts)
+
+
 def test_character_creation_smoke(monkeypatch):
     _install_topdown_stubs(monkeypatch)
     sys.modules.pop("tools.play_topdown", None)
@@ -179,10 +213,17 @@ def test_start_or_load_campaign_can_load_existing_save(monkeypatch):
 
     play_topdown = importlib.import_module("tools.play_topdown")
 
-    answers = iter(["load", "slot_a"])
+    answers = iter(["load", "Chaos", "1"])
     monkeypatch.setattr(play_topdown.Prompt, "ask", lambda *args, **kwargs: next(answers))
 
     class DummyClient:
+        def list_saves_for_player(self, player_id):
+            assert player_id == "Chaos"
+            return [
+                {"save_id": "slot_a", "slot_name": "slot_a", "location": "Harbor Town", "timestamp": "2026-03-28T10:00:00"},
+                {"save_id": "slot_b", "slot_name": "slot_b", "location": "Forest Edge", "timestamp": "2026-03-28T11:00:00"},
+            ]
+
         def load_campaign(self, save_id):
             assert save_id == "slot_a"
             return {"campaign_id": "camp_loaded", "narrative": "Loaded."}
@@ -190,3 +231,26 @@ def test_start_or_load_campaign_can_load_existing_save(monkeypatch):
     snapshot = play_topdown.start_or_load_campaign(DummyClient())
 
     assert snapshot["campaign_id"] == "camp_loaded"
+
+
+def test_start_or_load_campaign_invalid_save_input_falls_back_to_new(monkeypatch):
+    _install_topdown_stubs(monkeypatch)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play_topdown = importlib.import_module("tools.play_topdown")
+
+    answers = iter(["load", "Chaos", "bogus", "new"])
+    monkeypatch.setattr(play_topdown.Prompt, "ask", lambda *args, **kwargs: next(answers))
+    monkeypatch.setattr(play_topdown, "character_creation", lambda client=None: {"campaign_id": "camp_new"})
+
+    class DummyClient:
+        def list_saves_for_player(self, player_id):
+            assert player_id == "Chaos"
+            return [{"save_id": "slot_a", "slot_name": "slot_a", "location": "Harbor Town", "timestamp": "2026-03-28T10:00:00"}]
+
+        def load_campaign(self, save_id):
+            raise AssertionError("load_campaign should not be called for invalid selection fallback")
+
+    snapshot = play_topdown.start_or_load_campaign(DummyClient())
+
+    assert snapshot["campaign_id"] == "camp_new"

@@ -159,7 +159,7 @@ static func context_actions_for(entry: Dictionary) -> Array:
 		return entry["context_actions"]
 	var entity_type = str(entry.get("type", entry.get("entity_type", "npc"))).to_lower()
 	if entity_type == "item":
-		return ["examine", "pick up"]
+		return ["pick up", "examine"]
 	if entity_type == "creature" or str(entry.get("disposition", "")).to_lower() == "hostile":
 		return ["attack", "examine"]
 	var role = str(entry.get("role", entry.get("job", ""))).to_lower()
@@ -293,7 +293,7 @@ static func _normalize_tile_symbol(raw_value, map_type: String) -> String:
 		"t":
 			return "wall"
 		"d":
-			return "wood_floor"
+			return "door"
 		">", "<":
 			return "stone_floor"
 		",":
@@ -307,13 +307,13 @@ static func _normalize_tile_symbol(raw_value, map_type: String) -> String:
 		"corridor":
 			return "stone_floor"
 		"door":
-			return "wood_floor"
+			return "door"
 		"road":
 			return "cobblestone"
 		"cobble", "cobblestone":
 			return "cobblestone"
 		"floor", "wood_floor", "stone_floor":
 			return tile_name
-		"well", "fountain":
-			return "stone_floor"
+		"well", "fountain", "tree":
+			return tile_name
 	return tile_name

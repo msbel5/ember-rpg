@@ -11,8 +11,12 @@ const TILE_ORDER := [
 	"dirt_path",
 	"water",
 	"wall",
+	"door",
 	"wood_floor",
 	"cobblestone",
+	"tree",
+	"well",
+	"fountain",
 ]
 const TILE_ALIASES := {
 	"floor": "stone_floor",
@@ -32,8 +36,12 @@ const TILE_PALETTE := {
 	"dirt_path": Color(0.48, 0.32, 0.18),
 	"water": Color(0.16, 0.30, 0.52),
 	"wall": Color(0.22, 0.24, 0.28),
+	"door": Color(0.78, 0.60, 0.24),
 	"wood_floor": Color(0.52, 0.36, 0.22),
 	"cobblestone": Color(0.40, 0.40, 0.43),
+	"tree": Color(0.12, 0.34, 0.14),
+	"well": Color(0.28, 0.56, 0.62),
+	"fountain": Color(0.34, 0.68, 0.80),
 }
 const ADAPTER_WORLD_TINT := {
 	"fantasy_ember": Color(1.00, 0.95, 0.90),

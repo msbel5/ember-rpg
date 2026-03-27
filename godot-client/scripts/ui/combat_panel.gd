@@ -42,12 +42,13 @@ func _refresh() -> void:
 	var combatants: Array = combat_state.get("combatants", [])
 	round_label.text = "Round %d" % int(combat_state.get("round", 1))
 	active_label.text = "Turn: %s" % str(combat_state.get("active", "Unknown"))
+	var is_player_turn = _is_player_turn(combat_state)
 
 	var living_enemies := _living_enemies(combatants)
 	summary_label.text = "%d combatant(s), %d hostile target(s)" % [combatants.size(), living_enemies.size()]
-	attack_button.disabled = _is_waiting or living_enemies.is_empty()
-	disengage_button.disabled = _is_waiting
-	inventory_button.disabled = _is_waiting
+	attack_button.disabled = _is_waiting or living_enemies.is_empty() or not is_player_turn
+	disengage_button.disabled = _is_waiting or not is_player_turn
+	inventory_button.disabled = _is_waiting or not is_player_turn
 
 	_clear_rows()
 	for combatant in combatants:
@@ -76,7 +77,7 @@ func _build_row(combatant: Dictionary) -> Control:
 	if is_enemy and not bool(combatant.get("dead", false)):
 		var attack_target_button = Button.new()
 		attack_target_button.text = "Attack"
-		attack_target_button.disabled = _is_waiting
+		attack_target_button.disabled = _is_waiting or not _is_player_turn(GameState.combat_state)
 		attack_target_button.pressed.connect(func() -> void:
 			command_requested.emit("attack %s" % str(combatant.get("name", "")).to_lower())
 		)
@@ -128,6 +129,10 @@ func _living_enemies(combatants: Array) -> Array:
 
 func _is_player_combatant(combatant: Dictionary) -> bool:
 	return str(combatant.get("name", "")).strip_edges() == str(GameState.player.get("name", "")).strip_edges()
+
+
+func _is_player_turn(combat_state: Dictionary) -> bool:
+	return str(combat_state.get("active", "")).strip_edges() == str(GameState.player.get("name", "")).strip_edges()
 
 
 func _clear_rows() -> void:

@@ -42,7 +42,7 @@ offset_top = 105.0
 offset_right = 240.0
 offset_bottom = 135.0
 grow_horizontal = 2
-text = "Campaign Creation Recovery Build"
+text = "Choose Your Adventure"
 horizontal_alignment = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
@@ -137,19 +137,27 @@ text = "Adapter"
 [node name="AdapterOption" type="OptionButton" parent="CharacterCreation/VBox/IdentitySection"]
 layout_mode = 2
 
-[node name="ProfileLabel" type="Label" parent="CharacterCreation/VBox/IdentitySection"]
+[node name="AdvancedToggleButton" type="Button" parent="CharacterCreation/VBox/IdentitySection"]
+layout_mode = 2
+text = "Show Advanced Settings"
+
+[node name="AdvancedSection" type="VBoxContainer" parent="CharacterCreation/VBox/IdentitySection"]
+visible = false
+layout_mode = 2
+
+[node name="ProfileLabel" type="Label" parent="CharacterCreation/VBox/IdentitySection/AdvancedSection"]
 layout_mode = 2
 text = "Profile"
 
-[node name="ProfileInput" type="LineEdit" parent="CharacterCreation/VBox/IdentitySection"]
+[node name="ProfileInput" type="LineEdit" parent="CharacterCreation/VBox/IdentitySection/AdvancedSection"]
 layout_mode = 2
 text = "standard"
 
-[node name="SeedLabel" type="Label" parent="CharacterCreation/VBox/IdentitySection"]
+[node name="SeedLabel" type="Label" parent="CharacterCreation/VBox/IdentitySection/AdvancedSection"]
 layout_mode = 2
 text = "Seed (optional)"
 
-[node name="SeedInput" type="LineEdit" parent="CharacterCreation/VBox/IdentitySection"]
+[node name="SeedInput" type="LineEdit" parent="CharacterCreation/VBox/IdentitySection/AdvancedSection"]
 layout_mode = 2
 placeholder_text = "Leave blank for random"
 
@@ -311,3 +319,76 @@ text = "Start Campaign"
 [node name="BackButton" type="Button" parent="CharacterCreation/VBox/ButtonRow"]
 layout_mode = 2
 text = "Cancel"
+
+[node name="LoadBrowser" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340.0
+offset_top = -240.0
+offset_right = 340.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="LoadBrowser"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+
+[node name="TitleLabel" type="Label" parent="LoadBrowser/VBox"]
+layout_mode = 2
+text = "Resume Campaign"
+horizontal_alignment = 1
+
+[node name="HelpLabel" type="Label" parent="LoadBrowser/VBox"]
+layout_mode = 2
+text = "Browse recent saves for a player profile."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="PlayerRow" type="HBoxContainer" parent="LoadBrowser/VBox"]
+layout_mode = 2
+
+[node name="PlayerLabel" type="Label" parent="LoadBrowser/VBox/PlayerRow"]
+layout_mode = 2
+text = "Player"
+
+[node name="PlayerInput" type="LineEdit" parent="LoadBrowser/VBox/PlayerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter player name..."
+
+[node name="RefreshButton" type="Button" parent="LoadBrowser/VBox/PlayerRow"]
+layout_mode = 2
+text = "Refresh"
+
+[node name="StatusLabel" type="Label" parent="LoadBrowser/VBox"]
+layout_mode = 2
+text = "Choose a save slot to continue."
+autowrap_mode = 3
+
+[node name="SaveScroll" type="ScrollContainer" parent="LoadBrowser/VBox"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SaveList" type="VBoxContainer" parent="LoadBrowser/VBox/SaveScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ButtonRow" type="HBoxContainer" parent="LoadBrowser/VBox"]
+layout_mode = 2
+
+[node name="CloseButton" type="Button" parent="LoadBrowser/VBox/ButtonRow"]
+layout_mode = 2
+text = "Back"
