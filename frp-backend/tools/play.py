@@ -23,7 +23,7 @@ from rich.prompt import Prompt
 from rich.rule import Rule
 
 from tools.campaign_client import CampaignClient
-from tools.play_topdown import character_creation, render_header
+from tools.play_topdown import character_creation, render_character_sheet, render_header
 
 console = Console(force_terminal=True)
 
@@ -41,6 +41,7 @@ def _print_scene(snapshot: dict, history: list[str]) -> None:
     console.print(render_header(snapshot))
     console.print()
     console.print(Panel("\n\n".join(history[-12:]), title="Narrative", border_style="bright_blue"))
+    console.print(render_character_sheet(snapshot))
     settlement = snapshot.get("campaign", {}).get("settlement", {})
     if settlement:
         console.print(
@@ -62,13 +63,8 @@ def _print_scene(snapshot: dict, history: list[str]) -> None:
 
 def main() -> None:
     console.print(Rule("[bold bright_yellow]EMBER RPG[/bold bright_yellow]", style="bright_yellow"))
-    creation = character_creation()
     client = CampaignClient()
-    snapshot = client.create_campaign(
-        player_name=creation["name"],
-        player_class=creation["player_class"],
-        adapter_id=creation["adapter_id"],
-    )
+    snapshot = character_creation(client)
     history: list[str] = [snapshot.get("narrative", "")]
 
     while True:

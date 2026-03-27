@@ -32,6 +32,7 @@ from rich.table import Table
 from rich.text import Text
 
 from engine.map import TileType
+from engine.core.character_creation import ABILITY_ORDER, assign_stats_to_class
 from tools.campaign_client import CampaignClient
 
 MAP_WIDTH = 40
@@ -86,6 +87,15 @@ LEGACY_TILE_GLYPHS = {
     TileType.TREE: ("T", "green"),
     TileType.ROAD: ("=", "yellow"),
     TileType.EMPTY: (" ", "black"),
+}
+
+ABILITY_LABELS = {
+    "MIG": "Might",
+    "END": "Endurance",
+    "AGI": "Agility",
+    "MND": "Mind",
+    "INS": "Insight",
+    "PRE": "Presence",
 }
 
 
@@ -290,6 +300,84 @@ def render_settlement(campaign: dict[str, Any]) -> Panel:
     return Panel(text, title="[bold bright_white]Settlement[/bold bright_white]", border_style="bright_blue")
 
 
+def build_character_sheet(snapshot: dict[str, Any]) -> dict[str, Any]:
+    sheet = dict(snapshot.get("character_sheet") or {})
+    if sheet:
+        return sheet
+
+    campaign = dict(snapshot.get("campaign") or snapshot)
+    player = dict(campaign.get("player") or snapshot.get("player") or {})
+    stats = dict(player.get("stats") or {})
+    if not stats:
+        stats = assign_stats_to_class(
+            list(campaign.get("creation_state", {}).get("current_roll") or []),
+            str(player.get("player_class", "warrior")),
+        )
+
+    abilities = []
+    for ability in ABILITY_ORDER:
+        value = int(stats.get(ability, 10))
+        abilities.append(
+            {
+                "ability": ability,
+                "label": ABILITY_LABELS.get(ability, ability),
+                "value": value,
+                "modifier": (value - 10) // 2,
+            }
+        )
+
+    ap_state = player.get("ap") if isinstance(player.get("ap"), dict) else {}
+    current_ap = int(ap_state.get("current", player.get("action_points", 0)))
+    max_ap = int(ap_state.get("max", player.get("max_action_points", max(current_ap, 1))))
+
+    return {
+        "name": str(player.get("name", "Adventurer")),
+        "class": str(player.get("player_class", "warrior")),
+        "alignment": str(player.get("alignment", campaign.get("creation_state", {}).get("recommended_alignment", "NN"))),
+        "skills": list(player.get("skill_proficiencies") or campaign.get("creation_state", {}).get("recommended_skills") or []),
+        "stats": abilities,
+        "hp": {
+            "current": int(player.get("hp", 0)),
+            "max": int(player.get("max_hp", 1)),
+        },
+        "ap": {
+            "current": current_ap,
+            "max": max_ap,
+        },
+        "adapter_id": str(snapshot.get("adapter_id", campaign.get("adapter_id", "fantasy_ember"))),
+        "profile_id": str(snapshot.get("profile_id", campaign.get("profile_id", "standard"))),
+        "creation_summary": dict(campaign.get("creation_state") or snapshot.get("creation_state") or {}),
+    }
+
+
+def render_character_sheet(snapshot: dict[str, Any]) -> Panel:
+    sheet = build_character_sheet(snapshot)
+    text = Text()
+    text.append("%s | %s | %s\n\n" % (sheet["name"], sheet["class"].capitalize(), sheet["alignment"]))
+    text.append("Stats\n", style="bold")
+    for stat in sheet["stats"]:
+        text.append(
+            "- %s: %d (%+d)\n" % (stat["ability"], int(stat["value"]), int(stat["modifier"]))
+        )
+    text.append("\nSkills\n", style="bold")
+    skills = sheet.get("skills") or []
+    if skills:
+        for skill in skills:
+            text.append("- %s\n" % skill)
+    else:
+        text.append("- None\n", style="dim")
+    text.append("\nResources\n", style="bold")
+    text.append(
+        "HP %d/%d  AP %d/%d" % (
+            int(sheet["hp"]["current"]),
+            int(sheet["hp"]["max"]),
+            int(sheet["ap"]["current"]),
+            int(sheet["ap"]["max"]),
+        )
+    )
+    return Panel(text, title="[bold bright_white]Character[/bold bright_white]", border_style="bright_blue")
+
+
 def render_commands() -> Panel:
     commands = "move/look/talk/attack/travel/assign/build/defend/harvest/save/load/quit"
     return Panel(commands, title="[bold]Commands[/bold]", border_style="bright_blue", height=3)
@@ -303,13 +391,148 @@ def render_full(screen_state: CampaignScreenState) -> Layout:
     layout["footer"].update(render_commands())
     layout["main"].split_row(Layout(name="map", ratio=2), Layout(name="sidebar", ratio=1))
     layout["map"].update(render_map(map_state))
-    layout["sidebar"].split_column(Layout(name="narrative", ratio=3), Layout(name="settlement", ratio=2))
+    layout["sidebar"].split_column(
+        Layout(name="narrative", ratio=3),
+        Layout(name="character", ratio=2),
+        Layout(name="settlement", ratio=2),
+    )
     layout["narrative"].update(render_narrative(screen_state.narrative_history))
+    layout["character"].update(render_character_sheet(screen_state.snapshot))
     layout["settlement"].update(render_settlement(screen_state.campaign))
     return layout
 
 
-def character_creation() -> dict[str, Any]:
+def _ask_choice(prompt: str, options: list[str], default: str) -> str:
+    if len(options) == 1:
+        return options[0]
+    return Prompt.ask(prompt, choices=options, default=default)
+
+
+def _ask_yes_no(prompt: str, default: str = "yes") -> str:
+    return Prompt.ask(prompt, choices=["yes", "no"], default=default)
+
+
+def _print_creation_snapshot(state: dict[str, Any]) -> None:
+    sheet = build_character_sheet(state)
+    summary = Table(title="Creation Summary", show_header=False, expand=True)
+    summary.add_column("Field")
+    summary.add_column("Value")
+    summary.add_row("Recommended class", str(state.get("recommended_class", "")))
+    summary.add_row("Recommended alignment", str(state.get("recommended_alignment", "")))
+    summary.add_row("Recommended skills", ", ".join(state.get("recommended_skills") or []))
+    summary.add_row("Current roll", ", ".join(str(v) for v in state.get("current_roll") or []))
+    summary.add_row("Saved roll", ", ".join(str(v) for v in state.get("saved_roll") or []))
+    summary.add_row("Final class", f"{sheet['class']} / {sheet['alignment']}")
+    console.print(summary)
+
+
+def _prompt_questionnaire(client: CampaignClient, creation_state: dict[str, Any]) -> dict[str, Any]:
+    for question in creation_state.get("questions", []):
+        answers = list(question.get("answers") or [])
+        if not answers:
+            continue
+        answer_choices = [str(answer.get("id")) for answer in answers if answer.get("id")]
+        answer_default = answer_choices[0]
+        question_panel = Table(title=str(question.get("text", question.get("id", "Question"))), show_header=True, expand=True)
+        question_panel.add_column("Choice")
+        question_panel.add_column("Text")
+        for answer in answers:
+            question_panel.add_row(str(answer.get("id", "")), str(answer.get("text", "")))
+        console.print(question_panel)
+        choice = _ask_choice(f"Answer for {question.get('id', 'question')}", answer_choices, answer_default)
+        creation_state = client.answer_creation(str(creation_state["creation_id"]), str(question["id"]), choice)
+        _print_creation_snapshot(creation_state)
+    return creation_state
+
+
+def _prompt_roll_controls(client: CampaignClient, creation_state: dict[str, Any]) -> dict[str, Any]:
+    while True:
+        roll = ", ".join(str(v) for v in creation_state.get("current_roll") or [])
+        saved = ", ".join(str(v) for v in creation_state.get("saved_roll") or [])
+        console.print(Panel(f"Current roll: {roll}\nSaved roll: {saved}", title="Dice", border_style="bright_blue"))
+        action = _ask_choice("Roll action", ["keep", "reroll", "save", "swap"], "keep")
+        if action == "reroll":
+            creation_state = client.reroll_creation(str(creation_state["creation_id"]))
+            continue
+        if action == "save":
+            creation_state = client.save_creation_roll(str(creation_state["creation_id"]))
+            continue
+        if action == "swap":
+            creation_state = client.swap_creation_roll(str(creation_state["creation_id"]))
+            continue
+        return creation_state
+
+
+def _prompt_stat_assignment(creation_state: dict[str, Any], auto_assign: bool) -> dict[str, int]:
+    rolled = [int(value) for value in creation_state.get("current_roll") or []]
+    if not rolled:
+        return {ability: 10 for ability in ABILITY_ORDER}
+    if auto_assign:
+        return assign_stats_to_class(rolled, str(creation_state.get("recommended_class", "warrior")))
+
+    ordered = sorted(rolled, reverse=True)
+    assigned: dict[str, int] = {}
+    for index, ability in enumerate(ABILITY_ORDER):
+        default_value = ordered[index] if index < len(ordered) else 10
+        value = Prompt.ask(
+            f"Assign {ability}",
+            default=str(default_value),
+        ).strip()
+        assigned[ability] = int(value or default_value)
+    return assigned
+
+
+def _finalize_creation(
+    client: CampaignClient,
+    creation_state: dict[str, Any],
+    name: str,
+    adapter_id: str,
+    profile_id: str,
+    seed: int | None,
+) -> dict[str, Any]:
+    recommended_class = str(creation_state.get("recommended_class", "warrior"))
+    recommended_alignment = str(creation_state.get("recommended_alignment", "NN"))
+    recommended_skills = list(creation_state.get("recommended_skills") or [])
+
+    class_choices = [recommended_class] + [value for value, _stats in CLASS_OPTIONS.values() if value != recommended_class]
+    chosen_class = _ask_choice("Class", class_choices, recommended_class)
+    chosen_alignment = Prompt.ask("[bold green]Alignment[/bold green]", default=recommended_alignment).strip() or recommended_alignment
+    skills_text = Prompt.ask(
+        "[bold green]Skills[/bold green] (comma-separated)",
+        default=", ".join(recommended_skills),
+    ).strip()
+    chosen_skills = [skill.strip() for skill in skills_text.split(",") if skill.strip()] or recommended_skills
+    auto_assign = _ask_yes_no("Auto assign rolled stats?", "yes") == "yes"
+    assigned_stats = _prompt_stat_assignment(creation_state, auto_assign)
+
+    final_snapshot = client.finalize_creation(
+        str(creation_state["creation_id"]),
+        player_name=name,
+        player_class=chosen_class,
+        alignment=chosen_alignment,
+        skill_proficiencies=chosen_skills,
+        assigned_stats=assigned_stats,
+        adapter_id=adapter_id,
+        profile_id=profile_id,
+        seed=seed,
+    )
+    final_snapshot["creation_state"] = dict(creation_state)
+    final_snapshot["creation_state"]["final_class"] = chosen_class
+    final_snapshot["creation_state"]["final_alignment"] = chosen_alignment
+    final_snapshot["creation_state"]["final_skills"] = chosen_skills
+    final_snapshot["creation_state"]["assigned_stats"] = dict(assigned_stats)
+    final_snapshot["character_sheet"] = client.build_character_sheet(final_snapshot, creation_state=final_snapshot["creation_state"])
+    final_snapshot["name"] = name
+    final_snapshot["player_class"] = chosen_class
+    final_snapshot["adapter_id"] = adapter_id
+    final_snapshot["profile_id"] = profile_id
+    final_snapshot["stats"] = dict(assigned_stats)
+    final_snapshot["map_type"] = "town" if adapter_id == "fantasy_ember" else "wilderness"
+    return final_snapshot
+
+
+def character_creation(client: CampaignClient | None = None) -> dict[str, Any]:
+    client = client or CampaignClient()
     console.print()
     console.print(Rule("[bold bright_yellow]EMBER RPG[/bold bright_yellow]", style="bright_yellow"))
     name = Prompt.ask("[bold green]Name[/bold green]", default="Stranger").strip() or "Stranger"
@@ -333,16 +556,28 @@ def character_creation() -> dict[str, Any]:
 
     class_choice = Prompt.ask("[bold green]Select class[/bold green]", choices=list(CLASS_OPTIONS.keys()), default="1")
     adapter_choice = Prompt.ask("[bold green]Select adapter[/bold green]", choices=list(ADAPTER_OPTIONS.keys()), default="1")
-    player_class, stats = CLASS_OPTIONS[class_choice]
+    profile_id = Prompt.ask("[bold green]Profile[/bold green]", default="standard").strip() or "standard"
+    seed_text = Prompt.ask("[bold green]Seed[/bold green]", default="").strip()
+    seed = int(seed_text) if seed_text else None
+    player_class, _stats = CLASS_OPTIONS[class_choice]
     adapter_id, _adapter_name = ADAPTER_OPTIONS[adapter_choice]
-    map_type = "town" if adapter_id == "fantasy_ember" else "wilderness"
-    return {
-        "name": name,
-        "player_class": player_class,
-        "adapter_id": adapter_id,
-        "map_type": map_type,
-        "stats": stats,
-    }
+
+    creation_state = client.start_creation(
+        name,
+        location="",
+        adapter_id=adapter_id,
+        profile_id=profile_id,
+        seed=seed,
+    )
+    _print_creation_snapshot(creation_state)
+    creation_state = _prompt_questionnaire(client, creation_state)
+    creation_state = _prompt_roll_controls(client, creation_state)
+    final_snapshot = _finalize_creation(client, creation_state, name, adapter_id, profile_id, seed)
+    final_snapshot["recommended_class"] = str(creation_state.get("recommended_class", player_class))
+    final_snapshot["recommended_alignment"] = str(creation_state.get("recommended_alignment", "NN"))
+    final_snapshot["recommended_skills"] = list(creation_state.get("recommended_skills") or [])
+    final_snapshot["questionnaire"] = list(creation_state.get("answers") or [])
+    return final_snapshot
 
 
 def read_input() -> str:
@@ -429,12 +664,7 @@ def _handle_meta_command(client: CampaignClient, screen_state: CampaignScreenSta
 
 def main() -> None:
     client = CampaignClient()
-    creation = character_creation()
-    snapshot = client.create_campaign(
-        player_name=creation["name"],
-        player_class=creation["player_class"],
-        adapter_id=creation["adapter_id"],
-    )
+    snapshot = character_creation(client)
     history = [snapshot.get("narrative", "")]
     screen_state = CampaignScreenState(snapshot=snapshot, narrative_history=history)
 

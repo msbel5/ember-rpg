@@ -169,3 +169,5 @@ def test_character_creation_smoke(monkeypatch):
     assert creation["player_class"] in {"warrior", "rogue", "mage", "priest"}
     assert creation["map_type"] in {"town", "dungeon", "wilderness"}
     assert creation["stats"]
+    assert creation["character_sheet"]["name"] == "Stranger"
+    assert creation["creation_state"]["questions"]
