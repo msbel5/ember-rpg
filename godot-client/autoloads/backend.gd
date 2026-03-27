@@ -48,26 +48,38 @@ func delete_session(session_id: String, callback: Callable) -> void:
 func get_map(session_id: String, callback: Callable) -> void:
 	_http_get("/game/session/%s/map" % session_id, callback)
 
-func enter_scene(session_id: String, location: String, callback: Callable) -> void:
-	var p = GameState.player
+func get_inventory(session_id: String, callback: Callable) -> void:
+	_http_get("/game/session/%s/inventory" % session_id, callback)
+
+func enter_scene(session_id: String, location: String, callback: Callable, location_type: String = "") -> void:
+	var p = _get_player_state()
 	var player_name = p.get("name", "Adventurer")
 	var player_level = int(p.get("level", 1))
 	var body = JSON.stringify({
 		"session_id": session_id,
 		"location": location,
+		"location_type": location_type if not location_type.is_empty() else _infer_location_type(location),
 		"player_name": player_name,
 		"player_level": player_level
 	})
 	_post("/game/scene/enter", body, callback)
 
-func save_game(session_id: String, callback: Callable) -> void:
-	_post("/game/session/%s/save" % session_id, "{}", callback)
+func save_game(session_id: String, callback: Callable, slot_name: String = "", player_id: String = "") -> void:
+	var body = {
+		"player_id": _resolve_player_id(player_id),
+	}
+	if not slot_name.is_empty():
+		body["slot_name"] = slot_name
+	_post("/game/session/%s/save" % session_id, JSON.stringify(body), callback)
 
 func load_game(save_id: String, callback: Callable) -> void:
-	_post("/game/save/%s/load" % save_id, "{}", callback)
+	_post("/game/session/load/%s" % save_id, "{}", callback)
 
-func list_saves(callback: Callable) -> void:
-	_http_get("/game/saves", callback)
+func list_saves(callback: Callable, player_id: String = "") -> void:
+	_http_get("/game/saves/%s" % _resolve_player_id(player_id), callback)
+
+func delete_save(save_id: String, callback: Callable) -> void:
+	_http_delete("/game/saves/%s" % save_id, callback)
 
 # --- Internal HTTP ---
 
@@ -85,6 +97,39 @@ func _ensure_base_url(callback: Callable) -> bool:
 	request_error.emit("Backend URL is not configured. Set %s or %s." % [BACKEND_ENV, BACKEND_SETTING])
 	callback.call(null)
 	return false
+
+func _get_game_state() -> Node:
+	var loop = Engine.get_main_loop()
+	if loop is SceneTree:
+		return loop.root.get_node_or_null("GameState")
+	return null
+
+func _get_player_state() -> Dictionary:
+	var game_state = _get_game_state()
+	if game_state == null:
+		return {}
+	return game_state.player
+
+func _resolve_player_id(explicit_player_id: String = "") -> String:
+	var cleaned = explicit_player_id.strip_edges()
+	if not cleaned.is_empty():
+		return cleaned
+	var player_name = str(_get_player_state().get("name", "")).strip_edges()
+	if not player_name.is_empty():
+		return player_name
+	return "player"
+
+func _infer_location_type(location: String) -> String:
+	var loc = location.to_lower()
+	if loc.contains("forest") or loc.contains("road") or loc.contains("wild"):
+		return "wilderness"
+	if loc.contains("cave"):
+		return "cave"
+	if loc.contains("dungeon"):
+		return "dungeon"
+	if loc.contains("tavern") or loc.contains("inn"):
+		return "tavern"
+	return "town"
 
 func _post(path: String, body: String, callback: Callable) -> void:
 	if not _ensure_base_url(callback):

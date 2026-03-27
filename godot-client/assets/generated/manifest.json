@@ -1,0 +1,471 @@
+{
+  "version": 1,
+  "generated_at": "2026-03-27 03:22",
+  "sprite_size": [
+    16,
+    16
+  ],
+  "tiles": {
+    "brick": {
+      "relative_path": "tiles/brick.png",
+      "legacy_path": "res://assets/tiles/brick.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:46"
+    },
+    "bridge": {
+      "relative_path": "tiles/bridge.png",
+      "legacy_path": "res://assets/tiles/bridge.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:46"
+    },
+    "cave": {
+      "relative_path": "tiles/cave.png",
+      "legacy_path": "res://assets/tiles/cave.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:46"
+    },
+    "chest": {
+      "relative_path": "tiles/chest.png",
+      "legacy_path": "res://assets/tiles/chest.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "cobblestone": {
+      "relative_path": "tiles/cobblestone.png",
+      "legacy_path": "res://assets/tiles/cobblestone.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "dark_stone": {
+      "relative_path": "tiles/dark_stone.png",
+      "legacy_path": "res://assets/tiles/dark_stone.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "dirt_path": {
+      "relative_path": "tiles/dirt_path.png",
+      "legacy_path": "res://assets/tiles/dirt_path.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "door": {
+      "relative_path": "tiles/door.png",
+      "legacy_path": "res://assets/tiles/door.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "grass": {
+      "relative_path": "tiles/grass.png",
+      "legacy_path": "res://assets/tiles/grass.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "ice": {
+      "relative_path": "tiles/ice.png",
+      "legacy_path": "res://assets/tiles/ice.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:46"
+    },
+    "lava": {
+      "relative_path": "tiles/lava.png",
+      "legacy_path": "res://assets/tiles/lava.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:46"
+    },
+    "marble": {
+      "relative_path": "tiles/marble.png",
+      "legacy_path": "res://assets/tiles/marble.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:46"
+    },
+    "sand": {
+      "relative_path": "tiles/sand.png",
+      "legacy_path": "res://assets/tiles/sand.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "stairs": {
+      "relative_path": "tiles/stairs.png",
+      "legacy_path": "res://assets/tiles/stairs.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "stone_floor": {
+      "relative_path": "tiles/stone_floor.png",
+      "legacy_path": "res://assets/tiles/stone_floor.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "stone_wall": {
+      "relative_path": "tiles/stone_wall.png",
+      "legacy_path": "res://assets/tiles/stone_wall.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "swamp": {
+      "relative_path": "tiles/swamp.png",
+      "legacy_path": "res://assets/tiles/swamp.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:46"
+    },
+    "tavern_floor": {
+      "relative_path": "tiles/tavern_floor.png",
+      "legacy_path": "res://assets/tiles/tavern_floor.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:46"
+    },
+    "water": {
+      "relative_path": "tiles/water.png",
+      "legacy_path": "res://assets/tiles/water.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    },
+    "wood_floor": {
+      "relative_path": "tiles/wood_floor.png",
+      "legacy_path": "res://assets/tiles/wood_floor.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:45"
+    }
+  },
+  "sprites": {
+    "bandit": {
+      "relative_path": "sprites/bandit.png",
+      "legacy_path": "res://assets/sprites/bandit.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:44"
+    },
+    "bard": {
+      "relative_path": "sprites/bard.png",
+      "legacy_path": "res://assets/sprites/bard.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:40"
+    },
+    "beggar": {
+      "relative_path": "sprites/beggar.png",
+      "legacy_path": "res://assets/sprites/beggar.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:43"
+    },
+    "blacksmith": {
+      "relative_path": "sprites/blacksmith.png",
+      "legacy_path": "res://assets/sprites/blacksmith.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:43"
+    },
+    "dragon": {
+      "relative_path": "sprites/dragon.png",
+      "legacy_path": "res://assets/sprites/dragon.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:44"
+    },
+    "fairy": {
+      "relative_path": "sprites/fairy.png",
+      "legacy_path": "res://assets/sprites/fairy.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:41"
+    },
+    "ghost": {
+      "relative_path": "sprites/ghost.png",
+      "legacy_path": "res://assets/sprites/ghost.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:40"
+    },
+    "goblin": {
+      "relative_path": "sprites/goblin.png",
+      "legacy_path": "res://assets/sprites/goblin.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:43"
+    },
+    "guard": {
+      "relative_path": "sprites/guard.png",
+      "legacy_path": "res://assets/sprites/guard.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:43"
+    },
+    "healer": {
+      "relative_path": "sprites/healer.png",
+      "legacy_path": "res://assets/sprites/healer.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:43"
+    },
+    "innkeeper": {
+      "relative_path": "sprites/innkeeper.png",
+      "legacy_path": "res://assets/sprites/innkeeper.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:43"
+    },
+    "knight": {
+      "relative_path": "sprites/knight.png",
+      "legacy_path": "res://assets/sprites/knight.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:40"
+    },
+    "mage": {
+      "relative_path": "sprites/mage.png",
+      "legacy_path": "res://assets/sprites/mage.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:42"
+    },
+    "merchant": {
+      "relative_path": "sprites/merchant.png",
+      "legacy_path": "res://assets/sprites/merchant.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:42"
+    },
+    "mimic": {
+      "relative_path": "sprites/mimic.png",
+      "legacy_path": "res://assets/sprites/mimic.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:40"
+    },
+    "necromancer": {
+      "relative_path": "sprites/necromancer.png",
+      "legacy_path": "res://assets/sprites/necromancer.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:41"
+    },
+    "orc": {
+      "relative_path": "sprites/orc.png",
+      "legacy_path": "res://assets/sprites/orc.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:44"
+    },
+    "priest": {
+      "relative_path": "sprites/priest.png",
+      "legacy_path": "res://assets/sprites/priest.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:42"
+    },
+    "quest_giver": {
+      "relative_path": "sprites/quest_giver.png",
+      "legacy_path": "res://assets/sprites/quest_giver.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:42"
+    },
+    "rat": {
+      "relative_path": "sprites/rat.png",
+      "legacy_path": "res://assets/sprites/rat.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:41"
+    },
+    "rogue": {
+      "relative_path": "sprites/rogue.png",
+      "legacy_path": "res://assets/sprites/rogue.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:42"
+    },
+    "sage": {
+      "relative_path": "sprites/sage.png",
+      "legacy_path": "res://assets/sprites/sage.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:43"
+    },
+    "skeleton": {
+      "relative_path": "sprites/skeleton.png",
+      "legacy_path": "res://assets/sprites/skeleton.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:43"
+    },
+    "spider": {
+      "relative_path": "sprites/spider.png",
+      "legacy_path": "res://assets/sprites/spider.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:44"
+    },
+    "spy": {
+      "relative_path": "sprites/spy.png",
+      "legacy_path": "res://assets/sprites/spy.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:43"
+    },
+    "thief": {
+      "relative_path": "sprites/thief.png",
+      "legacy_path": "res://assets/sprites/thief.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:41"
+    },
+    "troll": {
+      "relative_path": "sprites/troll.png",
+      "legacy_path": "res://assets/sprites/troll.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:41"
+    },
+    "warrior": {
+      "relative_path": "sprites/warrior.png",
+      "legacy_path": "res://assets/sprites/warrior.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:42"
+    },
+    "witch": {
+      "relative_path": "sprites/witch.png",
+      "legacy_path": "res://assets/sprites/witch.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:40"
+    },
+    "wolf": {
+      "relative_path": "sprites/wolf.png",
+      "legacy_path": "res://assets/sprites/wolf.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:44"
+    },
+    "zombie": {
+      "relative_path": "sprites/zombie.png",
+      "legacy_path": "res://assets/sprites/zombie.png",
+      "size": [
+        16,
+        16
+      ],
+      "cached_at": "2026-03-24 17:44"
+    }
+  }
+}

@@ -1,6 +1,19 @@
-[gd_scene load_steps=2 format=3 uid="uid://cgamesession"]
+[gd_scene load_steps=15 format=3 uid="uid://cgamesession"]
 
 [ext_resource type="Script" path="res://scenes/game_session.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/world/world_view.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/world/tilemap_controller.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/world/entity_layer.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/world/camera_controller.gd" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/components/status_bar.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/components/narrative_panel.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://scenes/components/inventory_panel.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://scenes/components/minimap_panel.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/components/command_bar.tscn" id="10"]
+[ext_resource type="Script" path="res://scripts/world/selection_overlay.gd" id="11"]
+[ext_resource type="PackedScene" path="res://scenes/components/quest_panel.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://scenes/components/combat_panel.tscn" id="13"]
+[ext_resource type="PackedScene" path="res://scenes/components/save_load_panel.tscn" id="14"]
 
 [node name="GameSession" type="Control"]
 layout_mode = 3
@@ -16,110 +29,93 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.06, 0.05, 0.1, 1)
+color = Color(0.0823529, 0.0862745, 0.117647, 1)
 
-[node name="MainLayout" type="VBoxContainer" parent="."]
+[node name="MainMargin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 8.0
-offset_top = 8.0
-offset_right = -8.0
-offset_bottom = -8.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="PlayerStatus" type="HBoxContainer" parent="MainLayout"]
+[node name="MainVBox" type="VBoxContainer" parent="MainMargin"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 32)
 
-[node name="PlayerInfo" type="Label" parent="MainLayout/PlayerStatus"]
+[node name="StatusBar" parent="MainMargin/MainVBox" instance=ExtResource("6")]
 layout_mode = 2
-custom_minimum_size = Vector2(250, 0)
-text = "Lv.1 Warrior  Hero"
 
-[node name="HPBar" type="ProgressBar" parent="MainLayout/PlayerStatus"]
+[node name="ContentSplit" type="HSplitContainer" parent="MainMargin/MainVBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(150, 0)
-max_value = 20.0
-value = 20.0
-show_percentage = false
+size_flags_vertical = 3
+split_offset = 772
 
-[node name="HPLabel" type="Label" parent="MainLayout/PlayerStatus"]
+[node name="WorldPane" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit"]
 layout_mode = 2
-text = "20/20"
+custom_minimum_size = Vector2(720, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.9
 
-[node name="XPBar" type="ProgressBar" parent="MainLayout/PlayerStatus"]
+[node name="WorldViewportContainer" type="SubViewportContainer" parent="MainMargin/MainVBox/ContentSplit/WorldPane"]
 layout_mode = 2
-custom_minimum_size = Vector2(100, 0)
-show_percentage = false
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+mouse_target = true
+script = ExtResource("2")
 
-[node name="ContentSplit" type="HSplitContainer" parent="MainLayout"]
+[node name="WorldViewport" type="SubViewport" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer"]
+handle_input_locally = false
+size = Vector2i(960, 640)
+
+[node name="WorldRoot" type="Node2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport"]
+
+[node name="TerrainLayer" type="TileMapLayer" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
+texture_filter = 1
+script = ExtResource("3")
+
+[node name="EntityLayer" type="Node2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
+texture_filter = 1
+script = ExtResource("4")
+
+[node name="SelectionLayer" type="Node2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
+script = ExtResource("11")
+
+[node name="WorldCamera" type="Camera2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
+enabled = true
+position_smoothing_enabled = true
+position_smoothing_speed = 10.0
+script = ExtResource("5")
+
+[node name="Sidebar" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit"]
+layout_mode = 2
+custom_minimum_size = Vector2(340, 0)
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.95
+
+[node name="NarrativePanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("7")]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="MapPanel" type="Panel" parent="MainLayout/ContentSplit"]
-layout_mode = 2
-custom_minimum_size = Vector2(600, 0)
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 2.5
-
-[node name="LocationLabel" type="Label" parent="MainLayout/ContentSplit/MapPanel"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -100.0
-offset_top = 5.0
-offset_right = 100.0
-offset_bottom = 25.0
-grow_horizontal = 2
-text = "Unknown Location"
-horizontal_alignment = 1
-
-[node name="CombatHUD" type="PanelContainer" parent="MainLayout/ContentSplit/MapPanel"]
-visible = false
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -320.0
-offset_top = 30.0
-offset_right = -10.0
-offset_bottom = 230.0
-grow_horizontal = 0
-
-[node name="VBox" type="VBoxContainer" parent="MainLayout/ContentSplit/MapPanel/CombatHUD"]
+[node name="InventoryPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("8")]
 layout_mode = 2
 
-[node name="RoundLabel" type="Label" parent="MainLayout/ContentSplit/MapPanel/CombatHUD/VBox"]
-layout_mode = 2
-text = "Round 1"
-
-[node name="CombatantList" type="VBoxContainer" parent="MainLayout/ContentSplit/MapPanel/CombatHUD/VBox"]
+[node name="MinimapPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("9")]
 layout_mode = 2
 
-[node name="NarrativePanel" type="RichTextLabel" parent="MainLayout/ContentSplit"]
+[node name="QuestPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("12")]
 layout_mode = 2
-custom_minimum_size = Vector2(300, 0)
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
-bbcode_enabled = true
-text = ""
-scroll_following = true
 
-[node name="InputBar" type="HBoxContainer" parent="MainLayout"]
+[node name="CommandBar" parent="MainMargin/MainVBox" instance=ExtResource("10")]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 36)
 
-[node name="InputLabel" type="Label" parent="MainLayout/InputBar"]
-layout_mode = 2
-text = " > "
+[node name="OverlayCanvas" type="CanvasLayer" parent="."]
 
-[node name="TextInput" type="LineEdit" parent="MainLayout/InputBar"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "What do you do?..."
+[node name="CombatPanel" parent="OverlayCanvas" instance=ExtResource("13")]
 
-[node name="SendButton" type="Button" parent="MainLayout/InputBar"]
-layout_mode = 2
-text = "Send"
+[node name="SaveLoadPanel" parent="OverlayCanvas" instance=ExtResource("14")]

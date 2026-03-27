@@ -2,6 +2,7 @@ extends Node
 
 # GameState Singleton — central state store
 # Updated after every HTTP response from backend
+const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
 
 # Session
 var session_id: String = ""
@@ -13,7 +14,13 @@ var narrative_history: Array[String] = []
 var level_up_pending: Dictionary = {}
 var map_data: Dictionary = {}
 var entities: Dictionary = {}
+var world_entities: Array = []
+var inventory_items: Array = []
+var ground_items: Array = []
+var active_quests: Array = []
+var quest_offers: Array = []
 var narrative_stream: Array = []
+var last_save_slot: String = ""
 var player_map_pos: Vector2i = Vector2i(10, 7)  # Player position on tile map
 var player_facing: int = 2  # 0=N,1=E,2=S,3=W — default facing south
 
@@ -27,6 +34,7 @@ signal scene_changed(new_scene: String)
 signal map_loaded(map_data: Dictionary)
 signal entities_loaded(entities: Dictionary)
 signal entity_revealed(entity_id: String)
+signal inventory_updated(items: Array)
 
 func update_from_response(data: Dictionary) -> void:
 	if data.has("session_id"):
@@ -34,13 +42,9 @@ func update_from_response(data: Dictionary) -> void:
 
 	if data.has("player"):
 		player = data["player"]
-		# Update player map position if backend provides non-zero position
-		if player.has("position"):
-			var pos = player["position"]
-			var bx = int(pos[0])
-			var by = int(pos[1])
-			if bx > 0 or by > 0:  # Skip [0,0] placeholder from backend
-				player_map_pos = Vector2i(bx, by)
+		player_map_pos = ResponseNormalizer.player_position_from(player, player_map_pos)
+		if player.has("facing"):
+			player_facing = ResponseNormalizer.facing_to_int(str(player["facing"]), player_facing)
 
 	if data.has("location"):
 		location = data["location"]
@@ -64,12 +68,12 @@ func update_from_response(data: Dictionary) -> void:
 		elif old_scene == "combat" and scene != "combat":
 			combat_ended.emit()
 
-	# Combat state
-	if data.has("combat_state") and data["combat_state"] != null:
-		combat_state = data["combat_state"]
+	var normalized_combat = _normalize_combat_payload(data)
+	if normalized_combat != null:
+		combat_state = normalized_combat
 		if combat_state.get("ended", false):
 			combat_ended.emit()
-	else:
+	elif data.has("combat_state") or data.has("combat"):
 		combat_state = {}
 
 	# Level up
@@ -77,14 +81,37 @@ func update_from_response(data: Dictionary) -> void:
 		level_up_pending = data["level_up"]
 		level_up_occurred.emit(level_up_pending.get("new_level", 0))
 
-	# Map data (from scene/enter)
-	if data.has("map_data"):
-		map_data = data["map_data"]
+	var normalized_map = _normalize_map_payload(data)
+	if not normalized_map.is_empty():
+		map_data = normalized_map
 		map_loaded.emit(map_data)
 
-	if data.has("entities"):
-		entities = data["entities"]
+	if data.has("world_entities") and data["world_entities"] is Array:
+		world_entities = data["world_entities"]
+	var normalized_entities = _normalize_entities_payload(data)
+	if not normalized_entities.is_empty():
+		entities = normalized_entities
 		entities_loaded.emit(entities)
+
+	if data.has("ground_items") and data["ground_items"] is Array:
+		ground_items = data["ground_items"]
+
+	if data.has("active_quests") and data["active_quests"] is Array:
+		active_quests = data["active_quests"]
+	if data.has("quest_offers") and data["quest_offers"] is Array:
+		quest_offers = data["quest_offers"]
+	if data.has("last_save_slot"):
+		last_save_slot = str(data["last_save_slot"])
+
+	if data.has("items") and data["items"] is Array:
+		inventory_items = data["items"]
+		player["inventory"] = data["items"]
+		if data.has("gold"):
+			player["gold"] = int(data["gold"])
+		inventory_updated.emit(inventory_items)
+	elif player.has("inventory") and player["inventory"] is Array:
+		inventory_items = player["inventory"]
+		inventory_updated.emit(inventory_items)
 
 	if data.has("narrative_stream"):
 		narrative_stream = data["narrative_stream"]
@@ -111,7 +138,13 @@ func reset() -> void:
 	level_up_pending = {}
 	map_data = {}
 	entities = {}
+	world_entities = []
+	inventory_items = []
+	ground_items = []
+	active_quests = []
+	quest_offers = []
 	narrative_stream = []
+	last_save_slot = ""
 	player_map_pos = Vector2i(10, 7)
 	player_facing = 2
 
@@ -172,3 +205,27 @@ func _clean_narrative(text: String) -> String:
 		trimmed = trimmed.replace("dark_dungeon", "Dark Dungeon")
 		cleaned.append(trimmed)
 	return "\n".join(cleaned)
+
+func _normalize_combat_payload(data: Dictionary) -> Dictionary:
+	return ResponseNormalizer.normalize_combat(data)
+
+func _normalize_map_payload(data: Dictionary) -> Dictionary:
+	return ResponseNormalizer.normalize_map(data, map_data)
+
+func _normalize_entities_payload(data: Dictionary) -> Dictionary:
+	return ResponseNormalizer.normalize_entities(data)
+
+func _group_entity_list(raw_entities: Array) -> Dictionary:
+	return ResponseNormalizer.group_entity_list(raw_entities)
+
+func _group_world_entities(raw_entities: Array) -> Dictionary:
+	return ResponseNormalizer.group_world_entities(raw_entities)
+
+func _guess_entity_template(entry: Dictionary) -> String:
+	return ResponseNormalizer.guess_entity_template(entry)
+
+func _context_actions_for(entry: Dictionary) -> Array:
+	return ResponseNormalizer.context_actions_for(entry)
+
+func _facing_to_int(facing: String) -> int:
+	return ResponseNormalizer.facing_to_int(facing, player_facing)

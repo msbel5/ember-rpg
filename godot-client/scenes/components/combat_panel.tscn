@@ -1,0 +1,63 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/combat_panel.gd" id="1"]
+
+[node name="CombatPanel" type="PanelContainer"]
+visible = false
+offset_left = 900.0
+offset_top = 28.0
+offset_right = 1256.0
+offset_bottom = 420.0
+script = ExtResource("1")
+
+[node name="CombatMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="CombatVBox" type="VBoxContainer" parent="CombatMargin"]
+layout_mode = 2
+
+[node name="HeaderRow" type="HBoxContainer" parent="CombatMargin/CombatVBox"]
+layout_mode = 2
+
+[node name="RoundLabel" type="Label" parent="CombatMargin/CombatVBox/HeaderRow"]
+layout_mode = 2
+text = "Round 1"
+
+[node name="ActiveLabel" type="Label" parent="CombatMargin/CombatVBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+text = "Turn: Unknown"
+
+[node name="SummaryLabel" type="Label" parent="CombatMargin/CombatVBox"]
+layout_mode = 2
+text = "No combat"
+autowrap_mode = 2
+
+[node name="QuickActions" type="HBoxContainer" parent="CombatMargin/CombatVBox"]
+layout_mode = 2
+
+[node name="AttackButton" type="Button" parent="CombatMargin/CombatVBox/QuickActions"]
+layout_mode = 2
+text = "Attack"
+
+[node name="DisengageButton" type="Button" parent="CombatMargin/CombatVBox/QuickActions"]
+layout_mode = 2
+text = "Disengage"
+
+[node name="InventoryButton" type="Button" parent="CombatMargin/CombatVBox/QuickActions"]
+layout_mode = 2
+text = "Inventory"
+
+[node name="CombatantScroll" type="ScrollContainer" parent="CombatMargin/CombatVBox"]
+custom_minimum_size = Vector2(0, 270)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CombatantList" type="VBoxContainer" parent="CombatMargin/CombatVBox/CombatantScroll"]
+layout_mode = 2
+size_flags_horizontal = 3

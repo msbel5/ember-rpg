@@ -27,15 +27,23 @@ from PIL import Image, ImageFilter, ImageEnhance
 # Config
 # ---------------------------------------------------------------------------
 HF_API_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
+
+
+def get_hf_token() -> str:
+    return os.environ.get("HF_TOKEN", "") or os.environ.get("HUGGINGFACE_API_KEY", "")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = PROJECT_ROOT / "tools" / "asset_raw"          # AI output (512x512)
 SPRITE_DIR = PROJECT_ROOT / "godot-client" / "assets" / "sprites"
 TILE_DIR = PROJECT_ROOT / "godot-client" / "assets" / "tiles"
+GENERATED_DIR = PROJECT_ROOT / "godot-client" / "assets" / "generated"
+GENERATED_SPRITE_DIR = GENERATED_DIR / "sprites"
+GENERATED_TILE_DIR = GENERATED_DIR / "tiles"
+MANIFEST_FILE = GENERATED_DIR / "manifest.json"
 CACHE_FILE = PROJECT_ROOT / "tools" / "asset_cache.json"
 
-SPRITE_SIZE = (32, 32)     # final game size
+SPRITE_SIZE = (32, 32)     # legacy display size
+GENERATED_SIZE = (16, 16)  # cached runtime size
 RAW_SIZE = (512, 512)      # AI generation size
 UPSCALE_SIZE = (64, 64)    # intermediate for better downscale
 
@@ -125,11 +133,12 @@ TILE_DEFS = {
 # ---------------------------------------------------------------------------
 def generate_image(prompt: str, retries: int = 3) -> Image.Image | None:
     """Call HF Flux Schnell to generate an image."""
-    if not HF_TOKEN:
-        print("[ERROR] HF_TOKEN not set. Export it or pass via env.")
+    token = get_hf_token()
+    if not token:
+        print("[ERROR] HF_TOKEN/HUGGINGFACE_API_KEY not set. Export one of them or pass via env.")
         return None
 
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    headers = {"Authorization": f"Bearer {token}"}
     payload = {"inputs": prompt}
 
     for attempt in range(retries):
@@ -174,7 +183,7 @@ def remove_background(img: Image.Image) -> Image.Image:
         return img.convert("RGBA")
 
 
-def postprocess_sprite(raw_img: Image.Image) -> Image.Image:
+def postprocess_sprite(raw_img: Image.Image, final_size: tuple[int, int] = SPRITE_SIZE) -> Image.Image:
     """Full sprite postprocess pipeline: bg remove → enhance → resize."""
     # 1. Remove background
     img = remove_background(raw_img)
@@ -190,13 +199,13 @@ def postprocess_sprite(raw_img: Image.Image) -> Image.Image:
     # 4. Resize to intermediate (64x64) with LANCZOS for quality
     img = img.resize(UPSCALE_SIZE, Image.LANCZOS)
 
-    # 5. Final resize to 32x32 with NEAREST for crisp pixel art
-    img = img.resize(SPRITE_SIZE, Image.NEAREST)
+    # 5. Final resize with NEAREST for crisp pixel art
+    img = img.resize(final_size, Image.NEAREST)
 
     return img
 
 
-def postprocess_tile(raw_img: Image.Image) -> Image.Image:
+def postprocess_tile(raw_img: Image.Image, final_size: tuple[int, int] = SPRITE_SIZE) -> Image.Image:
     """Tile postprocess: no bg removal, just enhance + resize."""
     img = raw_img.convert("RGBA")
 
@@ -207,9 +216,9 @@ def postprocess_tile(raw_img: Image.Image) -> Image.Image:
     enhancer = ImageEnhance.Color(img)
     img = enhancer.enhance(1.2)
 
-    # Resize to 32x32 — LANCZOS then NEAREST for crisp tiles
+    # Resize to target size — LANCZOS then NEAREST for crisp tiles
     img = img.resize(UPSCALE_SIZE, Image.LANCZOS)
-    img = img.resize(SPRITE_SIZE, Image.NEAREST)
+    img = img.resize(final_size, Image.NEAREST)
 
     return img
 
@@ -227,6 +236,39 @@ def save_cache(cache: dict):
     CACHE_FILE.write_text(json.dumps(cache, indent=2))
 
 
+def write_manifest(cache: dict):
+    GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        "version": 1,
+        "generated_at": time.strftime("%Y-%m-%d %H:%M"),
+        "sprite_size": list(GENERATED_SIZE),
+        "tiles": {},
+        "sprites": {},
+    }
+
+    for name in sorted(SPRITE_DEFS.keys()):
+        generated_path = GENERATED_SPRITE_DIR / f"{name}.png"
+        if generated_path.exists():
+            manifest["sprites"][name] = {
+                "relative_path": f"sprites/{name}.png",
+                "legacy_path": f"res://assets/sprites/{name}.png",
+                "size": list(GENERATED_SIZE),
+                "cached_at": cache.get(f"sprite_{name}", {}).get("cached_at", cache.get(f"sprite_{name}", {}).get("generated", "")),
+            }
+
+    for name in sorted(TILE_DEFS.keys()):
+        generated_path = GENERATED_TILE_DIR / f"{name}.png"
+        if generated_path.exists():
+            manifest["tiles"][name] = {
+                "relative_path": f"tiles/{name}.png",
+                "legacy_path": f"res://assets/tiles/{name}.png",
+                "size": list(GENERATED_SIZE),
+                "cached_at": cache.get(f"tile_{name}", {}).get("cached_at", cache.get(f"tile_{name}", {}).get("generated", "")),
+            }
+
+    MANIFEST_FILE.write_text(json.dumps(manifest, indent=2))
+
+
 # ---------------------------------------------------------------------------
 # Generation commands
 # ---------------------------------------------------------------------------
@@ -235,6 +277,7 @@ def generate_sprites(names: list[str] | None = None, force: bool = False):
     cache = load_cache()
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     SPRITE_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_SPRITE_DIR.mkdir(parents=True, exist_ok=True)
 
     targets = names or list(SPRITE_DEFS.keys())
     total = len(targets)
@@ -246,9 +289,10 @@ def generate_sprites(names: list[str] | None = None, force: bool = False):
 
         raw_path = RAW_DIR / f"sprite_{name}_raw.png"
         final_path = SPRITE_DIR / f"{name}.png"
+        generated_path = GENERATED_SPRITE_DIR / f"{name}.png"
 
         # Skip if cached and not forced
-        if not force and cache.get(f"sprite_{name}") and final_path.exists():
+        if not force and cache.get(f"sprite_{name}") and final_path.exists() and generated_path.exists():
             print(f"[{i}/{total}] {name} — cached, skip")
             continue
 
@@ -265,18 +309,23 @@ def generate_sprites(names: list[str] | None = None, force: bool = False):
         print(f"  Raw saved: {raw_path.name}")
 
         # Postprocess
-        final_img = postprocess_sprite(raw_img)
+        final_img = postprocess_sprite(raw_img, SPRITE_SIZE)
+        generated_img = postprocess_sprite(raw_img, GENERATED_SIZE)
         final_img.save(str(final_path))
+        generated_img.save(str(generated_path))
         print(f"  Final saved: {final_path.name} ({final_img.size})")
+        print(f"  Generated saved: {generated_path.name} ({generated_img.size})")
 
         # Update cache
         cache[f"sprite_{name}"] = {
-            "generated": time.strftime("%Y-%m-%d %H:%M"),
+            "cached_at": time.strftime("%Y-%m-%d %H:%M"),
             "prompt": prompt[:100],
             "raw": str(raw_path),
             "final": str(final_path),
+            "generated_path": str(generated_path),
         }
         save_cache(cache)
+        write_manifest(cache)
 
         # Rate limiting — be nice to free API
         time.sleep(2)
@@ -289,6 +338,7 @@ def generate_tiles(names: list[str] | None = None, force: bool = False):
     cache = load_cache()
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     TILE_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_TILE_DIR.mkdir(parents=True, exist_ok=True)
 
     targets = names or list(TILE_DEFS.keys())
     total = len(targets)
@@ -300,8 +350,9 @@ def generate_tiles(names: list[str] | None = None, force: bool = False):
 
         raw_path = RAW_DIR / f"tile_{name}_raw.png"
         final_path = TILE_DIR / f"{name}.png"
+        generated_path = GENERATED_TILE_DIR / f"{name}.png"
 
-        if not force and cache.get(f"tile_{name}") and final_path.exists():
+        if not force and cache.get(f"tile_{name}") and final_path.exists() and generated_path.exists():
             print(f"[{i}/{total}] {name} — cached, skip")
             continue
 
@@ -316,15 +367,21 @@ def generate_tiles(names: list[str] | None = None, force: bool = False):
         raw_img.save(str(raw_path))
         print(f"  Raw saved: {raw_path.name}")
 
-        final_img = postprocess_tile(raw_img)
+        final_img = postprocess_tile(raw_img, SPRITE_SIZE)
+        generated_img = postprocess_tile(raw_img, GENERATED_SIZE)
         final_img.save(str(final_path))
+        generated_img.save(str(generated_path))
         print(f"  Final saved: {final_path.name} ({final_img.size})")
+        print(f"  Generated saved: {generated_path.name} ({generated_img.size})")
 
         cache[f"tile_{name}"] = {
-            "generated": time.strftime("%Y-%m-%d %H:%M"),
+            "cached_at": time.strftime("%Y-%m-%d %H:%M"),
             "prompt": prompt[:100],
+            "final": str(final_path),
+            "generated_path": str(generated_path),
         }
         save_cache(cache)
+        write_manifest(cache)
         time.sleep(2)
 
     print(f"\nDone! {total} tiles processed.")
@@ -333,22 +390,32 @@ def generate_tiles(names: list[str] | None = None, force: bool = False):
 def reprocess_all():
     """Re-postprocess all raw images without regenerating."""
     print("Re-processing raw sprites...")
+    GENERATED_SPRITE_DIR.mkdir(parents=True, exist_ok=True)
     for raw_file in sorted(RAW_DIR.glob("sprite_*_raw.png")):
         name = raw_file.stem.replace("sprite_", "").replace("_raw", "")
         final_path = SPRITE_DIR / f"{name}.png"
+        generated_path = GENERATED_SPRITE_DIR / f"{name}.png"
         raw_img = Image.open(raw_file)
-        final_img = postprocess_sprite(raw_img)
+        final_img = postprocess_sprite(raw_img, SPRITE_SIZE)
+        generated_img = postprocess_sprite(raw_img, GENERATED_SIZE)
         final_img.save(str(final_path))
-        print(f"  {name}: {final_img.size}")
+        generated_img.save(str(generated_path))
+        print(f"  {name}: {final_img.size} legacy, {generated_img.size} generated")
 
     print("Re-processing raw tiles...")
+    GENERATED_TILE_DIR.mkdir(parents=True, exist_ok=True)
     for raw_file in sorted(RAW_DIR.glob("tile_*_raw.png")):
         name = raw_file.stem.replace("tile_", "").replace("_raw", "")
         final_path = TILE_DIR / f"{name}.png"
+        generated_path = GENERATED_TILE_DIR / f"{name}.png"
         raw_img = Image.open(raw_file)
-        final_img = postprocess_tile(raw_img)
+        final_img = postprocess_tile(raw_img, SPRITE_SIZE)
+        generated_img = postprocess_tile(raw_img, GENERATED_SIZE)
         final_img.save(str(final_path))
-        print(f"  {name}: {final_img.size}")
+        generated_img.save(str(generated_path))
+        print(f"  {name}: {final_img.size} legacy, {generated_img.size} generated")
+
+    write_manifest(load_cache())
 
 
 def list_assets():
@@ -356,16 +423,18 @@ def list_assets():
     print("=== SPRITES ===")
     for name in sorted(SPRITE_DEFS.keys()):
         exists = (SPRITE_DIR / f"{name}.png").exists()
+        generated_exists = (GENERATED_SPRITE_DIR / f"{name}.png").exists()
         raw_exists = (RAW_DIR / f"sprite_{name}_raw.png").exists()
-        status = "OK" if exists else ("RAW ONLY" if raw_exists else "MISSING")
+        status = "OK" if exists and generated_exists else ("RAW ONLY" if raw_exists else "MISSING")
         marker = "  " if exists else ">>"
         print(f"  {marker} {name:20s} [{status}]")
 
     print("\n=== TILES ===")
     for name in sorted(TILE_DEFS.keys()):
         exists = (TILE_DIR / f"{name}.png").exists()
+        generated_exists = (GENERATED_TILE_DIR / f"{name}.png").exists()
         raw_exists = (RAW_DIR / f"tile_{name}_raw.png").exists()
-        status = "OK" if exists else ("RAW ONLY" if raw_exists else "MISSING")
+        status = "OK" if exists and generated_exists else ("RAW ONLY" if raw_exists else "MISSING")
         marker = "  " if exists else ">>"
         print(f"  {marker} {name:20s} [{status}]")
 
