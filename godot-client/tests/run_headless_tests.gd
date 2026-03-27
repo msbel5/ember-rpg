@@ -6,6 +6,7 @@ const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
 const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const TilemapController = preload("res://scripts/world/tilemap_controller.gd")
 const CameraController = preload("res://scripts/world/camera_controller.gd")
+const EntityLayer = preload("res://scripts/world/entity_layer.gd")
 
 var failures: int = 0
 
@@ -23,6 +24,7 @@ func _run_tests() -> void:
 	_test_game_state_normalization()
 	await _test_scene_instantiation()
 	await _test_world_shell()
+	await _test_entity_rendering()
 	_test_asset_bootstrap()
 	await _cleanup_test_nodes()
 
@@ -194,6 +196,32 @@ func _test_world_shell() -> void:
 	camera.focus_on_tile(Vector2i(5, 6))
 	_assert_true(is_equal_approx(camera.position.x, 88.0) and is_equal_approx(camera.position.y, 104.0), "CameraController centers on the tile midpoint")
 	camera.free()
+	await process_frame
+
+
+func _test_entity_rendering() -> void:
+	var layer = EntityLayer.new()
+	root.add_child(layer)
+	await process_frame
+	layer.render_entities(Vector2i(4, 4), {
+		"npcs": [{"id": "merchant_1", "name": "Merchant", "template": "merchant", "position": [5, 4]}],
+		"enemies": [{"id": "wolf_1", "name": "Wolf", "template": "wolf", "position": [6, 4]}],
+		"items": [{"id": "bread_1", "name": "Bread", "template": "chest", "position": [7, 4]}],
+	})
+	_assert_true(layer.get_child_count() == 4, "EntityLayer renders player plus world entities as sprites")
+	_assert_true(layer.get_entity_at_tile(Vector2i(5, 4)).get("name", "") == "Merchant", "EntityLayer can look up entities by tile")
+	layer.free()
+	await process_frame
+
+	var session_scene = load("res://scenes/game_session.tscn")
+	var session_instance = session_scene.instantiate()
+	root.add_child(session_instance)
+	await process_frame
+	var session_world_view = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer")
+	_assert_true(session_world_view.command_for_entity({"bucket": "npc", "name": "Merchant"}) == "talk merchant", "World view synthesizes talk commands for npc clicks")
+	_assert_true(session_world_view.command_for_entity({"bucket": "enemy", "name": "Wolf"}) == "attack wolf", "World view synthesizes attack commands for enemy clicks")
+	_assert_true(session_world_view.command_for_entity({"bucket": "item", "name": "Bread"}) == "examine bread", "World view synthesizes examine commands for item clicks")
+	session_instance.free()
 	await process_frame
 
 

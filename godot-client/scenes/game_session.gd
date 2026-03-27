@@ -37,6 +37,7 @@ func _ready() -> void:
 	GameState.combat_ended.connect(_on_combat_ended)
 	GameState.level_up_occurred.connect(_on_level_up)
 	Backend.request_error.connect(_on_backend_error)
+	world_view.command_requested.connect(_on_world_command_requested)
 
 	if not GameState.narrative_history.is_empty():
 		for line in GameState.narrative_history:
@@ -388,3 +389,7 @@ func _complete_followup_sync() -> void:
 	_pending_sync_callbacks = maxi(_pending_sync_callbacks - 1, 0)
 	if _pending_sync_callbacks == 0:
 		_finish_turn_sync()
+
+
+func _on_world_command_requested(command_text: String) -> void:
+	_submit_action(command_text)
