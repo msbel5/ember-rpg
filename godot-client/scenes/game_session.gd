@@ -1,23 +1,32 @@
 extends Control
 
 const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
+const PROFILE_PATH := "user://client_profile.cfg"
+const QUICKSAVE_SLOT := "quicksave"
 
 @onready var world_view: SubViewportContainer = $MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer
 @onready var narrative_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel
 @onready var command_bar = $MainMargin/MainVBox/CommandBar
-@onready var quest_summary: Label = $MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox/QuestSummary
-@onready var combat_hud: PanelContainer = $OverlayCanvas/CombatHUD
-@onready var combat_list: VBoxContainer = $OverlayCanvas/CombatHUD/CombatMargin/CombatVBox/CombatantList
-@onready var combat_round: Label = $OverlayCanvas/CombatHUD/CombatMargin/CombatVBox/RoundLabel
+@onready var quest_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel
+@onready var combat_panel = $OverlayCanvas/CombatPanel
+@onready var save_load_panel = $OverlayCanvas/SaveLoadPanel
 
 var is_waiting: bool = false
 var _pending_sync_callbacks: int = 0
 
 
 func _ready() -> void:
-	combat_hud.visible = false
 	command_bar.command_submitted.connect(_submit_action)
+	command_bar.quick_save_requested.connect(_on_quick_save_requested)
+	command_bar.saves_requested.connect(_open_save_load_panel)
 	world_view.command_requested.connect(_on_world_command_requested)
+	quest_panel.command_requested.connect(_submit_action)
+	combat_panel.command_requested.connect(_submit_action)
+	save_load_panel.save_requested.connect(_on_save_requested)
+	save_load_panel.load_requested.connect(_on_load_requested)
+	save_load_panel.delete_requested.connect(_on_delete_save_requested)
+	save_load_panel.refresh_requested.connect(_refresh_save_list)
+	save_load_panel.closed.connect(_on_save_load_closed)
 
 	GameState.state_updated.connect(_on_state_updated)
 	GameState.combat_started.connect(_on_combat_started)
@@ -25,11 +34,13 @@ func _ready() -> void:
 	GameState.level_up_occurred.connect(_on_level_up)
 	Backend.request_error.connect(_on_backend_error)
 
-	_refresh_combat_hud()
-	_refresh_quest_summary()
+	_remember_player_id()
 
-	if GameState.session_id != "" and GameState.map_data.is_empty():
-		_enter_scene(GameState.location if not GameState.location.is_empty() else "Harbor Town")
+	if GameState.session_id != "":
+		if GameState.map_data.is_empty():
+			_enter_scene(GameState.location if not GameState.location.is_empty() else "Harbor Town")
+		elif not _map_has_tiles():
+			_resync_existing_session()
 
 	command_bar.focus_input()
 
@@ -126,56 +137,22 @@ func _on_session_resynced(data, issued_text: String, previous_location: String) 
 func _set_waiting(waiting: bool) -> void:
 	is_waiting = waiting
 	command_bar.set_waiting(waiting)
+	if combat_panel.has_method("set_waiting"):
+		combat_panel.set_waiting(waiting)
+	if quest_panel.has_method("set_waiting"):
+		quest_panel.set_waiting(waiting)
+	save_load_panel.set_busy(waiting)
 
 
 func _finish_turn_sync() -> void:
 	_pending_sync_callbacks = 0
 	_set_waiting(false)
-	command_bar.focus_input()
+	if not save_load_panel.visible:
+		command_bar.focus_input()
 
 
 func _on_state_updated() -> void:
-	_refresh_combat_hud()
-	_refresh_quest_summary()
-
-
-func _refresh_quest_summary() -> void:
-	quest_summary.text = "%d active, %d available" % [GameState.active_quests.size(), GameState.quest_offers.size()]
-
-
-func _refresh_combat_hud() -> void:
-	if not GameState.is_in_combat():
-		combat_hud.visible = false
-		return
-
-	combat_hud.visible = true
-	var combat_state = GameState.combat_state
-	combat_round.text = "Round %d" % int(combat_state.get("round", 1))
-	for child in combat_list.get_children():
-		child.queue_free()
-
-	for combatant in combat_state.get("combatants", []):
-		var row = HBoxContainer.new()
-		var name_label = Label.new()
-		name_label.text = str(combatant.get("name", "?"))
-		name_label.custom_minimum_size.x = 120
-		row.add_child(name_label)
-
-		var hp_progress = ProgressBar.new()
-		hp_progress.max_value = maxi(int(combatant.get("max_hp", 1)), 1)
-		hp_progress.value = int(combatant.get("hp", 0))
-		hp_progress.custom_minimum_size.x = 140
-		hp_progress.show_percentage = false
-		row.add_child(hp_progress)
-
-		var hp_text = Label.new()
-		hp_text.text = "%d/%d" % [int(combatant.get("hp", 0)), int(combatant.get("max_hp", 1))]
-		row.add_child(hp_text)
-
-		if bool(combatant.get("dead", false)):
-			name_label.add_theme_color_override("font_color", Color(0.9, 0.2, 0.2))
-
-		combat_list.add_child(row)
+	_remember_player_id()
 
 
 func _on_combat_started() -> void:
@@ -183,7 +160,6 @@ func _on_combat_started() -> void:
 
 
 func _on_combat_ended() -> void:
-	combat_hud.visible = false
 	narrative_panel.append_system_text("[color=green]Combat ended.[/color]")
 
 
@@ -193,6 +169,22 @@ func _on_level_up(new_level: int) -> void:
 
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed):
+		return
+
+	if event.keycode == KEY_F5 or (event.ctrl_pressed and event.keycode == KEY_S):
+		_on_quick_save_requested()
+		get_viewport().set_input_as_handled()
+		return
+
+	if event.keycode == KEY_F9 or (event.ctrl_pressed and event.keycode == KEY_L):
+		_open_save_load_panel()
+		get_viewport().set_input_as_handled()
+		return
+
+	if save_load_panel.visible:
+		if event.keycode == KEY_ESCAPE:
+			save_load_panel.close_panel()
+			get_viewport().set_input_as_handled()
 		return
 
 	if event.keycode == KEY_HOME or event.keycode == KEY_I:
@@ -238,6 +230,7 @@ func _input(event: InputEvent) -> void:
 func _on_backend_error(message: String) -> void:
 	_pending_sync_callbacks = 0
 	_set_waiting(false)
+	save_load_panel.set_status(message)
 	narrative_panel.append_system_text("[color=red][%s][/color]" % message)
 
 
@@ -261,3 +254,146 @@ func _complete_followup_sync() -> void:
 
 func _on_world_command_requested(command_text: String) -> void:
 	_submit_action(command_text)
+
+
+func _resync_existing_session() -> void:
+	if GameState.session_id.is_empty():
+		return
+	Backend.get_session(GameState.session_id, _on_scene_session_loaded)
+	Backend.get_map(GameState.session_id, _on_map_loaded)
+	Backend.get_inventory(GameState.session_id, _on_inventory_loaded)
+
+
+func _on_quick_save_requested() -> void:
+	_save_session(QUICKSAVE_SLOT, false)
+
+
+func _open_save_load_panel() -> void:
+	save_load_panel.open_panel("Loading saves...")
+	save_load_panel.set_default_slot(GameState.last_save_slot if not GameState.last_save_slot.is_empty() else QUICKSAVE_SLOT)
+	_refresh_save_list()
+
+
+func _on_save_requested(slot_name: String) -> void:
+	_save_session(slot_name, true)
+
+
+func _save_session(slot_name: String, keep_panel_open: bool) -> void:
+	if GameState.session_id.is_empty():
+		narrative_panel.append_system_text("[color=red]No active session to save.[/color]")
+		return
+	var normalized_slot = slot_name.strip_edges()
+	if normalized_slot.is_empty():
+		normalized_slot = GameState.last_save_slot if not GameState.last_save_slot.is_empty() else QUICKSAVE_SLOT
+	if keep_panel_open:
+		save_load_panel.set_status("Saving %s..." % normalized_slot)
+	_set_waiting(true)
+	Backend.save_game(GameState.session_id, _on_save_completed.bind(keep_panel_open), normalized_slot)
+
+
+func _on_save_completed(data, keep_panel_open: bool) -> void:
+	_set_waiting(false)
+	if data == null:
+		return
+	var slot_name = str(data.get("slot_name", data.get("save_id", QUICKSAVE_SLOT)))
+	GameState.last_save_slot = slot_name
+	save_load_panel.set_default_slot(slot_name)
+	save_load_panel.set_status("Saved %s." % slot_name)
+	narrative_panel.append_system_text("[color=green]Saved to %s.[/color]" % slot_name)
+	_remember_player_id()
+	if keep_panel_open and save_load_panel.visible:
+		_refresh_save_list()
+
+
+func _refresh_save_list() -> void:
+	if GameState.player.is_empty():
+		save_load_panel.set_status("No active adventurer is available for save browsing.")
+		save_load_panel.set_save_summaries([])
+		return
+	save_load_panel.set_busy(true)
+	Backend.list_saves(_on_save_list_loaded)
+
+
+func _on_save_list_loaded(data) -> void:
+	save_load_panel.set_busy(false)
+	if data == null or not (data is Array):
+		save_load_panel.set_status("Failed to load save slots.")
+		save_load_panel.set_save_summaries([])
+		return
+	save_load_panel.set_save_summaries(data)
+	save_load_panel.set_status("%d save slot(s) ready." % data.size())
+
+
+func _on_load_requested(save_id: String) -> void:
+	if save_id.strip_edges().is_empty():
+		return
+	save_load_panel.set_status("Loading %s..." % save_id)
+	_set_waiting(true)
+	Backend.load_game(save_id, _on_load_completed.bind(save_id))
+
+
+func _on_load_completed(data, requested_save_id: String) -> void:
+	if data == null:
+		_set_waiting(false)
+		return
+	var session_data = data.get("session_data", {})
+	if not (session_data is Dictionary):
+		_set_waiting(false)
+		save_load_panel.set_status("Invalid save payload received.")
+		return
+
+	GameState.reset()
+	narrative_panel.load_history([])
+	GameState.update_from_response(session_data)
+	GameState.last_save_slot = str(data.get("slot_name", requested_save_id))
+	_remember_player_id()
+	save_load_panel.close_panel()
+	narrative_panel.append_system_text("[color=green]Loaded %s.[/color]" % GameState.last_save_slot)
+
+	if GameState.session_id.is_empty():
+		_set_waiting(false)
+		return
+
+	_pending_sync_callbacks = 3
+	Backend.get_session(GameState.session_id, _on_loaded_session_resynced)
+	Backend.get_map(GameState.session_id, _on_map_resynced)
+	Backend.get_inventory(GameState.session_id, _on_inventory_resynced)
+
+
+func _on_loaded_session_resynced(data) -> void:
+	if data != null:
+		GameState.update_from_response(data)
+	_complete_followup_sync()
+
+
+func _on_delete_save_requested(save_id: String) -> void:
+	if save_id.strip_edges().is_empty():
+		return
+	save_load_panel.set_busy(true)
+	save_load_panel.set_status("Deleting %s..." % save_id)
+	Backend.delete_save(save_id, _on_delete_save_completed.bind(save_id))
+
+
+func _on_delete_save_completed(data, save_id: String) -> void:
+	save_load_panel.set_busy(false)
+	if data == null:
+		return
+	save_load_panel.set_status("Deleted %s." % save_id)
+	_refresh_save_list()
+
+
+func _on_save_load_closed() -> void:
+	command_bar.focus_input()
+
+
+func _remember_player_id() -> void:
+	var player_name = str(GameState.player.get("name", "")).strip_edges()
+	if player_name.is_empty():
+		return
+	var profile = ConfigFile.new()
+	profile.set_value("profile", "last_player_id", player_name)
+	profile.save(PROFILE_PATH)
+
+
+func _map_has_tiles() -> bool:
+	return GameState.map_data.has("tiles") and GameState.map_data.get("tiles", []) is Array and not GameState.map_data.get("tiles", []).is_empty()

@@ -20,6 +20,7 @@ var ground_items: Array = []
 var active_quests: Array = []
 var quest_offers: Array = []
 var narrative_stream: Array = []
+var last_save_slot: String = ""
 var player_map_pos: Vector2i = Vector2i(10, 7)  # Player position on tile map
 var player_facing: int = 2  # 0=N,1=E,2=S,3=W — default facing south
 
@@ -99,6 +100,8 @@ func update_from_response(data: Dictionary) -> void:
 		active_quests = data["active_quests"]
 	if data.has("quest_offers") and data["quest_offers"] is Array:
 		quest_offers = data["quest_offers"]
+	if data.has("last_save_slot"):
+		last_save_slot = str(data["last_save_slot"])
 
 	if data.has("items") and data["items"] is Array:
 		inventory_items = data["items"]
@@ -141,6 +144,7 @@ func reset() -> void:
 	active_quests = []
 	quest_offers = []
 	narrative_stream = []
+	last_save_slot = ""
 	player_map_pos = Vector2i(10, 7)
 	player_facing = 2
 

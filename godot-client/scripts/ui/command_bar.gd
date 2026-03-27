@@ -2,10 +2,14 @@ extends PanelContainer
 class_name CommandBarWidget
 
 signal command_submitted(command_text: String)
+signal quick_save_requested
+signal saves_requested
 
 @onready var history_label: Label = $CommandVBox/HistoryLabel
 @onready var text_input: LineEdit = $CommandVBox/InputRow/TextInput
 @onready var send_btn: Button = $CommandVBox/InputRow/SendButton
+@onready var quick_save_btn: Button = $CommandVBox/InputRow/QuickSaveButton
+@onready var saves_btn: Button = $CommandVBox/InputRow/SavesButton
 
 var _history: Array[String] = []
 
@@ -13,6 +17,12 @@ var _history: Array[String] = []
 func _ready() -> void:
 	text_input.text_submitted.connect(_on_text_submitted)
 	send_btn.pressed.connect(_on_send_pressed)
+	quick_save_btn.pressed.connect(func() -> void:
+		quick_save_requested.emit()
+	)
+	saves_btn.pressed.connect(func() -> void:
+		saves_requested.emit()
+	)
 	_refresh_history()
 
 
@@ -31,6 +41,8 @@ func has_input_focus() -> bool:
 func set_waiting(waiting: bool) -> void:
 	text_input.editable = not waiting
 	send_btn.disabled = waiting
+	quick_save_btn.disabled = waiting
+	saves_btn.disabled = waiting
 
 
 func submit_command(text: String) -> void:

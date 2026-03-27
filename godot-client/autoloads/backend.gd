@@ -78,6 +78,9 @@ func load_game(save_id: String, callback: Callable) -> void:
 func list_saves(callback: Callable, player_id: String = "") -> void:
 	_http_get("/game/saves/%s" % _resolve_player_id(player_id), callback)
 
+func delete_save(save_id: String, callback: Callable) -> void:
+	_http_delete("/game/saves/%s" % save_id, callback)
+
 # --- Internal HTTP ---
 
 func _resolve_base_url() -> String:

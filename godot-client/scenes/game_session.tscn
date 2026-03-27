@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://cgamesession"]
+[gd_scene load_steps=15 format=3 uid="uid://cgamesession"]
 
 [ext_resource type="Script" path="res://scenes/game_session.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/world/world_view.gd" id="2"]
@@ -10,6 +10,10 @@
 [ext_resource type="PackedScene" path="res://scenes/components/inventory_panel.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/components/minimap_panel.tscn" id="9"]
 [ext_resource type="PackedScene" path="res://scenes/components/command_bar.tscn" id="10"]
+[ext_resource type="Script" path="res://scripts/world/selection_overlay.gd" id="11"]
+[ext_resource type="PackedScene" path="res://scenes/components/quest_panel.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://scenes/components/combat_panel.tscn" id="13"]
+[ext_resource type="PackedScene" path="res://scenes/components/save_load_panel.tscn" id="14"]
 
 [node name="GameSession" type="Control"]
 layout_mode = 3
@@ -80,6 +84,7 @@ texture_filter = 1
 script = ExtResource("4")
 
 [node name="SelectionLayer" type="Node2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
+script = ExtResource("11")
 
 [node name="WorldCamera" type="Camera2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
 enabled = true
@@ -103,54 +108,14 @@ layout_mode = 2
 [node name="MinimapPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("9")]
 layout_mode = 2
 
-[node name="QuestPanel" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
+[node name="QuestPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("12")]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 112)
-
-[node name="QuestMargin" type="MarginContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="QuestVBox" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin"]
-layout_mode = 2
-
-[node name="QuestTitle" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox"]
-layout_mode = 2
-text = "Quests"
-
-[node name="QuestSummary" type="Label" parent="MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox"]
-layout_mode = 2
-text = "0 active, 0 available"
-autowrap_mode = 2
 
 [node name="CommandBar" parent="MainMargin/MainVBox" instance=ExtResource("10")]
 layout_mode = 2
 
 [node name="OverlayCanvas" type="CanvasLayer" parent="."]
 
-[node name="CombatHUD" type="PanelContainer" parent="OverlayCanvas"]
-visible = false
-offset_left = 936.0
-offset_top = 88.0
-offset_right = 1260.0
-offset_bottom = 316.0
+[node name="CombatPanel" parent="OverlayCanvas" instance=ExtResource("13")]
 
-[node name="CombatMargin" type="MarginContainer" parent="OverlayCanvas/CombatHUD"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="CombatVBox" type="VBoxContainer" parent="OverlayCanvas/CombatHUD/CombatMargin"]
-layout_mode = 2
-
-[node name="RoundLabel" type="Label" parent="OverlayCanvas/CombatHUD/CombatMargin/CombatVBox"]
-layout_mode = 2
-text = "Round 1"
-
-[node name="CombatantList" type="VBoxContainer" parent="OverlayCanvas/CombatHUD/CombatMargin/CombatVBox"]
-layout_mode = 2
+[node name="SaveLoadPanel" parent="OverlayCanvas" instance=ExtResource("14")]

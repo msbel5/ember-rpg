@@ -1,5 +1,7 @@
 extends Control
 
+const PROFILE_PATH := "user://client_profile.cfg"
+
 @onready var new_game_btn: Button = $VBoxContainer/NewGameButton
 @onready var continue_btn: Button = $VBoxContainer/ContinueButton
 @onready var quit_btn: Button = $VBoxContainer/QuitButton
@@ -17,7 +19,7 @@ var recommended_alignment: String = "TN"
 func _ready() -> void:
 	creation_panel.visible = false
 	status_label.text = ""
-	continue_btn.disabled = true  # TODO: check for saved games
+	continue_btn.disabled = _last_player_id().is_empty()
 	class_option.disabled = true
 	start_btn.text = "Prepare Character"
 
@@ -36,8 +38,14 @@ func _on_new_game() -> void:
 	name_input.grab_focus()
 
 func _on_continue() -> void:
-	# TODO: show save list
-	pass
+	var player_id = _last_player_id()
+	if player_id.is_empty():
+		status_label.text = "No previous adventurer profile found."
+		continue_btn.disabled = true
+		return
+	status_label.text = "Finding saves for %s..." % player_id
+	continue_btn.disabled = true
+	Backend.list_saves(_on_continue_saves_loaded, player_id)
 
 func _on_quit() -> void:
 	get_tree().quit()
@@ -82,10 +90,12 @@ func _on_session_created(data) -> void:
 		return
 
 	GameState.update_from_response(data)
+	_store_last_player_id(str(GameState.player.get("name", current_creation_player_name)))
 	get_tree().change_scene_to_file("res://scenes/game_session.tscn")
 
 func _on_backend_error(message: String) -> void:
 	start_btn.disabled = false
+	continue_btn.disabled = _last_player_id().is_empty()
 	status_label.text = message
 
 func _on_name_changed(_new_text: String) -> void:
@@ -127,3 +137,50 @@ func _selected_class_id() -> String:
 	if meta == null:
 		return class_option.get_item_text(index).to_lower()
 	return str(meta)
+
+
+func _on_continue_saves_loaded(data) -> void:
+	continue_btn.disabled = false
+	if data == null or not (data is Array) or data.is_empty():
+		status_label.text = "No save files found for the last adventurer."
+		return
+
+	var saves: Array = data.duplicate(true)
+	saves.sort_custom(func(a, b): return str(a.get("timestamp", "")) > str(b.get("timestamp", "")))
+	var latest_save = saves[0]
+	status_label.text = "Loading %s..." % str(latest_save.get("slot_name", latest_save.get("save_id", "latest save")))
+	Backend.load_game(str(latest_save.get("save_id", "")), _on_continue_loaded)
+
+
+func _on_continue_loaded(data) -> void:
+	continue_btn.disabled = false
+	if data == null:
+		status_label.text = "Failed to load the latest save."
+		return
+
+	var session_data = data.get("session_data", {})
+	if not (session_data is Dictionary):
+		status_label.text = "Loaded save payload was invalid."
+		return
+
+	GameState.reset()
+	GameState.update_from_response(session_data)
+	GameState.last_save_slot = str(data.get("slot_name", data.get("save_id", "")))
+	_store_last_player_id(str(GameState.player.get("name", _last_player_id())))
+	get_tree().change_scene_to_file("res://scenes/game_session.tscn")
+
+
+func _store_last_player_id(player_id: String) -> void:
+	player_id = player_id.strip_edges()
+	if player_id.is_empty():
+		return
+	var profile = ConfigFile.new()
+	profile.set_value("profile", "last_player_id", player_id)
+	profile.save(PROFILE_PATH)
+
+
+func _last_player_id() -> String:
+	var profile = ConfigFile.new()
+	if profile.load(PROFILE_PATH) != OK:
+		return ""
+	return str(profile.get_value("profile", "last_player_id", "")).strip_edges()

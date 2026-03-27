@@ -28,3 +28,11 @@ placeholder_text = "What do you do?"
 [node name="SendButton" type="Button" parent="CommandVBox/InputRow"]
 layout_mode = 2
 text = "Send"
+
+[node name="QuickSaveButton" type="Button" parent="CommandVBox/InputRow"]
+layout_mode = 2
+text = "Quick Save"
+
+[node name="SavesButton" type="Button" parent="CommandVBox/InputRow"]
+layout_mode = 2
+text = "Saves"

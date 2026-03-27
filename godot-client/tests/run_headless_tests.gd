@@ -71,6 +71,9 @@ func _test_backend_routes() -> void:
 	_assert_true(probe.last_request.get("path", "") == "/game/session/session_1/save", "save_game uses session save route")
 	_assert_true(save_body is Dictionary and save_body.get("player_id", "") == "Chaos", "save_game sends player_id")
 	_assert_true(save_body is Dictionary and save_body.get("slot_name", "") == "campfire", "save_game sends optional slot_name")
+
+	probe.delete_save("campfire", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/saves/campfire", "delete_save uses the save delete route")
 	probe.free()
 
 
@@ -279,6 +282,43 @@ func _test_ui_panels() -> void:
 	await process_frame
 	var history_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel")
 	_assert_true(history_label.text.contains("inventory"), "Command bar tracks recent commands")
+	var quick_save_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/QuickSaveButton")
+	var saves_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SavesButton")
+	_assert_true(quick_save_button != null and saves_button != null, "Command bar exposes save controls")
+
+	game_state.update_from_response({
+		"scene": "combat",
+		"combat": {
+			"round": 3,
+			"active": "Chaos",
+			"ended": false,
+			"combatants": [
+				{"name": "Chaos", "hp": 18, "max_hp": 20, "ap": 2, "dead": false, "resources": {"movement_remaining": 3, "speed": 6}},
+				{"name": "Wolf", "hp": 7, "max_hp": 9, "ap": 2, "dead": false, "resources": {"movement_remaining": 4, "speed": 8}},
+			],
+		},
+		"active_quests": [{"quest_id": "q1", "title": "Bread Run", "status": "active", "deadline": 16}],
+		"quest_offers": [{"id": "offer_1", "title": "Clear The Roads", "description": "Drive goblins away.", "reward_gold": 60, "reward_xp": 75}],
+	})
+	await process_frame
+
+	var combat_panel = session_instance.get_node("OverlayCanvas/CombatPanel")
+	_assert_true(combat_panel.visible, "Combat panel appears when combat state is active")
+	var combat_rows = session_instance.get_node("OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/CombatantScroll/CombatantList")
+	_assert_true(combat_rows.get_child_count() >= 2, "Combat panel renders combatant rows")
+
+	var active_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/ActiveList")
+	var offer_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/OfferList")
+	_assert_true(active_list.get_child_count() >= 1 and offer_list.get_child_count() >= 1, "Quest panel renders active and available quest entries")
+
+	var save_load_panel = session_instance.get_node("OverlayCanvas/SaveLoadPanel")
+	save_load_panel.open_panel()
+	save_load_panel.set_save_summaries([
+		{"save_id": "slot_a", "slot_name": "slot_a", "location": "Harbor Town", "timestamp": "2026-03-27T01:02:03"},
+	])
+	await process_frame
+	var save_list = session_instance.get_node("OverlayCanvas/SaveLoadPanel/ModalFrame/ModalMargin/ModalVBox/SaveScroll/SaveList")
+	_assert_true(save_list.get_child_count() == 1, "Save/load panel renders save slot summaries")
 
 	session_instance.free()
 	await process_frame
