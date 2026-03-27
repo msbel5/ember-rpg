@@ -24,6 +24,8 @@
   - `C:/Users/msbel/AppData/Roaming/Godot/app_userdata/Ember RPG/screenshots/phase2/game/game_session_frame_2026-03-27T22-33-45.png`
 - 2026-03-28 title-shell proof after save-browser and advanced-settings pass:
   - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/godot_wizard_probe3.png`
+- 2026-03-28 title save-browser proof with player-scoped save listing:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/godot_continue_browser_probe.png`
 - 2026-03-28 summary-screen proof after layout and focus pass:
   - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/godot_summary_probe.png`
 - 2026-03-28 gameplay shell proof after keyboard-driven creation flow:
@@ -71,6 +73,7 @@
 - Title-screen `Continue` restores a saved `scifi_frontier` campaign.
 - Settlement quick actions remain visible and callable in the campaign shell.
 - The title-screen save browser opens from `Continue` and no longer relies on a cached single-slot restore.
+- Live title `Continue` opens a populated save browser for `Chaos` and renders at least one real save summary row.
 - A keyboard-driven `fantasy_ember` creation flow can reach the live gameplay shell.
 - Live command submission via `look around` updates narrative and recent-command UI in the gameplay shell.
 - Live map clicks issue movement commands and update AP / recent-command state.
