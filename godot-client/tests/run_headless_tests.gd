@@ -319,6 +319,9 @@ func _test_scene_instantiation() -> void:
 		title_instance._on_continue()
 		await process_frame
 		_assert_true(title_instance.get_node("LoadBrowser").visible, "TitleScreen opens the save browser for continue flow")
+		title_instance._set_busy(true, "Starting creation...")
+		title_instance._set_busy(false, "")
+		_assert_true(title_instance.get_node("StatusLabel").text.is_empty(), "TitleScreen clears stale busy status after success")
 		title_instance._apply_creation_state({
 			"creation_id": "create_1",
 			"player_name": "Chaos",
@@ -342,6 +345,10 @@ func _test_scene_instantiation() -> void:
 			"recommended_alignment": "LG",
 			"recommended_skills": ["athletics", "perception"],
 		})
+		title_instance._go_to_step(title_instance.STEP_QUESTIONNAIRE)
+		await process_frame
+		var title_next_button = title_instance.get_node("CharacterCreation/VBox/ButtonRow/NextButton")
+		_assert_true(title_instance.get_viewport().gui_get_focus_owner() == title_next_button, "TitleScreen focuses Next on the questionnaire step")
 		title_instance._go_to_step(title_instance.STEP_BUILD)
 		await process_frame
 		var title_class_option = title_instance.get_node("CharacterCreation/VBox/BuildSection/ClassOption")
@@ -357,7 +364,9 @@ func _test_scene_instantiation() -> void:
 		title_instance._go_to_step(title_instance.STEP_SUMMARY)
 		await process_frame
 		var title_summary = title_instance.get_node("CharacterCreation/VBox/SummarySection/SummaryText")
+		var title_start_button = title_instance.get_node("CharacterCreation/VBox/ButtonRow/StartButton")
 		_assert_true(title_summary.text.contains("recommended"), "TitleScreen summary renders creation preview text")
+		_assert_true(title_instance.get_viewport().gui_get_focus_owner() == title_start_button, "TitleScreen focuses Start Campaign on the summary step")
 		title_instance._go_to_step(title_instance.STEP_BUILD)
 		await process_frame
 		_assert_true(str(title_class_option.get_item_metadata(title_class_option.selected)) == "mage", "TitleScreen preserves manual class edits when returning from summary")

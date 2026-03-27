@@ -32,6 +32,9 @@ const CLASS_PRIORITIES := {
 @onready var new_game_btn: Button = $VBoxContainer/NewGameButton
 @onready var continue_btn: Button = $VBoxContainer/ContinueButton
 @onready var quit_btn: Button = $VBoxContainer/QuitButton
+@onready var main_menu: VBoxContainer = $VBoxContainer
+@onready var title_label: Label = $TitleLabel
+@onready var subtitle_label: Label = $SubtitleLabel
 @onready var creation_panel: Panel = $CharacterCreation
 @onready var status_label: Label = $StatusLabel
 
@@ -121,6 +124,7 @@ func _on_new_game() -> void:
 	creation_panel.visible = true
 	creation_payload = {}
 	wizard_step = STEP_IDENTITY
+	_refresh_shell_visibility()
 	_refresh_creation_view()
 	name_input.grab_focus()
 
@@ -349,6 +353,8 @@ func _set_busy(busy: bool, message: String) -> void:
 	auto_assign_button.disabled = busy
 	if not message.is_empty():
 		status_label.text = message
+	elif not busy:
+		status_label.text = ""
 
 
 func _refresh_creation_view() -> void:
@@ -381,6 +387,7 @@ func _refresh_creation_view() -> void:
 		_update_build_view()
 	elif wizard_step == STEP_SUMMARY:
 		_update_summary_preview()
+	call_deferred("_focus_primary_creation_control")
 
 
 func _on_toggle_advanced() -> void:
@@ -396,6 +403,7 @@ func _open_load_browser() -> void:
 	creation_panel.visible = false
 	load_browser.visible = true
 	status_label.text = ""
+	_refresh_shell_visibility()
 	load_player_input.text = _last_player_id()
 	load_status_label.text = "Choose a save slot to continue."
 	_clear_load_rows()
@@ -408,6 +416,7 @@ func _close_load_browser() -> void:
 	load_browser.visible = false
 	load_status_label.text = "Choose a save slot to continue."
 	_clear_load_rows()
+	_refresh_shell_visibility()
 	new_game_btn.grab_focus()
 
 
@@ -693,6 +702,7 @@ func _reset_wizard_state() -> void:
 	load_status_label.text = "Choose a save slot to continue."
 	_clear_load_rows()
 	_update_advanced_toggle_text()
+	_refresh_shell_visibility()
 	_refresh_creation_view()
 
 
@@ -819,3 +829,20 @@ func _input(event: InputEvent) -> void:
 	else:
 		status_label.text = "Viewport capture saved: %s" % screenshot_path
 	get_viewport().set_input_as_handled()
+
+
+func _refresh_shell_visibility() -> void:
+	var show_menu_shell = not creation_panel.visible and not load_browser.visible
+	main_menu.visible = show_menu_shell
+	title_label.visible = show_menu_shell
+	subtitle_label.visible = show_menu_shell
+
+
+func _focus_primary_creation_control() -> void:
+	match wizard_step:
+		STEP_IDENTITY:
+			name_input.grab_focus()
+		STEP_QUESTIONNAIRE, STEP_ROLL, STEP_BUILD:
+			next_button.grab_focus()
+		STEP_SUMMARY:
+			start_button.grab_focus()

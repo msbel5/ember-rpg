@@ -45,18 +45,18 @@
 | Campaign creation wizard works visually for both adapters | Green | `docs/qa/campaign_cutover_visual_log.md` | Godot / QA | Short graphical creation proof exists for both adapters. |
 | Character build edits survive wizard navigation | Green | `godot-client/tests/run_headless_tests.gd` | Godot | Regression coverage exists. |
 | In-session save/load shell works | Green | `docs/qa/campaign_cutover_visual_log.md` | Godot / QA | Quick save and in-session restore proof exists. |
-| Title-screen resume is a real save browser, not only cached `Continue` | Open | Current title flow still uses cached last-save continue | Godot | Release blocker. Player-scoped `GET /game/saves/{player_id}` is available for the eventual browser. |
+| Title-screen resume is a real save browser, not only cached `Continue` | Green | `godot-client/tests/run_headless_tests.gd`, `docs/qa/campaign_cutover_visual_log.md` | Godot | `Continue` now opens a player-scoped save browser instead of immediately restoring one cached slot. |
 | Status/location/resource labels stay aligned with backend state | Green | `docs/qa/campaign_cutover_visual_log.md` | Godot | The prior `Unknown` location defect is fixed. |
 | Inventory, quest, settlement, and character-sheet panels are clickable and non-ambiguous | Partial | Headless coverage plus short live proof | Godot | Inventory and settlement quick actions are covered; broader clickable-surface proof is still missing. |
-| Doors, furniture, item, and world-surface click actions feel complete | Open | No final QA evidence | Godot | Current world interaction is still shallower than the demo bar. |
-| Combat actions are disabled when it is not the player's turn | Open | No final QA evidence | Godot | Release blocker for combat UX correctness. |
+| Doors, furniture, item, and world-surface click actions feel complete | Partial | `godot-client/tests/run_headless_tests.gd`, `docs/qa/campaign_cutover_visual_log.md` | Godot | Item pickup, door open, well examine, and live movement clicks are covered; furniture/door interaction breadth still needs longer-form live proof. |
+| Combat actions are disabled when it is not the player's turn | Green | `godot-client/tests/run_headless_tests.gd` | Godot | Turn gating now has regression coverage and no longer leaves attack actions enabled off-turn. |
 | Placeholder and no-data states are clearly distinguished from valid gameplay | Open | No final QA evidence | Godot | Needs explicit live verification. |
 
 ## Visual and Benchmark Gates
 
 | Gate | Status | Evidence | Owner | Notes |
 |------|--------|----------|-------|-------|
-| Short graphical pass works for `fantasy_ember` | Green | `docs/qa/campaign_cutover_visual_log.md` | QA | Title, boot, command, and save proof exist. |
+| Short graphical pass works for `fantasy_ember` | Green | `docs/qa/campaign_cutover_visual_log.md` | QA | Title, wizard, gameplay boot, command, movement, and viewport proof exist. |
 | Short graphical pass works for `scifi_frontier` | Green | `docs/qa/campaign_cutover_visual_log.md` | QA | Title, boot, command, save, and continue proof exist. |
 | `100`-turn visual pass per adapter | Open | Tracked as pending in `campaign_cutover_visual_log.md` | QA | Required. |
 | `30`-minute free play per adapter | Open | Tracked as pending in `campaign_cutover_visual_log.md` | QA | Required. |
@@ -67,9 +67,7 @@
 ## Release Decision
 - Current release state: `Not ready for final demo signoff`
 - Hard blockers still open:
-  - real title save-browser / resume flow
-  - deeper clickable world interactions for doors, furniture, and item intent
-  - combat turn gating
+  - deeper clickable world interactions for furniture and richer world-object intent
   - placeholder/no-data visual clarity
   - long-form visual and chaos matrices
 - Conditions to flip to ready:
