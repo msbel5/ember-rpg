@@ -24,6 +24,7 @@ ALLOWED_OVERSIZE: Dict[str, str] = {
     "frp-backend/engine/data_loader.py": "Pure data loader exception.",
     "frp-backend/tools/play_topdown.py": "Terminal renderer surface exception.",
     "frp-backend/tools/play.py": "CLI surface exception.",
+    "godot-client/tests/run_headless_tests.gd": "Godot smoke harness intentionally centralizes lightweight client contract checks.",
 }
 FORBIDDEN_SNIPPETS: Dict[str, List[str]] = {
     "frp-backend/engine/world/consequence.py": [

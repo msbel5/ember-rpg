@@ -1,5 +1,15 @@
 {
   "id": "fantasy_ember",
+  "allowed_species": [
+    "human",
+    "dwarf",
+    "elf",
+    "dragon",
+    "horse",
+    "goat",
+    "deer",
+    "wolf"
+  ],
   "species_labels": {
     "human": "Human",
     "dwarf": "Dwarf",
@@ -9,5 +19,10 @@
     "goat": "Goat",
     "deer": "Deer",
     "wolf": "Wolf"
+  },
+  "starter_content": {
+    "player_classes": ["warrior", "rogue", "mage", "cleric"],
+    "default_player_class": "warrior",
+    "starting_focus": "frontier hamlet"
   }
 }

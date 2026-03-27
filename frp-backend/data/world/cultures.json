@@ -27,6 +27,27 @@
       "ethics": {"theft": "personal", "murder": "acceptable", "tribute": "required"},
       "governance_bias": "warlord",
       "institution_bias": {"hoard": 1.0, "fortification": 0.9, "market": 0.1}
+    },
+    "synth_compacts": {
+      "id": "synth_compacts",
+      "values": {"law": 65, "efficiency": 95, "trade": 40},
+      "ethics": {"theft": "crime", "murder": "capital", "maintenance": "duty"},
+      "governance_bias": "consensus_core",
+      "institution_bias": {"fabrication": 1.0, "archive": 0.8, "fortification": 0.7}
+    },
+    "frontier_concord": {
+      "id": "frontier_concord",
+      "values": {"law": 45, "commerce": 85, "exploration": 90},
+      "ethics": {"theft": "crime", "murder": "capital", "salvage": "regulated"},
+      "governance_bias": "charter_council",
+      "institution_bias": {"market": 0.9, "hangar": 0.8, "sensorium": 0.6}
+    },
+    "mycelial_synods": {
+      "id": "mycelial_synods",
+      "values": {"law": 30, "continuity": 95, "ecology": 90},
+      "ethics": {"theft": "meaningless", "murder": "taboo", "pollution": "crime"},
+      "governance_bias": "memory_synod",
+      "institution_bias": {"grove": 0.9, "laboratory": 0.8, "market": 0.3}
     }
   }
 }

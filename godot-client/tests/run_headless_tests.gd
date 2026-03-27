@@ -22,6 +22,7 @@ func _initialize() -> void:
 
 func _run_tests() -> void:
 	_test_backend_routes()
+	_test_campaign_backend_routes()
 	_test_response_normalizer()
 	_test_game_state_normalization()
 	await _test_scene_instantiation()
@@ -74,6 +75,47 @@ func _test_backend_routes() -> void:
 
 	probe.delete_save("campfire", noop)
 	_assert_true(probe.last_request.get("path", "") == "/game/saves/campfire", "delete_save uses the save delete route")
+	probe.free()
+
+
+func _test_campaign_backend_routes() -> void:
+	var probe = BackendProbe.new()
+	var noop := func(_data = null) -> void:
+		pass
+
+	probe.create_campaign("Chaos", "warrior", "fantasy_ember", noop, "standard", 42)
+	var create_body = JSON.parse_string(str(probe.last_request.get("body", "{}")))
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns", "create_campaign uses the campaign creation route")
+	_assert_true(create_body is Dictionary and create_body.get("adapter_id", "") == "fantasy_ember", "create_campaign sends adapter_id")
+	_assert_true(create_body is Dictionary and int(create_body.get("seed", -1)) == 42, "create_campaign sends an explicit seed")
+
+	probe.get_campaign("camp_1", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/camp_1", "get_campaign uses the campaign snapshot route")
+
+	probe.submit_campaign_command("camp_1", "look around", noop, "assign", {"resident": "Iris", "job": "hauling"})
+	var command_body = JSON.parse_string(str(probe.last_request.get("body", "{}")))
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/camp_1/commands", "submit_campaign_command uses the campaign command route")
+	_assert_true(command_body is Dictionary and command_body.get("shortcut", "") == "assign", "submit_campaign_command sends shortcut metadata")
+
+	probe.get_campaign_region("camp_1", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/camp_1/region/current", "get_campaign_region uses the realized region route")
+
+	probe.get_campaign_settlement("camp_1", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/camp_1/settlement/current", "get_campaign_settlement uses the settlement route")
+
+	probe.save_campaign("camp_1", noop, "frontier", "Chaos")
+	var save_body = JSON.parse_string(str(probe.last_request.get("body", "{}")))
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/camp_1/save", "save_campaign uses the campaign save route")
+	_assert_true(save_body is Dictionary and save_body.get("slot_name", "") == "frontier", "save_campaign sends slot_name")
+
+	probe.list_campaign_saves("camp_1", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/camp_1/saves", "list_campaign_saves uses the campaign save listing route")
+
+	probe.load_campaign("frontier", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/load/frontier", "load_campaign uses the campaign load route")
+
+	probe.delete_campaign("camp_1", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/camp_1", "delete_campaign uses the campaign delete route")
 	probe.free()
 
 

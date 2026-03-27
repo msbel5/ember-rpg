@@ -1,0 +1,22 @@
+{
+  "id": "scifi_frontier",
+  "allowed_species": [
+    "human",
+    "synthetic",
+    "auran",
+    "mycoid"
+  ],
+  "species_labels": {
+    "human": "Settler",
+    "synthetic": "Synth",
+    "auran": "Auran",
+    "mycoid": "Mycoid",
+    "horse": "Hauler Beast",
+    "wolf": "Razor Hound"
+  },
+  "starter_content": {
+    "player_classes": ["warrior", "rogue", "mage"],
+    "default_player_class": "rogue",
+    "starting_focus": "frontier outpost"
+  }
+}

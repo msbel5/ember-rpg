@@ -16,6 +16,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 - `frp-backend/engine/worldgen/pipeline.py`: Initial worldgen vertical slice keeps pipeline stages together until the package is split by subsystem.
 - `frp-backend/tools/play.py`: CLI surface exception.
 - `frp-backend/tools/play_topdown.py`: Terminal renderer surface exception.
+- `godot-client/tests/run_headless_tests.gd`: Godot smoke harness intentionally centralizes lightweight client contract checks.
 
 ## Module Map
 
@@ -24,6 +25,11 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/__init__.py` | 1 | - | - |
 | `frp-backend/engine/api/__init__.py` | 0 | - | - |
 | `frp-backend/engine/api/action_parser.py` | 439 | ActionIntent (0), ParsedAction (1), ActionParser (3) | _normalize, _looks_turkish, _restore_turkish_final_consonant, _strip_turkish_case_suffix |
+| `frp-backend/engine/api/campaign_commands.py` | 161 | - | resolve_command_text, maybe_handle_commander_command, handle_travel, hours_for_avatar_command |
+| `frp-backend/engine/api/campaign_models.py` | 60 | CreateCampaignRequest (0), CampaignCommandRequest (0), CampaignSaveRequest (0), CampaignSaveSummary (0) | - |
+| `frp-backend/engine/api/campaign_routes.py` | 133 | - | _make_llm_callable, create_campaign, get_campaign, run_campaign_command |
+| `frp-backend/engine/api/campaign_runtime.py` | 225 | CampaignContext (0), CampaignRuntime (11) | - |
+| `frp-backend/engine/api/campaign_state.py` | 409 | - | build_world, region_payload, campaign_payload, persist_campaign_state |
 | `frp-backend/engine/api/game_engine.py` | 233 | ActionResult (0), GameEngine (2) | - |
 | `frp-backend/engine/api/game_engine_runtime.py` | 317 | GameEngineRuntimeMixin (3) | - |
 | `frp-backend/engine/api/game_session.py` | 15 | - | - |
@@ -137,14 +143,14 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/world/world_routes.py` | 63 | - | _get_sessions, _get_session, get_world_state, get_history |
 | `frp-backend/engine/worldgen/__init__.py` | 54 | - | - |
 | `frp-backend/engine/worldgen/models.py` | 226 | WorldProfile (1), TectonicPlate (1), SpeciesLineage (1), FactionSeed (1) | _serialize |
-| `frp-backend/engine/worldgen/pipeline.py` | 814 | - | _clamp, _round_grid, _noise, _region_lookup |
-| `frp-backend/engine/worldgen/registries.py` | 98 | - | _normalized_map, load_world_profiles, load_world_biomes, load_species_templates |
+| `frp-backend/engine/worldgen/pipeline.py` | 815 | - | _clamp, _round_grid, _noise, _region_lookup |
+| `frp-backend/engine/worldgen/registries.py` | 108 | - | _normalized_map, load_world_profiles, load_world_biomes, load_species_templates |
 | `frp-backend/tools/chaos_playtest.py` | 322 | - | log_bug, play, run_chaos |
 | `frp-backend/tools/play.py` | 459 | - | hp_style, hp_bar, format_game_time, render_header |
 | `frp-backend/tools/play_topdown.py` | 788 | MapState (4) | hp_style, hp_bar, format_game_time, render_header |
-| `frp-backend/tools/runtime_audit.py` | 193 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
+| `frp-backend/tools/runtime_audit.py` | 194 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
 | `frp-backend/tools/terminal_client.py` | 39 | - | run |
-| `godot-client/autoloads/backend.gd` | 207 | - | _ready, create_session, start_creation, finalize_creation |
+| `godot-client/autoloads/backend.gd` | 254 | - | _ready, create_session, start_creation, finalize_creation |
 | `godot-client/autoloads/game_state.gd` | 231 | - | update_from_response, reset, is_in_combat, get_player_hp_ratio |
 | `godot-client/scenes/game_session.gd` | 427 | - | _ready, _enter_scene, _on_scene_entered, _on_scene_session_loaded |
 | `godot-client/scenes/title_screen.gd` | 200 | - | _ready, _on_new_game, _on_continue, _on_quit |
@@ -172,4 +178,4 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/scripts/world/tilemap_controller.gd` | 46 | - | _ready, render_map, get_map_size, _ensure_tileset |
 | `godot-client/scripts/world/world_view.gd` | 153 | - | _ready, refresh_from_state, _refresh_from_state, _gui_input |
 | `godot-client/tests/doubles/backend_probe.gd` | 29 | - | _ensure_base_url, _post, _http_get, _http_delete |
-| `godot-client/tests/run_headless_tests.gd` | 414 | - | _initialize, _run_tests, _assert_true, _game_state |
+| `godot-client/tests/run_headless_tests.gd` | 456 | - | _initialize, _run_tests, _assert_true, _game_state |

@@ -56,6 +56,48 @@
       "supernatural_tags": ["arcane", "fire_blood"],
       "culture_hint": "dragon_eyries"
     },
+    "synthetic": {
+      "id": "synthetic",
+      "name": "Synthetic",
+      "sapient": true,
+      "habitats": ["plains", "coast", "mountain"],
+      "temperature_range": [0.0, 1.0],
+      "moisture_range": [0.0, 1.0],
+      "physiology_tags": ["synthetic", "durable"],
+      "cognition_tags": ["analytical", "networked"],
+      "social_structure": "compact",
+      "domestication_roles": [],
+      "supernatural_tags": [],
+      "culture_hint": "synth_compacts"
+    },
+    "auran": {
+      "id": "auran",
+      "name": "Auran",
+      "sapient": true,
+      "habitats": ["coast", "plains"],
+      "temperature_range": [0.15, 0.95],
+      "moisture_range": [0.15, 0.85],
+      "physiology_tags": ["light_frame", "glider"],
+      "cognition_tags": ["curious", "mercantile"],
+      "social_structure": "flotilla",
+      "domestication_roles": [],
+      "supernatural_tags": [],
+      "culture_hint": "frontier_concord"
+    },
+    "mycoid": {
+      "id": "mycoid",
+      "name": "Mycoid",
+      "sapient": true,
+      "habitats": ["swamp", "temperate_forest"],
+      "temperature_range": [0.2, 0.8],
+      "moisture_range": [0.45, 1.0],
+      "physiology_tags": ["fungal", "resilient"],
+      "cognition_tags": ["collective_memory", "patient"],
+      "social_structure": "synod",
+      "domestication_roles": [],
+      "supernatural_tags": [],
+      "culture_hint": "mycelial_synods"
+    },
     "horse": {
       "id": "horse",
       "name": "Horse",

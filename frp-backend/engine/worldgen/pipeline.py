@@ -710,6 +710,7 @@ def realize_region(world: WorldBlueprint, region_id: str, detail_level: str = "s
             "macro_region_id": region_id,
             "controller_faction_id": region.get("controller_faction_id"),
             "settlement_id": region.get("settlement_id"),
+            "explainability": deepcopy(region.get("explainability", {})),
         },
     )
 

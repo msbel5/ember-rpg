@@ -81,6 +81,53 @@ func list_saves(callback: Callable, player_id: String = "") -> void:
 func delete_save(save_id: String, callback: Callable) -> void:
 	_http_delete("/game/saves/%s" % save_id, callback)
 
+func create_campaign(player_name: String, player_class: String, adapter_id: String, callback: Callable, profile_id: String = "standard", seed: int = -1) -> void:
+	var body := {
+		"player_name": player_name,
+		"player_class": player_class,
+		"adapter_id": adapter_id,
+		"profile_id": profile_id,
+	}
+	if seed >= 0:
+		body["seed"] = seed
+	_post("/game/campaigns", JSON.stringify(body), callback)
+
+func get_campaign(campaign_id: String, callback: Callable) -> void:
+	_http_get("/game/campaigns/%s" % campaign_id, callback)
+
+func submit_campaign_command(campaign_id: String, input_text: String, callback: Callable, shortcut: String = "", args: Dictionary = {}) -> void:
+	var body := {
+		"input": input_text,
+		"args": args,
+	}
+	if not shortcut.is_empty():
+		body["shortcut"] = shortcut
+	_post("/game/campaigns/%s/commands" % campaign_id, JSON.stringify(body), callback)
+
+func get_campaign_region(campaign_id: String, callback: Callable) -> void:
+	_http_get("/game/campaigns/%s/region/current" % campaign_id, callback)
+
+func get_campaign_settlement(campaign_id: String, callback: Callable) -> void:
+	_http_get("/game/campaigns/%s/settlement/current" % campaign_id, callback)
+
+func save_campaign(campaign_id: String, callback: Callable, slot_name: String = "", player_id: String = "") -> void:
+	var body := {}
+	var resolved_player_id := _resolve_player_id(player_id)
+	if not resolved_player_id.is_empty():
+		body["player_id"] = resolved_player_id
+	if not slot_name.is_empty():
+		body["slot_name"] = slot_name
+	_post("/game/campaigns/%s/save" % campaign_id, JSON.stringify(body), callback)
+
+func list_campaign_saves(campaign_id: String, callback: Callable) -> void:
+	_http_get("/game/campaigns/%s/saves" % campaign_id, callback)
+
+func load_campaign(save_id: String, callback: Callable) -> void:
+	_post("/game/campaigns/load/%s" % save_id, "{}", callback)
+
+func delete_campaign(campaign_id: String, callback: Callable) -> void:
+	_http_delete("/game/campaigns/%s" % campaign_id, callback)
+
 # --- Internal HTTP ---
 
 func _resolve_base_url() -> String:

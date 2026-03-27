@@ -54,6 +54,12 @@ def load_adapter_pack(adapter_id: str) -> dict[str, Any]:
     return load_json_path(path)
 
 
+@lru_cache(maxsize=None)
+def load_adapter_ids() -> tuple[str, ...]:
+    adapters_dir = _BASE_DIR / "adapters"
+    return tuple(sorted(path.stem for path in adapters_dir.glob("*.json")))
+
+
 def validate_world_registries() -> None:
     profiles = load_world_profiles()
     biomes = load_world_biomes()
@@ -61,8 +67,6 @@ def validate_world_registries() -> None:
     cultures = load_culture_templates()
     buildings = load_building_templates()
     furniture = load_furniture_templates()
-    adapter = load_adapter_pack("fantasy_ember")
-
     if "standard" not in profiles:
         raise ValueError("Missing required standard world profile")
 
@@ -92,7 +96,13 @@ def validate_world_registries() -> None:
                     f"Building template {building_id} references unknown furniture {item['kind']}"
                 )
 
-    species_labels = adapter.get("species_labels", {})
-    for species_id in species_labels:
-        if species_id not in species:
-            raise ValueError(f"Adapter fantasy_ember references unknown species {species_id}")
+    for adapter_id in load_adapter_ids():
+        adapter = load_adapter_pack(adapter_id)
+        species_labels = adapter.get("species_labels", {})
+        allowed_species = adapter.get("allowed_species", [])
+        for species_id in species_labels:
+            if species_id not in species:
+                raise ValueError(f"Adapter {adapter_id} references unknown species {species_id}")
+        for species_id in allowed_species:
+            if species_id not in species:
+                raise ValueError(f"Adapter {adapter_id} allows unknown species {species_id}")
