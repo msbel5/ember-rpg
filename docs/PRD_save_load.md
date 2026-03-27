@@ -1,15 +1,15 @@
 # PRD: Save/Load System — Ember RPG Backend
 
-**Version:** 1.1  
-**Author:** Alcyone  
-**Date:** 2026-03-25  
+**Version:** 1.1
+**Author:** Alcyone
+**Date:** 2026-03-25
 **Status:** Implemented
 
 ---
 
 ## 1. Overview & Goals
 
-The save/load system persists the full `GameSession` so a player can resume exactly where the simulation left off. The same serializer now powers autosave, manual save/load, restore-on-restart, REST routes, and natural-language engine commands.
+The save/load system persists the full gameplay state so a player can resume exactly where the simulation left off. Campaign saves are the active gameplay path for the current recovery plan; legacy session saves remain compatibility scaffolding until cutover is complete.
 
 **Goals:**
 - Persist full session state as JSON on disk
@@ -94,11 +94,14 @@ frp-backend/
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/game/session/{session_id}/save` | Save current session to a slot |
+| POST | `/game/session/{session_id}/save` | Legacy session save compatibility route |
+| POST | `/game/campaigns/{campaign_id}/save` | Save current campaign to a slot |
 | GET | `/game/saves/{player_id}` | List saves for a player |
+| GET | `/game/campaigns/{campaign_id}/saves` | List campaign saves |
 | GET | `/game/saves/file/{save_id}` | Get slot metadata |
 | DELETE | `/game/saves/{save_id}` | Delete a slot |
-| POST | `/game/session/load/{save_id}` | Load a session from a slot |
+| POST | `/game/session/load/{save_id}` | Legacy session load compatibility route |
+| POST | `/game/campaigns/load/{save_id}` | Load a campaign from a slot |
 
 ### Engine Commands
 
@@ -136,6 +139,10 @@ These commands do not advance the world tick.
 - Manual saves remain available after a session is ended, but they are not used for implicit session restore.
 - Route compatibility keeps `save_id` in responses even though the backing model is slot-based.
 
+## Changelog
+
+- 2026-03-27: Clarified campaign-first gameplay save/load while preserving legacy session compatibility notes.
+
 ---
 
 ## 8. Security Considerations
@@ -162,3 +169,7 @@ These commands do not advance the world tick.
 - Encryption
 - Multiplayer save coordination
 - Frontend save-slot UI
+
+## Changelog
+
+- 2026-03-27: Clarified campaign-first save/load behavior and added campaign route compatibility notes.
