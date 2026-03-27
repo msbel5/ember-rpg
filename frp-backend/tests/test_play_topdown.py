@@ -154,3 +154,18 @@ def test_render_header_uses_combat_ap(monkeypatch):
     rendered = panel.args[0]
 
     assert "AP: 3/3" in rendered
+
+
+def test_character_creation_smoke(monkeypatch):
+    _install_topdown_stubs(monkeypatch)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play_topdown = importlib.import_module("tools.play_topdown")
+    monkeypatch.setattr(play_topdown.time, "sleep", lambda *_args, **_kwargs: None)
+
+    creation = play_topdown.character_creation()
+
+    assert creation["name"] == "Stranger"
+    assert creation["player_class"] in {"warrior", "rogue", "mage", "priest"}
+    assert creation["map_type"] in {"town", "dungeon", "wilderness"}
+    assert creation["stats"]

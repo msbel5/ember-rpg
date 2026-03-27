@@ -8,7 +8,7 @@ from engine.api.action_parser import ActionIntent, ParsedAction
 from engine.api.game_session import GameSession
 from engine.core.dm_agent import SceneType
 from engine.world.action_points import ACTION_COSTS
-from engine.world.proximity import astar_path, check_proximity, distance, manhattan_distance
+from engine.world.proximity import astar_path, check_proximity, distance, get_interaction_range, manhattan_distance
 
 
 class ExplorationNavigationMixin:
@@ -278,11 +278,18 @@ class ExplorationNavigationMixin:
         npc_name = entity_data.get("name", target)
         target_blocking = bool(entity_data.get("blocking", True))
         target_type = str(entity_data.get("type", "")).lower()
-        interaction_radius = 2 if target_type in {"furniture", "building", "workstation"} or not target_blocking else 1
+        social_target = target_type == "npc" or bool(entity_data.get("role"))
+        if target_type in {"furniture", "building", "workstation"} or not target_blocking:
+            interaction_radius = 2
+        elif social_target:
+            interaction_radius = get_interaction_range("social")
+        else:
+            interaction_radius = 1
         steps_taken = 0
         refresh_count = 0
         blocked_reason: Optional[str] = None
         world_events: list[dict[str, object]] = []
+        detour_blocked_positions: set[tuple[int, int]] = set()
 
         while steps_taken < 40:
             current_target = session.entities.get(entity_id)
@@ -305,7 +312,7 @@ class ExplorationNavigationMixin:
                 allow_target_tile=not target_blocking,
             )
             best_path: list[list[int]] = []
-            blocked_positions = set()
+            blocked_positions = set(detour_blocked_positions)
             if session.spatial_index is not None:
                 for blocker in session.spatial_index.all_entities():
                     if blocker.id in {"player", entity_id} or not blocker.blocking:
@@ -324,6 +331,21 @@ class ExplorationNavigationMixin:
                 )
                 if candidate_path and (not best_path or len(candidate_path) < len(best_path)):
                     best_path = candidate_path
+
+            if not best_path and blocked_positions:
+                for candidate in goal_candidates:
+                    if candidate == session.position:
+                        best_path = []
+                        break
+                    candidate_path = astar_path(
+                        session.map_data,
+                        session.position,
+                        candidate,
+                        max_steps=40,
+                        blocked_positions=detour_blocked_positions,
+                    )
+                    if candidate_path and (not best_path or len(candidate_path) < len(best_path)):
+                        best_path = candidate_path
 
             if not goal_candidates or not best_path:
                 blocked_reason = f"Can't find a path to {npc_name}."
@@ -345,6 +367,10 @@ class ExplorationNavigationMixin:
                     for candidate in session.spatial_index.at(nx, ny)
                     if candidate.id != "player" and candidate.blocking
                 ]
+                if blockers and (nx, ny) not in detour_blocked_positions:
+                    detour_blocked_positions.add((nx, ny))
+                    blocked_reason = None
+                    continue
                 blocked_reason = f"{blockers[0].name} blocks the way to {npc_name}." if blockers else f"Something blocks the way to {npc_name}."
                 break
             if session.spatial_index and session.player_entity:
