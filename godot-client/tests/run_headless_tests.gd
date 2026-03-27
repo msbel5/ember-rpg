@@ -50,6 +50,10 @@ func _test_backend_routes() -> void:
 	var probe = BackendProbe.new()
 	var noop := func(_data = null) -> void:
 		pass
+	var backend_script = load("res://autoloads/backend.gd")
+	var backend_instance = backend_script.new()
+	_assert_true(not String(backend_instance._resolve_base_url()).strip_edges().is_empty(), "Backend resolves a usable default base URL")
+	backend_instance.free()
 
 	var game_state = _game_state()
 	_assert_true(game_state != null, "GameState autoload is available")
@@ -338,12 +342,24 @@ func _test_scene_instantiation() -> void:
 		await process_frame
 		var title_class_option = title_instance.get_node("CharacterCreation/VBox/BuildSection/ClassOption")
 		var title_alignment_input = title_instance.get_node("CharacterCreation/VBox/BuildSection/AlignmentInput")
+		var title_skills_input = title_instance.get_node("CharacterCreation/VBox/BuildSection/SkillsInput")
+		var title_mig_input = title_instance.get_node("CharacterCreation/VBox/BuildSection/StatsGrid/MIGInput")
 		_assert_true(title_class_option.item_count >= 4, "TitleScreen build step exposes class overrides")
 		_assert_true(title_alignment_input.text == "LG", "TitleScreen pre-fills recommended alignment in the build step")
+		title_class_option.select(2)
+		title_alignment_input.text = "CG"
+		title_skills_input.text = "arcana, history"
+		title_mig_input.text = "18"
 		title_instance._go_to_step(title_instance.STEP_SUMMARY)
 		await process_frame
 		var title_summary = title_instance.get_node("CharacterCreation/VBox/SummarySection/SummaryText")
 		_assert_true(title_summary.text.contains("recommended"), "TitleScreen summary renders creation preview text")
+		title_instance._go_to_step(title_instance.STEP_BUILD)
+		await process_frame
+		_assert_true(str(title_class_option.get_item_metadata(title_class_option.selected)) == "mage", "TitleScreen preserves manual class edits when returning from summary")
+		_assert_true(title_alignment_input.text == "CG", "TitleScreen preserves manual alignment edits when returning from summary")
+		_assert_true(title_skills_input.text == "arcana, history", "TitleScreen preserves manual skill edits when returning from summary")
+		_assert_true(title_mig_input.text == "18", "TitleScreen preserves manual stat edits when returning from summary")
 		title_instance.free()
 		await process_frame
 

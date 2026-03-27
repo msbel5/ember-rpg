@@ -368,9 +368,11 @@ def render_character_sheet(snapshot: dict[str, Any]) -> Panel:
         text.append("- None\n", style="dim")
     text.append("\nResources\n", style="bold")
     text.append(
-        "HP %d/%d  AP %d/%d" % (
+        "HP %d/%d  SP %d/%d  AP %d/%d" % (
             int(sheet["hp"]["current"]),
             int(sheet["hp"]["max"]),
+            int(sheet.get("sp", {}).get("current", 0)),
+            int(sheet.get("sp", {}).get("max", 0)),
             int(sheet["ap"]["current"]),
             int(sheet["ap"]["max"]),
         )
@@ -412,6 +414,13 @@ def _ask_yes_no(prompt: str, default: str = "yes") -> str:
     return Prompt.ask(prompt, choices=["yes", "no"], default=default)
 
 
+def _parse_optional_int(value: str) -> int | None:
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    return int(cleaned)
+
+
 def _print_creation_snapshot(state: dict[str, Any]) -> None:
     sheet = build_character_sheet(state)
     summary = Table(title="Creation Summary", show_header=False, expand=True)
@@ -451,15 +460,19 @@ def _prompt_roll_controls(client: CampaignClient, creation_state: dict[str, Any]
         saved = ", ".join(str(v) for v in creation_state.get("saved_roll") or [])
         console.print(Panel(f"Current roll: {roll}\nSaved roll: {saved}", title="Dice", border_style="bright_blue"))
         action = _ask_choice("Roll action", ["keep", "reroll", "save", "swap"], "keep")
-        if action == "reroll":
-            creation_state = client.reroll_creation(str(creation_state["creation_id"]))
-            continue
-        if action == "save":
-            creation_state = client.save_creation_roll(str(creation_state["creation_id"]))
-            continue
-        if action == "swap":
-            creation_state = client.swap_creation_roll(str(creation_state["creation_id"]))
-            continue
+        try:
+            if action == "reroll":
+                creation_state = client.reroll_creation(str(creation_state["creation_id"]))
+                continue
+            if action == "save":
+                creation_state = client.save_creation_roll(str(creation_state["creation_id"]))
+                continue
+            if action == "swap":
+                creation_state = client.swap_creation_roll(str(creation_state["creation_id"]))
+                continue
+        except ValueError as exc:
+            console.print(Panel(str(exc), title="Creation Warning", border_style="yellow"))
+            time.sleep(0.4)
         return creation_state
 
 
@@ -478,7 +491,10 @@ def _prompt_stat_assignment(creation_state: dict[str, Any], auto_assign: bool) -
             f"Assign {ability}",
             default=str(default_value),
         ).strip()
-        assigned[ability] = int(value or default_value)
+        try:
+            assigned[ability] = int(value or default_value)
+        except ValueError:
+            assigned[ability] = int(default_value)
     return assigned
 
 
@@ -531,21 +547,35 @@ def _finalize_creation(
     return final_snapshot
 
 
+def start_or_load_campaign(client: CampaignClient | None = None) -> dict[str, Any] | None:
+    client = client or CampaignClient()
+    console.print(Rule("[bold bright_yellow]EMBER RPG[/bold bright_yellow]", style="bright_yellow"))
+    mode = _ask_choice("Start mode", ["new", "load", "quit"], "new")
+    if mode == "quit":
+        return None
+    if mode == "load":
+        while True:
+            save_id = Prompt.ask("[bold green]Save slot[/bold green]", default="").strip()
+            if not save_id:
+                console.print(Panel("Enter a save slot or choose New Game.", title="Load", border_style="yellow"))
+                return character_creation(client)
+            try:
+                return client.load_campaign(save_id)
+            except Exception as exc:
+                console.print(Panel(str(exc), title="Load Failed", border_style="red"))
+                retry = _ask_choice("Try again or start new?", ["retry", "new", "quit"], "retry")
+                if retry == "retry":
+                    continue
+                if retry == "quit":
+                    return None
+                return character_creation(client)
+    return character_creation(client)
+
+
 def character_creation(client: CampaignClient | None = None) -> dict[str, Any]:
     client = client or CampaignClient()
     console.print()
-    console.print(Rule("[bold bright_yellow]EMBER RPG[/bold bright_yellow]", style="bright_yellow"))
     name = Prompt.ask("[bold green]Name[/bold green]", default="Stranger").strip() or "Stranger"
-
-    class_table = Table(title="Class", show_header=True, expand=True)
-    class_table.add_column("#", justify="center", width=3)
-    class_table.add_column("Class")
-    class_table.add_column("Notes")
-    class_table.add_row("1", "Warrior", "Frontline commander")
-    class_table.add_row("2", "Rogue", "Scout and infiltrator")
-    class_table.add_row("3", "Mage", "Arcane specialist")
-    class_table.add_row("4", "Priest", "Support and healing")
-    console.print(class_table)
 
     adapter_table = Table(title="Adapter", show_header=True, expand=True)
     adapter_table.add_column("#", justify="center", width=3)
@@ -554,12 +584,14 @@ def character_creation(client: CampaignClient | None = None) -> dict[str, Any]:
     adapter_table.add_row("2", "Sci-Fi Frontier")
     console.print(adapter_table)
 
-    class_choice = Prompt.ask("[bold green]Select class[/bold green]", choices=list(CLASS_OPTIONS.keys()), default="1")
     adapter_choice = Prompt.ask("[bold green]Select adapter[/bold green]", choices=list(ADAPTER_OPTIONS.keys()), default="1")
     profile_id = Prompt.ask("[bold green]Profile[/bold green]", default="standard").strip() or "standard"
     seed_text = Prompt.ask("[bold green]Seed[/bold green]", default="").strip()
-    seed = int(seed_text) if seed_text else None
-    player_class, _stats = CLASS_OPTIONS[class_choice]
+    try:
+        seed = _parse_optional_int(seed_text)
+    except ValueError:
+        console.print(Panel("Invalid seed. Starting with random seed.", title="Seed Warning", border_style="yellow"))
+        seed = None
     adapter_id, _adapter_name = ADAPTER_OPTIONS[adapter_choice]
 
     creation_state = client.start_creation(
@@ -573,7 +605,7 @@ def character_creation(client: CampaignClient | None = None) -> dict[str, Any]:
     creation_state = _prompt_questionnaire(client, creation_state)
     creation_state = _prompt_roll_controls(client, creation_state)
     final_snapshot = _finalize_creation(client, creation_state, name, adapter_id, profile_id, seed)
-    final_snapshot["recommended_class"] = str(creation_state.get("recommended_class", player_class))
+    final_snapshot["recommended_class"] = str(creation_state.get("recommended_class", "warrior"))
     final_snapshot["recommended_alignment"] = str(creation_state.get("recommended_alignment", "NN"))
     final_snapshot["recommended_skills"] = list(creation_state.get("recommended_skills") or [])
     final_snapshot["questionnaire"] = list(creation_state.get("answers") or [])
@@ -634,8 +666,11 @@ def _handle_meta_command(client: CampaignClient, screen_state: CampaignScreenSta
         return True
     if lower.startswith("save"):
         slot_name = command[4:].strip() or "quicksave"
-        metadata = client.save_campaign(screen_state.campaign_id, slot_name, str(screen_state.campaign.get("player", {}).get("name", "player")))
-        _append_history(screen_state.narrative_history, "[system] Saved to %s." % metadata.get("slot_name", slot_name))
+        try:
+            metadata = client.save_campaign(screen_state.campaign_id, slot_name, str(screen_state.campaign.get("player", {}).get("name", "player")))
+            _append_history(screen_state.narrative_history, "[system] Saved to %s." % metadata.get("slot_name", slot_name))
+        except Exception as exc:
+            _append_history(screen_state.narrative_history, "[system] Save failed: %s" % exc)
         return True
     if lower == "saves":
         saves = client.list_saves(screen_state.campaign_id)
@@ -656,15 +691,21 @@ def _handle_meta_command(client: CampaignClient, screen_state: CampaignScreenSta
     if lower.startswith("load "):
         save_id = command[5:].strip()
         if save_id:
-            screen_state.snapshot = client.load_campaign(save_id)
-            _append_history(screen_state.narrative_history, screen_state.snapshot.get("narrative", "Loaded."))
+            try:
+                screen_state.snapshot = client.load_campaign(save_id)
+                screen_state.narrative_history = []
+                _append_history(screen_state.narrative_history, screen_state.snapshot.get("narrative", "Loaded."))
+            except Exception as exc:
+                _append_history(screen_state.narrative_history, "[system] Load failed: %s" % exc)
         return True
     return False
 
 
 def main() -> None:
     client = CampaignClient()
-    snapshot = character_creation(client)
+    snapshot = start_or_load_campaign(client)
+    if snapshot is None:
+        return
     history = [snapshot.get("narrative", "")]
     screen_state = CampaignScreenState(snapshot=snapshot, narrative_history=history)
 

@@ -190,6 +190,7 @@ class CampaignClient:
                 ],
                 "stats": stats,
                 "hp": dict(resources.get("hp", {"current": 0, "max": 1})),
+                "sp": dict(resources.get("sp", {"current": 0, "max": 0})),
                 "ap": dict(resources.get("ap", {"current": 0, "max": 1})),
                 "profile_id": str(snapshot.get("profile_id", creation.get("profile_id", "standard"))),
                 "adapter_id": str(snapshot.get("adapter_id", creation.get("adapter_id", "fantasy_ember"))),
@@ -220,6 +221,10 @@ class CampaignClient:
             "hp": {
                 "current": int(player.get("hp", 0)),
                 "max": int(player.get("max_hp", 1)),
+            },
+            "sp": {
+                "current": int(player.get("spell_points", 0)),
+                "max": int(player.get("max_spell_points", 0)),
             },
             "ap": {
                 "current": current_ap,

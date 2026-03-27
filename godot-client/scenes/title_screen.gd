@@ -71,6 +71,9 @@ const CLASS_PRIORITIES := {
 var wizard_step: int = STEP_IDENTITY
 var creation_payload: Dictionary = {}
 var is_busy: bool = false
+var _build_touched: bool = false
+var _suppress_build_tracking: bool = false
+var _draft_build_state: Dictionary = {}
 
 
 func _ready() -> void:
@@ -91,6 +94,7 @@ func _ready() -> void:
 
 	_populate_adapter_options()
 	_populate_class_options()
+	_wire_build_tracking()
 	_reset_wizard_state()
 	continue_btn.disabled = _last_campaign_save_id().is_empty()
 
@@ -148,6 +152,7 @@ func _on_next_pressed() -> void:
 			wizard_step = STEP_BUILD
 			_refresh_creation_view()
 		STEP_BUILD:
+			_capture_build_state()
 			_update_summary_preview()
 			wizard_step = STEP_SUMMARY
 			_refresh_creation_view()
@@ -265,16 +270,21 @@ func _on_roll_updated(data) -> void:
 func _apply_creation_state(data: Dictionary) -> void:
 	creation_payload = data.duplicate(true)
 	GameState.update_from_response(creation_payload)
-	_apply_creation_defaults()
+	_build_touched = false
+	_draft_build_state = {}
+	_apply_creation_defaults(true)
 
 
 func _go_to_step(step: int) -> void:
+	if wizard_step == STEP_BUILD and step == STEP_SUMMARY:
+		_capture_build_state()
 	wizard_step = clampi(step, STEP_IDENTITY, STEP_SUMMARY)
 	_refresh_creation_view()
 
 
 func _on_auto_assign_pressed() -> void:
 	_apply_recommended_stats()
+	_build_touched = true
 	_update_summary_preview()
 
 
@@ -381,7 +391,10 @@ func _update_roll_view() -> void:
 
 
 func _update_build_view() -> void:
-	_apply_creation_defaults()
+	if _draft_build_state.is_empty():
+		_apply_creation_defaults(false)
+	else:
+		_restore_build_state()
 	_update_summary_preview()
 
 
@@ -404,19 +417,25 @@ func _update_summary_preview() -> void:
 	]
 
 
-func _apply_creation_defaults() -> void:
+func _apply_creation_defaults(force: bool = false) -> void:
 	if creation_payload.is_empty():
 		return
+	if _build_touched and not force:
+		return
+	_suppress_build_tracking = true
 	_select_class_by_id(str(creation_payload.get("recommended_class", "warrior")))
 	alignment_input.text = str(creation_payload.get("recommended_alignment", "TN"))
 	skills_input.text = ", ".join(creation_payload.get("recommended_skills", []))
 	_apply_recommended_stats()
+	_suppress_build_tracking = false
 
 
 func _apply_recommended_stats() -> void:
 	var assigned = _suggested_stats_for(_selected_class_id())
+	_suppress_build_tracking = true
 	for ability in ABILITY_ORDER:
 		_stat_input_for(ability).text = str(assigned.get(ability, 10))
+	_suppress_build_tracking = false
 
 
 func _suggested_stats_for(class_id: String) -> Dictionary:
@@ -522,6 +541,9 @@ func _reset_wizard_state() -> void:
 	creation_panel.visible = false
 	creation_payload = {}
 	wizard_step = STEP_IDENTITY
+	_build_touched = false
+	_draft_build_state = {}
+	_suppress_build_tracking = true
 	name_input.text = _last_player_id()
 	profile_input.text = "standard"
 	seed_input.text = ""
@@ -529,9 +551,47 @@ func _reset_wizard_state() -> void:
 	skills_input.text = ""
 	for ability in ABILITY_ORDER:
 		_stat_input_for(ability).text = "10"
+	_suppress_build_tracking = false
 	status_label.text = ""
 	continue_btn.disabled = _last_campaign_save_id().is_empty()
 	_refresh_creation_view()
+
+
+func _wire_build_tracking() -> void:
+	class_option.item_selected.connect(_on_build_field_changed)
+	alignment_input.text_changed.connect(_on_build_field_changed)
+	skills_input.text_changed.connect(_on_build_field_changed)
+	for ability in ABILITY_ORDER:
+		_stat_input_for(ability).text_changed.connect(_on_build_field_changed)
+
+
+func _on_build_field_changed(_value = null) -> void:
+	if _suppress_build_tracking:
+		return
+	_build_touched = true
+
+
+func _capture_build_state() -> void:
+	_draft_build_state = {
+		"class_id": _selected_class_id(),
+		"alignment": alignment_input.text,
+		"skills": skills_input.text,
+		"stats": _selected_stats(),
+	}
+
+
+func _restore_build_state() -> void:
+	if _draft_build_state.is_empty():
+		return
+	_suppress_build_tracking = true
+	_select_class_by_id(str(_draft_build_state.get("class_id", _selected_class_id())))
+	alignment_input.text = str(_draft_build_state.get("alignment", ""))
+	skills_input.text = str(_draft_build_state.get("skills", ""))
+	var stats = _draft_build_state.get("stats", {})
+	if stats is Dictionary:
+		for ability in ABILITY_ORDER:
+			_stat_input_for(ability).text = str(stats.get(ability, 10))
+	_suppress_build_tracking = false
 
 
 func _stat_input_for(ability: String) -> LineEdit:

@@ -132,7 +132,7 @@ class CampaignRuntime:
         location: Optional[str] = None,
     ) -> CampaignCreationContext:
         chosen_seed = seed if seed is not None else abs(hash((player_name, adapter_id, profile_id, "creation"))) % (2**31)
-        state = CreationState(player_name=player_name, location=location)
+        state = CreationState(player_name=player_name, location=location, rng_seed=chosen_seed)
         state.ensure_roll()
         context = CampaignCreationContext(
             state=state,

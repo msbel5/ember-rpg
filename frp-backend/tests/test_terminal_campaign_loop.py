@@ -12,6 +12,7 @@ def test_terminal_campaign_loop_smoke(tmp_path: Path):
     client = CampaignClient(runtime=runtime)
 
     snapshot = client.create_campaign("TerminalProbe", "rogue", "scifi_frontier", "standard", 77)
+    sheet = client.build_character_sheet(snapshot)
     map_state = MapState(snapshot)
     panel = render_map(map_state)
 
@@ -20,6 +21,7 @@ def test_terminal_campaign_loop_smoke(tmp_path: Path):
     loaded = client.load_campaign(str(save_meta["slot_name"]))
 
     assert panel is not None
+    assert sheet["sp"]["max"] >= sheet["sp"]["current"]
     assert map_state.width == 80 and map_state.height == 60
     assert response["campaign"]["settlement"]["jobs"]
     assert loaded["campaign"]["world"]["adapter_id"] == "scifi_frontier"

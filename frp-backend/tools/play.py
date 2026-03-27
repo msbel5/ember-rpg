@@ -23,7 +23,7 @@ from rich.prompt import Prompt
 from rich.rule import Rule
 
 from tools.campaign_client import CampaignClient
-from tools.play_topdown import character_creation, render_character_sheet, render_header
+from tools.play_topdown import render_character_sheet, render_header, start_or_load_campaign
 
 console = Console(force_terminal=True)
 
@@ -61,10 +61,63 @@ def _print_scene(snapshot: dict, history: list[str]) -> None:
     console.print("[dim]Commands: look around, talk <npc>, assign <name> to <job>, build <kind>, defend, travel <place>, save <slot>, load <slot>, quit[/dim]")
 
 
+def _current_player_id(snapshot: dict[str, object]) -> str:
+    campaign = snapshot.get("campaign", {}) if isinstance(snapshot, dict) else {}
+    if isinstance(campaign, dict):
+        player = campaign.get("player", {})
+        if isinstance(player, dict):
+            return str(player.get("name", "player"))
+    return "player"
+
+
+def _handle_meta_command(client: CampaignClient, snapshot: dict, history: list[str], command: str) -> tuple[bool, dict]:
+    lower = command.lower().strip()
+    if lower.startswith("save"):
+        slot_name = command[4:].strip() or "quicksave"
+        metadata = client.save_campaign(str(snapshot.get("campaign_id", "")), slot_name, _current_player_id(snapshot))
+        _append(history, "Saved to %s." % metadata.get("slot_name", slot_name))
+        return True, snapshot
+    if lower.startswith("load "):
+        save_id = command[5:].strip()
+        if not save_id:
+            return True, snapshot
+        try:
+            loaded = client.load_campaign(save_id)
+            history.clear()
+            _append(history, loaded.get("narrative", "Loaded."))
+            return True, loaded
+        except Exception as exc:
+            _append(history, "Load failed: %s" % exc)
+            return True, snapshot
+    if lower == "saves":
+        try:
+            saves = client.list_saves(str(snapshot.get("campaign_id", "")))
+        except Exception as exc:
+            _append(history, "Save listing failed: %s" % exc)
+            return True, snapshot
+        if not saves:
+            _append(history, "No save slots found.")
+            return True, snapshot
+        for entry in saves[:5]:
+            _append(
+                history,
+                "%s | %s | %s"
+                % (
+                    entry.get("slot_name", entry.get("save_id", "save")),
+                    entry.get("location", "Unknown"),
+                    entry.get("timestamp", ""),
+                ),
+            )
+        return True, snapshot
+    return False, snapshot
+
+
 def main() -> None:
     console.print(Rule("[bold bright_yellow]EMBER RPG[/bold bright_yellow]", style="bright_yellow"))
     client = CampaignClient()
-    snapshot = character_creation(client)
+    snapshot = start_or_load_campaign(client)
+    if snapshot is None:
+        return
     history: list[str] = [snapshot.get("narrative", "")]
 
     while True:
@@ -75,15 +128,8 @@ def main() -> None:
         lower = command.lower()
         if lower in {"quit", "exit"}:
             break
-        if lower.startswith("save"):
-            slot_name = command[4:].strip() or "quicksave"
-            metadata = client.save_campaign(snapshot["campaign_id"], slot_name, creation["name"])
-            _append(history, "Saved to %s." % metadata.get("slot_name", slot_name))
-            continue
-        if lower.startswith("load "):
-            save_id = command[5:].strip()
-            snapshot = client.load_campaign(save_id)
-            _append(history, snapshot.get("narrative", "Loaded."))
+        handled, snapshot = _handle_meta_command(client, snapshot, history, command)
+        if handled:
             continue
         response = client.submit_command(snapshot["campaign_id"], command)
         snapshot = response

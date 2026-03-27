@@ -88,6 +88,7 @@ def recommended_skills_for_class(state: Dict[str, Any], class_name: str) -> List
 class CreationState:
     player_name: str
     location: Optional[str] = None
+    rng_seed: Optional[int] = None
     creation_id: str = field(default_factory=lambda: uuid.uuid4().hex)
     question_bank: List[Dict[str, Any]] = field(default_factory=lambda: copy.deepcopy(CREATION_QUESTIONS))
     answers: List[Dict[str, Any]] = field(default_factory=list)
@@ -97,10 +98,16 @@ class CreationState:
     current_roll: List[int] = field(default_factory=list)
     saved_roll: Optional[List[int]] = None
     creation_profile: Dict[str, Any] = field(default_factory=dict)
+    reroll_count: int = 0
+
+    def _roll_rng(self, offset: int = 0) -> Optional[random.Random]:
+        if self.rng_seed is None:
+            return None
+        return random.Random(int(self.rng_seed) + int(offset))
 
     def ensure_roll(self, rng: Optional[random.Random] = None) -> List[int]:
         if not self.current_roll:
-            self.current_roll = roll_stat_array(rng)
+            self.current_roll = roll_stat_array(rng or self._roll_rng(self.reroll_count))
         return list(self.current_roll)
 
     def answer_question(self, question_id: str, answer_id: str) -> None:
@@ -135,7 +142,8 @@ class CreationState:
             self.alignment_axes = _merge_scores(self.alignment_axes, answer.get("alignment_axes", {}))
 
     def reroll(self, rng: Optional[random.Random] = None) -> List[int]:
-        self.current_roll = roll_stat_array(rng)
+        self.reroll_count += 1
+        self.current_roll = roll_stat_array(rng or self._roll_rng(self.reroll_count))
         return list(self.current_roll)
 
     def save_current_roll(self) -> List[int]:
@@ -178,4 +186,6 @@ class CreationState:
             "recommended_skills": self.recommended_skills(),
             "current_roll": list(self.current_roll or []),
             "saved_roll": list(self.saved_roll) if self.saved_roll is not None else None,
+            "seed": self.rng_seed,
+            "reroll_count": self.reroll_count,
         }

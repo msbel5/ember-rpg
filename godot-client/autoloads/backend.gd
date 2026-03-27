@@ -4,6 +4,7 @@ extends Node
 
 const BACKEND_SETTING := "ember_rpg/backend_url"
 const BACKEND_ENV := "EMBER_RPG_BACKEND_URL"
+const DEFAULT_BACKEND_URL := "http://127.0.0.1:8000"
 
 var base_url: String = ""
 
@@ -166,8 +167,10 @@ func _resolve_base_url() -> String:
 	if not env_url.is_empty():
 		return env_url
 	if ProjectSettings.has_setting(BACKEND_SETTING):
-		return str(ProjectSettings.get_setting(BACKEND_SETTING)).strip_edges()
-	return ""
+		var configured = str(ProjectSettings.get_setting(BACKEND_SETTING)).strip_edges()
+		if not configured.is_empty():
+			return configured
+	return DEFAULT_BACKEND_URL
 
 func _ensure_base_url(callback: Callable) -> bool:
 	if not base_url.is_empty():

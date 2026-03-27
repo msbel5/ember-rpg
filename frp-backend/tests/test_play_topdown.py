@@ -171,3 +171,22 @@ def test_character_creation_smoke(monkeypatch):
     assert creation["stats"]
     assert creation["character_sheet"]["name"] == "Stranger"
     assert creation["creation_state"]["questions"]
+
+
+def test_start_or_load_campaign_can_load_existing_save(monkeypatch):
+    _install_topdown_stubs(monkeypatch)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play_topdown = importlib.import_module("tools.play_topdown")
+
+    answers = iter(["load", "slot_a"])
+    monkeypatch.setattr(play_topdown.Prompt, "ask", lambda *args, **kwargs: next(answers))
+
+    class DummyClient:
+        def load_campaign(self, save_id):
+            assert save_id == "slot_a"
+            return {"campaign_id": "camp_loaded", "narrative": "Loaded."}
+
+    snapshot = play_topdown.start_or_load_campaign(DummyClient())
+
+    assert snapshot["campaign_id"] == "camp_loaded"

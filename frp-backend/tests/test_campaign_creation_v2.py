@@ -96,3 +96,17 @@ def test_creation_answer_roll_management_and_finalize_yield_campaign_snapshot():
     assert payload["campaign"]["character_sheet"]["alignment"] == "CG"
     assert payload["campaign"]["character_sheet"]["creation_summary"]["recommended_class"]
     assert payload["campaign"]["character_sheet"]["creation_summary"]["answers"]
+
+
+def test_creation_seed_produces_deterministic_initial_and_reroll_values():
+    first = _start_creation("fantasy_ember")
+    second = _start_creation("fantasy_ember")
+
+    assert first["current_roll"] == second["current_roll"]
+
+    rerolled_first = client.post(f"/game/campaigns/creation/{first['creation_id']}/reroll")
+    rerolled_second = client.post(f"/game/campaigns/creation/{second['creation_id']}/reroll")
+
+    assert rerolled_first.status_code == 200
+    assert rerolled_second.status_code == 200
+    assert rerolled_first.json()["current_roll"] == rerolled_second.json()["current_roll"]
