@@ -2,6 +2,7 @@ extends SceneTree
 
 const BackendProbe = preload("res://tests/doubles/backend_probe.gd")
 const AssetBootstrap = preload("res://scripts/asset/asset_bootstrap.gd")
+const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
 const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const TilemapController = preload("res://scripts/world/tilemap_controller.gd")
 const CameraController = preload("res://scripts/world/camera_controller.gd")
@@ -18,6 +19,7 @@ func _initialize() -> void:
 
 func _run_tests() -> void:
 	_test_backend_routes()
+	_test_response_normalizer()
 	_test_game_state_normalization()
 	await _test_scene_instantiation()
 	await _test_world_shell()
@@ -112,6 +114,29 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.entities.get("items", []).size() == 1, "item world entities group as items")
 	_assert_true(game_state.ground_items.size() == 1, "ground items are retained")
 	_assert_true(game_state.active_quests.size() == 1 and game_state.quest_offers.size() == 1, "quest payloads are retained")
+
+
+func _test_response_normalizer() -> void:
+	var merged_map = ResponseNormalizer.normalize_map({
+		"map": {
+			"width": 40,
+			"height": 40,
+		}
+	}, {
+		"width": 20,
+		"tiles": [["grass"]],
+	})
+	_assert_true(int(merged_map.get("width", 0)) == 40 and merged_map.has("tiles"), "ResponseNormalizer merges map payloads with existing state")
+
+	var normalized_entities = ResponseNormalizer.normalize_entities({
+		"world_entities": [
+			{"id": "merchant_1", "entity_type": "npc", "name": "Merchant", "position": [1, 2]},
+			{"id": "wolf_1", "entity_type": "creature", "name": "Wolf", "position": [2, 3], "disposition": "hostile"},
+		]
+	})
+	_assert_true(normalized_entities.get("npcs", []).size() == 1 and normalized_entities.get("enemies", []).size() == 1, "ResponseNormalizer groups world entities into gameplay buckets")
+	_assert_true(ResponseNormalizer.command_requires_inventory_refresh("pick up bread"), "ResponseNormalizer flags inventory-affecting commands")
+	_assert_true(not ResponseNormalizer.command_requires_inventory_refresh("look around"), "ResponseNormalizer ignores non-inventory commands")
 
 
 func _test_scene_instantiation() -> void:

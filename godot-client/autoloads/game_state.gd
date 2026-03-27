@@ -2,6 +2,7 @@ extends Node
 
 # GameState Singleton — central state store
 # Updated after every HTTP response from backend
+const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
 
 # Session
 var session_id: String = ""
@@ -40,11 +41,9 @@ func update_from_response(data: Dictionary) -> void:
 
 	if data.has("player"):
 		player = data["player"]
-		if player.has("position") and player["position"] is Array and player["position"].size() >= 2:
-			var pos = player["position"]
-			player_map_pos = Vector2i(int(pos[0]), int(pos[1]))
+		player_map_pos = ResponseNormalizer.player_position_from(player, player_map_pos)
 		if player.has("facing"):
-			player_facing = _facing_to_int(str(player["facing"]))
+			player_facing = ResponseNormalizer.facing_to_int(str(player["facing"]), player_facing)
 
 	if data.has("location"):
 		location = data["location"]
@@ -204,112 +203,25 @@ func _clean_narrative(text: String) -> String:
 	return "\n".join(cleaned)
 
 func _normalize_combat_payload(data: Dictionary) -> Dictionary:
-	if data.has("combat_state") and data["combat_state"] is Dictionary:
-		return data["combat_state"]
-	if data.has("combat") and data["combat"] is Dictionary:
-		return data["combat"]
-	return {}
+	return ResponseNormalizer.normalize_combat(data)
 
 func _normalize_map_payload(data: Dictionary) -> Dictionary:
-	if data.has("map_data") and data["map_data"] is Dictionary:
-		return data["map_data"]
-	if data.has("map") and data["map"] is Dictionary:
-		var normalized = map_data.duplicate(true) if not map_data.is_empty() else {}
-		normalized.merge(data["map"], true)
-		return normalized
-	return {}
+	return ResponseNormalizer.normalize_map(data, map_data)
 
 func _normalize_entities_payload(data: Dictionary) -> Dictionary:
-	if data.has("entities"):
-		if data["entities"] is Dictionary:
-			return data["entities"]
-		if data["entities"] is Array:
-			return _group_entity_list(data["entities"])
-	if data.has("world_entities") and data["world_entities"] is Array:
-		return _group_world_entities(data["world_entities"])
-	return {}
+	return ResponseNormalizer.normalize_entities(data)
 
 func _group_entity_list(raw_entities: Array) -> Dictionary:
-	var grouped = {"npcs": [], "items": [], "enemies": []}
-	for entry in raw_entities:
-		if not (entry is Dictionary):
-			continue
-		var entity_type = str(entry.get("type", entry.get("entity_type", "npc"))).to_lower()
-		var normalized = {
-			"id": entry.get("id", ""),
-			"name": entry.get("name", "Unknown"),
-			"template": _guess_entity_template(entry),
-			"position": entry.get("position", [0, 0]),
-			"role": entry.get("role", ""),
-			"context_actions": _context_actions_for(entry),
-		}
-		if entity_type == "item":
-			grouped["items"].append(normalized)
-		elif entity_type == "creature" or str(entry.get("disposition", "")).to_lower() == "hostile":
-			grouped["enemies"].append(normalized)
-		else:
-			grouped["npcs"].append(normalized)
-	return grouped
+	return ResponseNormalizer.group_entity_list(raw_entities)
 
 func _group_world_entities(raw_entities: Array) -> Dictionary:
-	var grouped = {"npcs": [], "items": [], "enemies": []}
-	for entry in raw_entities:
-		if not (entry is Dictionary):
-			continue
-		var entity_type = str(entry.get("entity_type", "npc")).to_lower()
-		var normalized = {
-			"id": entry.get("id", ""),
-			"name": entry.get("name", "Unknown"),
-			"template": _guess_entity_template(entry),
-			"position": entry.get("position", [0, 0]),
-			"context_actions": _context_actions_for(entry),
-			"is_hostile": str(entry.get("disposition", "")).to_lower() == "hostile",
-		}
-		if entity_type == "item":
-			grouped["items"].append(normalized)
-		elif entity_type == "creature" or normalized["is_hostile"]:
-			grouped["enemies"].append(normalized)
-		else:
-			grouped["npcs"].append(normalized)
-	return grouped
+	return ResponseNormalizer.group_world_entities(raw_entities)
 
 func _guess_entity_template(entry: Dictionary) -> String:
-	var explicit_template = str(entry.get("template", "")).strip_edges().to_lower()
-	if not explicit_template.is_empty():
-		return explicit_template
-	var role = str(entry.get("role", entry.get("job", ""))).to_lower()
-	if not role.is_empty():
-		return role.replace(" ", "_")
-	var name_hint = str(entry.get("name", "")).to_lower()
-	for candidate in ["merchant", "guard", "blacksmith", "priest", "beggar", "goblin", "skeleton", "orc", "wolf", "rat", "spider"]:
-		if name_hint.contains(candidate):
-			return candidate
-	var entity_type = str(entry.get("type", entry.get("entity_type", "warrior"))).to_lower()
-	if entity_type == "item":
-		return "chest"
-	return "warrior"
+	return ResponseNormalizer.guess_entity_template(entry)
 
 func _context_actions_for(entry: Dictionary) -> Array:
-	if entry.has("context_actions") and entry["context_actions"] is Array:
-		return entry["context_actions"]
-	var entity_type = str(entry.get("type", entry.get("entity_type", "npc"))).to_lower()
-	if entity_type == "item":
-		return ["examine", "pick up"]
-	if entity_type == "creature" or str(entry.get("disposition", "")).to_lower() == "hostile":
-		return ["attack", "examine"]
-	var role = str(entry.get("role", entry.get("job", ""))).to_lower()
-	if ["merchant", "innkeeper", "blacksmith"].has(role):
-		return ["talk", "trade", "examine"]
-	return ["talk", "examine"]
+	return ResponseNormalizer.context_actions_for(entry)
 
 func _facing_to_int(facing: String) -> int:
-	match facing.to_lower():
-		"north":
-			return 0
-		"east":
-			return 1
-		"south":
-			return 2
-		"west":
-			return 3
-	return player_facing
+	return ResponseNormalizer.facing_to_int(facing, player_facing)
