@@ -1,6 +1,8 @@
 extends PanelContainer
 class_name InventoryPanelWidget
 
+signal command_requested(command_text: String)
+
 @onready var gold_label: Label = $InventoryMargin/InventoryVBox/GoldLabel
 @onready var summary_label: Label = $InventoryMargin/InventoryVBox/SummaryLabel
 @onready var item_grid: GridContainer = $InventoryMargin/InventoryVBox/ItemGrid
@@ -35,11 +37,11 @@ func _refresh() -> void:
 
 	for entry in inventory:
 		var item_name = str(entry.get("name", entry)) if entry is Dictionary else str(entry)
-		var slot = PanelContainer.new()
+		var slot = Button.new()
 		slot.custom_minimum_size = Vector2(84, 28)
-		var label = Label.new()
-		label.text = item_name
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		slot.add_child(label)
+		slot.text = item_name
+		slot.tooltip_text = "Examine %s" % item_name
+		slot.pressed.connect(func() -> void:
+			command_requested.emit("examine %s" % item_name.to_lower())
+		)
 		item_grid.add_child(slot)

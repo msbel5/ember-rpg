@@ -29,9 +29,10 @@ func _ready() -> void:
 
 func set_waiting(waiting: bool) -> void:
 	_is_waiting = waiting
-	defend_button.disabled = waiting
-	harvest_button.disabled = waiting
-	build_button.disabled = waiting
+	var disable_actions = waiting or GameState.settlement_state.is_empty()
+	defend_button.disabled = disable_actions
+	harvest_button.disabled = disable_actions
+	build_button.disabled = disable_actions
 
 
 func _on_settlement_updated(_settlement: Dictionary) -> void:

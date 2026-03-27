@@ -445,6 +445,8 @@ func _test_ui_panels() -> void:
 	var session_instance = session_scene.instantiate()
 	root.add_child(session_instance)
 	await process_frame
+	var initial_defend_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel/SettlementMargin/SettlementVBox/QuickActions/DefendButton")
+	_assert_true(initial_defend_button.disabled, "Settlement quick actions stay disabled until settlement data is available")
 
 	game_state.update_from_response({
 		"player": {
@@ -489,6 +491,8 @@ func _test_ui_panels() -> void:
 
 	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
 	_assert_true(inventory_grid.get_child_count() >= 2, "Inventory panel populates grid items")
+	var inventory_button = inventory_grid.get_child(0)
+	_assert_true(inventory_button is Button, "Inventory entries render as clickable buttons")
 
 	var minimap_texture = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/MinimapPanel/MinimapMargin/MinimapVBox/MapTexture")
 	_assert_true(minimap_texture.texture != null, "Minimap panel renders a texture from map data")
@@ -500,9 +504,12 @@ func _test_ui_panels() -> void:
 	_assert_true(character_panel.text.contains("MIG"), "Character panel renders visible stat lines")
 
 	var command_bar = session_instance.get_node("MainMargin/MainVBox/CommandBar")
-	command_bar.submit_command("inventory")
+	inventory_button.pressed.emit()
 	await process_frame
 	var history_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel")
+	_assert_true(history_label.text.contains("examine bread"), "Inventory buttons route commands through the command bar")
+	command_bar.submit_command("inventory")
+	await process_frame
 	_assert_true(history_label.text.contains("inventory"), "Command bar tracks recent commands")
 	command_bar.remember_command("move to 7,4")
 	await process_frame

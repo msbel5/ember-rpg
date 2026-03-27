@@ -7,6 +7,7 @@ const QUICKSAVE_SLOT := "quicksave"
 
 @onready var world_view: SubViewportContainer = $MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer
 @onready var narrative_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/NarrativePanel
+@onready var inventory_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/InventoryPanel
 @onready var settlement_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel
 @onready var command_bar = $MainMargin/MainVBox/CommandBar
 @onready var quest_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/QuestPanel
@@ -22,6 +23,7 @@ func _ready() -> void:
 	command_bar.quick_save_requested.connect(_on_quick_save_requested)
 	command_bar.saves_requested.connect(_open_save_load_panel)
 	world_view.command_requested.connect(_on_world_command_requested)
+	inventory_panel.command_requested.connect(_submit_action)
 	settlement_panel.command_requested.connect(_submit_action)
 	quest_panel.command_requested.connect(_submit_action)
 	combat_panel.command_requested.connect(_submit_action)
