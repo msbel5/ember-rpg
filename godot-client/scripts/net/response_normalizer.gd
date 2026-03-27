@@ -33,11 +33,9 @@ static func normalize_combat(data: Dictionary) -> Dictionary:
 
 static func normalize_map(data: Dictionary, current_map: Dictionary = {}) -> Dictionary:
 	if data.has("map_data") and data["map_data"] is Dictionary:
-		return data["map_data"]
+		return _merge_and_normalize_map(data["map_data"], current_map)
 	if data.has("map") and data["map"] is Dictionary:
-		var normalized = current_map.duplicate(true) if not current_map.is_empty() else {}
-		normalized.merge(data["map"], true)
-		return normalized
+		return _merge_and_normalize_map(data["map"], current_map)
 	return {}
 
 
@@ -158,3 +156,64 @@ static func command_requires_inventory_refresh(text: String) -> bool:
 		if lower == marker or lower.begins_with(marker) or lower.contains(marker):
 			return true
 	return false
+
+
+static func _merge_and_normalize_map(map_payload: Dictionary, current_map: Dictionary = {}) -> Dictionary:
+	var normalized = current_map.duplicate(true) if not current_map.is_empty() else {}
+	normalized.merge(map_payload, true)
+
+	if normalized.has("tiles") and normalized["tiles"] is Array:
+		normalized["tiles"] = _normalize_tile_rows(normalized["tiles"], _map_type_from_payload(normalized))
+	return normalized
+
+
+static func _map_type_from_payload(map_payload: Dictionary) -> String:
+	if map_payload.has("metadata") and map_payload["metadata"] is Dictionary:
+		return str(map_payload["metadata"].get("map_type", "")).to_lower()
+	if map_payload.has("map_type"):
+		return str(map_payload.get("map_type", "")).to_lower()
+	return ""
+
+
+static func _normalize_tile_rows(rows: Array, map_type: String) -> Array:
+	var normalized_rows: Array = []
+	for row in rows:
+		if not (row is Array):
+			normalized_rows.append(row)
+			continue
+		var normalized_row: Array = []
+		for cell in row:
+			normalized_row.append(_normalize_tile_symbol(cell, map_type))
+		normalized_rows.append(normalized_row)
+	return normalized_rows
+
+
+static func _normalize_tile_symbol(raw_value, map_type: String) -> String:
+	var tile_name = str(raw_value).strip_edges().to_lower()
+	if tile_name.is_empty():
+		return "grass"
+
+	match tile_name:
+		"#", "wall":
+			return "wall"
+		"~", "water":
+			return "water"
+		"t":
+			return "wall"
+		"d":
+			return "wood_floor"
+		">", "<":
+			return "stone_floor"
+		",":
+			return "stone_floor" if map_type == "dungeon" else "dirt_path"
+		"=":
+			return "cobblestone" if map_type == "town" else "dirt_path"
+		".":
+			if map_type == "dungeon":
+				return "stone_floor"
+			return "grass"
+		"corridor":
+			return "stone_floor"
+		"door":
+			return "wood_floor"
+	return tile_name

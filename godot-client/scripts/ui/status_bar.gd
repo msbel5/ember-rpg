@@ -13,6 +13,8 @@ class_name GameStatusBar
 
 func _ready() -> void:
 	GameState.state_updated.connect(_refresh)
+	GameState.map_loaded.connect(_on_map_loaded)
+	GameState.scene_changed.connect(_on_scene_changed)
 	_refresh()
 
 
@@ -55,3 +57,12 @@ func _refresh() -> void:
 		ap_label.text = "Scene %s" % GameState.scene.capitalize()
 
 	location_label.text = GameState.get_display_location()
+	location_label.queue_redraw()
+
+
+func _on_map_loaded(_map_data: Dictionary) -> void:
+	call_deferred("_refresh")
+
+
+func _on_scene_changed(_new_scene: String) -> void:
+	call_deferred("_refresh")

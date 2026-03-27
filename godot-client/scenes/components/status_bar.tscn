@@ -52,5 +52,6 @@ size_flags_horizontal = 3
 
 [node name="LocationLabel" type="Label" parent="StatusRow"]
 layout_mode = 2
+custom_minimum_size = Vector2(180, 0)
 text = "Unknown"
 horizontal_alignment = 2

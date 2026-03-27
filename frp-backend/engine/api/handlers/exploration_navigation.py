@@ -181,7 +181,7 @@ class ExplorationNavigationMixin:
                     session.position = [new_x, new_y]
                     moved = True
         else:
-            coord_match = re.match(r"^\s*(\d{1,3})\s*,\s*(\d{1,3})\s*$", str(dest))
+            coord_match = re.match(r"^\s*(\d{1,3})\s*(?:,\s*|\s+)(\d{1,3})\s*$", str(dest))
             if coord_match:
                 try:
                     x = max(0, min(map_width - 1, int(coord_match.group(1))))

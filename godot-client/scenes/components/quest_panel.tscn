@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/quest_panel.gd" id="1"]
 
 [node name="QuestPanel" type="PanelContainer"]
-custom_minimum_size = Vector2(0, 228)
+custom_minimum_size = Vector2(0, 180)
 script = ExtResource("1")
 
 [node name="QuestMargin" type="MarginContainer" parent="."]
@@ -26,7 +26,7 @@ text = "0 active, 0 available"
 autowrap_mode = 2
 
 [node name="QuestScroll" type="ScrollContainer" parent="QuestMargin/QuestVBox"]
-custom_minimum_size = Vector2(0, 148)
+custom_minimum_size = Vector2(0, 104)
 layout_mode = 2
 size_flags_vertical = 3
 

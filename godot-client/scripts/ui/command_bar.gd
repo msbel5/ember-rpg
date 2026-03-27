@@ -50,6 +50,18 @@ func submit_command(text: String) -> void:
 	clear_input()
 
 
+func remember_command(text: String) -> void:
+	text = text.strip_edges()
+	if text.is_empty():
+		return
+	if not _history.is_empty() and _history[_history.size() - 1] == text:
+		return
+	_history.append(text)
+	if _history.size() > 6:
+		_history.pop_front()
+	_refresh_history()
+
+
 func _on_text_submitted(text: String) -> void:
 	_emit_command(text)
 
@@ -62,10 +74,7 @@ func _emit_command(text: String) -> void:
 	text = text.strip_edges()
 	if text.is_empty():
 		return
-	_history.append(text)
-	if _history.size() > 6:
-		_history.pop_front()
-	_refresh_history()
+	remember_command(text)
 	command_submitted.emit(text)
 
 

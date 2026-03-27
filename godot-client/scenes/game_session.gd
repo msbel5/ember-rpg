@@ -1,6 +1,7 @@
 extends Control
 
 const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
+const ScreenshotCapture = preload("res://scripts/ui/screenshot_capture.gd")
 const PROFILE_PATH := "user://client_profile.cfg"
 const QUICKSAVE_SLOT := "quicksave"
 
@@ -88,6 +89,7 @@ func _submit_action(text: String) -> void:
 	text = text.strip_edges()
 	if text.is_empty() or is_waiting:
 		return
+	command_bar.remember_command(text)
 	if GameState.session_id.is_empty():
 		narrative_panel.append_system_text("[color=red]No active session. Start a new adventure.[/color]")
 		return
@@ -169,6 +171,14 @@ func _on_level_up(new_level: int) -> void:
 
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed):
+		return
+
+	if event.keycode == KEY_F12:
+		if event.shift_pressed:
+			_capture_visual_proof("phase2/game", "game_session", true)
+		else:
+			_capture_visual_proof("phase2/game", "game_session", false)
+		get_viewport().set_input_as_handled()
 		return
 
 	if event.keycode == KEY_F5 or (event.ctrl_pressed and event.keycode == KEY_S):
@@ -393,6 +403,24 @@ func _remember_player_id() -> void:
 	var profile = ConfigFile.new()
 	profile.set_value("profile", "last_player_id", player_name)
 	profile.save(PROFILE_PATH)
+
+
+func _capture_visual_proof(folder: String, prefix: String, include_world: bool) -> void:
+	var frame_path = ScreenshotCapture.capture_viewport(get_viewport(), folder, "%s_frame" % prefix)
+	var world_path = ""
+	if include_world and world_view != null and world_view.has_method("capture_world_screenshot"):
+		world_path = world_view.capture_world_screenshot(folder, "%s_world" % prefix)
+
+	var parts: Array[String] = []
+	if not frame_path.is_empty():
+		parts.append("frame=%s" % frame_path)
+	if not world_path.is_empty():
+		parts.append("world=%s" % world_path)
+
+	if parts.is_empty():
+		narrative_panel.append_system_text("[color=red]Viewport capture failed.[/color]")
+		return
+	narrative_panel.append_system_text("[color=gray]Visual proof saved: %s[/color]" % " | ".join(parts))
 
 
 func _map_has_tiles() -> bool:

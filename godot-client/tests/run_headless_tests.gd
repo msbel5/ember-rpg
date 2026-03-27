@@ -137,6 +137,48 @@ func _test_response_normalizer() -> void:
 	})
 	_assert_true(int(merged_map.get("width", 0)) == 40 and merged_map.has("tiles"), "ResponseNormalizer merges map payloads with existing state")
 
+	var normalized_ascii_town_map = ResponseNormalizer.normalize_map({
+		"map": {
+			"width": 3,
+			"height": 2,
+			"metadata": {"map_type": "town"},
+			"tiles": [
+				["#", "=", "."],
+				["~", "D", "<"],
+			],
+		}
+	})
+	var town_tiles = normalized_ascii_town_map.get("tiles", [])
+	_assert_true(
+		town_tiles.size() == 2
+		and town_tiles[0] is Array
+		and town_tiles[1] is Array
+		and town_tiles[0][0] == "wall"
+		and town_tiles[0][1] == "cobblestone"
+		and town_tiles[0][2] == "grass"
+		and town_tiles[1][0] == "water"
+		and town_tiles[1][1] == "wood_floor"
+		and town_tiles[1][2] == "stone_floor",
+		"ResponseNormalizer converts backend ASCII town symbols into named terrain tiles"
+	)
+
+	var normalized_ascii_dungeon_map = ResponseNormalizer.normalize_map({
+		"map": {
+			"width": 2,
+			"height": 1,
+			"metadata": {"map_type": "dungeon"},
+			"tiles": [[",", "."]],
+		}
+	})
+	var dungeon_tiles = normalized_ascii_dungeon_map.get("tiles", [])
+	_assert_true(
+		dungeon_tiles.size() == 1
+		and dungeon_tiles[0] is Array
+		and dungeon_tiles[0][0] == "stone_floor"
+		and dungeon_tiles[0][1] == "stone_floor",
+		"ResponseNormalizer uses dungeon-appropriate floor tiles for ASCII maps"
+	)
+
 	var normalized_entities = ResponseNormalizer.normalize_entities({
 		"world_entities": [
 			{"id": "merchant_1", "entity_type": "npc", "name": "Merchant", "position": [1, 2]},
@@ -267,6 +309,8 @@ func _test_ui_panels() -> void:
 
 	var player_info = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/PlayerInfo")
 	_assert_true(player_info.text.contains("Chaos"), "Status bar reflects player identity")
+	var location_label = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/LocationLabel")
+	_assert_true(location_label.text.contains("Harbor"), "Status bar reflects the current location")
 
 	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
 	_assert_true(inventory_grid.get_child_count() >= 2, "Inventory panel populates grid items")
@@ -282,6 +326,9 @@ func _test_ui_panels() -> void:
 	await process_frame
 	var history_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel")
 	_assert_true(history_label.text.contains("inventory"), "Command bar tracks recent commands")
+	command_bar.remember_command("move to 7,4")
+	await process_frame
+	_assert_true(history_label.text.contains("move to 7,4"), "Command bar can record non-textbox commands without duplication")
 	var quick_save_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/QuickSaveButton")
 	var saves_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SavesButton")
 	_assert_true(quick_save_button != null and saves_button != null, "Command bar exposes save controls")

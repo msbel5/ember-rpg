@@ -137,6 +137,16 @@ func _tile_in_bounds(tile_position: Vector2i) -> bool:
 	return tile_position.x >= 0 and tile_position.y >= 0 and tile_position.x < width and tile_position.y < height
 
 
+func capture_world_image() -> Image:
+	return world_viewport.get_texture().get_image()
+
+
+func capture_world_screenshot(folder: String, prefix: String) -> String:
+	var image = capture_world_image()
+	var screenshot_capture = preload("res://scripts/ui/screenshot_capture.gd")
+	return screenshot_capture.capture_image(image, folder, prefix)
+
+
 func _on_mouse_exited() -> void:
 	tooltip_text = ""
 	if selection_layer.has_method("clear_hover"):

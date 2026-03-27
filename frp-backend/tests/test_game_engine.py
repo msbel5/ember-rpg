@@ -698,6 +698,23 @@ class TestHandleMove:
         assert "don't know" in result.narrative.lower() or "direction" in result.narrative.lower()
         assert warrior_session.dm_context.location != "the dungeon"
 
+    def test_move_to_coordinate_accepts_parser_normalized_spacing(self, engine, warrior_session):
+        warrior_session.map_data = MapData(
+            width=12,
+            height=12,
+            tiles=[[TileType.FLOOR for _ in range(12)] for _ in range(12)],
+            rooms=[],
+            spawn_point=(5, 5),
+            metadata={"map_type": "wilderness"},
+        )
+        warrior_session.position = [5, 5]
+        warrior_session.sync_player_state()
+
+        result = engine.process_action(warrior_session, "move to 7,4")
+
+        assert warrior_session.position == [7, 4]
+        assert "position: 7,4" in result.narrative.lower()
+
     def test_move_default_forward(self, engine, warrior_session):
         result = engine.process_action(warrior_session, "move")
         assert len(result.narrative) > 0
