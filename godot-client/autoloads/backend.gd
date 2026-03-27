@@ -92,6 +92,37 @@ func create_campaign(player_name: String, player_class: String, adapter_id: Stri
 		body["seed"] = seed
 	_post("/game/campaigns", JSON.stringify(body), callback)
 
+func start_campaign_creation(player_name: String, adapter_id: String, callback: Callable, profile_id: String = "standard", seed: int = -1, location: String = "") -> void:
+	var body := {
+		"player_name": player_name,
+		"adapter_id": adapter_id,
+		"profile_id": profile_id,
+	}
+	if seed >= 0:
+		body["seed"] = seed
+	if not location.is_empty():
+		body["location"] = location
+	_post("/game/campaigns/creation/start", JSON.stringify(body), callback)
+
+func answer_campaign_creation(creation_id: String, question_id: String, answer_id: String, callback: Callable) -> void:
+	var body := {
+		"question_id": question_id,
+		"answer_id": answer_id,
+	}
+	_post("/game/campaigns/creation/%s/answer" % creation_id, JSON.stringify(body), callback)
+
+func reroll_campaign_creation(creation_id: String, callback: Callable) -> void:
+	_post("/game/campaigns/creation/%s/reroll" % creation_id, "{}", callback)
+
+func save_campaign_creation_roll(creation_id: String, callback: Callable) -> void:
+	_post("/game/campaigns/creation/%s/save-roll" % creation_id, "{}", callback)
+
+func swap_campaign_creation_roll(creation_id: String, callback: Callable) -> void:
+	_post("/game/campaigns/creation/%s/swap-roll" % creation_id, "{}", callback)
+
+func finalize_campaign_creation(creation_id: String, callback: Callable, payload: Dictionary = {}) -> void:
+	_post("/game/campaigns/creation/%s/finalize" % creation_id, JSON.stringify(payload), callback)
+
 func get_campaign(campaign_id: String, callback: Callable) -> void:
 	_http_get("/game/campaigns/%s" % campaign_id, callback)
 

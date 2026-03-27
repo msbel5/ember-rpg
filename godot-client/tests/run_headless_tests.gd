@@ -83,6 +83,31 @@ func _test_campaign_backend_routes() -> void:
 	var noop := func(_data = null) -> void:
 		pass
 
+	probe.start_campaign_creation("Chaos", "fantasy_ember", noop, "standard", 42, "Harbor Town")
+	var creation_body = JSON.parse_string(str(probe.last_request.get("body", "{}")))
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/creation/start", "start_campaign_creation uses the campaign creation start route")
+	_assert_true(creation_body is Dictionary and creation_body.get("adapter_id", "") == "fantasy_ember", "start_campaign_creation sends adapter_id")
+	_assert_true(creation_body is Dictionary and int(creation_body.get("seed", -1)) == 42, "start_campaign_creation sends the requested seed")
+
+	probe.answer_campaign_creation("create_1", "q_intro", "a_1", noop)
+	var answer_body = JSON.parse_string(str(probe.last_request.get("body", "{}")))
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/creation/create_1/answer", "answer_campaign_creation uses the answer route")
+	_assert_true(answer_body is Dictionary and answer_body.get("question_id", "") == "q_intro", "answer_campaign_creation sends question_id")
+
+	probe.reroll_campaign_creation("create_1", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/creation/create_1/reroll", "reroll_campaign_creation uses the reroll route")
+
+	probe.save_campaign_creation_roll("create_1", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/creation/create_1/save-roll", "save_campaign_creation_roll uses the save-roll route")
+
+	probe.swap_campaign_creation_roll("create_1", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/creation/create_1/swap-roll", "swap_campaign_creation_roll uses the swap-roll route")
+
+	probe.finalize_campaign_creation("create_1", noop, {"player_class": "mage"})
+	var finalize_body = JSON.parse_string(str(probe.last_request.get("body", "{}")))
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/creation/create_1/finalize", "finalize_campaign_creation uses the finalize route")
+	_assert_true(finalize_body is Dictionary and finalize_body.get("player_class", "") == "mage", "finalize_campaign_creation sends override payload")
+
 	probe.create_campaign("Chaos", "warrior", "fantasy_ember", noop, "standard", 42)
 	var create_body = JSON.parse_string(str(probe.last_request.get("body", "{}")))
 	_assert_true(probe.last_request.get("path", "") == "/game/campaigns", "create_campaign uses the campaign creation route")
@@ -124,6 +149,22 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state != null, "GameState autoload is available for normalization")
 	if game_state == null:
 		return
+	game_state.reset()
+	game_state.update_from_response({
+		"creation_id": "create_1",
+		"player_name": "Chaos",
+		"adapter_id": "fantasy_ember",
+		"profile_id": "standard",
+		"seed": 42,
+		"questions": [{"id": "q1", "text": "Test?", "answers": [{"id": "a1", "text": "Yes"}]}],
+		"current_roll": [15, 14, 13, 12, 10, 8],
+		"recommended_class": "warrior",
+		"recommended_alignment": "LG",
+		"recommended_skills": ["athletics", "perception"],
+	})
+	_assert_true(game_state.creation_state.get("creation_id", "") == "create_1", "GameState stores campaign creation state payloads")
+	_assert_true(game_state.adapter_id == "fantasy_ember" and game_state.profile_id == "standard", "GameState tracks adapter/profile from creation state")
+
 	game_state.reset()
 	game_state.update_from_response({
 		"scene": "combat",
@@ -267,6 +308,42 @@ func _test_scene_instantiation() -> void:
 		root.add_child(title_instance)
 		await process_frame
 		_assert_true(is_instance_valid(title_instance), "TitleScreen instantiates")
+		title_instance._on_new_game()
+		await process_frame
+		_assert_true(title_instance.get_node("CharacterCreation").visible, "TitleScreen opens the creation wizard")
+		title_instance._apply_creation_state({
+			"creation_id": "create_1",
+			"player_name": "Chaos",
+			"adapter_id": "fantasy_ember",
+			"profile_id": "standard",
+			"seed": 42,
+			"questions": [
+				{
+					"id": "q_intro",
+					"text": "How do you react?",
+					"answers": [
+						{"id": "a_1", "text": "Stand firm"},
+						{"id": "a_2", "text": "Slip away"},
+					],
+				}
+			],
+			"answers": [],
+			"current_roll": [15, 14, 13, 12, 10, 8],
+			"saved_roll": [13, 12, 12, 10, 9, 8],
+			"recommended_class": "warrior",
+			"recommended_alignment": "LG",
+			"recommended_skills": ["athletics", "perception"],
+		})
+		title_instance._go_to_step(title_instance.STEP_BUILD)
+		await process_frame
+		var title_class_option = title_instance.get_node("CharacterCreation/VBox/BuildSection/ClassOption")
+		var title_alignment_input = title_instance.get_node("CharacterCreation/VBox/BuildSection/AlignmentInput")
+		_assert_true(title_class_option.item_count >= 4, "TitleScreen build step exposes class overrides")
+		_assert_true(title_alignment_input.text == "LG", "TitleScreen pre-fills recommended alignment in the build step")
+		title_instance._go_to_step(title_instance.STEP_SUMMARY)
+		await process_frame
+		var title_summary = title_instance.get_node("CharacterCreation/VBox/SummarySection/SummaryText")
+		_assert_true(title_summary.text.contains("recommended"), "TitleScreen summary renders creation preview text")
 		title_instance.free()
 		await process_frame
 

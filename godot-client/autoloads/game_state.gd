@@ -27,6 +27,8 @@ var narrative_stream: Array = []
 var last_save_slot: String = ""
 var world_state: Dictionary = {}
 var settlement_state: Dictionary = {}
+var creation_state: Dictionary = {}
+var character_sheet: Dictionary = {}
 var recent_event_log: Array = []
 var player_map_pos: Vector2i = Vector2i(10, 7)  # Player position on tile map
 var player_facing: int = 2  # 0=N,1=E,2=S,3=W — default facing south
@@ -43,8 +45,21 @@ signal entities_loaded(entities: Dictionary)
 signal entity_revealed(entity_id: String)
 signal inventory_updated(items: Array)
 signal settlement_updated(settlement: Dictionary)
+signal creation_updated(state: Dictionary)
+signal character_sheet_updated(sheet: Dictionary)
 
 func update_from_response(data: Dictionary) -> void:
+	if data.has("creation_id"):
+		creation_state = data.duplicate(true)
+		adapter_id = str(data.get("adapter_id", adapter_id))
+		profile_id = str(data.get("profile_id", profile_id))
+		if data.has("character_sheet") and data["character_sheet"] is Dictionary:
+			character_sheet = data["character_sheet"]
+			character_sheet_updated.emit(character_sheet)
+		creation_updated.emit(creation_state)
+		state_updated.emit()
+		return
+
 	if data.has("campaign") and data["campaign"] is Dictionary:
 		active_runtime = "campaign"
 		session_id = ""
@@ -53,6 +68,9 @@ func update_from_response(data: Dictionary) -> void:
 		profile_id = str(data.get("profile_id", data["campaign"].get("world", {}).get("profile_id", profile_id)))
 		world_state = data["campaign"].get("world", {})
 		settlement_state = data["campaign"].get("settlement", {})
+		character_sheet = data["campaign"].get("character_sheet", {})
+		if not character_sheet.is_empty():
+			character_sheet_updated.emit(character_sheet)
 		recent_event_log = data["campaign"].get("recent_event_log", [])
 		var flattened_campaign = ResponseNormalizer.flatten_campaign_response(data, map_data)
 		update_from_response(flattened_campaign)
@@ -74,6 +92,9 @@ func update_from_response(data: Dictionary) -> void:
 		settlement_updated.emit(settlement_state)
 	if data.has("recent_event_log") and data["recent_event_log"] is Array:
 		recent_event_log = data["recent_event_log"]
+	if data.has("character_sheet") and data["character_sheet"] is Dictionary:
+		character_sheet = data["character_sheet"]
+		character_sheet_updated.emit(character_sheet)
 
 	if data.has("player"):
 		player = data["player"]
@@ -188,6 +209,8 @@ func reset() -> void:
 	last_save_slot = ""
 	world_state = {}
 	settlement_state = {}
+	creation_state = {}
+	character_sheet = {}
 	recent_event_log = []
 	player_map_pos = Vector2i(10, 7)
 	player_facing = 2

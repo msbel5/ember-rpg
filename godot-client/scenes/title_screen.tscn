@@ -23,10 +23,10 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -200.0
-offset_top = 80.0
-offset_right = 200.0
-offset_bottom = 140.0
+offset_left = -240.0
+offset_top = 50.0
+offset_right = 240.0
+offset_bottom = 110.0
 grow_horizontal = 2
 text = "EMBER RPG"
 horizontal_alignment = 1
@@ -37,12 +37,12 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -200.0
-offset_top = 140.0
-offset_right = 200.0
-offset_bottom = 170.0
+offset_left = -240.0
+offset_top = 105.0
+offset_right = 240.0
+offset_bottom = 135.0
 grow_horizontal = 2
-text = "A Fantasy Role-Playing Adventure"
+text = "Campaign Creation Recovery Build"
 horizontal_alignment = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
@@ -52,9 +52,9 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -100.0
+offset_left = -110.0
 offset_top = -60.0
-offset_right = 100.0
+offset_right = 110.0
 offset_bottom = 60.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -78,11 +78,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -200.0
+offset_left = -340.0
 offset_top = -40.0
-offset_right = 200.0
+offset_right = 340.0
 grow_horizontal = 2
-grow_vertical = 0
 horizontal_alignment = 1
 
 [node name="CharacterCreation" type="Panel" parent="."]
@@ -93,10 +92,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -180.0
-offset_top = -120.0
-offset_right = 180.0
-offset_bottom = 120.0
+offset_left = -340.0
+offset_top = -240.0
+offset_right = 340.0
+offset_bottom = 240.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -115,32 +114,200 @@ layout_mode = 2
 text = "Create Your Character"
 horizontal_alignment = 1
 
-[node name="NameLabel" type="Label" parent="CharacterCreation/VBox"]
+[node name="StepLabel" type="Label" parent="CharacterCreation/VBox"]
 layout_mode = 2
-text = "Name:"
+text = "Step 1: Identity"
+horizontal_alignment = 1
 
-[node name="NameInput" type="LineEdit" parent="CharacterCreation/VBox"]
+[node name="IdentitySection" type="VBoxContainer" parent="CharacterCreation/VBox"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="CharacterCreation/VBox/IdentitySection"]
+layout_mode = 2
+text = "Name"
+
+[node name="NameInput" type="LineEdit" parent="CharacterCreation/VBox/IdentitySection"]
 layout_mode = 2
 placeholder_text = "Enter character name..."
 
-[node name="ClassLabel" type="Label" parent="CharacterCreation/VBox"]
+[node name="AdapterLabel" type="Label" parent="CharacterCreation/VBox/IdentitySection"]
 layout_mode = 2
-text = "Class:"
+text = "Adapter"
 
-[node name="ClassOption" type="OptionButton" parent="CharacterCreation/VBox"]
-layout_mode = 2
-
-[node name="AdapterLabel" type="Label" parent="CharacterCreation/VBox"]
-layout_mode = 2
-text = "Adapter:"
-
-[node name="AdapterOption" type="OptionButton" parent="CharacterCreation/VBox"]
+[node name="AdapterOption" type="OptionButton" parent="CharacterCreation/VBox/IdentitySection"]
 layout_mode = 2
 
-[node name="StartButton" type="Button" parent="CharacterCreation/VBox"]
+[node name="ProfileLabel" type="Label" parent="CharacterCreation/VBox/IdentitySection"]
 layout_mode = 2
-text = "Start Adventure"
+text = "Profile"
 
-[node name="BackButton" type="Button" parent="CharacterCreation/VBox"]
+[node name="ProfileInput" type="LineEdit" parent="CharacterCreation/VBox/IdentitySection"]
 layout_mode = 2
-text = "Back"
+text = "standard"
+
+[node name="SeedLabel" type="Label" parent="CharacterCreation/VBox/IdentitySection"]
+layout_mode = 2
+text = "Seed (optional)"
+
+[node name="SeedInput" type="LineEdit" parent="CharacterCreation/VBox/IdentitySection"]
+layout_mode = 2
+placeholder_text = "Leave blank for random"
+
+[node name="QuestionnaireSection" type="VBoxContainer" parent="CharacterCreation/VBox"]
+visible = false
+layout_mode = 2
+
+[node name="QuestionProgressLabel" type="Label" parent="CharacterCreation/VBox/QuestionnaireSection"]
+layout_mode = 2
+text = "Question 1/1"
+
+[node name="QuestionPrompt" type="RichTextLabel" parent="CharacterCreation/VBox/QuestionnaireSection"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="AnswerOption" type="OptionButton" parent="CharacterCreation/VBox/QuestionnaireSection"]
+layout_mode = 2
+
+[node name="RollSection" type="VBoxContainer" parent="CharacterCreation/VBox"]
+visible = false
+layout_mode = 2
+
+[node name="CurrentRollLabel" type="Label" parent="CharacterCreation/VBox/RollSection"]
+layout_mode = 2
+text = "Current Roll: -"
+
+[node name="SavedRollLabel" type="Label" parent="CharacterCreation/VBox/RollSection"]
+layout_mode = 2
+text = "Saved Roll: -"
+
+[node name="RollButtonRow" type="HBoxContainer" parent="CharacterCreation/VBox/RollSection"]
+layout_mode = 2
+
+[node name="RerollButton" type="Button" parent="CharacterCreation/VBox/RollSection/RollButtonRow"]
+layout_mode = 2
+text = "Reroll"
+
+[node name="SaveRollButton" type="Button" parent="CharacterCreation/VBox/RollSection/RollButtonRow"]
+layout_mode = 2
+text = "Save Roll"
+
+[node name="SwapRollButton" type="Button" parent="CharacterCreation/VBox/RollSection/RollButtonRow"]
+layout_mode = 2
+text = "Swap Roll"
+
+[node name="BuildSection" type="VBoxContainer" parent="CharacterCreation/VBox"]
+visible = false
+layout_mode = 2
+
+[node name="ClassLabel" type="Label" parent="CharacterCreation/VBox/BuildSection"]
+layout_mode = 2
+text = "Class"
+
+[node name="ClassOption" type="OptionButton" parent="CharacterCreation/VBox/BuildSection"]
+layout_mode = 2
+
+[node name="AlignmentLabel" type="Label" parent="CharacterCreation/VBox/BuildSection"]
+layout_mode = 2
+text = "Alignment"
+
+[node name="AlignmentInput" type="LineEdit" parent="CharacterCreation/VBox/BuildSection"]
+layout_mode = 2
+placeholder_text = "LG, TN, CG..."
+
+[node name="SkillsLabel" type="Label" parent="CharacterCreation/VBox/BuildSection"]
+layout_mode = 2
+text = "Skills (comma-separated)"
+
+[node name="SkillsInput" type="LineEdit" parent="CharacterCreation/VBox/BuildSection"]
+layout_mode = 2
+placeholder_text = "arcana, history"
+
+[node name="AutoAssignButton" type="Button" parent="CharacterCreation/VBox/BuildSection"]
+layout_mode = 2
+text = "Auto Assign Rolled Stats"
+
+[node name="StatsGrid" type="GridContainer" parent="CharacterCreation/VBox/BuildSection"]
+layout_mode = 2
+columns = 2
+
+[node name="MIGLabel" type="Label" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "MIG"
+
+[node name="MIGInput" type="LineEdit" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "10"
+
+[node name="AGILabel" type="Label" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "AGI"
+
+[node name="AGIInput" type="LineEdit" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "10"
+
+[node name="ENDLabel" type="Label" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "END"
+
+[node name="ENDInput" type="LineEdit" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "10"
+
+[node name="MNDLabel" type="Label" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "MND"
+
+[node name="MNDInput" type="LineEdit" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "10"
+
+[node name="INSLabel" type="Label" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "INS"
+
+[node name="INSInput" type="LineEdit" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "10"
+
+[node name="PRELabel" type="Label" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "PRE"
+
+[node name="PREInput" type="LineEdit" parent="CharacterCreation/VBox/BuildSection/StatsGrid"]
+layout_mode = 2
+text = "10"
+
+[node name="SummarySection" type="VBoxContainer" parent="CharacterCreation/VBox"]
+visible = false
+layout_mode = 2
+
+[node name="SummaryText" type="RichTextLabel" parent="CharacterCreation/VBox/SummarySection"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="ButtonRow" type="HBoxContainer" parent="CharacterCreation/VBox"]
+layout_mode = 2
+
+[node name="BackStepButton" type="Button" parent="CharacterCreation/VBox/ButtonRow"]
+layout_mode = 2
+text = "Previous"
+
+[node name="NextButton" type="Button" parent="CharacterCreation/VBox/ButtonRow"]
+layout_mode = 2
+text = "Next"
+
+[node name="StartButton" type="Button" parent="CharacterCreation/VBox/ButtonRow"]
+visible = false
+layout_mode = 2
+text = "Start Campaign"
+
+[node name="BackButton" type="Button" parent="CharacterCreation/VBox/ButtonRow"]
+layout_mode = 2
+text = "Cancel"
