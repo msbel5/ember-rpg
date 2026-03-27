@@ -9,11 +9,22 @@ signal command_requested(command_text: String)
 @onready var entity_layer: Node2D = $WorldViewport/WorldRoot/EntityLayer
 @onready var selection_layer = $WorldViewport/WorldRoot/SelectionLayer
 @onready var world_camera: Camera2D = $WorldViewport/WorldRoot/WorldCamera
+var _placeholder_banner: Label
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_exited.connect(_on_mouse_exited)
+	_placeholder_banner = Label.new()
+	_placeholder_banner.name = "PlaceholderBanner"
+	_placeholder_banner.visible = false
+	_placeholder_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_placeholder_banner.position = Vector2(12, 12)
+	_placeholder_banner.z_index = 100
+	_placeholder_banner.text = "Placeholder map: waiting for campaign data"
+	_placeholder_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.42))
+	_placeholder_banner.add_theme_font_size_override("font_size", 16)
+	add_child(_placeholder_banner)
 
 	if get_node_or_null("/root/GameState") != null:
 		GameState.map_loaded.connect(_refresh_from_state)
@@ -28,9 +39,11 @@ func refresh_from_state() -> void:
 
 
 func _refresh_from_state(_payload = null) -> void:
-	var map_payload: Dictionary = GameState.map_data if not GameState.map_data.is_empty() else TileCatalog.build_placeholder_map()
+	var has_real_map := not GameState.map_data.is_empty()
+	var map_payload: Dictionary = GameState.map_data if has_real_map else TileCatalog.build_placeholder_map()
 	if map_payload.is_empty():
 		map_payload = TileCatalog.build_placeholder_map()
+	_update_placeholder_banner(not has_real_map or bool(map_payload.get("placeholder", false)))
 	terrain_layer.render_map(map_payload)
 
 	var player_tile = GameState.player_map_pos
@@ -145,6 +158,8 @@ func _update_hover(screen_position: Vector2) -> void:
 
 
 func _describe_hover(tile_position: Vector2i, entity: Dictionary) -> String:
+	if _placeholder_banner != null and _placeholder_banner.visible:
+		return _placeholder_banner.text
 	if not entity.is_empty():
 		var actions = entity.get("context_actions", [])
 		if actions is Array and not actions.is_empty():
@@ -182,6 +197,14 @@ func capture_world_screenshot(folder: String, prefix: String) -> String:
 	var image = capture_world_image()
 	var screenshot_capture = preload("res://scripts/ui/screenshot_capture.gd")
 	return screenshot_capture.capture_image(image, folder, prefix)
+
+
+func _update_placeholder_banner(is_placeholder: bool) -> void:
+	if _placeholder_banner == null:
+		return
+	_placeholder_banner.visible = is_placeholder
+	if is_placeholder:
+		_placeholder_banner.text = "Placeholder map: waiting for campaign data"
 
 
 func _on_mouse_exited() -> void:

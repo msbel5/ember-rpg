@@ -475,6 +475,14 @@ def _print_save_browser(player_id: str, saves: list[dict[str, Any]]) -> None:
     console.print(table)
 
 
+def _campaign_compatible_saves(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    compatible: list[dict[str, Any]] = []
+    for entry in entries:
+        if isinstance(entry, dict) and bool(entry.get("campaign_compatible", True)):
+            compatible.append(entry)
+    return compatible
+
+
 def _resolve_save_choice(choice: str, saves: list[dict[str, Any]]) -> str:
     cleaned = choice.strip()
     if not cleaned:
@@ -500,7 +508,7 @@ def browse_campaign_saves(client: CampaignClient, default_player_id: str = "") -
             return None
         player_id = typed_player_id or player_id or "player"
         try:
-            saves = list(client.list_saves_for_player(player_id))
+            discovered_saves = list(client.list_saves_for_player(player_id))
         except Exception as exc:
             console.print(Panel(str(exc), title="Load Failed", border_style="red"))
             action = _ask_choice("Retry, New, or Quit?", ["retry", "new", "quit"], "retry")
@@ -509,8 +517,14 @@ def browse_campaign_saves(client: CampaignClient, default_player_id: str = "") -
             if action == "new":
                 return character_creation(client)
             return None
+        saves = _campaign_compatible_saves(discovered_saves)
         if not saves:
-            console.print(Panel(f"No saves found for {player_id}.", title="Load", border_style="yellow"))
+            message = (
+                f"No campaign saves found for {player_id}."
+                if not discovered_saves
+                else f"Only legacy or incompatible saves were found for {player_id}."
+            )
+            console.print(Panel(message, title="Load", border_style="yellow"))
             action = _ask_choice("Retry, New, or Quit?", ["retry", "new", "quit"], "retry")
             if action == "retry":
                 continue

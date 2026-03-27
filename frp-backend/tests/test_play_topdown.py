@@ -254,3 +254,49 @@ def test_start_or_load_campaign_invalid_save_input_falls_back_to_new(monkeypatch
     snapshot = play_topdown.start_or_load_campaign(DummyClient())
 
     assert snapshot["campaign_id"] == "camp_new"
+
+
+def test_start_or_load_campaign_filters_incompatible_legacy_saves(monkeypatch):
+    _install_topdown_stubs(monkeypatch)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play_topdown = importlib.import_module("tools.play_topdown")
+
+    answers = iter(["load", "Chaos", "1"])
+    monkeypatch.setattr(play_topdown.Prompt, "ask", lambda *args, **kwargs: next(answers))
+
+    class DummyClient:
+        def list_saves_for_player(self, player_id):
+            assert player_id == "Chaos"
+            return [
+                {"save_id": "legacy_slot", "slot_name": "legacy_slot", "location": "Harbor Town", "timestamp": "2026-03-28T10:00:00", "campaign_compatible": False},
+                {"save_id": "slot_a", "slot_name": "slot_a", "location": "Dragon Eyrie", "timestamp": "2026-03-28T11:00:00", "campaign_compatible": True},
+            ]
+
+        def load_campaign(self, save_id):
+            assert save_id == "slot_a"
+            return {"campaign_id": "camp_loaded", "narrative": "Loaded."}
+
+    snapshot = play_topdown.start_or_load_campaign(DummyClient())
+
+    assert snapshot["campaign_id"] == "camp_loaded"
+
+
+def test_start_or_load_campaign_reports_legacy_only_saves(monkeypatch):
+    _install_topdown_stubs(monkeypatch)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play_topdown = importlib.import_module("tools.play_topdown")
+
+    answers = iter(["load", "Chaos", "new"])
+    monkeypatch.setattr(play_topdown.Prompt, "ask", lambda *args, **kwargs: next(answers))
+    monkeypatch.setattr(play_topdown, "character_creation", lambda client=None: {"campaign_id": "camp_new"})
+
+    class DummyClient:
+        def list_saves_for_player(self, player_id):
+            assert player_id == "Chaos"
+            return [{"save_id": "legacy_slot", "slot_name": "legacy_slot", "location": "Harbor Town", "timestamp": "2026-03-28T10:00:00", "campaign_compatible": False}]
+
+    snapshot = play_topdown.start_or_load_campaign(DummyClient())
+
+    assert snapshot["campaign_id"] == "camp_new"

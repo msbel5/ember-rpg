@@ -144,6 +144,60 @@ def test_play_meta_saves_uses_player_discovery(monkeypatch):
     assert history[-1].startswith("demo | Harbor Town |")
 
 
+def test_play_meta_saves_filters_incompatible_legacy_slots(monkeypatch):
+    _install_play_stubs(monkeypatch)
+    sys.modules.pop("tools.play", None)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play = importlib.import_module("tools.play")
+
+    class DummyClient:
+        def list_saves_for_player(self, player_id):
+            assert player_id == "Chaos"
+            return [
+                {"slot_name": "legacy_slot", "save_id": "legacy_slot", "location": "Harbor Town", "timestamp": "2026-03-28T10:00:00", "campaign_compatible": False},
+                {"slot_name": "demo", "save_id": "demo", "location": "Dragon Eyrie", "timestamp": "2026-03-28T10:05:00", "campaign_compatible": True},
+            ]
+
+    snapshot = {
+        "campaign_id": "camp_1",
+        "campaign": {"player": {"name": "Chaos"}},
+    }
+    history = []
+
+    handled, new_snapshot = play._handle_meta_command(DummyClient(), snapshot, history, "saves")
+
+    assert handled is True
+    assert new_snapshot is snapshot
+    assert len(history) == 1
+    assert history[-1].startswith("demo | Dragon Eyrie |")
+
+
+def test_play_meta_saves_reports_no_campaign_slots_when_only_legacy(monkeypatch):
+    _install_play_stubs(monkeypatch)
+    sys.modules.pop("tools.play", None)
+    sys.modules.pop("tools.play_topdown", None)
+
+    play = importlib.import_module("tools.play")
+
+    class DummyClient:
+        def list_saves_for_player(self, player_id):
+            assert player_id == "Chaos"
+            return [{"slot_name": "legacy_slot", "save_id": "legacy_slot", "campaign_compatible": False}]
+
+    snapshot = {
+        "campaign_id": "camp_1",
+        "campaign": {"player": {"name": "Chaos"}},
+    }
+    history = []
+
+    handled, new_snapshot = play._handle_meta_command(DummyClient(), snapshot, history, "saves")
+
+    assert handled is True
+    assert new_snapshot is snapshot
+    assert history[-1] == "No campaign-compatible save slots found."
+
+
 def test_play_meta_load_without_slot_uses_browser(monkeypatch):
     _install_play_stubs(monkeypatch)
     sys.modules.pop("tools.play", None)

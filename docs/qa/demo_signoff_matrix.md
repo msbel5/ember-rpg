@@ -32,7 +32,7 @@
 
 | Gate | Status | Evidence | Owner | Notes |
 |------|--------|----------|-------|-------|
-| Campaign creation API and character-sheet tests are green | Green | Targeted backend suite (`19 passed`) | Backend | Current targeted slice is stable. |
+| Campaign creation API and character-sheet tests are green | Green | Targeted backend suite (`28 passed`) | Backend | Current targeted slice is stable after mixed-save compatibility filtering. |
 | Terminal startup supports `New / Load / Quit` | Green | `frp-backend/tests/test_play.py`, `frp-backend/tests/test_play_topdown.py` | Backend / Terminal | Player-facing start flow is present in both terminal entry points. |
 | Terminal load discovery is non-fatal on invalid input | Green | `frp-backend/tests/test_play.py`, `frp-backend/tests/test_play_topdown.py` | Backend / Terminal | Inline recovery is covered in the targeted slice. |
 | Terminal long-form pass: `200` turns per adapter | Open | No durable QA log yet | QA | Still required for final demo closure. |
@@ -45,12 +45,12 @@
 | Campaign creation wizard works visually for both adapters | Green | `docs/qa/campaign_cutover_visual_log.md` | Godot / QA | Short graphical creation proof exists for both adapters. |
 | Character build edits survive wizard navigation | Green | `godot-client/tests/run_headless_tests.gd` | Godot | Regression coverage exists. |
 | In-session save/load shell works | Green | `docs/qa/campaign_cutover_visual_log.md` | Godot / QA | Quick save and in-session restore proof exists. |
-| Title-screen resume is a real save browser, not only cached `Continue` | Green | `godot-client/tests/run_headless_tests.gd`, `docs/qa/campaign_cutover_visual_log.md` | Godot | `Continue` now opens a player-scoped save browser instead of immediately restoring one cached slot, and live proof shows save rows rendering for `Chaos`. |
+| Title-screen resume is a real save browser, not only cached `Continue` | Green | `godot-client/tests/run_headless_tests.gd`, `docs/qa/campaign_cutover_visual_log.md`, `frp-backend/tests/test_campaign_api_v2.py`, `frp-backend/tests/test_play.py`, `frp-backend/tests/test_play_topdown.py` | Godot | `Continue` now opens a player-scoped campaign browser, hides incompatible legacy saves, and live proof shows `resume_campaign_ok` restoring while legacy `chaostest` is suppressed. |
 | Status/location/resource labels stay aligned with backend state | Green | `docs/qa/campaign_cutover_visual_log.md` | Godot | The prior `Unknown` location defect is fixed. |
 | Inventory, quest, settlement, and character-sheet panels are clickable and non-ambiguous | Partial | Headless coverage plus short live proof | Godot | Inventory and settlement quick actions are covered; broader clickable-surface proof is still missing. |
 | Doors, furniture, item, and world-surface click actions feel complete | Partial | `godot-client/tests/run_headless_tests.gd`, `docs/qa/campaign_cutover_visual_log.md` | Godot | Item pickup, door open, well examine, and live movement clicks are covered; furniture/door interaction breadth still needs longer-form live proof. |
 | Combat actions are disabled when it is not the player's turn | Green | `godot-client/tests/run_headless_tests.gd` | Godot | Turn gating now has regression coverage and no longer leaves attack actions enabled off-turn. |
-| Placeholder and no-data states are clearly distinguished from valid gameplay | Open | No final QA evidence | Godot | Needs explicit live verification. |
+| Placeholder and no-data states are clearly distinguished from valid gameplay | Partial | `godot-client/tests/run_headless_tests.gd` | Godot | World and minimap now label placeholder/no-data states explicitly, but live graphical proof is still missing. |
 
 ## Visual and Benchmark Gates
 
@@ -68,7 +68,7 @@
 - Current release state: `Not ready for final demo signoff`
 - Hard blockers still open:
   - deeper clickable world interactions for furniture and richer world-object intent
-  - placeholder/no-data visual clarity
+  - placeholder/no-data visual clarity still lacks live proof
   - long-form visual and chaos matrices
 - Conditions to flip to ready:
   - all `Open` gates above become `Green`

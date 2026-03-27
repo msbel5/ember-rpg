@@ -268,7 +268,12 @@ class CampaignRuntime:
 
     def list_campaign_saves(self, campaign_id: str) -> list[dict[str, Any]]:
         context = self.get_campaign(campaign_id)
-        return self.save_system.list_saves(player_name=context.session.player.name)
+        saves = self.save_system.list_saves(player_name=context.session.player.name)
+        return [
+            entry
+            for entry in saves
+            if entry.get("campaign_compatible") and str(entry.get("campaign_id", "")) == context.campaign_id
+        ]
 
     def load_campaign(self, save_id: str) -> CampaignContext:
         session = self.save_system.load_game(save_id, strict=True)

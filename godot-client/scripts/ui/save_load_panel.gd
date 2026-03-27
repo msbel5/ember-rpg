@@ -113,6 +113,7 @@ func _build_row(summary: Dictionary) -> Control:
 	row.add_child(details)
 
 	var load_button = Button.new()
+	load_button.name = "LoadButton"
 	load_button.text = "Load"
 	load_button.disabled = _is_busy
 	load_button.pressed.connect(func() -> void:
@@ -121,6 +122,7 @@ func _build_row(summary: Dictionary) -> Control:
 	row.add_child(load_button)
 
 	var delete_button = Button.new()
+	delete_button.name = "DeleteButton"
 	delete_button.text = "Delete"
 	delete_button.disabled = _is_busy
 	delete_button.pressed.connect(func() -> void:

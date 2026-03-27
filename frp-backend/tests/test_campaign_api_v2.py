@@ -1,7 +1,13 @@
 """Targeted tests for the campaign-first API."""
 
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
+from engine.api.campaign_runtime import CampaignRuntime
+from engine.api.game_engine import GameEngine
+from engine.api.save_routes import SaveManagerCompat
+from engine.api import campaign_routes, save_routes
 from main import app
 
 
@@ -77,3 +83,57 @@ def test_campaign_save_and_load_round_trip():
     loaded_payload = loaded.json()
     assert loaded_payload["campaign"]["world"]["seed"] == 42
     assert loaded_payload["campaign"]["settlement"]["name"]
+
+
+def test_campaign_save_listing_filters_legacy_and_other_campaign_slots(tmp_path: Path):
+    runtime = CampaignRuntime(llm=None)
+    runtime.save_system.save_dir = tmp_path / "campaign_api_saves"
+    runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
+    old_runtime = campaign_routes.campaign_runtime
+    old_save_manager = save_routes.save_manager
+    campaign_routes.campaign_runtime = runtime
+    save_routes.save_manager = SaveManagerCompat(save_system=runtime.save_system)
+    try:
+        first = client.post(
+            "/game/campaigns",
+            json={
+                "player_name": "CampaignTester",
+                "player_class": "warrior",
+                "adapter_id": "fantasy_ember",
+                "profile_id": "standard",
+                "seed": 100,
+            },
+        ).json()
+        second = client.post(
+            "/game/campaigns",
+            json={
+                "player_name": "CampaignTester",
+                "player_class": "rogue",
+                "adapter_id": "scifi_frontier",
+                "profile_id": "standard",
+                "seed": 101,
+            },
+        ).json()
+        first_id = first["campaign_id"]
+        client.post(f"/game/campaigns/{first_id}/save", json={"player_id": "CampaignTester", "slot_name": "first_slot"})
+        client.post(f"/game/campaigns/{second['campaign_id']}/save", json={"player_id": "CampaignTester", "slot_name": "second_slot"})
+        legacy_session = GameEngine(llm=None).new_session("CampaignTester", "warrior", location="Harbor Town")
+        runtime.save_system.save_game(legacy_session, "legacy_slot", player_name="CampaignTester")
+
+        player_saves = client.get("/game/saves/CampaignTester")
+        assert player_saves.status_code == 200
+        player_entries = {entry["save_id"]: entry for entry in player_saves.json()}
+        assert player_entries["first_slot"]["campaign_compatible"] is True
+        assert player_entries["second_slot"]["campaign_compatible"] is True
+        assert player_entries["legacy_slot"]["campaign_compatible"] is False
+
+        detail = client.get("/game/saves/file/legacy_slot")
+        assert detail.status_code == 200
+        assert detail.json()["campaign_compatible"] is False
+
+        scoped = client.get(f"/game/campaigns/{first_id}/saves")
+        assert scoped.status_code == 200
+        assert [entry["save_id"] for entry in scoped.json()] == ["first_slot"]
+    finally:
+        campaign_routes.campaign_runtime = old_runtime
+        save_routes.save_manager = old_save_manager

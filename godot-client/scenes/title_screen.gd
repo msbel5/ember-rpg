@@ -447,10 +447,29 @@ func _on_saves_listed(data) -> void:
 	sorted_entries.sort_custom(func(left, right) -> bool:
 		return str(left.get("timestamp", "")) > str(right.get("timestamp", ""))
 	)
+	var campaign_entries: Array = []
+	var hidden_incompatible_count := 0
 	for entry in sorted_entries:
 		if entry is Dictionary:
-			load_save_list.add_child(_build_save_row(entry))
-	load_status_label.text = "Found %d save(s)." % sorted_entries.size()
+			if _is_campaign_compatible_save(entry):
+				campaign_entries.append(entry)
+			else:
+				hidden_incompatible_count += 1
+
+	if campaign_entries.is_empty():
+		if hidden_incompatible_count > 0:
+			load_status_label.text = "Only legacy or incompatible saves are available for this player."
+		else:
+			load_status_label.text = "No campaign saves found for this player."
+		return
+
+	for entry in campaign_entries:
+		load_save_list.add_child(_build_save_row(entry))
+	_sync_load_browser_row_buttons()
+	if hidden_incompatible_count > 0:
+		load_status_label.text = "Found %d campaign save(s). Hidden %d legacy save(s)." % [campaign_entries.size(), hidden_incompatible_count]
+	else:
+		load_status_label.text = "Found %d campaign save(s)." % campaign_entries.size()
 
 
 func _build_save_row(entry: Dictionary) -> Control:
@@ -477,9 +496,11 @@ func _build_save_row(entry: Dictionary) -> Control:
 	row.add_child(info)
 
 	var load_button = Button.new()
+	load_button.name = "LoadButton"
 	var save_id = str(entry.get("save_id", slot_name))
 	load_button.text = "Load"
 	load_button.tooltip_text = "Load %s" % slot_name
+	load_button.disabled = load_browser_busy
 	load_button.pressed.connect(func() -> void:
 		_load_save_from_browser(save_id)
 	)
@@ -488,6 +509,8 @@ func _build_save_row(entry: Dictionary) -> Control:
 
 
 func _load_save_from_browser(save_id: String) -> void:
+	if load_browser_busy:
+		return
 	if save_id.is_empty():
 		load_status_label.text = "This save is missing a save_id."
 		return
@@ -505,8 +528,23 @@ func _set_load_browser_busy(busy: bool, message: String) -> void:
 	continue_btn.disabled = busy
 	load_refresh_button.disabled = busy
 	load_close_button.disabled = busy
+	_sync_load_browser_row_buttons()
 	if not message.is_empty():
 		load_status_label.text = message
+
+
+func _sync_load_browser_row_buttons() -> void:
+	for child in load_save_list.get_children():
+		if child is HBoxContainer:
+			for grandchild in child.get_children():
+				if grandchild is Button:
+					grandchild.disabled = load_browser_busy
+
+
+func _is_campaign_compatible_save(entry: Dictionary) -> bool:
+	if entry.has("campaign_compatible"):
+		return bool(entry.get("campaign_compatible", true))
+	return false
 
 
 func _update_question_view() -> void:

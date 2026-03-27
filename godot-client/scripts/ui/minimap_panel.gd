@@ -19,13 +19,17 @@ func _refresh_from_map(_map_data: Dictionary) -> void:
 
 
 func _refresh() -> void:
-	var map_data = GameState.map_data if not GameState.map_data.is_empty() else TileCatalog.build_placeholder_map(24, 18)
+	var map_data = GameState.map_data
+	if map_data.is_empty():
+		map_texture.texture = null
+		summary_label.text = "No map loaded"
+		return
 	var width = int(map_data.get("width", 0))
 	var height = int(map_data.get("height", 0))
 	var tiles = map_data.get("tiles", [])
 	if width <= 0 or height <= 0 or tiles.is_empty():
 		map_texture.texture = null
-		summary_label.text = "No map loaded"
+		summary_label.text = "Placeholder map loaded" if bool(map_data.get("placeholder", false)) else "No map loaded"
 		return
 
 	var image = Image.create(width, height, false, Image.FORMAT_RGBA8)
@@ -41,7 +45,10 @@ func _refresh() -> void:
 		image.set_pixel(player_pos.x, player_pos.y, Color(0.95, 0.28, 0.20))
 
 	map_texture.texture = ImageTexture.create_from_image(image)
-	summary_label.text = "%s  %dx%d" % [GameState.get_display_location(), width, height]
+	if bool(map_data.get("placeholder", false)):
+		summary_label.text = "Placeholder map loaded  %dx%d" % [width, height]
+	else:
+		summary_label.text = "%s  %dx%d" % [GameState.get_display_location(), width, height]
 
 
 func _color_for_tile(tile_name: String) -> Color:

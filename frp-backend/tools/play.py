@@ -70,6 +70,16 @@ def _current_player_id(snapshot: dict[str, object]) -> str:
     return "player"
 
 
+def _campaign_compatible_saves(entries) -> list[dict]:
+    compatible: list[dict] = []
+    for entry in entries or []:
+        if not isinstance(entry, dict):
+            continue
+        if bool(entry.get("campaign_compatible", True)):
+            compatible.append(entry)
+    return compatible
+
+
 def _handle_meta_command(client: CampaignClient, snapshot: dict, history: list[str], command: str) -> tuple[bool, dict]:
     lower = command.lower().strip()
     if lower == "save" or lower.startswith("save "):
@@ -96,12 +106,12 @@ def _handle_meta_command(client: CampaignClient, snapshot: dict, history: list[s
             return True, snapshot
     if lower == "saves":
         try:
-            saves = client.list_saves_for_player(_current_player_id(snapshot))
+            saves = _campaign_compatible_saves(client.list_saves_for_player(_current_player_id(snapshot)))
         except Exception as exc:
             _append(history, "Save listing failed: %s" % exc)
             return True, snapshot
         if not saves:
-            _append(history, "No save slots found.")
+            _append(history, "No campaign-compatible save slots found.")
             return True, snapshot
         for entry in saves[:5]:
             _append(

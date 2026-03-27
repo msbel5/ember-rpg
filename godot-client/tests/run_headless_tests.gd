@@ -373,6 +373,19 @@ func _test_scene_instantiation() -> void:
 		_assert_true(title_alignment_input.text == "CG", "TitleScreen preserves manual alignment edits when returning from summary")
 		_assert_true(title_skills_input.text == "arcana, history", "TitleScreen preserves manual skill edits when returning from summary")
 		_assert_true(title_mig_input.text == "18", "TitleScreen preserves manual stat edits when returning from summary")
+		title_instance._clear_load_rows()
+		title_instance._on_saves_listed([
+			{"save_id": "legacy_a", "slot_name": "legacy_a", "campaign_compatible": false, "location": "Harbor Town", "timestamp": "2026-03-28T09:00:00"},
+			{"save_id": "campaign_a", "slot_name": "campaign_a", "campaign_compatible": true, "location": "Dragon Eyrie", "timestamp": "2026-03-28T10:00:00"},
+		])
+		var load_save_list = title_instance.get_node("LoadBrowser/VBox/SaveScroll/SaveList")
+		_assert_true(load_save_list.get_child_count() == 1, "TitleScreen hides incompatible save rows in continue flow")
+		_assert_true(title_instance.get_node("LoadBrowser/VBox/StatusLabel").text.contains("campaign save"), "TitleScreen reports campaign-compatible save counts")
+		title_instance._set_load_browser_busy(true, "Loading saves...")
+		await process_frame
+		var load_row = load_save_list.get_child(0)
+		var load_button = load_row.get_node_or_null("LoadButton")
+		_assert_true(load_button != null and load_button.disabled, "TitleScreen disables load buttons while the browser is busy")
 		title_instance.free()
 		await process_frame
 
@@ -441,6 +454,9 @@ func _test_entity_rendering() -> void:
 	root.add_child(session_instance)
 	await process_frame
 	var session_world_view = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer")
+	var placeholder_banner = session_world_view.get_node_or_null("PlaceholderBanner")
+	_assert_true(placeholder_banner != null and placeholder_banner.visible, "World view shows an explicit placeholder banner when map data is missing")
+	_assert_true(str(placeholder_banner.text).contains("Placeholder map"), "World view placeholder banner is readable")
 	var game_state = _game_state()
 	_assert_true(session_world_view.command_for_entity({"bucket": "npc", "name": "Merchant"}) == "talk merchant", "World view synthesizes talk commands for npc clicks")
 	_assert_true(session_world_view.command_for_entity({"bucket": "enemy", "name": "Wolf"}) == "attack wolf", "World view synthesizes attack commands for enemy clicks")
@@ -468,6 +484,8 @@ func _test_ui_panels() -> void:
 	await process_frame
 	var initial_defend_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel/SettlementMargin/SettlementVBox/QuickActions/DefendButton")
 	_assert_true(initial_defend_button.disabled, "Settlement quick actions stay disabled until settlement data is available")
+	var minimap_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/MinimapPanel/MinimapMargin/MinimapVBox/SummaryLabel")
+	_assert_true(minimap_summary.text == "No map loaded", "Minimap panel labels missing map data explicitly")
 
 	game_state.update_from_response({
 		"player": {
@@ -517,6 +535,7 @@ func _test_ui_panels() -> void:
 
 	var minimap_texture = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/MinimapPanel/MinimapMargin/MinimapVBox/MapTexture")
 	_assert_true(minimap_texture.texture != null, "Minimap panel renders a texture from map data")
+	_assert_true(minimap_summary.text.contains("Placeholder map"), "Minimap panel labels placeholder maps explicitly")
 
 	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/NarrativePanel")
 	_assert_true(narrative_widget.get_plain_text().contains("harbor square"), "Narrative panel shows backend narrative")

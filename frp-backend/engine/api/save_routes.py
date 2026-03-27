@@ -39,6 +39,7 @@ class SaveSummary(BaseModel):
     schema_version: str
     location: Optional[str] = None
     game_time: Optional[str] = None
+    campaign_compatible: bool = False
 
 
 class LoadResponse(BaseModel):
@@ -136,6 +137,7 @@ def _build_summary(save_id: str) -> SaveSummary:
         schema_version=save_file.schema_version,
         location=metadata.get("location"),
         game_time=metadata.get("game_time"),
+        campaign_compatible=bool(metadata.get("campaign_compatible", False)),
     )
 
 

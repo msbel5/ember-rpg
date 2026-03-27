@@ -26,6 +26,16 @@
   - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/godot_wizard_probe3.png`
 - 2026-03-28 title save-browser proof with player-scoped save listing:
   - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/godot_continue_browser_probe.png`
+- 2026-03-28 title save-browser proof after compatibility filter:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_browser_live.png`
+- 2026-03-28 title screen proof after backend restart:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_title_live.png`
+- 2026-03-28 live continue/restore proof after mixed-save fix:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_loaded_live.png`
+- 2026-03-28 post-resume world-click proof:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_loaded_after_world_click.png`
+- 2026-03-28 post-resume viewport capture proof:
+  - `C:/Users/msbel/AppData/Roaming/Godot/app_userdata/Ember RPG/screenshots/phase2/game/game_session_frame_2026-03-28T02-41-26.png`
 - 2026-03-28 summary-screen proof after layout and focus pass:
   - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/godot_summary_probe.png`
 - 2026-03-28 gameplay shell proof after keyboard-driven creation flow:
@@ -61,6 +71,10 @@
 - Fixed: busy-status text in the creation wizard no longer gets stuck on stale messages such as `Recording answer...`.
 - Fixed: root title/subtitle labels no longer overlap the modal creation headers during build and summary steps.
 - Fixed: keyboard focus now lands on the primary action in questionnaire and summary steps, so `Enter` can drive the default onboarding path.
+- Fixed: player-scoped `Continue` no longer advertises legacy session saves as resumable campaign saves; the browser now hides incompatible rows and only exposes saves that contain `campaign_v2` state.
+- Fixed: campaign-scoped in-session save browsing no longer leaks unrelated saves for the same player; it now filters on the active `campaign_id`.
+- Fixed: placeholder/no-data maps now show explicit warning text in the world view and minimap instead of quietly presenting fallback terrain as if it were real state.
+- Fixed: title save-browser load buttons now disable while a load is in flight, preventing double-triggered resume requests.
 
 ## Verified
 - Graphical campaign creation works for `fantasy_ember`.
@@ -78,10 +92,14 @@
 - Live command submission via `look around` updates narrative and recent-command UI in the gameplay shell.
 - Live map clicks issue movement commands and update AP / recent-command state.
 - `F12` viewport capture works from the gameplay shell and writes proof to `user://screenshots/...`.
+- Live title `Continue` now reports `Found 1 campaign save(s). Hidden 1 legacy save(s).` for `Chaos`, showing `resume_campaign_ok` while hiding incompatible `chaostest`.
+- Live `Continue` restores `resume_campaign_ok` into a playable `Dragon Eyrie` shell instead of failing with `Save ... does not contain campaign_v2 state`.
+- After restore, clicking the visible fountain issues `examine fountain`, updates `Recent`, and decrements AP from `4/4` to `3/4` without desync.
 
 ## Remaining Gaps
-- A full visual save-browser selection and restore pass has not yet been re-run after the new title-screen browser landed.
+- A full visual onboarding matrix from title through quest/settlement/combat panels has still not been re-run end-to-end after the mixed-save fix.
 - Full `100-turn` visual pass per adapter is still pending.
 - `30-minute` free play per adapter is still pending.
 - The final `500-turn` Godot visual chaos loop from `CODEX_REVIEW_PROMPT.md` is still pending.
+- Placeholder/no-data states now have headless coverage and visible warning copy, but they still need live graphical proof before this can be marked fully closed.
 - The current adapter-aware tint pass improves differentiation, but terrain silhouettes, furniture art, and faction/NPC silhouettes are still not distinct enough to claim final visual closure.

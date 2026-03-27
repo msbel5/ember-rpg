@@ -1,13 +1,16 @@
 # RimWorld Benchmark Report
 
 ## Scope
-- Date: 2026-03-27
+- Date: 2026-03-28
 - Benchmark PRD: `docs/PRD_rimworld_benchmark_v1.md`
 - Evidence sources:
   - `docs/qa/campaign_cutover_visual_log.md`
   - `godot-client/tests/manual/campaign_visual_driver.py`
   - `godot-client/tests/run_headless_tests.gd`
   - `frp-backend/tests/test_campaign_godot_payload_shapes.py`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_browser_live.png`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_loaded_live.png`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_loaded_after_world_click.png`
 
 ## Adapter Scores
 
@@ -37,7 +40,7 @@
 - Command discoverability: `3/5`
   - Evidence: command bar, recent history, and settlement quick actions are visible; the keyboard submit bug is now fixed.
 - Error recovery: `3/5`
-  - Evidence: save/load and backend error surfaces exist, but the deeper long-play recovery path is not benchmarked yet.
+  - Evidence: `Continue` now hides incompatible legacy saves instead of advertising a broken load path, but the deeper long-play recovery path is still not benchmarked.
 - Axis average: `3.0/5`
 
 ### Sci-Fi Frontier
@@ -73,6 +76,8 @@
 - Ember now meets the minimum benchmark gate mechanically: no current axis average below `3`.
 - Ember does not yet match RimWorld on silhouette density, room-purpose depth, or event-chain readability.
 - Ember remains an avatar-commander hybrid, not a pure colony sim clone. The benchmark is used to track clarity and polish, not to force a genre pivot.
+- The continue/load flow is finally honest, but the world still looks like debug art stretched into a shipping shell. The grass, road, and building surfaces are readable, yet they do not carry enough identity to feel authored or memorable.
+- The post-resume fountain click proves the interaction loop survives restore, but it also exposes how thin the surface language still is: one clear action works, while broader object vocabulary remains too sparse to feel rich.
 
 ## Open Gaps
 - Visual differentiation is still too dependent on tinting; it needs stronger terrain/furniture/entity art separation.
