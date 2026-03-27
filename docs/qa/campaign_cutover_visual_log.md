@@ -36,6 +36,8 @@
   - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_loaded_after_world_click.png`
 - 2026-03-28 post-resume viewport capture proof:
   - `C:/Users/msbel/AppData/Roaming/Godot/app_userdata/Ember RPG/screenshots/phase2/game/game_session_frame_2026-03-28T02-41-26.png`
+- 2026-03-28 in-session save panel proof after campaign-scoped filtering:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/in_session_saves_live.png`
 - 2026-03-28 summary-screen proof after layout and focus pass:
   - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/godot_summary_probe.png`
 - 2026-03-28 gameplay shell proof after keyboard-driven creation flow:
@@ -95,6 +97,7 @@
 - Live title `Continue` now reports `Found 1 campaign save(s). Hidden 1 legacy save(s).` for `Chaos`, showing `resume_campaign_ok` while hiding incompatible `chaostest`.
 - Live `Continue` restores `resume_campaign_ok` into a playable `Dragon Eyrie` shell instead of failing with `Save ... does not contain campaign_v2 state`.
 - After restore, clicking the visible fountain issues `examine fountain`, updates `Recent`, and decrements AP from `4/4` to `3/4` without desync.
+- After restore, the in-session `Save / Load` panel reports `1 save slot(s) ready.` and shows only `resume_campaign_ok`, confirming the active campaign browser no longer leaks unrelated player saves.
 
 ## Remaining Gaps
 - A full visual onboarding matrix from title through quest/settlement/combat panels has still not been re-run end-to-end after the mixed-save fix.

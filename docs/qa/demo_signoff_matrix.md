@@ -44,7 +44,7 @@
 |------|--------|----------|-------|-------|
 | Campaign creation wizard works visually for both adapters | Green | `docs/qa/campaign_cutover_visual_log.md` | Godot / QA | Short graphical creation proof exists for both adapters. |
 | Character build edits survive wizard navigation | Green | `godot-client/tests/run_headless_tests.gd` | Godot | Regression coverage exists. |
-| In-session save/load shell works | Green | `docs/qa/campaign_cutover_visual_log.md` | Godot / QA | Quick save and in-session restore proof exists. |
+| In-session save/load shell works | Green | `docs/qa/campaign_cutover_visual_log.md` | Godot / QA | Quick save and in-session restore proof exists, and the in-session panel now shows only the active campaign slot instead of a mixed player-wide list. |
 | Title-screen resume is a real save browser, not only cached `Continue` | Green | `godot-client/tests/run_headless_tests.gd`, `docs/qa/campaign_cutover_visual_log.md`, `frp-backend/tests/test_campaign_api_v2.py`, `frp-backend/tests/test_play.py`, `frp-backend/tests/test_play_topdown.py` | Godot | `Continue` now opens a player-scoped campaign browser, hides incompatible legacy saves, and live proof shows `resume_campaign_ok` restoring while legacy `chaostest` is suppressed. |
 | Status/location/resource labels stay aligned with backend state | Green | `docs/qa/campaign_cutover_visual_log.md` | Godot | The prior `Unknown` location defect is fixed. |
 | Inventory, quest, settlement, and character-sheet panels are clickable and non-ambiguous | Partial | Headless coverage plus short live proof | Godot | Inventory and settlement quick actions are covered; broader clickable-surface proof is still missing. |
