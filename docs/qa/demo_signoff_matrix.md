@@ -67,9 +67,11 @@
 ## Release Decision
 - Current release state: `Not ready for final demo signoff`
 - Hard blockers still open:
-  - deeper clickable world interactions for furniture and richer world-object intent
-  - placeholder/no-data visual clarity still lacks live proof
   - long-form visual and chaos matrices
+- Remaining non-blocking risks to refresh before final signoff:
+  - deeper clickable world interactions for furniture and richer world-object intent still need longer-form proof
+  - placeholder/no-data visual clarity has headless coverage but still lacks live graphical proof
+  - silhouette readability remains below final-demo quality even where the shell is now functionally honest
 - Conditions to flip to ready:
   - all `Open` gates above become `Green`
   - no critical or major bug remains in the long-form play matrices
