@@ -443,6 +443,19 @@ func _test_ui_panels() -> void:
 			"xp": 45,
 			"gold": 12,
 		},
+		"character_sheet": {
+			"name": "Chaos",
+			"class_name": "Warrior",
+			"alignment": "LG",
+			"stats": [
+				{"id": "MIG", "value": 16, "modifier": 3},
+				{"id": "AGI", "value": 12, "modifier": 1},
+			],
+			"skills": [
+				{"id": "athletics", "label": "Athletics", "bonus": 5},
+				{"id": "perception", "label": "Perception", "bonus": 3},
+			],
+		},
 		"location": "Harbor Town",
 		"map_data": TileCatalog.build_placeholder_map(16, 12),
 		"items": [{"name": "Bread"}, {"name": "Potion"}],
@@ -466,6 +479,9 @@ func _test_ui_panels() -> void:
 
 	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/NarrativePanel")
 	_assert_true(narrative_widget.get_plain_text().contains("harbor square"), "Narrative panel shows backend narrative")
+
+	var character_panel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
+	_assert_true(character_panel.text.contains("MIG"), "Character panel renders visible stat lines")
 
 	var command_bar = session_instance.get_node("MainMargin/MainVBox/CommandBar")
 	command_bar.submit_command("inventory")
