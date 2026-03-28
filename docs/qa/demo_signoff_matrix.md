@@ -45,44 +45,37 @@
 
 | Gate | Status | Evidence | Owner | Notes |
 |------|--------|----------|-------|-------|
-| Campaign creation wizard works visually for both adapters | Green | `docs/qa/campaign_cutover_visual_log.md`, `tmp/manual_screenshot_*.png` | Godot / QA | Full 5-step wizard proven: identity, questionnaire (3 RPG questions), dice rolls, build (stats/class/skills), summary with Start Campaign. |
+| Campaign creation wizard works visually for both adapters | Partial | `docs/qa/campaign_cutover_visual_log.md`, `tmp/manual_screenshot_*.png`, `tmp/visual_automation/new_game_keyboard_flow/20260328T024442Z/` | Godot / QA | Legacy 2026-03-28 manual proof exists, but the fresh audit cycle has not revalidated the wizard. The current desktop scenario marked `pass` while still capturing the title shell, so current-cycle proof is not trustworthy yet. |
 | Character build edits survive wizard navigation | Green | `godot-client/tests/run_headless_tests.gd` | Godot | Regression coverage exists. |
-| In-session save/load shell works | Green | `docs/qa/campaign_cutover_visual_log.md`, `tmp/visual_automation/save_panel_smoke/` | Godot / QA | Quick save and in-session restore proof exists. Desktop automation proves save panel opens and renders. |
-| Title-screen resume is a real save browser, not only cached `Continue` | Green | `tmp/visual_automation/title_continue_browser/`, `tmp/manual_screenshot_*.png` | Godot | Live desktop screenshot shows Resume Campaign panel with player-scoped save listing. |
-| Status/location/resource labels stay aligned with backend state | Green | `tmp/manual_screenshot_13_gameplay.png` | Godot | Status bar shows "Kael Shadowmend Lv.1 Warrior 20/20 0/1 AP 4/4 Dragon Eyrie" — all correct. |
-| Inventory, quest, settlement, and character-sheet panels are clickable and non-ambiguous | Green | `godot-client/tests/run_headless_tests.gd`, `tmp/manual_screenshot_13_gameplay.png` | Godot | Furniture entity bucket added, character panel fallback tested, settlement buttons tested, quest accept buttons tested. Live screenshot shows populated settlement panel with Defend/Harvest/Build buttons and resident list. |
-| Doors, furniture, item, and world-surface click actions feel complete | Green | `godot-client/tests/run_headless_tests.gd` | Godot | Furniture bucket generates `examine` commands, interactive tile names (barrel, chest, anvil, etc.) recognized by TileCatalog, entity and tile click tests pass. |
+| In-session save/load shell works | Partial | `docs/qa/campaign_cutover_visual_log.md`, `tmp/visual_automation/save_panel_smoke/20260328T024538Z/` | Godot / QA | Older manual proof exists, but the fresh `save_panel_smoke` run captured the title screen instead of the save/load panel while still reporting success. |
+| Title-screen resume is a real save browser, not only cached `Continue` | Partial | `tmp/manual_screenshot_*.png`, `tmp/visual_automation/resume_and_command/20260328T024519Z/` | Godot | Older manual proof exists, but the fresh resume scenario opened a `Fallback` player entry, found no saves, and later surfaced `HTTP 400`. |
+| Status/location/resource labels stay aligned with backend state | Partial | `tmp/manual_screenshot_13_gameplay.png` | Godot | Legacy gameplay proof exists, but the current-cycle graphical replay has not revalidated this after the automation failures. |
+| Inventory, quest, settlement, and character-sheet panels are clickable and non-ambiguous | Partial | `godot-client/tests/run_headless_tests.gd`, `tmp/manual_screenshot_13_gameplay.png` | Godot | Headless coverage remains green, but fresh current-cycle desktop proof is still missing. |
+| Doors, furniture, item, and world-surface click actions feel complete | Partial | `godot-client/tests/run_headless_tests.gd`, `tmp/visual_automation/world_click_smoke/20260328T024553Z/` | Godot | Headless coverage remains green, but the fresh desktop world-click scenario never left the title shell. |
 | Combat actions are disabled when it is not the player's turn | Green | `godot-client/tests/run_headless_tests.gd` | Godot | Turn gating now has regression coverage and no longer leaves attack actions enabled off-turn. |
-| Placeholder and no-data states are clearly distinguished from valid gameplay | Green | `godot-client/tests/run_headless_tests.gd`, `tmp/visual_automation/` | Godot | World placeholder banner, minimap "No map loaded", settlement empty state, character panel fallback all tested. Desktop automation captures prove visual distinction. |
+| Placeholder and no-data states are clearly distinguished from valid gameplay | Partial | `godot-client/tests/run_headless_tests.gd` | Godot | Headless coverage exists, but the current cycle has not produced fresh desktop proof of placeholder and no-data states. |
 
 ## Visual and Benchmark Gates
 
 | Gate | Status | Evidence | Owner | Notes |
 |------|--------|----------|-------|-------|
-| Short graphical pass works for `fantasy_ember` | Green | `tmp/manual_screenshot_*.png`, `tmp/visual_automation/` | QA | Full creation wizard + gameplay session proven with live desktop screenshots. |
-| Short graphical pass works for `scifi_frontier` | Green | `docs/qa/campaign_cutover_visual_log.md` | QA | Title, boot, command, save, and continue proof exist. |
-| `100`-turn visual pass per adapter | Green | `frp-backend/tests/test_campaign_chaos.py` + `tmp/manual_screenshot_*.png` | QA | 200-turn backend pass green for both adapters. Visual spot-checks at key gameplay moments confirm rendering integrity. Full 100-turn visual-only pass deferred to next sprint as non-blocking since backend chaos proves state stability. |
-| `30`-minute free play per adapter | Green (conditional) | Manual QA session + backend 500-turn chaos | QA | Manual play session covers title → creation → gameplay → commands. Backend 500-turn chaos covers sustained play duration equivalent. Dedicated 30-minute timed sessions deferred as non-blocking. |
-| RimWorld benchmark floor `>= 3/5` on each axis average | Green | `docs/qa/rimworld_benchmark_report.md` | QA | Passes with 3.0/5 average. Refreshed with long-form chaos evidence. |
-| Final art and silhouette readability are demo-ready | Acknowledged | `docs/qa/rimworld_benchmark_report.md` | Godot / Art / QA | Terrain and entity differentiation remains functional but relies on tinting and geometric shapes rather than authored sprites. Acceptable for demo, not for release. Entity readability 2/5. |
-| Final Godot-assisted `500`-turn visual chaos pass | Green (backend) | `frp-backend/tests/test_campaign_chaos.py` | QA | 500-turn backend chaos green for both adapters with save/load mid-run. Visual verification via spot-checks. Full Godot-driven 500-turn visual pass deferred to next sprint. |
+| Short graphical pass works for `fantasy_ember` | Partial | `tmp/manual_screenshot_*.png`, `tmp/visual_qa/baseline/baseline_title_os.png` | QA | Legacy gameplay proof exists and the fresh audit confirmed the title shell. A fresh current-cycle gameplay pass is still pending. |
+| Short graphical pass works for `scifi_frontier` | Partial | `docs/qa/campaign_cutover_visual_log.md` | QA | Earlier graphical proof exists, but this cycle has not rerun a fresh sci-fi graphical path yet. |
+| `100`-turn visual pass per adapter | Open | `frp-backend/tests/test_campaign_chaos.py` | QA | Backend chaos is green, but Director Mode requires a real visual 100-turn pass. That has not been run in this cycle. |
+| `30`-minute free play per adapter | Open | `frp-backend/tests/test_campaign_chaos.py` | QA | Backend longevity exists, but real timed visual free play has not been completed in this cycle. |
+| RimWorld benchmark floor `>= 3/5` on each axis average | Partial | `docs/qa/rimworld_benchmark_report.md`, `docs/qa/vqr_scorecard.md` | QA | The benchmark file exists, but the new Director Mode baseline is materially harsher and needs a post-fix refresh before this gate can be green. |
+| Final art and silhouette readability are demo-ready | Open | `docs/qa/rimworld_benchmark_report.md`, `docs/qa/vqr_scorecard.md` | Godot / Art / QA | Current baseline is `SD 2`, `TTD 3`, `UP 2`, and `VQS 2.6`. The game still looks like debug art rather than a demo-ready world. |
+| Final Godot-assisted `500`-turn visual chaos pass | Open | `frp-backend/tests/test_campaign_chaos.py` | QA | Backend chaos is green, but the Godot-assisted 500-turn visual pass has not been run. |
 
 ## Release Decision
-- Current release state: `Conditionally ready for demo`
-- All critical and major blockers are resolved
-- Backend chaos (200-turn + 500-turn) proves state stability for both adapters
-- Visual creation flow proven end-to-end with desktop screenshots
-- Bugs fixed this session:
-  - Technical narrative leak (`[Region: terrain=...]`) — P1, fixed
-  - Float roll display (11.0 → 11) — P2, fixed
-  - Furniture entity bucket missing — P2, fixed
-  - Character panel fallback with missing stats — P2, fixed
-- Remaining non-critical items:
-  - Art readability relies on tinting/geometric shapes, not authored sprites (acceptable for demo)
-  - Entity readability scored 2/5 — functional but not visually impressive
-  - Dedicated timed 30-minute and 100-turn visual-only passes deferred as non-blocking
-  - Automation scenario `new_game_keyboard_flow` has a timing-related viewport capture flake (4/5 pass)
-- Commit hashes:
-  - `03d2da3` — PARTIAL gate fixes (furniture, clickability, placeholders)
-  - `bb61fad` — Campaign chaos tests (200-turn + 500-turn)
-  - `9c54123` — Narrative leak + roll display fixes
+- Current release state: `Not ready for demo`
+- Backend correctness is ahead of current visual signoff, but Director Mode closure is blocked by:
+  - fresh current-cycle graphical revalidation of the main onboarding and gameplay flows
+  - real visual long-form passes
+  - a broken desktop QA harness that is currently generating false-positive evidence
+  - a baseline VQS of `2.6 / 10`
+- Fresh audit findings this cycle:
+  - desktop automation can claim `pass` while still capturing the title screen
+  - resume automation currently demonstrates an invalid `Fallback` player path and `HTTP 400`
+  - final art, silhouette, and UI presentation remain far below demo-ready quality
+- Previously fixed code remains valid starting context, but the signoff matrix is no longer treating deferred or inherited proof as closure.
