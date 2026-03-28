@@ -1,0 +1,25 @@
+[scenario]
+name = "title_continue_browser"
+description = "Open the campaign-first Continue browser from the title screen."
+adapter_id = "fantasy_ember"
+player_name = "VisualSmoke"
+create_new = false
+requires_backend = true
+tags = ["title", "continue", "save-browser"]
+
+[[steps]]
+id = "focus_title"
+action = "activate_window"
+capture_os = true
+capture_viewport = true
+expected = "title screen is visible"
+
+[[steps]]
+id = "open_continue_browser"
+action = "mouse_click"
+x = 640
+y = 330
+wait_ms = 750
+capture_os = true
+capture_viewport = true
+expected = "continue browser opens"

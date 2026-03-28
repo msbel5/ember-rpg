@@ -1,0 +1,56 @@
+[scenario]
+name = "resume_and_command"
+description = "Resume a campaign from title and issue a narrative command."
+adapter_id = "fantasy_ember"
+player_name = "VisualSmoke"
+create_new = false
+requires_backend = true
+tags = ["title", "resume", "command"]
+
+[[steps]]
+id = "focus_title"
+action = "activate_window"
+expected = "title screen is focused"
+
+[[steps]]
+id = "open_continue"
+action = "mouse_click"
+x = 640
+y = 330
+wait_ms = 700
+capture_os = true
+expected = "continue browser opens"
+
+[[steps]]
+id = "load_first_save"
+action = "mouse_click"
+x = 1110
+y = 250
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "gameplay scene loads"
+
+[[steps]]
+id = "focus_command_bar"
+action = "mouse_click"
+x = 320
+y = 688
+wait_ms = 100
+expected = "command input receives focus"
+
+[[steps]]
+id = "look_around"
+action = "text"
+text = "look around"
+wait_ms = 100
+expected = "command text appears in input"
+
+[[steps]]
+id = "submit_command"
+action = "key_press"
+key = "enter"
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "narrative updates after command"

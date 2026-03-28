@@ -1,0 +1,39 @@
+[scenario]
+name = "new_game_keyboard_flow"
+description = "Keyboard-first title flow through the creation wizard."
+adapter_id = "fantasy_ember"
+player_name = "VisualSmoke"
+create_new = true
+requires_backend = true
+tags = ["title", "creation", "keyboard"]
+
+[[steps]]
+id = "title_focus"
+action = "activate_window"
+capture_os = true
+capture_viewport = true
+expected = "title screen is focused"
+
+[[steps]]
+id = "open_new_game"
+action = "key_press"
+key = "enter"
+wait_ms = 500
+capture_viewport = true
+expected = "new game wizard opens"
+
+[[steps]]
+id = "type_name"
+action = "text"
+text = "VisualSmoke"
+wait_ms = 150
+expected = "name field receives input"
+
+[[steps]]
+id = "advance_identity"
+action = "key_press"
+key = "enter"
+wait_ms = 800
+capture_os = true
+capture_viewport = true
+expected = "wizard advances past identity"

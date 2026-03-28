@@ -1,0 +1,22 @@
+[scenario]
+name = "save_panel_smoke"
+description = "Open the in-session save panel and capture proof."
+adapter_id = "fantasy_ember"
+player_name = "VisualSmoke"
+create_new = false
+requires_backend = true
+tags = ["gameplay", "save-panel"]
+
+[[steps]]
+id = "activate_game_window"
+action = "activate_window"
+expected = "game window is focused"
+
+[[steps]]
+id = "open_save_panel"
+action = "key_press"
+key = "f9"
+wait_ms = 750
+capture_os = true
+capture_viewport = true
+expected = "save/load panel opens"

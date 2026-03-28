@@ -1,0 +1,23 @@
+[scenario]
+name = "world_click_smoke"
+description = "Click a visible world tile or prop and verify an interaction fires."
+adapter_id = "fantasy_ember"
+player_name = "VisualSmoke"
+create_new = false
+requires_backend = true
+tags = ["gameplay", "world-click"]
+
+[[steps]]
+id = "activate_game_window"
+action = "activate_window"
+expected = "game window is focused"
+
+[[steps]]
+id = "click_world_target"
+action = "mouse_click"
+x = 518
+y = 275
+wait_ms = 1000
+capture_os = true
+capture_viewport = true
+expected = "world click triggers movement or interaction"
