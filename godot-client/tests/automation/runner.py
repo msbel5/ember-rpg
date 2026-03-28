@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path
 
 from automation.artifacts import ArtifactManager
 from automation.executors.base import AutomationExecutor, CapabilityUnavailableError
@@ -99,7 +99,7 @@ def _run_step(executor: AutomationExecutor, report: RunReport, step: ActionStep)
             report.add_issue(executor.record_issue(step.id, "major", step.expected or step.action, str(exc)))
             return
         if artifact is not None:
-            report.add_artifact(artifact)
+            _record_artifact(report, executor, step, artifact)
         if step.wait_ms:
             time.sleep(step.wait_ms / 1000.0)
 
@@ -157,10 +157,72 @@ def _capture(report: RunReport, executor: AutomationExecutor, step: ActionStep, 
             if artifact_kind == "os"
             else executor.capture_viewport(step.id)
         )
-        report.add_artifact(artifact)
+        _record_artifact(report, executor, step, artifact)
     except CapabilityUnavailableError as exc:
         report.add_gap(executor.mark_gap(f"{step.id}:{artifact_kind}_capture"))
         report.add_note(str(exc))
+
+
+def _record_artifact(report: RunReport, executor: AutomationExecutor, step: ActionStep, artifact: ArtifactRecord) -> None:
+    report.add_artifact(artifact)
+    _validate_artifact(report, executor, step, artifact)
+
+
+def _validate_artifact(report: RunReport, executor: AutomationExecutor, step: ActionStep, artifact: ArtifactRecord) -> None:
+    expected_note = str(step.metadata.get("expect_note_contains", "")).strip()
+    if expected_note and artifact.artifact_type == "viewport_capture" and expected_note not in artifact.note:
+        report.add_issue(
+            executor.record_issue(
+                step.id,
+                "major",
+                step.expected or f"artifact note contains `{expected_note}`",
+                "Artifact note did not contain the required marker.",
+                (artifact.path,),
+            )
+        )
+
+    diff_reference = str(step.metadata.get("expect_artifact_differs_from", "")).strip()
+    if diff_reference:
+        reference = _find_artifact_reference(report, artifact, diff_reference)
+        if reference is None:
+            report.add_issue(
+                executor.record_issue(
+                    step.id,
+                    "major",
+                    step.expected or f"artifact differs from `{diff_reference}`",
+                    f"Reference artifact `{diff_reference}` was not found.",
+                    (artifact.path,),
+                )
+            )
+            return
+        if _artifact_bytes(artifact.path) == _artifact_bytes(reference.path):
+            report.add_issue(
+                executor.record_issue(
+                    step.id,
+                    "major",
+                    step.expected or f"artifact differs from `{diff_reference}`",
+                    "Captured artifact is identical to the referenced artifact.",
+                    (artifact.path, reference.path),
+                )
+            )
+
+
+def _find_artifact_reference(
+    report: RunReport,
+    artifact: ArtifactRecord,
+    reference: str,
+) -> ArtifactRecord | None:
+    step_id, _, artifact_type = reference.partition(":")
+    normalized_step_id = step_id.strip()
+    normalized_type = artifact_type.strip() or artifact.artifact_type
+    for candidate in reversed(report.artifacts):
+        if candidate.step_id == normalized_step_id and candidate.artifact_type == normalized_type:
+            return candidate
+    return None
+
+
+def _artifact_bytes(path: str) -> bytes:
+    return Path(path).read_bytes()
 
 
 def _require_xy(step: ActionStep) -> None:

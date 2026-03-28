@@ -2,6 +2,7 @@ extends Control
 
 const PROFILE_PATH := "user://client_profile.cfg"
 const ScreenshotCapture = preload("res://scripts/ui/screenshot_capture.gd")
+const EmberTheme = preload("res://scripts/ui/ember_theme.gd")
 
 const STEP_IDENTITY := 0
 const STEP_QUESTIONNAIRE := 1
@@ -89,6 +90,7 @@ var _draft_build_state: Dictionary = {}
 
 
 func _ready() -> void:
+	EmberTheme.apply_title_screen(self)
 	creation_panel.visible = false
 	load_browser.visible = false
 	status_label.text = ""
@@ -325,8 +327,11 @@ func _on_campaign_loaded(data, requested_save_id: String) -> void:
 		return
 	GameState.reset()
 	GameState.update_from_response(data)
+	GameState.seed_campaign_resume_narrative(str(data.get("narrative", "")))
 	GameState.last_save_slot = requested_save_id
-	_store_last_player_id(str(GameState.player.get("name", _last_player_id())))
+	var resumed_player_id = str(GameState.player.get("name", _last_player_id()))
+	_store_last_player_id(resumed_player_id)
+	_store_last_resume_player_id(resumed_player_id)
 	_store_last_adapter_id(str(GameState.adapter_id))
 	_store_last_campaign_save_id(requested_save_id)
 	get_tree().change_scene_to_file("res://scenes/game_session.tscn")
@@ -404,11 +409,12 @@ func _open_load_browser() -> void:
 	load_browser.visible = true
 	status_label.text = ""
 	_refresh_shell_visibility()
-	load_player_input.text = _last_player_id()
-	load_status_label.text = "Choose a save slot to continue."
+	load_player_input.text = _preferred_resume_player_id()
+	load_status_label.text = "Choose a save slot to continue." if not load_player_input.text.is_empty() else "Enter a player name to browse saves."
 	_clear_load_rows()
 	_update_advanced_toggle_text()
-	_refresh_load_browser()
+	if not load_player_input.text.is_empty():
+		_refresh_load_browser()
 	load_player_input.grab_focus()
 
 
@@ -819,6 +825,18 @@ func _store_last_player_id(player_id: String) -> void:
 
 func _last_player_id() -> String:
 	return str(_profile_value("last_player_id", "")).strip_edges()
+
+
+func _store_last_resume_player_id(player_id: String) -> void:
+	_store_profile_value("last_resume_player_id", player_id.strip_edges())
+
+
+func _last_resume_player_id() -> String:
+	return str(_profile_value("last_resume_player_id", "")).strip_edges()
+
+
+func _preferred_resume_player_id() -> String:
+	return _last_resume_player_id()
 
 
 func _store_last_adapter_id(value: String) -> void:

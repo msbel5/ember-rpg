@@ -162,3 +162,44 @@
 - Dedicated timed 30-minute and 100-turn visual-only Godot passes deferred as non-blocking (backend chaos proves state stability).
 - Full Godot-driven 500-turn visual chaos deferred (backend equivalent complete).
 - `new_game_keyboard_flow` automation scenario has a viewport capture timing flake (4/5 pass).
+
+## Session 2026-03-28 (Director Mode Slice)
+
+### Tooling
+- `computer_task` was unavailable in this cycle:
+  - `Messages.create() got an unexpected keyword argument 'betas'`
+- Visual fallback used:
+  - low-level desktop input tools
+  - maintained `win32_desktop` scenario runner
+- Constraint:
+  - desktop scenarios must run sequentially because the Win32 executor assumes exclusive control of one Godot window.
+
+### Maintained Desktop Audit (Fantasy Ember)
+
+| Step ID | Expected | Actual | Screenshot Path | Viewport Path | Bug | Severity | Fix Needed |
+|---------|----------|--------|-----------------|---------------|-----|----------|------------|
+| DM-01 | Title screen should feel authored and focused. | The title now has a real visual hierarchy and stronger copy instead of default-toolkit flatness. | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/title_continue_browser/20260328T032021Z/os_screens/focus_title.png` | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/title_continue_browser/20260328T032021Z/viewport_captures/focus_title.png` | No |  | No |
+| DM-02 | Keyboard-first new game should reach questionnaire. | The maintained onboarding scenario now reaches `Step 2: Questionnaire` reliably. | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/new_game_keyboard_flow/20260328T031956Z/os_screens/advance_identity.png` | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/new_game_keyboard_flow/20260328T031956Z/viewport_captures/advance_identity.png` | No |  | No |
+| DM-03 | `Continue` should show a real filtered campaign browser. | Browser shows `Found 1 campaign save(s). Hidden 1 legacy save(s).` for `Chaos` with a real loadable slot. | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/title_continue_browser/20260328T032021Z/os_screens/refresh_player_saves.png` | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/title_continue_browser/20260328T032021Z/viewport_captures/refresh_player_saves.png` | No |  | No |
+| DM-04 | Resume should hand off into gameplay, not stall on title. | Official maintained resume scenario now lands in `phase2/game` and shows the live shell. | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/os_screens/load_first_save.png` | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/viewport_captures/load_first_save.png` | No |  | No |
+| DM-05 | Command submission should work after resume. | `look around` submits from the command bar without breaking focus or load state. | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/os_screens/submit_command.png` | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/viewport_captures/submit_command.png` | No |  | No |
+| DM-06 | In-session save panel should open inside gameplay. | `Save / Load` opens in the live game scene and lists the current campaign slot. | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/save_panel_smoke/20260328T032538Z/os_screens/open_save_panel.png` | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/save_panel_smoke/20260328T032538Z/viewport_captures/open_save_panel.png` | No |  | No |
+| DM-07 | World click should produce a live gameplay result, not a title-scene false positive. | The click lands in gameplay and produces movement plus AP loss, but it is still a shallow move-tile proof rather than a rich object interaction. | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/os_screens/click_world_target.png` | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/viewport_captures/click_world_target.png` | Yes | P2 | Yes |
+
+### Current Honest Read
+- The title, wizard, and save browser now look intentionally designed instead of default-Godot bare.
+- Gameplay is more readable than the baseline because the player is larger, grounded, and closer to the camera.
+- The world still looks like debug art. Grass dominates the frame, the plaza texture repeats loudly, and there is no atmosphere.
+- The first gameplay frame after resume no longer shows the raw `resume_campaign_ok.` token, but the humanized line still clips to the tail fragment `back into the campaign.`.
+- `scifi_frontier` has not had a fresh maintained graphical rerun in this cycle.
+
+### Resume Follow-Up (2026-03-28 Late)
+- Old failure retired:
+  - raw token evidence: `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/os_screens/load_first_save.png`
+- Current state:
+  - humanized-but-clipped evidence: `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T035308Z/os_screens/load_first_save.png`
+  - follow-up command proof still green: `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T035308Z/os_screens/submit_command.png`
+- Honest read:
+  - the resume flow is now functionally stable and no longer leaks raw backend shorthand
+  - the narrative pane still does not present the full first-line sentence cleanly on the first gameplay frame
+  - keep this as a `P2` readability issue, not a closure blocker for the functional resume gate

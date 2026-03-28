@@ -2,15 +2,71 @@
 name = "save_panel_smoke"
 description = "Open the in-session save panel and capture proof."
 adapter_id = "fantasy_ember"
-player_name = "VisualSmoke"
+player_name = "Chaos"
 create_new = false
 requires_backend = true
 tags = ["gameplay", "save-panel"]
 
 [[steps]]
-id = "activate_game_window"
+id = "focus_title"
 action = "activate_window"
-expected = "game window is focused"
+wait_ms = 300
+capture_os = true
+capture_viewport = true
+expected = "title screen is focused"
+
+[[steps]]
+id = "open_continue"
+action = "mouse_click"
+x = 640
+y = 390
+wait_ms = 700
+capture_os = true
+expected = "continue browser opens"
+
+[[steps]]
+id = "focus_player_lookup"
+action = "mouse_click"
+x = 820
+y = 198
+wait_ms = 100
+expected = "player lookup field receives focus"
+
+[[steps]]
+id = "clear_player_lookup"
+action = "key_press"
+key = "backspace"
+repeat = 40
+wait_ms = 50
+expected = "previous player lookup text is cleared"
+
+[[steps]]
+id = "type_player_lookup"
+action = "text"
+text = "Chaos"
+wait_ms = 100
+expected = "player lookup contains Chaos"
+
+[[steps]]
+id = "refresh_player_saves"
+action = "mouse_click"
+x = 930
+y = 198
+wait_ms = 900
+capture_os = true
+expected = "continue browser shows campaign saves for Chaos"
+expect_artifact_differs_from = "open_continue:os_screenshot"
+
+[[steps]]
+id = "load_first_save"
+action = "mouse_click"
+x = 890
+y = 296
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "gameplay scene loads"
+expect_note_contains = "phase2\\game"
 
 [[steps]]
 id = "open_save_panel"
@@ -20,3 +76,4 @@ wait_ms = 750
 capture_os = true
 capture_viewport = true
 expected = "save/load panel opens"
+expect_note_contains = "phase2\\game"

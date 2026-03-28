@@ -64,6 +64,19 @@ class FakeExecutor(AutomationExecutor):
         return self.artifacts.write_text(tag, "viewport_captures", "ok", ".png")
 
 
+class ValidatingExecutor(FakeExecutor):
+    def capture_os(self, tag: str) -> ArtifactRecord:
+        path = self.artifacts.artifact_path("os_screens", tag, ".png")
+        path.write_bytes(b"same")
+        return self.artifacts.register(tag, "os_screenshot", path)
+
+    def capture_viewport(self, tag: str) -> ArtifactRecord:
+        path = self.artifacts.artifact_path("viewport_captures", tag, ".png")
+        path.write_bytes(tag.encode("utf-8"))
+        note = "C:/tmp/phase2/title/title_screen.png"
+        return self.artifacts.register(tag, "viewport_capture", path, note=note)
+
+
 def test_runner_executes_scenario_and_writes_reports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     scenario_path = tmp_path / "scenario.toml"
     scenario_path.write_text(
@@ -94,3 +107,65 @@ action = "capture_viewport"
     assert result.json_report.exists()
     assert result.markdown_report.exists()
     assert len(result.report.artifacts) == 2
+
+
+def test_runner_fails_when_viewport_note_expectation_is_not_met(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scenario_path = tmp_path / "scenario.toml"
+    scenario_path.write_text(
+        """
+[scenario]
+name = "viewport_guard"
+description = "Viewport note validation"
+requires_backend = false
+run_root = "__RUN_ROOT__"
+
+[[steps]]
+id = "load_first_save"
+action = "capture_viewport"
+expected = "gameplay scene loads"
+expect_note_contains = "phase2/game"
+""".strip().replace("__RUN_ROOT__", str(tmp_path / "out").replace("\\", "\\\\")),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setitem(EXECUTOR_TYPES, "fake", ValidatingExecutor)
+
+    result = run_scenario(scenario_path, "fake")
+
+    assert result.report.success is False
+    assert any(issue.step_id == "load_first_save" for issue in result.report.issues)
+
+
+def test_runner_fails_when_artifact_does_not_change(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scenario_path = tmp_path / "scenario.toml"
+    scenario_path.write_text(
+        """
+[scenario]
+name = "artifact_guard"
+description = "Artifact diff validation"
+requires_backend = false
+run_root = "__RUN_ROOT__"
+
+[[steps]]
+id = "first"
+action = "capture_os"
+
+[[steps]]
+id = "second"
+action = "capture_os"
+expected = "screen changes after the step"
+expect_artifact_differs_from = "first:os_screenshot"
+""".strip().replace("__RUN_ROOT__", str(tmp_path / "out").replace("\\", "\\\\")),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setitem(EXECUTOR_TYPES, "fake", ValidatingExecutor)
+
+    result = run_scenario(scenario_path, "fake")
+
+    assert result.report.success is False
+    assert any(issue.step_id == "second" for issue in result.report.issues)

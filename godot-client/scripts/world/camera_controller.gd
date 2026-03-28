@@ -3,7 +3,7 @@ extends Camera2D
 const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const ZOOM_STEPS := [1.0, 2.0, 3.0, 4.0]
 
-var _zoom_index: int = 1
+var _zoom_index: int = 2
 
 
 func _ready() -> void:

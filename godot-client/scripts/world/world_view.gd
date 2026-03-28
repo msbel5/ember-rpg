@@ -70,6 +70,8 @@ func _gui_input(event: InputEvent) -> void:
 				return
 			if selection_layer.has_method("set_selected_tile"):
 				selection_layer.set_selected_tile(tile_position)
+			if selection_layer.has_method("flash_tile"):
+				selection_layer.flash_tile(tile_position)
 			var entity = entity_layer.get_entity_at_tile(tile_position)
 			if not entity.is_empty():
 				command_requested.emit(command_for_entity(entity))

@@ -235,7 +235,20 @@ func get_display_location() -> String:
 		return "Unknown"
 	return location.replace("_", " ").capitalize()
 
+
+func seed_campaign_resume_narrative(backend_text: String = "") -> void:
+	var cleaned_backend = _clean_narrative(backend_text.strip_edges())
+	var message = "You steady yourself and step back into the campaign."
+	if not cleaned_backend.is_empty() and cleaned_backend != backend_text.strip_edges():
+		message = cleaned_backend
+	narrative_history.clear()
+	narrative_history.append(message)
+
 func _clean_narrative(text: String) -> String:
+	var raw = text.strip_edges()
+	if raw == "resume_campaign_ok.":
+		return "You steady yourself and step back into the campaign."
+
 	# Detect and block raw LLM prompt leaks
 	# Only block if MULTIPLE markers match (single match might be false positive)
 	var lower = text.to_lower()

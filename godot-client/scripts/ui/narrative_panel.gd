@@ -1,6 +1,10 @@
 extends PanelContainer
 class_name NarrativePanelWidget
 
+const TOKEN_REPLACEMENTS := {
+	"resume_campaign_ok.": "You steady yourself and step back into the campaign.",
+}
+
 @onready var narrative_log: RichTextLabel = $NarrativeMargin/NarrativeVBox/NarrativeLog
 
 var _typing_queue: Array[String] = []
@@ -15,11 +19,11 @@ func _ready() -> void:
 func load_history(lines: Array[String]) -> void:
 	narrative_log.clear()
 	for line in lines:
-		_append_block(line)
+		_append_block(_normalize_display_text(line))
 
 
 func append_system_text(text: String) -> void:
-	_append_block(text)
+	_append_block(_normalize_display_text(text))
 
 
 func append_command(command_text: String) -> void:
@@ -35,7 +39,7 @@ func get_plain_text() -> String:
 
 
 func _on_narrative(text: String) -> void:
-	_typing_queue.append(text)
+	_typing_queue.append(_normalize_display_text(text))
 	if not _is_typing:
 		_process_typing_queue()
 
@@ -65,9 +69,36 @@ func _type_text(text: String) -> void:
 			await get_tree().process_frame
 	narrative_log.append_text("\n\n")
 	await get_tree().process_frame
-	narrative_log.scroll_to_line(narrative_log.get_line_count())
+	_scroll_to_latest_paragraph()
 
 
 func _append_block(text: String) -> void:
 	narrative_log.append_text(text + "\n\n")
-	narrative_log.scroll_to_line(narrative_log.get_line_count())
+	_scroll_to_latest_paragraph()
+
+
+func _normalize_display_text(text: String) -> String:
+	var raw = text.strip_edges()
+	if raw.is_empty():
+		return text
+	if TOKEN_REPLACEMENTS.has(raw):
+		return str(TOKEN_REPLACEMENTS[raw])
+	if raw.contains("_") and not raw.contains(" "):
+		var punctuation := ""
+		if raw.ends_with(".") or raw.ends_with("!") or raw.ends_with("?"):
+			punctuation = raw.right(1)
+			raw = raw.left(raw.length() - 1)
+		var parts = raw.split("_", false)
+		for index in range(parts.size()):
+			var part = str(parts[index])
+			if part == "ok":
+				parts[index] = "ready"
+			elif not part.is_empty():
+				parts[index] = part.capitalize()
+		return " ".join(parts) + punctuation
+	return text
+
+
+func _scroll_to_latest_paragraph() -> void:
+	var paragraph_index = maxi(narrative_log.get_paragraph_count() - 2, 0)
+	narrative_log.scroll_to_paragraph(paragraph_index)

@@ -34,6 +34,7 @@ def _scenario(tmp_path: Path) -> AutomationScenario:
 def test_win32_executor_maps_keys_and_buttons(tmp_path: Path) -> None:
     executor = Win32DesktopExecutor(_scenario(tmp_path), ArtifactManager(tmp_path, "desktop", run_id="one"))
 
+    assert executor._vk_for_key("backspace") == 0x08
     assert executor._vk_for_key("enter") == 0x0D
     assert executor._vk_for_key("a") == ord("A")
     assert executor._normalize_button("right") == "right"
@@ -60,3 +61,23 @@ def test_win32_executor_capture_viewport_registers_copy(monkeypatch, tmp_path: P
     assert baselines == [None]
     assert artifact.artifact_type == "viewport_capture"
     assert Path(artifact.path).read_bytes() == b"png"
+
+
+def test_win32_executor_wait_for_viewport_capture_accepts_updated_same_path(
+    monkeypatch, tmp_path: Path
+) -> None:
+    executor = Win32DesktopExecutor(_scenario(tmp_path), ArtifactManager(tmp_path, "desktop", run_id="three"))
+    source = tmp_path / "source.png"
+    source.write_bytes(b"before")
+    baseline = source
+    poll_count = {"value": 0}
+
+    def latest_png() -> Path:
+        poll_count["value"] += 1
+        if poll_count["value"] == 1:
+            source.write_bytes(b"after")
+        return source
+
+    monkeypatch.setattr(executor, "_latest_png", latest_png)
+
+    assert executor._wait_for_viewport_capture(baseline, timeout=0.5) == source

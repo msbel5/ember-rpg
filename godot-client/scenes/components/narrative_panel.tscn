@@ -24,4 +24,5 @@ text = "Narrative"
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
-scroll_following = true
+autowrap_mode = 3
+scroll_following = false

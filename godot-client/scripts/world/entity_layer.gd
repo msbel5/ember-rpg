@@ -20,16 +20,19 @@ const ADAPTER_BUCKET_TINTS := {
 }
 
 var _marker_textures: Dictionary = {}
+var _shadow_texture: Texture2D
 var _entities_by_tile: Dictionary = {}
 
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_ensure_marker_textures()
+	_ensure_shadow_texture()
 
 
 func render_entities(player_tile: Vector2i, grouped_entities: Dictionary, player_template: String = "warrior") -> void:
 	_ensure_marker_textures()
+	_ensure_shadow_texture()
 	_clear_runtime_children()
 	_entities_by_tile.clear()
 
@@ -75,22 +78,47 @@ func _extract_position(entry: Dictionary) -> Vector2i:
 
 func _create_sprite_entity(entry: Dictionary) -> void:
 	var tile_position = _extract_position(entry)
+	var bucket = str(entry.get("bucket", "npc"))
+	var actor = Node2D.new()
+	actor.name = str(entry.get("id", "%s_%d_%d" % [bucket, tile_position.x, tile_position.y]))
+	actor.position = _tile_to_world(tile_position)
+	actor.z_index = tile_position.y
+
+	var shadow = Sprite2D.new()
+	shadow.name = "Shadow"
+	shadow.texture = _shadow_texture
+	shadow.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	shadow.centered = true
+	shadow.modulate = Color(0.0, 0.0, 0.0, _shadow_alpha_for_bucket(bucket))
+	shadow.position = Vector2(0, 4)
+	var shadow_scale = _shadow_scale_for_bucket(bucket)
+	shadow.scale = Vector2(shadow_scale, shadow_scale)
+	actor.add_child(shadow)
+
 	var sprite = Sprite2D.new()
+	sprite.name = "Body"
 	var texture = EntitySpriteCatalog.resolve_texture(str(entry.get("template", "warrior")))
+	var using_fallback := false
 	if texture != null:
 		sprite.texture = texture
-		var width = texture.get_width()
-		if width > TileCatalog.TILE_SIZE and width > 0:
-			var scale_factor = float(TileCatalog.TILE_SIZE) / float(width)
+		var max_dimension = maxi(texture.get_width(), texture.get_height())
+		if max_dimension > 0:
+			var scale_factor = float(display_size_for_bucket(bucket)) / float(max_dimension)
 			sprite.scale = Vector2(scale_factor, scale_factor)
 	else:
-		var bucket = str(entry.get("bucket", "npc"))
+		using_fallback = true
 		sprite.texture = _marker_textures.get(bucket, _marker_textures["player"])
+		var fallback_dimension = maxi(sprite.texture.get_width(), sprite.texture.get_height())
+		if fallback_dimension > 0:
+			var fallback_scale = float(display_size_for_bucket(bucket)) / float(fallback_dimension)
+			sprite.scale = Vector2(fallback_scale, fallback_scale)
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.centered = true
-	sprite.modulate = adapter_bucket_tint(str(entry.get("bucket", "npc")), _current_adapter_id())
-	sprite.position = _tile_to_world(tile_position)
-	add_child(sprite)
+	sprite.modulate = _body_modulate(bucket, _current_adapter_id(), using_fallback)
+	sprite.position = Vector2(0, -_body_lift_for_bucket(bucket))
+	actor.add_child(sprite)
+
+	add_child(actor)
 	_register_entity(tile_position, entry)
 
 
@@ -113,6 +141,22 @@ func _ensure_marker_textures() -> void:
 		"item": _build_square_texture(Color(0.38, 0.82, 0.46)),
 		"furniture": _build_square_texture(Color(0.62, 0.54, 0.42)),
 	}
+
+
+func _ensure_shadow_texture() -> void:
+	if _shadow_texture != null:
+		return
+	var image = Image.create(TileCatalog.TILE_SIZE, int(TileCatalog.TILE_SIZE / 2), false, Image.FORMAT_RGBA8)
+	var center = Vector2(float(image.get_width()) / 2.0, float(image.get_height()) / 2.0)
+	for y in range(image.get_height()):
+		for x in range(image.get_width()):
+			var normalized_x = (float(x) - center.x) / maxf(center.x - 1.0, 1.0)
+			var normalized_y = (float(y) - center.y) / maxf(center.y - 1.0, 1.0)
+			var distance = normalized_x * normalized_x + normalized_y * normalized_y
+			if distance <= 1.0:
+				var alpha = clampf(1.0 - distance, 0.0, 1.0) * 0.7
+				image.set_pixel(x, y, Color(0.0, 0.0, 0.0, alpha))
+	_shadow_texture = ImageTexture.create_from_image(image)
 
 
 func _build_circle_texture(color: Color) -> Texture2D:
@@ -172,6 +216,59 @@ static func adapter_bucket_tint(bucket: String, adapter_id: String) -> Color:
 	var normalized_bucket = bucket.strip_edges().to_lower()
 	var palette = ADAPTER_BUCKET_TINTS.get(normalized_adapter, ADAPTER_BUCKET_TINTS["fantasy_ember"])
 	return palette.get(normalized_bucket, Color.WHITE)
+
+
+static func display_size_for_bucket(bucket: String) -> int:
+	match bucket.strip_edges().to_lower():
+		"player":
+			return 30
+		"enemy":
+			return 24
+		"furniture":
+			return 22
+		"item":
+			return 18
+		_:
+			return 22
+
+
+static func _body_modulate(bucket: String, adapter_id: String, using_fallback: bool) -> Color:
+	if using_fallback:
+		return adapter_bucket_tint(bucket, adapter_id)
+	var tint = adapter_bucket_tint(bucket, adapter_id)
+	var blend = 0.08 if bucket == "player" else 0.16
+	return Color.WHITE.lerp(tint, blend)
+
+
+static func _body_lift_for_bucket(bucket: String) -> float:
+	var extra_height = maxf(float(display_size_for_bucket(bucket) - TileCatalog.TILE_SIZE), 0.0)
+	return 4.0 + extra_height * 0.42
+
+
+static func _shadow_alpha_for_bucket(bucket: String) -> float:
+	match bucket.strip_edges().to_lower():
+		"item":
+			return 0.18
+		"furniture":
+			return 0.26
+		"player":
+			return 0.34
+		_:
+			return 0.28
+
+
+static func _shadow_scale_for_bucket(bucket: String) -> float:
+	match bucket.strip_edges().to_lower():
+		"player":
+			return 1.25
+		"enemy", "npc":
+			return 1.05
+		"furniture":
+			return 1.15
+		"item":
+			return 0.70
+		_:
+			return 0.95
 
 
 func _current_adapter_id() -> String:

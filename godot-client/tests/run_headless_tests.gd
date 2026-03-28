@@ -9,6 +9,7 @@ const TilemapController = preload("res://scripts/world/tilemap_controller.gd")
 const CameraController = preload("res://scripts/world/camera_controller.gd")
 const EntityLayer = preload("res://scripts/world/entity_layer.gd")
 const EntitySpriteCatalog = preload("res://scripts/world/entity_sprite_catalog.gd")
+const SelectionOverlay = preload("res://scripts/world/selection_overlay.gd")
 
 var failures: int = 0
 
@@ -231,6 +232,13 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.has_active_campaign(), "GameState enters campaign runtime when campaign payload arrives")
 	_assert_true(game_state.location == "Dragon Eyrie", "GameState falls back to settlement name when campaign location is blank")
 	_assert_true(game_state.get_display_location() == "Dragon Eyrie", "display location falls back to settlement name for campaign payloads")
+	_assert_true(game_state._clean_narrative("resume_campaign_ok.").contains("step back into the campaign"), "GameState humanizes token-like narrative text")
+	game_state.seed_campaign_resume_narrative("Loaded campaign from resume_campaign_ok.")
+	_assert_true(
+		game_state.narrative_history.size() == 1
+		and str(game_state.narrative_history[0]).contains("step back into the campaign"),
+		"GameState seeds a humanized first-frame resume narrative"
+	)
 
 
 func _test_response_normalizer() -> void:
@@ -315,6 +323,8 @@ func _test_scene_instantiation() -> void:
 		root.add_child(title_instance)
 		await process_frame
 		_assert_true(is_instance_valid(title_instance), "TitleScreen instantiates")
+		_assert_true(title_instance.theme != null, "TitleScreen applies a shared authored theme")
+		_assert_true(title_instance.get_node_or_null("HeroPanel") != null, "TitleScreen installs a hero panel for first-impression copy")
 		title_instance._on_new_game()
 		await process_frame
 		_assert_true(title_instance.get_node("CharacterCreation").visible, "TitleScreen opens the creation wizard")
@@ -322,6 +332,16 @@ func _test_scene_instantiation() -> void:
 		title_instance._on_continue()
 		await process_frame
 		_assert_true(title_instance.get_node("LoadBrowser").visible, "TitleScreen opens the save browser for continue flow")
+		var title_profile_keys := PackedStringArray(["last_player_id", "last_resume_player_id", "last_adapter_id"])
+		var title_profile_backup = _capture_profile_values(title_instance.PROFILE_PATH, title_profile_keys)
+		title_instance._store_last_player_id("UnsavedHero")
+		title_instance._store_last_resume_player_id("Chaos")
+		title_instance._close_load_browser()
+		title_instance._on_continue()
+		await process_frame
+		var load_player_input = title_instance.get_node("LoadBrowser/VBox/PlayerRow/PlayerInput")
+		_assert_true(load_player_input.text == "Chaos", "TitleScreen continue flow prefers the last resumable player over the last created player")
+		_restore_profile_values(title_instance.PROFILE_PATH, title_profile_keys, title_profile_backup)
 		title_instance._set_busy(true, "Starting creation...")
 		title_instance._set_busy(false, "")
 		_assert_true(title_instance.get_node("StatusLabel").text.is_empty(), "TitleScreen clears stale busy status after success")
@@ -399,9 +419,19 @@ func _test_scene_instantiation() -> void:
 		root.add_child(session_instance)
 		await process_frame
 		_assert_true(is_instance_valid(session_instance), "GameSession instantiates without session bootstrap")
+		_assert_true(session_instance.theme != null, "GameSession applies the shared authored theme")
 		_assert_true(session_instance.get_node_or_null("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer") != null, "GameSession exposes the world viewport container")
 		_assert_true(session_instance.get_node_or_null("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot/TerrainLayer") != null, "GameSession exposes a TileMapLayer terrain node")
 		_assert_true(session_instance.get_node_or_null("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot/WorldCamera") != null, "GameSession exposes a Camera2D world camera")
+		var session_profile_keys := PackedStringArray(["last_player_id", "last_resume_player_id", "last_adapter_id"])
+		var session_profile_backup = _capture_profile_values(session_instance.PROFILE_PATH, session_profile_keys)
+		game_state.player = {"name": "Chaos"}
+		game_state.adapter_id = "fantasy_ember"
+		session_instance._on_save_completed({"slot_name": "campfire"}, false)
+		var session_profile = ConfigFile.new()
+		session_profile.load(session_instance.PROFILE_PATH)
+		_assert_true(str(session_profile.get_value("profile", "last_resume_player_id", "")) == "Chaos", "GameSession remembers the last resumable player after a successful save")
+		_restore_profile_values(session_instance.PROFILE_PATH, session_profile_keys, session_profile_backup)
 		session_instance.free()
 		await process_frame
 
@@ -410,6 +440,10 @@ func _test_world_shell() -> void:
 	var placeholder_map = TileCatalog.build_placeholder_map(12, 8)
 	_assert_true(int(placeholder_map.get("width", 0)) == 12 and placeholder_map.get("tiles", []).size() == 8, "TileCatalog builds placeholder maps")
 	_assert_true(TileCatalog.adapter_world_tint("fantasy_ember") != TileCatalog.adapter_world_tint("scifi_frontier"), "TileCatalog exposes adapter-specific world tints")
+	var built_tiles = TileCatalog.build_tileset()
+	var grass_variants = built_tiles.get("atlas", {}).get("grass", [])
+	_assert_true(grass_variants is Array and grass_variants.size() >= 3, "TileCatalog builds multiple atlas variants per terrain")
+	_assert_true(TileCatalog.variant_index_for_position("grass", Vector2i(0, 0)) != TileCatalog.variant_index_for_position("grass", Vector2i(1, 0)), "TileCatalog varies repeated terrain by position")
 
 	var terrain = TilemapController.new()
 	root.add_child(terrain)
@@ -422,6 +456,7 @@ func _test_world_shell() -> void:
 	var camera = CameraController.new()
 	root.add_child(camera)
 	await process_frame
+	_assert_true(camera.get_zoom_index() == 2 and is_equal_approx(camera.zoom.x, 3.0), "CameraController defaults to a closer gameplay zoom")
 	var initial_zoom = camera.zoom
 	camera.zoom_in()
 	_assert_true(camera.zoom != initial_zoom, "CameraController zoom_in changes zoom")
@@ -431,6 +466,15 @@ func _test_world_shell() -> void:
 	camera.focus_on_tile(Vector2i(5, 6))
 	_assert_true(is_equal_approx(camera.position.x, 88.0) and is_equal_approx(camera.position.y, 104.0), "CameraController centers on the tile midpoint")
 	camera.free()
+	await process_frame
+
+	var selection = SelectionOverlay.new()
+	root.add_child(selection)
+	await process_frame
+	selection.flash_tile(Vector2i(2, 3))
+	_assert_true(selection.flash_tile_position == Vector2i(2, 3), "SelectionOverlay tracks the flashed tile")
+	_assert_true(selection.flash_strength > 0.0, "SelectionOverlay exposes transient click flash state")
+	selection.free()
 	await process_frame
 
 
@@ -445,6 +489,13 @@ func _test_entity_rendering() -> void:
 		"furniture": [{"id": "barrel_1", "name": "Barrel", "template": "barrel", "position": [8, 4], "bucket": "furniture"}],
 	})
 	_assert_true(layer.get_child_count() == 5, "EntityLayer renders player plus world entities including furniture as sprites")
+	var player_visual = layer.get_child(0)
+	var npc_visual = layer.get_child(1)
+	var player_body = player_visual.get_node_or_null("Body")
+	var npc_body = npc_visual.get_node_or_null("Body")
+	_assert_true(player_body != null and npc_body != null, "EntityLayer wraps actor visuals in named body nodes")
+	_assert_true(player_visual.get_node_or_null("Shadow") != null, "EntityLayer adds grounding shadows under actors")
+	_assert_true(player_body != null and npc_body != null and player_body.scale.x > npc_body.scale.x, "EntityLayer makes the player visually dominant")
 	_assert_true(layer.get_entity_at_tile(Vector2i(5, 4)).get("name", "") == "Merchant", "EntityLayer can look up entities by tile")
 	_assert_true(
 		EntityLayer.adapter_bucket_tint("player", "fantasy_ember") != EntityLayer.adapter_bucket_tint("player", "scifi_frontier"),
@@ -551,7 +602,18 @@ func _test_ui_panels() -> void:
 	_assert_true(minimap_summary.text.contains("Placeholder map"), "Minimap panel labels placeholder maps explicitly")
 
 	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/NarrativePanel")
+	_assert_true(narrative_widget.narrative_log.autowrap_mode != TextServer.AUTOWRAP_OFF, "Narrative panel wraps long lines instead of clipping them")
 	_assert_true(narrative_widget.get_plain_text().contains("harbor square"), "Narrative panel shows backend narrative")
+	var empty_history: Array[String] = []
+	narrative_widget.load_history(empty_history)
+	await process_frame
+	var token_history: Array[String] = ["resume_campaign_ok."]
+	narrative_widget.load_history(token_history)
+	await process_frame
+	_assert_true(narrative_widget.get_plain_text().contains("step back into the campaign"), "Narrative panel humanizes token-like history text")
+	narrative_widget.append_system_text("resume_campaign_ok.")
+	await process_frame
+	_assert_true(narrative_widget.get_plain_text().contains("step back into the campaign"), "Narrative panel humanizes token-like fallback text")
 
 	var character_panel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
 	_assert_true(character_panel.text.contains("MIG"), "Character panel renders visible stat lines")
@@ -702,3 +764,25 @@ func _cleanup_test_nodes() -> void:
 			continue
 		child.free()
 	await process_frame
+
+
+func _capture_profile_values(profile_path: String, keys: PackedStringArray) -> Dictionary:
+	var profile = ConfigFile.new()
+	var captured: Dictionary = {}
+	if profile.load(profile_path) != OK:
+		return captured
+	for key in keys:
+		if profile.has_section_key("profile", key):
+			captured[key] = profile.get_value("profile", key)
+	return captured
+
+
+func _restore_profile_values(profile_path: String, keys: PackedStringArray, values: Dictionary) -> void:
+	var profile = ConfigFile.new()
+	profile.load(profile_path)
+	for key in keys:
+		if values.has(key):
+			profile.set_value("profile", key, values[key])
+		elif profile.has_section_key("profile", key):
+			profile.erase_section_key("profile", key)
+	profile.save(profile_path)

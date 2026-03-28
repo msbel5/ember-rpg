@@ -32,6 +32,7 @@ except Exception:  # pragma: no cover - exercised by import fallback tests
 SCREENSHOT_ROOT = Path(os.path.expandvars(r"%APPDATA%\Godot\app_userdata\Ember RPG\screenshots"))
 
 KEY_NAME_TO_VK = {
+    "backspace": 0x08,
     "enter": 0x0D,
     "tab": 0x09,
     "escape": 0x1B,
@@ -297,10 +298,10 @@ class Win32DesktopExecutor(AutomationExecutor):
 
     def _wait_for_viewport_capture(self, baseline: Path | None, timeout: float = 5.0) -> Path:
         deadline = time.time() + timeout
-        baseline_marker = str(baseline) if baseline else ""
+        baseline_marker = self._capture_marker(baseline)
         while time.time() < deadline:
             newest = self._latest_png()
-            newest_marker = str(newest) if newest else ""
+            newest_marker = self._capture_marker(newest)
             if newest is not None and newest_marker != baseline_marker:
                 return newest
             time.sleep(0.1)
@@ -313,3 +314,9 @@ class Win32DesktopExecutor(AutomationExecutor):
         if not files:
             return None
         return max(files, key=lambda path: path.stat().st_mtime)
+
+    def _capture_marker(self, path: Path | None) -> tuple[str, int, int] | None:
+        if path is None or not path.exists():
+            return None
+        stats = path.stat()
+        return (str(path), stats.st_mtime_ns, stats.st_size)

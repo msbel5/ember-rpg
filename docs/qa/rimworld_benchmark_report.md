@@ -100,6 +100,7 @@
 - P2: Dice roll floats (11.0 → 11) fixed
 - P2: Furniture entity bucket added for click interactions
 - P2: Character panel fallback hardened for missing stats
+- P2: Raw resume token leak removed from the first gameplay handoff
 
 ### Honest Assessment
 The game mechanically passes the `>= 3/5` benchmark floor on all axes. The creation flow genuinely feels like a real RPG onboarding — not a debug form. The questionnaire generates evocative questions, the dice rolls have tactile save/swap mechanics, and the build screen presents clear stat/class/skill choices. The gameplay session boots with correct state and responds to commands.
@@ -107,6 +108,7 @@ The game mechanically passes the `>= 3/5` benchmark floor on all axes. The creat
 What still feels weak:
 - Entity art is geometric shapes with tinting. A Planescape veteran would find this sterile.
 - Narrative text is thin — "settlement shaped by the uplands" doesn't create curiosity like it should.
+- The first resume sentence is still clipped to `back into the campaign.` in the live GUI, which makes the presentation feel brittle even though the raw token is gone.
 - The world looks functional but not authored. There's no mood, no atmosphere, no visual identity.
 - Furniture interaction adds `examine barrel` but there's no response depth behind it yet.
 - The game passes a stress test but doesn't yet create the "I wonder what's behind that door" feeling.

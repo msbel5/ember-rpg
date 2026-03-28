@@ -2,7 +2,7 @@
 name = "title_continue_browser"
 description = "Open the campaign-first Continue browser from the title screen."
 adapter_id = "fantasy_ember"
-player_name = "VisualSmoke"
+player_name = "Chaos"
 create_new = false
 requires_backend = true
 tags = ["title", "continue", "save-browser"]
@@ -18,8 +18,42 @@ expected = "title screen is visible"
 id = "open_continue_browser"
 action = "mouse_click"
 x = 640
-y = 330
+y = 390
 wait_ms = 750
 capture_os = true
 capture_viewport = true
 expected = "continue browser opens"
+
+[[steps]]
+id = "focus_player_lookup"
+action = "mouse_click"
+x = 820
+y = 198
+wait_ms = 100
+expected = "player lookup field receives focus"
+
+[[steps]]
+id = "clear_player_lookup"
+action = "key_press"
+key = "backspace"
+repeat = 40
+wait_ms = 50
+expected = "previous player lookup text is cleared"
+
+[[steps]]
+id = "type_player_lookup"
+action = "text"
+text = "Chaos"
+wait_ms = 100
+expected = "player lookup contains Chaos"
+
+[[steps]]
+id = "refresh_player_saves"
+action = "mouse_click"
+x = 930
+y = 198
+wait_ms = 1000
+capture_os = true
+capture_viewport = true
+expected = "continue browser shows campaign saves for Chaos"
+expect_artifact_differs_from = "open_continue_browser:os_screenshot"

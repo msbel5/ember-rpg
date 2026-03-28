@@ -5,6 +5,7 @@ const AssetBootstrap = preload("res://scripts/asset/asset_bootstrap.gd")
 const AssetManifest = preload("res://scripts/asset/asset_manifest.gd")
 const TILE_SIZE := 16
 const DEFAULT_MAP_SIZE := Vector2i(48, 36)
+const TILE_VARIANT_COUNT := 3
 const TILE_ORDER := [
 	"grass",
 	"stone_floor",
@@ -57,16 +58,16 @@ const ADAPTER_WORLD_TINT := {
 
 
 static func build_tileset() -> Dictionary:
-	var atlas_image = Image.create(TILE_SIZE * TILE_ORDER.size(), TILE_SIZE, false, Image.FORMAT_RGBA8)
+	var atlas_image = Image.create(TILE_SIZE * TILE_ORDER.size() * TILE_VARIANT_COUNT, TILE_SIZE, false, Image.FORMAT_RGBA8)
 	for tile_index in range(TILE_ORDER.size()):
 		var tile_name = TILE_ORDER[tile_index]
-		var tile_image = _load_tile_image(tile_name)
-		if tile_image != null:
-			if tile_image.get_width() != TILE_SIZE or tile_image.get_height() != TILE_SIZE:
-				tile_image.resize(TILE_SIZE, TILE_SIZE, Image.INTERPOLATE_NEAREST)
-			atlas_image.blit_rect(tile_image, Rect2i(0, 0, tile_image.get_width(), tile_image.get_height()), Vector2i(tile_index * TILE_SIZE, 0))
-		else:
-			_draw_tile(atlas_image, tile_index * TILE_SIZE, TILE_PALETTE[tile_name])
+		for variant in range(TILE_VARIANT_COUNT):
+			var tile_image = _variant_tile_image(tile_name, variant)
+			atlas_image.blit_rect(
+				tile_image,
+				Rect2i(0, 0, tile_image.get_width(), tile_image.get_height()),
+				Vector2i((tile_index * TILE_VARIANT_COUNT + variant) * TILE_SIZE, 0)
+			)
 
 	var atlas_texture = ImageTexture.create_from_image(atlas_image)
 	var tile_set = TileSet.new()
@@ -78,9 +79,12 @@ static func build_tileset() -> Dictionary:
 
 	var atlas_coords := {}
 	for tile_index in range(TILE_ORDER.size()):
-		var coords = Vector2i(tile_index, 0)
-		atlas_source.create_tile(coords)
-		atlas_coords[TILE_ORDER[tile_index]] = coords
+		var variants: Array = []
+		for variant in range(TILE_VARIANT_COUNT):
+			var coords = Vector2i(tile_index * TILE_VARIANT_COUNT + variant, 0)
+			atlas_source.create_tile(coords)
+			variants.append(coords)
+		atlas_coords[TILE_ORDER[tile_index]] = variants
 
 	tile_set.add_source(atlas_source, 0)
 	return {
@@ -88,6 +92,12 @@ static func build_tileset() -> Dictionary:
 		"source_id": 0,
 		"atlas": atlas_coords,
 	}
+
+
+static func variant_index_for_position(tile_name: String, tile_position: Vector2i) -> int:
+	var normalized = tile_name.strip_edges().to_lower()
+	var seed = normalized.hash() + tile_position.x * 92821 + tile_position.y * 68917
+	return posmod(seed, TILE_VARIANT_COUNT)
 
 
 static func build_placeholder_map(width: int = DEFAULT_MAP_SIZE.x, height: int = DEFAULT_MAP_SIZE.y) -> Dictionary:
@@ -138,13 +148,54 @@ static func adapter_world_tint(adapter_id: String) -> Color:
 	return Color.WHITE
 
 
-static func _draw_tile(target_image: Image, offset_x: int, base_color: Color) -> void:
-	target_image.fill_rect(Rect2i(offset_x, 0, TILE_SIZE, TILE_SIZE), base_color.darkened(0.10))
-	target_image.fill_rect(Rect2i(offset_x + 1, 1, TILE_SIZE - 2, TILE_SIZE - 2), base_color)
-	target_image.fill_rect(Rect2i(offset_x + 2, 2, TILE_SIZE - 4, TILE_SIZE - 4), base_color.lightened(0.06))
-	for step_y in range(2, TILE_SIZE - 1, 4):
-		for step_x in range(2, TILE_SIZE - 1, 4):
-			target_image.set_pixel(offset_x + step_x, step_y, base_color.lightened(0.14))
+static func _draw_tile(target_image: Image, offset_x: int, base_color: Color, variant: int = 0) -> void:
+	var fill_color = base_color
+	if variant == 1:
+		fill_color = fill_color.lightened(0.08)
+	elif variant == 2:
+		fill_color = fill_color.darkened(0.08)
+
+	target_image.fill_rect(Rect2i(offset_x, 0, TILE_SIZE, TILE_SIZE), fill_color.darkened(0.12))
+	target_image.fill_rect(Rect2i(offset_x + 1, 1, TILE_SIZE - 2, TILE_SIZE - 2), fill_color)
+	target_image.fill_rect(Rect2i(offset_x + 2, 2, TILE_SIZE - 4, TILE_SIZE - 4), fill_color.lightened(0.05))
+	for step_y in range(2 + variant, TILE_SIZE - 1, 4):
+		for step_x in range(2 + ((variant + step_y) % 2), TILE_SIZE - 1, 4):
+			target_image.set_pixel(offset_x + step_x, step_y, fill_color.lightened(0.12))
+
+
+static func _variant_tile_image(tile_name: String, variant: int) -> Image:
+	var loaded = _load_tile_image(tile_name)
+	if loaded != null:
+		if loaded.get_width() != TILE_SIZE or loaded.get_height() != TILE_SIZE:
+			loaded.resize(TILE_SIZE, TILE_SIZE, Image.INTERPOLATE_NEAREST)
+		return _variantize_image(loaded, variant)
+
+	var image = Image.create(TILE_SIZE, TILE_SIZE, false, Image.FORMAT_RGBA8)
+	_draw_tile(image, 0, TILE_PALETTE[tile_name], variant)
+	return image
+
+
+static func _variantize_image(source: Image, variant: int) -> Image:
+	var image = source.duplicate()
+	if variant == 0:
+		return image
+	for y in range(image.get_height()):
+		for x in range(image.get_width()):
+			var pixel = image.get_pixel(x, y)
+			if pixel.a <= 0.0:
+				continue
+			if variant == 1:
+				if (x + y) % 4 == 0:
+					pixel = pixel.lightened(0.07)
+				elif (x * 2 + y) % 5 == 0:
+					pixel = pixel.darkened(0.03)
+			elif variant == 2:
+				if (x + y * 2) % 3 == 0:
+					pixel = pixel.darkened(0.08)
+				elif (x * 3 + y) % 5 == 0:
+					pixel = pixel.lightened(0.04)
+			image.set_pixel(x, y, pixel)
+	return image
 
 
 static func _load_tile_image(tile_name: String) -> Image:

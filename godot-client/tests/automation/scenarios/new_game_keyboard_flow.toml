@@ -15,12 +15,35 @@ capture_viewport = true
 expected = "title screen is focused"
 
 [[steps]]
+id = "prime_primary_focus"
+action = "key_press"
+key = "tab"
+wait_ms = 150
+expected = "primary title button receives keyboard focus"
+
+[[steps]]
 id = "open_new_game"
 action = "key_press"
 key = "enter"
 wait_ms = 500
 capture_viewport = true
 expected = "new game wizard opens"
+
+[[steps]]
+id = "focus_name_field"
+action = "mouse_click"
+x = 820
+y = 225
+wait_ms = 100
+expected = "name field receives focus"
+
+[[steps]]
+id = "clear_name_field"
+action = "key_press"
+key = "backspace"
+repeat = 40
+wait_ms = 50
+expected = "name field is cleared"
 
 [[steps]]
 id = "type_name"
@@ -30,10 +53,17 @@ wait_ms = 150
 expected = "name field receives input"
 
 [[steps]]
+id = "capture_identity_ready"
+action = "capture_os"
+expected = "identity step is ready to advance"
+
+[[steps]]
 id = "advance_identity"
-action = "key_press"
-key = "enter"
+action = "mouse_click"
+x = 388
+y = 394
 wait_ms = 800
 capture_os = true
 capture_viewport = true
 expected = "wizard advances past identity"
+expect_artifact_differs_from = "capture_identity_ready:os_screenshot"

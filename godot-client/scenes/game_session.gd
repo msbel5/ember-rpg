@@ -2,6 +2,7 @@ extends Control
 
 const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
 const ScreenshotCapture = preload("res://scripts/ui/screenshot_capture.gd")
+const EmberTheme = preload("res://scripts/ui/ember_theme.gd")
 const PROFILE_PATH := "user://client_profile.cfg"
 const QUICKSAVE_SLOT := "quicksave"
 
@@ -19,6 +20,7 @@ var _pending_sync_callbacks: int = 0
 
 
 func _ready() -> void:
+	EmberTheme.apply_game_session(self)
 	command_bar.command_submitted.connect(_submit_action)
 	command_bar.quick_save_requested.connect(_on_quick_save_requested)
 	command_bar.saves_requested.connect(_open_save_load_panel)
@@ -376,6 +378,7 @@ func _on_save_completed(data, keep_panel_open: bool) -> void:
 	save_load_panel.set_status("Saved %s." % slot_name)
 	narrative_panel.append_system_text("[color=green]Saved to %s.[/color]" % slot_name)
 	_remember_player_id()
+	_remember_resume_player_id()
 	_remember_save_slot(slot_name)
 	if keep_panel_open and save_load_panel.visible:
 		_refresh_save_list()
@@ -434,6 +437,7 @@ func _on_load_completed(data, requested_save_id: String) -> void:
 	GameState.update_from_response(session_data)
 	GameState.last_save_slot = str(data.get("slot_name", requested_save_id))
 	_remember_player_id()
+	_remember_resume_player_id()
 	save_load_panel.close_panel()
 	narrative_panel.append_system_text("[color=green]Loaded %s.[/color]" % GameState.last_save_slot)
 
@@ -481,6 +485,16 @@ func _remember_player_id() -> void:
 	profile.load(PROFILE_PATH)
 	profile.set_value("profile", "last_player_id", player_name)
 	profile.set_value("profile", "last_adapter_id", GameState.adapter_id)
+	profile.save(PROFILE_PATH)
+
+
+func _remember_resume_player_id() -> void:
+	var player_name = str(GameState.player.get("name", "")).strip_edges()
+	if player_name.is_empty():
+		return
+	var profile = ConfigFile.new()
+	profile.load(PROFILE_PATH)
+	profile.set_value("profile", "last_resume_player_id", player_name)
 	profile.save(PROFILE_PATH)
 
 
@@ -535,8 +549,11 @@ func _on_campaign_load_completed(data, requested_save_id: String) -> void:
 	GameState.reset()
 	narrative_panel.load_history([])
 	GameState.update_from_response(data)
+	GameState.seed_campaign_resume_narrative(str(data.get("narrative", "")))
+	narrative_panel.load_history(GameState.narrative_history)
 	GameState.last_save_slot = requested_save_id
 	_remember_player_id()
+	_remember_resume_player_id()
 	_remember_save_slot(requested_save_id)
 	save_load_panel.close_panel()
 	narrative_panel.append_system_text("[color=green]Loaded %s.[/color]" % GameState.last_save_slot)

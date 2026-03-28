@@ -9,6 +9,8 @@
 - Evidence sources:
   - `docs/qa/campaign_cutover_visual_log.md`
   - `docs/qa/rimworld_benchmark_report.md`
+  - `docs/qa/vqr_scorecard.md`
+  - `docs/qa/bug_registry.md`
   - `frp-backend/tests/test_campaign_creation_v2.py`
   - `frp-backend/tests/test_campaign_character_sheet.py`
   - `frp-backend/tests/test_campaign_api_v2.py`
@@ -19,7 +21,8 @@
   - `frp-backend/tests/test_play.py`
   - `frp-backend/tests/test_play_topdown.py`
   - `godot-client/tests/run_headless_tests.gd`
-  - `godot-client/tests/automation/` (5 TOML scenarios)
+  - `godot-client/tests/automation/` (scenario fixtures plus harness tests; only targeted fresh green coverage is credited below)
+  - `tmp/visual_qa/baseline/`
   - `tmp/visual_automation/` (desktop automation evidence)
   - `tmp/manual_screenshot_*.png` (manual QA screenshots)
 
@@ -45,37 +48,38 @@
 
 | Gate | Status | Evidence | Owner | Notes |
 |------|--------|----------|-------|-------|
-| Campaign creation wizard works visually for both adapters | Partial | `docs/qa/campaign_cutover_visual_log.md`, `tmp/manual_screenshot_*.png`, `tmp/visual_automation/new_game_keyboard_flow/20260328T024442Z/` | Godot / QA | Legacy 2026-03-28 manual proof exists, but the fresh audit cycle has not revalidated the wizard. The current desktop scenario marked `pass` while still capturing the title shell, so current-cycle proof is not trustworthy yet. |
+| Campaign creation wizard works visually for both adapters | Partial | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/new_game_keyboard_flow/20260328T031956Z/os_screens/advance_identity.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/04_dice.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/10_build_retry.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/13_summary_pre_start.png` | Godot / QA | Fantasy onboarding now has maintained desktop proof into questionnaire, but `scifi_frontier` still has not been rerun this cycle. |
 | Character build edits survive wizard navigation | Green | `godot-client/tests/run_headless_tests.gd` | Godot | Regression coverage exists. |
-| In-session save/load shell works | Partial | `docs/qa/campaign_cutover_visual_log.md`, `tmp/visual_automation/save_panel_smoke/20260328T024538Z/` | Godot / QA | Older manual proof exists, but the fresh `save_panel_smoke` run captured the title screen instead of the save/load panel while still reporting success. |
-| Title-screen resume is a real save browser, not only cached `Continue` | Partial | `tmp/manual_screenshot_*.png`, `tmp/visual_automation/resume_and_command/20260328T024519Z/` | Godot | Older manual proof exists, but the fresh resume scenario opened a `Fallback` player entry, found no saves, and later surfaced `HTTP 400`. |
-| Status/location/resource labels stay aligned with backend state | Partial | `tmp/manual_screenshot_13_gameplay.png` | Godot | Legacy gameplay proof exists, but the current-cycle graphical replay has not revalidated this after the automation failures. |
-| Inventory, quest, settlement, and character-sheet panels are clickable and non-ambiguous | Partial | `godot-client/tests/run_headless_tests.gd`, `tmp/manual_screenshot_13_gameplay.png` | Godot | Headless coverage remains green, but fresh current-cycle desktop proof is still missing. |
-| Doors, furniture, item, and world-surface click actions feel complete | Partial | `godot-client/tests/run_headless_tests.gd`, `tmp/visual_automation/world_click_smoke/20260328T024553Z/` | Godot | Headless coverage remains green, but the fresh desktop world-click scenario never left the title shell. |
+| In-session save/load shell works | Green | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/save_panel_smoke/20260328T032538Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/save_panel_smoke/20260328T032538Z/os_screens/open_save_panel.png` | Godot / QA | Fresh maintained desktop proof shows the `Save / Load` overlay inside gameplay with the active campaign slot. |
+| Title-screen resume is a real save browser, not only cached `Continue` | Green | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/title_continue_browser/20260328T032021Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/title_continue_browser/20260328T032021Z/os_screens/refresh_player_saves.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T035308Z/reports/run_report.md` | Godot | Fresh maintained desktop proof shows the filtered Chaos save list and a successful handoff into gameplay. The first-frame resume copy is still clipped, but the flow itself is real and stable. |
+| Status/location/resource labels stay aligned with backend state | Green | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T035308Z/os_screens/load_first_save.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/os_screens/click_world_target.png` | Godot | Current fantasy gameplay proof shows coherent status, location, and AP changes after load and world click. |
+| Inventory, quest, settlement, and character-sheet panels are clickable and non-ambiguous | Partial | `godot-client/tests/run_headless_tests.gd`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/14_after_space_start.png` | Godot | Fresh gameplay proof shows settlement and character-sheet state, but inventory and quest panels were not freshly surfaced yet. |
+| Doors, furniture, item, and world-surface click actions feel complete | Partial | `godot-client/tests/run_headless_tests.gd`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/os_screens/click_world_target.png` | Godot | Fresh maintained proof now covers a live world click from gameplay, but it still lands on a movement tile rather than richer object interaction. |
 | Combat actions are disabled when it is not the player's turn | Green | `godot-client/tests/run_headless_tests.gd` | Godot | Turn gating now has regression coverage and no longer leaves attack actions enabled off-turn. |
 | Placeholder and no-data states are clearly distinguished from valid gameplay | Partial | `godot-client/tests/run_headless_tests.gd` | Godot | Headless coverage exists, but the current cycle has not produced fresh desktop proof of placeholder and no-data states. |
+| Desktop automation proof is fail-closed instead of false-positive | Green | `python -m pytest godot-client/tests/automation -q` (`24 passed`), `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/new_game_keyboard_flow/20260328T031956Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/title_continue_browser/20260328T032021Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/save_panel_smoke/20260328T032538Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/reports/run_report.md` | QA / Automation | The maintained harness now fails closed when scenes or captures are wrong. Runs must stay sequential because the Win32 executor assumes exclusive control of one Godot window. |
 
 ## Visual and Benchmark Gates
 
 | Gate | Status | Evidence | Owner | Notes |
 |------|--------|----------|-------|-------|
-| Short graphical pass works for `fantasy_ember` | Partial | `tmp/manual_screenshot_*.png`, `tmp/visual_qa/baseline/baseline_title_os.png` | QA | Legacy gameplay proof exists and the fresh audit confirmed the title shell. A fresh current-cycle gameplay pass is still pending. |
-| Short graphical pass works for `scifi_frontier` | Partial | `docs/qa/campaign_cutover_visual_log.md` | QA | Earlier graphical proof exists, but this cycle has not rerun a fresh sci-fi graphical path yet. |
+| Short graphical pass works for `fantasy_ember` | Green | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/new_game_keyboard_flow/20260328T031956Z/os_screens/advance_identity.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T035308Z/os_screens/load_first_save.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/save_panel_smoke/20260328T032538Z/os_screens/open_save_panel.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/os_screens/click_world_target.png` | QA | Fresh maintained fantasy proof covers wizard progression, resume-to-gameplay, save panel, and world click in one cycle. |
+| Short graphical pass works for `scifi_frontier` | Open | `docs/qa/campaign_cutover_visual_log.md` | QA | Earlier graphical proof exists, but this cycle has not rerun a fresh sci-fi graphical path yet. |
 | `100`-turn visual pass per adapter | Open | `frp-backend/tests/test_campaign_chaos.py` | QA | Backend chaos is green, but Director Mode requires a real visual 100-turn pass. That has not been run in this cycle. |
 | `30`-minute free play per adapter | Open | `frp-backend/tests/test_campaign_chaos.py` | QA | Backend longevity exists, but real timed visual free play has not been completed in this cycle. |
-| RimWorld benchmark floor `>= 3/5` on each axis average | Partial | `docs/qa/rimworld_benchmark_report.md`, `docs/qa/vqr_scorecard.md` | QA | The benchmark file exists, but the new Director Mode baseline is materially harsher and needs a post-fix refresh before this gate can be green. |
+| RimWorld benchmark floor `>= 3/5` on each axis average | Green | `docs/qa/rimworld_benchmark_report.md`, `docs/qa/vqr_scorecard.md` | QA | Current benchmark refresh keeps each axis average at or above `3/5`, even though the build is still far below a compelling aesthetic bar. |
 | Final art and silhouette readability are demo-ready | Open | `docs/qa/rimworld_benchmark_report.md`, `docs/qa/vqr_scorecard.md` | Godot / Art / QA | Current baseline is `SD 2`, `TTD 3`, `UP 2`, and `VQS 2.6`. The game still looks like debug art rather than a demo-ready world. |
 | Final Godot-assisted `500`-turn visual chaos pass | Open | `frp-backend/tests/test_campaign_chaos.py` | QA | Backend chaos is green, but the Godot-assisted 500-turn visual pass has not been run. |
 
 ## Release Decision
 - Current release state: `Not ready for demo`
 - Backend correctness is ahead of current visual signoff, but Director Mode closure is blocked by:
-  - fresh current-cycle graphical revalidation of the main onboarding and gameplay flows
+  - a missing current-cycle `scifi_frontier` graphical rerun
   - real visual long-form passes
-  - a broken desktop QA harness that is currently generating false-positive evidence
-  - a baseline VQS of `2.6 / 10`
+  - a post-slice VQS of only `3.1 / 10`, still below the `5.0` demo target
 - Fresh audit findings this cycle:
-  - desktop automation can claim `pass` while still capturing the title screen
-  - resume automation currently demonstrates an invalid `Fallback` player path and `HTTP 400`
+  - fantasy onboarding, resume, save panel, and world click now have fresh maintained desktop proof
+  - desktop automation is trustworthy again when run sequentially
+  - the first gameplay frame after resume now uses humanized copy, but the line still clips to the tail fragment `back into the campaign.`
   - final art, silhouette, and UI presentation remain far below demo-ready quality
 - Previously fixed code remains valid starting context, but the signoff matrix is no longer treating deferred or inherited proof as closure.

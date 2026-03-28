@@ -1,10 +1,23 @@
 # Play Log
 
 ## Scope
-- Audit date: 2026-03-28
-- Current cycle status: Pre-phase reality audit only
-- Note: no gameplay turns have been recorded yet in this cycle. The table below starts with the graphical boot confirmation that established the baseline.
+- Date opened: 2026-03-28
+- Phase: Pre-phase reality audit
+- Note: no 50-turn adapter pass has been logged yet. The rows below capture baseline desktop validation plus the first fail-closed desktop resume rerun, not the required long-form play sessions.
+- Separate suite status:
+  - Headless preflight: green for the current title/theme/resume/world-readability slice.
+  - Desktop automation suite: green (`python -m pytest godot-client/tests/automation -q` -> `24 passed`).
+  - Those suite results are not counted as play turns.
 
 | Turn | Command | Expected | Actual | Bug? | Screenshot |
 |------|---------|----------|--------|------|------------|
-| 0 | launch graphical Godot client | Title screen should open in a visible desktop window. | Title screen rendered in a visible Godot window. The UI is readable enough to audit, but it still looks like stock-toolkit scaffolding. | No | `C:\Users\msbel\projects\ember-rpg\tmp\visual_qa\baseline\baseline_title_os.png` |
+| 0 | `title -> new game -> questionnaire -> dice -> build -> summary` | Baseline onboarding surfaces render and advance. | Title through summary rendered correctly in the live GUI. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/01_title.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/03_questionnaire.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/10_build_retry.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/13_summary_pre_start.png` |
+| 1 | `Start Campaign` | Transition from summary into live gameplay. | Generic synthetic activation failed; direct click produced the gameplay shell. | Yes | `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/14_after_space_start.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/15_after_click_start.png` |
+| 2 | `move to 40,35` | Movement command updates world position and AP. | Player moved and AP dropped from `4/4` to `2/4`. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/15_after_click_start.png` |
+| 3 | `Continue` | Resume browser should open with a useful player profile and loadable saves. | Browser opened, but defaulted to a stale player value with no usable saves. | Yes | `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/16_continue_default.png` |
+| 4 | `desktop scenario: resume_and_command -> load_first_save -> submit_command` | Title `Continue` should load a real save into gameplay and let the command bar submit `look around`. | The maintained scenario now loads gameplay and submits the command successfully with `phase2\\game` viewport captures. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/os_screens/load_first_save.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/os_screens/submit_command.png` |
+| 5 | `desktop scenario: new_game_keyboard_flow -> advance_identity` | Keyboard-first onboarding should reach the questionnaire instead of stalling on Step 1. | The maintained scenario now lands on `Step 2: Questionnaire` and shows a real question/answer surface. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/new_game_keyboard_flow/20260328T031956Z/os_screens/advance_identity.png` |
+| 6 | `desktop scenario: title_continue_browser -> refresh_player_saves` | `Continue` should show filtered campaign saves for `Chaos`. | Browser shows `Found 1 campaign save(s). Hidden 1 legacy save(s).` with a live `Load` button. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/title_continue_browser/20260328T032021Z/os_screens/refresh_player_saves.png` |
+| 7 | `desktop scenario: save_panel_smoke -> open_save_panel` | In-session `Save / Load` should open from the gameplay shell. | The overlay opens in the live game scene and lists the current campaign save slot. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/save_panel_smoke/20260328T032538Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/save_panel_smoke/20260328T032538Z/os_screens/open_save_panel.png` |
+| 8 | `desktop scenario: world_click_smoke -> click_world_target` | A live world click should update the scene from gameplay, not title. | The click lands in gameplay and produces a movement result plus AP consumption, but it is still only a move-tile proof, not rich object interaction. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/os_screens/click_world_target.png` |
+| 9 | `desktop scenario: resume_and_command -> load_first_save` | First-frame resume copy should be human-readable and readable. | The raw `resume_campaign_ok.` token is gone, but the first gameplay frame still shows only the tail fragment `back into the campaign.`. | Yes | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T035308Z/os_screens/load_first_save.png` |
