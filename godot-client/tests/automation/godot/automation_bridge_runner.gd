@@ -16,8 +16,13 @@ func _initialize() -> void:
 	if state.quit_requested:
 		quit(1)
 		return
+	var _last_time = Time.get_ticks_msec()
 	while not state.quit_requested:
 		await bridge.poll_once()
+		var now = Time.get_ticks_msec()
+		var delta = (now - _last_time) / 1000.0
+		_last_time = now
+		bridge.tick_recording(delta)
 		await process_frame
 	quit(0)
 

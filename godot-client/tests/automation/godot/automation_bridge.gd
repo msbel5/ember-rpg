@@ -22,6 +22,11 @@ const KEY_NAME_MAP := {
 var state: RefCounted
 var current_scene_root: Node
 var playback_viewport: SubViewport
+var _recording: bool = false
+var _record_folder: String = ""
+var _record_frame_index: int = 0
+var _record_interval: float = 0.5
+var _record_timer: float = 0.0
 
 
 func configure(new_state: RefCounted) -> void:
@@ -49,6 +54,20 @@ func poll_once() -> void:
 	var result = await _dispatch_command(payload)
 	result["seq"] = seq
 	_write_json(state.result_file, result)
+
+
+func tick_recording(delta: float) -> void:
+	if not _recording or playback_viewport == null:
+		return
+	_record_timer += delta
+	if _record_timer < _record_interval:
+		return
+	_record_timer = 0.0
+	var image = playback_viewport.get_texture().get_image()
+	if image != null and image.get_width() > 0:
+		var frame_name = "frame_%04d" % _record_frame_index
+		ScreenshotCapture.capture_image(image, _record_folder, frame_name)
+		_record_frame_index += 1
 
 
 func playback_steps(steps: Array) -> Array:
@@ -117,7 +136,19 @@ func _dispatch_command(command: Dictionary) -> Dictionary:
 				"path": capture_path,
 				"synthetic": bool(capture_result.get("synthetic", false)),
 			}
+		"record_start":
+			_record_folder = str(command.get("folder", "recording")).strip_edges()
+			_record_interval = float(command.get("interval", 0.5))
+			_record_frame_index = 0
+			_record_timer = 0.0
+			_recording = true
+			DirAccess.make_dir_recursive_absolute("user://screenshots/%s" % _record_folder)
+			return {"status": "ok", "message": "Recording started to %s at %.1fs intervals" % [_record_folder, _record_interval]}
+		"record_stop":
+			_recording = false
+			return {"status": "ok", "frame_count": _record_frame_index, "folder": _record_folder}
 		"close":
+			_recording = false
 			state.quit_requested = true
 		_:
 			return {"status": "error", "message": "Unsupported automation action %s" % action}
@@ -201,6 +232,27 @@ func _push_input(event: InputEvent) -> void:
 
 
 func _capture_viewport_with_fallback(tag: String) -> Dictionary:
+	# Try real viewport capture first
+	if playback_viewport != null and is_instance_valid(playback_viewport):
+		await _settle_frames(2)
+		var image = playback_viewport.get_texture().get_image()
+		if image != null and image.get_width() > 0 and image.get_height() > 0:
+			# Check if image is not all-black (renderer actually drew something)
+			var has_content = false
+			for sample_x in [image.get_width() / 4, image.get_width() / 2, image.get_width() * 3 / 4]:
+				for sample_y in [image.get_height() / 4, image.get_height() / 2, image.get_height() * 3 / 4]:
+					var pixel = image.get_pixel(clampi(sample_x, 0, image.get_width() - 1), clampi(sample_y, 0, image.get_height() - 1))
+					if pixel.r > 0.01 or pixel.g > 0.01 or pixel.b > 0.01:
+						has_content = true
+						break
+				if has_content:
+					break
+			if has_content:
+				var real_path = ScreenshotCapture.capture_image(image, "phase2/headless", tag)
+				if not real_path.is_empty():
+					return {"path": real_path, "synthetic": false}
+
+	# Fallback to synthetic image
 	var fallback = Image.create(
 		max(playback_viewport.size.x if playback_viewport != null else 1280, 1),
 		max(playback_viewport.size.y if playback_viewport != null else 720, 1),

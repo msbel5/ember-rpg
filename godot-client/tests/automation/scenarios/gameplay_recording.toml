@@ -1,0 +1,87 @@
+[metadata]
+name = "gameplay_recording"
+description = "Record a gameplay session for visual QA review"
+adapter_id = "fantasy_ember"
+player_name = "QARecorder"
+create_new = true
+requires_backend = true
+tags = ["visual", "recording", "qa"]
+
+[[steps]]
+action = "record_start"
+folder = "gameplay_recording"
+interval = 1.0
+
+[[steps]]
+action = "text"
+text = "look around"
+
+[[steps]]
+action = "key_press"
+key = "enter"
+
+[[steps]]
+action = "capture_viewport"
+tag = "after_look"
+
+[[steps]]
+action = "text"
+text = "move north"
+
+[[steps]]
+action = "key_press"
+key = "enter"
+
+[[steps]]
+action = "capture_viewport"
+tag = "after_move_north"
+
+[[steps]]
+action = "text"
+text = "move east"
+
+[[steps]]
+action = "key_press"
+key = "enter"
+
+[[steps]]
+action = "capture_viewport"
+tag = "after_move_east"
+
+[[steps]]
+action = "text"
+text = "inventory"
+
+[[steps]]
+action = "key_press"
+key = "enter"
+
+[[steps]]
+action = "capture_viewport"
+tag = "after_inventory"
+
+[[steps]]
+action = "text"
+text = "move south"
+
+[[steps]]
+action = "key_press"
+key = "enter"
+
+[[steps]]
+action = "text"
+text = "move west"
+
+[[steps]]
+action = "key_press"
+key = "enter"
+
+[[steps]]
+action = "capture_viewport"
+tag = "after_explore"
+
+[[steps]]
+action = "record_stop"
+
+[[steps]]
+action = "close"
