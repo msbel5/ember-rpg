@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -22,24 +24,20 @@ BACKEND_CWD = ROOT / "frp-backend"
 GODOT_CWD = ROOT / "godot-client"
 GODOT_EXE = Path(r"C:\Tools\Scoop\apps\godot\current\godot.exe")
 SCREENSHOT_ROOT = Path(os.path.expandvars(r"%APPDATA%\Godot\app_userdata\Ember RPG\screenshots"))
-
+ABILITY_ORDER = ["MIG", "AGI", "END", "MND", "INS", "PRE"]
 
 TITLE_COORDS = {
-    "new_game": (640, 300),
-    "continue": (640, 330),
-    "name_input": (640, 276),
-    "adapter_dropdown": (640, 395),
-    "adapter_item": {
-        "fantasy_ember": (640, 423),
-        "scifi_frontier": (640, 453),
-    },
-    "start_campaign": (640, 420),
+    "continue": (640, 390),
+    "name_input": (820, 225),
+    "next_button": (388, 394),
+    "player_lookup": (820, 198),
+    "player_refresh": (930, 198),
+    "load_first_save": (890, 296),
 }
 
 GAME_COORDS = {
     "command_input": (320, 688),
 }
-
 
 DEFAULT_COMMANDS = [
     "look around",
@@ -63,6 +61,8 @@ class EvidenceRecord:
     step: str
     window_screenshot: str
     viewport_screenshot: str
+    turn: int = 0
+    command: str = ""
 
 
 def wait_http(url: str, timeout: float = 25.0) -> int:
@@ -111,6 +111,11 @@ def find_hwnd(pid: int, timeout: float = 20.0) -> int:
 def ensure_window_visible(hwnd: int) -> None:
     win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
     win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 80, 80, 1280, 720, 0)
+    win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 80, 80, 1280, 720, win32con.SWP_SHOWWINDOW)
+    try:
+        win32gui.SetForegroundWindow(hwnd)
+    except Exception:
+        pass
     time.sleep(0.2)
 
 
@@ -185,17 +190,104 @@ def trigger_viewport_capture(hwnd: int, folder: str) -> str:
     return ""
 
 
+def _start_backend_if_needed() -> subprocess.Popen[str] | None:
+    try:
+        wait_http("http://127.0.0.1:8000/docs", timeout=1.0)
+        return None
+    except RuntimeError:
+        backend = subprocess.Popen(
+            [sys.executable, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8000"],
+            cwd=BACKEND_CWD,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        wait_http("http://127.0.0.1:8000/docs")
+        return backend
+
+
+def _campaign_post(path: str, payload: dict | None = None) -> dict:
+    response = requests.post(f"http://127.0.0.1:8000{path}", json=payload or {}, timeout=20)
+    response.raise_for_status()
+    return response.json()
+
+
+def prepare_continue_save(adapter_id: str, player_name: str, slot_name: str) -> str:
+    started = _campaign_post(
+        "/game/campaigns/creation/start",
+        {
+            "player_name": player_name,
+            "adapter_id": adapter_id,
+            "profile_id": "standard",
+            "seed": 77 if adapter_id == "fantasy_ember" else 133,
+            "location": "Harbor Town",
+        },
+    )
+    payload = started
+    while True:
+        questions = payload.get("questions", [])
+        answers = payload.get("answers", [])
+        if not questions or len(answers) >= len(questions):
+            break
+        question = questions[len(answers)]
+        answer = question["answers"][0]
+        payload = _campaign_post(
+            f"/game/campaigns/creation/{payload['creation_id']}/answer",
+            {
+                "question_id": question["id"],
+                "answer_id": answer["id"],
+            },
+        )
+
+    assigned_stats = {ability: int(payload["current_roll"][index]) for index, ability in enumerate(ABILITY_ORDER)}
+    finalized = _campaign_post(
+        f"/game/campaigns/creation/{payload['creation_id']}/finalize",
+        {
+            "player_class": str(payload.get("recommended_class", "warrior")),
+            "alignment": str(payload.get("recommended_alignment", "TN")),
+            "skill_proficiencies": payload.get("recommended_skills", []),
+            "assigned_stats": assigned_stats,
+        },
+    )
+    saved = _campaign_post(
+        f"/game/campaigns/{finalized['campaign_id']}/save",
+        {
+            "player_id": player_name,
+            "slot_name": slot_name,
+        },
+    )
+    return str(saved.get("save_id", slot_name))
+
+
 def create_campaign_ui(hwnd: int, adapter_id: str, player_name: str) -> None:
-    post_click(hwnd, *TITLE_COORDS["new_game"])
+    post_key(hwnd, win32con.VK_TAB)
+    post_key(hwnd, win32con.VK_RETURN)
+    time.sleep(0.6)
     post_click(hwnd, *TITLE_COORDS["name_input"])
+    for _index in range(40):
+        post_key(hwnd, win32con.VK_BACK)
     post_text(hwnd, player_name)
-    post_click(hwnd, *TITLE_COORDS["adapter_dropdown"])
-    post_click(hwnd, *TITLE_COORDS["adapter_item"][adapter_id])
-    post_click(hwnd, *TITLE_COORDS["start_campaign"])
+    if adapter_id == "scifi_frontier":
+        post_key(hwnd, win32con.VK_TAB)
+        post_key(hwnd, win32con.VK_DOWN)
+        time.sleep(0.2)
+    post_click(hwnd, *TITLE_COORDS["next_button"])
+    time.sleep(1.0)
+    for _index in range(6):
+        post_key(hwnd, win32con.VK_RETURN)
+        time.sleep(0.9)
 
 
-def continue_campaign_ui(hwnd: int) -> None:
+def continue_campaign_ui(hwnd: int, player_name: str) -> None:
     post_click(hwnd, *TITLE_COORDS["continue"])
+    time.sleep(0.7)
+    post_click(hwnd, *TITLE_COORDS["player_lookup"])
+    for _index in range(40):
+        post_key(hwnd, win32con.VK_BACK)
+    post_text(hwnd, player_name)
+    post_click(hwnd, *TITLE_COORDS["player_refresh"])
+    time.sleep(1.0)
+    post_click(hwnd, *TITLE_COORDS["load_first_save"])
+    time.sleep(1.2)
 
 
 def focus_command_input(hwnd: int) -> None:
@@ -212,6 +304,53 @@ def quick_save(hwnd: int) -> None:
     post_key(hwnd, win32con.VK_F5)
 
 
+def _record_step(run_dir: Path, hwnd: int, viewport_folder: str, step: str, turn: int = 0, command: str = "") -> EvidenceRecord:
+    os_dir = run_dir / "os_screens"
+    os_dir.mkdir(parents=True, exist_ok=True)
+    window_path = os_dir / f"{step}.png"
+    print_window(hwnd, window_path)
+    viewport_path = trigger_viewport_capture(hwnd, viewport_folder)
+    return EvidenceRecord(step=step, window_screenshot=str(window_path), viewport_screenshot=viewport_path, turn=turn, command=command)
+
+
+def _write_manifest(run_dir: Path, records: list[EvidenceRecord]) -> None:
+    manifest_path = run_dir / "manifest.json"
+    manifest_path.write_text(json.dumps([asdict(record) for record in records], indent=2), encoding="utf-8")
+    rows = [
+        "| Step | Turn | Command | OS Screenshot | Viewport Capture |",
+        "| --- | ---: | --- | --- | --- |",
+    ]
+    for record in records:
+        rows.append(
+            "| {step} | {turn} | {command} | {os_path} | {viewport} |".format(
+                step=record.step,
+                turn=record.turn,
+                command=record.command or "",
+                os_path=record.window_screenshot,
+                viewport=record.viewport_screenshot,
+            )
+        )
+    (run_dir / "manifest.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+
+def _write_play_log_rows(run_dir: Path, records: list[EvidenceRecord]) -> None:
+    rows = [
+        "| Turn | Command | Expected | Actual | Bug? | Screenshot |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for record in records:
+        if record.turn <= 0:
+            continue
+        rows.append(
+            "| {turn} | {command} | command resolves in live GUI | captured current frame | no | {shot} |".format(
+                turn=record.turn,
+                command=record.command,
+                shot=record.window_screenshot,
+            )
+        )
+    (run_dir / "play_log_rows.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+
 def run_sequence(
     *,
     adapter_id: str,
@@ -221,13 +360,16 @@ def run_sequence(
     wait_after_create: float,
     wait_per_command: float,
     screenshot_every: int,
-) -> list[EvidenceRecord]:
-    backend = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8000"],
-        cwd=BACKEND_CWD,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+) -> tuple[list[EvidenceRecord], Path]:
+    backend = _start_backend_if_needed()
+    slot_name = f"{adapter_id}_visual_probe"
+    if not create_new:
+        prepare_continue_save(adapter_id, player_name, slot_name)
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    run_dir = ROOT / "tmp" / "visual_probe" / f"{adapter_id}_{'new' if create_new else 'continue'}_{timestamp}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+
     godot: subprocess.Popen[str] | None = None
     try:
         wait_http("http://127.0.0.1:8000/docs")
@@ -237,40 +379,38 @@ def run_sequence(
         time.sleep(2)
 
         evidence: list[EvidenceRecord] = []
-        title_os = ROOT / "tmp" / f"{adapter_id}_title.png"
-        print_window(hwnd, title_os)
-        title_vp = trigger_viewport_capture(hwnd, "phase2/title")
-        evidence.append(EvidenceRecord("title_screen", str(title_os), title_vp))
+        evidence.append(_record_step(run_dir, hwnd, "phase2/title", "title_screen"))
 
         if create_new:
             create_campaign_ui(hwnd, adapter_id, player_name)
         else:
-            continue_campaign_ui(hwnd)
+            continue_campaign_ui(hwnd, player_name)
         time.sleep(wait_after_create)
 
-        game_os = ROOT / "tmp" / f"{adapter_id}_game_boot.png"
-        print_window(hwnd, game_os)
-        game_vp = trigger_viewport_capture(hwnd, "phase2/game")
-        evidence.append(EvidenceRecord("campaign_boot", str(game_os), game_vp))
+        evidence.append(_record_step(run_dir, hwnd, "phase2/game", "campaign_boot"))
 
         for index, raw_command in enumerate(commands, start=1):
             command = raw_command.format(player_name=player_name)
             submit_command(hwnd, command)
             time.sleep(wait_per_command)
             if index % screenshot_every == 0:
-                step_name = f"command_{index:03d}"
-                step_os = ROOT / "tmp" / f"{adapter_id}_{step_name}.png"
-                print_window(hwnd, step_os)
-                step_vp = trigger_viewport_capture(hwnd, "phase2/game")
-                evidence.append(EvidenceRecord(step_name, str(step_os), step_vp))
+                evidence.append(
+                    _record_step(
+                        run_dir,
+                        hwnd,
+                        "phase2/game",
+                        f"command_{index:03d}",
+                        turn=index,
+                        command=command,
+                    )
+                )
 
         quick_save(hwnd)
         time.sleep(2)
-        save_os = ROOT / "tmp" / f"{adapter_id}_quicksave.png"
-        print_window(hwnd, save_os)
-        save_vp = trigger_viewport_capture(hwnd, "phase2/game")
-        evidence.append(EvidenceRecord("quick_save", str(save_os), save_vp))
-        return evidence
+        evidence.append(_record_step(run_dir, hwnd, "phase2/game", "quick_save"))
+        _write_manifest(run_dir, evidence)
+        _write_play_log_rows(run_dir, evidence)
+        return evidence, run_dir
     finally:
         if godot is not None:
             godot.terminate()
@@ -278,11 +418,12 @@ def run_sequence(
                 godot.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 godot.kill()
-        backend.terminate()
-        try:
-            backend.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            backend.kill()
+        if backend is not None:
+            backend.terminate()
+            try:
+                backend.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                backend.kill()
 
 
 def parse_args() -> argparse.Namespace:
@@ -304,7 +445,7 @@ def main() -> int:
     while len(commands) < args.turns:
         commands.extend(DEFAULT_COMMANDS)
     commands = commands[: args.turns]
-    evidence = run_sequence(
+    evidence, run_dir = run_sequence(
         adapter_id=args.adapter,
         player_name=args.player_name,
         create_new=not args.use_continue,
@@ -314,7 +455,9 @@ def main() -> int:
         screenshot_every=max(1, args.screenshot_every),
     )
     for item in evidence:
-        print(f"{item.step}|{item.window_screenshot}|{item.viewport_screenshot}")
+        print(f"{item.step}|{item.window_screenshot}|{item.viewport_screenshot}|{item.turn}|{item.command}")
+    print(f"manifest|{run_dir / 'manifest.md'}")
+    print(f"playlog|{run_dir / 'play_log_rows.md'}")
     return 0
 
 

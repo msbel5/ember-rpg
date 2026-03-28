@@ -31,7 +31,8 @@ func _refresh() -> void:
 
 	if inventory.is_empty():
 		var empty_label = Label.new()
-		empty_label.text = "Pack is empty"
+		empty_label.text = "Pack is empty. Scavenge, trade, or pry open something interesting."
+		empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		item_grid.add_child(empty_label)
 		return
 
@@ -40,7 +41,7 @@ func _refresh() -> void:
 		var slot = Button.new()
 		slot.custom_minimum_size = Vector2(84, 28)
 		slot.text = item_name
-		slot.tooltip_text = "Examine %s" % item_name
+		slot.tooltip_text = "Examine %s and decide whether it matters." % item_name
 		slot.pressed.connect(func() -> void:
 			command_requested.emit("examine %s" % item_name.to_lower())
 		)

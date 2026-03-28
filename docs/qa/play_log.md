@@ -2,22 +2,57 @@
 
 ## Scope
 - Date opened: 2026-03-28
-- Phase: Pre-phase reality audit
-- Note: no 50-turn adapter pass has been logged yet. The rows below capture baseline desktop validation plus the first fail-closed desktop resume rerun, not the required long-form play sessions.
-- Separate suite status:
-  - Headless preflight: green for the current title/theme/resume/world-readability slice.
-  - Desktop automation suite: green (`python -m pytest godot-client/tests/automation -q` -> `24 passed`).
-  - Those suite results are not counted as play turns.
+- Current-cycle evidence source:
+  - `godot-client/tests/manual/campaign_visual_driver.py`
+  - visual probe manifests under `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/`
+- Note:
+  - the driver executes each command turn-by-turn
+  - milestone screenshots are captured every `10` turns for long-form runs
+  - the rows below record the audited milestone turns used for signoff, while the full command sequence remains in each run's `manifest.md` and `play_log_rows.md`
+
+## Suite Status
+- Targeted backend suite: `28 passed`
+- Backend chaos suite: `4 passed`
+- Godot headless preflight: green
 
 | Turn | Command | Expected | Actual | Bug? | Screenshot |
 |------|---------|----------|--------|------|------------|
-| 0 | `title -> new game -> questionnaire -> dice -> build -> summary` | Baseline onboarding surfaces render and advance. | Title through summary rendered correctly in the live GUI. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/01_title.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/03_questionnaire.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/10_build_retry.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/13_summary_pre_start.png` |
-| 1 | `Start Campaign` | Transition from summary into live gameplay. | Generic synthetic activation failed; direct click produced the gameplay shell. | Yes | `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/14_after_space_start.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/15_after_click_start.png` |
-| 2 | `move to 40,35` | Movement command updates world position and AP. | Player moved and AP dropped from `4/4` to `2/4`. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/15_after_click_start.png` |
-| 3 | `Continue` | Resume browser should open with a useful player profile and loadable saves. | Browser opened, but defaulted to a stale player value with no usable saves. | Yes | `C:/Users/msbel/projects/ember-rpg/tmp/visual_qa/baseline/16_continue_default.png` |
-| 4 | `desktop scenario: resume_and_command -> load_first_save -> submit_command` | Title `Continue` should load a real save into gameplay and let the command bar submit `look around`. | The maintained scenario now loads gameplay and submits the command successfully with `phase2\\game` viewport captures. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/os_screens/load_first_save.png`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T032909Z/os_screens/submit_command.png` |
-| 5 | `desktop scenario: new_game_keyboard_flow -> advance_identity` | Keyboard-first onboarding should reach the questionnaire instead of stalling on Step 1. | The maintained scenario now lands on `Step 2: Questionnaire` and shows a real question/answer surface. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/new_game_keyboard_flow/20260328T031956Z/os_screens/advance_identity.png` |
-| 6 | `desktop scenario: title_continue_browser -> refresh_player_saves` | `Continue` should show filtered campaign saves for `Chaos`. | Browser shows `Found 1 campaign save(s). Hidden 1 legacy save(s).` with a live `Load` button. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/title_continue_browser/20260328T032021Z/os_screens/refresh_player_saves.png` |
-| 7 | `desktop scenario: save_panel_smoke -> open_save_panel` | In-session `Save / Load` should open from the gameplay shell. | The overlay opens in the live game scene and lists the current campaign save slot. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/save_panel_smoke/20260328T032538Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/save_panel_smoke/20260328T032538Z/os_screens/open_save_panel.png` |
-| 8 | `desktop scenario: world_click_smoke -> click_world_target` | A live world click should update the scene from gameplay, not title. | The click lands in gameplay and produces a movement result plus AP consumption, but it is still only a move-tile proof, not rich object interaction. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/reports/run_report.md`, `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/world_click_smoke/20260328T032606Z/os_screens/click_world_target.png` |
-| 9 | `desktop scenario: resume_and_command -> load_first_save` | First-frame resume copy should be human-readable and readable. | The raw `resume_campaign_ok.` token is gone, but the first gameplay frame still shows only the tail fragment `back into the campaign.`. | Yes | `C:/Users/msbel/projects/ember-rpg/tmp/visual_automation/resume_and_command/20260328T035308Z/os_screens/load_first_save.png` |
+| 0 | `new flow -> fantasy_ember` | Keyboard-driven wizard should reach live gameplay through summary activation. | Fresh current-cycle fantasy new-game pass booted directly into gameplay. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_new_20260328T091228Z/os_screens/campaign_boot.png` |
+| 5 | `move south` | Early post-create gameplay should accept commands and move the player. | Fantasy new-game pass accepted the command and stayed stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_new_20260328T091228Z/os_screens/command_005.png` |
+| 0 | `new flow -> scifi_frontier` | Sci-fi wizard should also reach live gameplay through summary activation. | Fresh current-cycle sci-fi new-game pass booted directly into gameplay. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_new_20260328T091331Z/os_screens/campaign_boot.png` |
+| 5 | `move south` | Early post-create gameplay should accept commands and move the player. | Sci-fi new-game pass accepted the command and stayed stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_new_20260328T091331Z/os_screens/command_005.png` |
+| 10 | `build workshop` | Continue flow should remain stable through settlement commands. | Fantasy `50`-turn run stayed in the live shell with updated orders and narrative. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T084318Z/os_screens/command_010.png` |
+| 20 | `assign VisualFantasy to scouting` | Assignment command should resolve without UI drift. | Fantasy `50`-turn run stayed coherent and readable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T084318Z/os_screens/command_020.png` |
+| 30 | `move east` | Map movement should remain stable mid-run. | Fantasy `50`-turn run remained stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T084318Z/os_screens/command_030.png` |
+| 40 | `look around` | Late-mid run command should update narrative and shell without breaking focus. | Fantasy `50`-turn run remained stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T084318Z/os_screens/command_040.png` |
+| 50 | `designate harvest` | End of fantasy short long-form pass should still be stable. | Fantasy `50`-turn run ended green and quick-saved cleanly. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T084318Z/os_screens/command_050.png` |
+| 10 | `build workshop` | Continue flow should remain stable through settlement commands. | Sci-fi `50`-turn run stayed in the live shell with updated orders and narrative. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T084722Z/os_screens/command_010.png` |
+| 20 | `assign VisualScifi to scouting` | Assignment command should resolve without UI drift. | Sci-fi `50`-turn run stayed coherent and readable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T084722Z/os_screens/command_020.png` |
+| 30 | `move east` | Map movement should remain stable mid-run. | Sci-fi `50`-turn run remained stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T084722Z/os_screens/command_030.png` |
+| 40 | `look around` | Late-mid run command should update narrative and shell without breaking focus. | Sci-fi `50`-turn run remained stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T084722Z/os_screens/command_040.png` |
+| 50 | `designate harvest` | End of sci-fi short long-form pass should still be stable. | Sci-fi `50`-turn run ended green and quick-saved cleanly. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T084722Z/os_screens/command_050.png` |
+| 10 | `build workshop` | Fantasy `100`-turn run should remain visually stable beyond smoke length. | The build stayed readable and coherent. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_010.png` |
+| 20 | `assign VisualFantasy100 to scouting` | Command flow should still work under longer play. | Orders updated cleanly. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_020.png` |
+| 30 | `move east` | Movement should remain stable. | Stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_030.png` |
+| 40 | `look around` | Narrative layer should still stay readable. | Stable; no raw token leak. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_040.png` |
+| 50 | `designate harvest` | Mid-run harvest command should keep the shell coherent. | Stable; no UI break. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_050.png` |
+| 60 | `defend` | Later run should preserve focus actions and status alignment. | Stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_060.png` |
+| 70 | `move south` | Player movement should stay synced late in the run. | Stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_070.png` |
+| 80 | `inventory` | Inventory access should not desync the shell. | Stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_080.png` |
+| 90 | `travel` | Late-run transition command should keep the session alive. | Stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_090.png` |
+| 100 | `set stockpile supplies` | End of fantasy `100`-turn run should still present a coherent shell and readable narrative block. | Stable; previous tail-fragment clipping did not reproduce. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_100.png` |
+| 10 | `build workshop` | Sci-fi `100`-turn run should remain visually stable beyond smoke length. | The build stayed readable and coherent. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_010.png` |
+| 20 | `assign VisualScifi100 to scouting` | Command flow should still work under longer play. | Orders updated cleanly. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_020.png` |
+| 30 | `move east` | Movement should remain stable. | Stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_030.png` |
+| 40 | `look around` | Narrative layer should still stay readable. | Stable; no raw token leak. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_040.png` |
+| 50 | `designate harvest` | Mid-run harvest command should keep the shell coherent. | Stable; no UI break. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_050.png` |
+| 60 | `defend` | Later run should preserve focus actions and status alignment. | Stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_060.png` |
+| 70 | `move south` | Player movement should stay synced late in the run. | Stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_070.png` |
+| 80 | `inventory` | Inventory access should not desync the shell. | Stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_080.png` |
+| 90 | `travel` | Late-run transition command should keep the session alive. | Stable. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_090.png` |
+| 100 | `set stockpile supplies` | End of sci-fi `100`-turn run should still present a coherent shell and readable narrative block. | Stable; previous tail-fragment clipping did not reproduce. | No | `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_100.png` |
+
+## Honest Read
+- The build now has real current-cycle `50`-turn and `100`-turn desktop evidence for both adapters.
+- No reproduced `P0` or `P1` blocker appeared in the current-cycle wizard, continue, or long-form milestone frames.
+- The remaining weakness is quality, not basic stability: the world is still sparse, and the narrative layer still has some awkward phrasing even though the clipping bug is closed.

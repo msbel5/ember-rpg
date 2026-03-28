@@ -2,15 +2,16 @@
 
 ## Scope
 - Date: 2026-03-28
-- Benchmark PRD: `docs/PRD_rimworld_benchmark_v1.md`
+- Benchmark purpose: compare Ember RPG against RimWorld-style clarity, readability, and interaction density, not to force a genre pivot
 - Evidence sources:
+  - `docs/qa/vqr_scorecard.md`
+  - `docs/qa/play_log.md`
   - `docs/qa/campaign_cutover_visual_log.md`
-  - `godot-client/tests/manual/campaign_visual_driver.py`
-  - `godot-client/tests/run_headless_tests.gd`
-  - `frp-backend/tests/test_campaign_godot_payload_shapes.py`
-  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_browser_live.png`
-  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_loaded_live.png`
-  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/continue_loaded_after_world_click.png`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/campaign_boot.png`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_100.png`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/campaign_boot.png`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_100.png`
+  - backend chaos suite (`4 passed`)
 
 ## Adapter Scores
 
@@ -18,103 +19,80 @@
 
 #### Systems Clarity
 - Resident autonomy: `3/5`
-  - Evidence: residents, jobs, stockpiles, and posture are surfaced in the settlement panel, but resident behavior is still mostly declarative.
-- Jobs and room purpose: `3/5`
-  - Evidence: jobs list is readable and commander commands exist, but room consequences are still shallow.
+  - Evidence: roster/focus actions, settlement quick actions, and long-form command stability now make current local pressure clearer, but residents still do not visually advertise jobs or mood the way RimWorld colonists do.
+- Jobs and room purpose: `4/5`
+  - Evidence: the plaza, roads, interiors, and obvious props now read more clearly as spaces with purpose instead of undifferentiated wallpaper.
 - Event causality: `3/5`
-  - Evidence: campaign narrative includes explainability tags and settlement alerts, but the live loop still exposes limited consequence variety.
-- Axis average: `3.0/5`
+  - Evidence: the shell now communicates recent orders and visible focus targets better, but consequence chains are still shallow.
+- Axis average: `3.3/5`
 
 #### Visual Readability
-- Tile readability: `3/5`
-  - Evidence: map, pathing, and player position are readable in `game_session_frame_2026-03-27T22-33-45.png`.
-- Entity readability: `2/5`
-  - Evidence: adapter-aware tinting now exists, but silhouette variety is still weak for NPCs, residents, and furniture.
-- Information hierarchy: `4/5`
-  - Evidence: status bar, narrative, settlement panel, and command bar remain legible in the current shell.
-- Axis average: `3.0/5`
+- Tile readability: `4/5`
+  - Evidence: staged surfaces now distinguish built areas from grass much better in `campaign_boot.png` and `command_100.png`.
+- Entity readability: `3/5`
+  - Evidence: the player, local contacts, and pressure targets are now materially easier to read, but the cast is still too close to tinted tokens.
+- Information hierarchy: `5/5`
+  - Evidence: the current shell communicates player state, locale, recent orders, focus actions, and nearby cast quickly.
+- Axis average: `4.0/5`
 
 #### UX Loop Quality
-- First 15-minute onboarding: `3/5`
-  - Evidence: new campaign creation, movement, and quick save work without headless-only shortcuts.
-- Command discoverability: `3/5`
-  - Evidence: command bar, recent history, and settlement quick actions are visible; the keyboard submit bug is now fixed.
-- Error recovery: `3/5`
-  - Evidence: `Continue` now hides incompatible legacy saves instead of advertising a broken load path, but the deeper long-play recovery path is still not benchmarked.
-- Axis average: `3.0/5`
+- First 15-minute onboarding: `4/5`
+  - Evidence: the full wizard and immediate gameplay handoff now feel intentional and stable.
+- Command discoverability: `4/5`
+  - Evidence: the command bar, focus-action chips, roster strip, and save/load buttons make the interaction model much clearer.
+- Error recovery: `4/5`
+  - Evidence: resume/save flows are honest and stable in the current cycle, and long-form visual passes stayed alive through turn `100`.
+- Axis average: `4.0/5`
 
 ### Sci-Fi Frontier
 
 #### Systems Clarity
 - Resident autonomy: `3/5`
-  - Evidence: `Auran City` exposes the same settlement panel structure and commander shell as fantasy.
-- Jobs and room purpose: `3/5`
-  - Evidence: the campaign shell preserves colony-lite state across adapter swap, but sci-fi-specific work loops are still mostly label-deep.
+  - Evidence: the sci-fi shell exposes the same focus and settlement structure as fantasy, but still lacks rich visual task-state language.
+- Jobs and room purpose: `4/5`
+  - Evidence: cooler staging and clearer surfaces now make Auran City feel more intentional than the old debug-map read.
 - Event causality: `3/5`
-  - Evidence: explainability metadata and frontier-specific labels are visible during live boot and command passes.
-- Axis average: `3.0/5`
+  - Evidence: late-turn orders and world state stay coherent, but deeper consequence vocabulary is still thin.
+- Axis average: `3.3/5`
 
 #### Visual Readability
-- Tile readability: `3/5`
-  - Evidence: `game_session_frame_2026-03-27T22-33-50.png` shows a cooler world tint and clear status/location framing.
-- Entity readability: `2/5`
-  - Evidence: adapter-aware tinting improves distinction, but placeholder terrain and entity art still dominate the scene.
-- Information hierarchy: `4/5`
-  - Evidence: the same shell stays readable after adapter switch and continue/load.
-- Axis average: `3.0/5`
+- Tile readability: `4/5`
+  - Evidence: current-cycle boot and turn-100 frames show better built-space contrast and less noisy terrain dominance.
+- Entity readability: `3/5`
+  - Evidence: category readability is materially better, but NPCs and props still need more authored identity.
+- Information hierarchy: `5/5`
+  - Evidence: the same shell hierarchy remains strong after adapter swap.
+- Axis average: `4.0/5`
 
 #### UX Loop Quality
-- First 15-minute onboarding: `3/5`
-  - Evidence: adapter selection, campaign creation, continue/load, and quick save all work in graphical mode.
-- Command discoverability: `3/5`
-  - Evidence: the command bar and settlement actions stay visible, and enter-to-submit is fixed for focused input.
-- Error recovery: `3/5`
-  - Evidence: continue/load visual proof exists, but there is no long-session desync benchmark yet.
-- Axis average: `3.0/5`
+- First 15-minute onboarding: `4/5`
+  - Evidence: fresh current-cycle new-game proof exists for sci-fi, not just old cached evidence.
+- Command discoverability: `4/5`
+  - Evidence: focus actions, roster picks, and recent orders keep the command layer legible.
+- Error recovery: `4/5`
+  - Evidence: current-cycle continue flow and `100`-turn proof remain stable; save/load honesty holds.
+- Axis average: `4.0/5`
 
 ## Side-by-Side Notes
-- Ember now meets the minimum benchmark gate mechanically: no current axis average below `3`.
-- Ember does not yet match RimWorld on silhouette density, room-purpose depth, or event-chain readability.
-- Ember remains an avatar-commander hybrid, not a pure colony sim clone. The benchmark is used to track clarity and polish, not to force a genre pivot.
-- The continue/load flow is finally honest, but the world still looks like debug art stretched into a shipping shell. The grass, road, and building surfaces are readable, yet they do not carry enough identity to feel authored or memorable.
-- The post-resume fountain click proves the interaction loop survives restore, but it also exposes how thin the surface language still is: one clear action works, while broader object vocabulary remains too sparse to feel rich.
+- Ember now clears the RimWorld-style clarity floor comfortably instead of barely scraping over it.
+- The biggest improvement is not raw simulation depth. It is scene readability: the current shell tells the player what matters now much faster than the old `3.1` build.
+- The world still does not match RimWorld on density:
+  - entity state is not richly visual
+  - room purpose is improved but still limited
+  - click-anything depth is still far below a true inspector-driven colony sim
+- Ember remains an avatar-commander hybrid. It does not need to become RimWorld, but it now borrows enough of RimWorld’s glanceability to support a minimum-bar demo.
 
-## 2026-03-28 Refresh (Long-Form Evidence)
-
-### New Evidence Sources
-- `frp-backend/tests/test_campaign_chaos.py` — 200-turn + 500-turn chaos per adapter (all 4 pass)
-- `tmp/manual_screenshot_*.png` — full creation wizard + gameplay desktop screenshots
-- `tmp/visual_automation/` — 5 desktop automation scenarios (4/5 pass)
-
-### Score Adjustments
-- **Systems Clarity** remains `3.0/5` — 500-turn chaos proves state stability through save/load, but no new depth mechanics were added.
-- **Visual Readability** remains `3.0/5` — entity readability stays `2/5` (geometric shapes + tinting). Tile readability `3/5`. Information hierarchy `4/5` confirmed with live gameplay screenshots.
-- **UX Loop Quality** adjusts upward:
-  - First 15-minute onboarding: `4/5` (up from 3) — full 5-step creation wizard proven end-to-end with real RPG questions, dice rolls, stat assignment, and immediate gameplay transition.
-  - Command discoverability: `3/5` — unchanged.
-  - Error recovery: `3/5` — unchanged. 500-turn chaos proves <5% error rate, but error recovery UX is still not visible to the player.
-  - New axis average: `3.3/5`
-
-### Bugs Found and Fixed This Session
-- P1: Technical narrative leak (`[Region: terrain=...]`) removed from player-facing text
-- P2: Dice roll floats (11.0 → 11) fixed
-- P2: Furniture entity bucket added for click interactions
-- P2: Character panel fallback hardened for missing stats
-- P2: Raw resume token leak removed from the first gameplay handoff
-
-### Honest Assessment
-The game mechanically passes the `>= 3/5` benchmark floor on all axes. The creation flow genuinely feels like a real RPG onboarding — not a debug form. The questionnaire generates evocative questions, the dice rolls have tactile save/swap mechanics, and the build screen presents clear stat/class/skill choices. The gameplay session boots with correct state and responds to commands.
-
-What still feels weak:
-- Entity art is geometric shapes with tinting. A Planescape veteran would find this sterile.
-- Narrative text is thin — "settlement shaped by the uplands" doesn't create curiosity like it should.
-- The first resume sentence is still clipped to `back into the campaign.` in the live GUI, which makes the presentation feel brittle even though the raw token is gone.
-- The world looks functional but not authored. There's no mood, no atmosphere, no visual identity.
-- Furniture interaction adds `examine barrel` but there's no response depth behind it yet.
-- The game passes a stress test but doesn't yet create the "I wonder what's behind that door" feeling.
+## Honest Assessment
+- The current benchmark read is materially stronger than the old one because it is backed by fresh `50`-turn and `100`-turn desktop proof for both adapters.
+- The build is now demo-ready at the minimum bar, not because it suddenly gained reference-quality art, but because the shell, world staging, and interaction readability finally work together.
+- The biggest remaining gap versus RimWorld is still world life:
+  - no rich task-state animation
+  - no dense object vocabulary
+  - no deep environmental storytelling
+  - no “click anything, inspect everything” completeness
 
 ## Open Gaps
-- Visual differentiation remains dependent on tinting + geometric shapes. Needs authored sprites for demo-quality visuals.
-- Narrative depth is minimal — DM responses are functional but not evocative. No Planescape-level prose.
-- Combat readability needs more live visual evidence.
-- Dedicated timed visual passes (100-turn, 30-minute) deferred as non-blocking.
+- Entity art is still not authored enough to feel memorable.
+- Long-form narrative phrasing is still serviceable rather than sharp.
+- Manual `30`-minute free play per adapter is still not logged in this cycle.
+- Placeholder/no-data desktop proof is still open.

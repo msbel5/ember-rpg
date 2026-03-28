@@ -877,6 +877,10 @@ func _profile_value(key: String, fallback):
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed):
 		return
+	var wizard_action = _primary_wizard_action_for_key(event.keycode)
+	if _trigger_wizard_action(wizard_action):
+		get_viewport().set_input_as_handled()
+		return
 	if event.keycode != KEY_F12:
 		return
 	var screenshot_path = ScreenshotCapture.capture_viewport(get_viewport(), "phase2/title", "title_screen")
@@ -902,3 +906,26 @@ func _focus_primary_creation_control() -> void:
 			next_button.grab_focus()
 		STEP_SUMMARY:
 			start_button.grab_focus()
+
+
+func _primary_wizard_action_for_key(keycode: int) -> String:
+	if load_browser.visible or not creation_panel.visible or is_busy:
+		return ""
+	if keycode not in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
+		return ""
+	if wizard_step == STEP_SUMMARY and start_button.visible and not start_button.disabled:
+		return "start"
+	if wizard_step in [STEP_QUESTIONNAIRE, STEP_ROLL, STEP_BUILD] and next_button.visible and not next_button.disabled:
+		return "next"
+	return ""
+
+
+func _trigger_wizard_action(action: String) -> bool:
+	match action:
+		"next":
+			_on_next_pressed()
+			return true
+		"start":
+			_on_finalize_pressed()
+			return true
+	return false

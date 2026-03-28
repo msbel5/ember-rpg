@@ -113,16 +113,16 @@ size_flags_vertical = 3
 [node name="CharacterPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent" instance=ExtResource("16")]
 layout_mode = 2
 
-[node name="SettlementPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent" instance=ExtResource("15")]
-layout_mode = 2
-
-[node name="InventoryPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent" instance=ExtResource("8")]
-layout_mode = 2
-
 [node name="MinimapPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent" instance=ExtResource("9")]
 layout_mode = 2
 
+[node name="SettlementPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent" instance=ExtResource("15")]
+layout_mode = 2
+
 [node name="QuestPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent" instance=ExtResource("12")]
+layout_mode = 2
+
+[node name="InventoryPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent" instance=ExtResource("8")]
 layout_mode = 2
 
 [node name="CommandBar" parent="MainMargin/MainVBox" instance=ExtResource("10")]

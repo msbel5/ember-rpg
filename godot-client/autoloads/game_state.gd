@@ -3,6 +3,7 @@ extends Node
 # GameState Singleton — central state store
 # Updated after every HTTP response from backend
 const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
+const RESUME_SEED_TEXT := "You step back into the campaign."
 
 # Session / Campaign
 var active_runtime: String = "session"
@@ -238,7 +239,7 @@ func get_display_location() -> String:
 
 func seed_campaign_resume_narrative(backend_text: String = "") -> void:
 	var cleaned_backend = _clean_narrative(backend_text.strip_edges())
-	var message = "You steady yourself and step back into the campaign."
+	var message = RESUME_SEED_TEXT
 	if not cleaned_backend.is_empty() and cleaned_backend != backend_text.strip_edges():
 		message = cleaned_backend
 	narrative_history.clear()
@@ -247,7 +248,7 @@ func seed_campaign_resume_narrative(backend_text: String = "") -> void:
 func _clean_narrative(text: String) -> String:
 	var raw = text.strip_edges()
 	if raw == "resume_campaign_ok.":
-		return "You steady yourself and step back into the campaign."
+		return RESUME_SEED_TEXT
 
 	# Detect and block raw LLM prompt leaks
 	# Only block if MULTIPLE markers match (single match might be false positive)

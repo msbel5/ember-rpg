@@ -25,6 +25,8 @@ func _ready() -> void:
 	command_bar.quick_save_requested.connect(_on_quick_save_requested)
 	command_bar.saves_requested.connect(_open_save_load_panel)
 	world_view.command_requested.connect(_on_world_command_requested)
+	world_view.focus_changed.connect(command_bar.set_focus_summary)
+	world_view.focus_actions_changed.connect(command_bar.set_focus_actions)
 	inventory_panel.command_requested.connect(_submit_action)
 	settlement_panel.command_requested.connect(_submit_action)
 	quest_panel.command_requested.connect(_submit_action)
@@ -52,6 +54,9 @@ func _ready() -> void:
 		elif not _map_has_tiles():
 			_resync_existing_session()
 
+	command_bar.set_focus_summary(world_view.get_focus_summary())
+	command_bar.set_focus_actions(world_view.get_focus_actions())
+	_refresh_scene_roster()
 	command_bar.focus_input()
 
 
@@ -112,7 +117,6 @@ func _submit_action(text: String) -> void:
 		return
 
 	_set_waiting(true)
-	narrative_panel.append_command(text)
 	command_bar.clear_input()
 	Backend.submit_action(GameState.session_id, text, _on_action_response.bind(text, GameState.location))
 	await get_tree().create_timer(3.0).timeout
@@ -125,7 +129,6 @@ func _submit_campaign_action(text: String) -> void:
 		narrative_panel.append_system_text("[color=red]No active campaign. Start a new campaign.[/color]")
 		return
 	_set_waiting(true)
-	narrative_panel.append_command(text)
 	command_bar.clear_input()
 	Backend.submit_campaign_command(GameState.campaign_id, text, _on_campaign_action_response.bind(text))
 	await get_tree().create_timer(3.0).timeout
@@ -190,6 +193,7 @@ func _finish_turn_sync() -> void:
 
 func _on_state_updated() -> void:
 	_remember_player_id()
+	_refresh_scene_roster()
 
 
 func _on_combat_started() -> void:
@@ -306,6 +310,55 @@ func _complete_followup_sync() -> void:
 
 func _on_world_command_requested(command_text: String) -> void:
 	_submit_action(command_text)
+
+
+func _refresh_scene_roster() -> void:
+	command_bar.set_scene_roster(_scene_roster_entries())
+
+
+func _scene_roster_entries() -> Array:
+	var entries: Array = []
+	_append_roster_bucket(entries, GameState.entities.get("npcs", []), 2)
+	_append_roster_bucket(entries, GameState.entities.get("enemies", []), 1)
+	if entries.size() < 3:
+		_append_roster_bucket(entries, GameState.entities.get("items", []), 3 - entries.size())
+	return entries.slice(0, 3)
+
+
+func _append_roster_bucket(entries: Array, bucket_entries: Array, limit: int) -> void:
+	for entry in bucket_entries:
+		if entries.size() >= 3 or limit <= 0:
+			return
+		if not (entry is Dictionary):
+			continue
+		var label = _clean_scene_label(str(entry.get("name", entry.get("id", ""))).strip_edges())
+		if label.is_empty():
+			continue
+		var command = world_view.command_for_entity(entry)
+		var template_name = str(entry.get("template", _template_for_bucket(str(entry.get("bucket", ""))))).strip_edges().to_lower()
+		entries.append({
+			"label": label,
+			"command": command,
+			"template": template_name,
+		})
+		limit -= 1
+
+
+func _template_for_bucket(bucket: String) -> String:
+	match bucket:
+		"enemy":
+			return "wolf"
+		"item":
+			return "chest"
+		_:
+			return "merchant"
+
+
+func _clean_scene_label(label: String) -> String:
+	var words = label.strip_edges().split(" ", false)
+	if words.size() == 2 and str(words[0]).to_lower() == str(words[1]).to_lower():
+		return str(words[0])
+	return label.strip_edges()
 
 
 func _resync_existing_session() -> void:

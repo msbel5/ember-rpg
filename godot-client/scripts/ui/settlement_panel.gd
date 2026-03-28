@@ -44,7 +44,7 @@ func _refresh() -> void:
 	if settlement.is_empty():
 		summary_label.text = "No active settlement"
 		detail_log.clear()
-		detail_log.append_text("Campaign settlement data will appear here.")
+		detail_log.append_text("No live settlement data yet.\nHold position, scout further, or enter a campaign scene that exposes colony state.")
 		set_waiting(_is_waiting)
 		return
 

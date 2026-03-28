@@ -87,7 +87,7 @@ func _rebuild_save_rows() -> void:
 
 	if _save_summaries.is_empty():
 		var empty_label = Label.new()
-		empty_label.text = "No save slots found for this adventurer."
+		empty_label.text = "No campaign saves are visible for this adventurer yet."
 		empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		save_list.add_child(empty_label)
 		return

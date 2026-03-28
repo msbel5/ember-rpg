@@ -203,3 +203,76 @@
   - the resume flow is now functionally stable and no longer leaks raw backend shorthand
   - the narrative pane still does not present the full first-line sentence cleanly on the first gameplay frame
   - keep this as a `P2` readability issue, not a closure blocker for the functional resume gate
+
+## Session 2026-03-28 (Strike Pass Completion)
+
+### Fresh New-Game Evidence
+
+#### Fantasy Ember
+- New-flow title proof:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_new_20260328T091228Z/os_screens/title_screen.png`
+- New-flow campaign boot proof:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_new_20260328T091228Z/os_screens/campaign_boot.png`
+- New-flow gameplay command proof:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_new_20260328T091228Z/os_screens/command_005.png`
+- Manifest:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_new_20260328T091228Z/manifest.md`
+
+#### Sci-Fi Frontier
+- New-flow title proof:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_new_20260328T091331Z/os_screens/title_screen.png`
+- New-flow campaign boot proof:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_new_20260328T091331Z/os_screens/campaign_boot.png`
+- New-flow gameplay command proof:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_new_20260328T091331Z/os_screens/command_005.png`
+- Manifest:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_new_20260328T091331Z/manifest.md`
+
+### Fresh Long-Form Desktop Evidence
+
+#### 50-Turn Continue Passes
+- Fantasy:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T084318Z/manifest.md`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T084318Z/play_log_rows.md`
+  - milestone screenshots through turn `50` under `.../os_screens/command_010.png` to `command_050.png`
+- Sci-fi:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T084722Z/manifest.md`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T084722Z/play_log_rows.md`
+  - milestone screenshots through turn `50` under `.../os_screens/command_010.png` to `command_050.png`
+
+#### 100-Turn Continue Passes
+- Fantasy:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/manifest.md`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/play_log_rows.md`
+  - boot and turn `100` proofs:
+    - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/campaign_boot.png`
+    - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/fantasy_ember_continue_20260328T090011Z/os_screens/command_100.png`
+- Sci-fi:
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/manifest.md`
+  - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/play_log_rows.md`
+  - boot and turn `100` proofs:
+    - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/campaign_boot.png`
+    - `C:/Users/msbel/projects/ember-rpg/tmp/visual_probe/scifi_frontier_continue_20260328T090528Z/os_screens/command_100.png`
+
+### Findings Fixed
+- Fixed: summary-step `Enter` / `Space` activation is now real under the Win32-driven new-flow pass; both adapters can reach gameplay without a direct click fallback.
+- Fixed: first-frame resume text no longer clips to `back into the campaign.` in current-cycle continue boot proof.
+- Fixed: narrative block retention no longer drifts into tail-fragment scroll positions during long-form play.
+- Improved: the shell now holds up under `50`-turn and `100`-turn current-cycle desktop passes for both adapters without reproducing a `P0` or `P1`.
+
+### Verified
+- Fresh wizard-to-gameplay proof now exists for both adapters.
+- Fresh short and long-form current-cycle continue proof now exists for both adapters.
+- `50`-turn visual pass per adapter: green.
+- `100`-turn visual pass per adapter: green.
+- Backend `200`-turn and `500`-turn chaos remains green for both adapters.
+- Current-cycle boot frames show the humanized resume line from the start of the block rather than the old clipped tail fragment.
+
+### Current Honest Read
+- The build now clears the minimum demo bar.
+- The shell has moved from “competent wrapper” to “actual authored product surface.”
+- The world still is not rich. It is readable, staged, and credible enough for a controlled demo, but it is still too sparse and too static to be mistaken for reference-quality CRPG or colony-sim presentation.
+- Remaining open debt is quality and follow-up proof:
+  - manual `30`-minute free play per adapter is still not logged
+  - placeholder/no-data desktop proof is still missing
+  - long-form narrative phrasing is still serviceable rather than elegant

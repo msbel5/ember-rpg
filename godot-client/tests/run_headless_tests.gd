@@ -232,11 +232,11 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.has_active_campaign(), "GameState enters campaign runtime when campaign payload arrives")
 	_assert_true(game_state.location == "Dragon Eyrie", "GameState falls back to settlement name when campaign location is blank")
 	_assert_true(game_state.get_display_location() == "Dragon Eyrie", "display location falls back to settlement name for campaign payloads")
-	_assert_true(game_state._clean_narrative("resume_campaign_ok.").contains("step back into the campaign"), "GameState humanizes token-like narrative text")
+	_assert_true(game_state._clean_narrative("resume_campaign_ok.") == "You step back into the campaign.", "GameState humanizes token-like narrative text with concise seeded copy")
 	game_state.seed_campaign_resume_narrative("Loaded campaign from resume_campaign_ok.")
 	_assert_true(
 		game_state.narrative_history.size() == 1
-		and str(game_state.narrative_history[0]).contains("step back into the campaign"),
+		and str(game_state.narrative_history[0]) == "You step back into the campaign.",
 		"GameState seeds a humanized first-frame resume narrative"
 	)
 
@@ -307,6 +307,12 @@ func _test_response_normalizer() -> void:
 	_assert_true(normalized_entities["furniture"][0].get("bucket", "") == "furniture", "ResponseNormalizer tags furniture entities with furniture bucket")
 	_assert_true(ResponseNormalizer.command_requires_inventory_refresh("pick up bread"), "ResponseNormalizer flags inventory-affecting commands")
 	_assert_true(not ResponseNormalizer.command_requires_inventory_refresh("look around"), "ResponseNormalizer ignores non-inventory commands")
+	var staged_rows: Array = [
+		["grass", "cobblestone", "grass"],
+		["stone_floor", "grass", "marble"],
+		["grass", "brick", "grass"],
+	]
+	_assert_true(TileCatalog.render_tile_name("grass", Vector2i(1, 1), staged_rows) == "dirt_path", "TileCatalog stages grass beside dense built tiles into a clearer path edge")
 
 
 func _test_scene_instantiation() -> void:
@@ -368,10 +374,13 @@ func _test_scene_instantiation() -> void:
 			"recommended_alignment": "LG",
 			"recommended_skills": ["athletics", "perception"],
 		})
+		title_instance.get_node("CharacterCreation").visible = true
+		title_instance.get_node("LoadBrowser").visible = false
 		title_instance._go_to_step(title_instance.STEP_QUESTIONNAIRE)
 		await process_frame
 		var title_next_button = title_instance.get_node("CharacterCreation/VBox/ButtonRow/NextButton")
 		_assert_true(title_instance.get_viewport().gui_get_focus_owner() == title_next_button, "TitleScreen focuses Next on the questionnaire step")
+		_assert_true(title_instance._primary_wizard_action_for_key(KEY_ENTER) == "next", "TitleScreen maps Enter to the wizard Next action")
 		title_instance._go_to_step(title_instance.STEP_BUILD)
 		await process_frame
 		var title_class_option = title_instance.get_node("CharacterCreation/VBox/BuildSection/ClassOption")
@@ -390,6 +399,7 @@ func _test_scene_instantiation() -> void:
 		var title_start_button = title_instance.get_node("CharacterCreation/VBox/ButtonRow/StartButton")
 		_assert_true(title_summary.text.contains("recommended"), "TitleScreen summary renders creation preview text")
 		_assert_true(title_instance.get_viewport().gui_get_focus_owner() == title_start_button, "TitleScreen focuses Start Campaign on the summary step")
+		_assert_true(title_instance._primary_wizard_action_for_key(KEY_SPACE) == "start", "TitleScreen maps Space to Start Campaign on the summary step")
 		title_instance._go_to_step(title_instance.STEP_BUILD)
 		await process_frame
 		_assert_true(str(title_class_option.get_item_metadata(title_class_option.selected)) == "mage", "TitleScreen preserves manual class edits when returning from summary")
@@ -444,6 +454,9 @@ func _test_world_shell() -> void:
 	var grass_variants = built_tiles.get("atlas", {}).get("grass", [])
 	_assert_true(grass_variants is Array and grass_variants.size() >= 3, "TileCatalog builds multiple atlas variants per terrain")
 	_assert_true(TileCatalog.variant_index_for_position("grass", Vector2i(0, 0)) != TileCatalog.variant_index_for_position("grass", Vector2i(1, 0)), "TileCatalog varies repeated terrain by position")
+	_assert_true(TileCatalog.resolve_tile_name("altar") == "altar", "TileCatalog preserves interactive prop tile names")
+	var chest_variants = built_tiles.get("atlas", {}).get("chest", [])
+	_assert_true(chest_variants is Array and chest_variants.size() >= 1, "TileCatalog exposes authored atlas slots for interactive prop tiles")
 
 	var terrain = TilemapController.new()
 	root.add_child(terrain)
@@ -456,15 +469,17 @@ func _test_world_shell() -> void:
 	var camera = CameraController.new()
 	root.add_child(camera)
 	await process_frame
-	_assert_true(camera.get_zoom_index() == 2 and is_equal_approx(camera.zoom.x, 3.0), "CameraController defaults to a closer gameplay zoom")
+	_assert_true(camera.get_zoom_index() == 3 and is_equal_approx(camera.zoom.x, 4.0), "CameraController defaults to a closer gameplay zoom")
 	var initial_zoom = camera.zoom
-	camera.zoom_in()
-	_assert_true(camera.zoom != initial_zoom, "CameraController zoom_in changes zoom")
+	camera.zoom_out()
+	_assert_true(camera.zoom != initial_zoom, "CameraController zoom_out changes zoom from the default close framing")
 	for _index in range(16):
 		camera.zoom_out()
 	_assert_true(camera.get_zoom_index() == 0, "CameraController clamps zoom_out to minimum")
 	camera.focus_on_tile(Vector2i(5, 6))
 	_assert_true(is_equal_approx(camera.position.x, 88.0) and is_equal_approx(camera.position.y, 104.0), "CameraController centers on the tile midpoint")
+	camera.focus_on_tiles([Vector2i(5, 6), Vector2i(12, 6), Vector2i(11, 11)])
+	_assert_true(camera.get_zoom_index() <= 2, "CameraController zooms out to frame multi-entity clusters instead of pinning the player alone")
 	camera.free()
 	await process_frame
 
@@ -474,6 +489,12 @@ func _test_world_shell() -> void:
 	selection.flash_tile(Vector2i(2, 3))
 	_assert_true(selection.flash_tile_position == Vector2i(2, 3), "SelectionOverlay tracks the flashed tile")
 	_assert_true(selection.flash_strength > 0.0, "SelectionOverlay exposes transient click flash state")
+	selection.set_interest_tiles([Vector2i(1, 1), Vector2i(3, 4)])
+	selection.set_hostile_tiles([Vector2i(5, 6)])
+	selection.set_ambient_tiles([Vector2i(2, 2)])
+	_assert_true(selection.get_interest_tile_count() == 2, "SelectionOverlay tracks interactive attention tiles")
+	_assert_true(selection.get_hostile_tile_count() == 1, "SelectionOverlay tracks hostile threat tiles")
+	_assert_true(selection.get_ambient_tile_count() == 1, "SelectionOverlay tracks ambient landmark tiles for lightweight activity")
 	selection.free()
 	await process_frame
 
@@ -495,12 +516,26 @@ func _test_entity_rendering() -> void:
 	var npc_body = npc_visual.get_node_or_null("Body")
 	_assert_true(player_body != null and npc_body != null, "EntityLayer wraps actor visuals in named body nodes")
 	_assert_true(player_visual.get_node_or_null("Shadow") != null, "EntityLayer adds grounding shadows under actors")
+	_assert_true(player_visual.get_node_or_null("Aura") != null, "EntityLayer adds a soft aura plate so important actors read against busy terrain")
 	_assert_true(player_body != null and npc_body != null and player_body.scale.x > npc_body.scale.x, "EntityLayer makes the player visually dominant")
 	_assert_true(layer.get_entity_at_tile(Vector2i(5, 4)).get("name", "") == "Merchant", "EntityLayer can look up entities by tile")
 	_assert_true(
 		EntityLayer.adapter_bucket_tint("player", "fantasy_ember") != EntityLayer.adapter_bucket_tint("player", "scifi_frontier"),
 		"EntityLayer exposes adapter-specific sprite tinting"
 	)
+	var merchant_actor = layer.get_actor_for_entity("merchant_1")
+	var merchant_start = merchant_actor.position
+	layer.render_entities(Vector2i(4, 4), {
+		"npcs": [{"id": "merchant_1", "name": "Merchant", "template": "merchant", "position": [7, 4]}],
+		"enemies": [{"id": "wolf_1", "name": "Wolf", "template": "wolf", "position": [6, 4]}],
+		"items": [{"id": "bread_1", "name": "Bread", "template": "chest", "position": [8, 4]}],
+		"furniture": [{"id": "barrel_1", "name": "Barrel", "template": "barrel", "position": [9, 4], "bucket": "furniture"}],
+	})
+	await process_frame
+	_assert_true(layer.get_actor_for_entity("merchant_1") == merchant_actor, "EntityLayer reuses actor nodes across refreshes instead of recreating them")
+	for _index in range(8):
+		await process_frame
+	_assert_true(merchant_actor.position.x > merchant_start.x, "EntityLayer animates actor movement between tile updates")
 	layer.free()
 	await process_frame
 
@@ -523,15 +558,44 @@ func _test_entity_rendering() -> void:
 		"height": 1,
 		"tiles": [["door", "well", "grass"]],
 	}
+	session_world_view.refresh_from_state()
+	await process_frame
 	_assert_true(session_world_view.command_for_tile(Vector2i(0, 0)) == "open door", "World view synthesizes open commands for door tiles")
 	_assert_true(session_world_view.command_for_tile(Vector2i(1, 0)) == "examine well", "World view synthesizes examine commands for well tiles")
+	var world_selection = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot/SelectionLayer")
+	_assert_true(world_selection.get_ambient_tile_count() >= 1, "World view flags fountain and well landmarks for ambient activity")
+	_assert_true(session_world_view._describe_hover(Vector2i(1, 0), {}).contains("Click:"), "World view hover text explains the tile click result")
 	game_state.map_data = {
 		"width": 3,
 		"height": 1,
 		"tiles": [["barrel", "anvil", "chest"]],
 	}
+	session_world_view.refresh_from_state()
+	await process_frame
 	_assert_true(session_world_view.command_for_tile(Vector2i(0, 0)) == "examine barrel", "World view synthesizes examine commands for furniture tiles")
 	_assert_true(session_world_view.command_for_tile(Vector2i(2, 0)) == "examine chest", "World view synthesizes examine commands for chest tiles")
+	game_state.entities = {
+		"npcs": [],
+		"items": [],
+		"enemies": [{"id": "wolf_1", "name": "Wolf", "position": [2, 0]}],
+		"furniture": [],
+	}
+	session_world_view.refresh_from_state()
+	await process_frame
+	_assert_true(world_selection.get_interest_tile_count() >= 3, "World view highlights interactive prop tiles in the selection overlay")
+	_assert_true(world_selection.get_hostile_tile_count() == 1, "World view highlights hostile tiles in the selection overlay")
+	_assert_true(session_world_view.get_atmosphere_state().get("mote_count", 0) > 0, "World view exposes live atmosphere state once map data is present")
+	_assert_true(str(session_world_view.get_atmosphere_state().get("background_key", "")).is_empty() == false, "World view selects a themed background layer for live map rendering")
+	_assert_true(TileCatalog.render_tile_name("cobblestone", Vector2i(4, 4), [["cobblestone", "cobblestone", "cobblestone"], ["cobblestone", "cobblestone", "cobblestone"], ["cobblestone", "cobblestone", "cobblestone"]]) != "", "TileCatalog exposes visual tile substitution for authored surface variation")
+	game_state.map_data = {
+		"width": 2,
+		"height": 1,
+		"tiles": [["wall", "water"]],
+	}
+	session_world_view.refresh_from_state()
+	await process_frame
+	_assert_true(session_world_view.command_for_tile(Vector2i(0, 0)) == "examine wall", "World view keeps impassable wall clicks truthful")
+	_assert_true(session_world_view.command_for_tile(Vector2i(1, 0)) == "examine water", "World view keeps water clicks truthful")
 	session_instance.free()
 	await process_frame
 
@@ -549,7 +613,9 @@ func _test_ui_panels() -> void:
 	var initial_defend_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel/SettlementMargin/SettlementVBox/QuickActions/DefendButton")
 	_assert_true(initial_defend_button.disabled, "Settlement quick actions stay disabled until settlement data is available")
 	var minimap_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/MinimapPanel/MinimapMargin/MinimapVBox/SummaryLabel")
-	_assert_true(minimap_summary.text == "No map loaded", "Minimap panel labels missing map data explicitly")
+	var minimap_intel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/MinimapPanel/MinimapMargin/MinimapVBox/IntelText")
+	_assert_true(minimap_summary.text.contains("No live survey"), "Minimap panel labels missing map data explicitly")
+	_assert_true(minimap_intel.text.contains("Scene Read"), "Minimap panel reserves visible scene-intel copy even before a map arrives")
 
 	game_state.update_from_response({
 		"player": {
@@ -579,6 +645,14 @@ func _test_ui_panels() -> void:
 		},
 		"location": "Harbor Town",
 		"map_data": TileCatalog.build_placeholder_map(16, 12),
+		"world_entities": [
+			{"id": "guard_1", "entity_type": "npc", "name": "Harbor Guard", "position": [6, 5], "disposition": "friendly"},
+			{"id": "merchant_1", "entity_type": "npc", "name": "Quartermaster", "position": [8, 5], "disposition": "friendly"},
+			{"id": "rat_1", "entity_type": "creature", "name": "Rat", "position": [10, 6], "disposition": "hostile"},
+			{"id": "crate_1", "entity_type": "furniture", "name": "Supply Crate", "position": [7, 5]},
+			{"id": "bread_1", "entity_type": "item", "name": "Bread", "position": [9, 6]},
+		],
+		"ground_items": [{"id": "bread_1", "entity_type": "item"}],
 		"items": [{"name": "Bread"}, {"name": "Potion"}],
 		"narrative": "You steady your breath in the harbor square.",
 	})
@@ -589,8 +663,10 @@ func _test_ui_panels() -> void:
 
 	var player_info = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/PlayerInfo")
 	_assert_true(player_info.text.contains("Chaos"), "Status bar reflects player identity")
+	var status_hp_bar = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/HPBar")
+	_assert_true(status_hp_bar.has_theme_stylebox_override("fill"), "Status bar applies authored fill styling to the health bar")
 	var location_label = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/LocationLabel")
-	_assert_true(location_label.text.contains("Harbor"), "Status bar reflects the current location")
+	_assert_true(location_label.text.contains("Harbor") and location_label.text.contains("Exploration") and location_label.text.contains("locals"), "Status bar reflects the current location, scene, and encounter summary")
 
 	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
 	_assert_true(inventory_grid.get_child_count() >= 2, "Inventory panel populates grid items")
@@ -599,7 +675,8 @@ func _test_ui_panels() -> void:
 
 	var minimap_texture = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/MinimapPanel/MinimapMargin/MinimapVBox/MapTexture")
 	_assert_true(minimap_texture.texture != null, "Minimap panel renders a texture from map data")
-	_assert_true(minimap_summary.text.contains("Placeholder map"), "Minimap panel labels placeholder maps explicitly")
+	_assert_true(minimap_summary.text.contains("Placeholder map") and minimap_summary.text.contains("locals") and minimap_summary.text.contains("Exploration"), "Minimap panel labels placeholder maps, scene, and local counts explicitly")
+	_assert_true(minimap_intel.text.contains("Harbor Guard") and minimap_intel.text.contains("Rat") and minimap_intel.text.contains("Contacts"), "Minimap panel surfaces scene intel instead of only raw counts")
 
 	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/NarrativePanel")
 	_assert_true(narrative_widget.narrative_log.autowrap_mode != TextServer.AUTOWRAP_OFF, "Narrative panel wraps long lines instead of clipping them")
@@ -610,15 +687,45 @@ func _test_ui_panels() -> void:
 	var token_history: Array[String] = ["resume_campaign_ok."]
 	narrative_widget.load_history(token_history)
 	await process_frame
-	_assert_true(narrative_widget.get_plain_text().contains("step back into the campaign"), "Narrative panel humanizes token-like history text")
+	_assert_true(narrative_widget.get_plain_text().contains("You step back into the campaign."), "Narrative panel humanizes token-like history text with concise seeded copy")
 	narrative_widget.append_system_text("resume_campaign_ok.")
 	await process_frame
-	_assert_true(narrative_widget.get_plain_text().contains("step back into the campaign"), "Narrative panel humanizes token-like fallback text")
+	_assert_true(narrative_widget.get_plain_text().contains("You step back into the campaign."), "Narrative panel humanizes token-like fallback text")
+	narrative_widget.append_system_text("You move south. (Position: 41,33)")
+	await process_frame
+	_assert_true(narrative_widget.get_plain_text().contains("You head south."), "Narrative panel turns movement telemetry into cleaner scene text")
+	var narrative_history: Array[String] = [
+		"First beat.",
+		"Second beat.",
+		"Third beat.",
+		"Fourth beat.",
+	]
+	narrative_widget.load_history(narrative_history)
+	await process_frame
+	_assert_true(not narrative_widget.get_plain_text().contains("First beat."), "Narrative panel trims stale blocks instead of letting old paragraphs crowd the viewport")
+	_assert_true(narrative_widget.get_plain_text().contains("Fourth beat."), "Narrative panel keeps the newest block visible after history reload")
 
 	var character_panel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
+	var character_portrait = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/PortraitFrame/Portrait")
+	var character_role = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/RoleLabel")
 	_assert_true(character_panel.text.contains("MIG"), "Character panel renders visible stat lines")
+	_assert_true(character_panel.text.contains("Skills"), "Character panel condenses stats and skills into a readable short brief")
+	_assert_true(character_portrait.texture != null, "Character panel renders an authored portrait instead of a text-only header")
+	_assert_true(character_role.text.contains("Warrior") and character_role.text.contains("LG"), "Character panel separates class and alignment into a readable header line")
 
 	var command_bar = session_instance.get_node("MainMargin/MainVBox/CommandBar")
+	var focus_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusLabel")
+	var focus_action_one = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionOne")
+	var focus_action_two = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionTwo")
+	var roster_one = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/RosterRow/RosterOne")
+	var roster_two = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/RosterRow/RosterTwo")
+	_assert_true(str(focus_label.text).contains("Focus:"), "Command bar surfaces a persistent focus summary instead of leaving world actions implicit")
+	_assert_true(
+		(str(focus_action_one.text).contains("Talk") or str(focus_action_one.text).contains("Look"))
+		and (str(focus_action_two.text).contains("Scout") or str(focus_action_two.text).contains("Inventory") or str(focus_action_two.text).contains("Loot")),
+		"Command bar exposes visible world-aware action chips instead of a dead text strip"
+	)
+	_assert_true(roster_one.visible and roster_one.icon != null and roster_two.visible, "Command bar surfaces a visible actor roster instead of leaving all contacts offscreen")
 	inventory_button.pressed.emit()
 	await process_frame
 	var history_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel")
@@ -629,6 +736,7 @@ func _test_ui_panels() -> void:
 	command_bar.remember_command("move to 7,4")
 	await process_frame
 	_assert_true(history_label.text.contains("move to 7,4"), "Command bar can record non-textbox commands without duplication")
+	_assert_true(history_label.text.contains("Recent Orders"), "Command bar uses the stronger recent-orders shell copy")
 	var quick_save_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/QuickSaveButton")
 	var saves_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SavesButton")
 	_assert_true(quick_save_button != null and saves_button != null, "Command bar exposes save controls")
@@ -697,7 +805,7 @@ func _test_ui_panels() -> void:
 	game_state.state_updated.emit()
 	await process_frame
 	await process_frame
-	var character_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/SummaryLabel")
+	var character_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/SummaryLabel")
 	_assert_true(character_summary.text.contains("Fallback"), "Character panel fallback renders player name when character_sheet is empty")
 	var character_stats_text = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
 	_assert_true(character_stats_text.text.contains("MIG"), "Character panel fallback renders default stats when stats key is missing")

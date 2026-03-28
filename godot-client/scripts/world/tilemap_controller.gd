@@ -29,8 +29,9 @@ func render_map(map_payload: Dictionary) -> void:
 			continue
 		for x in range(row.size()):
 			var tile_name = TileCatalog.resolve_tile_name(row[x])
-			var atlas_options = _atlas.get(tile_name, _atlas.get("grass", [Vector2i.ZERO]))
-			var atlas_coords = atlas_options[TileCatalog.variant_index_for_position(tile_name, Vector2i(x, y)) % atlas_options.size()]
+			var render_tile_name = TileCatalog.render_tile_name(tile_name, Vector2i(x, y), rows)
+			var atlas_options = _atlas.get(render_tile_name, _atlas.get(tile_name, _atlas.get("grass", [Vector2i.ZERO])))
+			var atlas_coords = atlas_options[TileCatalog.variant_index_for_position(render_tile_name, Vector2i(x, y)) % atlas_options.size()]
 			set_cell(Vector2i(x, y), _source_id, atlas_coords)
 
 
