@@ -108,6 +108,8 @@ func command_for_entity(entity: Dictionary) -> String:
 			return "attack %s" % entity_name
 		"item":
 			return "pick up %s" % entity_name
+		"furniture":
+			return "examine %s" % entity_name
 		_:
 			return "talk %s" % entity_name
 
@@ -118,6 +120,8 @@ func command_for_tile(tile_position: Vector2i) -> String:
 		"door":
 			return "open door"
 		"well", "fountain", "tree":
+			return "examine %s" % tile_name
+		"chair", "table", "barrel", "bookshelf", "crate", "anvil", "bed", "bench", "chest", "altar":
 			return "examine %s" % tile_name
 	return "move to %d,%d" % [tile_position.x, tile_position.y]
 

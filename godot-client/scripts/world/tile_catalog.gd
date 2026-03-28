@@ -30,6 +30,13 @@ const TILE_ALIASES := {
 	"dock_planks": "wood_floor",
 	"bridge": "wood_floor",
 }
+# Interactive object tiles — these are terrain-embedded objects, not entities.
+# They get their own palette entries so resolve_tile_name preserves the name
+# and command_for_tile can generate examine commands for them.
+const INTERACTIVE_TILE_NAMES := [
+	"barrel", "chest", "anvil", "bed", "bench", "table",
+	"chair", "bookshelf", "crate", "altar",
+]
 const TILE_PALETTE := {
 	"grass": Color(0.20, 0.42, 0.20),
 	"stone_floor": Color(0.45, 0.47, 0.50),
@@ -118,6 +125,8 @@ static func resolve_tile_name(raw_value) -> String:
 	if TILE_ALIASES.has(tile_name):
 		return TILE_ALIASES[tile_name]
 	if TILE_PALETTE.has(tile_name):
+		return tile_name
+	if INTERACTIVE_TILE_NAMES.has(tile_name):
 		return tile_name
 	return "grass"
 

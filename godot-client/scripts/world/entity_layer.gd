@@ -8,12 +8,14 @@ const ADAPTER_BUCKET_TINTS := {
 		"npc": Color(1.00, 0.90, 0.72),
 		"enemy": Color(0.96, 0.54, 0.42),
 		"item": Color(0.88, 1.00, 0.84),
+		"furniture": Color(0.78, 0.72, 0.62),
 	},
 	"scifi_frontier": {
 		"player": Color(0.76, 0.95, 1.00),
 		"npc": Color(0.76, 1.00, 0.92),
 		"enemy": Color(1.00, 0.58, 0.76),
 		"item": Color(0.94, 1.00, 0.72),
+		"furniture": Color(0.68, 0.74, 0.82),
 	},
 }
 
@@ -44,6 +46,8 @@ func render_entities(player_tile: Vector2i, grouped_entities: Dictionary, player
 		_create_sprite_entity(_with_bucket(enemy, "enemy"))
 	for item in grouped_entities.get("items", []):
 		_create_sprite_entity(_with_bucket(item, "item"))
+	for furniture in grouped_entities.get("furniture", []):
+		_create_sprite_entity(_with_bucket(furniture, "furniture"))
 
 
 func get_entity_at_tile(tile_position: Vector2i) -> Dictionary:
@@ -107,6 +111,7 @@ func _ensure_marker_textures() -> void:
 		"npc": _build_circle_texture(Color(0.92, 0.78, 0.30)),
 		"enemy": _build_diamond_texture(Color(0.84, 0.24, 0.24)),
 		"item": _build_square_texture(Color(0.38, 0.82, 0.46)),
+		"furniture": _build_square_texture(Color(0.62, 0.54, 0.42)),
 	}
 
 

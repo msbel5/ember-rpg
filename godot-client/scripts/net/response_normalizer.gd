@@ -92,7 +92,7 @@ static func normalize_entities(data: Dictionary) -> Dictionary:
 
 
 static func group_entity_list(raw_entities: Array) -> Dictionary:
-	var grouped = {"npcs": [], "items": [], "enemies": []}
+	var grouped = {"npcs": [], "items": [], "enemies": [], "furniture": []}
 	for entry in raw_entities:
 		if not (entry is Dictionary):
 			continue
@@ -107,6 +107,9 @@ static func group_entity_list(raw_entities: Array) -> Dictionary:
 		}
 		if entity_type == "item":
 			grouped["items"].append(normalized)
+		elif entity_type in ["furniture", "object", "fixture"]:
+			normalized["bucket"] = "furniture"
+			grouped["furniture"].append(normalized)
 		elif entity_type == "creature" or str(entry.get("disposition", "")).to_lower() == "hostile":
 			grouped["enemies"].append(normalized)
 		else:
@@ -115,7 +118,7 @@ static func group_entity_list(raw_entities: Array) -> Dictionary:
 
 
 static func group_world_entities(raw_entities: Array) -> Dictionary:
-	var grouped = {"npcs": [], "items": [], "enemies": []}
+	var grouped = {"npcs": [], "items": [], "enemies": [], "furniture": []}
 	for entry in raw_entities:
 		if not (entry is Dictionary):
 			continue
@@ -130,6 +133,9 @@ static func group_world_entities(raw_entities: Array) -> Dictionary:
 		}
 		if entity_type == "item":
 			grouped["items"].append(normalized)
+		elif entity_type in ["furniture", "object", "fixture"]:
+			normalized["bucket"] = "furniture"
+			grouped["furniture"].append(normalized)
 		elif entity_type == "creature" or normalized["is_hostile"]:
 			grouped["enemies"].append(normalized)
 		else:
@@ -160,6 +166,8 @@ static func context_actions_for(entry: Dictionary) -> Array:
 	var entity_type = str(entry.get("type", entry.get("entity_type", "npc"))).to_lower()
 	if entity_type == "item":
 		return ["pick up", "examine"]
+	if entity_type in ["furniture", "object", "fixture"]:
+		return ["examine"]
 	if entity_type == "creature" or str(entry.get("disposition", "")).to_lower() == "hostile":
 		return ["attack", "examine"]
 	var role = str(entry.get("role", entry.get("job", ""))).to_lower()

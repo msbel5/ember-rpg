@@ -291,9 +291,12 @@ func _test_response_normalizer() -> void:
 		"world_entities": [
 			{"id": "merchant_1", "entity_type": "npc", "name": "Merchant", "position": [1, 2]},
 			{"id": "wolf_1", "entity_type": "creature", "name": "Wolf", "position": [2, 3], "disposition": "hostile"},
+			{"id": "barrel_1", "entity_type": "furniture", "name": "Barrel", "position": [3, 4]},
 		]
 	})
 	_assert_true(normalized_entities.get("npcs", []).size() == 1 and normalized_entities.get("enemies", []).size() == 1, "ResponseNormalizer groups world entities into gameplay buckets")
+	_assert_true(normalized_entities.get("furniture", []).size() == 1, "ResponseNormalizer groups furniture entities into furniture bucket")
+	_assert_true(normalized_entities["furniture"][0].get("bucket", "") == "furniture", "ResponseNormalizer tags furniture entities with furniture bucket")
 	_assert_true(ResponseNormalizer.command_requires_inventory_refresh("pick up bread"), "ResponseNormalizer flags inventory-affecting commands")
 	_assert_true(not ResponseNormalizer.command_requires_inventory_refresh("look around"), "ResponseNormalizer ignores non-inventory commands")
 
@@ -439,8 +442,9 @@ func _test_entity_rendering() -> void:
 		"npcs": [{"id": "merchant_1", "name": "Merchant", "template": "merchant", "position": [5, 4]}],
 		"enemies": [{"id": "wolf_1", "name": "Wolf", "template": "wolf", "position": [6, 4]}],
 		"items": [{"id": "bread_1", "name": "Bread", "template": "chest", "position": [7, 4]}],
+		"furniture": [{"id": "barrel_1", "name": "Barrel", "template": "barrel", "position": [8, 4], "bucket": "furniture"}],
 	})
-	_assert_true(layer.get_child_count() == 4, "EntityLayer renders player plus world entities as sprites")
+	_assert_true(layer.get_child_count() == 5, "EntityLayer renders player plus world entities including furniture as sprites")
 	_assert_true(layer.get_entity_at_tile(Vector2i(5, 4)).get("name", "") == "Merchant", "EntityLayer can look up entities by tile")
 	_assert_true(
 		EntityLayer.adapter_bucket_tint("player", "fantasy_ember") != EntityLayer.adapter_bucket_tint("player", "scifi_frontier"),
@@ -461,6 +465,8 @@ func _test_entity_rendering() -> void:
 	_assert_true(session_world_view.command_for_entity({"bucket": "npc", "name": "Merchant"}) == "talk merchant", "World view synthesizes talk commands for npc clicks")
 	_assert_true(session_world_view.command_for_entity({"bucket": "enemy", "name": "Wolf"}) == "attack wolf", "World view synthesizes attack commands for enemy clicks")
 	_assert_true(session_world_view.command_for_entity({"bucket": "item", "name": "Bread"}) == "pick up bread", "World view synthesizes pickup commands for item clicks")
+	_assert_true(session_world_view.command_for_entity({"bucket": "furniture", "name": "Barrel"}) == "examine barrel", "World view synthesizes examine commands for furniture clicks")
+	_assert_true(session_world_view.command_for_entity({"context_actions": ["examine"], "name": "Anvil"}) == "examine anvil", "World view respects explicit context_actions for examine")
 	game_state.map_data = {
 		"width": 3,
 		"height": 1,
@@ -468,6 +474,13 @@ func _test_entity_rendering() -> void:
 	}
 	_assert_true(session_world_view.command_for_tile(Vector2i(0, 0)) == "open door", "World view synthesizes open commands for door tiles")
 	_assert_true(session_world_view.command_for_tile(Vector2i(1, 0)) == "examine well", "World view synthesizes examine commands for well tiles")
+	game_state.map_data = {
+		"width": 3,
+		"height": 1,
+		"tiles": [["barrel", "anvil", "chest"]],
+	}
+	_assert_true(session_world_view.command_for_tile(Vector2i(0, 0)) == "examine barrel", "World view synthesizes examine commands for furniture tiles")
+	_assert_true(session_world_view.command_for_tile(Vector2i(2, 0)) == "examine chest", "World view synthesizes examine commands for chest tiles")
 	session_instance.free()
 	await process_frame
 
@@ -615,6 +628,25 @@ func _test_ui_panels() -> void:
 
 	var settlement_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
 	_assert_true(settlement_summary.text.contains("Dragon Eyrie"), "Settlement panel reflects campaign settlement data")
+
+	# Phase 2A: Character panel fallback with missing stats key
+	game_state.character_sheet = {}
+	game_state.player = {"name": "Fallback", "player_class": "rogue", "alignment": "CN"}
+	game_state.state_updated.emit()
+	await process_frame
+	await process_frame
+	var character_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/SummaryLabel")
+	_assert_true(character_summary.text.contains("Fallback"), "Character panel fallback renders player name when character_sheet is empty")
+	var character_stats_text = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
+	_assert_true(character_stats_text.text.contains("MIG"), "Character panel fallback renders default stats when stats key is missing")
+
+	# Phase 2C: Empty-state assertions for quest and settlement panels
+	game_state.reset()
+	game_state.state_updated.emit()
+	await process_frame
+	await process_frame
+	var empty_settlement = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
+	_assert_true(empty_settlement.text.contains("No") or empty_settlement.text.contains("settlement"), "Settlement panel shows empty state when no settlement data")
 
 	var save_load_panel = session_instance.get_node("OverlayCanvas/SaveLoadPanel")
 	save_load_panel.open_panel()
