@@ -19,3 +19,4 @@ readchar>=4.2.0
 
 openai>=1.0.0
 anthropic>=0.20.0
+opensimplex>=0.4.5

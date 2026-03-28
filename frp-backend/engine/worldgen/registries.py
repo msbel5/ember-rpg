@@ -47,6 +47,16 @@ def load_furniture_templates() -> dict[str, dict[str, Any]]:
 
 
 @lru_cache(maxsize=None)
+def load_npc_templates() -> dict[str, dict[str, Any]]:
+    return _normalized_map("npc_templates.json", "npc_templates")
+
+
+@lru_cache(maxsize=None)
+def load_quest_templates() -> dict[str, dict[str, Any]]:
+    return _normalized_map("quest_templates.json", "quest_templates")
+
+
+@lru_cache(maxsize=None)
 def load_adapter_pack(adapter_id: str) -> dict[str, Any]:
     path = _BASE_DIR / "adapters" / f"{adapter_id}.json"
     if not path.exists():
@@ -67,6 +77,8 @@ def validate_world_registries() -> None:
     cultures = load_culture_templates()
     buildings = load_building_templates()
     furniture = load_furniture_templates()
+    npc_templates = load_npc_templates()
+    quest_templates = load_quest_templates()
     if "standard" not in profiles:
         raise ValueError("Missing required standard world profile")
 
@@ -95,6 +107,15 @@ def validate_world_registries() -> None:
                 raise ValueError(
                     f"Building template {building_id} references unknown furniture {item['kind']}"
                 )
+
+    for role_id, template in npc_templates.items():
+        for item in template.get("inventory", []):
+            if not isinstance(item, str):
+                raise ValueError(f"NPC template {role_id} has invalid inventory entry {item!r}")
+
+    for quest_id, template in quest_templates.items():
+        if "title" not in template or "description" not in template:
+            raise ValueError(f"Quest template {quest_id} is missing title or description")
 
     for adapter_id in load_adapter_ids():
         adapter = load_adapter_pack(adapter_id)

@@ -10,6 +10,7 @@ from engine.map import MapData, Room, TileType
 from engine.world.entity import Entity, EntityType
 from engine.world.spatial_index import SpatialIndex
 from engine.worldgen import (
+    WorldSeed,
     adapt_species,
     generate_world,
     initialize_simulation,
@@ -29,11 +30,16 @@ _TERRAIN_TILE_MAP: dict[str, TileType] = {
     "road": TileType.ROAD,
     "cobble": TileType.ROAD,
     "cobblestone": TileType.ROAD,
+    "dirt_path": TileType.ROAD,
     "wall": TileType.WALL,
     "door": TileType.DOOR,
     "floor": TileType.FLOOR,
     "wood_floor": TileType.FLOOR,
     "stone_floor": TileType.FLOOR,
+    "marble": TileType.FLOOR,
+    "tavern_floor": TileType.FLOOR,
+    "sand": TileType.FLOOR,
+    "swamp": TileType.FLOOR,
     "grass": TileType.FLOOR,
     "water": TileType.WATER,
     "tree": TileType.TREE,
@@ -46,7 +52,16 @@ _ROLE_GLYPHS: dict[str, str] = {
     "innkeeper": "I",
     "bard": "B",
     "priest": "P",
+    "merchant": "M",
+    "guard": "G",
     "resident": "R",
+    "mayor": "M",
+    "scribe": "S",
+    "alchemist": "A",
+    "baker": "B",
+    "stablehand": "H",
+    "quartermaster": "Q",
+    "jailer": "J",
     "scout": "C",
     "warden": "W",
     "researcher": "R",
@@ -57,7 +72,16 @@ _ROLE_COLORS: dict[str, str] = {
     "innkeeper": "magenta",
     "bard": "cyan",
     "priest": "white",
+    "merchant": "yellow",
+    "guard": "orange",
     "resident": "green",
+    "mayor": "light_blue",
+    "scribe": "white",
+    "alchemist": "purple",
+    "baker": "yellow",
+    "stablehand": "green",
+    "quartermaster": "light_blue",
+    "jailer": "orange",
     "scout": "light_blue",
     "warden": "orange",
     "researcher": "purple",
@@ -68,7 +92,7 @@ _ABILITY_ORDER: list[str] = ["MIG", "AGI", "END", "MND", "INS", "PRE"]
 
 def build_world(*, adapter_id: str, profile_id: str, seed: int) -> WorldBlueprint:
     adapter = load_adapter_pack(adapter_id)
-    world = generate_world(seed, profile_id)
+    world = generate_world(int(WorldSeed(seed)), profile_id)
     world = seed_species(world)
     allowed_species = set(adapter.get("allowed_species") or [])
     if allowed_species:
@@ -121,6 +145,7 @@ def map_payload_from_region(region_snapshot: RegionSnapshot) -> dict[str, Any]:
 
 def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     session_data = context.session.to_dict()
+    runtime_state = _runtime_region_state(context.world, context.region_snapshot.region_id)
     return {
         "world": {
             "seed": context.world.seed,
@@ -130,6 +155,10 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
             "faction_count": len(context.world.factions),
             "settlement_count": len(context.world.settlements),
             "history_end_year": context.world.history_end_year,
+            "current_hour": context.world.simulation_snapshot.current_hour if context.world.simulation_snapshot else 0,
+            "current_day": context.world.simulation_snapshot.current_day if context.world.simulation_snapshot else 1,
+            "season": context.world.simulation_snapshot.season if context.world.simulation_snapshot else "spring",
+            "weather": copy.deepcopy(runtime_state.get("weather", {})),
         },
         "player": session_data["player"],
         "scene": session_data["scene"],
@@ -138,10 +167,10 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "conversation_state": session_data.get("conversation_state", {}),
         "region": region_payload(context),
         "map_data": map_payload_from_region(context.region_snapshot),
-        "world_entities": copy.deepcopy(session_data.get("world_entities", [])),
+        "world_entities": build_world_entities(context.world, context.region_snapshot, context.adapter_id),
         "ground_items": copy.deepcopy(session_data.get("ground_items", [])),
-        "active_quests": copy.deepcopy(session_data.get("active_quests", [])),
-        "quest_offers": copy.deepcopy(session_data.get("quest_offers", [])),
+        "active_quests": copy.deepcopy(runtime_state.get("active_quests", session_data.get("active_quests", []))),
+        "quest_offers": copy.deepcopy(runtime_state.get("quest_offers", session_data.get("quest_offers", []))),
         "settlement": copy.deepcopy(context.settlement_state),
         "character_sheet": build_character_sheet(context.session, context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-12:]),
@@ -171,6 +200,7 @@ def apply_region_to_session(
     adapter_id: str,
     profile_id: str,
     seed: int,
+    preserve_position: bool = False,
 ) -> None:
     active_settlement = next(
         (item for item in world.settlements if item.region_id == region_snapshot.region_id),
@@ -178,7 +208,13 @@ def apply_region_to_session(
     )
     map_data = build_map_data(region_snapshot)
     session.map_data = map_data
-    session.position = list(map_data.spawn_point)
+    next_position = list(map_data.spawn_point)
+    if preserve_position and session.position:
+        px = int(session.position[0])
+        py = int(session.position[1])
+        if 0 <= py < region_snapshot.height and 0 <= px < region_snapshot.width and region_snapshot.typed_tiles[py][px]["passable"]:
+            next_position = [px, py]
+    session.position = next_position
     session.dm_context.scene_type = SceneType.EXPLORATION
     session.dm_context.location = active_settlement.center_name
     session.entities = {}
@@ -210,6 +246,9 @@ def apply_region_to_session(
     session.campaign_state["profile_id"] = profile_id
     session.campaign_state["world_seed"] = seed
     session.campaign_state["settlement_state"] = copy.deepcopy(settlement_state)
+    runtime_state = _runtime_region_state(world, region_snapshot.region_id)
+    session.campaign_state["active_quests"] = copy.deepcopy(runtime_state.get("active_quests", []))
+    session.campaign_state["quest_offers"] = copy.deepcopy(runtime_state.get("quest_offers", []))
     session.ensure_consistency()
 
 
@@ -261,12 +300,105 @@ def choose_spawn_point(region_snapshot: RegionSnapshot) -> tuple[int, int]:
     return (1, 1)
 
 
+def _runtime_region_state(world: WorldBlueprint, region_id: str) -> dict[str, Any]:
+    if world.simulation_snapshot is None:
+        return {}
+    return dict(world.simulation_snapshot.region_states.get(region_id, {}))
+
+
+def _furniture_template(kind: str) -> str:
+    return {
+        "forge": "anvil",
+        "workbench": "table",
+        "bar_counter": "bench",
+        "display_table": "table",
+        "rack": "chest",
+        "desk": "table",
+        "cabinet": "bookshelf",
+        "cauldron": "altar",
+        "oven": "altar",
+        "sack": "crate",
+        "trough": "bench",
+        "hay_bale": "crate",
+        "cell_door": "door",
+        "keys": "chest",
+        "well_bucket": "barrel",
+        "loom": "table",
+        "press": "table",
+        "cask": "barrel",
+        "lantern": "altar",
+        "map_table": "table",
+        "stool": "chair",
+        "ward_totem": "altar",
+    }.get(kind, kind)
+
+
+def _furniture_actions(kind: str) -> list[str]:
+    return {
+        "forge": ["examine", "use"],
+        "anvil": ["examine", "use"],
+        "bar_counter": ["examine", "trade"],
+        "altar": ["examine", "pray"],
+        "bed": ["examine", "rest"],
+        "bookshelf": ["examine", "read"],
+        "crate": ["examine", "search"],
+        "barrel": ["examine", "search"],
+        "bench": ["examine", "sit"],
+        "chair": ["examine", "sit"],
+    }.get(kind, ["examine"])
+
+
+def build_world_entities(world: WorldBlueprint, region_snapshot: RegionSnapshot, adapter_id: str) -> list[dict[str, Any]]:
+    del adapter_id
+    runtime_state = _runtime_region_state(world, region_snapshot.region_id)
+    entities: list[dict[str, Any]] = []
+    for npc in runtime_state.get("npcs", region_snapshot.layout.npc_spawns):
+        entities.append(
+            {
+                "id": str(npc["id"]),
+                "entity_type": "npc",
+                "name": str(npc.get("name", str(npc.get("role", "Resident")).replace("_", " ").title())),
+                "position": [int(npc["x"]), int(npc["y"])],
+                "role": str(npc.get("role", "resident")),
+                "template": str(npc.get("template", npc.get("role", "merchant"))),
+                "disposition": str(npc.get("disposition", "friendly")),
+                "context_actions": list(npc.get("context_actions", ["talk", "examine"])),
+            }
+        )
+    for furniture in region_snapshot.layout.furniture:
+        entities.append(
+            {
+                "id": str(furniture.get("id", f"{furniture['kind']}_{furniture['x']}_{furniture['y']}")),
+                "entity_type": "furniture",
+                "name": str(furniture["kind"]).replace("_", " ").title(),
+                "position": [int(furniture["x"]), int(furniture["y"])],
+                "template": _furniture_template(str(furniture["kind"])),
+                "context_actions": _furniture_actions(str(furniture["kind"])),
+            }
+        )
+    region = next(region for region in world.regions if region["id"] == region_snapshot.region_id)
+    if region.get("fauna"):
+        entities.append(
+            {
+                "id": f"{region_snapshot.region_id}_fauna_0",
+                "entity_type": "creature",
+                "name": str(region["fauna"][0]).replace("_", " ").title(),
+                "position": [region_snapshot.width - 5, region_snapshot.height - 5],
+                "template": str(region["fauna"][0]).lower(),
+                "disposition": "hostile",
+                "context_actions": ["attack", "examine"],
+            }
+        )
+    return entities
+
+
 def seed_region_entities(
     session: GameSession,
     world: WorldBlueprint,
     region_snapshot: RegionSnapshot,
     adapter_id: str,
 ) -> None:
+    runtime_state = _runtime_region_state(world, region_snapshot.region_id)
     controller = next(
         (
             region.get("controller_faction_id")
@@ -275,9 +407,9 @@ def seed_region_entities(
         ),
         "independent",
     )
-    for spawn in region_snapshot.layout.npc_spawns:
+    for spawn in runtime_state.get("npcs", region_snapshot.layout.npc_spawns):
         role = str(spawn["role"])
-        display_name = "%s %s" % (role.replace("_", " ").title(), spawn["id"].split("_")[-1].title())
+        display_name = str(spawn.get("name", role.replace("_", " ").title()))
         entity = Entity(
             id=str(spawn["id"]),
             entity_type=EntityType.NPC,
@@ -290,6 +422,7 @@ def seed_region_entities(
             max_hp=12,
             disposition="friendly",
             faction=controller,
+            schedule={"npc_id": str(spawn["id"]), "npc_name": display_name, "entries": copy.deepcopy(spawn.get("schedule", []))},
             job=role,
         )
         session.spatial_index.add(entity)
@@ -300,7 +433,32 @@ def seed_region_entities(
             "faction": controller,
             "role": role,
             "attitude": "friendly",
+            "template": str(spawn.get("template", role)),
+            "context_actions": list(spawn.get("context_actions", ["talk", "examine"])),
             "entity_ref": entity,
+        }
+    for furniture in region_snapshot.layout.furniture:
+        furniture_entity = Entity(
+            id=str(furniture.get("id", f"{furniture['kind']}_{furniture['x']}_{furniture['y']}")),
+            entity_type=EntityType.FURNITURE,
+            name=str(furniture["kind"]).replace("_", " ").title(),
+            position=(int(furniture["x"]), int(furniture["y"])),
+            glyph="#",
+            color="white",
+            blocking=bool(str(furniture["kind"]) not in {"bench", "chair", "bed", "pew", "sack"}),
+            disposition="neutral",
+            faction=None,
+            job=str(furniture["kind"]),
+        )
+        session.spatial_index.add(furniture_entity)
+        session.entities[furniture_entity.id] = {
+            "name": furniture_entity.name,
+            "type": "furniture",
+            "position": [furniture_entity.position[0], furniture_entity.position[1]],
+            "role": str(furniture["kind"]),
+            "template": _furniture_template(str(furniture["kind"])),
+            "context_actions": _furniture_actions(str(furniture["kind"])),
+            "entity_ref": furniture_entity,
         }
     region = next(region for region in world.regions if region["id"] == region_snapshot.region_id)
     if region.get("fauna"):
@@ -338,6 +496,7 @@ def build_settlement_state(
     player_name: str,
 ) -> dict[str, Any]:
     settlement = next(item for item in world.settlements if item.region_id == region_snapshot.region_id)
+    runtime_state = _runtime_region_state(world, region_snapshot.region_id)
     historical_pressure = [
         {
             "event_type": event.event_type,
@@ -348,16 +507,16 @@ def build_settlement_state(
         if settlement.region_id in event.regions
     ][:4]
     residents = []
-    for npc in region_snapshot.layout.npc_spawns:
+    for npc in runtime_state.get("npcs", region_snapshot.layout.npc_spawns):
         residents.append(
             {
                 "id": npc["id"],
-                "name": str(npc["role"]).replace("_", " ").title(),
+                "name": str(npc.get("name", str(npc["role"]).replace("_", " ").title())),
                 "role": npc["role"],
-                "assignment": npc["role"],
+                "assignment": str(npc.get("activity", npc["role"])),
                 "drafted": False,
-                "building_id": npc["building_id"],
-                "mood": "steady",
+                "building_id": npc.get("building_id"),
+                "mood": "steady" if str(npc.get("disposition", "friendly")) != "hostile" else "alarmed",
             }
         )
     residents.insert(
@@ -395,6 +554,9 @@ def build_settlement_state(
         }
         for index, furniture in enumerate(region_snapshot.layout.furniture)
     ]
+    economy = copy.deepcopy(runtime_state.get("economy", {}))
+    weather = copy.deepcopy(runtime_state.get("weather", {}))
+    readable_alerts = [str(item).replace("_", " ").capitalize() for item in runtime_state.get("alerts", [])]
     return {
         "adapter_id": adapter_id,
         "settlement_id": settlement.id,
@@ -414,7 +576,7 @@ def build_settlement_state(
             }
         ],
         "construction_queue": [],
-        "alerts": [],
+        "alerts": readable_alerts,
         "needs": {
             "food": max(1, settlement.population // 30),
             "security": max(1, len(residents) // 3),
@@ -422,12 +584,19 @@ def build_settlement_state(
         },
         "faction_pressure": historical_pressure,
         "current_hour": world.simulation_snapshot.current_hour if world.simulation_snapshot else 0,
+        "current_day": world.simulation_snapshot.current_day if world.simulation_snapshot else 1,
+        "season": world.simulation_snapshot.season if world.simulation_snapshot else "spring",
+        "weather": weather,
+        "economy": economy,
+        "quest_offer_count": len(runtime_state.get("quest_offers", [])),
     }
 
 
 def alerts_from_events(events: list[dict[str, Any]]) -> list[str]:
     alerts = []
     for event in events:
+        if str(event.get("severity", "warning")).lower() == "info":
+            continue
         event_type = str(event.get("event_type", "event"))
         region_id = str(event.get("region_id", "unknown"))
         alerts.append(f"{event_type.replace('_', ' ').title()} in {region_id}")

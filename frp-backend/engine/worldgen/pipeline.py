@@ -20,6 +20,11 @@ from .models import (
     WorldBlueprint,
     WorldProfile,
 )
+from .settlement_generator import generate_settlement_layout as generate_settlement_layout_v2
+from .terrain_generator import generate_world_blueprint
+from .world_seed import WorldSeed
+from .world_tick import initialize_simulation as initialize_simulation_v2
+from .world_tick import tick_global as tick_global_v2
 from .registries import (
     load_adapter_pack,
     load_building_templates,
@@ -276,86 +281,8 @@ def generate_world(seed: int, profile_id: str) -> WorldBlueprint:
     if profile_id not in profiles:
         raise ValueError(f"Unknown profile_id: {profile_id}")
     profile = WorldProfile.from_dict(profiles[profile_id])
-    plates, plate_map = _build_tectonic_plates(seed, profile)
-    elevation = _compute_elevation(seed, profile, plates, plate_map)
-    temperature = _compute_temperature(profile, elevation)
-    moisture = _compute_moisture(elevation, temperature)
-    drainage, river_paths = _compute_drainage_and_rivers(seed, elevation, moisture)
-    biomes = [
-        [
-            _classify_biome(elevation[y][x], temperature[y][x], moisture[y][x], drainage[y][x])
-            for x in range(profile.world_width)
-        ]
-        for y in range(profile.world_height)
-    ]
-
-    biome_registry = load_world_biomes()
-    river_tiles = {tuple(point) for river in river_paths for point in river["path"]}
-    regions: list[dict[str, Any]] = []
-    region_index = 0
-    for region_y in range(0, profile.world_height, profile.region_size):
-        for region_x in range(0, profile.world_width, profile.region_size):
-            cells = [
-                (x, y)
-                for y in range(region_y, min(region_y + profile.region_size, profile.world_height))
-                for x in range(region_x, min(region_x + profile.region_size, profile.world_width))
-            ]
-            avg_elevation = round(sum(elevation[y][x] for x, y in cells) / len(cells), 3)
-            avg_temperature = round(sum(temperature[y][x] for x, y in cells) / len(cells), 3)
-            avg_moisture = round(sum(moisture[y][x] for x, y in cells) / len(cells), 3)
-            avg_drainage = round(sum(drainage[y][x] for x, y in cells) / len(cells), 3)
-            biome_id = _majority(biomes[y][x] for x, y in cells)
-            water_access = "coast" if any(elevation[y][x] < 0.3 for x, y in cells) else "inland"
-            river_present = any((x, y) in river_tiles for x, y in cells)
-            boundary_hits = sum(1 for x, y in cells if _count_boundary_neighbors(plate_map, x, y) > 0)
-            settlement_score = round(
-                _clamp(
-                    biome_registry[biome_id]["settlement_weight"]
-                    + (0.15 if river_present or water_access == "coast" else 0.0)
-                ),
-                3,
-            )
-            regions.append(
-                {
-                    "id": f"region_{region_index:03d}",
-                    "x": region_x,
-                    "y": region_y,
-                    "width": min(profile.region_size, profile.world_width - region_x),
-                    "height": min(profile.region_size, profile.world_height - region_y),
-                    "biome_id": biome_id,
-                    "avg_elevation": avg_elevation,
-                    "avg_temperature": avg_temperature,
-                    "avg_moisture": avg_moisture,
-                    "avg_drainage": avg_drainage,
-                    "water_access": water_access,
-                    "resources": list(biome_registry[biome_id]["resources"]),
-                    "fauna": list(biome_registry[biome_id]["fauna"]),
-                    "settlement_score": settlement_score,
-                    "river_present": river_present,
-                    "explainability": {
-                        "terrain_driver": _terrain_driver(avg_elevation, boundary_hits, river_present),
-                        "climate_driver": _climate_driver(avg_temperature, avg_moisture, water_access),
-                    },
-                }
-            )
-            region_index += 1
-
-    return WorldBlueprint(
-        seed=seed,
-        profile_id=profile.id,
-        width=profile.world_width,
-        height=profile.world_height,
-        history_end_year=profile.history_end_year,
-        tectonic_plates=plates,
-        elevation=elevation,
-        temperature=temperature,
-        moisture=moisture,
-        drainage=drainage,
-        biomes=biomes,
-        river_paths=river_paths,
-        regions=regions,
-        metadata={"profile_title": profile.title},
-    )
+    canonical_seed = int(WorldSeed(seed))
+    return generate_world_blueprint(canonical_seed, profile, load_world_biomes())
 
 
 def seed_species(world: WorldBlueprint) -> WorldBlueprint:
@@ -542,115 +469,7 @@ def _set_tile(typed_tiles: list[list[dict[str, Any]]], x: int, y: int, **updates
 
 def generate_settlement_layout(world: WorldBlueprint, region_id: str) -> SettlementLayout:
     """Generate a deterministic 80x60 settlement layout for a populated region."""
-    region = _region_lookup(world, region_id)
-    settlement = next((item for item in world.settlements if item.region_id == region_id), None)
-    if settlement is None:
-        raise ValueError(f"Region {region_id} has no settlement")
-
-    width, height = 80, 60
-    ground = _ground_for_biome(region["biome_id"])
-    terrain_tiles = [[ground for _ in range(width)] for _ in range(height)]
-    road_tiles: set[tuple[int, int]] = set()
-
-    def road_at(x: int, y: int) -> None:
-        if 0 <= x < width and 0 <= y < height:
-            terrain_tiles[y][x] = "road"
-            road_tiles.add((x, y))
-
-    def connect_vertical(x: int, start_y: int, end_y: int) -> None:
-        step = 1 if end_y >= start_y else -1
-        for y in range(start_y, end_y + step, step):
-            road_at(x, y)
-
-    wave = [0, 0, 1, 1, 2, 1, 0, 0, -1, -1, 0, 0]
-    main_road_y: dict[int, int] = {}
-    for x in range(width):
-        y = 30 + wave[x % len(wave)]
-        main_road_y[x] = y
-        road_at(x, y)
-        road_at(x, min(height - 1, y + 1))
-
-    center_kind = "fountain" if region["biome_id"] == "coast" else "well"
-    center_feature = {"kind": center_kind, "x": 40, "y": 30}
-    for y in range(26, 35):
-        for x in range(36, 45):
-            terrain_tiles[y][x] = "cobble"
-            road_tiles.add((x, y))
-
-    building_templates = load_building_templates()
-    load_furniture_templates()
-    placements = [
-        ("blacksmith", 10, 10, "south"),
-        ("tavern", 18, 34, "north"),
-        ("temple", 52, 10, "south"),
-        ("house", 60, 34, "north"),
-    ]
-
-    buildings: list[dict[str, Any]] = []
-    furniture: list[dict[str, Any]] = []
-    npc_spawns: list[dict[str, Any]] = []
-
-    for index, (kind, x, y, door_side) in enumerate(placements):
-        template = building_templates[kind]
-        bw, bh = template["footprint"]
-        building_id = f"{kind}_{index}"
-        for ty in range(y, y + bh):
-            for tx in range(x, x + bw):
-                terrain_tiles[ty][tx] = "wall" if ty in (y, y + bh - 1) or tx in (x, x + bw - 1) else "floor"
-
-        if door_side == "south":
-            door_x, door_y = x + bw // 2, y + bh - 1
-            adjacent = (door_x, door_y + 1)
-        else:
-            door_x, door_y = x + bw // 2, y
-            adjacent = (door_x, door_y - 1)
-        connect_vertical(door_x, adjacent[1], main_road_y[door_x])
-        terrain_tiles[door_y][door_x] = "door"
-
-        required_kinds = [item["kind"] for item in template["required_furniture"]]
-        buildings.append(
-            {
-                "id": building_id,
-                "kind": kind,
-                "x": x,
-                "y": y,
-                "width": bw,
-                "height": bh,
-                "doors": [{"x": door_x, "y": door_y, "adjacent": [adjacent]}],
-                "required_furniture": required_kinds,
-                "npc_roles": list(template["npc_roles"]),
-            }
-        )
-        for item in template["required_furniture"]:
-            furniture.append(
-                {
-                    "kind": item["kind"],
-                    "x": x + item["anchor"][0],
-                    "y": y + item["anchor"][1],
-                    "building_id": building_id,
-                }
-            )
-        for role_index, role in enumerate(template["npc_roles"]):
-            npc_spawns.append(
-                {
-                    "id": f"{building_id}_{role}",
-                    "role": role,
-                    "x": x + 2 + min(role_index, max(0, bw - 4)),
-                    "y": y + max(2, bh // 2),
-                    "building_id": building_id,
-                }
-            )
-
-    return SettlementLayout(
-        width=width,
-        height=height,
-        terrain_tiles=terrain_tiles,
-        road_tiles=sorted(road_tiles),
-        buildings=buildings,
-        furniture=furniture,
-        npc_spawns=npc_spawns,
-        center_feature=center_feature,
-    )
+    return generate_settlement_layout_v2(world, region_id)
 
 
 def _build_typed_tiles(layout: SettlementLayout) -> list[list[dict[str, Any]]]:
@@ -741,68 +560,12 @@ def validate_region_snapshot(snapshot: RegionSnapshot) -> list[str]:
 
 def initialize_simulation(world: WorldBlueprint, start_region_id: str | None = None) -> WorldBlueprint:
     """Initialize the global runtime snapshot for an already simulated world."""
-    active_region_id = start_region_id
-    if active_region_id is None:
-        active_region_id = world.settlements[0].region_id if world.settlements else world.regions[0]["id"]
-    region_states = {}
-    for region in world.regions:
-        population = sum(item.population for item in world.settlements if item.region_id == region["id"])
-        region_states[region["id"]] = {
-            "population": population,
-            "resources": len(region.get("resources", [])),
-            "stability": round(0.5 + region["settlement_score"] * 0.3, 3),
-            "prosperity": round(50 + region["settlement_score"] * 25, 3),
-            "resolution": "fine" if region["id"] == active_region_id else "coarse",
-        }
-    faction_states = {
-        faction.id: {
-            "culture_id": faction.culture_id,
-            "influence": faction.traits.get("influence", 0.5),
-            "cohesion": faction.traits.get("cohesion", 0.5),
-        }
-        for faction in world.factions
-    }
-    world.simulation_snapshot = SimulationSnapshot(
-        current_year=world.history_end_year,
-        current_hour=0,
-        active_region_id=active_region_id,
-        region_states=region_states,
-        faction_states=faction_states,
-        pending_events=[],
-    )
-    return world
+    return initialize_simulation_v2(world, start_region_id)
 
 
 def tick_global(world: WorldBlueprint, hours: int) -> GlobalTickResult:
     """Advance the always-global runtime snapshot."""
-    if hours < 0:
-        raise ValueError("hours must be >= 0")
-    if world.simulation_snapshot is None:
-        initialize_simulation(world)
-    snapshot = SimulationSnapshot.from_dict(world.simulation_snapshot.to_dict())
-    snapshot.current_hour += hours
-    updated_regions = []
-    generated_events: list[dict[str, Any]] = []
-    active_region_id = snapshot.active_region_id
-    for region_id, state in snapshot.region_states.items():
-        updated_regions.append(region_id)
-        is_active = region_id == active_region_id
-        state["resolution"] = "fine" if is_active else "coarse"
-        state["prosperity"] = round(state["prosperity"] + (0.08 if is_active else 0.03) * hours, 3)
-        state["last_tick_hours"] = hours
-    if active_region_id is not None:
-        generated_events.append({"event_type": "active_region_update", "region_id": active_region_id, "hours": hours})
-    inactive_region = next((region_id for region_id in snapshot.region_states if region_id != active_region_id), None)
-    if inactive_region is not None:
-        generated_events.append({"event_type": "inactive_region_shift", "region_id": inactive_region, "hours": hours})
-    snapshot.pending_events.extend(generated_events)
-    world.simulation_snapshot = snapshot
-    active_region_snapshot = (
-        {"region_id": active_region_id, "state": deepcopy(snapshot.region_states[active_region_id])}
-        if active_region_id is not None
-        else None
-    )
-    return GlobalTickResult(hours, updated_regions, generated_events, snapshot, active_region_snapshot)
+    return tick_global_v2(world, hours)
 
 
 def snapshot_world(world: WorldBlueprint) -> dict[str, Any]:

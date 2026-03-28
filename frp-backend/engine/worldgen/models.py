@@ -115,6 +115,8 @@ class SimulationSnapshot:
     active_region_id: Optional[str]
     region_states: dict[str, dict[str, Any]]
     faction_states: dict[str, dict[str, Any]]
+    current_day: int = 1
+    season: str = "spring"
     pending_events: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:

@@ -10,7 +10,7 @@ from engine.api.game_engine import GameEngine
 from engine.api.game_session import GameSession
 from engine.api.save_system import SaveSystem
 from engine.core.character_creation import ABILITY_ORDER, CreationState, assign_stats_to_class
-from engine.worldgen import load_world_snapshot, realize_region, tick_global
+from engine.worldgen import WorldSeed, load_world_snapshot, realize_region, tick_global
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
 from .campaign_commands import (
@@ -54,6 +54,51 @@ class CampaignCreationContext:
     location: Optional[str] = None
 
 
+def _merge_settlement_controls(current: dict[str, Any], previous: dict[str, Any]) -> dict[str, Any]:
+    merged = copy.deepcopy(current)
+    previous_residents = {str(item.get("id")): item for item in previous.get("residents", [])}
+    for resident in merged.get("residents", []):
+        prior = previous_residents.get(str(resident.get("id")))
+        if prior is None:
+            continue
+        resident["assignment"] = prior.get("assignment", resident.get("assignment"))
+        resident["drafted"] = bool(prior.get("drafted", resident.get("drafted", False)))
+        if "squad_role" in prior:
+            resident["squad_role"] = prior["squad_role"]
+
+    previous_rooms = {str(item.get("id")): item for item in previous.get("rooms", [])}
+    for room in merged.get("rooms", []):
+        prior = previous_rooms.get(str(room.get("id")))
+        if prior is not None:
+            room["priority"] = prior.get("priority", room.get("priority", 3))
+
+    previous_jobs = {str(item.get("id")): item for item in previous.get("jobs", [])}
+    merged_jobs: list[dict[str, Any]] = []
+    seen_job_ids: set[str] = set()
+    for job in merged.get("jobs", []):
+        job_id = str(job.get("id"))
+        prior = previous_jobs.get(job_id)
+        if prior is not None:
+            merged_job = copy.deepcopy(job)
+            merged_job["priority"] = prior.get("priority", merged_job.get("priority", 3))
+            merged_job["status"] = prior.get("status", merged_job.get("status", "idle"))
+            merged_job["assignee_id"] = prior.get("assignee_id", merged_job.get("assignee_id"))
+            merged_jobs.append(merged_job)
+        else:
+            merged_jobs.append(copy.deepcopy(job))
+        seen_job_ids.add(job_id)
+    for job in previous.get("jobs", []):
+        job_id = str(job.get("id"))
+        if job_id not in seen_job_ids:
+            merged_jobs.append(copy.deepcopy(job))
+    merged["jobs"] = merged_jobs
+
+    merged["defense_posture"] = str(previous.get("defense_posture", merged.get("defense_posture", "normal")))
+    merged["stockpiles"] = copy.deepcopy(previous.get("stockpiles", merged.get("stockpiles", [])))
+    merged["construction_queue"] = copy.deepcopy(previous.get("construction_queue", merged.get("construction_queue", [])))
+    return merged
+
+
 class CampaignRuntime:
     """Owns campaign-first lifecycle, command dispatch, and save/load."""
 
@@ -77,7 +122,7 @@ class CampaignRuntime:
         creation_answers: Optional[list[dict[str, Any]]] = None,
         creation_profile: Optional[dict[str, Any]] = None,
     ) -> CampaignContext:
-        chosen_seed = seed if seed is not None else abs(hash((player_name, adapter_id, profile_id))) % (2**31)
+        chosen_seed = seed if seed is not None else int(WorldSeed(f"{player_name}:{adapter_id}:{profile_id}"))
         world = build_world(adapter_id=adapter_id, profile_id=profile_id, seed=chosen_seed)
         settlement = world.settlements[0]
         region_snapshot = realize_region(world, settlement.region_id)
@@ -131,7 +176,7 @@ class CampaignRuntime:
         seed: Optional[int] = None,
         location: Optional[str] = None,
     ) -> CampaignCreationContext:
-        chosen_seed = seed if seed is not None else abs(hash((player_name, adapter_id, profile_id, "creation"))) % (2**31)
+        chosen_seed = seed if seed is not None else int(WorldSeed(f"{player_name}:{adapter_id}:{profile_id}:creation"))
         state = CreationState(player_name=player_name, location=location, rng_seed=chosen_seed)
         state.ensure_roll()
         context = CampaignCreationContext(
@@ -311,6 +356,7 @@ class CampaignRuntime:
             profile_id=context.profile_id,
             seed=context.seed,
         )
+        context.settlement_state = build_settlement_state(world, region_snapshot, context.adapter_id, session.player.name)
         return context
 
     def run_command(
@@ -337,12 +383,37 @@ class CampaignRuntime:
                 command_type = "avatar"
                 hours_advanced = hours_for_avatar_command(lower)
 
+        previous_settlement_state = copy.deepcopy(context.settlement_state)
         tick_result = tick_global(context.world, hours_advanced)
         generated_events = list(tick_result.generated_events)
+        active_region_id = str(context.world.simulation_snapshot.active_region_id)
+        context.region_snapshot = realize_region(context.world, active_region_id)
+        context.settlement_state = build_settlement_state(
+            context.world,
+            context.region_snapshot,
+            context.adapter_id,
+            context.session.player.name,
+        )
+        if command_type != "travel":
+            context.settlement_state = _merge_settlement_controls(context.settlement_state, previous_settlement_state)
+        apply_region_to_session(
+            session=context.session,
+            world=context.world,
+            region_snapshot=context.region_snapshot,
+            settlement_state=context.settlement_state,
+            campaign_id=context.campaign_id,
+            adapter_id=context.adapter_id,
+            profile_id=context.profile_id,
+            seed=context.seed,
+            preserve_position=command_type != "travel",
+        )
         context.recent_event_log.extend(generated_events)
         context.recent_event_log = context.recent_event_log[-20:]
-        context.settlement_state["alerts"] = alerts_from_events(generated_events)
+        if generated_events:
+            context.settlement_state["alerts"] = alerts_from_events(generated_events)
         context.settlement_state["current_hour"] = context.world.simulation_snapshot.current_hour
+        context.settlement_state["current_day"] = context.world.simulation_snapshot.current_day
+        context.settlement_state["season"] = context.world.simulation_snapshot.season
         persist_campaign_state(context)
         return {
             "campaign_id": context.campaign_id,

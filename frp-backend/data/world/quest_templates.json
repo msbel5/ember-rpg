@@ -1,0 +1,10 @@
+{
+  "quest_templates": {
+    "fetch": {"id": "fetch", "title": "Fetch {resource} For The Stores", "description": "The quartermasters in {settlement_name} need more {resource}. Bring in a fresh haul before the shelves go empty.", "preferred_roles": ["quartermaster", "merchant", "resident"]},
+    "kill": {"id": "kill", "title": "Cull The {target}", "description": "Predators near {settlement_name} are threatening traffic and livestock. Track down the {target} pack and break their hold.", "preferred_roles": ["guard", "mayor", "stablehand"]},
+    "escort": {"id": "escort", "title": "Escort A Caravan To {destination}", "description": "A lightly guarded caravan is leaving {settlement_name}. Walk it safely toward {destination} and keep the road clear.", "preferred_roles": ["merchant", "guard", "quartermaster"]},
+    "deliver": {"id": "deliver", "title": "Deliver Emergency {resource}", "description": "{settlement_name} needs a fast delivery of {resource}. Make sure it reaches the right hands intact.", "preferred_roles": ["merchant", "mayor", "quartermaster"]},
+    "investigate": {"id": "investigate", "title": "Investigate The {site}", "description": "Strange reports from the {site} are spreading through {settlement_name}. Go see what is really out there and report back.", "preferred_roles": ["scribe", "priest", "bard"]},
+    "defend": {"id": "defend", "title": "Defend Against {target}", "description": "Scouts warn that {target} may strike soon. Reinforce {settlement_name} and hold the line if the threat arrives.", "preferred_roles": ["guard", "mayor", "priest"]}
+  }
+}

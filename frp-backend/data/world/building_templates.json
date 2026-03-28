@@ -3,16 +3,20 @@
     "blacksmith": {
       "id": "blacksmith",
       "footprint": [10, 8],
+      "wall_material": "stone",
+      "floor_kind": "stone_floor",
       "npc_roles": ["smith"],
       "required_furniture": [
         {"kind": "forge", "anchor": [2, 2]},
-        {"kind": "anvil", "anchor": [3, 2]},
+        {"kind": "anvil", "anchor": [4, 2]},
         {"kind": "workbench", "anchor": [6, 2]}
       ]
     },
     "tavern": {
       "id": "tavern",
       "footprint": [12, 8],
+      "wall_material": "timber",
+      "floor_kind": "tavern_floor",
       "npc_roles": ["innkeeper", "bard"],
       "required_furniture": [
         {"kind": "bar_counter", "anchor": [2, 2]},
@@ -21,9 +25,23 @@
         {"kind": "fireplace", "anchor": [9, 2]}
       ]
     },
+    "market_stall": {
+      "id": "market_stall",
+      "footprint": [9, 7],
+      "wall_material": "canvas",
+      "floor_kind": "wood_floor",
+      "npc_roles": ["merchant"],
+      "required_furniture": [
+        {"kind": "display_table", "anchor": [2, 2]},
+        {"kind": "crate", "anchor": [5, 2]},
+        {"kind": "barrel", "anchor": [6, 4]}
+      ]
+    },
     "temple": {
       "id": "temple",
       "footprint": [10, 9],
+      "wall_material": "marble",
+      "floor_kind": "marble",
       "npc_roles": ["priest"],
       "required_furniture": [
         {"kind": "altar", "anchor": [5, 2]},
@@ -31,14 +49,112 @@
         {"kind": "pew", "anchor": [6, 5]}
       ]
     },
+    "guard_post": {
+      "id": "guard_post",
+      "footprint": [9, 7],
+      "wall_material": "stone",
+      "floor_kind": "stone_floor",
+      "npc_roles": ["guard", "guard"],
+      "required_furniture": [
+        {"kind": "rack", "anchor": [2, 2]},
+        {"kind": "bench", "anchor": [4, 3]},
+        {"kind": "table", "anchor": [6, 2]}
+      ]
+    },
     "house": {
       "id": "house",
       "footprint": [8, 7],
+      "wall_material": "timber",
+      "floor_kind": "wood_floor",
       "npc_roles": ["resident"],
       "required_furniture": [
         {"kind": "bed", "anchor": [2, 2]},
         {"kind": "table", "anchor": [4, 3]},
         {"kind": "chair", "anchor": [4, 4]}
+      ]
+    },
+    "town_hall": {
+      "id": "town_hall",
+      "footprint": [11, 8],
+      "wall_material": "stone",
+      "floor_kind": "stone_floor",
+      "npc_roles": ["mayor", "scribe"],
+      "required_furniture": [
+        {"kind": "desk", "anchor": [3, 2]},
+        {"kind": "chair", "anchor": [3, 3]},
+        {"kind": "bookshelf", "anchor": [8, 2]}
+      ]
+    },
+    "library": {
+      "id": "library",
+      "footprint": [10, 8],
+      "wall_material": "stone",
+      "floor_kind": "wood_floor",
+      "npc_roles": ["scribe"],
+      "required_furniture": [
+        {"kind": "bookshelf", "anchor": [2, 2]},
+        {"kind": "bookshelf", "anchor": [7, 2]},
+        {"kind": "desk", "anchor": [4, 4]}
+      ]
+    },
+    "alchemist": {
+      "id": "alchemist",
+      "footprint": [9, 7],
+      "wall_material": "brick",
+      "floor_kind": "stone_floor",
+      "npc_roles": ["alchemist"],
+      "required_furniture": [
+        {"kind": "cabinet", "anchor": [2, 2]},
+        {"kind": "cauldron", "anchor": [5, 2]},
+        {"kind": "table", "anchor": [4, 4]}
+      ]
+    },
+    "bakery": {
+      "id": "bakery",
+      "footprint": [9, 7],
+      "wall_material": "brick",
+      "floor_kind": "wood_floor",
+      "npc_roles": ["baker"],
+      "required_furniture": [
+        {"kind": "oven", "anchor": [2, 2]},
+        {"kind": "table", "anchor": [5, 3]},
+        {"kind": "sack", "anchor": [6, 4]}
+      ]
+    },
+    "stable": {
+      "id": "stable",
+      "footprint": [11, 7],
+      "wall_material": "timber",
+      "floor_kind": "wood_floor",
+      "npc_roles": ["stablehand"],
+      "required_furniture": [
+        {"kind": "trough", "anchor": [2, 2]},
+        {"kind": "hay_bale", "anchor": [5, 2]},
+        {"kind": "crate", "anchor": [8, 3]}
+      ]
+    },
+    "warehouse": {
+      "id": "warehouse",
+      "footprint": [11, 8],
+      "wall_material": "stone",
+      "floor_kind": "stone_floor",
+      "npc_roles": ["quartermaster"],
+      "required_furniture": [
+        {"kind": "crate", "anchor": [2, 2]},
+        {"kind": "crate", "anchor": [5, 2]},
+        {"kind": "barrel", "anchor": [8, 4]}
+      ]
+    },
+    "jail": {
+      "id": "jail",
+      "footprint": [10, 8],
+      "wall_material": "stone",
+      "floor_kind": "stone_floor",
+      "npc_roles": ["jailer"],
+      "required_furniture": [
+        {"kind": "cell_door", "anchor": [2, 2]},
+        {"kind": "bench", "anchor": [5, 2]},
+        {"kind": "keys", "anchor": [7, 3]}
       ]
     }
   }

@@ -7,7 +7,7 @@ name = "ember-rpg"
 version = "0.1.0"
 description = "Ember RPG - AI-powered fantasy RPG game engine"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["opensimplex>=0.4.5"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

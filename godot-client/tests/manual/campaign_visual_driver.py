@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -258,6 +259,53 @@ def prepare_continue_save(adapter_id: str, player_name: str, slot_name: str) -> 
     return str(saved.get("save_id", slot_name))
 
 
+def prepare_continue_save_with_seed(adapter_id: str, player_name: str, slot_name: str, seed: int) -> str:
+    started = _campaign_post(
+        "/game/campaigns/creation/start",
+        {
+            "player_name": player_name,
+            "adapter_id": adapter_id,
+            "profile_id": "standard",
+            "seed": seed,
+            "location": "Harbor Town",
+        },
+    )
+    payload = started
+    while True:
+        questions = payload.get("questions", [])
+        answers = payload.get("answers", [])
+        if not questions or len(answers) >= len(questions):
+            break
+        question = questions[len(answers)]
+        answer = question["answers"][0]
+        payload = _campaign_post(
+            f"/game/campaigns/creation/{payload['creation_id']}/answer",
+            {
+                "question_id": question["id"],
+                "answer_id": answer["id"],
+            },
+        )
+
+    assigned_stats = {ability: int(payload["current_roll"][index]) for index, ability in enumerate(ABILITY_ORDER)}
+    finalized = _campaign_post(
+        f"/game/campaigns/creation/{payload['creation_id']}/finalize",
+        {
+            "player_class": str(payload.get("recommended_class", "warrior")),
+            "alignment": str(payload.get("recommended_alignment", "TN")),
+            "skill_proficiencies": payload.get("recommended_skills", []),
+            "assigned_stats": assigned_stats,
+        },
+    )
+    saved = _campaign_post(
+        f"/game/campaigns/{finalized['campaign_id']}/save",
+        {
+            "player_id": player_name,
+            "slot_name": slot_name,
+        },
+    )
+    return str(saved.get("save_id", slot_name))
+
+
 def create_campaign_ui(hwnd: int, adapter_id: str, player_name: str) -> None:
     post_key(hwnd, win32con.VK_TAB)
     post_key(hwnd, win32con.VK_RETURN)
@@ -351,11 +399,38 @@ def _write_play_log_rows(run_dir: Path, records: list[EvidenceRecord]) -> None:
     (run_dir / "play_log_rows.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
 
 
+def _stitch_video(run_dir: Path, records: list[EvidenceRecord], fps: int = 4) -> str:
+    frame_dir = run_dir / "video_frames"
+    frame_dir.mkdir(parents=True, exist_ok=True)
+    frame_index = 0
+    for record in records:
+        source = Path(record.window_screenshot)
+        if not source.exists():
+            continue
+        destination = frame_dir / f"frame_{frame_index:04d}.png"
+        shutil.copy2(source, destination)
+        frame_index += 1
+    if frame_index == 0:
+        return ""
+    output = run_dir / "qa_recording.mp4"
+    stitch_script = ROOT / "godot-client" / "tests" / "automation" / "stitch_video.py"
+    result = subprocess.run(
+        [sys.executable, str(stitch_script), str(frame_dir), str(output), "--fps", str(fps)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "stitch_video.py failed")
+    return str(output)
+
+
 def run_sequence(
     *,
     adapter_id: str,
     player_name: str,
     create_new: bool,
+    seed: int,
     commands: Iterable[str],
     wait_after_create: float,
     wait_per_command: float,
@@ -364,7 +439,7 @@ def run_sequence(
     backend = _start_backend_if_needed()
     slot_name = f"{adapter_id}_visual_probe"
     if not create_new:
-        prepare_continue_save(adapter_id, player_name, slot_name)
+        prepare_continue_save_with_seed(adapter_id, player_name, slot_name, seed)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = ROOT / "tmp" / "visual_probe" / f"{adapter_id}_{'new' if create_new else 'continue'}_{timestamp}"
@@ -410,6 +485,9 @@ def run_sequence(
         evidence.append(_record_step(run_dir, hwnd, "phase2/game", "quick_save"))
         _write_manifest(run_dir, evidence)
         _write_play_log_rows(run_dir, evidence)
+        video_path = _stitch_video(run_dir, evidence)
+        if video_path:
+            (run_dir / "video_path.txt").write_text(video_path + "\n", encoding="utf-8")
         return evidence, run_dir
     finally:
         if godot is not None:
@@ -435,6 +513,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--wait-after-create", type=float, default=10.0)
     parser.add_argument("--wait-per-command", type=float, default=1.5)
     parser.add_argument("--screenshot-every", type=int, default=5)
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--turns", type=int, default=15)
     return parser.parse_args()
 
@@ -449,6 +528,7 @@ def main() -> int:
         adapter_id=args.adapter,
         player_name=args.player_name,
         create_new=not args.use_continue,
+        seed=args.seed,
         commands=commands,
         wait_after_create=args.wait_after_create,
         wait_per_command=args.wait_per_command,

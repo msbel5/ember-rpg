@@ -21,10 +21,15 @@ ALLOWED_OVERSIZE: Dict[str, str] = {
     "frp-backend/engine/map/__init__.py": "Map generation package still centralizes multiple generators.",
     "frp-backend/engine/world/institutions.py": "Institution simulation remains unsplit.",
     "frp-backend/engine/worldgen/pipeline.py": "Initial worldgen vertical slice keeps pipeline stages together until the package is split by subsystem.",
+    "frp-backend/engine/api/campaign_runtime.py": "Campaign runtime still centralizes orchestration while campaign-first flows settle.",
+    "frp-backend/engine/api/campaign_state.py": "Campaign payload and session projection remain centralized during client cutover.",
     "frp-backend/engine/data_loader.py": "Pure data loader exception.",
     "frp-backend/tools/play_topdown.py": "Terminal renderer surface exception.",
     "frp-backend/tools/play.py": "CLI surface exception.",
     "godot-client/scenes/game_session.gd": "Godot campaign orchestration is still centralized while the client cutover settles.",
+    "godot-client/scenes/title_screen.gd": "Title and creation flow remain centralized until the wizard split lands.",
+    "godot-client/scripts/world/entity_layer.gd": "Entity presentation still combines sprite staging and motion until renderer helpers split out.",
+    "godot-client/scripts/world/world_view.gd": "World interaction orchestration still combines click routing, overlays, and affordance copy.",
     "godot-client/tests/run_headless_tests.gd": "Godot smoke harness intentionally centralizes lightweight client contract checks.",
 }
 FORBIDDEN_SNIPPETS: Dict[str, List[str]] = {
