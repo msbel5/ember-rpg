@@ -809,7 +809,7 @@ func _roll_text(values) -> String:
 		return "-"
 	var parts: Array[String] = []
 	for entry in values:
-		parts.append(str(entry))
+		parts.append(str(int(entry)))
 	return ", ".join(parts)
 
 

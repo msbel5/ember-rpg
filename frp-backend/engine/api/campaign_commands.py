@@ -151,11 +151,5 @@ def hours_for_avatar_command(command_text: str) -> int:
 
 
 def merge_avatar_narrative(context: "CampaignContext", narrative: str) -> str:
-    explanation = context.region_snapshot.metadata.get("explainability", {})
-    if not explanation:
-        return narrative
-    return (
-        f"{narrative} "
-        f"[Region: terrain={explanation.get('terrain_driver', 'unknown')}, "
-        f"climate={explanation.get('climate_driver', 'unknown')}]"
-    )
+    # Explainability metadata is for debug logging only, not player-facing narrative.
+    return narrative

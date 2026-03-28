@@ -262,8 +262,22 @@ func _clean_narrative(text: String) -> String:
 		print("[GameState] Blocked long prompt leak: %s" % text.substr(0, 80))
 		return "..."
 
+	# Strip bracketed debug metadata like [Region: terrain=..., climate=...]
+	var stripped = text
+	var bracket_start = stripped.find("[Region:")
+	while bracket_start >= 0:
+		var bracket_end = stripped.find("]", bracket_start)
+		if bracket_end >= 0:
+			stripped = stripped.substr(0, bracket_start).strip_edges() + " " + stripped.substr(bracket_end + 1).strip_edges()
+		else:
+			stripped = stripped.substr(0, bracket_start).strip_edges()
+		bracket_start = stripped.find("[Region:")
+	stripped = stripped.strip_edges()
+	if stripped.is_empty():
+		stripped = text.strip_edges()
+
 	# Remove markdown headers and clean technical names
-	var lines = text.split("\n")
+	var lines = stripped.split("\n")
 	var cleaned: Array[String] = []
 	for line in lines:
 		var trimmed = line.strip_edges()
@@ -274,9 +288,11 @@ func _clean_narrative(text: String) -> String:
 		if trimmed.is_empty():
 			continue
 		# Replace technical location names with display names
+		trimmed = trimmed.replace("upland_continent", "the uplands")
 		trimmed = trimmed.replace("harbor_town", "Harbor Town")
 		trimmed = trimmed.replace("forest_road", "Forest Road")
 		trimmed = trimmed.replace("dark_dungeon", "Dark Dungeon")
+		trimmed = trimmed.replace("temperate_band", "temperate region")
 		cleaned.append(trimmed)
 	return "\n".join(cleaned)
 
