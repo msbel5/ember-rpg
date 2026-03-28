@@ -17,6 +17,7 @@ python_classes = "Test*"
 python_functions = "test_*"
 markers = [
     "playtest: chaotic FRP player integration/scenario tests",
+    "slow: long-running chaos tests (500+ turns)",
 ]
 
 [tool.mypy]
