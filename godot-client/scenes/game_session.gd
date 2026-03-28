@@ -7,11 +7,12 @@ const PROFILE_PATH := "user://client_profile.cfg"
 const QUICKSAVE_SLOT := "quicksave"
 
 @onready var world_view: SubViewportContainer = $MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer
-@onready var narrative_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/NarrativePanel
-@onready var inventory_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/InventoryPanel
-@onready var settlement_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel
+@onready var sidebar: TabContainer = $MainMargin/MainVBox/ContentSplit/Sidebar
+@onready var narrative_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel
+@onready var inventory_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel
+@onready var settlement_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SettlementPanel
 @onready var command_bar = $MainMargin/MainVBox/CommandBar
-@onready var quest_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/QuestPanel
+@onready var quest_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel
 @onready var combat_panel = $OverlayCanvas/CombatPanel
 @onready var save_load_panel = $OverlayCanvas/SaveLoadPanel
 
@@ -21,6 +22,7 @@ var _pending_sync_callbacks: int = 0
 
 func _ready() -> void:
 	EmberTheme.apply_game_session(self)
+	_setup_sidebar_tabs()
 	command_bar.command_submitted.connect(_submit_action)
 	command_bar.quick_save_requested.connect(_on_quick_save_requested)
 	command_bar.saves_requested.connect(_open_save_load_panel)
@@ -58,6 +60,21 @@ func _ready() -> void:
 	command_bar.set_focus_actions(world_view.get_focus_actions())
 	_refresh_scene_roster()
 	command_bar.focus_input()
+
+
+func _setup_sidebar_tabs() -> void:
+	var tab_titles := {
+		"NarrativePanel": "Narrative",
+		"CharacterPanel": "Hero",
+		"SettlementPanel": "Town",
+		"QuestPanel": "Quests",
+		"InventoryPanel": "Items",
+		"MinimapPanel": "Map",
+	}
+	for index in range(sidebar.get_tab_count()):
+		var child = sidebar.get_tab_control(index)
+		if child != null and tab_titles.has(child.name):
+			sidebar.set_tab_title(index, tab_titles[child.name])
 
 
 func _enter_scene(location_name: String) -> void:
@@ -236,7 +253,7 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 
-	if event.keycode == KEY_HOME or event.keycode == KEY_I:
+	if event.keycode == KEY_HOME or (event.keycode == KEY_I and not command_bar.has_input_focus()):
 		_submit_action("inventory")
 		get_viewport().set_input_as_handled()
 		return
@@ -247,30 +264,16 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 
-	var direction = ""
-	match event.keycode:
-		KEY_UP:
-			direction = "north"
-		KEY_DOWN:
-			direction = "south"
-		KEY_LEFT:
-			direction = "west"
-		KEY_RIGHT:
-			direction = "east"
-	if direction != "":
-		_submit_action("move %s" % direction)
-		get_viewport().set_input_as_handled()
-		return
-
 	if not command_bar.has_input_focus():
+		var direction = ""
 		match event.keycode:
-			KEY_W:
+			KEY_UP, KEY_W:
 				direction = "north"
-			KEY_S:
+			KEY_DOWN, KEY_S:
 				direction = "south"
-			KEY_A:
+			KEY_LEFT, KEY_A:
 				direction = "west"
-			KEY_D:
+			KEY_RIGHT, KEY_D:
 				direction = "east"
 		if direction != "":
 			_submit_action("move %s" % direction)

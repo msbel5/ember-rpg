@@ -11,8 +11,12 @@ layout_mode = 2
 
 [node name="PlayerInfo" type="Label" parent="StatusRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(260, 0)
+custom_minimum_size = Vector2(200, 0)
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.6
 text = "Hero"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="HPBar" type="ProgressBar" parent="StatusRow"]
 layout_mode = 2
@@ -46,12 +50,12 @@ layout_mode = 2
 custom_minimum_size = Vector2(88, 0)
 text = "Scene Exploration"
 
-[node name="Spacer" type="Control" parent="StatusRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-
 [node name="LocationLabel" type="Label" parent="StatusRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
 text = "Unknown"
 horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3

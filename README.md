@@ -1,94 +1,80 @@
 # Ember RPG
 
-A 2D fantasy RPG with **AI-generated unique art**, **real tabletop mechanics**, and a **living world simulation** inspired by Dwarf Fortress. Every playthrough looks different, feels different, and tells a unique story.
+A top-down RPG with **deterministic world simulation**, **real tabletop mechanics**, and an **AI enrichment layer**. Inspired by Daggerfall, Bard's Tale, Dwarf Fortress, RimWorld, Zork, and Hitchhiker's Guide to the Galaxy.
 
-## What Makes This Different
+## Design Philosophy
 
-| Feature | AI Dungeon | BG3 | Dwarf Fortress | Ember RPG |
-|---------|:---:|:---:|:---:|:---:|
-| Real game mechanics (dice, stats, combat) | No | Yes | No | **Yes** |
-| AI-generated narrative | Yes | No | No | **Yes** |
-| AI-generated unique art | No | No | No | **Yes** |
-| Persistent NPC memory | No | No | Yes | **Yes** |
-| World simulation (DF-style) | No | Scripted | **Yes** | **Yes** |
-| Consequence cascading | No | Partial | **Yes** | **Yes** |
-| Open source | No | No | Yes | **Yes** |
+**Deterministic first, AI second.** The game engine runs a fully algorithmic world — NPCs have schedules, economies tick, quests trigger from world state, combat resolves with dice. The entire game works without any LLM calls. AI layers (DM narration, NPC conversation, world description) are hooked in via API interfaces to enrich — not replace — the deterministic simulation.
+
+Each conscious entity (NPC, DM) will have its own persistent session so it remembers context across interactions. The LLM layer makes the world feel alive; the deterministic layer makes it actually alive.
 
 ## Architecture
 
 ```
-Godot 4.6 Client (PC/Web)
+Godot 4.6 Client (PC)
     |
-    | HTTP REST API
+    | HTTP REST API (campaign-first routes)
     |
 FastAPI Backend (Python 3.11+)
     |
-    +-- GameSession (canonical runtime state: world, map, entities, quests, inventory)
+    +-- CampaignSession (canonical state: world, map, entities, quests, inventory)
     +-- Game Engine (deterministic rules, combat, crafting, world tick)
-    +-- LLM Router (Claude Haiku / Sonnet / GPT fallback via Copilot API)
-    +-- Living World Systems (NPC schedules, rumors, economy, consequences)
-    +-- Full-Fidelity Save/Load (named slots + autosave restore)
-    +-- Terminal + Client Surfaces (shared map/spatial state)
+    +-- LLM Router (Claude / GPT via Copilot API — optional enrichment)
+    +-- Living World (NPC schedules, rumors, economy, consequences)
+    +-- Save/Load (named slots + autosave)
+    +-- Content Adapters (fantasy_ember, scifi_frontier)
 ```
 
 ## Quick Start
 
-### Backend (Raspberry Pi or any Linux)
+### Backend
 ```bash
 cd frp-backend
 python3 -m venv ../venv && source ../venv/bin/activate
 pip install -r requirements.txt
-python3 main.py
-# API running at http://localhost:8000
+uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
-### Client (Windows/Mac/Linux)
+### Client
 1. Install [Godot 4.6](https://godotengine.org/download)
 2. Open `godot-client/project.godot`
-3. Set backend URL in `autoloads/backend.gd`
+3. Set backend URL in `autoloads/backend.gd` line 5
 4. Press F5 to play
 
 ## Project Structure
 
 ```
 ember-rpg/
-  docs/           # PRDs, GDD, research (19 PRDs)
-  frp-backend/    # Python backend (830+ tests, 96% coverage)
-  godot-client/   # Godot 4.6 game client
-  ROADMAP.md      # Development roadmap
+  docs/              # 53 PRDs, GDD, QA artifacts, research
+  docs/qa/           # VQR scorecard, bug registry, play logs
+  frp-backend/       # Python backend (1700+ tests, 96% coverage)
+  godot-client/      # Godot 4.6 game client (183 headless tests)
 ```
 
 ## Current State (March 2026)
 
-- **Backend**: 1700+ tests, deterministic combat/magic/crafting, named-slot save/load, autosave restore, living-world NPC simulation
-- **Runtime**: `GameSession` is the canonical state for API, autosave, inventory/equipment, quests, and top-down rendering
-- **Living World**: NPC schedules and patrols move on the live spatial index every action; rumors, caravans, economy, and quest timers tick in the same loop
-- **Client**: First-person POV + tile map, AI narrative, shared session map rendering, live inventory/equipment state
-- **AI Art**: HuggingFace Flux Schnell integration tested (free, ~3s/image)
-- **Inspiration**: Dwarf Fortress (world sim), BBC Hitchhiker's Guide (illustrated text adventure), Doom (POV)
-- **Phase**: Active development — backend core loop unified, Godot presentation and content breadth expanding
+- **Backend**: Deterministic combat, magic (50+ spells), crafting, economy, living-world NPC simulation, campaign-first API, full save/load
+- **Client**: Top-down tile map, tab-based sidebar (Narrative/Hero/Town/Quests/Items/Map), entity rendering with authored sprites, AI narrative panel
+- **Adapters**: `fantasy_ember` (medieval fantasy), `scifi_frontier` (space opera)
+- **VQS**: 5.0/10 — minimum demo bar reached, not impressive yet
+- **Next**: Deterministic world generation, deeper interaction, animation, atmospheric density
 
-## Tech Stack
+## Roadmap Vision
 
-| Component | Technology |
-|-----------|-----------|
-| Game Client | Godot 4.6 (GDScript, Compatibility renderer) |
-| Backend | Python 3.11+, FastAPI, Uvicorn |
-| AI Models | Claude Haiku 4.5 (narrative), Claude Sonnet 4.6 (key moments) |
-| Persistence | JSON save slots + autosave snapshots |
-| Hosting | Raspberry Pi 5 (backend), any PC (client) |
-| CI/CD | GitHub Actions (planned) |
+1. **Now**: Algorithmic deterministic world (Daggerfall/DF quality procedural generation)
+2. **Next**: API hooks for DM interface + NPC agent sessions (each NPC remembers)
+3. **Then**: LLM enrichment layer on top of working deterministic base
+4. **Future**: 3D world rendering (Bard's Tale 4 style), persistent universe
 
 ## Documentation
 
-All design documents are in `docs/`:
-- `PRD_STANDARD.md` — Template all PRDs follow
-- `PRD_*.md` — 20 Product Requirement Documents
-- `PRD_asset_pipeline.md` — **NEW** AI-generated layered art system
-- `GDD_v3.md` — **NEW** Game Design Document (DF-inspired world sim + AI art)
-- `GDD_v2.md` — Core mechanics reference
-- `RESEARCH.md` — Market research and competitor analysis
-- `ROADMAP.md` — Development phases and milestones
+- `docs/PRD_IMPLEMENTATION_MATRIX.md` — Master doc governance (authoritative vs superseded)
+- `docs/PRD_STANDARD.md` — Template all PRDs follow
+- `docs/PRD_godot_client.md` — Current client contract
+- `docs/qa/vqr_scorecard.md` — Visual quality tracking
+- `docs/qa/bug_registry.md` — Known issues
+
+> **Note**: Many early PRDs (living_simulation_v1, world_generation_v2, map_generator, etc.) are **superseded** per the Implementation Matrix. See `PRD_IMPLEMENTATION_MATRIX.md` for which docs are authoritative.
 
 ## License
 

@@ -610,10 +610,10 @@ func _test_ui_panels() -> void:
 	var session_instance = session_scene.instantiate()
 	root.add_child(session_instance)
 	await process_frame
-	var initial_defend_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel/SettlementMargin/SettlementVBox/QuickActions/DefendButton")
+	var initial_defend_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SettlementPanel/SettlementMargin/SettlementVBox/QuickActions/DefendButton")
 	_assert_true(initial_defend_button.disabled, "Settlement quick actions stay disabled until settlement data is available")
-	var minimap_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/MinimapPanel/MinimapMargin/MinimapVBox/SummaryLabel")
-	var minimap_intel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/MinimapPanel/MinimapMargin/MinimapVBox/IntelText")
+	var minimap_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin/MinimapVBox/SummaryLabel")
+	var minimap_intel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin/MinimapVBox/IntelText")
 	_assert_true(minimap_summary.text.contains("No live survey"), "Minimap panel labels missing map data explicitly")
 	_assert_true(minimap_intel.text.contains("Scene Read"), "Minimap panel reserves visible scene-intel copy even before a map arrives")
 
@@ -668,17 +668,17 @@ func _test_ui_panels() -> void:
 	var location_label = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/LocationLabel")
 	_assert_true(location_label.text.contains("Harbor") and location_label.text.contains("Exploration") and location_label.text.contains("locals"), "Status bar reflects the current location, scene, and encounter summary")
 
-	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
+	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
 	_assert_true(inventory_grid.get_child_count() >= 2, "Inventory panel populates grid items")
 	var inventory_button = inventory_grid.get_child(0)
 	_assert_true(inventory_button is Button, "Inventory entries render as clickable buttons")
 
-	var minimap_texture = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/MinimapPanel/MinimapMargin/MinimapVBox/MapTexture")
+	var minimap_texture = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/MinimapPanel/MinimapMargin/MinimapVBox/MapTexture")
 	_assert_true(minimap_texture.texture != null, "Minimap panel renders a texture from map data")
 	_assert_true(minimap_summary.text.contains("Placeholder map") and minimap_summary.text.contains("locals") and minimap_summary.text.contains("Exploration"), "Minimap panel labels placeholder maps, scene, and local counts explicitly")
 	_assert_true(minimap_intel.text.contains("Harbor Guard") and minimap_intel.text.contains("Rat") and minimap_intel.text.contains("Contacts"), "Minimap panel surfaces scene intel instead of only raw counts")
 
-	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/NarrativePanel")
+	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel")
 	_assert_true(narrative_widget.narrative_log.autowrap_mode != TextServer.AUTOWRAP_OFF, "Narrative panel wraps long lines instead of clipping them")
 	_assert_true(narrative_widget.get_plain_text().contains("harbor square"), "Narrative panel shows backend narrative")
 	var empty_history: Array[String] = []
@@ -705,9 +705,9 @@ func _test_ui_panels() -> void:
 	_assert_true(not narrative_widget.get_plain_text().contains("First beat."), "Narrative panel trims stale blocks instead of letting old paragraphs crowd the viewport")
 	_assert_true(narrative_widget.get_plain_text().contains("Fourth beat."), "Narrative panel keeps the newest block visible after history reload")
 
-	var character_panel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
-	var character_portrait = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/PortraitFrame/Portrait")
-	var character_role = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/RoleLabel")
+	var character_panel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
+	var character_portrait = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/PortraitFrame/Portrait")
+	var character_role = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/RoleLabel")
 	_assert_true(character_panel.text.contains("MIG"), "Character panel renders visible stat lines")
 	_assert_true(character_panel.text.contains("Skills"), "Character panel condenses stats and skills into a readable short brief")
 	_assert_true(character_portrait.texture != null, "Character panel renders an authored portrait instead of a text-only header")
@@ -792,11 +792,11 @@ func _test_ui_panels() -> void:
 	await process_frame
 	_assert_true(combat_attack_button.disabled, "Combat attack disables when it is not the player's turn")
 
-	var active_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/ActiveList")
-	var offer_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/OfferList")
+	var active_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/ActiveList")
+	var offer_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/OfferList")
 	_assert_true(active_list.get_child_count() >= 1 and offer_list.get_child_count() >= 1, "Quest panel renders active and available quest entries")
 
-	var settlement_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
+	var settlement_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
 	_assert_true(settlement_summary.text.contains("Dragon Eyrie"), "Settlement panel reflects campaign settlement data")
 
 	# Phase 2A: Character panel fallback with missing stats key
@@ -805,9 +805,9 @@ func _test_ui_panels() -> void:
 	game_state.state_updated.emit()
 	await process_frame
 	await process_frame
-	var character_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/SummaryLabel")
+	var character_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/SummaryLabel")
 	_assert_true(character_summary.text.contains("Fallback"), "Character panel fallback renders player name when character_sheet is empty")
-	var character_stats_text = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
+	var character_stats_text = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
 	_assert_true(character_stats_text.text.contains("MIG"), "Character panel fallback renders default stats when stats key is missing")
 
 	# Phase 2C: Empty-state assertions for quest and settlement panels
@@ -815,7 +815,7 @@ func _test_ui_panels() -> void:
 	game_state.state_updated.emit()
 	await process_frame
 	await process_frame
-	var empty_settlement = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarContent/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
+	var empty_settlement = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
 	_assert_true(empty_settlement.text.contains("No") or empty_settlement.text.contains("settlement"), "Settlement panel shows empty state when no settlement data")
 
 	var save_load_panel = session_instance.get_node("OverlayCanvas/SaveLoadPanel")

@@ -1,8 +1,7 @@
 extends Control
 class_name WorldOverlay
 
-const HARBOR_BACKGROUND := preload("res://assets/generated/test_harbor_bg.jpg")
-const DUNGEON_BACKGROUND := preload("res://assets/generated/test_dungeon_bg.jpg")
+## Deprecated: static background images removed — tilemap is the sole world surface now
 const ATMOSPHERE_THEME := {
 	"fantasy_ember": {
 		"wash": Color(0.10, 0.08, 0.04, 0.10),
@@ -61,10 +60,6 @@ func _draw() -> void:
 	var mote_color: Color = palette.get("mote", Color(1.0, 1.0, 1.0, 0.12))
 	var focus: Color = palette.get("focus", Color(1.0, 1.0, 1.0, 0.0))
 	var line: Color = palette.get("line", Color(1.0, 1.0, 1.0, 0.0))
-	var background = _background_texture_for_key(background_key)
-	if background != null:
-		var background_alpha = 0.32 if placeholder_active else 0.18
-		draw_texture_rect(background, Rect2(Vector2.ZERO, size), false, Color(1.0, 1.0, 1.0, background_alpha))
 	draw_rect(Rect2(Vector2.ZERO, size), wash, true)
 	draw_rect(Rect2(0.0, size.y * 0.54, size.x, size.y * 0.46), Color(bottom.r, bottom.g, bottom.b, bottom.a * 0.55), true)
 	var slice_count := 6
@@ -124,11 +119,3 @@ func _draw_adapter_linework(line: Color) -> void:
 			draw_arc(center, minf(size.x, size.y) * (0.18 + ring * 0.08), 0.0, TAU, 64, Color(line.r, line.g, line.b, line.a * (0.45 - ring * 0.10)), 1.0)
 
 
-func _background_texture_for_key(background_lookup_key: String) -> Texture2D:
-	match background_lookup_key:
-		"harbor":
-			return HARBOR_BACKGROUND
-		"dungeon":
-			return DUNGEON_BACKGROUND
-		_:
-			return null

@@ -77,7 +77,7 @@ static func apply_game_session(root: Control) -> void:
 		world_pane.add_theme_stylebox_override("panel", _panel_style(Color(0.08, 0.08, 0.10, 0.98), 10, Color(0.33, 0.39, 0.46, 0.90)))
 
 	var sidebar = root.get_node_or_null("MainMargin/MainVBox/ContentSplit/Sidebar")
-	if sidebar is ScrollContainer:
+	if sidebar != null:
 		sidebar.add_theme_stylebox_override("panel", _panel_style(PANEL_ALT, 10, ACCENT_SOFT))
 
 	var command_bar = root.get_node_or_null("MainMargin/MainVBox/CommandBar")

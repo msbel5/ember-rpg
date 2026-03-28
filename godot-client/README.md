@@ -1,55 +1,85 @@
 # Ember RPG — Godot Client
 
-2D game client for Ember RPG, built with Godot 4.6 (Compatibility renderer).
+Top-down 2D game client built with Godot 4.6 (Compatibility renderer).
 
 ## Requirements
 
 - Godot 4.6+ (Standard, not .NET)
-- Backend server running (see `../frp-backend/README.md`)
+- Backend server running at `http://127.0.0.1:8000`
 
 ## Setup
 
 1. Open `project.godot` in Godot
-2. Edit `autoloads/backend.gd` line 5 — set your backend URL:
-   ```gdscript
-   const DEFAULT_URL = "http://YOUR_PI_IP:8765"
-   ```
+2. Edit `autoloads/backend.gd` line 5 — set your backend URL
 3. Press F5 to run
 
 ## Controls
 
 | Key | Action |
 |-----|--------|
-| Enter | Send text command |
-| M | Toggle tile map view |
-| I | Toggle inventory (planned) |
-| Click entity | Context menu (examine, talk, trade) |
+| Enter | Focus command bar / send command |
+| Arrow Keys / WASD | Move (when not typing) |
+| I | Open inventory (when not typing) |
+| F5 / Ctrl+S | Quick save |
+| F9 / Ctrl+L | Open save/load panel |
+| Escape | Close panels |
+| F12 | Capture visual proof screenshot |
+| Click entity | Context action (examine, talk, trade) |
 | Click tile | Move to tile |
+
+## UI Layout
+
+```
++--StatusBar (HP/SP/AP/Location)---------------------------+
+|                          |  [Tabs]                       |
+|   World Viewport         |  Narrative | Hero | Town |    |
+|   (top-down tile map)    |  Quests | Items | Map         |
+|                          |                               |
++--CommandBar (input + Act/Save/Loads + roster)------------+
+```
+
+The sidebar uses **TabContainer** — each tab shows one panel at a time (no scrolling).
 
 ## Structure
 
 ```
 godot-client/
   autoloads/
-    backend.gd      # HTTP client for FastAPI backend
-    game_state.gd    # Global game state singleton
+    backend.gd         # HTTP client (campaign-first routes)
+    game_state.gd      # Global state singleton
   scenes/
-    title_screen.tscn/.gd    # Title + character creation
-    game_session.tscn/.gd    # Main game screen
+    title_screen.*     # Title + character creation wizard
+    game_session.*     # Main gameplay screen
+    components/        # UI panel scenes (narrative, inventory, etc.)
   scripts/
-    tile_map_renderer.gd     # Tile map rendering from backend data
+    ui/                # Panel logic (command_bar, status_bar, etc.)
+    world/             # Tile rendering, entity layer, camera, overlay
+    net/               # Response normalization
+    asset/             # Sprite/tile catalog, HF asset bootstrap
   assets/
-    fonts/       # Game fonts
-    sprites/     # Entity sprites (NPC, monster, item)
-    tiles/       # Tile textures (grass, cobblestone, etc.)
+    fonts/             # Game fonts
+    sprites/           # Hand-drawn entity sprites
+    tiles/             # Tile textures
+    generated/         # AI-generated sprites and tiles
+    ui/                # UI bar textures
+  tests/
+    run_headless_tests.gd  # 183 headless tests
+    automation/            # Desktop automation harness
 ```
 
-## Backend API
+## Backend API (Campaign-First)
 
-The client communicates with the backend via REST:
-- `POST /game/session/new` — Create game session
-- `POST /game/session/{id}/action` — Send player action
-- `POST /game/scene/enter` — Enter a new scene (map + entities + narrative)
-- `GET /game/session/{id}/inventory` — Get player inventory
+> **Note**: Legacy `/session/` routes are deprecated. Use campaign routes.
 
-See `../frp-backend/README.md` for full API reference.
+- `POST /game/campaigns/create` — Start campaign creation
+- `POST /game/campaigns/{id}/commands` — Send player command
+- `GET /game/campaigns/{id}` — Get campaign snapshot
+- `GET /game/campaigns/{id}/settlement` — Get settlement state
+- `POST /game/campaigns/{id}/save` — Save campaign
+- `GET /game/campaigns/{id}/saves` — List saves
+- `POST /game/campaigns/load/{save_id}` — Load save
+
+## Content Adapters
+
+- `fantasy_ember` — Medieval fantasy (default)
+- `scifi_frontier` — Space opera variant
