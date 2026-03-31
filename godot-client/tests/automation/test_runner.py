@@ -64,6 +64,18 @@ class FakeExecutor(AutomationExecutor):
         return self.artifacts.write_text(tag, "viewport_captures", "ok", ".png")
 
 
+class MissingDependencyExecutor(FakeExecutor):
+    def environment_health(self) -> dict:
+        return {
+            "ok": False,
+            "summary": "Desktop automation environment is incomplete: pywin32, Pillow.",
+            "notes": [
+                "Missing `pywin32`.",
+                "Missing `Pillow`.",
+            ],
+        }
+
+
 class ValidatingExecutor(FakeExecutor):
     def capture_os(self, tag: str) -> ArtifactRecord:
         path = self.artifacts.artifact_path("os_screens", tag, ".png")
@@ -169,3 +181,31 @@ expect_artifact_differs_from = "first:os_screenshot"
 
     assert result.report.success is False
     assert any(issue.step_id == "second" for issue in result.report.issues)
+
+
+def test_runner_fails_fast_when_executor_environment_is_incomplete(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scenario_path = tmp_path / "scenario.toml"
+    scenario_path.write_text(
+        """
+[scenario]
+name = "env_guard"
+description = "Desktop environment validation"
+requires_backend = false
+run_root = "__RUN_ROOT__"
+
+[[steps]]
+id = "focus"
+action = "activate_window"
+""".strip().replace("__RUN_ROOT__", str(tmp_path / "out").replace("\\", "\\\\")),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setitem(EXECUTOR_TYPES, "fake", MissingDependencyExecutor)
+
+    result = run_scenario(scenario_path, "fake")
+
+    assert result.report.success is False
+    assert any(issue.step_id == "environment" for issue in result.report.issues)
+    assert any("pywin32" in note for note in result.report.notes)

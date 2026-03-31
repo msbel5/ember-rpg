@@ -7,22 +7,29 @@ const PROFILE_PATH := "user://client_profile.cfg"
 const QUICKSAVE_SLOT := "quicksave"
 
 @onready var world_view: SubViewportContainer = $MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer
-@onready var sidebar: TabContainer = $MainMargin/MainVBox/ContentSplit/Sidebar
-@onready var narrative_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/NarrativePanel
-@onready var inventory_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/InventoryPanel
-@onready var settlement_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SettlementPanel
+@onready var sidebar: VBoxContainer = $MainMargin/MainVBox/ContentSplit/Sidebar
+@onready var sidebar_nav: HBoxContainer = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav
+@onready var sidebar_tabs: TabContainer = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs
+@onready var narrative_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/NarrativePanel
+@onready var inventory_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/InventoryPanel
+@onready var settlement_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/SettlementPanel
+@onready var minimap_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel
 @onready var command_bar = $MainMargin/MainVBox/CommandBar
-@onready var quest_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/QuestPanel
+@onready var quest_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/QuestPanel
 @onready var combat_panel = $OverlayCanvas/CombatPanel
 @onready var save_load_panel = $OverlayCanvas/SaveLoadPanel
 
 var is_waiting: bool = false
 var _pending_sync_callbacks: int = 0
+var _sidebar_button_group: ButtonGroup = ButtonGroup.new()
+var _sidebar_buttons: Dictionary = {}
 
 
 func _ready() -> void:
 	EmberTheme.apply_game_session(self)
 	_setup_sidebar_tabs()
+	if GameState.has_active_campaign():
+		sidebar_tabs.current_tab = 5
 	command_bar.command_submitted.connect(_submit_action)
 	command_bar.quick_save_requested.connect(_on_quick_save_requested)
 	command_bar.saves_requested.connect(_open_save_load_panel)
@@ -31,6 +38,7 @@ func _ready() -> void:
 	world_view.focus_actions_changed.connect(command_bar.set_focus_actions)
 	inventory_panel.command_requested.connect(_submit_action)
 	settlement_panel.command_requested.connect(_submit_action)
+	minimap_panel.travel_requested.connect(_on_world_graph_travel_requested)
 	quest_panel.command_requested.connect(_submit_action)
 	combat_panel.command_requested.connect(_submit_action)
 	save_load_panel.save_requested.connect(_on_save_requested)
@@ -71,10 +79,36 @@ func _setup_sidebar_tabs() -> void:
 		"InventoryPanel": "Items",
 		"MinimapPanel": "Map",
 	}
-	for index in range(sidebar.get_tab_count()):
-		var child = sidebar.get_tab_control(index)
+	for child in sidebar_nav.get_children():
+		child.queue_free()
+	sidebar_tabs.tabs_visible = false
+	for index in range(sidebar_tabs.get_tab_count()):
+		var child = sidebar_tabs.get_tab_control(index)
 		if child != null and tab_titles.has(child.name):
-			sidebar.set_tab_title(index, tab_titles[child.name])
+			var title = str(tab_titles[child.name])
+			sidebar_tabs.set_tab_title(index, title)
+			var button = Button.new()
+			button.toggle_mode = true
+			button.button_group = _sidebar_button_group
+			button.text = title
+			button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			button.pressed.connect(_on_sidebar_tab_button_pressed.bind(index))
+			sidebar_nav.add_child(button)
+			_sidebar_buttons[index] = button
+	if _sidebar_buttons.has(sidebar_tabs.current_tab):
+		var active_button: Button = _sidebar_buttons[sidebar_tabs.current_tab]
+		active_button.button_pressed = true
+	sidebar_tabs.tab_changed.connect(_on_sidebar_tab_changed)
+
+
+func _on_sidebar_tab_button_pressed(index: int) -> void:
+	sidebar_tabs.current_tab = index
+
+
+func _on_sidebar_tab_changed(index: int) -> void:
+	for tab_index in _sidebar_buttons.keys():
+		var button: Button = _sidebar_buttons[tab_index]
+		button.button_pressed = int(tab_index) == index
 
 
 func _enter_scene(location_name: String) -> void:
@@ -313,6 +347,23 @@ func _complete_followup_sync() -> void:
 
 func _on_world_command_requested(command_text: String) -> void:
 	_submit_action(command_text)
+
+
+func _on_world_graph_travel_requested(destination_region_id: String, destination_settlement_id: String) -> void:
+	if is_waiting or GameState.campaign_id.is_empty():
+		return
+	command_bar.remember_command("travel %s" % destination_region_id)
+	_set_waiting(true)
+	Backend.submit_campaign_command(
+		GameState.campaign_id,
+		"",
+		_on_campaign_action_response.bind("travel %s" % destination_region_id),
+		"travel",
+		{
+			"destination_region_id": destination_region_id,
+			"destination_settlement_id": destination_settlement_id,
+		},
+	)
 
 
 func _refresh_scene_roster() -> void:

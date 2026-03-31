@@ -11,7 +11,7 @@
 Define which product docs are authoritative for the shipable demo recovery effort, which legacy docs are superseded, and which docs are non-blocking reference material. This prevents overlapping PRDs from quietly competing with the recovery plan.
 
 ## 2. Scope
-- In scope: demo-blocking PRDs, onboarding/creation docs, campaign/runtime docs, client UX docs, and save/load docs.
+- In scope: demo-blocking PRDs, onboarding/creation docs, campaign/runtime docs, client UX docs, save/load docs, recovery checklists, and canonical kernel PRDs.
 - Out of scope: code changes, runtime data migrations, and feature work not required to resolve the demo blocker.
 
 ## 3. Functional Requirements
@@ -19,7 +19,7 @@ FR-01: Every demo-blocking PRD SHALL be classified as `Authoritative`, `Supersed
 FR-02: Authoritative docs SHALL describe the active implementation target for the demo recovery plan.
 FR-03: Superseded docs SHALL remain readable but SHALL NOT be used as the source of truth for implementation.
 FR-04: Non-blocking docs SHALL be explicitly allowed to drift relative to the demo recovery plan.
-FR-05: The matrix SHALL include the current Godot client, character system, game flow, save/load, and campaign runtime docs.
+FR-05: The matrix SHALL include the current Godot client, character system, game flow, save/load, campaign runtime docs, and canonical kernel PRDs.
 FR-06: The matrix SHALL note the implementation owner area for each authoritative doc.
 
 ## 4. Data Structures
@@ -64,6 +64,22 @@ AC-06 [FR-06]: Each authoritative entry states the subsystem it owns.
 - `docs/PRD_character_system.md`
 - `docs/PRD_save_load.md`
 - `docs/PRD_campaign_generator.md`
+- `docs/PRD_creation_surface_v2.md`
+- `docs/PRD_automation_authority_v1.md`
+- `docs/PRD_actor_kernel_v1.md`
+- `docs/PRD_material_item_kernel_v1.md`
+- `docs/PRD_body_injury_combat_v1.md`
+- `docs/PRD_world_state_kernel_v1.md`
+- `docs/PRD_history_and_factions_v1.md`
+- `docs/PRD_job_reaction_kernel_v1.md`
+- `docs/PRD_colony_simulation_v1.md`
+- `docs/PRD_hybrid_commander_loop_v1.md`
+- `docs/architecture/runtime_authority.md`
+- `docs/architecture/creation_state_machine.md`
+- `docs/architecture/automation_stack.md`
+- `docs/architecture/reference_notes.md`
+- `docs/qa/recovery_checklist.md`
+- `docs/qa/df_mechanism_checklist.md`
 - `docs/PRD_living_simulation_v1.md`
 - `docs/PRD_world_generation_v2.md`
 
@@ -82,6 +98,22 @@ AC-06 [FR-06]: Each authoritative entry states the subsystem it owns.
 - `docs/PRD_save_load.md` - current save/load persistence contract.
 - `docs/PRD_campaign_generator.md` - quest and campaign progression logic that remains active in the demo stack.
 - `docs/PRD_rimworld_benchmark_v1.md` - benchmark rubric for the final demo review.
+- `docs/PRD_creation_surface_v2.md` - authoritative Sprint 0 creation-unblock contract for the title-screen creation workspace.
+- `docs/PRD_automation_authority_v1.md` - authoritative QA and automation contract for Godot bridge vs Win32 fallback.
+- `docs/PRD_actor_kernel_v1.md` - authoritative root actor model for player, NPC, and creature unification.
+- `docs/PRD_material_item_kernel_v1.md` - authoritative typed material, item, equipment, and wear baseline.
+- `docs/PRD_body_injury_combat_v1.md` - authoritative typed body, wound, and early deterministic combat baseline.
+- `docs/PRD_world_state_kernel_v1.md` - authoritative typed macro-world graph and region/site/faction state baseline.
+- `docs/PRD_history_and_factions_v1.md` - authoritative typed history and faction linkage baseline.
+- `docs/PRD_job_reaction_kernel_v1.md` - authoritative typed work, recipe, and worksite baseline.
+- `docs/PRD_colony_simulation_v1.md` - authoritative typed need, schedule, supply, and pressure baseline.
+- `docs/PRD_hybrid_commander_loop_v1.md` - authoritative contract for macro travel and local commander play sharing one world tick.
+- `docs/architecture/runtime_authority.md` - authoritative runtime boundary between macro world graph, active local map, campaign runtime, and client state.
+- `docs/architecture/creation_state_machine.md` - authoritative creation flow from identity through questionnaire, rolled pool assignment, summary, and finalize.
+- `docs/architecture/automation_stack.md` - authoritative QA/tooling stack for Godot automation, recording, and desktop fallback.
+- `docs/architecture/reference_notes.md` - authoritative high-level reference translation notes for Dwarf Fortress and RimWorld concepts.
+- `docs/qa/recovery_checklist.md` - authoritative sprint-state and evidence tracker for the recovery program.
+- `docs/qa/df_mechanism_checklist.md` - authoritative DF-inspired mechanism coverage map and dependency guardrail checklist.
 
 ### Superseded
 - `docs/PRD_living_simulation_v1.md` - legacy high-level world simulation draft.
@@ -89,6 +121,7 @@ AC-06 [FR-06]: Each authoritative entry states the subsystem it owns.
 - `docs/PRD_map_generator.md` - legacy map layout draft superseded by region realization PRDs.
 - `docs/PRD_topdown_living_world_v1.md` - legacy top-down world draft.
 - `docs/PRD_living_world_v1.md` - legacy living-world draft.
+- `docs/PROMPT_deterministic_world_v1.md` - historical planning prompt; no longer authoritative after the tooling-first architecture reset docs landed.
 
 ### Non-blocking
 - `docs/PRD_dm_agent.md`

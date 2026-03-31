@@ -199,6 +199,11 @@ class WorldBlueprint:
     domestication_pools: dict[str, list[str]] = field(default_factory=dict)
     factions: list[FactionSeed] = field(default_factory=list)
     settlements: list[SettlementSeed] = field(default_factory=list)
+    settlement_nodes: list[dict[str, Any]] = field(default_factory=list)
+    faction_presence: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    travel_edges: list[dict[str, Any]] = field(default_factory=list)
+    region_economy: dict[str, dict[str, Any]] = field(default_factory=dict)
+    region_alerts: dict[str, list[str]] = field(default_factory=dict)
     historical_events: list[HistoricalEvent] = field(default_factory=list)
     simulation_snapshot: Optional[SimulationSnapshot] = None
     metadata: dict[str, Any] = field(default_factory=dict)

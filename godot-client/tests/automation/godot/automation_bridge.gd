@@ -31,7 +31,9 @@ var _record_timer: float = 0.0
 
 func configure(new_state: RefCounted) -> void:
 	state = new_state
+	_write_json(state.status_file, state.status_payload({"ready": false, "status": "booting", "message": "Preparing playback viewport"}))
 	await _ensure_playback_viewport()
+	_write_json(state.status_file, state.status_payload({"ready": false, "status": "loading_scene", "message": "Loading initial scene"}))
 	await _load_scene(state.initial_scene)
 	_write_json(state.status_file, state.status_payload({"status": "ok"}))
 
@@ -127,7 +129,7 @@ func _dispatch_command(command: Dictionary) -> Dictionary:
 			_dispatch_text(str(command.get("text", "")))
 		"capture_viewport":
 			var tag = str(command.get("tag", "automation_capture")).strip_edges()
-			var capture_result = _capture_viewport_with_fallback(tag)
+			var capture_result = await _capture_viewport_with_fallback(tag)
 			var capture_path = str(capture_result.get("path", ""))
 			if capture_path.is_empty():
 				return {"status": "error", "message": "Viewport capture failed."}

@@ -57,6 +57,11 @@ static func flatten_campaign_response(data: Dictionary, current_map: Dictionary 
 	flattened["combat"] = campaign.get("combat", {})
 	flattened["conversation_state"] = campaign.get("conversation_state", {})
 	flattened["world_state"] = campaign.get("world", {})
+	flattened["world_graph"] = campaign.get("world_graph", {})
+	flattened["travel_options"] = campaign.get("travel_options", [])
+	flattened["current_region_summary"] = campaign.get("current_region_summary", {})
+	if flattened["current_region_summary"] is Dictionary:
+		flattened["selected_world_node"] = str(flattened["current_region_summary"].get("settlement_node_id", ""))
 	flattened["settlement_state"] = campaign.get("settlement", {})
 	flattened["recent_event_log"] = campaign.get("recent_event_log", [])
 	flattened["active_quests"] = campaign.get("active_quests", [])

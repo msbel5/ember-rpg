@@ -8,7 +8,8 @@ venv/
 env/
 ENV/
 .venv/
-
+tmp/
+.claude
 
 # IDE
 .vscode/

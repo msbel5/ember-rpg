@@ -38,8 +38,19 @@ def write_json_atomic(path: str | Path, payload: dict[str, Any]) -> None:
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temp_path = destination.with_suffix(destination.suffix + ".tmp")
-    temp_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    temp_path.replace(destination)
+    serialized = json.dumps(payload, indent=2)
+    temp_path.write_text(serialized, encoding="utf-8")
+    for _attempt in range(5):
+        try:
+            temp_path.replace(destination)
+            return
+        except PermissionError:
+            time.sleep(0.05)
+    # Windows can briefly lock the target while Godot polls it; fall back to a
+    # direct overwrite so bridge traffic keeps moving instead of aborting.
+    destination.write_text(serialized, encoding="utf-8")
+    if temp_path.exists():
+        temp_path.unlink(missing_ok=True)
 
 
 def read_json(path: str | Path) -> dict[str, Any]:

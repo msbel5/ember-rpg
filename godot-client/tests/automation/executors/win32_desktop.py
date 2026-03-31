@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+import importlib.util
 
 from automation.artifacts import ArtifactManager
 from automation.executors.base import AutomationExecutor, CapabilityUnavailableError
@@ -30,6 +31,11 @@ except Exception:  # pragma: no cover - exercised by import fallback tests
 
 
 SCREENSHOT_ROOT = Path(os.path.expandvars(r"%APPDATA%\Godot\app_userdata\Ember RPG\screenshots"))
+DESKTOP_REQUIREMENTS = {
+    "pywin32": ("win32gui", "Install desktop automation support with `pip install -r godot-client/tests/automation/requirements-desktop.txt`."),
+    "Pillow": ("PIL", "Install image capture support with `pip install -r godot-client/tests/automation/requirements-desktop.txt`."),
+    "requests": ("requests", "Install the shared automation HTTP dependency with `pip install -r godot-client/tests/automation/requirements-desktop.txt`."),
+}
 
 KEY_NAME_TO_VK = {
     "backspace": 0x08,
@@ -70,6 +76,28 @@ class Win32DesktopExecutor(AutomationExecutor):
         if WIN32_AVAILABLE:
             capabilities.update({"os_capture", "window_activation"})
         return capabilities
+
+    def environment_health(self) -> dict:
+        missing: list[str] = []
+        notes: list[str] = []
+        for package_name, (module_name, remediation) in DESKTOP_REQUIREMENTS.items():
+            if importlib.util.find_spec(module_name) is None:
+                missing.append(package_name)
+                notes.append(f"Missing `{package_name}`. {remediation}")
+        if WIN32_AVAILABLE and "pywin32" in missing:
+            missing.remove("pywin32")
+        if not WIN32_AVAILABLE and "pywin32" not in missing:
+            missing.insert(0, "pywin32")
+            notes.insert(0, "Missing `pywin32`. Install desktop automation support with `pip install -r godot-client/tests/automation/requirements-desktop.txt`.")
+        summary = ""
+        if missing:
+            summary = "Desktop automation environment is incomplete: %s." % ", ".join(missing)
+        return {
+            "ok": not missing,
+            "summary": summary,
+            "notes": notes,
+            "missing": missing,
+        }
 
     def launch_backend(self) -> None:
         docs_url = self._docs_url()

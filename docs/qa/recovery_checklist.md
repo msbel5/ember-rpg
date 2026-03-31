@@ -42,23 +42,35 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 ## Sprint 3: Jobs / Reactions / Colony Simulation
 - [x] Write jobs/reactions PRD
 - [x] Write colony simulation PRD
-- [ ] Unify workstation, recipe, and need/schedule logic under typed job records
-- [ ] Route quests from deterministic colony pressure
-- [ ] Add shortage / production / schedule tests
-- [ ] Preserve DF-style M02, M03, M04, M16, and M19 dependency links in runtime code
+- [x] Unify workstation, recipe, and need/schedule logic under typed job records
+- [x] Route quests from deterministic colony pressure
+- [x] Add shortage / production / schedule tests
+- [x] Preserve DF-style M02, M03, M04, M16, and M19 dependency links in runtime code
 
 ## Sprint 4: Hybrid Commander Loop
 - [x] Write hybrid commander loop PRD
-- [ ] Bind macro travel and local commander exploration to one authoritative world tick
-- [ ] Keep AI out of core gameplay authority
-- [ ] Add targeted map/travel/local-loop integration tests
-- [ ] Preserve DF-style M15 and M18 dependency links in runtime code
+- [x] Bind macro travel and local commander exploration to one authoritative world tick
+- [x] Keep AI out of core gameplay authority
+- [x] Add targeted map/travel/local-loop integration tests
+- [x] Preserve DF-style M15 and M18 dependency links in runtime code
+
+## Sprint 5: Systems Closure
+- [x] Introduce typed syndrome and condition registry surfaces
+- [x] Introduce typed power-network and trap surfaces
+- [x] Introduce typed fluid and temperature surfaces
+- [x] Introduce typed strange-mood incident surface
+- [x] Expose Sprint 5 systems through campaign payloads and save metadata
+- [x] Add targeted systems tests and payload regression coverage
+- [x] Preserve DF-style M06, M07, M08, M09, M10, and M13 dependency links in runtime code
 
 ## Global Rules
 - [x] PRD first
 - [ ] AC written before each new implementation chunk
 - [x] TDD for Sprint 1 combat/body cutover
 - [x] TDD for Sprint 2 campaign/world payload cutover
+- [x] TDD for Sprint 3 colony/job payload cutover
+- [x] TDD for Sprint 4 hybrid/path/military payload cutover
+- [x] TDD for Sprint 5 systems-closure payload cutover
 - [x] Screenshot or video proof for the current UI-facing recovery slice
 - [x] No full chaos suite by default
 - [x] No regression to hidden-tab or one-question wizard UX
@@ -67,6 +79,7 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 ## Current Evidence
 - [x] Backend targeted suite passed on 2026-03-31 for actor/world-state plus campaign regression tests
 - [x] Backend targeted suite passed on 2026-04-01 for canonical world-state payload, save/load, command bus, and travel graph coverage
+- [x] Backend targeted suite passed on 2026-04-01 for colony, hybrid, and systems kernel coverage
 - [x] Godot headless suite passed on 2026-03-31 after creation-shell and automation-bridge changes
 - [x] Python automation suite passed on 2026-03-31 including atomic command-file fallback coverage
 - [x] Desktop smoke scenario produced title and questionnaire screenshots on 2026-03-31
@@ -74,4 +87,4 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 ## Current Risks
 - [ ] Win32 keyboard injection is still weaker than the headless bridge path
 - [ ] Sprint 1 still leaves legacy save/load and some non-combat runtime surfaces on compatibility shims
-- [ ] Sprint 3 through Sprint 4 are documented but not yet integrated end-to-end
+- [ ] Sprint closure is typed-authority complete, but deeper simulation balance and UI ergonomics still need manual cleanup

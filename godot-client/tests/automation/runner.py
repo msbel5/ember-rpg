@@ -62,6 +62,9 @@ def run_scenario(scenario_path: str | Path, executor_name: str) -> RunnerResult:
     )
 
     try:
+        if not _check_environment(executor, report):
+            json_report, markdown_report = write_report(report, artifacts)
+            return RunnerResult(json_report=json_report, markdown_report=markdown_report, report=report)
         if scenario.requires_backend:
             executor.launch_backend()
         executor.launch_client()
@@ -86,6 +89,26 @@ def run_scenario(scenario_path: str | Path, executor_name: str) -> RunnerResult:
 def _build_executor(executor_name: str, scenario, artifacts) -> AutomationExecutor:
     executor_type = EXECUTOR_TYPES[executor_name]
     return executor_type(scenario, artifacts)
+
+
+def _check_environment(executor: AutomationExecutor, report: RunReport) -> bool:
+    health = executor.environment_health()
+    if bool(health.get("ok", True)):
+        return True
+    summary = str(health.get("summary", "")).strip() or "Automation environment preflight failed."
+    report.success = False
+    report.add_note(summary)
+    for note in health.get("notes", []):
+        report.add_note(str(note))
+    report.add_issue(
+        executor.record_issue(
+            "environment",
+            "critical",
+            "automation environment is ready before scenario launch",
+            summary,
+        )
+    )
+    return False
 
 
 def _run_step(executor: AutomationExecutor, report: RunReport, step: ActionStep) -> None:

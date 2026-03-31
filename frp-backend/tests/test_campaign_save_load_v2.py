@@ -18,6 +18,12 @@ def test_campaign_client_save_load_round_trip(tmp_path: Path):
     assert loaded["campaign"]["world"]["seed"] == 42
     assert loaded["campaign"]["world_state"]["seed"] == 42
     assert loaded["campaign"]["actors"]
+    assert loaded["campaign"]["jobs"]
+    assert loaded["campaign"]["reactions"]
+    assert loaded["campaign"]["worksites"]
+    assert loaded["campaign"]["colony_pressure"]["food"] >= 0
+    assert loaded["campaign"]["path_authority"]["active_region_id"] == loaded["campaign"]["world"]["active_region_id"]
+    assert "power_network" in loaded["campaign"]["systems"]
     assert loaded["campaign"]["settlement"]["name"]
     assert loaded["campaign"]["player"]["name"] == "Saver"
 

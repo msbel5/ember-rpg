@@ -90,6 +90,13 @@ class AutomationExecutor(ABC):
     def capture_viewport(self, tag: str) -> ArtifactRecord:
         raise NotImplementedError
 
+    def environment_health(self) -> dict:
+        return {
+            "ok": True,
+            "summary": "",
+            "notes": [],
+        }
+
     def record_issue(
         self,
         step_id: str,

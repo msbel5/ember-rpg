@@ -1,0 +1,45 @@
+[scenario]
+name = "title_creation_bridge"
+description = "Headless-bridge proof for the title and early creation flow using logical focus and viewport capture."
+adapter_id = "fantasy_ember"
+player_name = "VisualSmoke"
+create_new = true
+requires_backend = true
+tags = ["title", "creation", "headless", "proof"]
+
+[[steps]]
+id = "capture_title"
+action = "capture_viewport"
+expected = "title screen is visible"
+
+[[steps]]
+id = "open_new_game"
+action = "key_press"
+key = "enter"
+wait_ms = 500
+capture_viewport = true
+expected = "new game shell opens"
+
+[[steps]]
+id = "clear_name_field"
+action = "key_press"
+key = "backspace"
+repeat = 40
+wait_ms = 75
+expected = "name field is cleared"
+
+[[steps]]
+id = "type_name"
+action = "text"
+text = "VisualSmoke"
+wait_ms = 125
+capture_viewport = true
+expected = "identity step is filled"
+
+[[steps]]
+id = "advance_identity"
+action = "key_press"
+key = "enter"
+wait_ms = 850
+capture_viewport = true
+expected = "questionnaire step opens"

@@ -21,3 +21,5 @@ def test_world_snapshot_round_trip_preserves_identity_and_runtime_focus():
     assert restored.profile_id == world.profile_id
     assert restored.simulation_snapshot.active_region_id == world.simulation_snapshot.active_region_id
     assert [faction.id for faction in restored.factions] == [faction.id for faction in world.factions]
+    assert restored.settlement_nodes == world.settlement_nodes
+    assert restored.travel_edges == world.travel_edges

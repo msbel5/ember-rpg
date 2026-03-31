@@ -1,0 +1,32 @@
+[scenario]
+name = "title_creation_desktop"
+description = "Desktop proof for title and early creation flow using Win32 window automation."
+adapter_id = "fantasy_ember"
+player_name = "VisualSmoke"
+create_new = true
+requires_backend = true
+tags = ["title", "creation", "desktop", "proof"]
+
+[[steps]]
+id = "focus_window"
+action = "activate_window"
+capture_os = true
+expected = "title screen is visible in a desktop window"
+
+[[steps]]
+id = "open_new_game"
+action = "mouse_click"
+x = 632
+y = 340
+wait_ms = 700
+capture_os = true
+expected = "new game shell opens"
+
+[[steps]]
+id = "advance_identity"
+action = "mouse_click"
+x = 1019
+y = 645
+wait_ms = 1200
+capture_os = true
+expected = "questionnaire step opens"

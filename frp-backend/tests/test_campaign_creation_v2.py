@@ -34,8 +34,13 @@ def test_start_creation_returns_guided_creation_state():
     assert payload["adapter_id"] == "fantasy_ember"
     assert payload["profile_id"] == "standard"
     assert payload["seed"] == 77
+    assert len(payload["question_groups"]) >= 5
     assert len(payload["questions"]) >= 3
     assert len(payload["current_roll"]) == 6
+    assert payload["roll_pool"] == sorted(payload["current_roll"], reverse=True)
+    assert payload["allocation_rules"]["mode"] == "rolled_array_assignment"
+    assert payload["campaign_genesis"]["world_premise"]
+    assert payload["world_seed_hints"]["preferred_adapter"] == "fantasy_ember"
     assert payload["recommended_class"]
     assert payload["recommended_alignment"]
 
@@ -96,6 +101,11 @@ def test_creation_answer_roll_management_and_finalize_yield_campaign_snapshot():
     assert payload["campaign"]["character_sheet"]["alignment"] == "CG"
     assert payload["campaign"]["character_sheet"]["creation_summary"]["recommended_class"]
     assert payload["campaign"]["character_sheet"]["creation_summary"]["answers"]
+    assert payload["campaign"]["character_sheet"]["creation_summary"]["campaign_genesis"]["world_premise"]
+    assert payload["campaign"]["character_sheet"]["creation_summary"]["world_seed_hints"]["preferred_adapter"] in {
+        "fantasy_ember",
+        "scifi_frontier",
+    }
 
 
 def test_creation_seed_produces_deterministic_initial_and_reroll_values():

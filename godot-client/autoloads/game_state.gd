@@ -27,6 +27,10 @@ var quest_offers: Array = []
 var narrative_stream: Array = []
 var last_save_slot: String = ""
 var world_state: Dictionary = {}
+var world_graph: Dictionary = {}
+var travel_options: Array = []
+var current_region_summary: Dictionary = {}
+var selected_world_node: String = ""
 var settlement_state: Dictionary = {}
 var creation_state: Dictionary = {}
 var character_sheet: Dictionary = {}
@@ -88,6 +92,14 @@ func update_from_response(data: Dictionary) -> void:
 		profile_id = str(data["profile_id"])
 	if data.has("world_state") and data["world_state"] is Dictionary:
 		world_state = data["world_state"]
+	if data.has("world_graph") and data["world_graph"] is Dictionary:
+		world_graph = data["world_graph"]
+	if data.has("travel_options") and data["travel_options"] is Array:
+		travel_options = data["travel_options"]
+	if data.has("current_region_summary") and data["current_region_summary"] is Dictionary:
+		current_region_summary = data["current_region_summary"]
+	if data.has("selected_world_node"):
+		selected_world_node = str(data["selected_world_node"])
 	if data.has("settlement_state") and data["settlement_state"] is Dictionary:
 		settlement_state = data["settlement_state"]
 		settlement_updated.emit(settlement_state)
@@ -209,6 +221,10 @@ func reset() -> void:
 	narrative_stream = []
 	last_save_slot = ""
 	world_state = {}
+	world_graph = {}
+	travel_options = []
+	current_region_summary = {}
+	selected_world_node = ""
 	settlement_state = {}
 	creation_state = {}
 	character_sheet = {}

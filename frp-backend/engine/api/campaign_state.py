@@ -4,9 +4,28 @@ from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING, Any
 
-from engine.api.campaign_kernel import build_canonical_actor_roster, build_canonical_world_state
+from engine.api.campaign_kernel import (
+    build_canonical_actor_records,
+    build_canonical_world_state,
+)
 from engine.api.game_session import GameSession
 from engine.core.dm_agent import SceneType
+from engine.kernel import (
+    colony_pressure_from_settlement,
+    fluid_state_from_region,
+    job_records_from_settlement,
+    local_map_state_from_region,
+    military_state_from_settlement,
+    path_authority_from_world,
+    power_network_from_settlement,
+    production_ledger_from_settlement,
+    reaction_defs_from_settlement,
+    strange_mood_incident_from_settlement,
+    syndrome_registry_from_actors,
+    temperature_state_from_region,
+    trap_state_from_settlement,
+    worksite_records_from_settlement,
+)
 from engine.map import MapData, Room, TileType
 from engine.world.entity import Entity, EntityType
 from engine.world.spatial_index import SpatialIndex
@@ -233,15 +252,65 @@ def map_payload_from_region(region_snapshot: RegionSnapshot) -> dict[str, Any]:
     }
 
 
+def _active_site_id(context: "CampaignContext") -> str:
+    return str(
+        context.settlement_state.get("settlement_id")
+        or context.region_snapshot.metadata.get("settlement_id")
+        or context.region_snapshot.region_id
+    )
+
+
+def _build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:
+    active_site_id = _active_site_id(context)
+    canonical_world_state = build_canonical_world_state(context.world)
+    canonical_actor_records = build_canonical_actor_records(
+        context.session,
+        active_region_id=context.region_snapshot.region_id,
+        active_site_id=active_site_id,
+    )
+    canonical_actors = [actor.to_dict() for actor in canonical_actor_records]
+    jobs = [job.to_dict() for job in job_records_from_settlement(context.settlement_state)]
+    reactions = [reaction.to_dict() for reaction in reaction_defs_from_settlement(context.settlement_state)]
+    worksites = [worksite.to_dict() for worksite in worksite_records_from_settlement(context.settlement_state)]
+    colony_pressure_model = colony_pressure_from_settlement(context.settlement_state)
+    colony_pressure = colony_pressure_model.to_dict()
+    production_ledger = production_ledger_from_settlement(context.settlement_state).to_dict()
+    path_authority = path_authority_from_world(context.world, context.region_snapshot).to_dict()
+    local_map_state = local_map_state_from_region(context.region_snapshot).to_dict()
+    military = military_state_from_settlement(context.settlement_state).to_dict()
+    strange_mood = strange_mood_incident_from_settlement(
+        context.settlement_state,
+        colony_pressure_model,
+    )
+    systems = {
+        "syndrome_registry": [
+            syndrome.to_dict() for syndrome in syndrome_registry_from_actors(canonical_actor_records)
+        ],
+        "power_network": power_network_from_settlement(context.settlement_state).to_dict(),
+        "traps": [trap.to_dict() for trap in trap_state_from_settlement(context.settlement_state)],
+        "fluid_state": fluid_state_from_region(context.region_snapshot).to_dict(),
+        "temperature_state": temperature_state_from_region(context.region_snapshot).to_dict(),
+        "strange_mood_incident": strange_mood.to_dict() if strange_mood is not None else None,
+    }
+    return {
+        "world_state": canonical_world_state,
+        "actors": canonical_actors,
+        "jobs": jobs,
+        "reactions": reactions,
+        "worksites": worksites,
+        "colony_pressure": colony_pressure,
+        "production_ledger": production_ledger,
+        "path_authority": path_authority,
+        "local_map_state": local_map_state,
+        "military": military,
+        "systems": systems,
+    }
+
+
 def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     session_data = context.session.to_dict()
     runtime_state = _runtime_region_state(context.world, context.region_snapshot.region_id)
-    canonical_world_state = build_canonical_world_state(context.world)
-    canonical_actors = build_canonical_actor_roster(
-        context.session,
-        active_region_id=context.region_snapshot.region_id,
-        active_site_id=context.region_snapshot.region_id,
-    )
+    kernel_payload = _build_kernel_payload(context)
     return {
         "world": {
             "seed": context.world.seed,
@@ -256,8 +325,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
             "season": context.world.simulation_snapshot.season if context.world.simulation_snapshot else "spring",
             "weather": copy.deepcopy(runtime_state.get("weather", {})),
         },
-        "world_state": canonical_world_state,
-        "actors": canonical_actors,
+        **kernel_payload,
         "world_graph": build_world_graph(context.world),
         "travel_options": build_travel_options(context.world),
         "current_region_summary": build_current_region_summary(context.world, context.region_snapshot),
@@ -279,12 +347,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
 
 
 def persist_campaign_state(context: "CampaignContext") -> None:
-    canonical_world_state = build_canonical_world_state(context.world)
-    canonical_actors = build_canonical_actor_roster(
-        context.session,
-        active_region_id=context.region_snapshot.region_id,
-        active_site_id=context.region_snapshot.region_id,
-    )
+    kernel_payload = _build_kernel_payload(context)
     context.session.campaign_state["campaign_v2"] = {
         "campaign_id": context.campaign_id,
         "adapter_id": context.adapter_id,
@@ -292,8 +355,17 @@ def persist_campaign_state(context: "CampaignContext") -> None:
         "seed": context.seed,
         "active_region_id": context.region_snapshot.region_id,
         "world_snapshot": snapshot_world(context.world),
-        "kernel_world_state": canonical_world_state,
-        "kernel_actors": canonical_actors,
+        "kernel_world_state": kernel_payload["world_state"],
+        "kernel_actors": kernel_payload["actors"],
+        "kernel_jobs": kernel_payload["jobs"],
+        "kernel_reactions": kernel_payload["reactions"],
+        "kernel_worksites": kernel_payload["worksites"],
+        "kernel_colony_pressure": kernel_payload["colony_pressure"],
+        "kernel_production_ledger": kernel_payload["production_ledger"],
+        "kernel_path_authority": kernel_payload["path_authority"],
+        "kernel_local_map_state": kernel_payload["local_map_state"],
+        "kernel_military": kernel_payload["military"],
+        "kernel_systems": kernel_payload["systems"],
         "settlement_state": copy.deepcopy(context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-20:]),
     }

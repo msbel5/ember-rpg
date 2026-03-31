@@ -19,7 +19,11 @@ def resolve_command_text(*, input_text: str, shortcut: Optional[str], args: dict
     if shortcut_value == "assign":
         return "assign %s to %s" % (args.get("resident", "resident"), args.get("job", "duty"))
     if shortcut_value == "travel":
-        return "travel %s" % args.get("destination", "next outpost")
+        if args.get("destination_region_id"):
+            return "travel %s" % args.get("destination_region_id")
+        if args.get("destination"):
+            return "travel %s" % args.get("destination")
+        return "travel next outpost"
     if shortcut_value == "build":
         return "build %s" % args.get("kind", "house")
     return "look around"
@@ -106,24 +110,76 @@ def maybe_handle_commander_command(
     return None
 
 
-def handle_travel(context: "CampaignContext", command_text: str) -> str:
+def handle_travel(context: "CampaignContext", command_text: str, args: Optional[dict[str, Any]] = None) -> str:
+    payload = dict(args or {})
     target = command_text[len("travel"):].strip().lower()
-    destinations = list(context.world.settlements)
+    destination_region_id = str(payload.get("destination_region_id", "")).strip()
+    destination_settlement_id = str(payload.get("destination_settlement_id", "")).strip()
+    destinations = list(context.world.settlement_nodes)
     current_region_id = context.world.simulation_snapshot.active_region_id
+    reachable_options = []
+    for edge in context.world.travel_edges:
+        if edge["from_region_id"] == current_region_id:
+            reachable_options.append((edge["to_region_id"], edge["to_settlement_id"], edge))
+        elif edge["to_region_id"] == current_region_id:
+            reachable_options.append((edge["from_region_id"], edge["from_settlement_id"], edge))
     chosen = None
-    if target:
+    chosen_edge = None
+    if destination_region_id:
+        chosen = next(
+            (
+                settlement
+                for settlement in destinations
+                if settlement["region_id"] == destination_region_id
+                and (not destination_settlement_id or settlement["id"] == destination_settlement_id)
+            ),
+            None,
+        )
+        if chosen is not None:
+            chosen_edge = next(
+                (
+                    edge
+                    for _, settlement_id, edge in reachable_options
+                    if settlement_id == chosen["id"]
+                ),
+                None,
+            )
+    if chosen is None and target:
         for settlement in destinations:
-            if target in settlement.center_name.lower() or target in settlement.region_id.lower():
+            if target in str(settlement["name"]).lower() or target in str(settlement["region_id"]).lower():
                 chosen = settlement
+                chosen_edge = next(
+                    (
+                        edge
+                        for _, settlement_id, edge in reachable_options
+                        if settlement_id == settlement["id"]
+                    ),
+                    None,
+                )
                 break
     if chosen is None:
-        current_index = next(
-            (index for index, settlement in enumerate(destinations) if settlement.region_id == current_region_id),
-            0,
-        )
-        chosen = destinations[(current_index + 1) % len(destinations)]
-    context.world.simulation_snapshot.active_region_id = chosen.region_id
-    context.region_snapshot = realize_region(context.world, chosen.region_id)
+        if reachable_options:
+            destination_region_id, destination_settlement_id, chosen_edge = reachable_options[0]
+            chosen = next(
+                settlement
+                for settlement in destinations
+                if settlement["region_id"] == destination_region_id
+                and settlement["id"] == destination_settlement_id
+            )
+        else:
+            current_index = next(
+                (
+                    index
+                    for index, settlement in enumerate(destinations)
+                    if settlement["region_id"] == current_region_id
+                ),
+                0,
+            )
+            chosen = destinations[(current_index + 1) % len(destinations)]
+    if chosen_edge is None and current_region_id != chosen["region_id"]:
+        raise ValueError(f"Destination {chosen['region_id']} is not reachable from {current_region_id}")
+    context.world.simulation_snapshot.active_region_id = chosen["region_id"]
+    context.region_snapshot = realize_region(context.world, chosen["region_id"])
     context.settlement_state = build_settlement_state(
         context.world, context.region_snapshot, context.adapter_id, context.session.player.name
     )
@@ -137,7 +193,9 @@ def handle_travel(context: "CampaignContext", command_text: str) -> str:
         profile_id=context.profile_id,
         seed=context.seed,
     )
-    return f"Travel complete. You arrive at {chosen.center_name}."
+    travel_hours = int(chosen_edge.get("travel_hours", 4)) if chosen_edge is not None else 4
+    context.session.campaign_state["last_travel_hours"] = travel_hours
+    return f"Travel complete after {travel_hours}h. You arrive at {chosen['name']}."
 
 
 def hours_for_avatar_command(command_text: str) -> int:

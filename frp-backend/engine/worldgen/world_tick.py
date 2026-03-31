@@ -40,28 +40,42 @@ def _weather_for(seed: int, biome_id: str, day: int) -> dict[str, Any]:
 
 def _build_region_state(world: WorldBlueprint, region: dict[str, Any], active_region_id: str) -> dict[str, Any]:
     settlement = next((item for item in world.settlements if item.region_id == region["id"]), None)
+    settlement_node = next(
+        (item for item in world.settlement_nodes if item["region_id"] == region["id"]),
+        None,
+    )
     population = sum(item.population for item in world.settlements if item.region_id == region["id"])
+    base_economy = deepcopy(
+        world.region_economy.get(
+            str(region["id"]),
+            {"resources": {"food": 0, "ore": 0, "wood": 0, "gold": 0}, "prosperity": 42.0},
+        )
+    )
     state = {
         "population": population,
         "resources": list(region.get("resources", [])),
         "stability": round(0.5 + region["settlement_score"] * 0.3, 3),
-        "prosperity": round(50 + region["settlement_score"] * 25, 3),
+        "prosperity": round(float(base_economy.get("prosperity", 50.0)), 3),
         "resolution": "fine" if region["id"] == active_region_id else "coarse",
         "day": 1,
         "season": "spring",
         "weather": _weather_for(world.seed, str(region["biome_id"]), 1),
-        "alerts": [],
+        "alerts": list(world.region_alerts.get(str(region["id"]), [])),
         "active_quests": [],
         "quest_offers": [],
         "npcs": [],
         "economy": {"resources": {"food": 0, "ore": 0, "wood": 0, "gold": 0}, "prices": {}, "trade_routes": [], "scarcity": {}},
+        "faction_presence": deepcopy(world.faction_presence.get(str(region["id"]), [])),
+        "settlement_node_id": settlement_node["id"] if settlement_node is not None else None,
     }
     if settlement is None:
+        state["economy"]["resources"] = deepcopy(base_economy.get("resources", {}))
         return state
 
     layout = generate_settlement_layout(world, region["id"])
     state["npcs"] = runtime_npc_state(layout.npc_spawns, 0)
     state["economy"] = initialize_region_economy(region, settlement)
+    state["economy"]["resources"] = deepcopy(base_economy.get("resources", state["economy"].get("resources", {})))
     settlement_state = {
         "name": settlement.center_name,
         "needs": {
@@ -124,6 +138,7 @@ def _tick_region(world: WorldBlueprint, region: dict[str, Any], state: dict[str,
     next_state["prosperity"] = round(float(next_state.get("prosperity", 50.0)) + (0.08 if is_active else 0.03) * max(current_hour, 1), 3)
 
     if settlement is None:
+        world.region_alerts[str(region["id"])] = list(next_state.get("alerts", []))
         return next_state, events
 
     next_state["npcs"] = runtime_npc_state(list(next_state.get("npcs", [])), current_hour)
@@ -151,6 +166,7 @@ def _tick_region(world: WorldBlueprint, region: dict[str, Any], state: dict[str,
         alerts.append("bandit_raid")
         events.append({"event_type": "bandit_raid", "region_id": region["id"], "summary": f"Raiders are probing the outskirts of {settlement.center_name}."})
     next_state["alerts"] = alerts[:4]
+    world.region_alerts[str(region["id"])] = list(next_state["alerts"])
     settlement_state = {
         "name": settlement.center_name,
         "needs": needs,

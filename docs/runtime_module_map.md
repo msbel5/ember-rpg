@@ -31,11 +31,11 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/__init__.py` | 1 | - | - |
 | `frp-backend/engine/api/__init__.py` | 0 | - | - |
 | `frp-backend/engine/api/action_parser.py` | 439 | ActionIntent (0), ParsedAction (1), ActionParser (3) | _normalize, _looks_turkish, _restore_turkish_final_consonant, _strip_turkish_case_suffix |
-| `frp-backend/engine/api/campaign_commands.py` | 155 | - | resolve_command_text, maybe_handle_commander_command, handle_travel, hours_for_avatar_command |
+| `frp-backend/engine/api/campaign_commands.py` | 213 | - | resolve_command_text, maybe_handle_commander_command, handle_travel, hours_for_avatar_command |
 | `frp-backend/engine/api/campaign_models.py` | 110 | CreateCampaignRequest (0), CampaignCreationStartRequest (0), CampaignCreationAnswerRequest (0), CampaignCreationFinalizeRequest (0) | - |
 | `frp-backend/engine/api/campaign_routes.py` | 243 | - | _make_llm_callable, _creation_response, start_campaign_creation, answer_campaign_creation |
-| `frp-backend/engine/api/campaign_runtime.py` | 455 | CampaignContext (0), CampaignCreationContext (0), CampaignRuntime (20) | _merge_settlement_controls |
-| `frp-backend/engine/api/campaign_state.py` | 674 | - | build_world, region_payload, map_payload_from_region, campaign_payload |
+| `frp-backend/engine/api/campaign_runtime.py` | 456 | CampaignContext (0), CampaignCreationContext (0), CampaignRuntime (20) | _merge_settlement_controls |
+| `frp-backend/engine/api/campaign_state.py` | 766 | - | build_world, region_payload, _region_grid_position, build_world_graph |
 | `frp-backend/engine/api/game_engine.py` | 233 | ActionResult (0), GameEngine (2) | - |
 | `frp-backend/engine/api/game_engine_runtime.py` | 317 | GameEngineRuntimeMixin (3) | - |
 | `frp-backend/engine/api/game_session.py` | 15 | - | - |
@@ -149,15 +149,15 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/world/world_routes.py` | 63 | - | _get_sessions, _get_session, get_world_state, get_history |
 | `frp-backend/engine/worldgen/__init__.py` | 60 | - | - |
 | `frp-backend/engine/worldgen/economy.py` | 79 | - | _resource_seed, initialize_region_economy, _trade_routes, _scarcity |
-| `frp-backend/engine/worldgen/models.py` | 228 | WorldProfile (1), TectonicPlate (1), SpeciesLineage (1), FactionSeed (1) | _serialize |
+| `frp-backend/engine/worldgen/models.py` | 233 | WorldProfile (1), TectonicPlate (1), SpeciesLineage (1), FactionSeed (1) | _serialize |
 | `frp-backend/engine/worldgen/npc_generator.py` | 175 | - | _role_template, _interior_anchor, _schedule_entries, _build_inventory |
-| `frp-backend/engine/worldgen/pipeline.py` | 578 | - | _clamp, _round_grid, _noise, _region_lookup |
+| `frp-backend/engine/worldgen/pipeline.py` | 882 | - | _clamp, _round_grid, _noise, _region_lookup |
 | `frp-backend/engine/worldgen/quest_generator.py` | 93 | - | _pick_giver, _reward_for, generate_quest_offers |
 | `frp-backend/engine/worldgen/registries.py` | 129 | - | _normalized_map, load_world_profiles, load_world_biomes, load_species_templates |
 | `frp-backend/engine/worldgen/settlement_generator.py` | 288 | - | _region_lookup, _ground_for_biome, _carve_square, _can_place |
 | `frp-backend/engine/worldgen/terrain_generator.py` | 355 | _NoiseField (2) | _clamp, _round_grid, _fallback_noise, _plate_seed_points |
 | `frp-backend/engine/worldgen/world_seed.py` | 63 | WorldSeed (12) | _stable_seed_from_text, stable_seed_from_parts |
-| `frp-backend/engine/worldgen/world_tick.py` | 231 | - | _season_for_day, _weather_for, _build_region_state, initialize_simulation |
+| `frp-backend/engine/worldgen/world_tick.py` | 247 | - | _season_for_day, _weather_for, _build_region_state, initialize_simulation |
 | `frp-backend/tools/campaign_client.py` | 272 | CampaignClient (19) | _default_llm |
 | `frp-backend/tools/chaos_playtest.py` | 322 | - | log_bug, play, run_chaos |
 | `frp-backend/tools/play.py` | 155 | - | _append, _print_scene, _current_player_id, _campaign_compatible_saves |
@@ -165,13 +165,13 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/tools/runtime_audit.py` | 200 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
 | `frp-backend/tools/terminal_client.py` | 39 | - | run |
 | `godot-client/autoloads/backend.gd` | 306 | - | _ready, create_session, start_creation, finalize_creation |
-| `godot-client/autoloads/game_state.gd` | 335 | - | update_from_response, reset, is_in_combat, has_active_campaign |
-| `godot-client/scenes/game_session.gd` | 616 | - | _ready, _setup_sidebar_tabs, _enter_scene, _on_scene_entered |
+| `godot-client/autoloads/game_state.gd` | 351 | - | update_from_response, reset, is_in_combat, has_active_campaign |
+| `godot-client/scenes/game_session.gd` | 635 | - | _ready, _setup_sidebar_tabs, _enter_scene, _on_scene_entered |
 | `godot-client/scenes/title_screen.gd` | 931 | - | _ready, _on_new_game, _on_continue, _on_quit |
 | `godot-client/scripts/asset/asset_bootstrap.gd` | 38 | AssetBootstrap (0) | - |
 | `godot-client/scripts/asset/asset_manifest.gd` | 38 | AssetManifest (0) | - |
 | `godot-client/scripts/game_session_helpers.gd` | 96 | GameSessionHelpers (0) | - |
-| `godot-client/scripts/net/response_normalizer.gd` | 327 | ResponseNormalizer (0) | - |
+| `godot-client/scripts/net/response_normalizer.gd` | 332 | ResponseNormalizer (0) | - |
 | `godot-client/scripts/pov_renderer.gd` | 414 | - | _ready, set_location_type, _load_ai_background, update_player |
 | `godot-client/scripts/pov_renderer_config.gd` | 101 | PovRendererConfig (0) | - |
 | `godot-client/scripts/tile_map_renderer.gd` | 263 | - | _ready, _process, _create_player_marker, _on_map_loaded |
@@ -180,7 +180,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/scripts/ui/command_bar.gd` | 167 | CommandBarWidget (0) | _ready, focus_input, clear_input, has_input_focus |
 | `godot-client/scripts/ui/ember_theme.gd` | 243 | EmberTheme (0) | - |
 | `godot-client/scripts/ui/inventory_panel.gd` | 48 | InventoryPanelWidget (0) | _ready, _refresh_inventory, _refresh |
-| `godot-client/scripts/ui/minimap_panel.gd` | 188 | MinimapPanelWidget (0) | _ready, _refresh_from_map, _refresh, _color_for_tile |
+| `godot-client/scripts/ui/minimap_panel.gd` | 426 | MinimapPanelWidget (0) | _ready, _refresh_from_map, _refresh, _refresh_world_graph |
 | `godot-client/scripts/ui/narrative_panel.gd` | 146 | NarrativePanelWidget (0) | _ready, load_history, append_system_text, append_command |
 | `godot-client/scripts/ui/quest_panel.gd` | 131 | QuestPanelWidget (0) | _ready, set_waiting, _refresh, _build_active_row |
 | `godot-client/scripts/ui/save_load_panel.gd` | 133 | SaveLoadPanelWidget (0) | _ready, open_panel, close_panel, set_busy |
@@ -201,4 +201,4 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/tests/automation/godot/input_probe.gd` | 39 | - | _ready, _input |
 | `godot-client/tests/automation/godot/test_automation_bridge.gd` | 127 | - | _initialize, _run_tests, _setup_bridge, _test_mouse_input |
 | `godot-client/tests/doubles/backend_probe.gd` | 29 | - | _ensure_base_url, _post, _http_get, _http_delete |
-| `godot-client/tests/run_headless_tests.gd` | 896 | - | _initialize, _run_tests, _assert_true, _game_state |
+| `godot-client/tests/run_headless_tests.gd` | 962 | - | _initialize, _run_tests, _assert_true, _game_state |
