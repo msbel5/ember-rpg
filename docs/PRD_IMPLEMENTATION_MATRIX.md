@@ -87,6 +87,7 @@ AC-06 [FR-06]: Each authoritative entry states the subsystem it owns.
 - Manual review only. The matrix is validated by doc consistency checks during implementation review.
 
 ## Changelog
+- 2026-04-01: Added 7 new authoritative PRDs (effect_system, combat_resolution, medical_system, systems_closure, colony_v2, job_v2). Superseded colony_v1 and job_v1. Updated all sparse kernel PRDs with dataclass definitions and algorithms.
 - 2026-03-27: Initial implementation matrix for the shipable demo recovery plan.
 
 ## Doc Classifications
@@ -108,6 +109,12 @@ AC-06 [FR-06]: Each authoritative entry states the subsystem it owns.
 - `docs/PRD_job_reaction_kernel_v1.md` - authoritative typed work, recipe, and worksite baseline.
 - `docs/PRD_colony_simulation_v1.md` - authoritative typed need, schedule, supply, and pressure baseline.
 - `docs/PRD_hybrid_commander_loop_v1.md` - authoritative contract for macro travel and local commander play sharing one world tick.
+- `docs/PRD_effect_system_v1.md` - authoritative unified buff/debuff/condition pipeline synthesizing GemRB opcodes and DF syndromes.
+- `docs/PRD_combat_resolution_v1.md` - authoritative complete combat pipeline synthesizing GemRB THAC0/AC and DF tissue/material physics.
+- `docs/PRD_medical_system_v1.md` - authoritative medical treatment pipeline from DF M05 (diagnosis, treatment, infection, recovery).
+- `docs/PRD_systems_closure_v1.md` - authoritative Sprint 5 baseline for syndromes, power networks, traps, fluids, temperature, strange moods.
+- `docs/PRD_colony_simulation_v2.md` - authoritative colony pressure, morale cascades, production workflows, quest hook generation.
+- `docs/PRD_job_reaction_kernel_v2.md` - authoritative job/reaction pipeline, skill XP, skill rust, labor assignment.
 - `docs/architecture/runtime_authority.md` - authoritative runtime boundary between macro world graph, active local map, campaign runtime, and client state.
 - `docs/architecture/creation_state_machine.md` - authoritative creation flow from identity through questionnaire, rolled pool assignment, summary, and finalize.
 - `docs/architecture/automation_stack.md` - authoritative QA/tooling stack for Godot automation, recording, and desktop fallback.
@@ -122,6 +129,8 @@ AC-06 [FR-06]: Each authoritative entry states the subsystem it owns.
 - `docs/PRD_topdown_living_world_v1.md` - legacy top-down world draft.
 - `docs/PRD_living_world_v1.md` - legacy living-world draft.
 - `docs/PROMPT_deterministic_world_v1.md` - historical planning prompt; no longer authoritative after the tooling-first architecture reset docs landed.
+- `docs/PRD_colony_simulation_v1.md` - superseded by v2 which adds full pressure algorithms, morale cascades, production workflows.
+- `docs/PRD_job_reaction_kernel_v1.md` - superseded by v2 which adds ReactionDef schema, skill XP formulas, labor assignment.
 
 ### Non-blocking
 - `docs/PRD_dm_agent.md`

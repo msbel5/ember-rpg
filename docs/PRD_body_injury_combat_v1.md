@@ -144,3 +144,58 @@ AC-07 [FR-09]: Given existing combat handlers still use legacy surfaces, when th
 - vital-part viability rules
 - wound serialization
 - deterministic strike resolution with and without armor
+- 85% line coverage
+
+## 11. Deferred Mechanics (to be implemented in later sprints)
+
+### Infection Progression (DF M05 — see `PRD_medical_system_v1`)
+Untreated open wounds develop infections over time:
+```
+wound.infection_level starts at 0 when wound is created
+Each world tick (if wound is open and not cleaned):
+    wound.infection_level += 1
+Thresholds:
+    infection_level > 30: fever condition applied (+pain, -performance)
+    infection_level > 60: organ impairment (-stat penalties)
+    infection_level > 90: sepsis → actor death
+Treatment with soap reduces infection_risk by 90% (DF M05 clean step)
+```
+
+### Bleeding Progression
+Active bleeding wounds drain blood each tick:
+```
+Each world tick:
+    actor.blood_count -= sum(wound.bleeding for wound in active_wounds)
+    if actor.blood_count <= actor.max_blood * 0.5:
+        unconscious condition applied
+    if actor.blood_count <= 0:
+        death
+```
+
+### Tissue Layer Integration (DF M01 — partial)
+Current implementation uses simplified HP-per-part. Future expansion:
+- Each body part has tissue layers: skin → fat → muscle → bone → organ
+- Edge damage penetrates layer by layer (force vs material.shear_yield)
+- Blunt damage causes bruising/fracture without penetrating
+- Severed connective parts (neck) cause instant death
+- Nerve damage in specific layers causes motor/sensory loss
+
+### BodyPartState Definition (missing from original PRD)
+```python
+@dataclass
+class BodyPartState:
+    part_id: str
+    current_hp: int
+    max_hp: int
+    destroyed: bool = False
+    bleed_rate: float = 0.0
+    pain: float = 0.0
+    mobility_penalty: float = 0.0
+    infection_level: int = 0
+    bandaged: bool = False
+    splinted: bool = False
+```
+
+## Changelog
+
+- 2026-04-01: Added deferred mechanics (infection progression, bleeding progression, tissue layer roadmap). Added BodyPartState definition. Added test coverage target.

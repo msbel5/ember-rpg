@@ -143,3 +143,50 @@ AC-08 [FR-10]: Given a canonical actor record, when it is serialized and reloade
 ## 10. Test Coverage Target
 - New kernel adapter tests must cover NPC, creature, and avatar-style inputs.
 - Serialization coverage for `ActorRecord` and nested records must be explicit rather than incidental.
+- 85% line coverage for adapter and serialization functions.
+
+## 11. Deferred Mechanics (to be implemented in later sprints)
+
+### Skill Rust (DF M02 — Sprint 3)
+Skills not used for extended periods decay. Implementation:
+```python
+# On each world tick, for each actor skill:
+skill.unused_ticks += 1
+rust_threshold = base_threshold * (1 + memory_bonus)
+if skill.unused_ticks > rust_threshold:
+    skill.rusty += 1
+    if skill.rusty > demotion_threshold:
+        skill.rating -= 1  # effective skill drops
+# Legendary skills (rating >= 15) rust 3x slower
+# Skills below rating 1 cannot rust further
+```
+
+### Pain Thresholds (DF M01 — Sprint 1 extension)
+Pain accumulates from wounds and affects actor behavior:
+```python
+@dataclass
+class PainState:
+    current_pain: float = 0.0  # 0.0 to 1.0+
+    threshold_stunned: float = 0.5
+    threshold_unconscious: float = 0.8
+    threshold_shock_death: float = 1.2
+    willpower_modifier: float = 0.0  # reduces effective pain
+    toughness_modifier: float = 0.0  # reduces pain accumulation rate
+```
+Pain effects:
+- pain >= stunned_threshold: -2 to all rolls
+- pain >= unconscious_threshold: actor cannot act, drops to ground
+- pain >= shock_threshold: death from pain shock
+
+### Need Fulfillment (DF M03 — Sprint 3)
+Each need has a decay rate and fulfillment action:
+- EAT: hunger_timer++ each tick; fulfilled by consuming food item
+- DRINK: thirst_timer++ each tick; fulfilled by consuming drink
+- SLEEP: sleepiness_timer++ each tick; fulfilled by resting in bed/bedroll
+- SOCIALIZE: loneliness_timer++ each tick; fulfilled by conversation/proximity to allies
+- CRAFT: creative_urge++ each tick; fulfilled by completing crafting job
+- PRAY: spiritual_need++ each tick (if has religious trait); fulfilled by visiting shrine
+
+## Changelog
+
+- 2026-04-01: Added deferred mechanics section (skill rust, pain thresholds, need fulfillment). Added test coverage target. Promoted authorship to Alcyone.

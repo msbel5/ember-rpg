@@ -53,7 +53,47 @@ A mechanism is not complete until all four are true:
 - Sprint 4 must deliver the hybrid commander loop, travel, local map authority, and military framing needed for M15 and M18.
 - Sprint 5 must deliver the typed systems-closure baseline for M06, M07, M08, M09, M10, and M13.
 
+## Implementation Reality Audit (2026-04-01)
+
+Honest assessment of what exists as running simulation vs metadata-only typed structures:
+
+| ID | Mechanism | Dataclass Coverage | Logic Coverage | Reality |
+|----|-----------|-------------------|----------------|---------|
+| M01 | Combat | 90% | 50% | Strike resolution works (material physics, armor, wounds). MISSING: to-hit/dodge rolls, saving throws, pain cascade, backstab. Auto-hits. |
+| M02 | Skill/Learning | 70% | 20% | Skills stored on actor. MISSING: XP gain from jobs, skill rust, quality formula from skill rating. |
+| M03 | Need/Happiness/Stress | 80% | 35% | NeedState and ColonyPressureState exist with numeric formulas. MISSING: morale cascades (tantrum/berserk), need decay per tick. |
+| M04 | Job/Task Assignment | 85% | 35% | JobRecord, ReactionDef, WorksiteRecord exist. MISSING: actual labor simulation, material gathering pathfinding, work execution ticks. |
+| M05 | Medical | 30% | 0% | Wound hooks exist. MISSING: entire treatment pipeline (diagnosis, clean, suture, dress, recovery). No healing mechanics. |
+| M06 | Syndrome/Poison | 85% | 15% | SyndromeDef/SyndromeEffect exist. MISSING: resistance checks, transmission, tick progression, actual effects on actor. |
+| M07 | Machine/Power | 80% | 20% | PowerNetworkState counts nodes. MISSING: distribution algorithm, connected components, mechanism chains. |
+| M08 | Traps | 70% | 10% | TrapState exists, hardcoded for fortified settlements only. MISSING: trigger pipeline, damage resolution, rearm logic. |
+| M09 | Fluid Simulation | 60% | 5% | FluidState counts tiles. MISSING: flow spreading, drowning, magma damage, obsidian creation. |
+| M10 | Temperature | 60% | 5% | TemperatureState tracks ambient band. MISSING: heat source radiation, freeze/burn effects, material state changes. |
+| M11 | Trade | 40% | 15% | Region economy with base prices. MISSING: caravan simulation, barter values, CHA effect, faction trade agreements. |
+| M12 | Migration | 50% | 10% | HistoryFigure, FactionRecord, population field. MISSING: wave mechanics, family trees, skill-based distribution. |
+| M13 | Strange Mood | 70% | 10% | StrangeMoodIncident exists. MISSING: material demand phase, artifact creation, skill boost, mood failure consequences. |
+| M14 | World Generation | 95% | 80% | Excellent terrain gen (tectonics, erosion, biomes). History generation exists. Settlement layout works. |
+| M15 | Pathfinding | 60% | 25% | Travel graph with PathAuthorityState. MISSING: local A* on search map, multi-tile pathfinding. |
+| M16 | Building/Room | 70% | 20% | WorksiteRecord exists. MISSING: room value calculation, zone assignment, furniture happiness bonus. |
+| M17 | Wear/Degradation | 60% | 15% | ItemStack.wear field, combat wear increments. MISSING: wear threshold breakage, sharpness decay. |
+| M18 | Military | 70% | 15% | SquadRecord, MilitaryState exist. MISSING: squad movement, engagement, order execution, coordination. |
+| M19 | Farming | 50% | 10% | Crop job references in colony. MISSING: growth cycles, seed economy, harvest mechanics. |
+| M20 | Diplomacy | 50% | 10% | Faction disposition field. MISSING: ethics conflict computation, war/peace state machine, tribute demands. |
+
+**Overall: ~72% dataclass coverage, ~22% logic coverage. The kernel is typed metadata, not a running simulation.**
+
+### New PRDs Added to Close Logic Gaps
+- `PRD_effect_system_v1.md` — unified buff/debuff pipeline (spine for M01, M05, M06)
+- `PRD_combat_resolution_v1.md` — complete d20 + physics combat (M01 upgrade)
+- `PRD_medical_system_v1.md` — treatment pipeline (M05)
+- `PRD_systems_closure_v1.md` — full Sprint 5 spec (M06-M10, M13)
+- `PRD_colony_simulation_v2.md` — full colony spec (M03, M04, M16, M19)
+- `PRD_job_reaction_kernel_v2.md` — full job/reaction spec (M02, M04)
+
 ## Notes
 - "PRD seed" means the owning PRD family exists but the mechanism still needs a dedicated implementation slice and tests.
 - "Initial typed runtime" means canonical structures, payload wiring, and targeted tests exist, but the mechanic may still need deeper simulation depth or balance cleanup.
 - This checklist should be updated whenever a mechanism moves from PRD-only to typed runtime, or from typed runtime to tested integration.
+
+## Changelog
+- 2026-04-01: Added Implementation Reality Audit with honest dataclass vs logic coverage percentages. Added 6 new PRDs to close logic gaps.
