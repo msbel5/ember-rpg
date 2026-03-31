@@ -24,16 +24,16 @@ A mechanism is not complete until all four are true:
 | M08 | Traps | Post Sprint 3 | future infra/combat PRD | trap defs, trigger records | M01, M07 | combat, security loops | Planned |
 | M09 | Fluid Simulation | Post Sprint 2 | future environment PRD | fluid cells, flow state | M07, map authority | M06, M10, M19 | Planned |
 | M10 | Temperature | Post Sprint 2 | future environment/material PRD | temperature field, thermal material state | M09, material kernel | M01, M17, M19 | Planned |
-| M11 | Trade | Sprint 2 then Sprint 3 | `docs/PRD_world_state_kernel_v1.md`, `docs/PRD_colony_simulation_v1.md` | faction/site trade state, value hooks | M20, item kernel | M12, diplomacy, supply | PRD seed |
-| M12 | Migration / Population | Sprint 2 | `docs/PRD_world_state_kernel_v1.md`, `docs/PRD_history_and_factions_v1.md` | `HistoryFigure`, `FactionRecord`, future migration events | world generation, faction kernel | M03, site pressure | PRD written |
+| M11 | Trade | Sprint 2 then Sprint 3 | `docs/PRD_world_state_kernel_v1.md`, `docs/PRD_colony_simulation_v1.md` | faction/site trade state, value hooks | M20, item kernel | M12, diplomacy, supply | Typed macro payload hooks live, colony economics pending |
+| M12 | Migration / Population | Sprint 2 | `docs/PRD_world_state_kernel_v1.md`, `docs/PRD_history_and_factions_v1.md` | `HistoryFigure`, `FactionRecord`, future migration events | world generation, faction kernel | M03, site pressure | Typed runtime and save/load coverage |
 | M13 | Strange Mood | Post Sprint 3 | future colony/crafting pressure PRD | mood event defs, artifact hooks | M02, M03, M04 | M11, colony incidents | Planned |
-| M14 | World Generation | Sprint 2 | `docs/PRD_world_state_kernel_v1.md`, `docs/PRD_history_and_factions_v1.md` | `WorldState`, `RegionRecord`, `HistoryEvent` | worldgen pipeline | all higher systems | PRD written, initial runtime slice |
+| M14 | World Generation | Sprint 2 | `docs/PRD_world_state_kernel_v1.md`, `docs/PRD_history_and_factions_v1.md` | `WorldState`, `RegionRecord`, `HistoryEvent` | worldgen pipeline | all higher systems | Typed payload and save/load integration |
 | M15 | Pathfinding | Sprint 4 local authority | `docs/PRD_hybrid_commander_loop_v1.md` plus future local map/path PRD | travel graph, local path authority | world state, local map | M04, M18, local actions | PRD seed |
 | M16 | Building / Room Assignment | Sprint 3 | `docs/PRD_job_reaction_kernel_v1.md`, `docs/PRD_colony_simulation_v1.md` | `WorksiteRecord`, room/zone state | M04, item/material kernel | M03, M07, M11 | PRD seed |
 | M17 | Wear / Degradation | Sprint 1 then later expansion | `docs/PRD_material_item_kernel_v1.md` | `ItemStack`, material durability, wear state | M01, M10 | M03, item upkeep | Initial combat wear integration |
 | M18 | Military | Sprint 4 | `docs/PRD_hybrid_commander_loop_v1.md`, future squad PRD | squad state, duty schedule, equipment policy | M01, M02, M15 | combat, raids, defense | PRD seed |
 | M19 | Farming | Sprint 3 | `docs/PRD_job_reaction_kernel_v1.md`, `docs/PRD_colony_simulation_v1.md` | crop jobs, seed economy, food pressure | M04, M10 | M03, supply, trade | PRD seed |
-| M20 | Diplomacy | Sprint 2 then Sprint 3 | `docs/PRD_history_and_factions_v1.md`, `docs/PRD_world_state_kernel_v1.md` | faction relations, diplomacy events | M11, M14 | M11, war/travel pressure | PRD written |
+| M20 | Diplomacy | Sprint 2 then Sprint 3 | `docs/PRD_history_and_factions_v1.md`, `docs/PRD_world_state_kernel_v1.md` | faction relations, diplomacy events | M11, M14 | M11, war/travel pressure | Typed faction/history payload links live |
 
 ## Dependency Guardrails
 - M01 Combat must still create wounds that feed M05 Medical, contaminants that feed M06 Syndrome, and witness/death events that feed M03 Stress.

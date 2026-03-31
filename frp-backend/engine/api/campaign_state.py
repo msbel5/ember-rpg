@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING, Any
 
+from engine.api.campaign_kernel import build_canonical_actor_roster, build_canonical_world_state
 from engine.api.game_session import GameSession
 from engine.core.dm_agent import SceneType
 from engine.map import MapData, Room, TileType
@@ -126,6 +127,95 @@ def region_payload(context: "CampaignContext") -> dict[str, Any]:
     return snapshot
 
 
+def _region_grid_position(region: dict[str, Any]) -> list[int]:
+    return [
+        int(region["x"]) // max(1, int(region["width"])),
+        int(region["y"]) // max(1, int(region["height"])),
+    ]
+
+
+def build_world_graph(world: WorldBlueprint) -> dict[str, Any]:
+    active_region_id = world.simulation_snapshot.active_region_id if world.simulation_snapshot else ""
+    regions = []
+    for region in world.regions:
+        region_id = str(region["id"])
+        runtime_state = _runtime_region_state(world, region_id)
+        regions.append(
+            {
+                "id": region_id,
+                "grid_position": _region_grid_position(region),
+                "biome_id": str(region["biome_id"]),
+                "controller_faction_id": region.get("controller_faction_id"),
+                "settlement_node_id": region.get("settlement_id"),
+                "settlement_name": region.get("primary_settlement_name", ""),
+                "faction_presence": copy.deepcopy(world.faction_presence.get(region_id, [])),
+                "prosperity": runtime_state.get("prosperity", world.region_economy.get(region_id, {}).get("prosperity", 42)),
+                "alerts": copy.deepcopy(runtime_state.get("alerts", world.region_alerts.get(region_id, []))),
+            }
+        )
+    return {
+        "active_region_id": active_region_id,
+        "dimensions": copy.deepcopy(world.metadata.get("world_graph_dimensions", {})),
+        "regions": regions,
+        "nodes": copy.deepcopy(world.settlement_nodes),
+        "edges": copy.deepcopy(world.travel_edges),
+    }
+
+
+def build_travel_options(world: WorldBlueprint) -> list[dict[str, Any]]:
+    active_region_id = world.simulation_snapshot.active_region_id if world.simulation_snapshot else None
+    active_node = next((item for item in world.settlement_nodes if item["region_id"] == active_region_id), None)
+    if active_node is None:
+        return []
+    options: list[dict[str, Any]] = []
+    for edge in world.travel_edges:
+        if edge["from_settlement_id"] == active_node["id"]:
+            destination_id = edge["to_settlement_id"]
+            destination_region_id = edge["to_region_id"]
+        elif edge["to_settlement_id"] == active_node["id"]:
+            destination_id = edge["from_settlement_id"]
+            destination_region_id = edge["from_region_id"]
+        else:
+            continue
+        destination_node = next(
+            (item for item in world.settlement_nodes if item["id"] == destination_id),
+            None,
+        )
+        if destination_node is None:
+            continue
+        options.append(
+            {
+                "destination_settlement_id": destination_id,
+                "destination_region_id": destination_region_id,
+                "destination_name": destination_node["name"],
+                "travel_hours": int(edge.get("travel_hours", 4)),
+                "biome_id": destination_node.get("biome_id", ""),
+            }
+        )
+    options.sort(key=lambda item: (item["travel_hours"], item["destination_name"]))
+    return options
+
+
+def build_current_region_summary(world: WorldBlueprint, region_snapshot: RegionSnapshot) -> dict[str, Any]:
+    region = next(region for region in world.regions if region["id"] == region_snapshot.region_id)
+    runtime_state = _runtime_region_state(world, region_snapshot.region_id)
+    settlement_node = next(
+        (item for item in world.settlement_nodes if item["region_id"] == region_snapshot.region_id),
+        None,
+    )
+    return {
+        "region_id": region_snapshot.region_id,
+        "biome_id": region_snapshot.biome_id,
+        "grid_position": _region_grid_position(region),
+        "settlement_node_id": settlement_node["id"] if settlement_node is not None else None,
+        "settlement_name": settlement_node["name"] if settlement_node is not None else "",
+        "controller_faction_id": region.get("controller_faction_id"),
+        "weather": copy.deepcopy(runtime_state.get("weather", {})),
+        "alerts": copy.deepcopy(runtime_state.get("alerts", [])),
+        "faction_presence": copy.deepcopy(world.faction_presence.get(region_snapshot.region_id, [])),
+    }
+
+
 def map_payload_from_region(region_snapshot: RegionSnapshot) -> dict[str, Any]:
     tiles: list[list[str]] = []
     for row in region_snapshot.typed_tiles:
@@ -146,6 +236,12 @@ def map_payload_from_region(region_snapshot: RegionSnapshot) -> dict[str, Any]:
 def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     session_data = context.session.to_dict()
     runtime_state = _runtime_region_state(context.world, context.region_snapshot.region_id)
+    canonical_world_state = build_canonical_world_state(context.world)
+    canonical_actors = build_canonical_actor_roster(
+        context.session,
+        active_region_id=context.region_snapshot.region_id,
+        active_site_id=context.region_snapshot.region_id,
+    )
     return {
         "world": {
             "seed": context.world.seed,
@@ -160,6 +256,11 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
             "season": context.world.simulation_snapshot.season if context.world.simulation_snapshot else "spring",
             "weather": copy.deepcopy(runtime_state.get("weather", {})),
         },
+        "world_state": canonical_world_state,
+        "actors": canonical_actors,
+        "world_graph": build_world_graph(context.world),
+        "travel_options": build_travel_options(context.world),
+        "current_region_summary": build_current_region_summary(context.world, context.region_snapshot),
         "player": session_data["player"],
         "scene": session_data["scene"],
         "location": session_data["location"],
@@ -178,6 +279,12 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
 
 
 def persist_campaign_state(context: "CampaignContext") -> None:
+    canonical_world_state = build_canonical_world_state(context.world)
+    canonical_actors = build_canonical_actor_roster(
+        context.session,
+        active_region_id=context.region_snapshot.region_id,
+        active_site_id=context.region_snapshot.region_id,
+    )
     context.session.campaign_state["campaign_v2"] = {
         "campaign_id": context.campaign_id,
         "adapter_id": context.adapter_id,
@@ -185,6 +292,8 @@ def persist_campaign_state(context: "CampaignContext") -> None:
         "seed": context.seed,
         "active_region_id": context.region_snapshot.region_id,
         "world_snapshot": snapshot_world(context.world),
+        "kernel_world_state": canonical_world_state,
+        "kernel_actors": canonical_actors,
         "settlement_state": copy.deepcopy(context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-20:]),
     }
@@ -650,6 +759,11 @@ def build_character_sheet(session: GameSession, settlement_state: dict[str, Any]
         "class_weights": copy.deepcopy(creation_profile.get("class_weights", {})),
         "skill_weights": copy.deepcopy(creation_profile.get("skill_weights", {})),
         "alignment_axes": copy.deepcopy(player.alignment_axes),
+        "facet_scores": copy.deepcopy(creation_profile.get("facet_scores", {})),
+        "campaign_genesis": copy.deepcopy(creation_profile.get("campaign_genesis", {})),
+        "world_seed_hints": copy.deepcopy(creation_profile.get("world_seed_hints", {})),
+        "faction_bias": copy.deepcopy(creation_profile.get("faction_bias", {})),
+        "settlement_bias": copy.deepcopy(creation_profile.get("settlement_bias", {})),
         "stat_source": str(creation_profile.get("stat_source", "default")),
         "rolled_values": list(creation_profile.get("rolled_values", [])),
         "saved_roll": copy.deepcopy(creation_profile.get("saved_roll")),

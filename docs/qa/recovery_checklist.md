@@ -33,11 +33,11 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 ## Sprint 2: World State / History / Faction
 - [x] Write world-state kernel PRD
 - [x] Write history/factions PRD
-- [ ] Type macro world graph as authoritative `WorldState` in campaign/runtime payloads
-- [ ] Type site/faction/history links end-to-end
-- [ ] Ensure save/load round-trip for typed macro state
-- [ ] Prove travel graph integrity with targeted tests
-- [ ] Preserve DF-style M11, M12, M14, and M20 dependency links in runtime code
+- [x] Type macro world graph as authoritative `WorldState` in campaign/runtime payloads
+- [x] Type site/faction/history links end-to-end
+- [x] Ensure save/load round-trip for typed macro state
+- [x] Prove travel graph integrity with targeted tests
+- [x] Preserve DF-style M11, M12, M14, and M20 dependency links in runtime code
 
 ## Sprint 3: Jobs / Reactions / Colony Simulation
 - [x] Write jobs/reactions PRD
@@ -58,6 +58,7 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 - [x] PRD first
 - [ ] AC written before each new implementation chunk
 - [x] TDD for Sprint 1 combat/body cutover
+- [x] TDD for Sprint 2 campaign/world payload cutover
 - [x] Screenshot or video proof for the current UI-facing recovery slice
 - [x] No full chaos suite by default
 - [x] No regression to hidden-tab or one-question wizard UX
@@ -65,6 +66,7 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 
 ## Current Evidence
 - [x] Backend targeted suite passed on 2026-03-31 for actor/world-state plus campaign regression tests
+- [x] Backend targeted suite passed on 2026-04-01 for canonical world-state payload, save/load, command bus, and travel graph coverage
 - [x] Godot headless suite passed on 2026-03-31 after creation-shell and automation-bridge changes
 - [x] Python automation suite passed on 2026-03-31 including atomic command-file fallback coverage
 - [x] Desktop smoke scenario produced title and questionnaire screenshots on 2026-03-31
@@ -72,4 +74,4 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 ## Current Risks
 - [ ] Win32 keyboard injection is still weaker than the headless bridge path
 - [ ] Sprint 1 still leaves legacy save/load and some non-combat runtime surfaces on compatibility shims
-- [ ] Sprint 2 through Sprint 4 are documented but not yet integrated end-to-end
+- [ ] Sprint 3 through Sprint 4 are documented but not yet integrated end-to-end

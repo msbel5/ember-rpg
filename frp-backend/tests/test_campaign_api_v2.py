@@ -33,6 +33,13 @@ def test_create_campaign_returns_campaign_snapshot():
     payload = _create_campaign()
     assert payload["adapter_id"] == "fantasy_ember"
     assert payload["campaign"]["world"]["active_region_id"]
+    assert payload["campaign"]["world_state"]["active_region_id"]
+    assert payload["campaign"]["world_state"]["regions"]
+    assert payload["campaign"]["actors"]
+    assert payload["campaign"]["actors"][0]["identity"]["actor_id"] == "player"
+    assert payload["campaign"]["world_graph"]["nodes"]
+    assert payload["campaign"]["travel_options"]
+    assert payload["campaign"]["current_region_summary"]["settlement_node_id"]
     assert payload["campaign"]["settlement"]["residents"]
     assert payload["campaign"]["region"]["width"] == 80
     assert payload["campaign"]["region"]["height"] == 60
@@ -82,6 +89,8 @@ def test_campaign_save_and_load_round_trip():
     assert loaded.status_code == 200
     loaded_payload = loaded.json()
     assert loaded_payload["campaign"]["world"]["seed"] == 42
+    assert loaded_payload["campaign"]["world_state"]["seed"] == 42
+    assert loaded_payload["campaign"]["actors"]
     assert loaded_payload["campaign"]["settlement"]["name"]
 
 

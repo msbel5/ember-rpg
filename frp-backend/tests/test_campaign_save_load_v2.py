@@ -16,6 +16,8 @@ def test_campaign_client_save_load_round_trip(tmp_path: Path):
     loaded = client.load_campaign(str(save_meta["slot_name"]))
 
     assert loaded["campaign"]["world"]["seed"] == 42
+    assert loaded["campaign"]["world_state"]["seed"] == 42
+    assert loaded["campaign"]["actors"]
     assert loaded["campaign"]["settlement"]["name"]
     assert loaded["campaign"]["player"]["name"] == "Saver"
 

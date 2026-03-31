@@ -125,6 +125,7 @@ class ScheduleEntry:
     period: str
     location_id: str | None = None
     position: list[int] | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
@@ -133,8 +134,21 @@ class ScheduleEntry:
     def from_dict(cls, data: dict[str, Any]) -> "ScheduleEntry":
         payload = dict(data)
         position = payload.get("position")
-        payload["position"] = list(position) if position is not None else None
-        return cls(**payload)
+        metadata = dict(payload)
+        period = str(
+            payload.get("period")
+            or payload.get("time_period")
+            or payload.get("hour")
+            or payload.get("activity")
+            or "unscheduled"
+        )
+        location_id = payload.get("location_id") or payload.get("building_kind") or payload.get("activity")
+        return cls(
+            period=period,
+            location_id=str(location_id) if location_id is not None else None,
+            position=list(position) if position is not None else None,
+            metadata=metadata,
+        )
 
 
 @dataclass
