@@ -9,7 +9,9 @@ from engine.core.character import Character
 from engine.core.combat import CombatManager
 from engine.core.dm_agent import SceneType
 from engine.data_loader import list_monsters
+from engine.world.body_parts import BodyPartTracker
 from engine.world.entity import Entity, EntityType
+from engine.world.npc_needs import NPCNeeds
 
 
 class CombatSpawningMixin:
@@ -61,6 +63,9 @@ class CombatSpawningMixin:
                     disposition="hostile",
                     attitude="hostile",
                     alignment="CE",
+                    body=BodyPartTracker(),
+                    needs=NPCNeeds(safety=30, commerce=5, social=10, sustenance=70, duty=60),
+                    job=str(getattr(enemy, "role", "monster")),
                 )
                 if session.spatial_index is not None and session.spatial_index.get_position(entity_id) is None:
                     session.spatial_index.add(live_entity)
@@ -77,8 +82,11 @@ class CombatSpawningMixin:
                     "attitude": "hostile",
                     "alignment": "CE",
                     "alignment_axes": {"law_chaos": -40, "good_evil": -40},
+                    "body": live_entity.body,
+                    "needs": live_entity.needs,
                     "entity_ref": live_entity,
                 }
+                session.sync_entity_record(entity_id, live_entity)
             combatants.append(enemy)
         session.combat = CombatManager(combatants, seed=random.randint(0, 9999))
         session.combat.start_turn()

@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from engine.world.body_parts import BodyPartTracker
 from engine.world.entity import Entity
+from engine.world.npc_needs import NPCNeeds
 
 
 class SessionEntityMixin:
@@ -52,16 +54,24 @@ class SessionEntityMixin:
             record["alignment_axes"] = dict(live_entity.alignment_axes or {})
 
         live_body = getattr(live_entity, "body", None)
+        if live_body is None and isinstance(record.get("body"), BodyPartTracker):
+            live_entity.body = record["body"]
+            live_body = live_entity.body
+        if live_body is None:
+            live_body = BodyPartTracker()
+            live_entity.body = live_body
         if live_body is not None:
             record["body"] = live_body
-        elif record.get("body") is not None:
-            live_entity.body = record["body"]
 
         live_needs = getattr(live_entity, "needs", None)
+        if live_needs is None and isinstance(record.get("needs"), NPCNeeds):
+            live_entity.needs = record["needs"]
+            live_needs = live_entity.needs
+        if live_needs is None:
+            live_needs = NPCNeeds()
+            live_entity.needs = live_needs
         if live_needs is not None:
             record["needs"] = live_needs
-        elif record.get("needs") is not None:
-            live_entity.needs = record["needs"]
 
         live_schedule = getattr(live_entity, "schedule", None)
         if live_schedule is not None:
