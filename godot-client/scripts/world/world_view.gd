@@ -81,34 +81,152 @@ func _refresh_from_state(_payload = null) -> void:
 	_set_focus_actions(_default_focus_actions())
 
 
+var _context_menu: PopupMenu
+var _context_target_entity: Dictionary = {}
+var _context_target_tile: Vector2i = Vector2i.ZERO
+var _is_camera_dragging: bool = false
+var _camera_drag_start: Vector2 = Vector2.ZERO
+const EDGE_SCROLL_MARGIN := 20.0
+const EDGE_SCROLL_SPEED := 200.0
+const KEYBOARD_PAN_SPEED := 300.0
+
+
+func _process(delta: float) -> void:
+	_handle_edge_scroll(delta)
+	_handle_keyboard_pan(delta)
+
+
+func _handle_edge_scroll(delta: float) -> void:
+	if not is_visible_in_tree():
+		return
+	var mouse_pos = get_local_mouse_position()
+	var vp_size = size
+	var scroll_dir = Vector2.ZERO
+	if mouse_pos.x < EDGE_SCROLL_MARGIN and mouse_pos.x >= 0:
+		scroll_dir.x = -1.0
+	elif mouse_pos.x > vp_size.x - EDGE_SCROLL_MARGIN and mouse_pos.x <= vp_size.x:
+		scroll_dir.x = 1.0
+	if mouse_pos.y < EDGE_SCROLL_MARGIN and mouse_pos.y >= 0:
+		scroll_dir.y = -1.0
+	elif mouse_pos.y > vp_size.y - EDGE_SCROLL_MARGIN and mouse_pos.y <= vp_size.y:
+		scroll_dir.y = 1.0
+	if scroll_dir != Vector2.ZERO:
+		world_camera.position += scroll_dir * EDGE_SCROLL_SPEED * delta / world_camera.zoom.x
+
+
+func _handle_keyboard_pan(delta: float) -> void:
+	if not is_visible_in_tree():
+		return
+	var pan_dir = Vector2.ZERO
+	if Input.is_key_pressed(KEY_HOME):
+		var player_tile = GameState.player_map_pos
+		if player_tile != Vector2i.ZERO:
+			world_camera.position = Vector2(player_tile) * TileCatalog.TILE_SIZE + Vector2(TileCatalog.TILE_SIZE / 2.0, TileCatalog.TILE_SIZE / 2.0)
+		return
+	if pan_dir != Vector2.ZERO:
+		world_camera.position += pan_dir.normalized() * KEYBOARD_PAN_SPEED * delta / world_camera.zoom.x
+
+
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
+		if _is_camera_dragging:
+			world_camera.position -= event.relative / world_camera.zoom
+			accept_event()
+			return
 		_update_hover(event.position)
 		return
 
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			var tile_position = _screen_to_tile(event.position)
-			if not _tile_in_bounds(tile_position):
-				return
-			if selection_layer.has_method("set_selected_tile"):
-				selection_layer.set_selected_tile(tile_position)
-			if selection_layer.has_method("flash_tile"):
-				selection_layer.flash_tile(tile_position)
-			var entity = entity_layer.get_entity_at_tile(tile_position)
-			_set_focus_summary(_focus_summary(tile_position, entity))
-			_set_focus_actions(_focus_actions_for(tile_position, entity))
-			if not entity.is_empty():
-				command_requested.emit(command_for_entity(entity))
-			else:
-				command_requested.emit(command_for_tile(tile_position))
+	if event is InputEventMouseButton:
+		# Middle mouse drag for camera pan
+		if event.button_index == MOUSE_BUTTON_MIDDLE:
+			_is_camera_dragging = event.pressed
+			if event.pressed:
+				_camera_drag_start = event.position
 			accept_event()
-		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			world_camera.zoom_in()
-			accept_event()
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			world_camera.zoom_out()
-			accept_event()
+			return
+
+		if event.pressed:
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				var tile_position = _screen_to_tile(event.position)
+				if not _tile_in_bounds(tile_position):
+					return
+				if selection_layer.has_method("set_selected_tile"):
+					selection_layer.set_selected_tile(tile_position)
+				if selection_layer.has_method("flash_tile"):
+					selection_layer.flash_tile(tile_position)
+				var entity = entity_layer.get_entity_at_tile(tile_position)
+				_set_focus_summary(_focus_summary(tile_position, entity))
+				_set_focus_actions(_focus_actions_for(tile_position, entity))
+				if not entity.is_empty():
+					command_requested.emit(command_for_entity(entity))
+				else:
+					command_requested.emit(command_for_tile(tile_position))
+				accept_event()
+
+			elif event.button_index == MOUSE_BUTTON_RIGHT:
+				var tile_position = _screen_to_tile(event.position)
+				if not _tile_in_bounds(tile_position):
+					return
+				var entity = entity_layer.get_entity_at_tile(tile_position)
+				_show_context_menu(event.position, tile_position, entity)
+				accept_event()
+
+			elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				world_camera.zoom_in()
+				accept_event()
+			elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				world_camera.zoom_out()
+				accept_event()
+
+
+func _show_context_menu(screen_pos: Vector2, tile: Vector2i, entity: Dictionary) -> void:
+	if _context_menu != null:
+		_context_menu.queue_free()
+	_context_menu = PopupMenu.new()
+	_context_menu.name = "ContextMenu"
+	add_child(_context_menu)
+	_context_target_entity = entity
+	_context_target_tile = tile
+
+	if not entity.is_empty():
+		var entity_name = str(entity.get("name", "target")).strip_edges()
+		var bucket = str(entity.get("bucket", "npc"))
+		_context_menu.add_item("Talk to %s" % entity_name, 0)
+		_context_menu.add_item("Examine %s" % entity_name, 1)
+		if bucket == "enemy":
+			_context_menu.add_item("Attack %s" % entity_name, 2)
+		elif bucket == "npc":
+			_context_menu.add_item("Attack %s" % entity_name, 2)
+			_context_menu.add_item("Pickpocket %s" % entity_name, 3)
+		elif bucket == "item":
+			_context_menu.add_item("Pick up %s" % entity_name, 4)
+	else:
+		_context_menu.add_item("Move here", 10)
+		_context_menu.add_item("Search area", 11)
+		_context_menu.add_item("Rest", 12)
+		var tile_name = _tile_name_at(tile)
+		if not tile_name.is_empty() and tile_name in INTERACTIVE_TILE_NAMES:
+			_context_menu.add_item("Examine %s" % _display_tile_name(tile_name), 13)
+
+	_context_menu.id_pressed.connect(_on_context_menu_selected)
+	_context_menu.position = Vector2i(int(screen_pos.x) + int(global_position.x), int(screen_pos.y) + int(global_position.y))
+	_context_menu.popup()
+
+
+func _on_context_menu_selected(id: int) -> void:
+	var entity_name = str(_context_target_entity.get("name", "target")).strip_edges().to_lower()
+	match id:
+		0: command_requested.emit("talk %s" % entity_name)
+		1: command_requested.emit("examine %s" % entity_name)
+		2: command_requested.emit("attack %s" % entity_name)
+		3: command_requested.emit("pickpocket %s" % entity_name)
+		4: command_requested.emit("pick up %s" % entity_name)
+		10: command_requested.emit("move to %d,%d" % [_context_target_tile.x, _context_target_tile.y])
+		11: command_requested.emit("search area")
+		12: command_requested.emit("rest")
+		13:
+			var tile_name = _tile_name_at(_context_target_tile)
+			command_requested.emit("examine %s" % tile_name)
 
 
 func command_for_entity(entity: Dictionary) -> String:

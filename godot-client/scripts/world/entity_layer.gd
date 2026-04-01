@@ -163,8 +163,33 @@ func _create_sprite_entity(actor_id: String, entry: Dictionary, tile_position: V
 	actor.add_child(sprite)
 	_apply_actor_visual(actor, entry, Vector2.ZERO)
 
+	# Name label above entity
+	var entity_name = str(entry.get("name", "")).strip_edges()
+	if not entity_name.is_empty() and bucket != "furniture":
+		var name_label = Label.new()
+		name_label.name = "NameLabel"
+		name_label.text = entity_name
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.position = Vector2(-40, -14)
+		name_label.size = Vector2(80, 16)
+		name_label.add_theme_font_size_override("font_size", 10)
+		name_label.add_theme_color_override("font_color", _name_label_color(bucket))
+		name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+		name_label.add_theme_constant_override("outline_size", 2)
+		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		actor.add_child(name_label)
+
 	add_child(actor)
 	return actor
+
+
+func _name_label_color(bucket: String) -> Color:
+	match bucket:
+		"player": return Color(1.0, 1.0, 1.0)
+		"npc": return Color(0.80, 0.68, 0.26)
+		"enemy": return Color(0.96, 0.30, 0.30)
+		"item": return Color(0.40, 0.85, 0.40)
+		_: return Color(0.70, 0.70, 0.70)
 
 
 func _create_marker(kind: String, tile_position: Vector2i) -> void:
