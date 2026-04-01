@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from engine.api.campaign_kernel import (
     build_canonical_actor_records,
+    build_canonical_game_state,
     build_canonical_world_state,
 )
 from engine.api.game_session import GameSession
@@ -268,6 +269,13 @@ def _build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:
         active_region_id=context.region_snapshot.region_id,
         active_site_id=active_site_id,
     )
+    canonical_game_state = build_canonical_game_state(
+        context.session,
+        campaign_id=context.campaign_id,
+        seed=context.seed,
+        active_region_id=context.region_snapshot.region_id,
+        active_site_id=active_site_id,
+    )
     canonical_actors = [actor.to_dict() for actor in canonical_actor_records]
     jobs = [job.to_dict() for job in job_records_from_settlement(context.settlement_state)]
     reactions = [reaction.to_dict() for reaction in reaction_defs_from_settlement(context.settlement_state)]
@@ -294,6 +302,7 @@ def _build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:
     }
     return {
         "world_state": canonical_world_state,
+        "game_state": canonical_game_state.to_dict(),
         "actors": canonical_actors,
         "jobs": jobs,
         "reactions": reactions,
@@ -356,6 +365,7 @@ def persist_campaign_state(context: "CampaignContext") -> None:
         "active_region_id": context.region_snapshot.region_id,
         "world_snapshot": snapshot_world(context.world),
         "kernel_world_state": kernel_payload["world_state"],
+        "kernel_game_state": kernel_payload["game_state"],
         "kernel_actors": kernel_payload["actors"],
         "kernel_jobs": kernel_payload["jobs"],
         "kernel_reactions": kernel_payload["reactions"],

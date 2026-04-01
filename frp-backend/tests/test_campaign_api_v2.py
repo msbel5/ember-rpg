@@ -34,6 +34,9 @@ def test_create_campaign_returns_campaign_snapshot():
     assert payload["adapter_id"] == "fantasy_ember"
     assert payload["campaign"]["world"]["active_region_id"]
     assert payload["campaign"]["world_state"]["active_region_id"]
+    assert payload["campaign"]["game_state"]["campaign_id"] == payload["campaign_id"]
+    assert payload["campaign"]["game_state"]["current_area_id"] == payload["campaign"]["world"]["active_region_id"]
+    assert payload["campaign"]["game_state"]["actors"]["player"]["identity"]["actor_id"] == "player"
     assert payload["campaign"]["world_state"]["regions"]
     assert payload["campaign"]["actors"]
     assert payload["campaign"]["actors"][0]["identity"]["actor_id"] == "player"
@@ -104,6 +107,8 @@ def test_campaign_save_and_load_round_trip():
     loaded_payload = loaded.json()
     assert loaded_payload["campaign"]["world"]["seed"] == 42
     assert loaded_payload["campaign"]["world_state"]["seed"] == 42
+    assert loaded_payload["campaign"]["game_state"]["seed"] == 42
+    assert loaded_payload["campaign"]["game_state"]["party"] == ["player"]
     assert loaded_payload["campaign"]["actors"]
     assert loaded_payload["campaign"]["systems"]["temperature_state"]["ambient_band"]
     assert loaded_payload["campaign"]["settlement"]["name"]

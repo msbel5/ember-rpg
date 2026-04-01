@@ -17,6 +17,8 @@ def test_campaign_client_save_load_round_trip(tmp_path: Path):
 
     assert loaded["campaign"]["world"]["seed"] == 42
     assert loaded["campaign"]["world_state"]["seed"] == 42
+    assert loaded["campaign"]["game_state"]["seed"] == 42
+    assert loaded["campaign"]["game_state"]["party"] == ["player"]
     assert loaded["campaign"]["actors"]
     assert loaded["campaign"]["jobs"]
     assert loaded["campaign"]["reactions"]

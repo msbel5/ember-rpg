@@ -5,7 +5,15 @@ import copy
 from typing import Any
 
 from engine.api.game_session import GameSession
-from engine.kernel import ActorRecord, actor_record_from_character, actor_record_from_entity, world_state_from_blueprint
+from engine.kernel import (
+    ActorRecord,
+    AreaState,
+    GameState,
+    actor_record_from_character,
+    actor_record_from_entity,
+    create_game_state,
+    world_state_from_blueprint,
+)
 from engine.worldgen.models import WorldBlueprint
 
 
@@ -65,3 +73,44 @@ def build_canonical_actor_records(
         actor.raw_payload["context_actions"] = copy.deepcopy(record.get("context_actions", []))
         actors.append(actor)
     return actors
+
+
+def build_canonical_game_state(
+    session: GameSession,
+    *,
+    campaign_id: str,
+    seed: int,
+    active_region_id: str | None = None,
+    active_site_id: str | None = None,
+) -> GameState:
+    actors = build_canonical_actor_records(
+        session,
+        active_region_id=active_region_id,
+        active_site_id=active_site_id,
+    )
+    state = create_game_state(str(campaign_id), int(seed))
+    active_area_id = str(active_region_id or active_site_id or "")
+    if active_area_id:
+        state.current_area_id = active_area_id
+        state.loaded_area_ids = [active_area_id]
+        state.loaded_areas[active_area_id] = AreaState(area_id=active_area_id)
+    state.actors = {actor.identity.actor_id: actor for actor in actors}
+    if "player" in state.actors:
+        state.party = ["player"]
+    state.inactive_npcs = [
+        actor_id for actor_id in state.actors if actor_id not in state.party
+    ]
+    if session.game_time is not None:
+        state.world_time.hour = int(getattr(session.game_time, "hour", state.world_time.hour))
+    state.raw_payload.update(
+        {
+            "active_site_id": str(active_site_id or ""),
+            "session_id": str(getattr(session, "session_id", "")),
+            "adapter_id": str(session.campaign_state.get("adapter_id", "")),
+            "profile_id": str(session.campaign_state.get("profile_id", "")),
+            "world_seed": int(session.campaign_state.get("world_seed", seed)),
+        }
+    )
+    if getattr(session, "position", None):
+        state.raw_payload["current_area_position"] = [int(session.position[0]), int(session.position[1])]
+    return state

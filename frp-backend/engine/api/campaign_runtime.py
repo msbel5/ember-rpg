@@ -10,6 +10,7 @@ from engine.api.game_engine import GameEngine
 from engine.api.game_session import GameSession
 from engine.api.save_system import SaveSystem
 from engine.core.character_creation import ABILITY_ORDER, CreationState, assign_stats_to_class
+from engine.kernel import GameState
 from engine.worldgen import WorldSeed, load_world_snapshot, realize_region, tick_global
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
@@ -336,6 +337,8 @@ class CampaignRuntime:
         meta = dict(session.campaign_state.get("campaign_v2") or {})
         if not meta:
             raise ValueError(f"Save {save_id} does not contain campaign_v2 state")
+        if "kernel_game_state" in meta:
+            GameState.from_dict(dict(meta["kernel_game_state"]))
         world = load_world_snapshot(meta["world_snapshot"])
         active_region_id = str(meta.get("active_region_id") or world.simulation_snapshot.active_region_id)
         region_snapshot = realize_region(world, active_region_id)
