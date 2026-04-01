@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from engine.kernel.common import serialize_value
 from engine.world.body_parts import BodyPartTracker, DEFAULT_PART_HP
 from engine.world.entity import Entity
 
+if TYPE_CHECKING:
+    from engine.kernel.effects import EffectQueue
 
 VITAL_PART_IDS = {"head", "neck", "chest", "torso"}
 _BODY_PART_LABELS = {
@@ -571,6 +573,7 @@ class ActorRecord:
     inventory: list[ItemStack] = field(default_factory=list)
     equipment: EquipmentLoadout = field(default_factory=EquipmentLoadout)
     conditions: list[ConditionRecord] = field(default_factory=list)
+    effect_queue: "EffectQueue | None" = None
     raw_payload: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -592,6 +595,11 @@ class ActorRecord:
         payload["conditions"] = [
             ConditionRecord.from_dict(item) for item in payload.get("conditions", [])
         ]
+        effect_queue = payload.get("effect_queue")
+        if isinstance(effect_queue, dict):
+            from engine.kernel.effects import EffectQueue
+
+            payload["effect_queue"] = EffectQueue.from_dict(effect_queue)
         return cls(**payload)
 
 
