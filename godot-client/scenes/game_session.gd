@@ -4,6 +4,7 @@ const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
 const ScreenshotCapture = preload("res://scripts/ui/screenshot_capture.gd")
 const EmberTheme = preload("res://scripts/ui/ember_theme.gd")
 const PROFILE_PATH := "user://client_profile.cfg"
+const StatusBarWidget = preload("res://scripts/ui/status_bar_widget.gd")
 const QUICKSAVE_SLOT := "quicksave"
 
 @onready var world_view: SubViewportContainer = $MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer
@@ -27,6 +28,7 @@ var _sidebar_buttons: Dictionary = {}
 
 func _ready() -> void:
 	EmberTheme.apply_game_session(self)
+	_install_status_bar()
 	_setup_sidebar_tabs()
 	if GameState.has_active_campaign():
 		sidebar_tabs.current_tab = 5
@@ -68,6 +70,15 @@ func _ready() -> void:
 	command_bar.set_focus_actions(world_view.get_focus_actions())
 	_refresh_scene_roster()
 	command_bar.focus_input()
+
+
+func _install_status_bar() -> void:
+	var main_vbox = $MainMargin/MainVBox
+	if main_vbox == null:
+		return
+	var status_bar := StatusBarWidget.new()
+	main_vbox.add_child(status_bar)
+	main_vbox.move_child(status_bar, 0)
 
 
 func _setup_sidebar_tabs() -> void:
