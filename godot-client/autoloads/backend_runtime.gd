@@ -2,8 +2,8 @@ extends Node
 
 const BACKEND_ENV := "EMBER_RPG_BACKEND_URL"
 const BACKEND_SETTING := "ember_rpg/backend_url"
-const DEFAULT_BACKEND_URL := "http://127.0.0.1:8000"
-const PREFERRED_PORTS := [8000, 8765]
+const DEFAULT_BACKEND_URL := "http://127.0.0.1:8741"
+const PREFERRED_PORTS := [8741, 8765]
 const DEV_SERVER_PATH := "res://../frp-backend/dev_server.py"
 
 signal status_changed(message: String)
@@ -37,7 +37,7 @@ func _run_bootstrap() -> void:
 	status_changed.emit("Starting campaign backend...")
 	# In debug builds, launch backend process immediately while also probing
 	if OS.is_debug_build():
-		_spawn_backend_process(8000)
+		_spawn_backend_process(8741)
 	status_changed.emit("Connecting to campaign backend...")
 	# Probe all candidates (the one we just launched will be ready soon)
 	var candidates = _candidate_urls()

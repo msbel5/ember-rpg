@@ -18,7 +18,7 @@ from main import app  # noqa: E402
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the Ember RPG backend server.")
     parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--port", type=int, default=8741)
     parser.add_argument("--log-level", default="warning")
     return parser.parse_args()
 

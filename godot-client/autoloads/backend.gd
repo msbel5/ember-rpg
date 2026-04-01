@@ -4,7 +4,7 @@ extends Node
 
 const BACKEND_SETTING := "ember_rpg/backend_url"
 const BACKEND_ENV := "EMBER_RPG_BACKEND_URL"
-const DEFAULT_BACKEND_URL := "http://127.0.0.1:8000"
+const DEFAULT_BACKEND_URL := "http://127.0.0.1:8741"
 
 var base_url: String = ""
 
@@ -14,6 +14,14 @@ signal request_error(message: String)
 
 func _ready() -> void:
 	base_url = _resolve_base_url()
+
+
+func set_base_url(url: String) -> void:
+	base_url = url.strip_edges().trim_suffix("/")
+
+
+func get_base_url() -> String:
+	return base_url
 
 # --- API Methods ---
 
@@ -162,6 +170,10 @@ func load_campaign(save_id: String, callback: Callable) -> void:
 
 func delete_campaign(campaign_id: String, callback: Callable) -> void:
 	_http_delete("/game/campaigns/%s" % campaign_id, callback)
+
+
+func get_campaign_client_health(callback: Callable) -> void:
+	_http_get("/game/health/campaign-client", callback)
 
 # --- Internal HTTP ---
 
