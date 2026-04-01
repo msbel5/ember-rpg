@@ -4,7 +4,7 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 
 ## Summary
 
-- Active PRDs: 27
+- Active PRDs: 28
 - Deprecated PRDs: 56
 - Deprecated Notes: 6
 - Canonical mechanics map: `docs/architecture/ember_mechanics_canon_v1.md`
@@ -24,12 +24,13 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 | `docs/prd/active/PRD_game_state_v1.md` | `kernel_game_state` | GEMRB:M16 | `frp-backend/engine/kernel/game_state.py`, `frp-backend/engine/api/campaign_kernel.py` | - |
 | `docs/prd/active/PRD_gamescript_ai_v1.md` | `kernel_scripts` | GEMRB:M08 | `frp-backend/engine/kernel/scripts.py`, `frp-backend/engine/world/behavior_tree.py` | - |
 | `docs/prd/active/PRD_godot_client.md` | `client_runtime` | CLIENT:CONTRACT, GEMRB:M16, DF:M15 | `godot-client/autoloads/game_state.gd`, `godot-client/scenes/game_session.gd`, `godot-client/scenes/title_screen.gd` | `docs/deprecated/prd/PRD_godot_client_sprint_0.md`, `docs/deprecated/prd/PRD_godot_client_sprint_1.md`, `docs/deprecated/prd/PRD_godot_client_sprint_2.md` |
+| `docs/prd/active/PRD_godot_ux_accessibility_v1.md` | `client_ux` | CLIENT:UX, CLIENT:ACCESSIBILITY | `godot-client/scenes/title_screen.gd`, `godot-client/scenes/game_session.gd`, `godot-client/tests/automation` | - |
 | `docs/prd/active/PRD_history_and_factions_v1.md` | `kernel_history` | DF:M12, DF:M14, DF:M20 | `frp-backend/engine/world/history.py`, `frp-backend/engine/kernel/world_state.py` | `docs/deprecated/prd/PRD_civilizations_institutions_history_v1.md` |
 | `docs/prd/active/PRD_hybrid_commander_loop_v1.md` | `kernel_hybrid` | DF:M15, DF:M18, GEMRB:M14, GEMRB:M16 | `frp-backend/engine/kernel/hybrid.py`, `frp-backend/engine/api/campaign_commands.py` | - |
 | `docs/prd/active/PRD_item_system_kernel_v1.md` | `kernel_items` | DF:M17, GEMRB:M07 | `frp-backend/engine/kernel/items.py`, `frp-backend/engine/world/inventory.py` | `docs/deprecated/prd/PRD_item_system.md` |
 | `docs/prd/active/PRD_job_reaction_kernel_v2.md` | `kernel_jobs` | DF:M02, DF:M04, DF:M16, DF:M19 | `frp-backend/engine/kernel/jobs.py`, `frp-backend/engine/world/crafting.py` | `docs/deprecated/prd/PRD_job_reaction_kernel_v1.md` |
 | `docs/prd/active/PRD_level_progression_v1.md` | `kernel_progression` | DF:M02, GEMRB:M15 | `frp-backend/engine/kernel/progression.py`, `frp-backend/engine/core/progression.py` | `docs/deprecated/prd/PRD_progression_system.md` |
-| `docs/prd/active/PRD_macro_society_runtime_v1.md` | `kernel_macro_society` | DF:M11, DF:M12, DF:M20, GEMRB:M13, GEMRB:M14 | `frp-backend/engine/api/campaign/live_kernel.py`, `frp-backend/engine/api/campaign/runtime.py`, `frp-backend/engine/kernel/world_state.py` | - |
+| `docs/prd/active/PRD_macro_society_runtime_v1.md` | `kernel_macro_society` | DF:M11, DF:M12, DF:M20, GEMRB:M13, GEMRB:M14 | `frp-backend/engine/api/campaign/live_kernel.py`, `frp-backend/engine/api/campaign/runtime_macro_society.py`, `frp-backend/engine/kernel/world_state.py` | - |
 | `docs/prd/active/PRD_material_item_kernel_v1.md` | `kernel_material_item` | DF:M01, DF:M11, DF:M17, GEMRB:M07 | `frp-backend/engine/kernel/items.py`, `frp-backend/engine/core/item.py` | - |
 | `docs/prd/active/PRD_medical_system_v1.md` | `kernel_medical` | DF:M05, DF:M03, DF:M04 | `frp-backend/engine/kernel/medical.py`, `frp-backend/engine/kernel/effects.py` | - |
 | `docs/prd/active/PRD_pathfinding_v1.md` | `kernel_pathfinding` | DF:M15, GEMRB:M11 | `frp-backend/engine/kernel/pathfinding.py`, `frp-backend/engine/api/handlers/exploration_navigation.py` | - |

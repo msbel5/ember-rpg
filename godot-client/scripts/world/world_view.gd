@@ -86,6 +86,9 @@ var _context_target_entity: Dictionary = {}
 var _context_target_tile: Vector2i = Vector2i.ZERO
 var _is_camera_dragging: bool = false
 var _camera_drag_start: Vector2 = Vector2.ZERO
+var _walker: WorldWalk = WorldWalk.new()
+var _walk_tween: Tween
+var _walk_pending_interact: Dictionary = {}
 const EDGE_SCROLL_MARGIN := 20.0
 const EDGE_SCROLL_SPEED := 200.0
 const KEYBOARD_PAN_SPEED := 300.0
@@ -157,10 +160,7 @@ func _gui_input(event: InputEvent) -> void:
 				var entity = entity_layer.get_entity_at_tile(tile_position)
 				_set_focus_summary(_focus_summary(tile_position, entity))
 				_set_focus_actions(_focus_actions_for(tile_position, entity))
-				if not entity.is_empty():
-					command_requested.emit(command_for_entity(entity))
-				else:
-					command_requested.emit(command_for_tile(tile_position))
+				_handle_left_click(tile_position, entity)
 				accept_event()
 
 			elif event.button_index == MOUSE_BUTTON_RIGHT:
@@ -227,6 +227,90 @@ func _on_context_menu_selected(id: int) -> void:
 		13:
 			var tile_name = _tile_name_at(_context_target_tile)
 			command_requested.emit("examine %s" % tile_name)
+
+
+func _handle_left_click(tile_position: Vector2i, entity: Dictionary) -> void:
+	_walker.cancel()
+	var player_tile := GameState.player_map_pos
+	if player_tile == Vector2i.ZERO:
+		# No player position known — fall back to instant command
+		if not entity.is_empty():
+			command_requested.emit(command_for_entity(entity))
+		else:
+			command_requested.emit(command_for_tile(tile_position))
+		return
+
+	if not entity.is_empty():
+		# Walk to entity, then interact
+		var dist := abs(tile_position.x - player_tile.x) + abs(tile_position.y - player_tile.y)
+		if dist <= 1:
+			command_requested.emit(command_for_entity(entity))
+			return
+		# Walk to adjacent tile, then interact
+		var adjacent := _find_adjacent_to(tile_position, player_tile)
+		var path := _walker.compute_path(player_tile, adjacent, GameState.map_data)
+		if path.is_empty():
+			command_requested.emit(command_for_entity(entity))
+			return
+		_walk_pending_interact = entity
+		_walker.start_walk(path)
+		_animate_walk_path(path)
+	else:
+		# Walk to tile, then send move command
+		var tile_name := _tile_name_at(tile_position)
+		if tile_name in INTERACTIVE_TILE_NAMES:
+			command_requested.emit(command_for_tile(tile_position))
+			return
+		var path := _walker.compute_path(player_tile, tile_position, GameState.map_data)
+		if path.is_empty():
+			command_requested.emit(command_for_tile(tile_position))
+			return
+		_walk_pending_interact = {}
+		_walker.start_walk(path)
+		_animate_walk_path(path)
+		# Send the move command to backend for world tick
+		command_requested.emit("move to %d,%d" % [tile_position.x, tile_position.y])
+
+
+func _find_adjacent_to(target: Vector2i, from: Vector2i) -> Vector2i:
+	var best := target
+	var best_dist := 99999
+	for dir in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]:
+		var candidate := target + dir
+		if not _tile_in_bounds(candidate):
+			continue
+		var tile_name := _tile_name_at(candidate)
+		if tile_name in ["wall", "water", "void"]:
+			continue
+		var dist := abs(candidate.x - from.x) + abs(candidate.y - from.y)
+		if dist < best_dist:
+			best = candidate
+			best_dist = dist
+	return best
+
+
+func _animate_walk_path(path: Array[Vector2i]) -> void:
+	if path.is_empty():
+		return
+	if _walk_tween != null and _walk_tween.is_valid():
+		_walk_tween.kill()
+	var player_actor := entity_layer.get_node_or_null("player")
+	if player_actor == null:
+		return
+	_walk_tween = create_tween()
+	_walk_tween.set_ease(Tween.EASE_IN_OUT)
+	_walk_tween.set_trans(Tween.TRANS_SINE)
+	for tile in path:
+		var target_pos := Vector2(tile.x * TileCatalog.TILE_SIZE + TileCatalog.TILE_SIZE / 2.0, tile.y * TileCatalog.TILE_SIZE + TileCatalog.TILE_SIZE / 2.0)
+		_walk_tween.tween_property(player_actor, "position", target_pos, WorldWalk.STEP_DURATION)
+	_walk_tween.finished.connect(_on_walk_finished)
+
+
+func _on_walk_finished() -> void:
+	_walker.is_walking = false
+	if not _walk_pending_interact.is_empty():
+		command_requested.emit(command_for_entity(_walk_pending_interact))
+		_walk_pending_interact = {}
 
 
 func command_for_entity(entity: Dictionary) -> String:
