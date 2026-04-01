@@ -30,7 +30,7 @@ func compute_path(
 	to_tile: Vector2i,
 	map_data: Dictionary,
 ) -> Array[Vector2i]:
-	"""Simple BFS pathfinding on the tile grid.  Walls and water block."""
+	# Simple BFS pathfinding on the tile grid. Walls and water block.
 	if from_tile == to_tile:
 		return []
 	var width := int(map_data.get("width", 0))
@@ -41,7 +41,7 @@ func compute_path(
 
 	var open: Array[Vector2i] = [from_tile]
 	var came_from: Dictionary = {_key(from_tile): Vector2i(-1, -1)}
-	var directions := [
+	var directions: Array[Vector2i] = [
 		Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0),
 	]
 
@@ -77,8 +77,8 @@ func start_walk(path: Array[Vector2i]) -> void:
 
 
 func advance_step() -> bool:
-	"""Called each time the tween for one tile completes.
-	Returns true if there are more steps, false when walk is done."""
+	# Called each time the tween for one tile completes.
+	# Returns true if there are more steps, false when walk is done.
 	_step_index += 1
 	if _step_index >= _path.size():
 		is_walking = false
