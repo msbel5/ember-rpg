@@ -96,7 +96,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			_on_close()
 			get_viewport().set_input_as_handled()
 		elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
-			var index := event.keycode - KEY_1
+			var index: int = int(event.keycode) - int(KEY_1)
 			_select_option(index)
 			get_viewport().set_input_as_handled()
 

@@ -27,8 +27,8 @@ var is_waiting: bool = false
 var _pending_sync_callbacks: int = 0
 var _sidebar_button_group: ButtonGroup = ButtonGroup.new()
 var _sidebar_buttons: Dictionary = {}
-var _dialog_overlay: DialogOverlay
-var _combat_overlay_widget: CombatOverlay
+var _dialog_overlay = null
+var _combat_overlay_widget = null
 
 
 func _ready() -> void:
