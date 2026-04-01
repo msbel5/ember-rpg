@@ -27,8 +27,13 @@ flowchart LR
   - alerts and pressure
   - travel reachability
   - active local runtime enrichments
-- `GameState` is the client-side projection of the backend response, not an
-  independent simulation authority.
+- `GameState` is the canonical runtime/save-load projection assembled by the
+  campaign runtime from typed kernel state. It is not a second independent
+  simulation authority, but it is the primary persistence and client handoff
+  root for campaign-local play state.
+- Campaign payloads should now expose both:
+  - typed kernel slices (`world_state`, `actors`, `jobs`, `systems`, ...)
+  - a `game_state` root container for save/load round-trip and local runtime continuity
 - Sidebar panels must expose distinct layers instead of hiding state inside a
   `TabContainer` tab strip the player has to discover.
 
@@ -37,3 +42,5 @@ flowchart LR
 - Character creation state does not yet shape world/campaign setup deeply
 - World graph exists but is not discoverable enough in live UI
 - Desktop automation depends on an undeclared Windows environment
+- Some API/session surfaces still carry legacy compatibility shims even after the
+  `GameState` cutover and need follow-up cleanup

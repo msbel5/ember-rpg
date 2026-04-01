@@ -2,6 +2,7 @@ from pathlib import Path
 
 from engine.api.campaign_runtime import CampaignRuntime
 from engine.api.game_engine import GameEngine
+from engine.kernel import GameState
 from tools.campaign_client import CampaignClient
 
 
@@ -47,3 +48,16 @@ def test_campaign_runtime_lists_only_matching_campaign_saves(tmp_path: Path):
 
     assert [entry["slot_name"] for entry in listed] == ["first_slot"]
     assert all(entry["campaign_compatible"] for entry in listed)
+
+
+def test_campaign_runtime_persists_kernel_game_state_in_campaign_meta():
+    runtime = CampaignRuntime(llm=None)
+
+    context = runtime.create_campaign("Saver", "warrior", "fantasy_ember", "standard", 42)
+    meta = context.session.campaign_state["campaign_v2"]
+    restored = GameState.from_dict(meta["kernel_game_state"])
+
+    assert restored.campaign_id == context.campaign_id
+    assert restored.seed == 42
+    assert restored.current_area_id == meta["active_region_id"]
+    assert restored.party == ["player"]

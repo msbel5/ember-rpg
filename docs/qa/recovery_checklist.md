@@ -63,6 +63,12 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 - [x] Add targeted systems tests and payload regression coverage
 - [x] Preserve DF-style M06, M07, M08, M09, M10, and M13 dependency links in runtime code
 
+## Wave 2: Runtime / Save-Load Cutover
+- [x] Expose `GameState` in campaign payloads as the canonical runtime/save-load projection root
+- [x] Persist `kernel_game_state` inside `campaign_v2` metadata
+- [x] Validate `GameState.from_dict()` during campaign load for fail-fast kernel save compatibility
+- [x] Keep campaign API and campaign client save/load regression tests green after `GameState` cutover
+
 ## Global Rules
 - [x] PRD first
 - [ ] AC written before each new implementation chunk
@@ -80,6 +86,7 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 - [x] Backend targeted suite passed on 2026-03-31 for actor/world-state plus campaign regression tests
 - [x] Backend targeted suite passed on 2026-04-01 for canonical world-state payload, save/load, command bus, and travel graph coverage
 - [x] Backend targeted suite passed on 2026-04-01 for colony, hybrid, and systems kernel coverage
+- [x] Backend targeted suite passed on 2026-04-01 for campaign API/client `GameState` cutover and save/load metadata validation
 - [x] Godot headless suite passed on 2026-03-31 after creation-shell and automation-bridge changes
 - [x] Python automation suite passed on 2026-03-31 including atomic command-file fallback coverage
 - [x] Desktop smoke scenario produced title and questionnaire screenshots on 2026-03-31
@@ -87,4 +94,5 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 ## Current Risks
 - [ ] Win32 keyboard injection is still weaker than the headless bridge path
 - [ ] Sprint 1 still leaves legacy save/load and some non-combat runtime surfaces on compatibility shims
+- [ ] Runtime payloads now expose `GameState`, but command handlers and session serialization still need deeper migration off legacy session/entity shims
 - [ ] Sprint closure is typed-authority complete, but deeper simulation balance and UI ergonomics still need manual cleanup
