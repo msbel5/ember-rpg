@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from automation.artifacts import ArtifactManager
+from automation.executors import win32_desktop
 from automation.executors.win32_desktop import Win32DesktopExecutor
 from automation.models import AutomationScenario
 
@@ -81,3 +82,23 @@ def test_win32_executor_wait_for_viewport_capture_accepts_updated_same_path(
     monkeypatch.setattr(executor, "_latest_png", latest_png)
 
     assert executor._wait_for_viewport_capture(baseline, timeout=0.5) == source
+
+
+def test_win32_executor_reports_missing_environment_dependencies(monkeypatch, tmp_path: Path) -> None:
+    executor = Win32DesktopExecutor(_scenario(tmp_path), ArtifactManager(tmp_path, "desktop", run_id="four"))
+
+    def fake_find_spec(module_name: str):
+        if module_name in {"win32gui", "PIL"}:
+            return None
+        class _Spec:
+            pass
+        return _Spec()
+
+    monkeypatch.setattr(win32_desktop.importlib.util, "find_spec", fake_find_spec)
+    monkeypatch.setattr(win32_desktop, "WIN32_AVAILABLE", False)
+
+    health = executor.environment_health()
+
+    assert health["ok"] is False
+    assert "pywin32" in health["missing"]
+    assert "Pillow" in health["missing"]

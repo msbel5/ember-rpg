@@ -7,43 +7,12 @@
       "thief": "rogue",
       "wizard": "mage"
     },
-    "ability_order": [
-      "MIG",
-      "AGI",
-      "END",
-      "MND",
-      "INS",
-      "PRE"
-    ],
+    "ability_order": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
     "class_skill_options": {
-      "warrior": [
-        "athletics",
-        "intimidation",
-        "perception",
-        "survival"
-      ],
-      "rogue": [
-        "acrobatics",
-        "deception",
-        "stealth",
-        "sleight_of_hand",
-        "perception",
-        "investigation"
-      ],
-      "mage": [
-        "arcana",
-        "history",
-        "investigation",
-        "religion",
-        "insight"
-      ],
-      "priest": [
-        "medicine",
-        "insight",
-        "persuasion",
-        "religion",
-        "history"
-      ]
+      "warrior": ["athletics", "intimidation", "perception", "survival"],
+      "rogue": ["acrobatics", "deception", "stealth", "sleight_of_hand", "perception", "investigation"],
+      "mage": ["arcana", "history", "investigation", "religion", "insight"],
+      "priest": ["medicine", "insight", "persuasion", "religion", "history"]
     },
     "class_skill_counts": {
       "warrior": 2,
@@ -52,273 +21,290 @@
       "priest": 2
     },
     "class_default_skills": {
-      "warrior": [
-        "athletics",
-        "perception"
-      ],
-      "rogue": [
-        "stealth",
-        "deception",
-        "perception",
-        "investigation"
-      ],
-      "mage": [
-        "arcana",
-        "investigation"
-      ],
-      "priest": [
-        "insight",
-        "religion"
-      ]
+      "warrior": ["athletics", "perception"],
+      "rogue": ["stealth", "deception", "perception", "investigation"],
+      "mage": ["arcana", "investigation"],
+      "priest": ["insight", "religion"]
     },
     "class_stat_priorities": {
-      "warrior": [
-        "MIG",
-        "END",
-        "AGI",
-        "PRE",
-        "INS",
-        "MND"
-      ],
-      "rogue": [
-        "AGI",
-        "INS",
-        "PRE",
-        "MND",
-        "END",
-        "MIG"
-      ],
-      "mage": [
-        "MND",
-        "INS",
-        "AGI",
-        "PRE",
-        "END",
-        "MIG"
-      ],
-      "priest": [
-        "INS",
-        "PRE",
-        "END",
-        "MND",
-        "MIG",
-        "AGI"
-      ]
+      "warrior": ["MIG", "END", "AGI", "PRE", "INS", "MND"],
+      "rogue": ["AGI", "INS", "PRE", "MND", "END", "MIG"],
+      "mage": ["MND", "INS", "AGI", "PRE", "END", "MIG"],
+      "priest": ["INS", "PRE", "END", "MND", "MIG", "AGI"]
     },
-    "questions": [
+    "question_groups": [
       {
-        "id": "origin",
-        "text": "When your village needed help, what did you do first?",
-        "answers": [
+        "id": "setting_scale",
+        "title": "Setting and Scale",
+        "subtitle": "Choose the frontier the colony wakes up inside.",
+        "questions": [
           {
-            "id": "stand_guard",
-            "text": "Took up a spear and stood watch.",
-            "class_weights": {
-              "warrior": 3,
-              "priest": 1
-            },
-            "skill_weights": {
-              "athletics": 2,
-              "perception": 1,
-              "survival": 1
-            },
-            "alignment_axes": {
-              "law_chaos": 10,
-              "good_evil": 6
-            }
-          },
-          {
-            "id": "work_back_alleys",
-            "text": "Moved quietly, listened, and learned who was lying.",
-            "class_weights": {
-              "rogue": 3,
-              "mage": 1
-            },
-            "skill_weights": {
-              "stealth": 2,
-              "deception": 1,
-              "investigation": 2
-            },
-            "alignment_axes": {
-              "law_chaos": -8,
-              "good_evil": 0
-            }
-          },
-          {
-            "id": "study_old_records",
-            "text": "Went for books, records, and old clues.",
-            "class_weights": {
-              "mage": 3,
-              "priest": 1
-            },
-            "skill_weights": {
-              "arcana": 1,
-              "history": 2,
-              "investigation": 1,
-              "religion": 1
-            },
-            "alignment_axes": {
-              "law_chaos": 2,
-              "good_evil": 2
-            }
-          },
-          {
-            "id": "comfort_people",
-            "text": "Stayed with the frightened and kept people steady.",
-            "class_weights": {
-              "priest": 3,
-              "warrior": 1
-            },
-            "skill_weights": {
-              "insight": 2,
-              "medicine": 1,
-              "persuasion": 2
-            },
-            "alignment_axes": {
-              "law_chaos": 4,
-              "good_evil": 10
-            }
+            "id": "world_scope",
+            "text": "What kind of frontier should define the campaign?",
+            "answers": [
+              {
+                "id": "border_marches",
+                "text": "A hard land border of forts, roads, and hungry villages.",
+                "class_weights": {"warrior": 2, "priest": 1},
+                "skill_weights": {"survival": 2, "athletics": 1, "perception": 1},
+                "alignment_axes": {"law_chaos": 8, "good_evil": 4},
+                "facet_weights": {"frontier": 3, "discipline": 2},
+                "adapter_weights": {"fantasy_ember": 2},
+                "faction_bias": {"guard_captains": 2, "nobility": 1},
+                "settlement_bias": {"fortified_hamlet": 2, "border_keep": 2},
+                "world_tags": ["watchfires", "old roads"],
+                "quest_themes": ["defense", "escort"],
+                "tone_tags": ["stern", "grounded"]
+              },
+              {
+                "id": "orbital_lanes",
+                "text": "A chain of stations and colonies hanging off distant trade lanes.",
+                "class_weights": {"rogue": 1, "mage": 2},
+                "skill_weights": {"investigation": 2, "history": 1, "arcana": 1},
+                "alignment_axes": {"law_chaos": -2, "good_evil": 0},
+                "facet_weights": {"cosmic": 3, "mobility": 2, "industry": 2},
+                "adapter_weights": {"scifi_frontier": 3},
+                "faction_bias": {"free_traders": 2, "research_conclave": 1, "colonial_office": 1},
+                "settlement_bias": {"relay_station": 2, "orbital_colony": 2},
+                "world_tags": ["relay lanes", "cold stars"],
+                "quest_themes": ["deliver", "investigate"],
+                "tone_tags": ["wide", "lonely"]
+              },
+              {
+                "id": "pilgrim_routes",
+                "text": "A sacred route where shrines, markets, and ruins collide.",
+                "class_weights": {"priest": 2, "mage": 1},
+                "skill_weights": {"religion": 2, "history": 1, "persuasion": 1},
+                "alignment_axes": {"law_chaos": 4, "good_evil": 8},
+                "facet_weights": {"mysticism": 3, "community": 2},
+                "adapter_weights": {"fantasy_ember": 2},
+                "faction_bias": {"clergy": 2, "guilds": 1},
+                "settlement_bias": {"pilgrim_town": 3, "harbor_settlement": 1},
+                "world_tags": ["shrines", "pilgrim roads"],
+                "quest_themes": ["investigate", "escort"],
+                "tone_tags": ["somber", "hopeful"]
+              }
+            ]
           }
         ]
       },
       {
-        "id": "temptation",
-        "text": "A powerful patron offers wealth for a dirty job. What wins out?",
-        "answers": [
+        "id": "species_origin",
+        "title": "Species, Culture, and Origin",
+        "subtitle": "Decide what sort of people and institutions formed the commander.",
+        "questions": [
           {
-            "id": "refuse_on_principle",
-            "text": "Refuse. Some lines should not be crossed.",
-            "class_weights": {
-              "priest": 2,
-              "warrior": 1
-            },
-            "skill_weights": {
-              "insight": 1,
-              "persuasion": 1
-            },
-            "alignment_axes": {
-              "law_chaos": 8,
-              "good_evil": 12
-            }
-          },
-          {
-            "id": "take_and_control",
-            "text": "Take the job, but on your terms and with a plan.",
-            "class_weights": {
-              "rogue": 2,
-              "mage": 1
-            },
-            "skill_weights": {
-              "deception": 1,
-              "investigation": 1,
-              "stealth": 1
-            },
-            "alignment_axes": {
-              "law_chaos": -2,
-              "good_evil": -2
-            }
-          },
-          {
-            "id": "serve_order",
-            "text": "Ask who gave the order and whether it serves stability.",
-            "class_weights": {
-              "warrior": 1,
-              "priest": 1,
-              "mage": 1
-            },
-            "skill_weights": {
-              "history": 1,
-              "persuasion": 1
-            },
-            "alignment_axes": {
-              "law_chaos": 12,
-              "good_evil": 0
-            }
-          },
-          {
-            "id": "take_the_money",
-            "text": "If the pay is good enough, morals can wait.",
-            "class_weights": {
-              "rogue": 2
-            },
-            "skill_weights": {
-              "deception": 2,
-              "sleight_of_hand": 1,
-              "intimidation": 1
-            },
-            "alignment_axes": {
-              "law_chaos": -6,
-              "good_evil": -12
-            }
+            "id": "upbringing",
+            "text": "Who mostly raised you?",
+            "answers": [
+              {
+                "id": "barracks",
+                "text": "Watch officers and drill leaders who expected formation under stress.",
+                "class_weights": {"warrior": 3},
+                "skill_weights": {"athletics": 1, "perception": 1, "intimidation": 1},
+                "alignment_axes": {"law_chaos": 10},
+                "facet_weights": {"discipline": 3},
+                "adapter_weights": {"fantasy_ember": 1, "scifi_frontier": 1},
+                "faction_bias": {"guard_captains": 2},
+                "settlement_bias": {"border_keep": 2},
+                "world_tags": ["marching songs"],
+                "quest_themes": ["defense"],
+                "tone_tags": ["martial"]
+              },
+              {
+                "id": "caravan",
+                "text": "Traders, mechanics, and smugglers who survived by staying mobile.",
+                "class_weights": {"rogue": 2, "mage": 1},
+                "skill_weights": {"deception": 1, "investigation": 1, "stealth": 1},
+                "alignment_axes": {"law_chaos": -6},
+                "facet_weights": {"mobility": 3, "opportunism": 2},
+                "adapter_weights": {"scifi_frontier": 1},
+                "faction_bias": {"free_traders": 2, "smugglers": 1},
+                "settlement_bias": {"harbor_settlement": 2, "relay_station": 1},
+                "world_tags": ["moving camps"],
+                "quest_themes": ["deliver", "escort"],
+                "tone_tags": ["restless"]
+              },
+              {
+                "id": "cloister",
+                "text": "A library, shrine, or research hall where every answer opened a worse question.",
+                "class_weights": {"mage": 2, "priest": 2},
+                "skill_weights": {"history": 2, "arcana": 1, "religion": 1, "insight": 1},
+                "alignment_axes": {"law_chaos": 2, "good_evil": 4},
+                "facet_weights": {"mysticism": 2, "scholarship": 3},
+                "adapter_weights": {"fantasy_ember": 1, "scifi_frontier": 1},
+                "faction_bias": {"research_conclave": 2, "clergy": 1},
+                "settlement_bias": {"scholar_enclave": 3},
+                "world_tags": ["sealed archives"],
+                "quest_themes": ["investigate"],
+                "tone_tags": ["studious"]
+              }
+            ]
           }
         ]
       },
       {
-        "id": "fear",
-        "text": "What frightens you most when the night is quiet?",
-        "answers": [
+        "id": "role_training",
+        "title": "Colony Role and Training",
+        "subtitle": "Choose what you already know how to hold together when the colony starts failing.",
+        "questions": [
           {
-            "id": "failing_comrades",
-            "text": "Letting others die because I hesitated.",
-            "class_weights": {
-              "warrior": 2,
-              "priest": 2
-            },
-            "skill_weights": {
-              "medicine": 1,
-              "perception": 1,
-              "survival": 1
-            },
-            "alignment_axes": {
-              "good_evil": 8
-            }
-          },
+            "id": "first_responsibility",
+            "text": "In a crisis, what job lands on your desk first?",
+            "answers": [
+              {
+                "id": "security",
+                "text": "Security, patrols, breaches, and who stands where.",
+                "class_weights": {"warrior": 3},
+                "skill_weights": {"perception": 2, "athletics": 1, "intimidation": 1},
+                "alignment_axes": {"law_chaos": 8},
+                "facet_weights": {"discipline": 2, "frontier": 1},
+                "adapter_weights": {"fantasy_ember": 1, "scifi_frontier": 1},
+                "faction_bias": {"guard_captains": 2},
+                "settlement_bias": {"border_keep": 2},
+                "world_tags": ["breached walls"],
+                "quest_themes": ["defense", "kill"],
+                "tone_tags": ["hard-edged"]
+              },
+              {
+                "id": "supply",
+                "text": "Supply, manifests, repairs, and what the colony can spare.",
+                "class_weights": {"rogue": 1, "mage": 1, "priest": 1},
+                "skill_weights": {"investigation": 1, "history": 1, "persuasion": 1},
+                "alignment_axes": {"law_chaos": 4},
+                "facet_weights": {"industry": 3, "scarcity": 2},
+                "adapter_weights": {"scifi_frontier": 1},
+                "faction_bias": {"guilds": 2, "free_traders": 1},
+                "settlement_bias": {"relay_station": 1, "mining_camp": 2},
+                "world_tags": ["supply ledgers"],
+                "quest_themes": ["fetch", "deliver"],
+                "tone_tags": ["pragmatic"]
+              },
+              {
+                "id": "morale",
+                "text": "Morale, care, and making people trust tomorrow again.",
+                "class_weights": {"priest": 3},
+                "skill_weights": {"insight": 2, "persuasion": 1, "medicine": 1},
+                "alignment_axes": {"good_evil": 10},
+                "facet_weights": {"community": 3},
+                "adapter_weights": {"fantasy_ember": 1},
+                "faction_bias": {"clergy": 2, "guilds": 1},
+                "settlement_bias": {"pilgrim_town": 1, "fortified_hamlet": 1},
+                "world_tags": ["shared fires"],
+                "quest_themes": ["escort", "defense"],
+                "tone_tags": ["human"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "values_pressure",
+        "title": "Values, Pressure, and Trauma",
+        "subtitle": "Pick what bends, what breaks, and what the colony will test first.",
+        "questions": [
           {
-            "id": "being_controlled",
-            "text": "Chains, vows, and any hand trying to steer me.",
-            "class_weights": {
-              "rogue": 2,
-              "mage": 1
-            },
-            "skill_weights": {
-              "acrobatics": 1,
-              "stealth": 1,
-              "deception": 1
-            },
-            "alignment_axes": {
-              "law_chaos": -12
-            }
-          },
+            "id": "temptation",
+            "text": "A wealthy patron offers enough resources to stabilize the colony for one month. The catch is ugly. What wins out?",
+            "answers": [
+              {
+                "id": "refuse_on_principle",
+                "text": "Refuse. Some lines poison everyone who crosses them.",
+                "class_weights": {"priest": 2, "warrior": 1},
+                "skill_weights": {"insight": 1, "persuasion": 1},
+                "alignment_axes": {"law_chaos": 8, "good_evil": 12},
+                "facet_weights": {"community": 2, "discipline": 1},
+                "adapter_weights": {"fantasy_ember": 1},
+                "faction_bias": {"clergy": 2},
+                "settlement_bias": {"pilgrim_town": 1},
+                "world_tags": ["refused bargains"],
+                "quest_themes": ["defense"],
+                "tone_tags": ["principled"]
+              },
+              {
+                "id": "take_and_control",
+                "text": "Take the deal, but seize every lever you can before they own the outcome.",
+                "class_weights": {"rogue": 2, "mage": 1},
+                "skill_weights": {"deception": 1, "investigation": 1, "stealth": 1},
+                "alignment_axes": {"law_chaos": -2, "good_evil": -2},
+                "facet_weights": {"intrigue": 3, "industry": 1},
+                "adapter_weights": {"scifi_frontier": 1},
+                "faction_bias": {"guilds": 1, "smugglers": 2},
+                "settlement_bias": {"harbor_settlement": 1, "relay_station": 1},
+                "world_tags": ["managed corruption"],
+                "quest_themes": ["deliver", "investigate"],
+                "tone_tags": ["hard-nosed"]
+              },
+              {
+                "id": "serve_order",
+                "text": "Ask whether the existing chain of command can absorb it cleanly.",
+                "class_weights": {"warrior": 1, "priest": 1, "mage": 1},
+                "skill_weights": {"history": 1, "persuasion": 1},
+                "alignment_axes": {"law_chaos": 12, "good_evil": 0},
+                "facet_weights": {"discipline": 2, "industry": 1},
+                "adapter_weights": {"fantasy_ember": 1, "scifi_frontier": 1},
+                "faction_bias": {"colonial_office": 1, "guard_captains": 1},
+                "settlement_bias": {"border_keep": 1, "relay_station": 1},
+                "world_tags": ["sealed directives"],
+                "quest_themes": ["investigate"],
+                "tone_tags": ["bureaucratic"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "tone_threat",
+        "title": "Tone, Threat, and Frontier Pressure",
+        "subtitle": "Pick what the player should feel when the colony wakes up.",
+        "questions": [
           {
-            "id": "ignorance",
-            "text": "Not understanding what is really happening.",
-            "class_weights": {
-              "mage": 3
-            },
-            "skill_weights": {
-              "arcana": 1,
-              "history": 1,
-              "investigation": 2
-            },
-            "alignment_axes": {
-              "law_chaos": 2
-            }
-          },
-          {
-            "id": "losing_faith",
-            "text": "Waking one day with nothing worth believing in.",
-            "class_weights": {
-              "priest": 3
-            },
-            "skill_weights": {
-              "religion": 2,
-              "insight": 1,
-              "persuasion": 1
-            },
-            "alignment_axes": {
-              "good_evil": 8,
-              "law_chaos": 4
-            }
+            "id": "opening_trouble",
+            "text": "What kind of problem do you want knocking first?",
+            "answers": [
+              {
+                "id": "raiders",
+                "text": "Raiders, predators, and violent opportunists testing the walls.",
+                "class_weights": {"warrior": 2},
+                "skill_weights": {"athletics": 1, "perception": 1, "survival": 1},
+                "alignment_axes": {"law_chaos": 2},
+                "facet_weights": {"frontier": 2, "dread": 1},
+                "adapter_weights": {"fantasy_ember": 1, "scifi_frontier": 1},
+                "faction_bias": {"guard_captains": 1},
+                "settlement_bias": {"border_keep": 1, "fortified_hamlet": 1},
+                "world_tags": ["burned fences"],
+                "quest_themes": ["kill", "defense"],
+                "tone_tags": ["urgent"]
+              },
+              {
+                "id": "missing_convoy",
+                "text": "A convoy or courier run that should have arrived days ago.",
+                "class_weights": {"rogue": 1, "priest": 1},
+                "skill_weights": {"investigation": 1, "survival": 1, "persuasion": 1},
+                "alignment_axes": {"good_evil": 2},
+                "facet_weights": {"mobility": 1, "scarcity": 1, "community": 1},
+                "adapter_weights": {"fantasy_ember": 1, "scifi_frontier": 1},
+                "faction_bias": {"free_traders": 1, "guilds": 1},
+                "settlement_bias": {"harbor_settlement": 1, "relay_station": 1},
+                "world_tags": ["late convoy"],
+                "quest_themes": ["escort", "deliver", "investigate"],
+                "tone_tags": ["restless"]
+              },
+              {
+                "id": "bad_signal",
+                "text": "A ruin, shrine, beacon, or signal that should have stayed silent.",
+                "class_weights": {"mage": 2, "priest": 1},
+                "skill_weights": {"arcana": 1, "investigation": 1, "religion": 1},
+                "alignment_axes": {"law_chaos": -2, "good_evil": 0},
+                "facet_weights": {"cosmic": 2, "mysticism": 2, "dread": 1},
+                "adapter_weights": {"fantasy_ember": 1, "scifi_frontier": 2},
+                "faction_bias": {"research_conclave": 2, "clergy": 1},
+                "settlement_bias": {"scholar_enclave": 1, "orbital_colony": 1},
+                "world_tags": ["bad signal", "awakened ruin"],
+                "quest_themes": ["investigate", "kill"],
+                "tone_tags": ["ominous"]
+              }
+            ]
           }
         ]
       }

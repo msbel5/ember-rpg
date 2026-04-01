@@ -22,7 +22,7 @@ from .models import (
 )
 from .settlement_generator import generate_settlement_layout as generate_settlement_layout_v2
 from .terrain_generator import generate_world_blueprint
-from .world_seed import WorldSeed
+from .world_seed import WorldSeed, stable_seed_from_parts
 from .world_tick import initialize_simulation as initialize_simulation_v2
 from .world_tick import tick_global as tick_global_v2
 from .registries import (
@@ -345,51 +345,354 @@ def adapt_species(world: WorldBlueprint, adapter_id: str) -> WorldBlueprint:
     return world
 
 
+def _region_grid_position(region: dict[str, Any]) -> tuple[int, int]:
+    return (
+        int(region["x"]) // max(1, int(region["width"])),
+        int(region["y"]) // max(1, int(region["height"])),
+    )
+
+
+def _region_distance(left: dict[str, Any], right: dict[str, Any]) -> int:
+    lx, ly = _region_grid_position(left)
+    rx, ry = _region_grid_position(right)
+    return abs(lx - rx) + abs(ly - ry)
+
+
+def _lineage_candidate_regions(
+    world: WorldBlueprint,
+    lineage: SpeciesLineage,
+    template: dict[str, Any],
+) -> list[tuple[float, str]]:
+    scored: list[tuple[float, str]] = []
+    temp_mid = sum(template["temperature_range"]) / 2
+    moist_mid = sum(template["moisture_range"]) / 2
+    habitats = set(template.get("habitats", []))
+    for region in world.regions:
+        score = float(region.get("settlement_suitability", region.get("settlement_score", 0.0)))
+        score += 0.32 if region["biome_id"] in habitats else -0.18
+        score += max(0.0, 0.18 - abs(float(region["avg_temperature"]) - temp_mid) * 0.28)
+        score += max(0.0, 0.16 - abs(float(region["avg_moisture"]) - moist_mid) * 0.22)
+        if region["id"] in lineage.home_regions:
+            score += 0.24
+        elif region["id"] in lineage.expansion_regions:
+            score += 0.12
+        if region.get("river_present"):
+            score += 0.06
+        if region.get("water_access") == "coast":
+            score += 0.05
+        scored.append((round(score, 4), str(region["id"])))
+    scored.sort(key=lambda item: (-item[0], item[1]))
+    return scored
+
+
+def _settlement_type_for_species(species_id: str) -> str:
+    return {
+        "dwarf": "stronghold",
+        "elf": "grove",
+        "dragon": "eyrie",
+        "synthetic": "hub",
+        "auran": "wayport",
+        "mycoid": "synod",
+    }.get(species_id, "city")
+
+
+def _focus_for_culture(culture: dict[str, Any]) -> list[str]:
+    return sorted(
+        culture["institution_bias"].keys(),
+        key=lambda key: (-culture["institution_bias"][key], key),
+    )[:3]
+
+
+def _choose_region_with_spacing(
+    world: WorldBlueprint,
+    candidate_regions: list[tuple[float, str]],
+    chosen_region_ids: list[str],
+    min_distance: int,
+    seed_label: str,
+) -> dict[str, Any]:
+    rng = random.Random(stable_seed_from_parts(world.seed, seed_label, len(chosen_region_ids)))
+    chosen_regions = [_region_lookup(world, region_id) for region_id in chosen_region_ids]
+    best_region = None
+    best_score = None
+    fallback_region = None
+    fallback_score = None
+    for base_score, region_id in candidate_regions:
+        region = _region_lookup(world, region_id)
+        distance_penalty = 0.0
+        nearest = None
+        for other in chosen_regions:
+            distance = _region_distance(region, other)
+            nearest = distance if nearest is None else min(nearest, distance)
+            if distance < min_distance:
+                distance_penalty += (min_distance - distance) * 0.18
+        score = round(base_score - distance_penalty + rng.random() * 0.04, 4)
+        if fallback_score is None or score > fallback_score:
+            fallback_region = region
+            fallback_score = score
+        if nearest is None or nearest >= min_distance:
+            if best_score is None or score > best_score:
+                best_region = region
+                best_score = score
+    if best_region is not None:
+        return best_region
+    if fallback_region is not None:
+        return fallback_region
+    return _region_lookup(world, candidate_regions[0][1])
+
+
+def _region_resources_to_economy(region: dict[str, Any], has_settlement: bool) -> dict[str, Any]:
+    resources = set(region.get("resources", []))
+    base_food = 24 if region["biome_id"] in {"plains", "temperate_forest", "coast"} else 12
+    if "fish" in resources or "salt" in resources:
+        base_food += 8
+    ore = 24 if "ore" in resources else 8
+    wood = 24 if {"timber", "herbs", "amber"} & resources else 10
+    gold = int(16 + float(region.get("settlement_score", 0.0)) * 18 + (8 if has_settlement else 0))
+    return {
+        "resources": {
+            "food": int(base_food + float(region.get("vegetation_density", 0.0)) * 12),
+            "ore": ore,
+            "wood": wood,
+            "gold": gold,
+        },
+        "prosperity": round(42 + float(region.get("settlement_suitability", 0.0)) * 28 + (6 if has_settlement else 0), 3),
+    }
+
+
+def _build_travel_edges(world: WorldBlueprint) -> list[dict[str, Any]]:
+    nodes = list(world.settlement_nodes)
+    if len(nodes) < 2:
+        return []
+    positions = {
+        str(node["id"]): tuple(int(value) for value in node.get("grid_position", [0, 0]))
+        for node in nodes
+    }
+    node_by_id = {str(node["id"]): node for node in nodes}
+    seen_pairs: set[tuple[str, str]] = set()
+    edges: list[dict[str, Any]] = []
+
+    def distance(left_id: str, right_id: str) -> int:
+        lx, ly = positions[left_id]
+        rx, ry = positions[right_id]
+        return abs(lx - rx) + abs(ly - ry)
+
+    visited = {str(nodes[0]["id"])}
+    unvisited = {str(node["id"]) for node in nodes[1:]}
+    while unvisited:
+        best: tuple[int, str, str] | None = None
+        for left_id in visited:
+            for right_id in unvisited:
+                candidate = (distance(left_id, right_id), left_id, right_id)
+                if best is None or candidate < best:
+                    best = candidate
+        assert best is not None
+        _, left_id, right_id = best
+        pair = tuple(sorted((left_id, right_id)))
+        seen_pairs.add(pair)
+        left_node = node_by_id[left_id]
+        right_node = node_by_id[right_id]
+        edges.append(
+            {
+                "id": f"edge_{left_id}_{right_id}",
+                "from_settlement_id": left_id,
+                "to_settlement_id": right_id,
+                "from_region_id": left_node["region_id"],
+                "to_region_id": right_node["region_id"],
+                "travel_hours": max(2, distance(left_id, right_id) * 2),
+            }
+        )
+        visited.add(right_id)
+        unvisited.remove(right_id)
+
+    for node in nodes:
+        node_id = str(node["id"])
+        neighbors = sorted(
+            (
+                (distance(node_id, str(other["id"])), str(other["id"]))
+                for other in nodes
+                if str(other["id"]) != node_id
+            ),
+            key=lambda item: (item[0], item[1]),
+        )[:2]
+        for dist, other_id in neighbors:
+            pair = tuple(sorted((node_id, other_id)))
+            if pair in seen_pairs:
+                continue
+            seen_pairs.add(pair)
+            other_node = node_by_id[other_id]
+            edges.append(
+                {
+                    "id": f"edge_{node_id}_{other_id}",
+                    "from_settlement_id": node_id,
+                    "to_settlement_id": other_id,
+                    "from_region_id": node["region_id"],
+                    "to_region_id": other_node["region_id"],
+                    "travel_hours": max(2, dist * 2),
+                }
+            )
+    edges.sort(key=lambda item: (item["from_region_id"], item["to_region_id"], item["id"]))
+    return edges
+
+
 def seed_civilizations(world: WorldBlueprint) -> WorldBlueprint:
-    """Seed faction and settlement candidates from sapient lineages."""
+    """Seed macro factions, settlement nodes, and travel graph from sapient lineages."""
     species_registry = load_species_templates()
     cultures = load_culture_templates()
+    sapient_lineages = sorted(
+        [lineage for lineage in world.species_lineages if lineage.sapient],
+        key=lambda item: item.species_id,
+    )
     world.factions = []
     world.settlements = []
-    for lineage in sorted(world.species_lineages, key=lambda item: item.species_id):
-        if not lineage.sapient or not lineage.home_regions:
-            continue
-        region = _region_lookup(world, lineage.home_regions[0])
+    world.settlement_nodes = []
+    world.faction_presence = {str(region["id"]): [] for region in world.regions}
+    world.travel_edges = []
+    world.region_economy = {}
+    world.region_alerts = {str(region["id"]): [] for region in world.regions}
+
+    if not sapient_lineages:
+        return world
+
+    lineage_candidates = {
+        lineage.species_id: _lineage_candidate_regions(world, lineage, species_registry[lineage.species_id])
+        for lineage in sapient_lineages
+    }
+    desired_faction_count = min(10, max(6, len(sapient_lineages) + 3))
+    chosen_origins: list[str] = []
+    for index in range(desired_faction_count):
+        lineage = sapient_lineages[index % len(sapient_lineages)]
         template = species_registry[lineage.species_id]
         culture_id = template["culture_hint"]
         culture = cultures[culture_id]
-        faction_id = f"{lineage.species_id}-{region['id']}-{world.seed % 997}"
+        origin_region = _choose_region_with_spacing(
+            world,
+            lineage_candidates[lineage.species_id],
+            chosen_origins,
+            2,
+            f"faction-origin:{lineage.species_id}:{index}",
+        )
+        chosen_origins.append(str(origin_region["id"]))
+        faction_id = f"{lineage.species_id}_faction_{index:02d}_{world.seed % 997}"
+        influence = round(0.42 + float(origin_region["settlement_suitability"]) * 0.34 + (index % 3) * 0.02, 3)
+        cohesion = round(0.52 + len(culture["institution_bias"]) * 0.04, 3)
         world.factions.append(
             FactionSeed(
                 id=faction_id,
                 culture_id=culture_id,
                 species_id=lineage.species_id,
-                origin_region_id=region["id"],
-                traits={
-                    "influence": round(0.45 + region["settlement_score"] * 0.4, 3),
-                    "cohesion": round(0.55 + len(culture["institution_bias"]) * 0.03, 3),
-                },
+                origin_region_id=str(origin_region["id"]),
+                traits={"influence": influence, "cohesion": cohesion},
             )
         )
-        settlement_type = {"dwarf": "stronghold", "elf": "grove", "dragon": "eyrie"}.get(
-            lineage.species_id, "city"
+
+    faction_rotation = sorted(world.factions, key=lambda faction: (faction.species_id, faction.id))
+    desired_settlement_count = min(20, max(12, len(faction_rotation) * 2))
+    used_settlement_regions: list[str] = []
+    biome_prefix = {
+        "coast": "Harbor",
+        "desert": "Sun",
+        "mountain": "Stone",
+        "plains": "Field",
+        "swamp": "Mire",
+        "temperate_forest": "Grove",
+    }
+    for settlement_index in range(desired_settlement_count):
+        faction = faction_rotation[settlement_index % len(faction_rotation)]
+        lineage = next(lineage for lineage in sapient_lineages if lineage.species_id == faction.species_id)
+        culture = cultures[faction.culture_id]
+        template = species_registry[faction.species_id]
+        region = _choose_region_with_spacing(
+            world,
+            lineage_candidates[lineage.species_id],
+            used_settlement_regions,
+            2,
+            f"settlement:{faction.id}:{settlement_index}",
         )
-        focus = sorted(
-            culture["institution_bias"].keys(),
-            key=lambda key: (-culture["institution_bias"][key], key),
-        )[:3]
-        settlement = {
-            "id": f"settlement-{lineage.species_id}-{region['id']}",
-            "faction_id": faction_id,
-            "region_id": region["id"],
+        if str(region["id"]) in used_settlement_regions:
+            continue
+        used_settlement_regions.append(str(region["id"]))
+        settlement_type = _settlement_type_for_species(faction.species_id)
+        focus = _focus_for_culture(culture)
+        prefix = biome_prefix.get(str(region["biome_id"]), "Frontier")
+        center_name = f"{prefix} {template['name']} {settlement_type.title()}"
+        population = int(150 + float(region["settlement_suitability"]) * 180 + (settlement_index % 4) * 18)
+        node_id = f"node_{region['id']}_{settlement_index:02d}"
+        node = {
+            "id": node_id,
+            "region_id": str(region["id"]),
+            "faction_id": faction.id,
+            "name": center_name,
             "settlement_type": settlement_type,
-            "population": int(180 + region["settlement_score"] * 220),
-            "center_name": f"{template['name']} {settlement_type.title()}",
+            "population": population,
             "building_focus": focus,
+            "primary": True,
+            "node_type": "primary_settlement",
+            "biome_id": str(region["biome_id"]),
+            "grid_position": list(_region_grid_position(region)),
         }
-        region["controller_faction_id"] = faction_id
-        region["settlement_id"] = settlement["id"]
-        world.settlements.append(SettlementSeed.from_dict(settlement))
+        region["controller_faction_id"] = faction.id
+        region["settlement_id"] = node_id
+        region["settlement_node_ids"] = [node_id]
+        region["primary_settlement_name"] = center_name
+        world.settlement_nodes.append(node)
+        world.settlements.append(
+            SettlementSeed(
+                id=node_id,
+                faction_id=faction.id,
+                region_id=str(region["id"]),
+                settlement_type=settlement_type,
+                population=population,
+                center_name=center_name,
+                building_focus=focus,
+            )
+        )
+        world.faction_presence[str(region["id"])].append(
+            {
+                "faction_id": faction.id,
+                "species_id": faction.species_id,
+                "presence_type": "primary_settlement",
+                "pressure": round(faction.traits.get("influence", 0.5), 3),
+            }
+        )
+
+    for region in world.regions:
+        region_id = str(region["id"])
+        current_presence = world.faction_presence.setdefault(region_id, [])
+        ranked = sorted(
+            (
+                (
+                    next(score for score, candidate_region_id in lineage_candidates[faction.species_id] if candidate_region_id == region_id),
+                    faction,
+                )
+                for faction in world.factions
+            ),
+            key=lambda item: (-item[0], item[1].id),
+        )[:3]
+        for score, faction in ranked:
+            if any(item["faction_id"] == faction.id for item in current_presence):
+                continue
+            if score < 0.55:
+                continue
+            current_presence.append(
+                {
+                    "faction_id": faction.id,
+                    "species_id": faction.species_id,
+                    "presence_type": "minor_enclave" if score > 0.82 else "influence",
+                    "pressure": round(min(0.95, score), 3),
+                }
+            )
+        if current_presence and "controller_faction_id" not in region:
+            region["controller_faction_id"] = current_presence[0]["faction_id"]
+        world.region_economy[region_id] = _region_resources_to_economy(
+            region,
+            has_settlement=bool(region.get("settlement_id")),
+        )
+
+    world.travel_edges = _build_travel_edges(world)
+    world.metadata["world_graph_dimensions"] = {
+        "columns": len({int(region["x"]) for region in world.regions}),
+        "rows": len({int(region["y"]) for region in world.regions}),
+    }
     return world
 
 
@@ -399,21 +702,22 @@ def simulate_history(world: WorldBlueprint, end_year: int | None = None) -> Worl
     rng = random.Random(world.seed + target_year)
     events: list[HistoricalEvent] = []
     for index, faction in enumerate(world.factions):
-        settlement = next(item for item in world.settlements if item.faction_id == faction.id)
+        settlement = next((item for item in world.settlements if item.faction_id == faction.id), None)
+        anchor_region_id = settlement.region_id if settlement is not None else faction.origin_region_id
         if index % 2 == 0:
             event_type = "migration"
-            summary = f"{faction.id} pushed settlers beyond {settlement.region_id}."
-            consequences = {"new_frontier": settlement.region_id, "pressure": round(rng.uniform(0.2, 0.6), 3)}
+            summary = f"{faction.id} pushed settlers beyond {anchor_region_id}."
+            consequences = {"new_frontier": anchor_region_id, "pressure": round(rng.uniform(0.2, 0.6), 3)}
         else:
             event_type = "trade_route"
-            summary = f"{faction.id} established a trade route through {settlement.region_id}."
+            summary = f"{faction.id} established a trade route through {anchor_region_id}."
             consequences = {"trade_value": round(rng.uniform(0.3, 0.9), 3)}
         events.append(
             HistoricalEvent(
                 year=target_year - 180 + index * 21,
                 event_type=event_type,
                 factions=[faction.id],
-                regions=[settlement.region_id],
+                regions=[anchor_region_id],
                 summary=summary,
                 consequences=consequences,
             )

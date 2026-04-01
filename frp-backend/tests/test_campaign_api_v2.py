@@ -33,6 +33,26 @@ def test_create_campaign_returns_campaign_snapshot():
     payload = _create_campaign()
     assert payload["adapter_id"] == "fantasy_ember"
     assert payload["campaign"]["world"]["active_region_id"]
+    assert payload["campaign"]["world_state"]["active_region_id"]
+    assert payload["campaign"]["game_state"]["campaign_id"] == payload["campaign_id"]
+    assert payload["campaign"]["game_state"]["current_area_id"] == payload["campaign"]["world"]["active_region_id"]
+    assert payload["campaign"]["game_state"]["actors"]["player"]["identity"]["actor_id"] == "player"
+    assert payload["campaign"]["world_state"]["regions"]
+    assert payload["campaign"]["actors"]
+    assert payload["campaign"]["actors"][0]["identity"]["actor_id"] == "player"
+    assert payload["campaign"]["jobs"]
+    assert payload["campaign"]["reactions"]
+    assert payload["campaign"]["worksites"]
+    assert payload["campaign"]["colony_pressure"]["food"] >= 0
+    assert "shortages" in payload["campaign"]["production_ledger"]
+    assert payload["campaign"]["path_authority"]["active_region_id"]
+    assert payload["campaign"]["local_map_state"]["region_id"] == payload["campaign"]["world"]["active_region_id"]
+    assert payload["campaign"]["military"]["squads"]
+    assert "power_network" in payload["campaign"]["systems"]
+    assert "syndrome_registry" in payload["campaign"]["systems"]
+    assert payload["campaign"]["world_graph"]["nodes"]
+    assert payload["campaign"]["travel_options"]
+    assert payload["campaign"]["current_region_summary"]["settlement_node_id"]
     assert payload["campaign"]["settlement"]["residents"]
     assert payload["campaign"]["region"]["width"] == 80
     assert payload["campaign"]["region"]["height"] == 60
@@ -53,6 +73,10 @@ def test_campaign_command_and_region_endpoints_work():
     body = command.json()
     assert body["command_type"] == "avatar"
     assert body["campaign"]["recent_event_log"]
+    assert body["campaign"]["jobs"]
+    assert "unrest" in body["campaign"]["colony_pressure"]
+    assert body["campaign"]["path_authority"]["active_region_id"] == body["campaign"]["world"]["active_region_id"]
+    assert body["campaign"]["systems"]["power_network"]["total_required"] >= 0
 
     region = client.get(f"/game/campaigns/{campaign_id}/region/current")
     assert region.status_code == 200
@@ -82,6 +106,11 @@ def test_campaign_save_and_load_round_trip():
     assert loaded.status_code == 200
     loaded_payload = loaded.json()
     assert loaded_payload["campaign"]["world"]["seed"] == 42
+    assert loaded_payload["campaign"]["world_state"]["seed"] == 42
+    assert loaded_payload["campaign"]["game_state"]["seed"] == 42
+    assert loaded_payload["campaign"]["game_state"]["party"] == ["player"]
+    assert loaded_payload["campaign"]["actors"]
+    assert loaded_payload["campaign"]["systems"]["temperature_state"]["ambient_band"]
     assert loaded_payload["campaign"]["settlement"]["name"]
 
 

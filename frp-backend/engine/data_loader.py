@@ -485,7 +485,28 @@ def get_creation_class_stat_priorities() -> Dict[str, List[str]]:
 
 
 def get_creation_questions() -> List[Dict[str, Any]]:
+    if CHARACTER_CREATION.get("question_groups") is not None:
+        flattened: List[Dict[str, Any]] = []
+        for group in CHARACTER_CREATION.get("question_groups", []):
+            if not isinstance(group, dict):
+                continue
+            group_id = str(group.get("id", ""))
+            for question in group.get("questions", []):
+                if not isinstance(question, dict):
+                    continue
+                entry = dict(question)
+                if group_id and not entry.get("group_id"):
+                    entry["group_id"] = group_id
+                flattened.append(entry)
+        return flattened
     return [dict(question) for question in CHARACTER_CREATION.get("questions", [])]
+
+
+def get_creation_question_groups() -> List[Dict[str, Any]]:
+    groups = CHARACTER_CREATION.get("question_groups", [])
+    if not isinstance(groups, list):
+        return []
+    return [dict(group) for group in groups if isinstance(group, dict)]
 
 
 # Runtime gameplay/config registries

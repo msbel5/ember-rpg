@@ -6,11 +6,17 @@ from typing import Any, Optional
 
 from engine.api.action_parser import ParsedAction
 from engine.api.game_session import GameSession
+from engine.kernel import (
+    actor_record_from_character,
+    actor_record_from_entity,
+    item_stack_from_legacy_payload,
+    resolve_strike,
+    sync_body_state_to_tracker,
+)
 from engine.core.character import Character
 from engine.core.combat import CombatManager
 from engine.core.dm_agent import DMEvent, EventType, SceneType
-from engine.world.body_parts import BodyPartTracker, calculate_armor_reduction
-from engine.world.materials import MATERIALS
+from engine.world.body_parts import BodyPartTracker
 
 from engine.api.runtime_constants import HOSTILE_KEYWORDS, XP_REWARDS
 
@@ -108,24 +114,59 @@ class CombatActionsMixin:
             from engine.api.game_engine import roll_hit_location as _roll_hit_location
 
             hit_part = _roll_hit_location()
-            equipped_armor = getattr(target_combatant.character, "equipped_armor", []) if target_combatant else []
-            armor_reduction = calculate_armor_reduction(hit_part, equipped_armor)
-            weapon_material = getattr(session.player, "weapon_material", "iron")
-            if weapon_material in MATERIALS:
-                material = MATERIALS[weapon_material]
-                damage = max(1, int(raw_damage * material.damage_mult))
-                material_bonus = f" ({weapon_material})"
-            effective_damage = max(0, damage - armor_reduction)
+            attacker_weapon_payload = dict(session.equipment.get("weapon") or {})
+            attacker_weapon = (
+                item_stack_from_legacy_payload(attacker_weapon_payload, index=0)
+                if attacker_weapon_payload
+                else None
+            )
+            if attacker_weapon is not None and attacker_weapon.material_id:
+                material_bonus = f" ({attacker_weapon.material_id})"
+            effective_damage = max(0, damage)
             if target_combatant is not None:
+                entity_id = getattr(target_combatant.character, "_entity_id", None)
+                if entity_id and entity_id in session.entities:
+                    entity_record = session.entities[entity_id]
+                    entity_ref = entity_record.get("entity_ref")
+                    if entity_ref is not None:
+                        if not isinstance(getattr(entity_ref, "body", None), BodyPartTracker):
+                            entity_ref.body = entity_record.get("body") if isinstance(entity_record.get("body"), BodyPartTracker) else BodyPartTracker()
+                        entity_record["body"] = entity_ref.body
+                        attacker_record = actor_record_from_character(
+                            session.player,
+                            actor_id="player",
+                            position=tuple(session.position),
+                            equipment_payloads=session.equipment,
+                            region_id=str(session.campaign_state.get("active_region_id", "")) or None,
+                        )
+                        defender_record = actor_record_from_entity(
+                            entity_ref,
+                            site_id=str(session.campaign_state.get("active_region_id", "")) or None,
+                            region_id=str(session.campaign_state.get("active_region_id", "")) or None,
+                        )
+                        resolution = resolve_strike(
+                            attacker_record,
+                            defender_record,
+                            weapon=attacker_weapon,
+                            seed=(combat.round * 1000) + target_idx,
+                            raw_damage=max(1, int(damage)),
+                            hit=True,
+                            crit=crit,
+                            explicit_hit_part=hit_part,
+                        )
+                        effective_damage = max(0, int(resolution.effective_damage))
+                        armor_reduction = max(0, int(resolution.armor_absorbed))
+                        damage = effective_damage
+                        entity_record["actor_record"] = defender_record.to_dict()
+                        entity_record["kernel_last_strike"] = resolution.to_dict()
+                        sync_body_state_to_tracker(defender_record.body_state, entity_ref.body)
+                        entity_record["body"] = entity_ref.body
+                        state_changes["kernel_strike"] = resolution.to_dict()
                 corrected_hp = target_combatant.character.hp + raw_damage - effective_damage
                 target_combatant.character.hp = max(0, min(target_combatant.character.max_hp, corrected_hp))
                 target_combatant.is_dead = target_combatant.character.hp <= 0
                 result["killed"] = target_combatant.is_dead
-                entity_id = getattr(target_combatant.character, "_entity_id", None)
                 if entity_id and entity_id in session.entities:
-                    entity_body = session.entities[entity_id].get("body")
-                    if isinstance(entity_body, BodyPartTracker) and hit_part:
-                        entity_body.apply_damage(hit_part, effective_damage)
                     session.entities[entity_id]["hp"] = target_combatant.character.hp
                     session.entities[entity_id]["alive"] = not target_combatant.is_dead
                     session.entities[entity_id]["blocking"] = not target_combatant.is_dead
@@ -134,8 +175,6 @@ class CombatActionsMixin:
                         entity_ref.hp = target_combatant.character.hp
                         entity_ref.alive = not target_combatant.is_dead
                         entity_ref.blocking = not target_combatant.is_dead
-                        if isinstance(getattr(entity_ref, "body", None), BodyPartTracker) and entity_ref.body is not entity_body and hit_part:
-                            entity_ref.body.apply_damage(hit_part, effective_damage)
                         session.sync_entity_record(entity_id, entity_ref)
             state_changes["hit_location"] = hit_part
             state_changes["armor_reduction"] = armor_reduction

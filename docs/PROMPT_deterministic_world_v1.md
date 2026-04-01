@@ -1,5 +1,12 @@
 # Codex Prompt: Deterministic World Engine — All Sprints
 
+> Status: Historical planning prompt, not the current source of truth.
+> For the active implementation authority after the tooling-first reset, use:
+> `docs/architecture/runtime_authority.md`
+> `docs/architecture/creation_state_machine.md`
+> `docs/architecture/automation_stack.md`
+> `docs/architecture/reference_notes.md`
+
 Do NOT stop until all sprints are complete, all tests pass, and visual QA is done.
 If the build is broken, fix it. If tests fail, fix them. Loop until green.
 

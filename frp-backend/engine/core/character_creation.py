@@ -15,6 +15,7 @@ from engine.data_loader import (
     get_creation_class_skill_counts,
     get_creation_class_skill_options,
     get_creation_class_stat_priorities,
+    get_creation_question_groups,
     get_creation_questions,
 )
 
@@ -24,6 +25,38 @@ CLASS_DEFAULT_SKILLS: Dict[str, List[str]] = get_creation_class_default_skills()
 CLASS_STAT_PRIORITIES: Dict[str, List[str]] = get_creation_class_stat_priorities()
 ABILITY_ORDER = get_creation_ability_order()
 CREATION_QUESTIONS: List[Dict[str, Any]] = get_creation_questions()
+CREATION_QUESTION_GROUPS: List[Dict[str, Any]] = get_creation_question_groups()
+ALLOCATION_RULES: Dict[str, Any] = {
+    "mode": "rolled_array_assignment",
+    "abilities": list(ABILITY_ORDER),
+    "min_value": 3,
+    "max_value": 18,
+    "requires_exact_pool_use": True,
+}
+ADAPTER_LABELS = {
+    "fantasy_ember": "Fantasy Ember",
+    "scifi_frontier": "Sci-Fi Frontier",
+}
+SETTLEMENT_LABELS = {
+    "fortified_hamlet": "fortified hamlet",
+    "border_keep": "border keep",
+    "scholar_enclave": "scholar enclave",
+    "relay_station": "relay station",
+    "harbor_settlement": "harbor settlement",
+    "mining_camp": "mining camp",
+    "orbital_colony": "orbital colony",
+    "pilgrim_town": "pilgrim town",
+}
+FACTION_LABELS = {
+    "guard_captains": "guard captains",
+    "clergy": "clergy",
+    "guilds": "guilds",
+    "free_traders": "free traders",
+    "nobility": "nobility",
+    "research_conclave": "research conclave",
+    "colonial_office": "colonial office",
+    "smugglers": "smugglers",
+}
 
 
 def roll_stat_array(rng: Optional[random.Random] = None) -> List[int]:
@@ -65,6 +98,27 @@ def _merge_scores(existing: Dict[str, int], updates: Dict[str, int]) -> Dict[str
     return merged
 
 
+def _sorted_weight_pairs(weight_map: Dict[str, int], limit: int = 4) -> List[tuple[str, int]]:
+    return sorted(
+        ((str(key), int(value)) for key, value in (weight_map or {}).items() if int(value) != 0),
+        key=lambda pair: (-pair[1], pair[0]),
+    )[:limit]
+
+
+def _dedupe_strings(values: List[str], limit: int = 4) -> List[str]:
+    seen: set[str] = set()
+    ordered: List[str] = []
+    for value in values:
+        normalized = str(value).strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        ordered.append(normalized)
+        if len(ordered) >= limit:
+            break
+    return ordered
+
+
 def recommended_skills_for_class(state: Dict[str, Any], class_name: str) -> List[str]:
     normalized_class = str(class_name or "warrior").lower()
     options = list(CLASS_SKILL_OPTIONS.get(normalized_class, CLASS_DEFAULT_SKILLS["warrior"]))
@@ -90,11 +144,16 @@ class CreationState:
     location: Optional[str] = None
     rng_seed: Optional[int] = None
     creation_id: str = field(default_factory=lambda: uuid.uuid4().hex)
+    question_groups: List[Dict[str, Any]] = field(default_factory=lambda: copy.deepcopy(CREATION_QUESTION_GROUPS))
     question_bank: List[Dict[str, Any]] = field(default_factory=lambda: copy.deepcopy(CREATION_QUESTIONS))
     answers: List[Dict[str, Any]] = field(default_factory=list)
     class_weights: Dict[str, int] = field(default_factory=dict)
     skill_weights: Dict[str, int] = field(default_factory=dict)
     alignment_axes: Dict[str, int] = field(default_factory=lambda: {"law_chaos": 0, "good_evil": 0})
+    facet_scores: Dict[str, int] = field(default_factory=dict)
+    adapter_bias: Dict[str, int] = field(default_factory=dict)
+    faction_bias: Dict[str, int] = field(default_factory=dict)
+    settlement_bias: Dict[str, int] = field(default_factory=dict)
     current_roll: List[int] = field(default_factory=list)
     saved_roll: Optional[List[int]] = None
     creation_profile: Dict[str, Any] = field(default_factory=dict)
@@ -129,6 +188,10 @@ class CreationState:
         self.class_weights = {}
         self.skill_weights = {}
         self.alignment_axes = {"law_chaos": 0, "good_evil": 0}
+        self.facet_scores = {}
+        self.adapter_bias = {}
+        self.faction_bias = {}
+        self.settlement_bias = {}
         answer_map = {entry["question_id"]: entry["answer_id"] for entry in self.answers}
         for question in self.question_bank:
             answer_id = answer_map.get(question["id"])
@@ -140,6 +203,10 @@ class CreationState:
             self.class_weights = _merge_scores(self.class_weights, answer.get("class_weights", {}))
             self.skill_weights = _merge_scores(self.skill_weights, answer.get("skill_weights", {}))
             self.alignment_axes = _merge_scores(self.alignment_axes, answer.get("alignment_axes", {}))
+            self.facet_scores = _merge_scores(self.facet_scores, answer.get("facet_weights", {}))
+            self.adapter_bias = _merge_scores(self.adapter_bias, answer.get("adapter_weights", {}))
+            self.faction_bias = _merge_scores(self.faction_bias, answer.get("faction_bias", {}))
+            self.settlement_bias = _merge_scores(self.settlement_bias, answer.get("settlement_bias", {}))
 
     def reroll(self, rng: Optional[random.Random] = None) -> List[int]:
         self.reroll_count += 1
@@ -171,21 +238,119 @@ class CreationState:
             class_name or self.recommended_class(),
         )
 
+    def selected_answers(self) -> List[Dict[str, Any]]:
+        answer_map = {entry["question_id"]: entry["answer_id"] for entry in self.answers}
+        selected: List[Dict[str, Any]] = []
+        for question in self.question_bank:
+            answer_id = answer_map.get(str(question.get("id", "")))
+            if not answer_id:
+                continue
+            answer = next((item for item in question.get("answers", []) if item.get("id") == answer_id), None)
+            if answer is None:
+                continue
+            selected.append(
+                {
+                    "question_id": str(question.get("id", "")),
+                    "question_text": str(question.get("text", "")),
+                    "answer_id": str(answer.get("id", "")),
+                    "text": str(answer.get("text", "")),
+                    "world_tags": list(answer.get("world_tags", [])),
+                    "quest_themes": list(answer.get("quest_themes", [])),
+                    "tone_tags": list(answer.get("tone_tags", [])),
+                }
+            )
+        return selected
+
+    def question_groups_payload(self) -> List[Dict[str, Any]]:
+        answer_map = {entry["question_id"]: entry["answer_id"] for entry in self.answers}
+        groups: List[Dict[str, Any]] = []
+        for raw_group in self.question_groups:
+            questions: List[Dict[str, Any]] = []
+            for question in raw_group.get("questions", []):
+                item = copy.deepcopy(question)
+                item["selected_answer_id"] = answer_map.get(str(question.get("id", "")), "")
+                questions.append(item)
+            group_payload = copy.deepcopy(raw_group)
+            group_payload["questions"] = questions
+            groups.append(group_payload)
+        return groups
+
+    def world_seed_hints(self) -> Dict[str, Any]:
+        adapter_rank = _sorted_weight_pairs(self.adapter_bias, 2)
+        settlement_rank = _sorted_weight_pairs(self.settlement_bias, 2)
+        facet_rank = _sorted_weight_pairs(self.facet_scores, 5)
+        return {
+            "preferred_adapter": adapter_rank[0][0] if adapter_rank else "fantasy_ember",
+            "secondary_adapter": adapter_rank[1][0] if len(adapter_rank) > 1 else "",
+            "preferred_settlement": settlement_rank[0][0] if settlement_rank else "",
+            "dominant_facets": [name for name, _value in facet_rank],
+        }
+
+    def campaign_genesis(self) -> Dict[str, Any]:
+        selected = self.selected_answers()
+        world_tags = _dedupe_strings([tag for answer in selected for tag in answer.get("world_tags", [])], 4)
+        tone_tags = _dedupe_strings([tag for answer in selected for tag in answer.get("tone_tags", [])], 4)
+        quest_themes = _dedupe_strings([tag for answer in selected for tag in answer.get("quest_themes", [])], 5)
+        settlement_rank = _sorted_weight_pairs(self.settlement_bias, 2)
+        faction_rank = _sorted_weight_pairs(self.faction_bias, 2)
+        adapter_rank = _sorted_weight_pairs(self.adapter_bias, 2)
+        top_settlement = SETTLEMENT_LABELS.get(settlement_rank[0][0], settlement_rank[0][0].replace("_", " ")) if settlement_rank else "frontier settlement"
+        top_faction = FACTION_LABELS.get(faction_rank[0][0], faction_rank[0][0].replace("_", " ")) if faction_rank else "local power brokers"
+        adapter_name = ADAPTER_LABELS.get(adapter_rank[0][0], "Fantasy Ember") if adapter_rank else "Fantasy Ember"
+        premise_tags = ", ".join(world_tags[:2]) if world_tags else "hard weather and thin supply lines"
+        pressure_bits = []
+        if quest_themes:
+            pressure_bits.append(quest_themes[0].replace("_", " "))
+        if tone_tags:
+            pressure_bits.append(tone_tags[0].replace("_", " "))
+        if not pressure_bits:
+            pressure_bits.append("border pressure")
+        return {
+            "adapter_bias": adapter_rank[0][0] if adapter_rank else "fantasy_ember",
+            "adapter_label": adapter_name,
+            "world_premise": "A %s campaign shaped by %s." % (adapter_name, premise_tags),
+            "commander_profile": "A %s-leaning commander whose instincts point toward %s." % (
+                self.recommended_class(),
+                self.recommended_alignment(),
+            ),
+            "colony_archetype": top_settlement,
+            "starting_pressure": "The opening colony leans on %s while %s tightens the screws." % (
+                top_settlement,
+                top_faction,
+            ),
+            "quest_seed_themes": quest_themes,
+            "tone_tags": tone_tags,
+            "world_tags": world_tags,
+        }
+
+    def allocation_rules(self) -> Dict[str, Any]:
+        return copy.deepcopy(ALLOCATION_RULES)
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "creation_id": self.creation_id,
             "player_name": self.player_name,
             "location": self.location,
+            "question_groups": self.question_groups_payload(),
             "questions": copy.deepcopy(self.question_bank),
             "answers": copy.deepcopy(self.answers),
             "class_weights": dict(self.class_weights),
             "skill_weights": dict(self.skill_weights),
             "alignment_axes": dict(self.alignment_axes),
+            "facet_scores": dict(self.facet_scores),
+            "adapter_bias": dict(self.adapter_bias),
+            "faction_bias": dict(self.faction_bias),
+            "settlement_bias": dict(self.settlement_bias),
+            "campaign_genesis": self.campaign_genesis(),
+            "world_seed_hints": self.world_seed_hints(),
+            "allocation_rules": self.allocation_rules(),
             "recommended_class": self.recommended_class(),
             "recommended_alignment": self.recommended_alignment(),
             "recommended_skills": self.recommended_skills(),
             "current_roll": list(self.current_roll or []),
             "saved_roll": list(self.saved_roll) if self.saved_roll is not None else None,
+            "roll_pool": sorted([int(value) for value in self.current_roll or []], reverse=True),
+            "saved_roll_pool": sorted([int(value) for value in self.saved_roll or []], reverse=True) if self.saved_roll is not None else [],
             "seed": self.rng_seed,
             "reroll_count": self.reroll_count,
         }

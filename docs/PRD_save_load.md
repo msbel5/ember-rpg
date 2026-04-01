@@ -8,7 +8,7 @@
 ---
 
 ## 1. Purpose
-Define the campaign-first persistence contract for Ember RPG. Save/load must preserve the active campaign, support in-session quick save and explicit slot restore, and expose enough metadata for terminal and Godot resume flows. The backend contract is implemented; final demo closure still requires the Godot title flow to graduate from cached-slot `Continue` to a true save browser, which is tracked in QA rather than by changing the wire format.
+Define the campaign-first persistence contract for Ember RPG. Save/load must preserve the active campaign, support in-session quick save and explicit slot restore, and expose enough metadata for terminal and Godot resume flows. The backend contract now persists canonical kernel roots alongside campaign metadata and rejects invalid kernel save payloads during strict campaign load instead of silently rebuilding divergent runtime state from partial legacy fields.
 
 ## 2. Scope
 - In scope: campaign save routes, player-scoped save discovery, slot metadata, save/load UI contracts for terminal and Godot, and compatibility notes for legacy session routes.
@@ -16,7 +16,7 @@ Define the campaign-first persistence contract for Ember RPG. Save/load must pre
 
 ## 3. Functional Requirements
 FR-01: The active player-facing save path SHALL use the campaign-first route family under `/game/campaigns/...`.
-FR-02: The save payload SHALL preserve campaign state, realized region state, settlement state, recent event log, character sheet inputs, and enough session state to resume in a playable scene.
+FR-02: The save payload SHALL preserve campaign state, realized region state, settlement state, recent event log, character sheet inputs, canonical `kernel_world_state`, canonical `kernel_game_state`, and enough session state to resume in a playable scene.
 FR-03: The system SHALL support explicit named saves through backend routes and through terminal and Godot UI actions.
 FR-04: The system SHALL expose campaign-scoped save listing for in-session save/load panels.
 FR-05: The system SHALL expose player-scoped save discovery through `GET /game/saves/{player_id}` for title/resume flows and terminal load discovery.
@@ -24,6 +24,7 @@ FR-06: Loading a missing or corrupt save SHALL return a clear user-facing error 
 FR-07: Loading a campaign save SHALL restore the active runtime as a playable campaign, not a legacy blank shell.
 FR-08: The contract SHALL preserve `last_save_slot` and slot metadata so clients can seed default quick-save and continue behavior.
 FR-09: Legacy session save routes MAY remain available as compatibility scaffolding, but they SHALL NOT be the primary player-facing contract.
+FR-10: Strict campaign load SHALL validate canonical kernel roots (`kernel_world_state`, `kernel_game_state`) before hydrating the live runtime.
 
 ## 4. Data Structures
 ```python
@@ -56,6 +57,8 @@ class PersistedCampaignState(TypedDict):
     seed: int
     active_region_id: str
     world_snapshot: dict[str, object]
+    kernel_world_state: dict[str, object]
+    kernel_game_state: dict[str, object]
     settlement_state: dict[str, object]
     recent_event_log: list[dict[str, object]]
 ```
@@ -91,6 +94,7 @@ AC-06 [FR-06]: Missing or corrupt saves surface a clear error and do not crash t
 AC-07 [FR-07]: Loading a campaign save returns the player to a playable campaign scene with narrative, map, and settlement state intact.
 AC-08 [FR-08]: `last_save_slot` is preserved so quick-save defaults and cached continue behavior can be restored.
 AC-09 [FR-09]: Legacy session save routes remain compatibility-only and are not documented as the primary user path.
+AC-10 [FR-10]: Given a campaign save contains invalid `kernel_game_state` or `kernel_world_state`, when strict load is requested, then the load fails fast with a validation-style error instead of reconstructing a partial runtime from legacy shims.
 
 ## 7. Performance Requirements
 - Manual save and load should complete in under 250 ms for the typical demo campaign on local hardware, excluding client rendering time.
@@ -100,6 +104,7 @@ AC-09 [FR-09]: Legacy session save routes remain compatibility-only and are not 
 - Invalid or missing `slot_name` falls back to backend defaults rather than crashing the request.
 - Missing saves return a clear not-found error.
 - Corrupt saves return a validation-style error rather than silently spawning a new campaign.
+- Invalid canonical kernel roots return a validation-style error before campaign hydration starts.
 - Clients must keep the current playable state on load failure and surface the failure inline.
 
 ## 9. Integration Points
@@ -120,4 +125,5 @@ AC-09 [FR-09]: Legacy session save routes remain compatibility-only and are not 
 - Godot headless coverage must include campaign save/load request shapes and default save-slot behavior.
 
 ## Changelog
+- 2026-04-01: Added canonical `kernel_world_state` / `kernel_game_state` persistence requirements and strict-load fail-fast validation for invalid kernel save payloads.
 - 2026-03-28: Rewritten to make campaign-first save/load authoritative, align slot metadata with the live campaign routes, and move remaining title resume gaps into QA tracking.

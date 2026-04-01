@@ -21,6 +21,12 @@ def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
     payload = response.json()
     campaign = payload["campaign"]
 
+    assert campaign["world_state"]["seed"] == 42
+    assert campaign["game_state"]["campaign_id"] == payload["campaign_id"]
+    assert campaign["game_state"]["party"] == ["player"]
+    assert campaign["actors"]
+    assert campaign["jobs"]
+    assert campaign["systems"]["power_network"]["total_required"] >= 0
     assert campaign["map_data"]["metadata"]["map_type"] == "campaign_region"
     assert len(campaign["map_data"]["tiles"]) == 60
     assert len(campaign["map_data"]["tiles"][0]) == 80
@@ -52,3 +58,6 @@ def test_campaign_command_preserves_godot_payload_shape():
     assert payload["campaign"]["settlement"]["defense_posture"] == "fortified"
     assert payload["campaign"]["map_data"]["metadata"]["region_id"]
     assert payload["campaign"]["world"]["adapter_id"] == "scifi_frontier"
+    assert payload["campaign"]["world_state"]["active_region_id"] == payload["campaign"]["world"]["active_region_id"]
+    assert payload["campaign"]["game_state"]["current_area_id"] == payload["campaign"]["world"]["active_region_id"]
+    assert payload["campaign"]["systems"]["temperature_state"]["ambient_band"]

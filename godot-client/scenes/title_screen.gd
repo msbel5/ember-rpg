@@ -38,6 +38,7 @@ const CLASS_PRIORITIES := {
 @onready var subtitle_label: Label = $SubtitleLabel
 @onready var creation_panel: Panel = $CharacterCreation
 @onready var status_label: Label = $StatusLabel
+@onready var creation_vbox: VBoxContainer = $CharacterCreation/VBox
 
 @onready var step_label: Label = $CharacterCreation/VBox/StepLabel
 @onready var identity_section: VBoxContainer = $CharacterCreation/VBox/IdentitySection
@@ -67,6 +68,13 @@ const CLASS_PRIORITIES := {
 @onready var alignment_input: LineEdit = $CharacterCreation/VBox/BuildSection/AlignmentInput
 @onready var skills_input: LineEdit = $CharacterCreation/VBox/BuildSection/SkillsInput
 @onready var auto_assign_button: Button = $CharacterCreation/VBox/BuildSection/AutoAssignButton
+@onready var stats_grid: GridContainer = $CharacterCreation/VBox/BuildSection/StatsGrid
+@onready var mig_input: LineEdit = $CharacterCreation/VBox/BuildSection/StatsGrid/MIGInput
+@onready var agi_input: LineEdit = $CharacterCreation/VBox/BuildSection/StatsGrid/AGIInput
+@onready var end_input: LineEdit = $CharacterCreation/VBox/BuildSection/StatsGrid/ENDInput
+@onready var mnd_input: LineEdit = $CharacterCreation/VBox/BuildSection/StatsGrid/MNDInput
+@onready var ins_input: LineEdit = $CharacterCreation/VBox/BuildSection/StatsGrid/INSInput
+@onready var pre_input: LineEdit = $CharacterCreation/VBox/BuildSection/StatsGrid/PREInput
 @onready var summary_text: RichTextLabel = $CharacterCreation/VBox/SummarySection/SummaryText
 
 @onready var back_step_button: Button = $CharacterCreation/VBox/ButtonRow/BackStepButton
@@ -87,6 +95,25 @@ var load_browser_busy: bool = false
 var _build_touched: bool = false
 var _suppress_build_tracking: bool = false
 var _draft_build_state: Dictionary = {}
+var _questionnaire_choices: Dictionary = {}
+var _questionnaire_selectors: Dictionary = {}
+var _pending_questionnaire_answers: Array = []
+var _question_scroll: ScrollContainer
+var _question_list: VBoxContainer
+var _creation_body: HSplitContainer
+var _creation_form_scroll: ScrollContainer
+var _creation_form_content: VBoxContainer
+var _creation_preview_panel: PanelContainer
+var _creation_preview_title: Label
+var _creation_preview_text: RichTextLabel
+var _creation_preview_meta: RichTextLabel
+var _allocation_panel: VBoxContainer
+var _allocation_state_label: Label
+var _allocation_pool_label: Label
+var _allocation_hint: RichTextLabel
+var _allocation_value_labels: Dictionary = {}
+var _allocation_minus_buttons: Dictionary = {}
+var _allocation_plus_buttons: Dictionary = {}
 
 
 func _ready() -> void:
@@ -116,6 +143,10 @@ func _ready() -> void:
 	_populate_adapter_options()
 	_populate_class_options()
 	_wire_build_tracking()
+	_install_creation_shell()
+	_install_questionnaire_canvas()
+	_install_allocation_board()
+	_configure_build_inputs()
 	_reset_wizard_state()
 	continue_btn.disabled = false
 
@@ -188,6 +219,13 @@ func _on_finalize_pressed() -> void:
 		"alignment": alignment_input.text.strip_edges(),
 		"skill_proficiencies": _selected_skills(),
 		"assigned_stats": _selected_stats(),
+		"selected_facets": _selected_creation_facets(),
+		"creation_answers": creation_payload.get("answers", []),
+		"creation_profile": {
+			"campaign_genesis": creation_payload.get("campaign_genesis", {}),
+			"world_seed_hints": creation_payload.get("world_seed_hints", {}),
+			"questionnaire": _questionnaire_choices.duplicate(true),
+		},
 	}
 	var seed_value = _selected_seed()
 	if seed_value >= 0:
@@ -227,17 +265,25 @@ func _on_creation_started(data) -> void:
 
 
 func _submit_question_answer() -> void:
-	var question = _current_question()
-	if question.is_empty():
+	var queue: Array = []
+	var answered_map = _answered_question_map()
+	for question_id in _question_ids_in_display_order():
+		var answer_id = str(_questionnaire_choices.get(question_id, "")).strip_edges()
+		if answer_id.is_empty():
+			status_label.text = "Answer every questionnaire item before moving on."
+			return
+		if str(answered_map.get(question_id, "")) != answer_id:
+			queue.append({
+				"question_id": question_id,
+				"answer_id": answer_id,
+			})
+	_pending_questionnaire_answers = queue
+	if _pending_questionnaire_answers.is_empty():
 		wizard_step = STEP_ROLL
 		_refresh_creation_view()
 		return
-	if answer_option.item_count == 0:
-		status_label.text = "Select an answer."
-		return
-	var answer_id = str(answer_option.get_item_metadata(answer_option.selected))
-	_set_busy(true, "Recording answer...")
-	Backend.answer_campaign_creation(str(creation_payload.get("creation_id", "")), str(question.get("id", "")), answer_id, _on_question_answered)
+	_set_busy(true, "Locking questionnaire into the campaign frame...")
+	_submit_next_questionnaire_answer()
 
 
 func _on_question_answered(data) -> void:
@@ -251,6 +297,32 @@ func _on_question_answered(data) -> void:
 	else:
 		wizard_step = STEP_QUESTIONNAIRE
 	_refresh_creation_view()
+
+
+func _submit_next_questionnaire_answer() -> void:
+	if _pending_questionnaire_answers.is_empty():
+		_set_busy(false, "")
+		wizard_step = STEP_ROLL
+		_refresh_creation_view()
+		return
+	var entry = _pending_questionnaire_answers[0]
+	_pending_questionnaire_answers.remove_at(0)
+	Backend.answer_campaign_creation(
+		str(creation_payload.get("creation_id", "")),
+		str(entry.get("question_id", "")),
+		str(entry.get("answer_id", "")),
+		_on_questionnaire_batch_answered.bind(str(entry.get("question_id", "")), str(entry.get("answer_id", ""))),
+	)
+
+
+func _on_questionnaire_batch_answered(data, _question_id: String, _answer_id: String) -> void:
+	if data == null:
+		_pending_questionnaire_answers.clear()
+		_set_busy(false, "")
+		status_label.text = "Failed to record the questionnaire."
+		return
+	_apply_creation_state(data)
+	_submit_next_questionnaire_answer()
 
 
 func _on_reroll_pressed() -> void:
@@ -286,6 +358,7 @@ func _on_roll_updated(data) -> void:
 func _apply_creation_state(data: Dictionary) -> void:
 	creation_payload = data.duplicate(true)
 	GameState.update_from_response(creation_payload)
+	_sync_questionnaire_choices_from_payload(true)
 	_build_touched = false
 	_draft_build_state = {}
 	_apply_creation_defaults(true)
@@ -375,14 +448,19 @@ func _refresh_creation_view() -> void:
 	match wizard_step:
 		STEP_IDENTITY:
 			step_label.text = "Step 1: Identity"
+			_set_creation_preview(
+				"Commander Intake",
+				"[b]Identity Frame[/b]\nChoose the commander name, adapter, and optional deterministic world seed before the world frame locks in.",
+				"[b]Identity Rule[/b]\nName is required. Profile and seed are optional overrides, not hidden blockers."
+			)
 		STEP_QUESTIONNAIRE:
-			step_label.text = "Step 2: Questionnaire"
+			step_label.text = "Step 2: World and Commander Questions"
 		STEP_ROLL:
-			step_label.text = "Step 3: Dice"
+			step_label.text = "Step 3: Rolled Pool"
 		STEP_BUILD:
-			step_label.text = "Step 4: Build"
+			step_label.text = "Step 4: Allocation and Build"
 		STEP_SUMMARY:
-			step_label.text = "Step 5: Summary"
+			step_label.text = "Step 5: Dossier"
 
 	if wizard_step == STEP_QUESTIONNAIRE:
 		_update_question_view()
@@ -553,28 +631,510 @@ func _is_campaign_compatible_save(entry: Dictionary) -> bool:
 	return false
 
 
-func _update_question_view() -> void:
-	var questions: Array = creation_payload.get("questions", [])
-	var answers: Array = creation_payload.get("answers", [])
-	var question = _current_question()
-	if question.is_empty():
-		question_progress_label.text = "Questionnaire complete"
-		question_prompt.text = "All questions answered."
-		answer_option.clear()
+func _install_creation_shell() -> void:
+	creation_panel.anchors_preset = Control.PRESET_FULL_RECT
+	creation_panel.anchor_left = 0.0
+	creation_panel.anchor_top = 0.0
+	creation_panel.anchor_right = 1.0
+	creation_panel.anchor_bottom = 1.0
+	creation_panel.offset_left = 48.0
+	creation_panel.offset_top = 40.0
+	creation_panel.offset_right = -48.0
+	creation_panel.offset_bottom = -40.0
+	load_browser.anchors_preset = Control.PRESET_FULL_RECT
+	load_browser.anchor_left = 0.0
+	load_browser.anchor_top = 0.0
+	load_browser.anchor_right = 1.0
+	load_browser.anchor_bottom = 1.0
+	load_browser.offset_left = 88.0
+	load_browser.offset_top = 72.0
+	load_browser.offset_right = -88.0
+	load_browser.offset_bottom = -72.0
+	creation_vbox.add_theme_constant_override("separation", 18)
+	if creation_vbox.get_node_or_null("CreationBody") != null:
 		return
-	question_progress_label.text = "Question %d/%d" % [answers.size() + 1, questions.size()]
-	question_prompt.text = str(question.get("text", question.get("id", "Question")))
-	answer_option.clear()
-	for entry in question.get("answers", []):
-		answer_option.add_item(str(entry.get("text", "Answer")))
-		answer_option.set_item_metadata(answer_option.item_count - 1, str(entry.get("id", "")))
-	answer_option.select(0)
+	var button_row := $CharacterCreation/VBox/ButtonRow
+	button_row.alignment = BoxContainer.ALIGNMENT_END
+	_creation_body = HSplitContainer.new()
+	_creation_body.name = "CreationBody"
+	_creation_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_creation_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_creation_body.split_offset = 720
+	creation_vbox.add_child(_creation_body)
+	creation_vbox.move_child(_creation_body, creation_vbox.get_children().find(button_row))
+
+	var form_pane = VBoxContainer.new()
+	form_pane.name = "FormPane"
+	form_pane.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	form_pane.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_creation_body.add_child(form_pane)
+
+	_creation_form_scroll = ScrollContainer.new()
+	_creation_form_scroll.name = "FormScroll"
+	_creation_form_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_creation_form_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_creation_form_scroll.custom_minimum_size = Vector2(0, 520)
+	form_pane.add_child(_creation_form_scroll)
+
+	_creation_form_content = VBoxContainer.new()
+	_creation_form_content.name = "FormContent"
+	_creation_form_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_creation_form_content.add_theme_constant_override("separation", 16)
+	_creation_form_scroll.add_child(_creation_form_content)
+
+	for section in [identity_section, questionnaire_section, roll_section, build_section, summary_section]:
+		var parent = section.get_parent()
+		if parent != null:
+			parent.remove_child(section)
+		_creation_form_content.add_child(section)
+		section.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	_creation_preview_panel = PanelContainer.new()
+	_creation_preview_panel.name = "PreviewPane"
+	_creation_preview_panel.custom_minimum_size = Vector2(360, 0)
+	_creation_preview_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_creation_preview_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_creation_body.add_child(_creation_preview_panel)
+
+	var preview_margin = MarginContainer.new()
+	preview_margin.name = "PreviewMargin"
+	preview_margin.add_theme_constant_override("margin_left", 14)
+	preview_margin.add_theme_constant_override("margin_top", 12)
+	preview_margin.add_theme_constant_override("margin_right", 14)
+	preview_margin.add_theme_constant_override("margin_bottom", 12)
+	_creation_preview_panel.add_child(preview_margin)
+
+	var preview_vbox = VBoxContainer.new()
+	preview_vbox.name = "PreviewVBox"
+	preview_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	preview_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	preview_vbox.add_theme_constant_override("separation", 10)
+	preview_margin.add_child(preview_vbox)
+
+	_creation_preview_title = Label.new()
+	_creation_preview_title.name = "PreviewHeading"
+	_creation_preview_title.text = "Campaign Genesis"
+	_creation_preview_title.add_theme_font_size_override("font_size", 22)
+	preview_vbox.add_child(_creation_preview_title)
+
+	_creation_preview_text = RichTextLabel.new()
+	_creation_preview_text.name = "PreviewText"
+	_creation_preview_text.bbcode_enabled = true
+	_creation_preview_text.fit_content = false
+	_creation_preview_text.scroll_active = true
+	_creation_preview_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_creation_preview_text.custom_minimum_size = Vector2(0, 320)
+	preview_vbox.add_child(_creation_preview_text)
+
+	_creation_preview_meta = RichTextLabel.new()
+	_creation_preview_meta.name = "PreviewMeta"
+	_creation_preview_meta.bbcode_enabled = true
+	_creation_preview_meta.fit_content = true
+	_creation_preview_meta.scroll_active = false
+	_creation_preview_meta.custom_minimum_size = Vector2(0, 120)
+	preview_vbox.add_child(_creation_preview_meta)
+
+
+func _install_questionnaire_canvas() -> void:
+	answer_option.visible = false
+	question_prompt.visible = false
+	question_prompt.custom_minimum_size = Vector2(0, 132)
+	question_prompt.bbcode_enabled = true
+	question_prompt.fit_content = false
+	question_prompt.scroll_active = true
+	_question_scroll = ScrollContainer.new()
+	_question_scroll.name = "QuestionScroll"
+	_question_scroll.custom_minimum_size = Vector2(0, 360)
+	_question_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_question_list = VBoxContainer.new()
+	_question_list.name = "QuestionList"
+	_question_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_question_list.add_theme_constant_override("separation", 12)
+	_question_scroll.add_child(_question_list)
+	questionnaire_section.add_child(_question_scroll)
+	questionnaire_section.move_child(_question_scroll, questionnaire_section.get_child_count() - 1)
+
+
+func _install_allocation_board() -> void:
+	_allocation_panel = VBoxContainer.new()
+	_allocation_panel.name = "AllocationPanel"
+	_allocation_panel.add_theme_constant_override("separation", 8)
+	_allocation_state_label = Label.new()
+	_allocation_state_label.name = "AllocationStateLabel"
+	_allocation_panel.add_child(_allocation_state_label)
+	_allocation_pool_label = Label.new()
+	_allocation_pool_label.name = "AllocationPoolLabel"
+	_allocation_pool_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_allocation_panel.add_child(_allocation_pool_label)
+	_allocation_hint = RichTextLabel.new()
+	_allocation_hint.name = "AllocationHint"
+	_allocation_hint.custom_minimum_size = Vector2(0, 80)
+	_allocation_hint.bbcode_enabled = true
+	_allocation_hint.fit_content = true
+	_allocation_hint.scroll_active = false
+	_allocation_panel.add_child(_allocation_hint)
+	for ability in ABILITY_ORDER:
+		var row = HBoxContainer.new()
+		row.name = "%sRow" % ability
+		row.add_theme_constant_override("separation", 8)
+		var ability_label = Label.new()
+		ability_label.text = ability
+		ability_label.custom_minimum_size = Vector2(52, 0)
+		row.add_child(ability_label)
+		var minus_button = Button.new()
+		minus_button.text = "-"
+		minus_button.custom_minimum_size = Vector2(36, 36)
+		minus_button.pressed.connect(_on_shift_stat_pressed.bind(ability, -1))
+		row.add_child(minus_button)
+		var value_label = Label.new()
+		value_label.text = "10 (+0)"
+		value_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(value_label)
+		var plus_button = Button.new()
+		plus_button.text = "+"
+		plus_button.custom_minimum_size = Vector2(36, 36)
+		plus_button.pressed.connect(_on_shift_stat_pressed.bind(ability, 1))
+		row.add_child(plus_button)
+		_allocation_value_labels[ability] = value_label
+		_allocation_minus_buttons[ability] = minus_button
+		_allocation_plus_buttons[ability] = plus_button
+		_allocation_panel.add_child(row)
+	build_section.add_child(_allocation_panel)
+	build_section.move_child(_allocation_panel, build_section.get_children().find(auto_assign_button) + 1)
+
+
+func _configure_build_inputs() -> void:
+	auto_assign_button.text = "Reset To Recommended Assignment"
+	class_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	alignment_input.placeholder_text = "LG, TN, CG..."
+	skills_input.placeholder_text = "athletics, perception"
+	for ability in ABILITY_ORDER:
+		var field = _stat_input_for(ability)
+		field.editable = false
+		field.visible = false
+	stats_grid.visible = false
+
+
+func _question_groups_for_view() -> Array:
+	var groups = creation_payload.get("question_groups", [])
+	if groups is Array and not groups.is_empty():
+		return groups
+	if creation_payload.get("questions", []) is Array:
+		return [{
+			"id": "questionnaire",
+			"title": "Questionnaire",
+			"subtitle": "Answer every question before continuing.",
+			"questions": creation_payload.get("questions", []),
+		}]
+	return []
+
+
+func _question_ids_in_display_order() -> Array[String]:
+	var ordered: Array[String] = []
+	for group in _question_groups_for_view():
+		if not (group is Dictionary):
+			continue
+		for question in group.get("questions", []):
+			if question is Dictionary:
+				ordered.append(str(question.get("id", "")))
+	return ordered
+
+
+func _answered_question_map() -> Dictionary:
+	var answered := {}
+	for entry in creation_payload.get("answers", []):
+		if entry is Dictionary:
+			answered[str(entry.get("question_id", ""))] = str(entry.get("answer_id", ""))
+	return answered
+
+
+func _sync_questionnaire_choices_from_payload(preserve_existing: bool) -> void:
+	var merged: Dictionary = {}
+	if preserve_existing:
+		merged = _questionnaire_choices.duplicate(true)
+	for entry in creation_payload.get("answers", []):
+		if entry is Dictionary:
+			merged[str(entry.get("question_id", ""))] = str(entry.get("answer_id", ""))
+	_questionnaire_choices = merged
+
+
+func _render_questionnaire_cards() -> void:
+	if _question_list == null:
+		return
+	for child in _question_list.get_children():
+		child.queue_free()
+	_questionnaire_selectors.clear()
+	for group in _question_groups_for_view():
+		if not (group is Dictionary):
+			continue
+		var card = PanelContainer.new()
+		var margin = MarginContainer.new()
+		margin.add_theme_constant_override("margin_left", 12)
+		margin.add_theme_constant_override("margin_top", 10)
+		margin.add_theme_constant_override("margin_right", 12)
+		margin.add_theme_constant_override("margin_bottom", 10)
+		card.add_child(margin)
+		var group_box = VBoxContainer.new()
+		group_box.add_theme_constant_override("separation", 8)
+		margin.add_child(group_box)
+		var title = Label.new()
+		title.text = str(group.get("title", "Question Group"))
+		group_box.add_child(title)
+		var subtitle = Label.new()
+		subtitle.text = str(group.get("subtitle", ""))
+		subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		group_box.add_child(subtitle)
+		for question in group.get("questions", []):
+			if not (question is Dictionary):
+				continue
+			var question_box = VBoxContainer.new()
+			question_box.add_theme_constant_override("separation", 4)
+			var prompt = RichTextLabel.new()
+			prompt.bbcode_enabled = true
+			prompt.fit_content = true
+			prompt.scroll_active = false
+			prompt.custom_minimum_size = Vector2(0, 42)
+			prompt.text = "[b]%s[/b]" % str(question.get("text", "Question"))
+			question_box.add_child(prompt)
+			var selector = OptionButton.new()
+			selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			selector.add_item("Choose an answer...")
+			selector.set_item_metadata(0, "")
+			var selected_answer_id = str(_questionnaire_choices.get(str(question.get("id", "")), str(question.get("selected_answer_id", ""))))
+			for answer in question.get("answers", []):
+				selector.add_item(str(answer.get("text", "Answer")))
+				selector.set_item_metadata(selector.item_count - 1, str(answer.get("id", "")))
+			var selected_index := 0
+			for idx in range(selector.item_count):
+				if str(selector.get_item_metadata(idx)) == selected_answer_id:
+					selected_index = idx
+					break
+			selector.select(selected_index)
+			selector.item_selected.connect(_on_questionnaire_answer_selected.bind(str(question.get("id", "")), selector))
+			question_box.add_child(selector)
+			group_box.add_child(question_box)
+			_questionnaire_selectors[str(question.get("id", ""))] = selector
+		_question_list.add_child(card)
+
+
+func _on_questionnaire_answer_selected(index: int, question_id: String, selector: OptionButton) -> void:
+	var answer_id = str(selector.get_item_metadata(index)).strip_edges()
+	if answer_id.is_empty():
+		_questionnaire_choices.erase(question_id)
+	else:
+		_questionnaire_choices[question_id] = answer_id
+	_update_questionnaire_preview()
+
+
+func _selected_questionnaire_answers() -> Array:
+	var selected: Array = []
+	for group in _question_groups_for_view():
+		if not (group is Dictionary):
+			continue
+		for question in group.get("questions", []):
+			if not (question is Dictionary):
+				continue
+			var answer_id = str(_questionnaire_choices.get(str(question.get("id", "")), "")).strip_edges()
+			if answer_id.is_empty():
+				continue
+			for answer in question.get("answers", []):
+				if answer is Dictionary and str(answer.get("id", "")) == answer_id:
+					selected.append(answer)
+					break
+	return selected
+
+
+func _merge_int_weights(target: Dictionary, updates: Dictionary) -> void:
+	for key in updates.keys():
+		target[str(key)] = int(target.get(str(key), 0)) + int(updates.get(key, 0))
+
+
+func _top_weight_label(weights: Dictionary, labels: Dictionary, fallback: String) -> String:
+	var best_key := ""
+	var best_value := -9999
+	for key in weights.keys():
+		var value = int(weights.get(key, 0))
+		if value > best_value or (value == best_value and str(key) < best_key):
+			best_key = str(key)
+			best_value = value
+	if best_key.is_empty():
+		return fallback
+	return str(labels.get(best_key, best_key.replace("_", " ")))
+
+
+func _unique_strings(values: Array, limit: int) -> Array[String]:
+	var result: Array[String] = []
+	for value in values:
+		var text = str(value).strip_edges()
+		if text.is_empty() or result.has(text):
+			continue
+		result.append(text)
+		if result.size() >= limit:
+			break
+	return result
+
+
+func _update_questionnaire_preview() -> void:
+	var preview_title := "Live Genesis Preview"
+	var selected = _selected_questionnaire_answers()
+	if selected.is_empty():
+		var empty_preview = "[b]Live Genesis Preview[/b]\nChoose answers to shape the world, colony pressure, and opening quest themes."
+		question_prompt.text = empty_preview
+		_set_creation_preview(preview_title, empty_preview, "[b]Questionnaire Rule[/b]\nEvery visible question must be answered before the rolled pool unlocks.")
+		return
+	var adapter_bias := {}
+	var settlement_bias := {}
+	var faction_bias := {}
+	var world_tags: Array = []
+	var tone_tags: Array = []
+	var quest_themes: Array = []
+	for answer in selected:
+		if answer is Dictionary:
+			_merge_int_weights(adapter_bias, answer.get("adapter_weights", {}))
+			_merge_int_weights(settlement_bias, answer.get("settlement_bias", {}))
+			_merge_int_weights(faction_bias, answer.get("faction_bias", {}))
+			world_tags.append_array(answer.get("world_tags", []))
+			tone_tags.append_array(answer.get("tone_tags", []))
+			quest_themes.append_array(answer.get("quest_themes", []))
+	var adapter_name = _top_weight_label(adapter_bias, {
+		"fantasy_ember": "Fantasy Ember",
+		"scifi_frontier": "Sci-Fi Frontier",
+	}, "Fantasy Ember")
+	var settlement_name = _top_weight_label(settlement_bias, {
+		"fortified_hamlet": "fortified hamlet",
+		"border_keep": "border keep",
+		"scholar_enclave": "scholar enclave",
+		"relay_station": "relay station",
+		"harbor_settlement": "harbor settlement",
+		"mining_camp": "mining camp",
+		"orbital_colony": "orbital colony",
+		"pilgrim_town": "pilgrim town",
+	}, "frontier settlement")
+	var faction_name = _top_weight_label(faction_bias, {
+		"guard_captains": "guard captains",
+		"clergy": "clergy",
+		"guilds": "guilds",
+		"free_traders": "free traders",
+		"nobility": "nobility",
+		"research_conclave": "research conclave",
+		"colonial_office": "colonial office",
+		"smugglers": "smugglers",
+	}, "local power brokers")
+	var world_bits = _unique_strings(world_tags, 3)
+	var tone_bits = _unique_strings(tone_tags, 3)
+	var quest_bits = _unique_strings(quest_themes, 4)
+	var preview_text = "[b]Live Genesis Preview[/b]\nWorld: %s shaped by %s.\nColony: %s under pressure from %s.\nTone: %s.\nQuest seeds: %s." % [
+		adapter_name,
+		", ".join(world_bits) if not world_bits.is_empty() else "frontier stress",
+		settlement_name,
+		faction_name,
+		", ".join(tone_bits) if not tone_bits.is_empty() else "uncertain pressure",
+		", ".join(quest_bits) if not quest_bits.is_empty() else "no quest themes locked yet",
+	]
+	question_prompt.text = preview_text
+	_set_creation_preview(preview_title, preview_text, "[b]Questionnaire Rule[/b]\nVisible answers directly bias adapter tone, settlement pressure, faction pull, and quest seed themes.")
+
+
+func _selected_creation_facets() -> Dictionary:
+	return {
+		"questionnaire": _questionnaire_choices.duplicate(true),
+		"campaign_genesis": creation_payload.get("campaign_genesis", {}).duplicate(true),
+		"world_seed_hints": creation_payload.get("world_seed_hints", {}).duplicate(true),
+	}
+
+
+func _on_shift_stat_pressed(ability: String, direction: int) -> void:
+	_shift_stat_value(ability, direction)
+
+
+func _shift_stat_value(ability: String, direction: int) -> void:
+	var stats = _selected_stats()
+	var current_value = int(stats.get(ability, 10))
+	var swap_ability := ""
+	var swap_value: int = current_value
+	for other in ABILITY_ORDER:
+		if other == ability:
+			continue
+		var candidate = int(stats.get(other, 10))
+		if direction > 0:
+			if candidate <= current_value:
+				continue
+			if swap_ability.is_empty() or candidate < swap_value:
+				swap_ability = other
+				swap_value = candidate
+		else:
+			if candidate >= current_value:
+				continue
+			if swap_ability.is_empty() or candidate > swap_value:
+				swap_ability = other
+				swap_value = candidate
+	if swap_ability.is_empty():
+		return
+	_suppress_build_tracking = true
+	_stat_input_for(ability).text = str(swap_value)
+	_stat_input_for(swap_ability).text = str(current_value)
+	_suppress_build_tracking = false
+	_build_touched = true
+	_refresh_allocation_board()
+	_update_summary_preview()
+
+
+func _refresh_allocation_board() -> void:
+	if _allocation_panel == null:
+		return
+	_allocation_state_label.text = "Locked pool: exact rolled array. Use +/- to swap values between abilities."
+	_allocation_pool_label.text = "Rolled Pool  %s" % _roll_text(creation_payload.get("current_roll", []))
+	_allocation_hint.text = "[b]Build Rule[/b]\nThe six assigned stats must remain a permutation of the active rolled pool. Raw number entry is disabled on purpose."
+	var stats = _selected_stats()
+	for ability in ABILITY_ORDER:
+		var value = int(stats.get(ability, 10))
+		if _allocation_value_labels.has(ability):
+			var label: Label = _allocation_value_labels[ability]
+			label.text = "%d  (%+d)" % [value, _modifier(value)]
+		if _allocation_minus_buttons.has(ability):
+			var minus_button: Button = _allocation_minus_buttons[ability]
+			minus_button.disabled = not _has_swap_candidate(ability, -1, stats)
+		if _allocation_plus_buttons.has(ability):
+			var plus_button: Button = _allocation_plus_buttons[ability]
+			plus_button.disabled = not _has_swap_candidate(ability, 1, stats)
+
+
+func _has_swap_candidate(ability: String, direction: int, stats: Dictionary) -> bool:
+	var current_value = int(stats.get(ability, 10))
+	for other in ABILITY_ORDER:
+		if other == ability:
+			continue
+		var candidate = int(stats.get(other, 10))
+		if direction > 0 and candidate > current_value:
+			return true
+		if direction < 0 and candidate < current_value:
+			return true
+	return false
+
+
+func _update_question_view() -> void:
+	var total_questions = _question_ids_in_display_order().size()
+	var answered_count = _answered_question_map().size()
+	question_progress_label.text = "Answer every visible question. %d / %d locked into the current creation state." % [answered_count, total_questions]
+	_render_questionnaire_cards()
+	_update_questionnaire_preview()
 
 
 func _update_roll_view() -> void:
-	current_roll_label.text = "Current Roll: %s" % _roll_text(creation_payload.get("current_roll", []))
+	current_roll_label.text = "Active Rolled Pool: %s" % _roll_text(creation_payload.get("current_roll", []))
 	var saved_roll = creation_payload.get("saved_roll", null)
-	saved_roll_label.text = "Saved Roll: %s" % (_roll_text(saved_roll) if saved_roll != null else "-")
+	saved_roll_label.text = "Saved Pool: %s" % (_roll_text(saved_roll) if saved_roll != null else "No saved pool yet")
+	save_roll_button.text = "Lock This Pool"
+	swap_roll_button.text = "Swap Active / Saved"
+	reroll_button.text = "Roll Fresh Pool"
+	_set_creation_preview(
+		"Rolled Pool Authority",
+		"[b]Active Pool[/b]\n%s\n\n[b]Saved Pool[/b]\n%s" % [
+			_roll_text(creation_payload.get("current_roll", [])),
+			_roll_text(saved_roll) if saved_roll != null else "No saved pool yet",
+		],
+		"[b]Roll Rule[/b]\nLock a pool before swapping. The build step can only permute the active pool; it can never mint new values."
+	)
 
 
 func _update_build_view() -> void:
@@ -582,10 +1142,12 @@ func _update_build_view() -> void:
 		_apply_creation_defaults(false)
 	else:
 		_restore_build_state()
+	_refresh_allocation_board()
 	_update_summary_preview()
 
 
 func _update_summary_preview() -> void:
+	var genesis = creation_payload.get("campaign_genesis", {})
 	var recommended_class = str(creation_payload.get("recommended_class", _selected_class_id()))
 	var recommended_alignment = str(creation_payload.get("recommended_alignment", alignment_input.text.strip_edges()))
 	var recommended_skills = ", ".join(creation_payload.get("recommended_skills", []))
@@ -593,7 +1155,12 @@ func _update_summary_preview() -> void:
 	var stat_lines: Array[String] = []
 	for ability in ABILITY_ORDER:
 		stat_lines.append("%s %d (%+d)" % [ability, int(selected_stats.get(ability, 10)), _modifier(int(selected_stats.get(ability, 10)))])
-	summary_text.text = "[b]recommended[/b]\nClass: %s\nAlignment: %s\nSkills: %s\n\n[b]final build[/b]\nClass: %s\nAlignment: %s\nSkills: %s\nStats: %s" % [
+	var quest_themes = genesis.get("quest_seed_themes", [])
+	summary_text.text = "[b]World Premise[/b]\n%s\n\n[b]Commander Profile[/b]\n%s\n\n[b]Colony Pressure[/b]\n%s\n\n[b]Quest Seeds[/b]\n%s\n\n[b]Recommended Frame[/b]\nClass: %s\nAlignment: %s\nSkills: %s\n\n[b]Final Build[/b]\nClass: %s\nAlignment: %s\nSkills: %s\nStats: %s" % [
+		str(genesis.get("world_premise", "A frontier colony waits for the first hard decision.")),
+		str(genesis.get("commander_profile", "The commander has not yet been fully framed.")),
+		str(genesis.get("starting_pressure", "Choose answers that define the colony's first pressure.")),
+		", ".join(quest_themes) if quest_themes is Array and not quest_themes.is_empty() else "No quest themes locked yet.",
 		recommended_class.capitalize(),
 		recommended_alignment,
 		recommended_skills,
@@ -602,6 +1169,27 @@ func _update_summary_preview() -> void:
 		", ".join(_selected_skills()),
 		" | ".join(stat_lines),
 	]
+	if wizard_step == STEP_SUMMARY:
+		_set_creation_preview(
+			"Launch Dossier",
+			"[b]Start Check[/b]\nReview the dossier on the left before committing.\n\n[b]Current Class[/b] %s\n[b]Alignment[/b] %s\n[b]Skills[/b] %s" % [
+				_selected_class_id().capitalize(),
+				alignment_input.text.strip_edges(),
+				", ".join(_selected_skills()),
+			],
+			"[b]Launch Rule[/b]\nUse Previous to revise build decisions. Start Campaign should never be the first time the player sees world premise or starting pressure."
+		)
+	elif wizard_step == STEP_BUILD:
+		_set_creation_preview(
+			"Allocation Board",
+			"[b]Current Build[/b]\nClass: %s\nAlignment: %s\nSkills: %s\nStats: %s" % [
+				_selected_class_id().capitalize(),
+				alignment_input.text.strip_edges(),
+				", ".join(_selected_skills()),
+				" | ".join(stat_lines),
+			],
+			"[b]Build Rule[/b]\nThe six assigned stats must remain a permutation of the active rolled pool. Use +/- to swap positions; raw number entry stays locked."
+		)
 
 
 func _apply_creation_defaults(force: bool = false) -> void:
@@ -614,6 +1202,7 @@ func _apply_creation_defaults(force: bool = false) -> void:
 	alignment_input.text = str(creation_payload.get("recommended_alignment", "TN"))
 	skills_input.text = ", ".join(creation_payload.get("recommended_skills", []))
 	_apply_recommended_stats()
+	_refresh_allocation_board()
 	_suppress_build_tracking = false
 
 
@@ -623,6 +1212,7 @@ func _apply_recommended_stats() -> void:
 	for ability in ABILITY_ORDER:
 		_stat_input_for(ability).text = str(assigned.get(ability, 10))
 	_suppress_build_tracking = false
+	_refresh_allocation_board()
 
 
 func _suggested_stats_for(class_id: String) -> Dictionary:
@@ -731,6 +1321,9 @@ func _reset_wizard_state() -> void:
 	wizard_step = STEP_IDENTITY
 	_build_touched = false
 	_draft_build_state = {}
+	_questionnaire_choices.clear()
+	_questionnaire_selectors.clear()
+	_pending_questionnaire_answers.clear()
 	_suppress_build_tracking = true
 	name_input.text = _last_player_id()
 	profile_input.text = "standard"
@@ -742,12 +1335,22 @@ func _reset_wizard_state() -> void:
 		_stat_input_for(ability).text = "10"
 	_suppress_build_tracking = false
 	status_label.text = ""
+	question_progress_label.text = "Answer every question to shape the campaign frame."
+	question_prompt.text = "[b]Live Genesis Preview[/b]\nChoose answers to shape the world, colony pressure, and opening quest themes."
 	continue_btn.disabled = false
 	load_status_label.text = "Choose a save slot to continue."
 	_clear_load_rows()
 	_update_advanced_toggle_text()
+	_refresh_allocation_board()
+	_set_creation_preview(
+		"Campaign Genesis",
+		"[b]Creation Surface[/b]\nName the commander, set optional world seed controls, then answer the grouped questions that shape the deterministic campaign frame.",
+		"[b]Flow[/b]\nIdentity -> Questionnaire -> Rolled Pool -> Allocation -> Dossier"
+	)
 	_refresh_shell_visibility()
 	_refresh_creation_view()
+	if not creation_panel.visible and not load_browser.visible:
+		new_game_btn.grab_focus()
 
 
 func _wire_build_tracking() -> void:
@@ -790,18 +1393,18 @@ func _restore_build_state() -> void:
 func _stat_input_for(ability: String) -> LineEdit:
 	match ability:
 		"MIG":
-			return $CharacterCreation/VBox/BuildSection/StatsGrid/MIGInput
+			return mig_input
 		"AGI":
-			return $CharacterCreation/VBox/BuildSection/StatsGrid/AGIInput
+			return agi_input
 		"END":
-			return $CharacterCreation/VBox/BuildSection/StatsGrid/ENDInput
+			return end_input
 		"MND":
-			return $CharacterCreation/VBox/BuildSection/StatsGrid/MNDInput
+			return mnd_input
 		"INS":
-			return $CharacterCreation/VBox/BuildSection/StatsGrid/INSInput
+			return ins_input
 		"PRE":
-			return $CharacterCreation/VBox/BuildSection/StatsGrid/PREInput
-	return $CharacterCreation/VBox/BuildSection/StatsGrid/MIGInput
+			return pre_input
+	return mig_input
 
 
 func _modifier(value: int) -> int:
@@ -896,14 +1499,35 @@ func _refresh_shell_visibility() -> void:
 	main_menu.visible = show_menu_shell
 	title_label.visible = show_menu_shell
 	subtitle_label.visible = show_menu_shell
+	var hero_panel = get_node_or_null("HeroPanel")
+	if hero_panel != null:
+		hero_panel.visible = show_menu_shell
+
+
+func _set_creation_preview(title: String, body: String, meta: String) -> void:
+	if _creation_preview_title != null:
+		_creation_preview_title.text = title
+	if _creation_preview_text != null:
+		_creation_preview_text.text = body
+	if _creation_preview_meta != null:
+		_creation_preview_meta.text = meta
 
 
 func _focus_primary_creation_control() -> void:
 	match wizard_step:
 		STEP_IDENTITY:
 			name_input.grab_focus()
-		STEP_QUESTIONNAIRE, STEP_ROLL, STEP_BUILD:
-			next_button.grab_focus()
+		STEP_QUESTIONNAIRE:
+			if not _questionnaire_selectors.is_empty():
+				var first_key = _questionnaire_selectors.keys()[0]
+				var selector: OptionButton = _questionnaire_selectors[first_key]
+				selector.grab_focus()
+			else:
+				next_button.grab_focus()
+		STEP_ROLL:
+			reroll_button.grab_focus()
+		STEP_BUILD:
+			class_option.grab_focus()
 		STEP_SUMMARY:
 			start_button.grab_focus()
 
@@ -915,7 +1539,7 @@ func _primary_wizard_action_for_key(keycode: int) -> String:
 		return ""
 	if wizard_step == STEP_SUMMARY and start_button.visible and not start_button.disabled:
 		return "start"
-	if wizard_step in [STEP_QUESTIONNAIRE, STEP_ROLL, STEP_BUILD] and next_button.visible and not next_button.disabled:
+	if wizard_step in [STEP_IDENTITY, STEP_QUESTIONNAIRE, STEP_ROLL, STEP_BUILD] and next_button.visible and not next_button.disabled:
 		return "next"
 	return ""
 

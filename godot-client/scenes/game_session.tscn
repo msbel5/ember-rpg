@@ -94,31 +94,42 @@ position_smoothing_enabled = true
 position_smoothing_speed = 10.0
 script = ExtResource("5")
 
-[node name="Sidebar" type="TabContainer" parent="MainMargin/MainVBox/ContentSplit"]
+[node name="Sidebar" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit"]
 layout_mode = 2
 custom_minimum_size = Vector2(340, 0)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.95
+theme_override_constants/separation = 8
+
+[node name="SidebarNav" type="HBoxContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="SidebarTabs" type="TabContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 tab_alignment = 1
 
-[node name="NarrativePanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("7")]
+[node name="NarrativePanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("7")]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CharacterPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("16")]
+[node name="CharacterPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("16")]
 layout_mode = 2
 
-[node name="SettlementPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("15")]
+[node name="SettlementPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("15")]
 layout_mode = 2
 
-[node name="QuestPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("12")]
+[node name="QuestPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("12")]
 layout_mode = 2
 
-[node name="InventoryPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("8")]
+[node name="InventoryPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("8")]
 layout_mode = 2
 
-[node name="MinimapPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar" instance=ExtResource("9")]
+[node name="MinimapPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("9")]
 layout_mode = 2
 
 [node name="CommandBar" parent="MainMargin/MainVBox" instance=ExtResource("10")]

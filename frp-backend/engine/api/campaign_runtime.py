@@ -10,6 +10,7 @@ from engine.api.game_engine import GameEngine
 from engine.api.game_session import GameSession
 from engine.api.save_system import SaveSystem
 from engine.core.character_creation import ABILITY_ORDER, CreationState, assign_stats_to_class
+from engine.kernel import GameState
 from engine.worldgen import WorldSeed, load_world_snapshot, realize_region, tick_global
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
@@ -227,6 +228,7 @@ class CampaignRuntime:
         alignment: Optional[str] = None,
         skill_proficiencies: Optional[list[str]] = None,
         assigned_stats: Optional[dict[str, int]] = None,
+        selected_facets: Optional[dict[str, Any]] = None,
         creation_answers: Optional[list[dict[str, Any]]] = None,
         creation_profile: Optional[dict[str, Any]] = None,
         location: Optional[str] = None,
@@ -250,6 +252,14 @@ class CampaignRuntime:
             "recommended_skills": state.recommended_skills(effective_class),
             "rolled_values": list(state.current_roll),
             "saved_roll": list(state.saved_roll) if state.saved_roll is not None else None,
+            "facet_scores": dict(state.facet_scores),
+            "adapter_bias": dict(state.adapter_bias),
+            "faction_bias": dict(state.faction_bias),
+            "settlement_bias": dict(state.settlement_bias),
+            "campaign_genesis": state.campaign_genesis(),
+            "world_seed_hints": state.world_seed_hints(),
+            "allocation_rules": state.allocation_rules(),
+            "selected_facets": dict(selected_facets or {}),
             "stat_source": stat_source,
             "adapter_id": effective_adapter_id,
             "profile_id": effective_profile_id,
@@ -327,6 +337,8 @@ class CampaignRuntime:
         meta = dict(session.campaign_state.get("campaign_v2") or {})
         if not meta:
             raise ValueError(f"Save {save_id} does not contain campaign_v2 state")
+        if "kernel_game_state" in meta:
+            GameState.from_dict(dict(meta["kernel_game_state"]))
         world = load_world_snapshot(meta["world_snapshot"])
         active_region_id = str(meta.get("active_region_id") or world.simulation_snapshot.active_region_id)
         region_snapshot = realize_region(world, active_region_id)
@@ -345,18 +357,19 @@ class CampaignRuntime:
             settlement_state=settlement_state,
             recent_event_log=list(meta.get("recent_event_log") or []),
         )
+        refreshed_settlement_state = build_settlement_state(world, region_snapshot, context.adapter_id, session.player.name)
+        context.settlement_state = _merge_settlement_controls(refreshed_settlement_state, settlement_state)
         self._campaigns[context.campaign_id] = context
         apply_region_to_session(
             session=session,
             world=world,
             region_snapshot=region_snapshot,
-            settlement_state=settlement_state,
+            settlement_state=context.settlement_state,
             campaign_id=context.campaign_id,
             adapter_id=context.adapter_id,
             profile_id=context.profile_id,
             seed=context.seed,
         )
-        context.settlement_state = build_settlement_state(world, region_snapshot, context.adapter_id, session.player.name)
         return context
 
     def run_command(
@@ -367,12 +380,13 @@ class CampaignRuntime:
         args: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         context = self.get_campaign(campaign_id)
-        issued = resolve_command_text(input_text=input_text, shortcut=shortcut, args=dict(args or {}))
+        command_args = dict(args or {})
+        issued = resolve_command_text(input_text=input_text, shortcut=shortcut, args=command_args)
         lower = issued.lower()
         if lower.startswith("travel"):
-            narrative = handle_travel(context, issued)
+            narrative = handle_travel(context, issued, command_args)
             command_type = "travel"
-            hours_advanced = 4
+            hours_advanced = int(context.session.campaign_state.get("last_travel_hours", 4))
         else:
             handled = maybe_handle_commander_command(context, issued)
             if handled is not None:
