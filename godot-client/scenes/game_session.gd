@@ -5,6 +5,9 @@ const ScreenshotCapture = preload("res://scripts/ui/screenshot_capture.gd")
 const EmberTheme = preload("res://scripts/ui/ember_theme.gd")
 const PROFILE_PATH := "user://client_profile.cfg"
 const StatusBarWidget = preload("res://scripts/ui/status_bar_widget.gd")
+const DialogOverlayScript = preload("res://scripts/ui/dialog_overlay.gd")
+const CombatOverlayScript = preload("res://scripts/ui/combat_overlay.gd")
+const EquipmentPanelScript = preload("res://scripts/ui/equipment_panel.gd")
 const QUICKSAVE_SLOT := "quicksave"
 
 @onready var world_view: SubViewportContainer = $MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer
@@ -24,11 +27,15 @@ var is_waiting: bool = false
 var _pending_sync_callbacks: int = 0
 var _sidebar_button_group: ButtonGroup = ButtonGroup.new()
 var _sidebar_buttons: Dictionary = {}
+var _dialog_overlay: DialogOverlay
+var _combat_overlay_widget: CombatOverlay
 
 
 func _ready() -> void:
 	EmberTheme.apply_game_session(self)
 	_install_status_bar()
+	_install_dialog_overlay()
+	_install_combat_overlay()
 	_setup_sidebar_tabs()
 	if GameState.has_active_campaign():
 		sidebar_tabs.current_tab = 5
@@ -79,6 +86,22 @@ func _install_status_bar() -> void:
 	var status_bar := StatusBarWidget.new()
 	main_vbox.add_child(status_bar)
 	main_vbox.move_child(status_bar, 0)
+
+
+func _install_dialog_overlay() -> void:
+	_dialog_overlay = DialogOverlayScript.new()
+	var world_pane = $MainMargin/MainVBox/ContentSplit/WorldPane
+	if world_pane != null:
+		world_pane.add_child(_dialog_overlay)
+		_dialog_overlay.command_requested.connect(_submit_action)
+
+
+func _install_combat_overlay() -> void:
+	_combat_overlay_widget = CombatOverlayScript.new()
+	var world_pane = $MainMargin/MainVBox/ContentSplit/WorldPane
+	if world_pane != null:
+		world_pane.add_child(_combat_overlay_widget)
+		_combat_overlay_widget.command_requested.connect(_submit_action)
 
 
 func _setup_sidebar_tabs() -> void:
@@ -231,6 +254,11 @@ func _on_campaign_action_response(data, _issued_text: String) -> void:
 		_finish_turn_sync()
 		return
 	GameState.update_from_response(data)
+	# Check for dialog options in response
+	if _dialog_overlay != null and data.has("dialog_options") and data["dialog_options"] is Array and not data["dialog_options"].is_empty():
+		var npc_name := str(data.get("dialog_npc", data.get("speaker", "NPC")))
+		var npc_text := str(data.get("dialog_text", data.get("narrative", "")))
+		_dialog_overlay.show_dialog(npc_name, npc_text, data["dialog_options"])
 	_finish_turn_sync()
 
 
