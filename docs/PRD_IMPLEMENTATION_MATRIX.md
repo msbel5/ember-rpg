@@ -87,7 +87,8 @@ AC-06 [FR-06]: Each authoritative entry states the subsystem it owns.
 - Manual review only. The matrix is validated by doc consistency checks during implementation review.
 
 ## Changelog
-- 2026-04-01: Added 7 new authoritative PRDs (effect_system, combat_resolution, medical_system, systems_closure, colony_v2, job_v2). Superseded colony_v1 and job_v1. Updated all sparse kernel PRDs with dataclass definitions and algorithms.
+- 2026-04-01b: Added 10 GemRB-synthesis PRDs: spell_system, projectile_system, item_system_kernel, store_trade, level_progression, dialog_system, gamescript_ai, pathfinding, area_map, game_state. All 16 GemRB mechanisms now have authoritative PRDs.
+- 2026-04-01a: Added 7 new authoritative PRDs (effect_system, combat_resolution, medical_system, systems_closure, colony_v2, job_v2). Superseded colony_v1 and job_v1. Updated all sparse kernel PRDs with dataclass definitions and algorithms.
 - 2026-03-27: Initial implementation matrix for the shipable demo recovery plan.
 
 ## Doc Classifications
@@ -115,6 +116,16 @@ AC-06 [FR-06]: Each authoritative entry states the subsystem it owns.
 - `docs/PRD_systems_closure_v1.md` - authoritative Sprint 5 baseline for syndromes, power networks, traps, fluids, temperature, strange moods.
 - `docs/PRD_colony_simulation_v2.md` - authoritative colony pressure, morale cascades, production workflows, quest hook generation.
 - `docs/PRD_job_reaction_kernel_v2.md` - authoritative job/reaction pipeline, skill XP, skill rust, labor assignment.
+- `docs/PRD_spell_system_v1.md` - authoritative spell casting pipeline (GemRB M05): memorization, casting time, interruption, spell failure, magic resistance.
+- `docs/PRD_projectile_system_v1.md` - authoritative projectile/missile system (GemRB M12): 6 types (arrow, fireball, cone, bounce, traveling), AoE, friend/foe.
+- `docs/PRD_item_system_kernel_v1.md` - authoritative item system (GemRB M07): weapon headers, equip effects, requirements, wear, identification, stacking.
+- `docs/PRD_store_trade_v1.md` - authoritative store/trade system (GemRB M13): buy/sell, CHA pricing, depreciation, steal, temple/inn services, colony trade.
+- `docs/PRD_level_progression_v1.md` - authoritative level/progression system (GemRB M15): XP, class tables, HP, BAB, saves, proficiency, ability increase, DF skill learning.
+- `docs/PRD_dialog_system_v1.md` - authoritative dialog system (GemRB M09): state/transition trees, conditions, actions, journal, CHA gates, multi-dialog jump.
+- `docs/PRD_gamescript_ai_v1.md` - authoritative AI scripting system (GemRB M08): trigger/action blocks, 30 core triggers, 30 core actions, script slots, shout.
+- `docs/PRD_pathfinding_v1.md` - authoritative pathfinding system (GemRB M11 + DF M15): A*, actor size, terrain cost, bumping, random walk, doors.
+- `docs/PRD_area_map_v1.md` - authoritative area/map system (GemRB M10 + DF M16): regions, containers, doors, spawns, day/night, rooms, fog of war.
+- `docs/PRD_game_state_v1.md` - authoritative game state system (GemRB M16): party, areas, variables, journal, time, reputation, difficulty, save/load.
 - `docs/architecture/runtime_authority.md` - authoritative runtime boundary between macro world graph, active local map, campaign runtime, and client state.
 - `docs/architecture/creation_state_machine.md` - authoritative creation flow from identity through questionnaire, rolled pool assignment, summary, and finalize.
 - `docs/architecture/automation_stack.md` - authoritative QA/tooling stack for Godot automation, recording, and desktop fallback.
@@ -132,13 +143,15 @@ AC-06 [FR-06]: Each authoritative entry states the subsystem it owns.
 - `docs/PRD_colony_simulation_v1.md` - superseded by v2 which adds full pressure algorithms, morale cascades, production workflows.
 - `docs/PRD_job_reaction_kernel_v1.md` - superseded by v2 which adds ReactionDef schema, skill XP formulas, labor assignment.
 
+### Superseded (by new GemRB synthesis PRDs)
+- `docs/PRD_magic_system.md` - superseded by PRD_spell_system_v1.md
+- `docs/PRD_combat_engine.md` - superseded by PRD_combat_resolution_v1.md
+- `docs/PRD_item_system.md` - superseded by PRD_item_system_kernel_v1.md
+- `docs/PRD_progression_system.md` - superseded by PRD_level_progression_v1.md
+
 ### Non-blocking
 - `docs/PRD_dm_agent.md`
 - `docs/PRD_npc_memory.md`
-- `docs/PRD_magic_system.md`
-- `docs/PRD_combat_engine.md`
-- `docs/PRD_item_system.md`
-- `docs/PRD_progression_system.md`
 - `docs/PRD_websocket.md`
 - `docs/PRD_world_state.md`
 - `docs/PRD_consequence_system.md`
