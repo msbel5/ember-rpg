@@ -52,6 +52,16 @@ _DEFAULT_LAYER_BLUEPRINT = (
     {"layer_id": "muscle", "material_id": "muscle", "relative_thickness": 2},
     {"layer_id": "bone", "material_id": "bone", "relative_thickness": 2, "structural": True},
 )
+_DEFAULT_NEED_VALUES = {
+    "eat": 100.0,
+    "drink": 100.0,
+    "sleep": 100.0,
+    "pray": 100.0,
+    "socialize": 100.0,
+    "craft": 100.0,
+    "train": 100.0,
+    "admire_art": 100.0,
+}
 
 
 @dataclass
@@ -95,6 +105,12 @@ class NeedState:
     mood: str = "steady"
     modifiers: dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        normalized = {key: float(value) for key, value in self.values.items()}
+        for need_id, default_value in _DEFAULT_NEED_VALUES.items():
+            normalized.setdefault(need_id, default_value)
+        self.values = normalized
+
     @classmethod
     def from_legacy(cls, legacy: Any) -> "NeedState":
         if legacy is None:
@@ -108,7 +124,7 @@ class NeedState:
                 else {}
             )
             return cls(values=values, mood=mood, modifiers=modifiers)
-        return cls(values={str(key): float(value) for key, value in dict(legacy).items()})
+            return cls(values={str(key): float(value) for key, value in dict(legacy).items()})
 
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
