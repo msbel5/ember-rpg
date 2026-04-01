@@ -20,6 +20,12 @@ class PowerNodeState:
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PowerNodeState":
+        payload = dict(data)
+        payload["connected_to"] = [str(item) for item in payload.get("connected_to", [])]
+        return cls(**payload)
+
 
 @dataclass
 class PowerNetworkState:
@@ -31,6 +37,15 @@ class PowerNetworkState:
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PowerNetworkState":
+        payload = dict(data)
+        payload["nodes"] = [
+            node if isinstance(node, PowerNodeState) else PowerNodeState.from_dict(dict(node))
+            for node in payload.get("nodes", [])
+        ]
+        return cls(**payload)
+
 
 @dataclass
 class TrapComponent:
@@ -41,6 +56,10 @@ class TrapComponent:
 
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TrapComponent":
+        return cls(**data)
 
 
 @dataclass
@@ -55,6 +74,15 @@ class TrapState:
 
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TrapState":
+        payload = dict(data)
+        payload["components"] = [
+            item if isinstance(item, TrapComponent) else TrapComponent.from_dict(dict(item))
+            for item in payload.get("components", [])
+        ]
+        return cls(**payload)
 
 
 def compute_power_network(settlement_state: dict) -> PowerNetworkState:

@@ -105,6 +105,18 @@
       "supersedes": [],
       "note": "Canonical trade, services, pricing, and colony supply pressure linkage."
     },
+    "PRD_macro_society_runtime_v1.md": {
+      "owner": "kernel_macro_society",
+      "mechanism_ids": ["DF:M11", "DF:M12", "DF:M20", "GEMRB:M13", "GEMRB:M14"],
+      "runtime_surface": [
+        "frp-backend/engine/api/campaign/live_kernel.py",
+        "frp-backend/engine/api/campaign/runtime.py",
+        "frp-backend/engine/kernel/world_state.py",
+        "frp-backend/engine/kernel/store.py"
+      ],
+      "supersedes": [],
+      "note": "Canonical macro-society runtime for caravans, migration waves, diplomacy drift, and ownership consequences."
+    },
     "PRD_dialog_system_v1.md": {
       "owner": "kernel_dialog",
       "mechanism_ids": ["GEMRB:M09"],

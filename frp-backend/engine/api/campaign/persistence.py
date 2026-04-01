@@ -29,6 +29,7 @@ from engine.worldgen import snapshot_world
 
 from .session import build_world_entities
 from .settlement import build_character_sheet
+from .live_kernel import ensure_kernel_runtime, serialize_kernel_runtime
 from .world import (
     build_current_region_summary,
     build_travel_options,
@@ -102,12 +103,15 @@ def persist_campaign_state(context: "CampaignContext") -> None:
         "kernel_local_map_state": kernel_payload["local_map_state"],
         "kernel_military": kernel_payload["military"],
         "kernel_systems": kernel_payload["systems"],
+        "kernel_stores": kernel_payload["stores"],
         "settlement_state": copy.deepcopy(context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-20:]),
     }
 
 
 def build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:
+    if context.kernel_runtime:
+        return serialize_kernel_runtime(context)
     active_site_id = _active_site_id(context)
     canonical_world_state = build_canonical_world_state(context.world)
     canonical_actor_records = build_canonical_actor_records(
@@ -149,6 +153,7 @@ def build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:
             "temperature_state": temperature_state_from_region(context.region_snapshot).to_dict(),
             "strange_mood_incident": strange_mood.to_dict() if strange_mood is not None else None,
         },
+        "stores": [store.to_dict() for store in ensure_kernel_runtime(context).get("stores", [])],
     }
 
 

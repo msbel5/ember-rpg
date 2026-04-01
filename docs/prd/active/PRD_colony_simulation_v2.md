@@ -14,6 +14,28 @@ The Colony Simulation Kernel manages the living state of a player's settlement b
 - **In scope:** `NeedState` per-actor need tracking with decay and fulfillment; `ColonyPressureState` aggregate colony metrics; morale cascade thresholds and behavior modifiers; production ledger shortage detection; quest hook generation from pressure; pressure tag system; room quality contribution to morale; farming yield contribution to food pressure.
 - **Out of scope:** Trade caravan AI routing; diplomacy resolution; UI dashboard rendering; AI narration text generation; full migration/population growth simulation (only the pressure signal that triggers migration is in scope).
 
+## 2.1 Runtime Authority Closure
+
+Colony state is authoritative only when it participates in the live campaign
+tick, not when it exists as a typed projection. On every world advance or
+commander command, runtime must apply the settlement loop in this order:
+
+1. need decay
+2. morale cascade
+3. production ledger recompute
+4. farm growth and harvest
+5. shortage / surplus propagation
+6. quest seed regeneration
+
+Authoritative runtime surfaces:
+- `frp-backend/engine/api/campaign/live_kernel.py`
+- `frp-backend/engine/api/campaign/runtime.py`
+- `frp-backend/engine/api/campaign/persistence.py`
+
+`campaign.settlement` remains a presentation aggregate. Runtime authority lives
+in canonical `colony_pressure`, `production_ledger`, `jobs`, `reactions`,
+`worksites`, and persisted kernel payload slices.
+
 ## 3. Functional Requirements (FR)
 
 FR-01: The kernel must maintain a typed `NeedState` per actor with individual need values for: `eat`, `drink`, `sleep`, `pray`, `socialize`, `craft`, `train`, `admire_art`.

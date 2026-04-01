@@ -20,6 +20,7 @@ class CampaignContext:
     region_snapshot: RegionSnapshot
     settlement_state: dict[str, Any]
     recent_event_log: list[dict[str, Any]] = field(default_factory=list)
+    kernel_runtime: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

@@ -16,6 +16,10 @@ class MaterialDemand:
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "MaterialDemand":
+        return cls(**data)
+
 
 @dataclass
 class StrangeMoodIncident:
@@ -33,6 +37,16 @@ class StrangeMoodIncident:
 
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "StrangeMoodIncident":
+        payload = dict(data)
+        payload["material_demands"] = [
+            item if isinstance(item, MaterialDemand) else MaterialDemand.from_dict(dict(item))
+            for item in payload.get("material_demands", [])
+        ]
+        payload["candidate_actor_ids"] = [str(item) for item in payload.get("candidate_actor_ids", [])]
+        return cls(**payload)
 
 
 def tick_strange_mood(

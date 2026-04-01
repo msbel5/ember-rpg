@@ -4,7 +4,7 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 
 ## Summary
 
-- Active PRDs: 26
+- Active PRDs: 27
 - Deprecated PRDs: 56
 - Deprecated Notes: 6
 - Canonical mechanics map: `docs/architecture/ember_mechanics_canon_v1.md`
@@ -13,7 +13,6 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 
 | Path | Owner | Mechanisms | Runtime Surface | Supersedes |
 | --- | --- | --- | --- | --- |
-| `docs/prd/active/PRD_STANDARD.md` | `docs_governance` | DOCS:STANDARD | `docs/prd/active/PRD_STANDARD.md` | - |
 | `docs/prd/active/PRD_actor_kernel_v1.md` | `kernel_actor` | DF:M02, DF:M03, DF:M18, GEMRB:M01 | `frp-backend/engine/kernel/actor.py`, `frp-backend/engine/api/campaign_kernel.py` | - |
 | `docs/prd/active/PRD_area_map_v1.md` | `kernel_area` | DF:M16, GEMRB:M10 | `frp-backend/engine/kernel/area.py`, `frp-backend/engine/map` | `docs/deprecated/prd/PRD_map_generator.md`, `docs/deprecated/prd/PRD_pov_system.md` |
 | `docs/prd/active/PRD_automation_authority_v1.md` | `qa_automation` | QA:AUTO | `godot-client/tests/automation`, `frp-backend/tests` | `docs/deprecated/prd/PRD_visual_automation_backup_v1.md`, `docs/deprecated/prd/PRD_visual_automation_desktop_executor_v1.md`, `docs/deprecated/prd/PRD_visual_automation_headless_executor_v1.md` |
@@ -30,11 +29,13 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 | `docs/prd/active/PRD_item_system_kernel_v1.md` | `kernel_items` | DF:M17, GEMRB:M07 | `frp-backend/engine/kernel/items.py`, `frp-backend/engine/world/inventory.py` | `docs/deprecated/prd/PRD_item_system.md` |
 | `docs/prd/active/PRD_job_reaction_kernel_v2.md` | `kernel_jobs` | DF:M02, DF:M04, DF:M16, DF:M19 | `frp-backend/engine/kernel/jobs.py`, `frp-backend/engine/world/crafting.py` | `docs/deprecated/prd/PRD_job_reaction_kernel_v1.md` |
 | `docs/prd/active/PRD_level_progression_v1.md` | `kernel_progression` | DF:M02, GEMRB:M15 | `frp-backend/engine/kernel/progression.py`, `frp-backend/engine/core/progression.py` | `docs/deprecated/prd/PRD_progression_system.md` |
+| `docs/prd/active/PRD_macro_society_runtime_v1.md` | `kernel_macro_society` | DF:M11, DF:M12, DF:M20, GEMRB:M13, GEMRB:M14 | `frp-backend/engine/api/campaign/live_kernel.py`, `frp-backend/engine/api/campaign/runtime.py`, `frp-backend/engine/kernel/world_state.py` | - |
 | `docs/prd/active/PRD_material_item_kernel_v1.md` | `kernel_material_item` | DF:M01, DF:M11, DF:M17, GEMRB:M07 | `frp-backend/engine/kernel/items.py`, `frp-backend/engine/core/item.py` | - |
 | `docs/prd/active/PRD_medical_system_v1.md` | `kernel_medical` | DF:M05, DF:M03, DF:M04 | `frp-backend/engine/kernel/medical.py`, `frp-backend/engine/kernel/effects.py` | - |
 | `docs/prd/active/PRD_pathfinding_v1.md` | `kernel_pathfinding` | DF:M15, GEMRB:M11 | `frp-backend/engine/kernel/pathfinding.py`, `frp-backend/engine/api/handlers/exploration_navigation.py` | - |
 | `docs/prd/active/PRD_save_load.md` | `persistence` | EMBER:SAVELOAD, GEMRB:M16 | `frp-backend/engine/api/save`, `frp-backend/engine/save` | - |
 | `docs/prd/active/PRD_spell_system_v1.md` | `kernel_spells` | GEMRB:M05, GEMRB:M06, GEMRB:M12 | `frp-backend/engine/kernel/spells.py`, `frp-backend/engine/kernel/projectiles.py` | `docs/deprecated/prd/PRD_magic_system.md` |
+| `docs/prd/active/PRD_STANDARD.md` | `docs_governance` | DOCS:STANDARD | `docs/prd/active/PRD_STANDARD.md` | - |
 | `docs/prd/active/PRD_store_trade_v1.md` | `kernel_store` | DF:M11, GEMRB:M13 | `frp-backend/engine/kernel/store.py`, `frp-backend/engine/api/shop_routes.py` | - |
 | `docs/prd/active/PRD_systems_closure_v1.md` | `kernel_systems` | DF:M06, DF:M07, DF:M08, DF:M09, DF:M10, DF:M13 | `frp-backend/engine/kernel/systems.py`, `frp-backend/engine/kernel/effects.py` | - |
 | `docs/prd/active/PRD_world_data_registries_v1.md` | `data_registries` | DATA:REGISTRY, DF:M14 | `frp-backend/engine/data_loader.py`, `frp-backend/engine/worldgen/registries.py` | - |
@@ -42,7 +43,6 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 
 ## Deprecated PRDs
 
-- `docs/deprecated/prd/PRD_IMPLEMENTATION_MATRIX_legacy_20260401.md`
 - `docs/deprecated/prd/PRD_animation_fluidity_v1.md`
 - `docs/deprecated/prd/PRD_api_layer.md`
 - `docs/deprecated/prd/PRD_asset_pipeline.md`
@@ -67,6 +67,7 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 - `docs/deprecated/prd/PRD_godot_client_sprint_4.md`
 - `docs/deprecated/prd/PRD_godot_client_sprint_5.md`
 - `docs/deprecated/prd/PRD_godot_client_sprint_6.md`
+- `docs/deprecated/prd/PRD_IMPLEMENTATION_MATRIX_legacy_20260401.md`
 - `docs/deprecated/prd/PRD_interaction_feedback_v1.md`
 - `docs/deprecated/prd/PRD_item_system.md`
 - `docs/deprecated/prd/PRD_job_reaction_kernel_v1.md`

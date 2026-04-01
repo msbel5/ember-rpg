@@ -25,6 +25,7 @@ class SaveSessionStateMixin:
         "kernel_local_map_state",
         "kernel_military",
         "kernel_systems",
+        "kernel_stores",
     )
 
     @classmethod

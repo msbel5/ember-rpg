@@ -13,6 +13,7 @@ from engine.worldgen import WorldSeed, load_world_snapshot, realize_region, tick
 
 from .context import CampaignContext, CampaignCreationContext
 from .controls import merge_settlement_controls
+from .live_kernel import advance_kernel_runtime, ensure_kernel_runtime
 from .persistence import campaign_payload, persist_campaign_state
 from .session import apply_region_to_session
 from .settlement import build_character_sheet, build_settlement_state
@@ -90,6 +91,7 @@ class CampaignRuntime:
             settlement_state=settlement_state,
             recent_event_log=[{"event_type": "campaign_start", "summary": opening}],
         )
+        ensure_kernel_runtime(context)
         self._campaigns[campaign_id] = context
         persist_campaign_state(context)
         return context
@@ -296,6 +298,7 @@ class CampaignRuntime:
             profile_id=context.profile_id,
             seed=context.seed,
         )
+        ensure_kernel_runtime(context, rebuild_projection=True)
         return context
 
     def run_command(
@@ -347,6 +350,13 @@ class CampaignRuntime:
             seed=context.seed,
             preserve_position=command_type != "travel",
         )
+        live_events = advance_kernel_runtime(
+            context,
+            hours_advanced=hours_advanced,
+            command_type=command_type,
+            command_text=issued,
+        )
+        generated_events.extend(live_events)
         context.recent_event_log.extend(generated_events)
         context.recent_event_log = context.recent_event_log[-20:]
         if generated_events:

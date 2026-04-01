@@ -20,6 +20,10 @@ class FluidCell:
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "FluidCell":
+        return cls(**data)
+
 
 @dataclass
 class FluidState:
@@ -30,6 +34,16 @@ class FluidState:
 
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "FluidState":
+        payload = dict(data)
+        payload["cells"] = [
+            cell if isinstance(cell, FluidCell) else FluidCell.from_dict(dict(cell))
+            for cell in payload.get("cells", [])
+        ]
+        payload["fluid_counts"] = dict(payload.get("fluid_counts", {}))
+        return cls(**payload)
 
 
 @dataclass
@@ -54,6 +68,19 @@ class TemperatureState:
             "tags": list(self.tags),
             "tile_states": {f"{x},{y}": value for (x, y), value in self.tile_states.items()},
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TemperatureState":
+        payload = dict(data)
+        tile_states: dict[tuple[int, int], str] = {}
+        for key, value in dict(payload.get("tile_states", {})).items():
+            if isinstance(key, str) and "," in key:
+                raw_x, raw_y = key.split(",", 1)
+                tile_states[(int(raw_x), int(raw_y))] = str(value)
+        payload["heat_sources"] = [dict(item) for item in payload.get("heat_sources", [])]
+        payload["tags"] = [str(item) for item in payload.get("tags", [])]
+        payload["tile_states"] = tile_states
+        return cls(**payload)
 
 
 def tick_fluids(fluid_state: FluidState, terrain: list[list[dict]]) -> FluidState:

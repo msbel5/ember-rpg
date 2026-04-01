@@ -14,6 +14,27 @@ The Job and Reaction Kernel defines the typed work system that connects actors t
 - **In scope:** `JobRecord` lifecycle (create, assign, tick, complete, cancel); `ReactionDef` with typed material inputs/outputs; `WorksiteRecord` binding reactions to rooms; labor assignment algorithm; job completion XP and skill leveling; skill rust mechanics; quality output formula; room/zone assignment basics (bedroom, dining, workshop).
 - **Out of scope:** Full trade caravan economy; late-game industry balancing; UI job queue rendering; military squad assignment; strange mood crafting (covered by colony simulation M13).
 
+## 2.1 Runtime Authority Closure
+
+Jobs and reactions are logic-live only when they execute inside the authoritative
+campaign runtime and feed the same save/load contract as the rest of the kernel.
+Every world advance or commander action must run:
+
+1. labor assignment on queued jobs
+2. active job ticking
+3. reaction completion
+4. output material propagation to settlement economy and stock
+5. pressure / farming follow-on updates
+
+Authoritative runtime surfaces:
+- `frp-backend/engine/api/campaign/live_kernel.py`
+- `frp-backend/engine/api/campaign/runtime.py`
+- `frp-backend/engine/api/campaign/persistence.py`
+
+`JobRecord`, `ReactionDef`, and `WorksiteRecord` are not considered complete if
+they only round-trip through tests; they must mutate live campaign payloads and
+persist through canonical kernel save slices.
+
 ## 3. Functional Requirements (FR)
 
 FR-01: The kernel must define a typed `JobRecord` with fields: `job_id`, `kind`, `priority`, `status`, `assignee_id`, `skill_id`, `worksite_id`, `input_tags`, `output_tags`, `completion_ticks`, `elapsed_ticks`.

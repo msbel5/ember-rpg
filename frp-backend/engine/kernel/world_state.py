@@ -76,6 +76,7 @@ class FactionRecord:
     origin_region_id: str
     traits: dict[str, float] = field(default_factory=dict)
     region_presence: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    relations: dict[str, int] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
@@ -158,6 +159,9 @@ class WorldState:
     history_figures: dict[str, HistoryFigure] = field(default_factory=dict)
     history_events: list[HistoryEvent] = field(default_factory=list)
     travel_edges: list[TravelEdge] = field(default_factory=list)
+    active_caravans: list[dict[str, Any]] = field(default_factory=list)
+    migration_waves: list[dict[str, Any]] = field(default_factory=list)
+    ownership_changes: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -188,6 +192,9 @@ class WorldState:
         payload["travel_edges"] = [
             TravelEdge.from_dict(item) for item in payload.get("travel_edges", [])
         ]
+        payload["active_caravans"] = [dict(item) for item in payload.get("active_caravans", [])]
+        payload["migration_waves"] = [dict(item) for item in payload.get("migration_waves", [])]
+        payload["ownership_changes"] = [dict(item) for item in payload.get("ownership_changes", [])]
         return cls(**payload)
 
 
@@ -223,6 +230,9 @@ def world_state_from_blueprint(world: WorldBlueprint) -> WorldState:
 
     factions: dict[str, FactionRecord] = {}
     for seed in world.factions:
+        faction_state = {}
+        if world.simulation_snapshot is not None:
+            faction_state = dict(world.simulation_snapshot.faction_states.get(seed.id, {}))
         region_presence = {
             region_id: [dict(entry) for entry in entries if entry.get("faction_id") == seed.id]
             for region_id, entries in world.faction_presence.items()
@@ -235,6 +245,7 @@ def world_state_from_blueprint(world: WorldBlueprint) -> WorldState:
             origin_region_id=seed.origin_region_id,
             traits=dict(seed.traits),
             region_presence=region_presence,
+            relations={str(key): int(value) for key, value in dict(faction_state.get("relations", {})).items()},
         )
 
     regions: dict[str, RegionRecord] = {}
@@ -291,6 +302,9 @@ def world_state_from_blueprint(world: WorldBlueprint) -> WorldState:
         factions=factions,
         history_events=history_events,
         travel_edges=[_travel_edge_from_payload(edge) for edge in world.travel_edges],
+        active_caravans=list(dict(world.metadata).get("active_caravans", [])),
+        migration_waves=list(dict(world.metadata).get("migration_waves", [])),
+        ownership_changes=list(dict(world.metadata).get("ownership_changes", [])),
         metadata=dict(world.metadata),
     )
 

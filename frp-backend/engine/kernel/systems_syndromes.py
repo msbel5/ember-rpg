@@ -22,6 +22,10 @@ class SyndromeEffect:
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "SyndromeEffect":
+        return cls(**data)
+
 
 @dataclass
 class SyndromeDef:
@@ -36,11 +40,39 @@ class SyndromeDef:
     def to_dict(self) -> dict[str, Any]:
         return serialize_value(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "SyndromeDef":
+        payload = dict(data)
+        payload["effects"] = [
+            item if isinstance(item, SyndromeEffect) else SyndromeEffect.from_dict(dict(item))
+            for item in payload.get("effects", [])
+        ]
+        return cls(**payload)
+
 
 def syndrome_registry_from_actors(actors: list[ActorRecord]) -> list[SyndromeDef]:
     registry: list[SyndromeDef] = []
     seen: set[str] = set()
     for actor in actors:
+        for payload in actor.raw_payload.get("active_syndromes", []):
+            syndrome_id = str(payload.get("syndrome_id", ""))
+            if not syndrome_id or syndrome_id in seen:
+                continue
+            seen.add(syndrome_id)
+            registry.append(
+                SyndromeDef(
+                    syndrome_id=syndrome_id,
+                    name=str(payload.get("name", syndrome_id)),
+                    delivery=str(payload.get("delivery", "contact")),
+                    resistance_dc=int(payload.get("resistance_dc", 10)),
+                    contagious=bool(payload.get("contagious", False)),
+                    contagion_probability=float(payload.get("contagion_probability", 0.0)),
+                    effects=[
+                        item if isinstance(item, SyndromeEffect) else SyndromeEffect.from_dict(dict(item))
+                        for item in payload.get("effects", [])
+                    ],
+                )
+            )
         for condition in actor.conditions:
             syndrome_id = f"condition::{condition.condition_id}"
             if syndrome_id in seen:

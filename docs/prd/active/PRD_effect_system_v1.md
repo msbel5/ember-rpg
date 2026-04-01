@@ -38,6 +38,26 @@ This is the SPINE of the simulation — it connects combat (M01), medical (M05),
 - AI decision-making about when to apply effects
 - Network synchronization of effect state
 
+## 2.1 Runtime Authority Closure
+
+The effect system is no longer a kernel-only helper. Active campaign runtime must
+tick effect state in this order on every authoritative world advance and avatar
+command:
+
+1. `tick_effects(...)` on each live `ActorRecord`
+2. `tick_syndromes(...)` and `spread_contagion(...)`
+3. medical side-effects produced by pain, bleeding, paralysis, and viability loss
+4. environmental/system consequences that reuse the same actor effect queue
+
+Authoritative runtime surfaces:
+- `frp-backend/engine/api/campaign/live_kernel.py`
+- `frp-backend/engine/api/campaign/runtime.py`
+- `frp-backend/engine/api/campaign/persistence.py`
+
+Release requirement: effect and syndrome mutations must survive campaign
+save/load via canonical `kernel_game_state`, `kernel_actors`, and
+`kernel_systems`, and must be visible in the Godot campaign payload.
+
 ## 3. Reference Mechanism Coverage
 
 | Source | Mechanism | Coverage | Notes |

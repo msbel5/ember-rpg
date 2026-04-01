@@ -28,6 +28,28 @@ Provides deterministic baseline implementations for the six deferred subsystems:
 - Weather-driven temperature (handled by world tick, not this module)
 - Visual/Godot rendering of these systems
 
+## 2.1 Runtime Authority Closure
+
+Systems closure is only complete when its consequences are observed in live
+campaign state, not merely in isolated kernel tests. Active runtime must apply
+the systems phase after effects/syndromes and before persistence projection:
+
+1. power network recompute
+2. fluid tick and drowning/magma checks
+3. temperature tick and resulting wounds/conditions
+4. trap trigger resolution
+5. strange mood lifecycle advance
+6. syndrome registry refresh
+
+Authoritative runtime surfaces:
+- `frp-backend/engine/api/campaign/live_kernel.py`
+- `frp-backend/engine/api/campaign/runtime.py`
+- `frp-backend/engine/api/campaign/persistence.py`
+
+These results must alter canonical `actors`, `systems`, `world_state`, and
+settlement projections that are sent to Godot and saved back through
+`kernel_systems`.
+
 ## 3. Functional Requirements (FR)
 
 ### Syndromes (DF M06)
