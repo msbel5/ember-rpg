@@ -7,6 +7,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
+from .institutions_catalog import load_institutions_registry
+
 
 # ---------------------------------------------------------------------------
 # Institutional response types
@@ -70,159 +72,31 @@ class CivicRole:
     reports_to: Optional[str] = None  # role_id of superior
     holder_name: Optional[str] = None  # current office holder
 
+_REGISTRY = load_institutions_registry()
 
-TOWN_INSTITUTIONS: dict[str, dict[str, CivicRole]] = {
-    "harbor_town": {
-        "mayor": CivicRole(
-            role_id="mayor",
-            title="Mayor of Harbor Town",
-            faction_affiliation="harbor_guard",
-            authority_level=10,
-            responsibilities=[
-                "Oversee all civic affairs",
-                "Declare martial law in emergencies",
-                "Approve major expenditures",
-                "Appoint and dismiss officials",
-            ],
-            can_issue=["martial_law", "exile", "curfew"],
-            reports_to=None,
-            holder_name="Edmund Greyharbor",
-        ),
-        "guard_captain": CivicRole(
-            role_id="guard_captain",
-            title="Captain of the Harbor Guard",
-            faction_affiliation="harbor_guard",
-            authority_level=8,
-            responsibilities=[
-                "Maintain law and order",
-                "Command the town guard",
-                "Issue bounties for criminals",
-                "Organize patrols",
-            ],
-            can_issue=["bounty", "arrest", "curfew", "investigation"],
-            reports_to="mayor",
-            holder_name="Sera Ironvane",
-        ),
-        "harbormaster": CivicRole(
-            role_id="harbormaster",
-            title="Harbormaster",
-            faction_affiliation="merchant_guild",
-            authority_level=7,
-            responsibilities=[
-                "Regulate port traffic",
-                "Collect docking fees",
-                "Enforce trade regulations",
-                "Inspect cargo for contraband",
-            ],
-            can_issue=["price_floor", "investigation"],
-            reports_to="mayor",
-            holder_name="Dorian Keel",
-        ),
-        "magistrate": CivicRole(
-            role_id="magistrate",
-            title="Town Magistrate",
-            faction_affiliation="temple_order",
-            authority_level=8,
-            responsibilities=[
-                "Preside over trials",
-                "Determine sentences",
-                "Interpret town law",
-                "Mediate disputes",
-            ],
-            can_issue=["exile", "arrest", "sanctuary"],
-            reports_to="mayor",
-            holder_name="Brother Aldous Penn",
-        ),
-        "tax_collector": CivicRole(
-            role_id="tax_collector",
-            title="Royal Tax Collector",
-            faction_affiliation="merchant_guild",
-            authority_level=6,
-            responsibilities=[
-                "Collect taxes from merchants",
-                "Assess property values",
-                "Report to the crown treasury",
-                "Enforce tariffs",
-            ],
-            can_issue=["price_floor", "investigation"],
-            reports_to="harbormaster",
-            holder_name="Finley Copperworth",
-        ),
-        "temple_prior": CivicRole(
-            role_id="temple_prior",
-            title="Prior of the Harbor Temple",
-            faction_affiliation="temple_order",
-            authority_level=7,
-            responsibilities=[
-                "Oversee religious ceremonies",
-                "Provide sanctuary to the persecuted",
-                "Counsel the mayor on moral matters",
-                "Maintain the temple grounds",
-            ],
-            can_issue=["sanctuary"],
-            reports_to=None,
-            holder_name="Sister Maren Lightfoot",
-        ),
-        "guild_master": CivicRole(
-            role_id="guild_master",
-            title="Master of the Merchant Guild",
-            faction_affiliation="merchant_guild",
-            authority_level=7,
-            responsibilities=[
-                "Regulate trade within town",
-                "Set fair market prices",
-                "Represent merchant interests",
-                "Organize trade caravans",
-            ],
-            can_issue=["price_floor"],
-            reports_to=None,
-            holder_name="Vesper Goleli",
-        ),
-    },
-}
+
+def _load_town_institutions() -> dict[str, dict[str, CivicRole]]:
+    towns: dict[str, dict[str, CivicRole]] = {}
+    for town_id, roles in _REGISTRY.get("town_institutions", {}).items():
+        towns[town_id] = {
+            role_id: CivicRole(**payload)
+            for role_id, payload in roles.items()
+        }
+    return towns
+
+
+TOWN_INSTITUTIONS: dict[str, dict[str, CivicRole]] = _load_town_institutions()
 
 # ---------------------------------------------------------------------------
 # Event response rules
 # ---------------------------------------------------------------------------
 
 _EVENT_RESPONSE_RULES: dict[str, list[dict]] = {
-    "murder": [
-        {"severity_min": "low", "role": "guard_captain", "response": "investigation", "desc": "Guard Captain orders an investigation into the killing."},
-        {"severity_min": "medium", "role": "guard_captain", "response": "bounty", "desc": "Guard Captain issues a bounty for the killer.", "params": {"bounty_gold": 100}},
-        {"severity_min": "high", "role": "guard_captain", "response": "arrest", "desc": "Guard Captain orders immediate arrest of any suspects."},
-        {"severity_min": "critical", "role": "mayor", "response": "martial_law", "desc": "Mayor declares martial law following the murders.", "duration": 48},
-    ],
-    "theft": [
-        {"severity_min": "low", "role": "guard_captain", "response": "investigation", "desc": "Guards begin an investigation into the theft."},
-        {"severity_min": "medium", "role": "guard_captain", "response": "bounty", "desc": "Guard Captain issues a bounty for the thief.", "params": {"bounty_gold": 50}},
-        {"severity_min": "high", "role": "guard_captain", "response": "arrest", "desc": "Guard Captain orders sweep of known hideouts."},
-    ],
-    "riot": [
-        {"severity_min": "low", "role": "guard_captain", "response": "curfew", "desc": "Guard Captain institutes an evening curfew.", "duration": 24},
-        {"severity_min": "medium", "role": "guard_captain", "response": "arrest", "desc": "Guard Captain orders arrest of ringleaders."},
-        {"severity_min": "high", "role": "mayor", "response": "martial_law", "desc": "Mayor declares martial law to quell the riot.", "duration": 72},
-        {"severity_min": "critical", "role": "mayor", "response": "exile", "desc": "Mayor orders exile of riot instigators."},
-    ],
-    "trade_disruption": [
-        {"severity_min": "low", "role": "harbormaster", "response": "investigation", "desc": "Harbormaster investigates the disruption."},
-        {"severity_min": "medium", "role": "guild_master", "response": "price_floor", "desc": "Guild Master sets emergency price floors to prevent gouging.", "params": {"price_modifier": 1.5}},
-        {"severity_min": "high", "role": "harbormaster", "response": "price_floor", "desc": "Harbormaster enforces strict rationing and price controls.", "params": {"price_modifier": 2.0}},
-    ],
-    "desecration": [
-        {"severity_min": "low", "role": "temple_prior", "response": "sanctuary", "desc": "Temple Prior offers sanctuary and prayers for cleansing."},
-        {"severity_min": "medium", "role": "magistrate", "response": "arrest", "desc": "Magistrate orders arrest of the desecrators."},
-        {"severity_min": "high", "role": "magistrate", "response": "exile", "desc": "Magistrate sentences desecrators to permanent exile."},
-        {"severity_min": "critical", "role": "mayor", "response": "martial_law", "desc": "Mayor declares state of emergency after temple desecration.", "duration": 24},
-    ],
-    "invasion": [
-        {"severity_min": "low", "role": "guard_captain", "response": "curfew", "desc": "Guard Captain establishes curfew and doubles patrols.", "duration": 48},
-        {"severity_min": "medium", "role": "guard_captain", "response": "bounty", "desc": "Guard Captain offers bounty on enemy scouts.", "params": {"bounty_gold": 200}},
-        {"severity_min": "high", "role": "mayor", "response": "martial_law", "desc": "Mayor declares martial law and mobilizes militia.", "duration": 168},
-        {"severity_min": "critical", "role": "mayor", "response": "martial_law", "desc": "Mayor declares total war footing. All citizens conscripted.", "duration": 336},
-    ],
+    event_type: list(rules)
+    for event_type, rules in _REGISTRY.get("event_response_rules", {}).items()
 }
 
-_SEVERITY_ORDER = ["low", "medium", "high", "critical"]
+_SEVERITY_ORDER = list(_REGISTRY.get("severity_order", ["low", "medium", "high", "critical"]))
 
 
 def _severity_index(sev: str) -> int:
@@ -237,76 +111,8 @@ def _severity_index(sev: str) -> int:
 # ---------------------------------------------------------------------------
 
 _VACUUM_EFFECTS: dict[str, dict] = {
-    "mayor": {
-        "effects": [
-            "Town council convenes emergency session",
-            "Factions compete for influence",
-            "Tax collection halted",
-            "Guard morale drops",
-            "Merchant guild attempts to fill power vacuum",
-        ],
-        "chaos_level": 80,
-        "potential_successors": ["guard_captain", "magistrate"],
-    },
-    "guard_captain": {
-        "effects": [
-            "Guard patrols become irregular",
-            "Crime rate spikes",
-            "Thieves guild grows bolder",
-            "Citizens form vigilante groups",
-        ],
-        "chaos_level": 60,
-        "potential_successors": ["mayor"],
-    },
-    "harbormaster": {
-        "effects": [
-            "Port operations slow dramatically",
-            "Smuggling increases",
-            "Trade revenue drops",
-            "Ships queue outside harbor",
-        ],
-        "chaos_level": 40,
-        "potential_successors": ["guild_master", "tax_collector"],
-    },
-    "magistrate": {
-        "effects": [
-            "Trials suspended",
-            "Prisoners await sentencing",
-            "Disputes go unresolved",
-            "Temple Prior attempts to mediate",
-        ],
-        "chaos_level": 50,
-        "potential_successors": ["temple_prior"],
-    },
-    "tax_collector": {
-        "effects": [
-            "Tax collection halted",
-            "Crown sends audit team",
-            "Merchants celebrate briefly",
-        ],
-        "chaos_level": 20,
-        "potential_successors": ["harbormaster"],
-    },
-    "temple_prior": {
-        "effects": [
-            "Temple services disrupted",
-            "No sanctuary available",
-            "Religious community in mourning",
-            "Pilgrims leave town",
-        ],
-        "chaos_level": 35,
-        "potential_successors": ["magistrate"],
-    },
-    "guild_master": {
-        "effects": [
-            "Trade disputes unresolved",
-            "Price instability",
-            "Smaller merchants struggle",
-            "Black market grows",
-        ],
-        "chaos_level": 45,
-        "potential_successors": ["harbormaster", "tax_collector"],
-    },
+    role_id: dict(payload)
+    for role_id, payload in _REGISTRY.get("vacuum_effects", {}).items()
 }
 
 

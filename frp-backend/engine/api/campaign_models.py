@@ -47,6 +47,21 @@ class CampaignCreationFinalizeRequest(BaseModel):
     location: Optional[str] = None
 
 
+class CreationCatalogResponse(BaseModel):
+    mechanics_version: str
+    default_class_id: str
+    default_adapter_id: str
+    default_profile_id: str
+    ability_order: List[str] = Field(default_factory=list)
+    allocation_rules: Dict[str, Any] = Field(default_factory=dict)
+    settlement_labels: Dict[str, str] = Field(default_factory=dict)
+    faction_labels: Dict[str, str] = Field(default_factory=dict)
+    genesis_defaults: Dict[str, str] = Field(default_factory=dict)
+    class_catalog: List[Dict[str, Any]] = Field(default_factory=list)
+    adapter_catalog: List[Dict[str, Any]] = Field(default_factory=list)
+    profile_catalog: List[Dict[str, Any]] = Field(default_factory=list)
+
+
 class CampaignCreationStateResponse(BaseModel):
     creation_id: str
     player_name: str
@@ -74,6 +89,7 @@ class CampaignCreationStateResponse(BaseModel):
     saved_roll: Optional[List[int]] = None
     roll_pool: List[int] = Field(default_factory=list)
     saved_roll_pool: List[int] = Field(default_factory=list)
+    catalog: Dict[str, Any] = Field(default_factory=dict)
 
 
 class CampaignCommandRequest(BaseModel):

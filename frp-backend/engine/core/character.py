@@ -5,6 +5,7 @@ Universal Character class for PC, NPC, and monsters.
 The character model now carries both legacy Ember fields and the canonical
 D&D-style state used by the final rules pass.
 """
+from engine.data_loader import get_class_hit_die_size, get_creation_default_class
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from enum import Enum
@@ -139,13 +140,6 @@ class Character:
 
     SKILL_STATS = {**DND_SKILL_STATS, **LEGACY_SKILL_STATS}
 
-    CLASS_HIT_DICE = {
-        "warrior": 10,
-        "rogue": 8,
-        "mage": 6,
-        "priest": 8,
-    }
-    
     # --- Derived Properties ---
 
     def __post_init__(self) -> None:
@@ -192,8 +186,8 @@ class Character:
 
     @property
     def hit_die_size(self) -> int:
-        dominant = str(self.dominant_class or "warrior").lower()
-        return self.CLASS_HIT_DICE.get(dominant, 8)
+        dominant = str(self.dominant_class or get_creation_default_class()).lower()
+        return get_class_hit_die_size(dominant)
 
     @property
     def passive_perception(self) -> int:

@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import sys
 import time
-from dataclasses import dataclass
 from typing import Any
 
 if sys.platform == "win32":
@@ -23,21 +22,30 @@ if _ROOT not in sys.path:
 import readchar
 
 from rich.console import Console
-from rich.layout import Layout
 from rich.markup import escape
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.rule import Rule
 from rich.table import Table
-from rich.text import Text
 
-from engine.map import TileType
 from engine.core.character_creation import ABILITY_ORDER, assign_stats_to_class
+from engine.core.creation_catalog import get_creation_catalog
 from tools.campaign_client import CampaignClient
-
-MAP_WIDTH = 40
-MAP_HEIGHT = 20
-VISIBLE_NARRATIVES = 14
+from tools.play_topdown_saves import (
+    append_history as _append_history,
+    browse_campaign_saves as _browse_campaign_saves,
+    campaign_compatible_saves as _campaign_compatible_saves,
+    current_player_id as _current_player_id,
+)
+from tools.play_topdown_view import (
+    CampaignScreenState,
+    MapState,
+    build_character_sheet,
+    render_character_sheet,
+    render_full,
+    render_header,
+    render_map,
+)
 
 console = Console(force_terminal=True)
 
@@ -48,46 +56,25 @@ ARROW_COMMANDS = {
     readchar.key.RIGHT: "move east",
 }
 
-CLASS_OPTIONS = {
-    "1": ("warrior", {"MIG": 16, "END": 14, "AGI": 10, "MND": 8, "INS": 8, "PRE": 10}),
-    "2": ("rogue", {"MIG": 10, "END": 10, "AGI": 16, "MND": 8, "INS": 14, "PRE": 10}),
-    "3": ("mage", {"MIG": 8, "END": 8, "AGI": 10, "MND": 16, "INS": 14, "PRE": 10}),
-    "4": ("priest", {"MIG": 10, "END": 12, "AGI": 8, "MND": 14, "INS": 16, "PRE": 10}),
-}
+CREATION_CATALOG = get_creation_catalog()
 
-ADAPTER_OPTIONS = {
-    "1": ("fantasy_ember", "Fantasy Ember"),
-    "2": ("scifi_frontier", "Sci-Fi Frontier"),
-}
 
-TERRAIN_GLYPHS = {
-    "road": ("=", "yellow"),
-    "cobble": ("=", "yellow"),
-    "cobblestone": ("=", "yellow"),
-    "wall": ("#", "grey35"),
-    "door": ("+", "yellow"),
-    "floor": (".", "grey55"),
-    "wood_floor": (".", "grey60"),
-    "stone_floor": (".", "grey50"),
-    "grass": (",", "green"),
-    "water": ("~", "blue"),
-    "tree": ("T", "green"),
-    "well": ("O", "bright_cyan"),
-    "fountain": ("O", "bright_cyan"),
-}
+def _indexed_options(entries: list[dict[str, Any]]) -> dict[str, tuple[str, str]]:
+    return {
+        str(index + 1): (str(entry.get("id", "")), str(entry.get("label", entry.get("id", ""))))
+        for index, entry in enumerate(entries)
+    }
 
-LEGACY_TILE_GLYPHS = {
-    TileType.FLOOR: (".", "grey55"),
-    TileType.WALL: ("#", "grey35"),
-    TileType.DOOR: ("+", "yellow"),
-    TileType.CORRIDOR: (".", "grey45"),
-    TileType.STAIRS_DOWN: (">", "bright_cyan"),
-    TileType.STAIRS_UP: ("<", "bright_cyan"),
-    TileType.WATER: ("~", "blue"),
-    TileType.TREE: ("T", "green"),
-    TileType.ROAD: ("=", "yellow"),
-    TileType.EMPTY: (" ", "black"),
-}
+
+def _default_option_key(options: dict[str, tuple[str, str]], default_id: str) -> str:
+    for key, (option_id, _label) in options.items():
+        if option_id == default_id:
+            return key
+    return next(iter(options.keys()), "")
+
+
+CLASS_OPTIONS = _indexed_options(list(CREATION_CATALOG.get("class_catalog", [])))
+ADAPTER_OPTIONS = _indexed_options(list(CREATION_CATALOG.get("adapter_catalog", [])))
 
 ABILITY_LABELS = {
     "MIG": "Might",
@@ -97,323 +84,6 @@ ABILITY_LABELS = {
     "INS": "Insight",
     "PRE": "Presence",
 }
-
-
-@dataclass
-class CampaignScreenState:
-    snapshot: dict[str, Any]
-    narrative_history: list[str]
-
-    @property
-    def campaign_id(self) -> str:
-        return str(self.snapshot.get("campaign_id", ""))
-
-    @property
-    def campaign(self) -> dict[str, Any]:
-        return dict(self.snapshot.get("campaign") or {})
-
-
-class MapState:
-    """Compatibility wrapper that accepts either a legacy GameSession or a campaign snapshot."""
-
-    def __init__(self, source: Any):
-        self.source = source
-        self.player_pos = (0, 0)
-        self.width = 0
-        self.height = 0
-        self.tiles: list[list[Any]] = []
-        self.entities: list[dict[str, Any]] = []
-        self.player_name = "Player"
-        self.location = "Unknown"
-        self._from_source(source)
-
-    def _from_source(self, source: Any) -> None:
-        if hasattr(source, "map_data") and hasattr(source, "player"):
-            self._from_legacy_session(source)
-            return
-        campaign = source.get("campaign", source) if isinstance(source, dict) else {}
-        self._from_campaign(campaign)
-
-    def _from_legacy_session(self, session: Any) -> None:
-        self.width = int(getattr(session.map_data, "width", 0))
-        self.height = int(getattr(session.map_data, "height", 0))
-        self.tiles = []
-        for y in range(self.height):
-            row = []
-            for x in range(self.width):
-                row.append(session.map_data.get_tile(x, y))
-            self.tiles.append(row)
-        self.player_pos = tuple(getattr(session.player_entity, "position", tuple(session.position)))
-        self.player_name = session.player.name
-        self.location = session.dm_context.location
-        if getattr(session, "spatial_index", None) is not None:
-            for entity in session.spatial_index.all_entities():
-                if entity.id == "player":
-                    continue
-                self.entities.append(
-                    {
-                        "id": entity.id,
-                        "name": entity.name,
-                        "position": [entity.position[0], entity.position[1]],
-                        "glyph": entity.glyph,
-                        "color": entity.color,
-                        "bucket": "enemy" if getattr(entity, "disposition", "") == "hostile" else "npc",
-                    }
-                )
-
-    def _from_campaign(self, campaign: dict[str, Any]) -> None:
-        player = dict(campaign.get("player") or {})
-        map_payload = dict(campaign.get("map_data") or {})
-        self.width = int(map_payload.get("width", 0))
-        self.height = int(map_payload.get("height", 0))
-        self.tiles = list(map_payload.get("tiles") or [])
-        self.player_pos = tuple(player.get("position", map_payload.get("spawn_point", [0, 0])))
-        self.player_name = str(player.get("name", "Player"))
-        self.location = str(campaign.get("location", "Unknown"))
-        self.entities = list(campaign.get("world_entities") or [])
-
-    def bounds(self) -> tuple[int, int, int, int]:
-        px, py = self.player_pos
-        half_w = MAP_WIDTH // 2
-        half_h = MAP_HEIGHT // 2
-        min_x = max(0, px - half_w)
-        min_y = max(0, py - half_h)
-        max_x = min(self.width, min_x + MAP_WIDTH)
-        max_y = min(self.height, min_y + MAP_HEIGHT)
-        min_x = max(0, max_x - MAP_WIDTH)
-        min_y = max(0, max_y - MAP_HEIGHT)
-        return min_x, min_y, max_x, max_y
-
-    def entity_at(self, x: int, y: int) -> dict[str, Any] | None:
-        for entity in self.entities:
-            position = entity.get("position", [None, None])
-            if len(position) >= 2 and int(position[0]) == x and int(position[1]) == y:
-                return entity
-        return None
-
-
-def hp_bar(current: int, maximum: int, width: int = 16) -> str:
-    filled = int(width * current / max(maximum, 1))
-    filled = min(width, max(0, filled))
-    return "[%s%s] %d/%d" % ("#" * filled, "-" * (width - filled), current, maximum)
-
-
-def render_header(session_or_campaign: Any) -> Panel:
-    if hasattr(session_or_campaign, "to_dict"):
-        snapshot = session_or_campaign.to_dict()
-        player = snapshot["player"]
-        location = snapshot.get("location", getattr(session_or_campaign.dm_context, "location", "Unknown"))
-        world_line = "Legacy Session"
-    else:
-        campaign = session_or_campaign.get("campaign", session_or_campaign)
-        player = campaign.get("player", {})
-        world = campaign.get("world", {})
-        location = campaign.get("location", "Unknown")
-        world_line = "%s | %s" % (str(world.get("adapter_id", "campaign")), str(world.get("active_region_id", "")))
-
-    classes = player.get("classes", {})
-    class_name = "Adventurer"
-    if isinstance(classes, dict) and classes:
-        class_name = str(next(iter(classes.keys()))).capitalize()
-    elif player.get("player_class"):
-        class_name = str(player["player_class"]).capitalize()
-
-    ap_payload = player.get("ap") or {
-        "current": int(player.get("action_points", player.get("ap", 0))),
-        "max": int(player.get("max_action_points", player.get("max_ap", 0))),
-    }
-    header = (
-        f"{player.get('name', 'Unknown')}  Lv.{player.get('level', 1)} {class_name}\n"
-        f"HP: {hp_bar(int(player.get('hp', 0)), int(player.get('max_hp', 1)))}  "
-        f"AP: {ap_payload.get('current', 0)}/{ap_payload.get('max', 0)}  "
-        f"Gold: {player.get('gold', 0)}\n"
-        f"{location}  |  {world_line}"
-    )
-    return Panel(header, title="[bold bright_white]Status[/bold bright_white]", border_style="bright_blue")
-
-
-def render_map(map_state: MapState) -> Panel:
-    text = Text()
-    min_x, min_y, max_x, max_y = map_state.bounds()
-    for y in range(min_y, max_y):
-        for x in range(min_x, max_x):
-            if (x, y) == tuple(map_state.player_pos):
-                text.append("@", style="bold bright_white")
-                continue
-            entity = map_state.entity_at(x, y)
-            if entity is not None:
-                glyph = str(entity.get("glyph", str(entity.get("name", "?"))[:1].upper() or "?"))
-                color = "red" if str(entity.get("disposition", "")).lower() == "hostile" else "cyan"
-                text.append(glyph[:1], style="bold %s" % color)
-                continue
-            tile = map_state.tiles[y][x] if y < len(map_state.tiles) and x < len(map_state.tiles[y]) else "grass"
-            glyph, color = _tile_style(tile)
-            text.append(glyph, style=color)
-        if y < max_y - 1:
-            text.append("\n")
-    return Panel(text, title="[bold bright_white]Region[/bold bright_white]", border_style="bright_blue")
-
-
-def render_narrative(history: list[str]) -> Panel:
-    visible = history[-VISIBLE_NARRATIVES:]
-    text = Text()
-    for line in visible:
-        style = "white"
-        lower = line.lower()
-        if line.startswith(">"):
-            style = "green"
-        elif "attack" in lower or "damage" in lower or "combat" in lower:
-            style = "bold red"
-        elif line.startswith("["):
-            style = "yellow"
-        text.append(line + "\n", style=style)
-    return Panel(text, title="[bold bright_white]Narrative[/bold bright_white]", border_style="bright_blue")
-
-
-def render_settlement(campaign: dict[str, Any]) -> Panel:
-    settlement = dict(campaign.get("settlement") or {})
-    text = Text()
-    if not settlement:
-        text.append("No settlement data.", style="dim")
-        return Panel(text, title="[bold bright_white]Settlement[/bold bright_white]", border_style="bright_blue")
-    text.append(
-        "%s | Pop %s | %s\n\n"
-        % (
-            settlement.get("name", "Settlement"),
-            settlement.get("population", len(settlement.get("residents", []))),
-            str(settlement.get("defense_posture", "normal")).capitalize(),
-        )
-    )
-    text.append("Residents\n", style="bold")
-    for resident in settlement.get("residents", [])[:4]:
-        text.append("- %s: %s\n" % (resident.get("name", "Resident"), resident.get("assignment", resident.get("role", "idle"))))
-    text.append("\nJobs\n", style="bold")
-    for job in settlement.get("jobs", [])[:4]:
-        text.append("- %s [%s]\n" % (str(job.get("kind", "job")).capitalize(), job.get("status", "queued")))
-    text.append("\nAlerts\n", style="bold")
-    alerts = settlement.get("alerts", [])
-    if alerts:
-        for alert in alerts[:4]:
-            text.append("- %s\n" % alert, style="yellow")
-    else:
-        text.append("- None\n", style="dim")
-    return Panel(text, title="[bold bright_white]Settlement[/bold bright_white]", border_style="bright_blue")
-
-
-def build_character_sheet(snapshot: dict[str, Any]) -> dict[str, Any]:
-    sheet = dict(snapshot.get("character_sheet") or {})
-    if sheet:
-        return sheet
-
-    campaign = dict(snapshot.get("campaign") or snapshot)
-    player = dict(campaign.get("player") or snapshot.get("player") or {})
-    stats = dict(player.get("stats") or {})
-    if not stats:
-        stats = assign_stats_to_class(
-            list(campaign.get("creation_state", {}).get("current_roll") or []),
-            str(player.get("player_class", "warrior")),
-        )
-
-    abilities = []
-    for ability in ABILITY_ORDER:
-        value = int(stats.get(ability, 10))
-        abilities.append(
-            {
-                "ability": ability,
-                "label": ABILITY_LABELS.get(ability, ability),
-                "value": value,
-                "modifier": (value - 10) // 2,
-            }
-        )
-
-    ap_state = player.get("ap") if isinstance(player.get("ap"), dict) else {}
-    current_ap = int(ap_state.get("current", player.get("action_points", 0)))
-    max_ap = int(ap_state.get("max", player.get("max_action_points", max(current_ap, 1))))
-
-    return {
-        "name": str(player.get("name", "Adventurer")),
-        "class": str(player.get("player_class", "warrior")),
-        "alignment": str(player.get("alignment", campaign.get("creation_state", {}).get("recommended_alignment", "NN"))),
-        "skills": list(player.get("skill_proficiencies") or campaign.get("creation_state", {}).get("recommended_skills") or []),
-        "stats": abilities,
-        "hp": {
-            "current": int(player.get("hp", 0)),
-            "max": int(player.get("max_hp", 1)),
-        },
-        "ap": {
-            "current": current_ap,
-            "max": max_ap,
-        },
-        "adapter_id": str(snapshot.get("adapter_id", campaign.get("adapter_id", "fantasy_ember"))),
-        "profile_id": str(snapshot.get("profile_id", campaign.get("profile_id", "standard"))),
-        "creation_summary": dict(campaign.get("creation_state") or snapshot.get("creation_state") or {}),
-    }
-
-
-def render_character_sheet(snapshot: dict[str, Any]) -> Panel:
-    sheet = build_character_sheet(snapshot)
-    text = Text()
-    text.append("%s | %s | %s\n\n" % (sheet["name"], sheet["class"].capitalize(), sheet["alignment"]))
-    text.append("Stats\n", style="bold")
-    for stat in sheet["stats"]:
-        text.append(
-            "- %s: %d (%+d)\n" % (stat["ability"], int(stat["value"]), int(stat["modifier"]))
-        )
-    text.append("\nSkills\n", style="bold")
-    skills = sheet.get("skills") or []
-    if skills:
-        for skill in skills:
-            text.append("- %s\n" % skill)
-    else:
-        text.append("- None\n", style="dim")
-    text.append("\nResources\n", style="bold")
-    text.append(
-        "HP %d/%d  SP %d/%d  AP %d/%d" % (
-            int(sheet["hp"]["current"]),
-            int(sheet["hp"]["max"]),
-            int(sheet.get("sp", {}).get("current", 0)),
-            int(sheet.get("sp", {}).get("max", 0)),
-            int(sheet["ap"]["current"]),
-            int(sheet["ap"]["max"]),
-        )
-    )
-    creation_summary = dict(sheet.get("creation_summary") or {})
-    if creation_summary:
-        text.append("\n\nCreation\n", style="bold")
-        text.append(
-            "Recommended: %s / %s\n"
-            % (
-                str(creation_summary.get("recommended_class", sheet["class"])).capitalize(),
-                str(creation_summary.get("recommended_alignment", sheet["alignment"])),
-            )
-        )
-        text.append("Current roll: %s\n" % _roll_text(creation_summary.get("current_roll", [])))
-        text.append("Saved roll: %s" % _roll_text(creation_summary.get("saved_roll", [])))
-    return Panel(text, title="[bold bright_white]Character[/bold bright_white]", border_style="bright_blue")
-
-
-def render_commands() -> Panel:
-    commands = "move/look/talk/attack/travel/assign/build/defend/harvest/save/load/quit"
-    return Panel(commands, title="[bold]Commands[/bold]", border_style="bright_blue", height=3)
-
-
-def render_full(screen_state: CampaignScreenState) -> Layout:
-    map_state = MapState(screen_state.snapshot)
-    layout = Layout()
-    layout.split_column(Layout(name="header", size=5), Layout(name="main"), Layout(name="footer", size=3))
-    layout["header"].update(render_header(screen_state.snapshot))
-    layout["footer"].update(render_commands())
-    layout["main"].split_row(Layout(name="map", ratio=2), Layout(name="sidebar", ratio=1))
-    layout["map"].update(render_map(map_state))
-    layout["sidebar"].split_column(
-        Layout(name="narrative", ratio=3),
-        Layout(name="character", ratio=2),
-        Layout(name="settlement", ratio=2),
-    )
-    layout["narrative"].update(render_narrative(screen_state.narrative_history))
-    layout["character"].update(render_character_sheet(screen_state.snapshot))
-    layout["settlement"].update(render_settlement(screen_state.campaign))
-    return layout
 
 
 def _ask_choice(prompt: str, options: list[str], default: str) -> str:
@@ -447,115 +117,17 @@ def _print_creation_snapshot(state: dict[str, Any]) -> None:
     console.print(summary)
 
 
-def _roll_text(values) -> str:
-    if values is None:
-        return "-"
-    if not isinstance(values, list):
-        values = list(values)
-    if not values:
-        return "-"
-    return ", ".join(str(value) for value in values)
-
-
-def _print_save_browser(player_id: str, saves: list[dict[str, Any]]) -> None:
-    table = Table(title=f"Recent Saves for {player_id}", show_header=True, expand=True)
-    table.add_column("#", justify="center", width=4)
-    table.add_column("Slot")
-    table.add_column("Save ID")
-    table.add_column("Location")
-    table.add_column("Updated")
-    for index, entry in enumerate(saves, start=1):
-        table.add_row(
-            str(index),
-            str(entry.get("slot_name", entry.get("save_id", "save"))),
-            str(entry.get("save_id", "")),
-            str(entry.get("location", "Unknown")),
-            str(entry.get("timestamp", "")),
-        )
-    console.print(table)
-
-
-def _campaign_compatible_saves(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    compatible: list[dict[str, Any]] = []
-    for entry in entries:
-        if isinstance(entry, dict) and bool(entry.get("campaign_compatible", True)):
-            compatible.append(entry)
-    return compatible
-
-
-def _resolve_save_choice(choice: str, saves: list[dict[str, Any]]) -> str:
-    cleaned = choice.strip()
-    if not cleaned:
-        return ""
-    if cleaned.isdigit():
-        index = int(cleaned) - 1
-        if 0 <= index < len(saves):
-            return str(saves[index].get("save_id") or saves[index].get("slot_name", ""))
-    for entry in saves:
-        save_id = str(entry.get("save_id", "")).strip()
-        slot_name = str(entry.get("slot_name", "")).strip()
-        if cleaned == save_id or cleaned == slot_name:
-            return save_id or slot_name
-    return ""
-
-
 def browse_campaign_saves(client: CampaignClient, default_player_id: str = "") -> dict[str, Any] | None:
-    player_id = default_player_id.strip() or "player"
-    while True:
-        try:
-            typed_player_id = Prompt.ask("[bold green]Player[/bold green]", default=player_id).strip()
-        except (EOFError, KeyboardInterrupt):
-            return None
-        player_id = typed_player_id or player_id or "player"
-        try:
-            discovered_saves = list(client.list_saves_for_player(player_id))
-        except Exception as exc:
-            console.print(Panel(str(exc), title="Load Failed", border_style="red"))
-            action = _ask_choice("Retry, New, or Quit?", ["retry", "new", "quit"], "retry")
-            if action == "retry":
-                continue
-            if action == "new":
-                return character_creation(client)
-            return None
-        saves = _campaign_compatible_saves(discovered_saves)
-        if not saves:
-            message = (
-                f"No campaign saves found for {player_id}."
-                if not discovered_saves
-                else f"Only legacy or incompatible saves were found for {player_id}."
-            )
-            console.print(Panel(message, title="Load", border_style="yellow"))
-            action = _ask_choice("Retry, New, or Quit?", ["retry", "new", "quit"], "retry")
-            if action == "retry":
-                continue
-            if action == "new":
-                return character_creation(client)
-            return None
-
-        _print_save_browser(player_id, saves)
-        while True:
-            try:
-                choice = Prompt.ask("[bold green]Select save number or id[/bold green]", default="1").strip()
-            except (EOFError, KeyboardInterrupt):
-                return None
-            if choice.lower() in {"new", "quit", "back"}:
-                if choice.lower() == "new":
-                    return character_creation(client)
-                return None
-            save_id = _resolve_save_choice(choice, saves)
-            if not save_id:
-                console.print(Panel("Unknown save selection. Enter a number or save id.", title="Load", border_style="yellow"))
-                continue
-            try:
-                return client.load_campaign(save_id)
-            except Exception as exc:
-                console.print(Panel(str(exc), title="Load Failed", border_style="red"))
-                action = _ask_choice("Retry, New, or Quit?", ["retry", "new", "quit"], "retry")
-                if action == "retry":
-                    break
-                if action == "new":
-                    return character_creation(client)
-                return None
+    return _browse_campaign_saves(
+        client,
+        default_player_id,
+        prompt_cls=Prompt,
+        console=console,
+        panel_cls=Panel,
+        table_cls=Table,
+        ask_choice=_ask_choice,
+        character_creation_fn=character_creation,
+    )
 
 
 def _prompt_questionnaire(client: CampaignClient, creation_state: dict[str, Any]) -> dict[str, Any]:
@@ -610,10 +182,7 @@ def _prompt_stat_assignment(creation_state: dict[str, Any], auto_assign: bool) -
     assigned: dict[str, int] = {}
     for index, ability in enumerate(ABILITY_ORDER):
         default_value = ordered[index] if index < len(ordered) else 10
-        value = Prompt.ask(
-            f"Assign {ability}",
-            default=str(default_value),
-        ).strip()
+        value = Prompt.ask(f"Assign {ability}", default=str(default_value)).strip()
         try:
             assigned[ability] = int(value or default_value)
         except ValueError:
@@ -629,17 +198,14 @@ def _finalize_creation(
     profile_id: str,
     seed: int | None,
 ) -> dict[str, Any]:
-    recommended_class = str(creation_state.get("recommended_class", "warrior"))
+    recommended_class = str(creation_state.get("recommended_class", CREATION_CATALOG.get("default_class_id", "")))
     recommended_alignment = str(creation_state.get("recommended_alignment", "NN"))
     recommended_skills = list(creation_state.get("recommended_skills") or [])
 
-    class_choices = [recommended_class] + [value for value, _stats in CLASS_OPTIONS.values() if value != recommended_class]
+    class_choices = [recommended_class] + [value for value, _label in CLASS_OPTIONS.values() if value != recommended_class]
     chosen_class = _ask_choice("Class", class_choices, recommended_class)
     chosen_alignment = Prompt.ask("[bold green]Alignment[/bold green]", default=recommended_alignment).strip() or recommended_alignment
-    skills_text = Prompt.ask(
-        "[bold green]Skills[/bold green] (comma-separated)",
-        default=", ".join(recommended_skills),
-    ).strip()
+    skills_text = Prompt.ask("[bold green]Skills[/bold green] (comma-separated)", default=", ".join(recommended_skills)).strip()
     chosen_skills = [skill.strip() for skill in skills_text.split(",") if skill.strip()] or recommended_skills
     auto_assign = _ask_yes_no("Auto assign rolled stats?", "yes") == "yes"
     assigned_stats = _prompt_stat_assignment(creation_state, auto_assign)
@@ -666,7 +232,10 @@ def _finalize_creation(
     final_snapshot["adapter_id"] = adapter_id
     final_snapshot["profile_id"] = profile_id
     final_snapshot["stats"] = dict(assigned_stats)
-    final_snapshot["map_type"] = "town" if adapter_id == "fantasy_ember" else "wilderness"
+    final_snapshot["map_type"] = (
+        str(final_snapshot.get("map_type", final_snapshot.get("campaign", {}).get("map_data", {}).get("metadata", {}).get("map_type", "")))
+        or "campaign_region"
+    )
     return final_snapshot
 
 
@@ -689,12 +258,17 @@ def character_creation(client: CampaignClient | None = None) -> dict[str, Any]:
     adapter_table = Table(title="Adapter", show_header=True, expand=True)
     adapter_table.add_column("#", justify="center", width=3)
     adapter_table.add_column("World")
-    adapter_table.add_row("1", "Fantasy Ember")
-    adapter_table.add_row("2", "Sci-Fi Frontier")
+    for key, (_adapter_id, adapter_label) in ADAPTER_OPTIONS.items():
+        adapter_table.add_row(key, adapter_label)
     console.print(adapter_table)
 
-    adapter_choice = Prompt.ask("[bold green]Select adapter[/bold green]", choices=list(ADAPTER_OPTIONS.keys()), default="1")
-    profile_id = Prompt.ask("[bold green]Profile[/bold green]", default="standard").strip() or "standard"
+    adapter_choice = Prompt.ask(
+        "[bold green]Select adapter[/bold green]",
+        choices=list(ADAPTER_OPTIONS.keys()),
+        default=_default_option_key(ADAPTER_OPTIONS, str(CREATION_CATALOG.get("default_adapter_id", ""))),
+    )
+    profile_id = Prompt.ask("[bold green]Profile[/bold green]", default=str(CREATION_CATALOG.get("default_profile_id", ""))).strip()
+    profile_id = profile_id or str(CREATION_CATALOG.get("default_profile_id", ""))
     seed_text = Prompt.ask("[bold green]Seed[/bold green]", default="").strip()
     try:
         seed = _parse_optional_int(seed_text)
@@ -703,13 +277,7 @@ def character_creation(client: CampaignClient | None = None) -> dict[str, Any]:
         seed = None
     adapter_id, _adapter_name = ADAPTER_OPTIONS[adapter_choice]
 
-    creation_state = client.start_creation(
-        name,
-        location="",
-        adapter_id=adapter_id,
-        profile_id=profile_id,
-        seed=seed,
-    )
+    creation_state = client.start_creation(name, location="", adapter_id=adapter_id, profile_id=profile_id, seed=seed)
     _print_creation_snapshot(creation_state)
     creation_state = _prompt_questionnaire(client, creation_state)
     creation_state = _prompt_roll_controls(client, creation_state)
@@ -752,20 +320,6 @@ def read_input() -> str:
             sys.stdout.flush()
 
 
-def _tile_style(tile: Any) -> tuple[str, str]:
-    if tile in LEGACY_TILE_GLYPHS:
-        return LEGACY_TILE_GLYPHS[tile]
-    return TERRAIN_GLYPHS.get(str(tile).lower(), ("?", "white"))
-
-
-def _append_history(history: list[str], line: str) -> None:
-    cleaned = line.strip()
-    if not cleaned:
-        return
-    history.append(cleaned)
-    del history[:-60]
-
-
 def _handle_meta_command(client: CampaignClient, screen_state: CampaignScreenState, command: str) -> bool:
     lower = command.lower().strip()
     if lower in {"quit", "exit"}:
@@ -776,13 +330,14 @@ def _handle_meta_command(client: CampaignClient, screen_state: CampaignScreenSta
     if lower == "save" or lower.startswith("save "):
         slot_name = command[4:].strip() or "quicksave"
         try:
-            metadata = client.save_campaign(screen_state.campaign_id, slot_name, str(screen_state.campaign.get("player", {}).get("name", "player")))
+            metadata = client.save_campaign(screen_state.campaign_id, slot_name, _current_player_id(screen_state.snapshot))
             _append_history(screen_state.narrative_history, "[system] Saved to %s." % metadata.get("slot_name", slot_name))
         except Exception as exc:
             _append_history(screen_state.narrative_history, "[system] Save failed: %s" % exc)
         return True
     if lower == "saves":
         saves = client.list_saves_for_player(_current_player_id(screen_state.snapshot))
+        saves = _campaign_compatible_saves(list(saves))
         if not saves:
             _append_history(screen_state.narrative_history, "[system] No save slots found.")
         else:

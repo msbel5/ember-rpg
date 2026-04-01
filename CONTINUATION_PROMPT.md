@@ -27,8 +27,8 @@ Paste this at the start of a new Claude Code conversation to restore full contex
 
 ### Key Files to Read First
 1. `docs/PRD_IMPLEMENTATION_MATRIX.md` — Which docs are authoritative vs superseded
-2. `docs/PROMPT_deterministic_world_v1.md` — World engine prompt (all sprints defined)
-3. `docs/PROMPT_director_v2.md` — VQR rubric and quality benchmarks
+2. `docs/deprecated/notes/PROMPT_deterministic_world_v1.md` — World engine prompt (all sprints defined)
+3. `docs/deprecated/notes/PROMPT_director_v2.md` — VQR rubric and quality benchmarks
 4. `docs/qa/vqr_scorecard.md` — Current visual quality scores
 5. `CODEX_REVIEW_PROMPT.md` — Latest Codex task prompt
 6. `README.md` — Architecture and vision overview

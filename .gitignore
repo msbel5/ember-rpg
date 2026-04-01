@@ -14,11 +14,13 @@ tmp/
 # IDE
 .vscode/
 .idea/
+.DS_Store
 
 # Test coverage
 .coverage
 htmlcov/
 .pytest_cache/
+frp-backend/tests/coverage.json
 
 # Distribution / packaging
 *.egg-info/

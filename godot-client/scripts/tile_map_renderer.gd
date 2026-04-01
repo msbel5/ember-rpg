@@ -5,74 +5,74 @@ extends Control
 
 const TILE_SIZE = 32
 const TILE_TEXTURES = {
-	"stone_floor": "res://assets/tiles/stone_floor.png",
-	"stone_wall": "res://assets/tiles/stone_wall.png",
-	"grass": "res://assets/tiles/grass.png",
-	"dirt_path": "res://assets/tiles/dirt_path.png",
-	"water": "res://assets/tiles/water.png",
-	"door": "res://assets/tiles/door.png",
-	"chest": "res://assets/tiles/chest.png",
-	"stairs": "res://assets/tiles/stairs.png",
-	"cobblestone": "res://assets/tiles/cobblestone.png",
-	"wood_floor": "res://assets/tiles/wood_floor.png",
-	"sand": "res://assets/tiles/sand.png",
-	"dark_stone": "res://assets/tiles/dark_stone.png",
-	"tavern_floor": "res://assets/tiles/tavern_floor.png",
+	"stone_floor": "res://assets/generated/tiles/stone_floor.png",
+	"stone_wall": "res://assets/generated/tiles/stone_wall.png",
+	"grass": "res://assets/generated/tiles/grass.png",
+	"dirt_path": "res://assets/generated/tiles/dirt_path.png",
+	"water": "res://assets/generated/tiles/water.png",
+	"door": "res://assets/generated/tiles/door.png",
+	"chest": "res://assets/generated/tiles/chest.png",
+	"stairs": "res://assets/generated/tiles/stairs.png",
+	"cobblestone": "res://assets/generated/tiles/cobblestone.png",
+	"wood_floor": "res://assets/generated/tiles/wood_floor.png",
+	"sand": "res://assets/generated/tiles/sand.png",
+	"dark_stone": "res://assets/generated/tiles/dark_stone.png",
+	"tavern_floor": "res://assets/generated/tiles/tavern_floor.png",
 	# New zone tiles
-	"lava": "res://assets/tiles/lava.png",
-	"ice": "res://assets/tiles/ice.png",
-	"swamp": "res://assets/tiles/swamp.png",
-	"marble": "res://assets/tiles/marble.png",
-	"brick": "res://assets/tiles/brick.png",
-	"cave": "res://assets/tiles/cave.png",
-	"bridge": "res://assets/tiles/bridge.png",
+	"lava": "res://assets/generated/tiles/lava.png",
+	"ice": "res://assets/generated/tiles/ice.png",
+	"swamp": "res://assets/generated/tiles/swamp.png",
+	"marble": "res://assets/generated/tiles/marble.png",
+	"brick": "res://assets/generated/tiles/brick.png",
+	"cave": "res://assets/generated/tiles/cave.png",
+	"bridge": "res://assets/generated/tiles/bridge.png",
 	# Fallbacks
-	"wall": "res://assets/tiles/stone_wall.png",
-	"floor": "res://assets/tiles/stone_floor.png",
-	"road": "res://assets/tiles/dirt_path.png",
-	"building_wall": "res://assets/tiles/stone_wall.png",
-	"building_floor": "res://assets/tiles/tavern_floor.png",
-	"dock_planks": "res://assets/tiles/wood_floor.png",
-	"frozen": "res://assets/tiles/ice.png",
-	"volcanic": "res://assets/tiles/lava.png",
-	"mud": "res://assets/tiles/swamp.png",
-	"stone_brick": "res://assets/tiles/brick.png",
-	"palace_floor": "res://assets/tiles/marble.png",
+	"wall": "res://assets/generated/tiles/stone_wall.png",
+	"floor": "res://assets/generated/tiles/stone_floor.png",
+	"road": "res://assets/generated/tiles/dirt_path.png",
+	"building_wall": "res://assets/generated/tiles/stone_wall.png",
+	"building_floor": "res://assets/generated/tiles/tavern_floor.png",
+	"dock_planks": "res://assets/generated/tiles/wood_floor.png",
+	"frozen": "res://assets/generated/tiles/ice.png",
+	"volcanic": "res://assets/generated/tiles/lava.png",
+	"mud": "res://assets/generated/tiles/swamp.png",
+	"stone_brick": "res://assets/generated/tiles/brick.png",
+	"palace_floor": "res://assets/generated/tiles/marble.png",
 }
 
 const SPRITE_TEXTURES = {
-	"warrior": "res://assets/sprites/warrior.png",
-	"mage": "res://assets/sprites/mage.png",
-	"rogue": "res://assets/sprites/rogue.png",
-	"priest": "res://assets/sprites/priest.png",
-	"goblin": "res://assets/sprites/goblin.png",
-	"skeleton": "res://assets/sprites/skeleton.png",
-	"merchant": "res://assets/sprites/merchant.png",
-	"quest_giver": "res://assets/sprites/quest_giver.png",
-	"innkeeper": "res://assets/sprites/innkeeper.png",
-	"guard": "res://assets/sprites/guard.png",
-	"blacksmith": "res://assets/sprites/blacksmith.png",
-	"healer": "res://assets/sprites/healer.png",
-	"beggar": "res://assets/sprites/beggar.png",
-	"spy": "res://assets/sprites/spy.png",
-	"sage": "res://assets/sprites/sage.png",
-	"wolf": "res://assets/sprites/wolf.png",
-	"orc": "res://assets/sprites/orc.png",
-	"spider": "res://assets/sprites/spider.png",
-	"bandit": "res://assets/sprites/bandit.png",
-	"dragon": "res://assets/sprites/dragon.png",
-	"zombie": "res://assets/sprites/zombie.png",
+	"warrior": "res://assets/generated/sprites/warrior.png",
+	"mage": "res://assets/generated/sprites/mage.png",
+	"rogue": "res://assets/generated/sprites/rogue.png",
+	"priest": "res://assets/generated/sprites/priest.png",
+	"goblin": "res://assets/generated/sprites/goblin.png",
+	"skeleton": "res://assets/generated/sprites/skeleton.png",
+	"merchant": "res://assets/generated/sprites/merchant.png",
+	"quest_giver": "res://assets/generated/sprites/quest_giver.png",
+	"innkeeper": "res://assets/generated/sprites/innkeeper.png",
+	"guard": "res://assets/generated/sprites/guard.png",
+	"blacksmith": "res://assets/generated/sprites/blacksmith.png",
+	"healer": "res://assets/generated/sprites/healer.png",
+	"beggar": "res://assets/generated/sprites/beggar.png",
+	"spy": "res://assets/generated/sprites/spy.png",
+	"sage": "res://assets/generated/sprites/sage.png",
+	"wolf": "res://assets/generated/sprites/wolf.png",
+	"orc": "res://assets/generated/sprites/orc.png",
+	"spider": "res://assets/generated/sprites/spider.png",
+	"bandit": "res://assets/generated/sprites/bandit.png",
+	"dragon": "res://assets/generated/sprites/dragon.png",
+	"zombie": "res://assets/generated/sprites/zombie.png",
 	# New entity types
-	"bard": "res://assets/sprites/bard.png",
-	"witch": "res://assets/sprites/witch.png",
-	"knight": "res://assets/sprites/knight.png",
-	"thief": "res://assets/sprites/thief.png",
-	"necromancer": "res://assets/sprites/necromancer.png",
-	"troll": "res://assets/sprites/troll.png",
-	"rat": "res://assets/sprites/rat.png",
-	"ghost": "res://assets/sprites/ghost.png",
-	"mimic": "res://assets/sprites/mimic.png",
-	"fairy": "res://assets/sprites/fairy.png",
+	"bard": "res://assets/generated/sprites/bard.png",
+	"witch": "res://assets/generated/sprites/witch.png",
+	"knight": "res://assets/generated/sprites/knight.png",
+	"thief": "res://assets/generated/sprites/thief.png",
+	"necromancer": "res://assets/generated/sprites/necromancer.png",
+	"troll": "res://assets/generated/sprites/troll.png",
+	"rat": "res://assets/generated/sprites/rat.png",
+	"ghost": "res://assets/generated/sprites/ghost.png",
+	"mimic": "res://assets/generated/sprites/mimic.png",
+	"fairy": "res://assets/generated/sprites/fairy.png",
 }
 
 var tile_cache: Dictionary = {}
@@ -150,7 +150,7 @@ func _on_entities_loaded(entities_data: Dictionary) -> void:
 		_draw_entity(entity)
 
 func _draw_tile(x: int, y: int, tile_type: String) -> void:
-	var tex_path = TILE_TEXTURES.get(tile_type, "res://assets/tiles/stone_floor.png")
+	var tex_path = TILE_TEXTURES.get(tile_type, "res://assets/generated/tiles/stone_floor.png")
 	var tex = _load_texture(tex_path)
 	if tex == null:
 		return
@@ -168,7 +168,7 @@ func _draw_entity(entity: Dictionary) -> void:
 	var entity_id = entity.get("id", "")
 	var entity_name = entity.get("name", "Unknown")
 
-	var tex_path = SPRITE_TEXTURES.get(template, "res://assets/sprites/warrior.png")
+	var tex_path = SPRITE_TEXTURES.get(template, "res://assets/generated/sprites/warrior.png")
 	var tex = _load_texture(tex_path)
 	if tex == null:
 		return

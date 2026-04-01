@@ -10,26 +10,6 @@ const STEP_ROLL := 2
 const STEP_BUILD := 3
 const STEP_SUMMARY := 4
 
-const CLASS_OPTIONS := [
-	{"label": "Warrior", "id": "warrior"},
-	{"label": "Rogue", "id": "rogue"},
-	{"label": "Mage", "id": "mage"},
-	{"label": "Priest", "id": "priest"},
-]
-
-const ADAPTER_OPTIONS := [
-	{"label": "Fantasy Ember", "id": "fantasy_ember"},
-	{"label": "Sci-Fi Frontier", "id": "scifi_frontier"},
-]
-
-const ABILITY_ORDER := ["MIG", "AGI", "END", "MND", "INS", "PRE"]
-const CLASS_PRIORITIES := {
-	"warrior": ["MIG", "END", "AGI", "PRE", "INS", "MND"],
-	"rogue": ["AGI", "INS", "PRE", "END", "MIG", "MND"],
-	"mage": ["MND", "INS", "AGI", "PRE", "END", "MIG"],
-	"priest": ["INS", "MND", "PRE", "END", "AGI", "MIG"],
-}
-
 @onready var new_game_btn: Button = $VBoxContainer/NewGameButton
 @onready var continue_btn: Button = $VBoxContainer/ContinueButton
 @onready var quit_btn: Button = $VBoxContainer/QuitButton
@@ -90,6 +70,7 @@ const CLASS_PRIORITIES := {
 
 var wizard_step: int = STEP_IDENTITY
 var creation_payload: Dictionary = {}
+var _creation_catalog: Dictionary = {}
 var is_busy: bool = false
 var load_browser_busy: bool = false
 var _build_touched: bool = false
@@ -155,6 +136,8 @@ func _on_new_game() -> void:
 	status_label.text = ""
 	load_browser.visible = false
 	creation_panel.visible = true
+	if _creation_catalog.is_empty():
+		Backend.get_campaign_creation_catalog(_on_creation_catalog_loaded)
 	creation_payload = {}
 	wizard_step = STEP_IDENTITY
 	_refresh_shell_visibility()
@@ -239,6 +222,10 @@ func _begin_creation_flow() -> void:
 	if player_name.is_empty():
 		status_label.text = "Enter a character name."
 		return
+	if _adapter_catalog_entries().is_empty() or _class_catalog_entries().is_empty():
+		status_label.text = "Creation catalog is not loaded yet."
+		Backend.get_campaign_creation_catalog(_on_creation_catalog_loaded)
+		return
 	GameState.reset()
 	_set_busy(true, "Starting creation...")
 	Backend.start_campaign_creation(
@@ -249,6 +236,17 @@ func _begin_creation_flow() -> void:
 		_selected_seed(),
 		"",
 	)
+
+
+func _on_creation_catalog_loaded(data) -> void:
+	if data == null:
+		if _creation_catalog.is_empty():
+			status_label.text = "Failed to load the creation catalog."
+		return
+	if data is Dictionary:
+		_creation_catalog = data.duplicate(true)
+		_populate_adapter_options()
+		_populate_class_options()
 
 
 func _on_creation_started(data) -> void:
@@ -357,6 +355,10 @@ func _on_roll_updated(data) -> void:
 
 func _apply_creation_state(data: Dictionary) -> void:
 	creation_payload = data.duplicate(true)
+	if data.get("catalog", null) is Dictionary:
+		_creation_catalog = data["catalog"].duplicate(true)
+		_populate_adapter_options()
+		_populate_class_options()
 	GameState.update_from_response(creation_payload)
 	_sync_questionnaire_choices_from_payload(true)
 	_build_touched = false
@@ -773,7 +775,7 @@ func _install_allocation_board() -> void:
 	_allocation_hint.fit_content = true
 	_allocation_hint.scroll_active = false
 	_allocation_panel.add_child(_allocation_hint)
-	for ability in ABILITY_ORDER:
+	for ability in _ability_order():
 		var row = HBoxContainer.new()
 		row.name = "%sRow" % ability
 		row.add_theme_constant_override("separation", 8)
@@ -808,7 +810,7 @@ func _configure_build_inputs() -> void:
 	class_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	alignment_input.placeholder_text = "LG, TN, CG..."
 	skills_input.placeholder_text = "athletics, perception"
-	for ability in ABILITY_ORDER:
+	for ability in _ability_order():
 		var field = _stat_input_for(ability)
 		field.editable = false
 		field.visible = false
@@ -996,30 +998,18 @@ func _update_questionnaire_preview() -> void:
 			world_tags.append_array(answer.get("world_tags", []))
 			tone_tags.append_array(answer.get("tone_tags", []))
 			quest_themes.append_array(answer.get("quest_themes", []))
-	var adapter_name = _top_weight_label(adapter_bias, {
-		"fantasy_ember": "Fantasy Ember",
-		"scifi_frontier": "Sci-Fi Frontier",
-	}, "Fantasy Ember")
-	var settlement_name = _top_weight_label(settlement_bias, {
-		"fortified_hamlet": "fortified hamlet",
-		"border_keep": "border keep",
-		"scholar_enclave": "scholar enclave",
-		"relay_station": "relay station",
-		"harbor_settlement": "harbor settlement",
-		"mining_camp": "mining camp",
-		"orbital_colony": "orbital colony",
-		"pilgrim_town": "pilgrim town",
-	}, "frontier settlement")
-	var faction_name = _top_weight_label(faction_bias, {
-		"guard_captains": "guard captains",
-		"clergy": "clergy",
-		"guilds": "guilds",
-		"free_traders": "free traders",
-		"nobility": "nobility",
-		"research_conclave": "research conclave",
-		"colonial_office": "colonial office",
-		"smugglers": "smugglers",
-	}, "local power brokers")
+	var genesis_defaults = _genesis_defaults()
+	var adapter_name = _top_weight_label(adapter_bias, _adapter_label_map(), _humanize_id(_default_adapter_id()))
+	var settlement_name = _top_weight_label(
+		settlement_bias,
+		_settlement_label_map(),
+		str(genesis_defaults.get("settlement_label", "")),
+	)
+	var faction_name = _top_weight_label(
+		faction_bias,
+		_faction_label_map(),
+		str(genesis_defaults.get("faction_label", "")),
+	)
 	var world_bits = _unique_strings(world_tags, 3)
 	var tone_bits = _unique_strings(tone_tags, 3)
 	var quest_bits = _unique_strings(quest_themes, 4)
@@ -1052,7 +1042,7 @@ func _shift_stat_value(ability: String, direction: int) -> void:
 	var current_value = int(stats.get(ability, 10))
 	var swap_ability := ""
 	var swap_value: int = current_value
-	for other in ABILITY_ORDER:
+	for other in _ability_order():
 		if other == ability:
 			continue
 		var candidate = int(stats.get(other, 10))
@@ -1086,7 +1076,7 @@ func _refresh_allocation_board() -> void:
 	_allocation_pool_label.text = "Rolled Pool  %s" % _roll_text(creation_payload.get("current_roll", []))
 	_allocation_hint.text = "[b]Build Rule[/b]\nThe six assigned stats must remain a permutation of the active rolled pool. Raw number entry is disabled on purpose."
 	var stats = _selected_stats()
-	for ability in ABILITY_ORDER:
+	for ability in _ability_order():
 		var value = int(stats.get(ability, 10))
 		if _allocation_value_labels.has(ability):
 			var label: Label = _allocation_value_labels[ability]
@@ -1101,7 +1091,7 @@ func _refresh_allocation_board() -> void:
 
 func _has_swap_candidate(ability: String, direction: int, stats: Dictionary) -> bool:
 	var current_value = int(stats.get(ability, 10))
-	for other in ABILITY_ORDER:
+	for other in _ability_order():
 		if other == ability:
 			continue
 		var candidate = int(stats.get(other, 10))
@@ -1153,7 +1143,7 @@ func _update_summary_preview() -> void:
 	var recommended_skills = ", ".join(creation_payload.get("recommended_skills", []))
 	var selected_stats = _selected_stats()
 	var stat_lines: Array[String] = []
-	for ability in ABILITY_ORDER:
+	for ability in _ability_order():
 		stat_lines.append("%s %d (%+d)" % [ability, int(selected_stats.get(ability, 10)), _modifier(int(selected_stats.get(ability, 10)))])
 	var quest_themes = genesis.get("quest_seed_themes", [])
 	summary_text.text = "[b]World Premise[/b]\n%s\n\n[b]Commander Profile[/b]\n%s\n\n[b]Colony Pressure[/b]\n%s\n\n[b]Quest Seeds[/b]\n%s\n\n[b]Recommended Frame[/b]\nClass: %s\nAlignment: %s\nSkills: %s\n\n[b]Final Build[/b]\nClass: %s\nAlignment: %s\nSkills: %s\nStats: %s" % [
@@ -1198,7 +1188,7 @@ func _apply_creation_defaults(force: bool = false) -> void:
 	if _build_touched and not force:
 		return
 	_suppress_build_tracking = true
-	_select_class_by_id(str(creation_payload.get("recommended_class", "warrior")))
+	_select_class_by_id(str(creation_payload.get("recommended_class", _default_class_id())))
 	alignment_input.text = str(creation_payload.get("recommended_alignment", "TN"))
 	skills_input.text = ", ".join(creation_payload.get("recommended_skills", []))
 	_apply_recommended_stats()
@@ -1209,7 +1199,7 @@ func _apply_creation_defaults(force: bool = false) -> void:
 func _apply_recommended_stats() -> void:
 	var assigned = _suggested_stats_for(_selected_class_id())
 	_suppress_build_tracking = true
-	for ability in ABILITY_ORDER:
+	for ability in _ability_order():
 		_stat_input_for(ability).text = str(assigned.get(ability, 10))
 	_suppress_build_tracking = false
 	_refresh_allocation_board()
@@ -1221,13 +1211,14 @@ func _suggested_stats_for(class_id: String) -> Dictionary:
 		rolled.append(int(value))
 	rolled.sort()
 	rolled.reverse()
-	var priorities: Array = CLASS_PRIORITIES.get(class_id, CLASS_PRIORITIES["warrior"])
+	var priorities: Array = _class_priorities(class_id)
+	var abilities := _ability_order()
 	var assigned := {}
-	for index in range(ABILITY_ORDER.size()):
-		var ability = str(priorities[index] if index < priorities.size() else ABILITY_ORDER[index])
+	for index in range(abilities.size()):
+		var ability = str(priorities[index] if index < priorities.size() else abilities[index])
 		var value = int(rolled[index] if index < rolled.size() else 10)
 		assigned[ability] = value
-	for ability in ABILITY_ORDER:
+	for ability in abilities:
 		if not assigned.has(ability):
 			assigned[ability] = 10
 	return assigned
@@ -1247,7 +1238,7 @@ func _current_question() -> Dictionary:
 
 func _selected_stats() -> Dictionary:
 	var stats := {}
-	for ability in ABILITY_ORDER:
+	for ability in _ability_order():
 		var raw_value = _stat_input_for(ability).text.strip_edges()
 		stats[ability] = int(raw_value) if raw_value.is_valid_int() else 10
 	return stats
@@ -1262,21 +1253,98 @@ func _selected_skills() -> Array[String]:
 	return parsed
 
 
+func _catalog() -> Dictionary:
+	if creation_payload.get("catalog", null) is Dictionary and not creation_payload.get("catalog", {}).is_empty():
+		return creation_payload.get("catalog", {})
+	return _creation_catalog
+
+
+func _catalog_entries(key: String) -> Array:
+	var entries = _catalog().get(key, [])
+	return entries if entries is Array else []
+
+
+func _ability_order() -> Array:
+	return _catalog_entries("ability_order")
+
+
+func _humanize_id(raw_id: String) -> String:
+	return raw_id.replace("_", " ").replace("-", " ").capitalize()
+
+
+func _default_class_id() -> String:
+	return str(_catalog().get("default_class_id", ""))
+
+
+func _default_adapter_id() -> String:
+	return str(_catalog().get("default_adapter_id", ""))
+
+
+func _default_profile_id() -> String:
+	return str(_catalog().get("default_profile_id", ""))
+
+
+func _class_catalog_entries() -> Array:
+	return _catalog_entries("class_catalog")
+
+
+func _adapter_catalog_entries() -> Array:
+	return _catalog_entries("adapter_catalog")
+
+
+func _adapter_label_map() -> Dictionary:
+	var labels := {}
+	for entry in _adapter_catalog_entries():
+		if entry is Dictionary:
+			labels[str(entry.get("id", ""))] = str(entry.get("label", entry.get("id", "")))
+	return labels
+
+
+func _settlement_label_map() -> Dictionary:
+	var labels = _catalog().get("settlement_labels", {})
+	return labels if labels is Dictionary else {}
+
+
+func _faction_label_map() -> Dictionary:
+	var labels = _catalog().get("faction_labels", {})
+	return labels if labels is Dictionary else {}
+
+
+func _genesis_defaults() -> Dictionary:
+	var defaults = _catalog().get("genesis_defaults", {})
+	return defaults if defaults is Dictionary else {}
+
+
+func _class_catalog_entry(class_id: String) -> Dictionary:
+	for entry in _class_catalog_entries():
+		if entry is Dictionary and str(entry.get("id", "")) == class_id:
+			return entry
+	return {}
+
+
+func _class_priorities(class_id: String) -> Array:
+	var entry = _class_catalog_entry(class_id)
+	var priorities = entry.get("ability_priority", [])
+	if priorities is Array and not priorities.is_empty():
+		return priorities
+	return _ability_order()
+
+
 func _selected_adapter_id() -> String:
 	if adapter_option.item_count == 0:
-		return "fantasy_ember"
+		return _default_adapter_id()
 	return str(adapter_option.get_item_metadata(adapter_option.selected))
 
 
 func _selected_class_id() -> String:
 	if class_option.item_count == 0:
-		return "warrior"
+		return _default_class_id()
 	return str(class_option.get_item_metadata(class_option.selected))
 
 
 func _selected_profile_id() -> String:
 	var value = profile_input.text.strip_edges()
-	return value if not value.is_empty() else "standard"
+	return value if not value.is_empty() else _default_profile_id()
 
 
 func _selected_seed() -> int:
@@ -1289,22 +1357,32 @@ func _selected_seed() -> int:
 func _populate_adapter_options() -> void:
 	adapter_option.clear()
 	var preferred = _last_adapter_id()
-	var selected_index := 0
-	for index in range(ADAPTER_OPTIONS.size()):
-		var entry = ADAPTER_OPTIONS[index]
-		adapter_option.add_item(str(entry["label"]))
-		adapter_option.set_item_metadata(index, str(entry["id"]))
-		if preferred == str(entry["id"]):
+	var selected_index := -1
+	var entries := _adapter_catalog_entries()
+	for index in range(entries.size()):
+		var entry = entries[index]
+		adapter_option.add_item(str(entry.get("label", entry.get("id", ""))))
+		adapter_option.set_item_metadata(index, str(entry.get("id", "")))
+		if preferred == str(entry.get("id", "")):
 			selected_index = index
-	adapter_option.select(selected_index)
+		elif selected_index == -1 and str(entry.get("id", "")) == _default_adapter_id():
+			selected_index = index
+	if selected_index >= 0:
+		adapter_option.select(selected_index)
 
 
 func _populate_class_options() -> void:
 	class_option.clear()
-	for entry in CLASS_OPTIONS:
-		class_option.add_item(str(entry["label"]))
-		class_option.set_item_metadata(class_option.item_count - 1, str(entry["id"]))
-	class_option.select(0)
+	var selected_index := -1
+	var entries := _class_catalog_entries()
+	for index in range(entries.size()):
+		var entry = entries[index]
+		class_option.add_item(str(entry.get("label", entry.get("id", ""))))
+		class_option.set_item_metadata(index, str(entry.get("id", "")))
+		if selected_index == -1 and str(entry.get("id", "")) == _default_class_id():
+			selected_index = index
+	if selected_index >= 0:
+		class_option.select(selected_index)
 
 
 func _select_class_by_id(class_id: String) -> void:
@@ -1326,12 +1404,12 @@ func _reset_wizard_state() -> void:
 	_pending_questionnaire_answers.clear()
 	_suppress_build_tracking = true
 	name_input.text = _last_player_id()
-	profile_input.text = "standard"
+	profile_input.text = _default_profile_id()
 	seed_input.text = ""
 	advanced_section.visible = false
 	alignment_input.text = ""
 	skills_input.text = ""
-	for ability in ABILITY_ORDER:
+	for ability in _ability_order():
 		_stat_input_for(ability).text = "10"
 	_suppress_build_tracking = false
 	status_label.text = ""
@@ -1357,7 +1435,7 @@ func _wire_build_tracking() -> void:
 	class_option.item_selected.connect(_on_build_field_changed)
 	alignment_input.text_changed.connect(_on_build_field_changed)
 	skills_input.text_changed.connect(_on_build_field_changed)
-	for ability in ABILITY_ORDER:
+	for ability in _ability_order():
 		_stat_input_for(ability).text_changed.connect(_on_build_field_changed)
 
 
@@ -1385,7 +1463,7 @@ func _restore_build_state() -> void:
 	skills_input.text = str(_draft_build_state.get("skills", ""))
 	var stats = _draft_build_state.get("stats", {})
 	if stats is Dictionary:
-		for ability in ABILITY_ORDER:
+		for ability in _ability_order():
 			_stat_input_for(ability).text = str(stats.get(ability, 10))
 	_suppress_build_tracking = false
 
@@ -1447,7 +1525,7 @@ func _store_last_adapter_id(value: String) -> void:
 
 
 func _last_adapter_id() -> String:
-	return str(_profile_value("last_adapter_id", "fantasy_ember")).strip_edges()
+	return str(_profile_value("last_adapter_id", _default_adapter_id())).strip_edges()
 
 
 func _store_last_campaign_save_id(save_id: String) -> void:

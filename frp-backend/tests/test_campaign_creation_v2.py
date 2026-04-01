@@ -27,6 +27,23 @@ def _start_creation(adapter_id: str = "fantasy_ember") -> dict:
     return response.json()
 
 
+def test_creation_catalog_endpoint_returns_backend_authority():
+    response = client.get("/game/campaigns/creation/catalog")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["mechanics_version"] == "ember_hybrid_v1"
+    assert payload["default_class_id"] == "warrior"
+    assert payload["default_adapter_id"] == "fantasy_ember"
+    assert payload["default_profile_id"] == "standard"
+    assert payload["ability_order"] == ABILITY_ORDER
+    assert len(payload["class_catalog"]) >= 4
+    assert any(entry["id"] == "mage" for entry in payload["class_catalog"])
+    assert any(entry["id"] == "scifi_frontier" for entry in payload["adapter_catalog"])
+    assert payload["settlement_labels"]["border_keep"] == "border keep"
+    assert payload["faction_labels"]["research_conclave"] == "research conclave"
+
+
 def test_start_creation_returns_guided_creation_state():
     payload = _start_creation()
 
@@ -43,6 +60,9 @@ def test_start_creation_returns_guided_creation_state():
     assert payload["world_seed_hints"]["preferred_adapter"] == "fantasy_ember"
     assert payload["recommended_class"]
     assert payload["recommended_alignment"]
+    assert payload["catalog"]["default_adapter_id"] == "fantasy_ember"
+    assert payload["catalog"]["ability_order"] == ABILITY_ORDER
+    assert any(entry["id"] == "warrior" for entry in payload["catalog"]["class_catalog"])
 
 
 def test_creation_answer_roll_management_and_finalize_yield_campaign_snapshot():

@@ -2,7 +2,10 @@ from pathlib import Path
 
 from engine.core.character_creation import (
     ABILITY_ORDER,
+    ALLOCATION_RULES,
     CLASS_DEFAULT_SKILLS,
+    DEFAULT_ADAPTER_ID,
+    DEFAULT_CLASS_ID,
     CLASS_SKILL_COUNTS,
     CLASS_SKILL_OPTIONS,
     CLASS_STAT_PRIORITIES,
@@ -20,14 +23,21 @@ from engine.data_loader import (
     get_consequence_rule_specs,
     get_context_actions,
     get_creation_ability_order,
+    get_creation_allocation_rules,
     get_creation_class_aliases,
     get_creation_class_default_skills,
     get_creation_class_skill_counts,
     get_creation_class_skill_options,
     get_creation_class_stat_priorities,
+    get_creation_default_adapter,
     get_creation_default_class,
+    get_creation_default_profile,
+    get_creation_faction_labels,
+    get_creation_genesis_defaults,
     get_default_opening_scene,
     get_creation_questions,
+    get_creation_settlement_labels,
+    get_creation_unknown_class_fallback,
     get_godot_runtime_config,
     get_history_all_factions,
     get_history_present_year,
@@ -79,7 +89,12 @@ def test_orchestrator_registries_match_loader():
 
 def test_character_creation_config_matches_loader():
     assert ABILITY_ORDER == get_creation_ability_order()
+    assert ALLOCATION_RULES == get_creation_allocation_rules()
     assert get_creation_default_class() == "warrior"
+    assert DEFAULT_CLASS_ID == "warrior"
+    assert get_creation_default_adapter() == "fantasy_ember"
+    assert DEFAULT_ADAPTER_ID == "fantasy_ember"
+    assert get_creation_default_profile() == "standard"
     assert get_creation_class_aliases()["fighter"] == "warrior"
     assert get_creation_class_aliases()["wizard"] == "mage"
     assert CLASS_SKILL_OPTIONS == get_creation_class_skill_options()
@@ -87,6 +102,10 @@ def test_character_creation_config_matches_loader():
     assert CLASS_DEFAULT_SKILLS == get_creation_class_default_skills()
     assert CLASS_STAT_PRIORITIES == get_creation_class_stat_priorities()
     assert CREATION_QUESTIONS == get_creation_questions()
+    assert get_creation_settlement_labels()["border_keep"] == "border keep"
+    assert get_creation_faction_labels()["smugglers"] == "smugglers"
+    assert get_creation_genesis_defaults()["settlement_label"] == "frontier settlement"
+    assert get_creation_unknown_class_fallback()["hp"] == 16
 
 
 def test_runtime_default_content_is_data_driven():
@@ -135,6 +154,7 @@ def test_runtime_content_json_loads_are_centralized():
     engine_root = Path(__file__).resolve().parents[1] / "engine"
     allowed = {
         "data_loader.py",
+        "data/_shared.py",
         "llm/auth.py",
         "api/save_system.py",
         "api/save/repository.py",
@@ -150,3 +170,15 @@ def test_runtime_content_json_loads_are_centralized():
         if "json.load(" in text or "json.loads(" in text:
             offenders.append(rel)
     assert not offenders, f"Direct JSON loading outside data_loader: {offenders}"
+
+
+def test_creation_surfaces_do_not_ship_local_catalog_truth():
+    repo_root = Path(__file__).resolve().parents[2]
+    title_screen = (repo_root / "godot-client" / "scenes" / "title_screen.gd").read_text(encoding="utf-8")
+    play_topdown = (repo_root / "frp-backend" / "tools" / "play_topdown.py").read_text(encoding="utf-8")
+
+    assert "const CLASS_OPTIONS" not in title_screen
+    assert "const ADAPTER_OPTIONS" not in title_screen
+    assert "const CLASS_PRIORITIES" not in title_screen
+    assert '"Fantasy Ember"' not in play_topdown
+    assert '"Sci-Fi Frontier"' not in play_topdown

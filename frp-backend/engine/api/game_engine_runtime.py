@@ -14,7 +14,13 @@ from engine.core.character_creation import (
     recommended_skills_for_class,
 )
 from engine.core.dm_agent import DMContext, SceneType
-from engine.data_loader import get_class_default_hp, get_class_default_spell_points, get_class_default_stats
+from engine.data_loader import (
+    get_class,
+    get_class_default_hp,
+    get_class_default_spell_points,
+    get_class_default_stats,
+    get_creation_unknown_class_fallback,
+)
 from engine.world.behavior_tree import BehaviorContext, create_npc_behavior_tree
 from engine.world.economy import LocationStock
 from engine.world.entity import EntityType
@@ -40,12 +46,13 @@ class GameEngineRuntimeMixin:
         creation_answers: Optional[List[Dict[str, Any]]] = None,
         creation_profile: Optional[Dict[str, Any]] = None,
     ) -> GameSession:
+        unknown_class_fallback = get_creation_unknown_class_fallback()
         requested_class = str(player_class or DEFAULT_PLAYER_CLASS).lower()
         player_class = CLASS_ALIASES.get(requested_class, requested_class)
-        class_stats_template = get_class_default_stats(player_class)
-        unknown_class = not class_stats_template
+        unknown_class = not get_class(player_class)
+        class_stats_template = {} if unknown_class else get_class_default_stats(player_class)
         if unknown_class:
-            player_class = DEFAULT_PLAYER_CLASS
+            player_class = str(unknown_class_fallback.get("class_id") or DEFAULT_PLAYER_CLASS).lower()
             class_stats_template = get_class_default_stats(player_class)
         assigned_stats = dict(stats or {})
         if assigned_stats:
@@ -53,7 +60,7 @@ class GameEngineRuntimeMixin:
                 assigned_stats.setdefault(key, 10)
         else:
             assigned_stats = dict(class_stats_template)
-        hp = 16 if unknown_class else get_class_default_hp(player_class)
+        hp = int(unknown_class_fallback.get("hp", 0)) if unknown_class else get_class_default_hp(player_class)
         sp = get_class_default_spell_points(player_class)
 
         creation_profile = dict(creation_profile or {})

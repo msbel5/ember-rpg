@@ -99,6 +99,21 @@ class CreationFinalizeRequest(BaseModel):
     location: Optional[str] = None
 
 
+class CreationCatalogResponse(BaseModel):
+    mechanics_version: str
+    default_class_id: str
+    default_adapter_id: str
+    default_profile_id: str
+    ability_order: List[str] = Field(default_factory=list)
+    allocation_rules: dict = Field(default_factory=dict)
+    settlement_labels: dict = Field(default_factory=dict)
+    faction_labels: dict = Field(default_factory=dict)
+    genesis_defaults: dict = Field(default_factory=dict)
+    class_catalog: List[dict] = Field(default_factory=list)
+    adapter_catalog: List[dict] = Field(default_factory=list)
+    profile_catalog: List[dict] = Field(default_factory=list)
+
+
 class CreationStateResponse(BaseModel):
     creation_id: str
     player_name: str
@@ -113,3 +128,4 @@ class CreationStateResponse(BaseModel):
     recommended_skills: List[str] = Field(default_factory=list)
     current_roll: List[int] = Field(default_factory=list)
     saved_roll: Optional[List[int]] = None
+    catalog: dict = Field(default_factory=dict)

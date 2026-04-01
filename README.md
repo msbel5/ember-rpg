@@ -38,17 +38,18 @@ uvicorn main:app --host 127.0.0.1 --port 8000
 ### Client
 1. Install [Godot 4.6](https://godotengine.org/download)
 2. Open `godot-client/project.godot`
-3. Set backend URL in `autoloads/backend.gd` line 5
+3. Set `EMBER_RPG_BACKEND_URL` or `ember_rpg/backend_url` in `godot-client/project.godot`
 4. Press F5 to play
 
 ## Project Structure
 
 ```
 ember-rpg/
-  docs/              # 53 PRDs, GDD, QA artifacts, research
-  docs/qa/           # VQR scorecard, bug registry, play logs
-  frp-backend/       # Python backend (1700+ tests, 96% coverage)
-  godot-client/      # Godot 4.6 game client (183 headless tests)
+  docs/              # Mechanics canon, generated matrix, live architecture and QA docs
+  docs/prd/active/   # Authoritative implementation PRDs
+  docs/deprecated/   # Superseded PRDs, prompts, and legacy notes
+  frp-backend/       # Python backend and audit/test tooling
+  godot-client/      # Godot 4.6 game client
 ```
 
 ## Current State (March 2026)
@@ -69,12 +70,13 @@ ember-rpg/
 ## Documentation
 
 - `docs/PRD_IMPLEMENTATION_MATRIX.md` — Master doc governance (authoritative vs superseded)
-- `docs/PRD_STANDARD.md` — Template all PRDs follow
-- `docs/PRD_godot_client.md` — Current client contract
+- `docs/architecture/ember_mechanics_canon_v1.md` — Canonical Ember hybrid mechanics map
+- `docs/prd/active/PRD_STANDARD.md` — Template all active PRDs follow
+- `docs/prd/active/PRD_godot_client.md` — Current client contract
 - `docs/qa/vqr_scorecard.md` — Visual quality tracking
 - `docs/qa/bug_registry.md` — Known issues
 
-> **Note**: Many early PRDs (living_simulation_v1, world_generation_v2, map_generator, etc.) are **superseded** per the Implementation Matrix. See `PRD_IMPLEMENTATION_MATRIX.md` for which docs are authoritative.
+> **Note**: Active PRDs live only under `docs/prd/active/`. Superseded PRDs and old planning notes are archived under `docs/deprecated/`.
 
 ## License
 

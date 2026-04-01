@@ -1,0 +1,64 @@
+{
+  "shapes": {
+    "tiny": {"cells": [[0, 0]], "rigid": true},
+    "small_h": {"cells": [[0, 0], [0, 1]], "rigid": true},
+    "small_v": {"cells": [[0, 0], [1, 0]], "rigid": true},
+    "medium_h": {"cells": [[0, 0], [0, 1], [0, 2]], "rigid": true},
+    "medium_flex": {"cells": [[0, 0], [0, 1], [0, 2]], "rigid": false},
+    "long": {"cells": [[0, 0], [0, 1], [0, 2], [0, 3]], "rigid": true},
+    "square_2x2": {"cells": [[0, 0], [0, 1], [1, 0], [1, 1]], "rigid": true},
+    "t_shape": {"cells": [[0, 0], [0, 1], [0, 2], [1, 1]], "rigid": true},
+    "large": {"cells": [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2]], "rigid": true}
+  },
+  "item_type_shapes": {
+    "weapon_sword": "medium_h",
+    "weapon_dagger": "small_h",
+    "weapon_staff": "long",
+    "weapon_bow": "long",
+    "armor_light": "square_2x2",
+    "armor_medium": "square_2x2",
+    "armor_heavy": "large",
+    "shield": "square_2x2",
+    "helmet": "small_h",
+    "boots": "small_h",
+    "gloves": "tiny",
+    "ring": "tiny",
+    "amulet": "tiny",
+    "potion": "tiny",
+    "consumable": "tiny",
+    "tool": "small_h",
+    "scroll": "medium_flex",
+    "rope": "medium_flex",
+    "gem": "tiny",
+    "currency": "tiny",
+    "container": "square_2x2",
+    "default": "tiny"
+  },
+  "default_equipment_slots": [
+    "weapon",
+    "armor",
+    "shield",
+    "helmet",
+    "boots",
+    "gloves",
+    "ring",
+    "amulet",
+    "backpack",
+    "belt",
+    "cloak",
+    "quiver"
+  ],
+  "default_containers": {
+    "backpack": {"container_id": "backpack", "rows": 6, "cols": 4, "max_weight": 30.0, "accepted_states": ["solid"]},
+    "belt": {"container_id": "belt", "rows": 1, "cols": 4, "max_weight": 5.0, "accepted_states": ["solid"]},
+    "pockets": [
+      {"container_id": "pocket_left", "rows": 1, "cols": 2, "max_weight": 1.0, "accepted_states": ["solid"]},
+      {"container_id": "pocket_right", "rows": 1, "cols": 2, "max_weight": 1.0, "accepted_states": ["solid"]}
+    ],
+    "hidden_stashes": {
+      "sock_left": {"container_id": "sock_left", "rows": 1, "cols": 1, "max_weight": 0.5, "accepted_states": ["solid"], "tier": "ADVANCED"},
+      "sock_right": {"container_id": "sock_right", "rows": 1, "cols": 1, "max_weight": 0.5, "accepted_states": ["solid"], "tier": "ADVANCED"},
+      "boot_lining": {"container_id": "boot_lining", "rows": 1, "cols": 1, "max_weight": 0.3, "accepted_states": ["solid"], "tier": "ADVANCED"}
+    }
+  }
+}

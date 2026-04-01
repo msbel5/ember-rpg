@@ -10,15 +10,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict
 
+from engine.data_loader import get_class_ap_map
+
 
 # ── Class AP pools ───────────────────────────────────────────────────
 
-# Loaded from data/classes.json — expandable, no hardcoded classes
-try:
-    from engine.data_loader import get_class_ap_map
-    CLASS_AP: Dict[str, int] = get_class_ap_map()
-except ImportError:
-    CLASS_AP: Dict[str, int] = {"warrior": 4, "rogue": 6, "mage": 3, "priest": 4}
+CLASS_AP: Dict[str, int] = get_class_ap_map()
 
 # ── Action costs ─────────────────────────────────────────────────────
 # Keys match the canonical action identifiers used by the interaction system.

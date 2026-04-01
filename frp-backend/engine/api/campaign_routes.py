@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 from engine.api.campaign_models import (
     CampaignCreationAnswerRequest,
     CampaignCreationFinalizeRequest,
+    CreationCatalogResponse,
     CampaignCreationStartRequest,
     CampaignCreationStateResponse,
     CampaignCommandRequest,
@@ -16,6 +17,7 @@ from engine.api.campaign_models import (
     CampaignSnapshotResponse,
     CreateCampaignRequest,
 )
+from engine.core.creation_catalog import get_creation_catalog
 from engine.api.campaign_runtime import CampaignRuntime
 
 
@@ -60,7 +62,13 @@ def _creation_response(context) -> CampaignCreationStateResponse:
         saved_roll=payload["saved_roll"],
         roll_pool=payload["roll_pool"],
         saved_roll_pool=payload["saved_roll_pool"],
+        catalog=get_creation_catalog(),
     )
+
+
+@router.get("/campaigns/creation/catalog", response_model=CreationCatalogResponse)
+def get_campaign_creation_catalog():
+    return CreationCatalogResponse(**get_creation_catalog())
 
 
 @router.post("/campaigns/creation/start", response_model=CampaignCreationStateResponse)

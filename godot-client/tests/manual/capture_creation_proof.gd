@@ -29,6 +29,26 @@ func _initialize() -> void:
 		"adapter_id": "fantasy_ember",
 		"profile_id": "standard",
 		"seed": 42,
+		"catalog": {
+			"default_class_id": "warrior",
+			"default_adapter_id": "fantasy_ember",
+			"default_profile_id": "standard",
+			"ability_order": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
+			"class_catalog": [
+				{"id": "warrior", "label": "Warrior", "ability_priority": ["MIG", "END", "AGI", "PRE", "INS", "MND"]},
+				{"id": "rogue", "label": "Rogue", "ability_priority": ["AGI", "INS", "PRE", "MND", "END", "MIG"]},
+				{"id": "mage", "label": "Mage", "ability_priority": ["MND", "INS", "AGI", "PRE", "END", "MIG"]},
+				{"id": "priest", "label": "Priest", "ability_priority": ["INS", "PRE", "END", "MND", "MIG", "AGI"]},
+			],
+			"adapter_catalog": [
+				{"id": "fantasy_ember", "label": "Fantasy Ember"},
+				{"id": "scifi_frontier", "label": "Sci-Fi Frontier"},
+			],
+			"profile_catalog": [{"id": "standard", "label": "Standard Continental World"}],
+			"settlement_labels": {"border_keep": "border keep"},
+			"faction_labels": {"guard_captains": "guard captains"},
+			"genesis_defaults": {"settlement_label": "frontier settlement", "faction_label": "local power brokers"},
+		},
 		"question_groups": [
 			{
 				"id": "setting_scale",

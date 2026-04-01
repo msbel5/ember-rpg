@@ -12,11 +12,13 @@ from engine.api.models import (
     NewSessionRequest, NewSessionResponse,
     ActionRequest, ActionResponse,
     SessionStateResponse,
+    CreationCatalogResponse,
     CreationStartRequest,
     CreationAnswerRequest,
     CreationFinalizeRequest,
     CreationStateResponse,
 )
+from engine.core.creation_catalog import get_creation_catalog
 from engine.core.character_creation import CreationState, assign_stats_to_class
 from engine.core.dm_agent import DMEvent, EventType, SceneType
 
@@ -117,7 +119,13 @@ def _creation_state_response(state: CreationState, player_name: str, location: O
         recommended_skills=payload["recommended_skills"],
         current_roll=payload["current_roll"],
         saved_roll=payload["saved_roll"],
+        catalog=get_creation_catalog(),
     )
+
+
+@router.get("/session/creation/catalog", response_model=CreationCatalogResponse)
+def get_session_creation_catalog():
+    return CreationCatalogResponse(**get_creation_catalog())
 
 
 @router.post("/session/creation/start", response_model=CreationStateResponse)

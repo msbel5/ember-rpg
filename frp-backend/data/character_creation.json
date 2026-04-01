@@ -1,6 +1,12 @@
 {
   "character_creation": {
     "default_class": "warrior",
+    "default_adapter": "fantasy_ember",
+    "default_profile": "standard",
+    "unknown_class_fallback": {
+      "class_id": "warrior",
+      "hp": 16
+    },
     "class_aliases": {
       "fighter": "warrior",
       "cleric": "priest",
@@ -8,6 +14,13 @@
       "wizard": "mage"
     },
     "ability_order": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
+    "allocation_rules": {
+      "mode": "rolled_array_assignment",
+      "abilities": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
+      "min_value": 3,
+      "max_value": 18,
+      "requires_exact_pool_use": true
+    },
     "class_skill_options": {
       "warrior": ["athletics", "intimidation", "perception", "survival"],
       "rogue": ["acrobatics", "deception", "stealth", "sleight_of_hand", "perception", "investigation"],
@@ -31,6 +44,37 @@
       "rogue": ["AGI", "INS", "PRE", "MND", "END", "MIG"],
       "mage": ["MND", "INS", "AGI", "PRE", "END", "MIG"],
       "priest": ["INS", "PRE", "END", "MND", "MIG", "AGI"]
+    },
+    "settlement_labels": {
+      "fortified_hamlet": "fortified hamlet",
+      "border_keep": "border keep",
+      "scholar_enclave": "scholar enclave",
+      "relay_station": "relay station",
+      "harbor_settlement": "harbor settlement",
+      "mining_camp": "mining camp",
+      "orbital_colony": "orbital colony",
+      "pilgrim_town": "pilgrim town"
+    },
+    "faction_labels": {
+      "guard_captains": "guard captains",
+      "clergy": "clergy",
+      "guilds": "guilds",
+      "free_traders": "free traders",
+      "nobility": "nobility",
+      "research_conclave": "research conclave",
+      "colonial_office": "colonial office",
+      "smugglers": "smugglers"
+    },
+    "genesis_defaults": {
+      "settlement_label": "frontier settlement",
+      "faction_label": "local power brokers",
+      "premise_tags": "hard weather and thin supply lines"
+    },
+    "genesis_templates": {
+      "world_premise": "A %s campaign shaped by %s.",
+      "commander_profile": "A %s-leaning commander whose instincts point toward %s.",
+      "starting_pressure": "The opening colony leans on %s while %s tightens the screws.",
+      "fallback_pressure": "border pressure"
     },
     "question_groups": [
       {

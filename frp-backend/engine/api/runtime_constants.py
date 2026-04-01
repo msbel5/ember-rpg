@@ -45,18 +45,13 @@ DEFAULT_OPENING_SCENE = get_default_opening_scene()
 LOCATION_STOCK_BASELINE = get_location_stock_baseline()
 INTERACTION_HOLD_TURNS = get_interaction_hold_turns()
 STARTER_KITS = _build_starter_kits()
+_OPENING_SCENE_DATA = get_opening_scenes()
+if not _OPENING_SCENE_DATA:
+    raise ValueError("locations.json is missing opening_scenes entries")
 OPENING_SCENES = [
     (
-        scene.get("location", DEFAULT_OPENING_SCENE.get("location", "Stone Bridge Tavern")),
-        scene.get("description", DEFAULT_OPENING_SCENE.get("description", "")),
+        str(scene.get("location", DEFAULT_OPENING_SCENE.get("location", ""))),
+        str(scene.get("description", DEFAULT_OPENING_SCENE.get("description", ""))),
     )
-    for scene in get_opening_scenes()
-] or [
-    (
-        DEFAULT_OPENING_SCENE.get("location", "Stone Bridge Tavern"),
-        DEFAULT_OPENING_SCENE.get(
-            "description",
-            "Low rafters, the smell of pipe smoke. A fire crackles in the hearth. The door creaks open - someone has arrived.",
-        ),
-    ),
+    for scene in _OPENING_SCENE_DATA
 ]

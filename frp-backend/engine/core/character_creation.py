@@ -9,14 +9,22 @@ import copy
 import random
 import uuid
 
+from engine.core.creation_catalog import get_creation_adapter_entry
 from engine.data_loader import (
     get_creation_ability_order,
+    get_creation_allocation_rules,
     get_creation_class_default_skills,
     get_creation_class_skill_counts,
     get_creation_class_skill_options,
     get_creation_class_stat_priorities,
+    get_creation_default_adapter,
+    get_creation_default_class,
+    get_creation_faction_labels,
+    get_creation_genesis_defaults,
+    get_creation_genesis_templates,
     get_creation_question_groups,
     get_creation_questions,
+    get_creation_settlement_labels,
 )
 
 CLASS_SKILL_OPTIONS: Dict[str, List[str]] = get_creation_class_skill_options()
@@ -26,37 +34,27 @@ CLASS_STAT_PRIORITIES: Dict[str, List[str]] = get_creation_class_stat_priorities
 ABILITY_ORDER = get_creation_ability_order()
 CREATION_QUESTIONS: List[Dict[str, Any]] = get_creation_questions()
 CREATION_QUESTION_GROUPS: List[Dict[str, Any]] = get_creation_question_groups()
-ALLOCATION_RULES: Dict[str, Any] = {
-    "mode": "rolled_array_assignment",
-    "abilities": list(ABILITY_ORDER),
-    "min_value": 3,
-    "max_value": 18,
-    "requires_exact_pool_use": True,
-}
-ADAPTER_LABELS = {
-    "fantasy_ember": "Fantasy Ember",
-    "scifi_frontier": "Sci-Fi Frontier",
-}
-SETTLEMENT_LABELS = {
-    "fortified_hamlet": "fortified hamlet",
-    "border_keep": "border keep",
-    "scholar_enclave": "scholar enclave",
-    "relay_station": "relay station",
-    "harbor_settlement": "harbor settlement",
-    "mining_camp": "mining camp",
-    "orbital_colony": "orbital colony",
-    "pilgrim_town": "pilgrim town",
-}
-FACTION_LABELS = {
-    "guard_captains": "guard captains",
-    "clergy": "clergy",
-    "guilds": "guilds",
-    "free_traders": "free traders",
-    "nobility": "nobility",
-    "research_conclave": "research conclave",
-    "colonial_office": "colonial office",
-    "smugglers": "smugglers",
-}
+ALLOCATION_RULES: Dict[str, Any] = get_creation_allocation_rules()
+DEFAULT_CLASS_ID = get_creation_default_class()
+DEFAULT_ADAPTER_ID = get_creation_default_adapter()
+SETTLEMENT_LABELS = get_creation_settlement_labels()
+FACTION_LABELS = get_creation_faction_labels()
+GENESIS_DEFAULTS = get_creation_genesis_defaults()
+GENESIS_TEMPLATES = get_creation_genesis_templates()
+
+
+def _readable_token(token: str) -> str:
+    return str(token or "").replace("_", " ").strip()
+
+
+def _adapter_label(adapter_id: str) -> str:
+    entry = get_creation_adapter_entry(adapter_id)
+    return str(entry.get("label") or _readable_token(adapter_id))
+
+
+def _skill_pick_default() -> int:
+    first_value = next(iter(CLASS_SKILL_COUNTS.values()), 0)
+    return int(first_value)
 
 
 def roll_stat_array(rng: Optional[random.Random] = None) -> List[int]:
@@ -70,7 +68,7 @@ def roll_stat_array(rng: Optional[random.Random] = None) -> List[int]:
 
 def assign_stats_to_class(scores: List[int], class_name: str) -> Dict[str, int]:
     ordered = sorted([int(score) for score in scores], reverse=True)
-    priorities = CLASS_STAT_PRIORITIES.get(str(class_name).lower(), CLASS_STAT_PRIORITIES["warrior"])
+    priorities = CLASS_STAT_PRIORITIES.get(str(class_name).lower(), CLASS_STAT_PRIORITIES.get(DEFAULT_CLASS_ID, []))
     stats = {ability: 10 for ability in ABILITY_ORDER}
     for ability, score in zip(priorities, ordered):
         stats[ability] = score
@@ -87,7 +85,7 @@ def recommended_alignment_from_axes(axes: Dict[str, int]) -> str:
 
 def _best_class(class_weights: Dict[str, int]) -> str:
     if not class_weights:
-        return "warrior"
+        return DEFAULT_CLASS_ID
     return sorted(class_weights.items(), key=lambda pair: (-pair[1], pair[0]))[0][0]
 
 
@@ -120,9 +118,9 @@ def _dedupe_strings(values: List[str], limit: int = 4) -> List[str]:
 
 
 def recommended_skills_for_class(state: Dict[str, Any], class_name: str) -> List[str]:
-    normalized_class = str(class_name or "warrior").lower()
-    options = list(CLASS_SKILL_OPTIONS.get(normalized_class, CLASS_DEFAULT_SKILLS["warrior"]))
-    limit = CLASS_SKILL_COUNTS.get(normalized_class, 2)
+    normalized_class = str(class_name or DEFAULT_CLASS_ID).lower()
+    options = list(CLASS_SKILL_OPTIONS.get(normalized_class, CLASS_DEFAULT_SKILLS.get(DEFAULT_CLASS_ID, [])))
+    limit = CLASS_SKILL_COUNTS.get(normalized_class, _skill_pick_default())
     skill_weights = dict(state.get("skill_weights", {}))
     ranked = sorted(
         options,
@@ -130,7 +128,7 @@ def recommended_skills_for_class(state: Dict[str, Any], class_name: str) -> List
     )
     selected = ranked[:limit]
     if len(selected) < limit:
-        for skill in CLASS_DEFAULT_SKILLS.get(normalized_class, []):
+        for skill in CLASS_DEFAULT_SKILLS.get(normalized_class, CLASS_DEFAULT_SKILLS.get(DEFAULT_CLASS_ID, [])):
             if skill not in selected:
                 selected.append(skill)
             if len(selected) >= limit:
@@ -280,7 +278,7 @@ class CreationState:
         settlement_rank = _sorted_weight_pairs(self.settlement_bias, 2)
         facet_rank = _sorted_weight_pairs(self.facet_scores, 5)
         return {
-            "preferred_adapter": adapter_rank[0][0] if adapter_rank else "fantasy_ember",
+            "preferred_adapter": adapter_rank[0][0] if adapter_rank else DEFAULT_ADAPTER_ID,
             "secondary_adapter": adapter_rank[1][0] if len(adapter_rank) > 1 else "",
             "preferred_settlement": settlement_rank[0][0] if settlement_rank else "",
             "dominant_facets": [name for name, _value in facet_rank],
@@ -294,27 +292,38 @@ class CreationState:
         settlement_rank = _sorted_weight_pairs(self.settlement_bias, 2)
         faction_rank = _sorted_weight_pairs(self.faction_bias, 2)
         adapter_rank = _sorted_weight_pairs(self.adapter_bias, 2)
-        top_settlement = SETTLEMENT_LABELS.get(settlement_rank[0][0], settlement_rank[0][0].replace("_", " ")) if settlement_rank else "frontier settlement"
-        top_faction = FACTION_LABELS.get(faction_rank[0][0], faction_rank[0][0].replace("_", " ")) if faction_rank else "local power brokers"
-        adapter_name = ADAPTER_LABELS.get(adapter_rank[0][0], "Fantasy Ember") if adapter_rank else "Fantasy Ember"
-        premise_tags = ", ".join(world_tags[:2]) if world_tags else "hard weather and thin supply lines"
+        default_settlement = GENESIS_DEFAULTS.get("settlement_label", "")
+        default_faction = GENESIS_DEFAULTS.get("faction_label", "")
+        premise_default = GENESIS_DEFAULTS.get("premise_tags", "")
+        top_settlement = (
+            SETTLEMENT_LABELS.get(settlement_rank[0][0], _readable_token(settlement_rank[0][0]))
+            if settlement_rank
+            else default_settlement
+        )
+        top_faction = (
+            FACTION_LABELS.get(faction_rank[0][0], _readable_token(faction_rank[0][0]))
+            if faction_rank
+            else default_faction
+        )
+        adapter_name = _adapter_label(adapter_rank[0][0] if adapter_rank else DEFAULT_ADAPTER_ID)
+        premise_tags = ", ".join(world_tags[:2]) if world_tags else premise_default
         pressure_bits = []
         if quest_themes:
             pressure_bits.append(quest_themes[0].replace("_", " "))
         if tone_tags:
             pressure_bits.append(tone_tags[0].replace("_", " "))
         if not pressure_bits:
-            pressure_bits.append("border pressure")
+            pressure_bits.append(GENESIS_TEMPLATES.get("fallback_pressure", ""))
         return {
-            "adapter_bias": adapter_rank[0][0] if adapter_rank else "fantasy_ember",
+            "adapter_bias": adapter_rank[0][0] if adapter_rank else DEFAULT_ADAPTER_ID,
             "adapter_label": adapter_name,
-            "world_premise": "A %s campaign shaped by %s." % (adapter_name, premise_tags),
-            "commander_profile": "A %s-leaning commander whose instincts point toward %s." % (
+            "world_premise": GENESIS_TEMPLATES.get("world_premise", "%s %s") % (adapter_name, premise_tags),
+            "commander_profile": GENESIS_TEMPLATES.get("commander_profile", "%s %s") % (
                 self.recommended_class(),
                 self.recommended_alignment(),
             ),
             "colony_archetype": top_settlement,
-            "starting_pressure": "The opening colony leans on %s while %s tightens the screws." % (
+            "starting_pressure": GENESIS_TEMPLATES.get("starting_pressure", "%s %s") % (
                 top_settlement,
                 top_faction,
             ),

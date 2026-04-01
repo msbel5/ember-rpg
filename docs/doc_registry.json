@@ -1,0 +1,227 @@
+{
+  "version": 1,
+  "generated_views": [
+    "docs/PRD_IMPLEMENTATION_MATRIX.md"
+  ],
+  "active_prds": {
+    "PRD_STANDARD.md": {
+      "owner": "docs_governance",
+      "mechanism_ids": ["DOCS:STANDARD"],
+      "runtime_surface": ["docs/prd/active/PRD_STANDARD.md"],
+      "supersedes": [],
+      "note": "Single authoring template for implementation-grade PRDs."
+    },
+    "PRD_automation_authority_v1.md": {
+      "owner": "qa_automation",
+      "mechanism_ids": ["QA:AUTO"],
+      "runtime_surface": ["godot-client/tests/automation", "frp-backend/tests"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_visual_automation_backup_v1.md",
+        "docs/deprecated/prd/PRD_visual_automation_desktop_executor_v1.md",
+        "docs/deprecated/prd/PRD_visual_automation_headless_executor_v1.md",
+        "docs/deprecated/prd/PRD_visual_automation_reporting_v1.md"
+      ],
+      "note": "Canonical automation and evidence contract for backend and Godot verification."
+    },
+    "PRD_creation_surface_v2.md": {
+      "owner": "client_creation",
+      "mechanism_ids": ["EMBER:CREATION", "GEMRB:M16", "DF:M03"],
+      "runtime_surface": ["frp-backend/engine/core/character_creation.py", "godot-client/scenes/title_screen.gd"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_character_system.md",
+        "docs/deprecated/prd/PRD_game_flow_architecture.md"
+      ],
+      "note": "Authoritative commander identity and creation workspace contract."
+    },
+    "PRD_actor_kernel_v1.md": {
+      "owner": "kernel_actor",
+      "mechanism_ids": ["DF:M02", "DF:M03", "DF:M18", "GEMRB:M01"],
+      "runtime_surface": ["frp-backend/engine/kernel/actor.py", "frp-backend/engine/api/campaign_kernel.py"],
+      "supersedes": [],
+      "note": "Canonical actor state for avatar, NPC, creature, injuries, skills, and command continuity."
+    },
+    "PRD_material_item_kernel_v1.md": {
+      "owner": "kernel_material_item",
+      "mechanism_ids": ["DF:M01", "DF:M11", "DF:M17", "GEMRB:M07"],
+      "runtime_surface": ["frp-backend/engine/kernel/items.py", "frp-backend/engine/core/item.py"],
+      "supersedes": [],
+      "note": "Canonical material, wear, equipment, and item value baseline."
+    },
+    "PRD_level_progression_v1.md": {
+      "owner": "kernel_progression",
+      "mechanism_ids": ["DF:M02", "GEMRB:M15"],
+      "runtime_surface": ["frp-backend/engine/kernel/progression.py", "frp-backend/engine/core/progression.py"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_progression_system.md"
+      ],
+      "note": "Canonical class leveling plus DF-style skill growth and rust."
+    },
+    "PRD_effect_system_v1.md": {
+      "owner": "kernel_effects",
+      "mechanism_ids": ["DF:M06", "DF:M03", "GEMRB:M04", "GEMRB:M06"],
+      "runtime_surface": ["frp-backend/engine/kernel/effects.py", "frp-backend/engine/api/game_engine.py"],
+      "supersedes": [],
+      "note": "Shared effect spine for buffs, debuffs, syndromes, saves, and state transitions."
+    },
+    "PRD_combat_resolution_v1.md": {
+      "owner": "kernel_combat",
+      "mechanism_ids": ["DF:M01", "DF:M03", "GEMRB:M02", "GEMRB:M03", "GEMRB:M04"],
+      "runtime_surface": ["frp-backend/engine/kernel/combat.py", "frp-backend/engine/core/combat.py"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_combat_engine.md",
+        "docs/deprecated/prd/PRD_body_injury_combat_v1.md"
+      ],
+      "note": "Canonical hybrid combat pipeline: GemRB accuracy/saves plus DF tissue, pain, and casualty logic."
+    },
+    "PRD_medical_system_v1.md": {
+      "owner": "kernel_medical",
+      "mechanism_ids": ["DF:M05", "DF:M03", "DF:M04"],
+      "runtime_surface": ["frp-backend/engine/kernel/medical.py", "frp-backend/engine/kernel/effects.py"],
+      "supersedes": [],
+      "note": "Canonical wound treatment, recovery, and chronic consequence rules."
+    },
+    "PRD_item_system_kernel_v1.md": {
+      "owner": "kernel_items",
+      "mechanism_ids": ["DF:M17", "GEMRB:M07"],
+      "runtime_surface": ["frp-backend/engine/kernel/items.py", "frp-backend/engine/world/inventory.py"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_item_system.md"
+      ],
+      "note": "Canonical item instances, equipment headers, usability, and stacking."
+    },
+    "PRD_spell_system_v1.md": {
+      "owner": "kernel_spells",
+      "mechanism_ids": ["GEMRB:M05", "GEMRB:M06", "GEMRB:M12"],
+      "runtime_surface": ["frp-backend/engine/kernel/spells.py", "frp-backend/engine/kernel/projectiles.py"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_magic_system.md"
+      ],
+      "note": "Canonical casting, interruption, resistance, and projectile-linked spell flow."
+    },
+    "PRD_store_trade_v1.md": {
+      "owner": "kernel_store",
+      "mechanism_ids": ["DF:M11", "GEMRB:M13"],
+      "runtime_surface": ["frp-backend/engine/kernel/store.py", "frp-backend/engine/api/shop_routes.py"],
+      "supersedes": [],
+      "note": "Canonical trade, services, pricing, and colony supply pressure linkage."
+    },
+    "PRD_dialog_system_v1.md": {
+      "owner": "kernel_dialog",
+      "mechanism_ids": ["GEMRB:M09"],
+      "runtime_surface": ["frp-backend/engine/kernel/dialog.py", "frp-backend/engine/api/handlers/social_actions.py"],
+      "supersedes": [],
+      "note": "Canonical deterministic dialog tree contract with conditional branches."
+    },
+    "PRD_gamescript_ai_v1.md": {
+      "owner": "kernel_scripts",
+      "mechanism_ids": ["GEMRB:M08"],
+      "runtime_surface": ["frp-backend/engine/kernel/scripts.py", "frp-backend/engine/world/behavior_tree.py"],
+      "supersedes": [],
+      "note": "Canonical deterministic script AI bridge for actors, traps, and scripted world reactions."
+    },
+    "PRD_area_map_v1.md": {
+      "owner": "kernel_area",
+      "mechanism_ids": ["DF:M16", "GEMRB:M10"],
+      "runtime_surface": ["frp-backend/engine/kernel/area.py", "frp-backend/engine/map"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_map_generator.md",
+        "docs/deprecated/prd/PRD_pov_system.md"
+      ],
+      "note": "Canonical active-site map, room, door, container, and spawn authority."
+    },
+    "PRD_pathfinding_v1.md": {
+      "owner": "kernel_pathfinding",
+      "mechanism_ids": ["DF:M15", "GEMRB:M11"],
+      "runtime_surface": ["frp-backend/engine/kernel/pathfinding.py", "frp-backend/engine/api/handlers/exploration_navigation.py"],
+      "supersedes": [],
+      "note": "Canonical local movement and search-map path authority."
+    },
+    "PRD_hybrid_commander_loop_v1.md": {
+      "owner": "kernel_hybrid",
+      "mechanism_ids": ["DF:M15", "DF:M18", "GEMRB:M14", "GEMRB:M16"],
+      "runtime_surface": ["frp-backend/engine/kernel/hybrid.py", "frp-backend/engine/api/campaign_commands.py"],
+      "supersedes": [],
+      "note": "Canonical avatar-plus-commander loop sharing one deterministic tick."
+    },
+    "PRD_colony_simulation_v2.md": {
+      "owner": "kernel_colony",
+      "mechanism_ids": ["DF:M03", "DF:M11", "DF:M12", "DF:M16", "DF:M19"],
+      "runtime_surface": ["frp-backend/engine/kernel/colony.py", "frp-backend/engine/api/campaign_state.py"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_colony_simulation_v1.md"
+      ],
+      "note": "Canonical colony pressure, needs, morale, production, and shortage simulation."
+    },
+    "PRD_job_reaction_kernel_v2.md": {
+      "owner": "kernel_jobs",
+      "mechanism_ids": ["DF:M02", "DF:M04", "DF:M16", "DF:M19"],
+      "runtime_surface": ["frp-backend/engine/kernel/jobs.py", "frp-backend/engine/world/crafting.py"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_job_reaction_kernel_v1.md"
+      ],
+      "note": "Canonical deterministic jobs, worksites, reactions, and labor flow."
+    },
+    "PRD_world_state_kernel_v1.md": {
+      "owner": "kernel_world_state",
+      "mechanism_ids": ["DF:M11", "DF:M12", "DF:M14", "DF:M20", "GEMRB:M14"],
+      "runtime_surface": ["frp-backend/engine/kernel/world_state.py", "frp-backend/engine/api/campaign_state.py"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_world_state.md",
+        "docs/deprecated/prd/PRD_live_global_simulation_runtime_v1.md"
+      ],
+      "note": "Canonical macro-world authority for regions, sites, factions, and off-map continuity."
+    },
+    "PRD_history_and_factions_v1.md": {
+      "owner": "kernel_history",
+      "mechanism_ids": ["DF:M12", "DF:M14", "DF:M20"],
+      "runtime_surface": ["frp-backend/engine/world/history.py", "frp-backend/engine/kernel/world_state.py"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_civilizations_institutions_history_v1.md"
+      ],
+      "note": "Canonical history seeds, faction records, and migration/diplomacy hooks."
+    },
+    "PRD_game_state_v1.md": {
+      "owner": "kernel_game_state",
+      "mechanism_ids": ["GEMRB:M16"],
+      "runtime_surface": ["frp-backend/engine/kernel/game_state.py", "frp-backend/engine/api/campaign_kernel.py"],
+      "supersedes": [],
+      "note": "Canonical root container for loaded campaign, party, journal, time, and difficulty."
+    },
+    "PRD_save_load.md": {
+      "owner": "persistence",
+      "mechanism_ids": ["EMBER:SAVELOAD", "GEMRB:M16"],
+      "runtime_surface": ["frp-backend/engine/api/save", "frp-backend/engine/save"],
+      "supersedes": [],
+      "note": "Canonical backward-compatible save/load contract for session and campaign runtimes."
+    },
+    "PRD_godot_client.md": {
+      "owner": "client_runtime",
+      "mechanism_ids": ["CLIENT:CONTRACT", "GEMRB:M16", "DF:M15"],
+      "runtime_surface": ["godot-client/autoloads/game_state.gd", "godot-client/scenes/game_session.gd", "godot-client/scenes/title_screen.gd"],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_godot_client_sprint_0.md",
+        "docs/deprecated/prd/PRD_godot_client_sprint_1.md",
+        "docs/deprecated/prd/PRD_godot_client_sprint_2.md",
+        "docs/deprecated/prd/PRD_godot_client_sprint_3.md",
+        "docs/deprecated/prd/PRD_godot_client_sprint_4.md",
+        "docs/deprecated/prd/PRD_godot_client_sprint_5.md",
+        "docs/deprecated/prd/PRD_godot_client_sprint_6.md"
+      ],
+      "note": "Canonical Godot contract for creation, campaign runtime, and UI authority boundaries."
+    },
+    "PRD_world_data_registries_v1.md": {
+      "owner": "data_registries",
+      "mechanism_ids": ["DATA:REGISTRY", "DF:M14"],
+      "runtime_surface": ["frp-backend/engine/data_loader.py", "frp-backend/engine/worldgen/registries.py"],
+      "supersedes": [],
+      "note": "Canonical registry ownership for gameplay data and adapter-backed content."
+    },
+    "PRD_systems_closure_v1.md": {
+      "owner": "kernel_systems",
+      "mechanism_ids": ["DF:M06", "DF:M07", "DF:M08", "DF:M09", "DF:M10", "DF:M13"],
+      "runtime_surface": ["frp-backend/engine/kernel/systems.py", "frp-backend/engine/kernel/effects.py"],
+      "supersedes": [],
+      "note": "Canonical closure for syndromes, power, traps, fluids, temperature, and strange moods."
+    }
+  }
+}

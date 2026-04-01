@@ -170,6 +170,10 @@ class TestSessionEndpoints:
             )
 
     def test_creation_flow_endpoints(self):
+        catalog_resp = client.get("/game/session/creation/catalog")
+        assert catalog_resp.status_code == 200
+        assert catalog_resp.json()["default_class_id"] == "warrior"
+
         start = client.post(
             "/game/session/creation/start",
             json={"player_name": "FinalPass", "location": "Market Town"},
@@ -179,6 +183,8 @@ class TestSessionEndpoints:
         creation_id = state["creation_id"]
         assert len(state["questions"]) >= 3
         assert len(state["current_roll"]) == 6
+        assert state["catalog"]["default_profile_id"] == "standard"
+        assert any(entry["id"] == "priest" for entry in state["catalog"]["class_catalog"])
 
         first_question = state["questions"][0]
         answer = first_question["answers"][0]["id"]

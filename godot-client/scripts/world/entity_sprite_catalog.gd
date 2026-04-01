@@ -22,7 +22,7 @@ static func resolve_texture(template_name: String) -> Texture2D:
 	var relative_path = AssetManifest.resolve_relative_path("sprites", template)
 	if relative_path.is_empty():
 		relative_path = "sprites/%s.png" % template
-	var texture_path = AssetBootstrap.resolve_asset(relative_path, "res://assets/sprites/%s.png" % template)
+	var texture_path = AssetBootstrap.resolve_asset(relative_path, "res://assets/generated/sprites/%s.png" % template)
 	var resolved = _load_texture(texture_path)
 	if resolved != null:
 		return resolved
@@ -30,7 +30,7 @@ static func resolve_texture(template_name: String) -> Texture2D:
 	relative_path = AssetManifest.resolve_relative_path("sprites", FALLBACK_TEMPLATE)
 	if relative_path.is_empty():
 		relative_path = "sprites/%s.png" % FALLBACK_TEMPLATE
-	texture_path = AssetBootstrap.resolve_asset(relative_path, "res://assets/sprites/%s.png" % FALLBACK_TEMPLATE)
+	texture_path = AssetBootstrap.resolve_asset(relative_path, "res://assets/generated/sprites/%s.png" % FALLBACK_TEMPLATE)
 	resolved = _load_texture(texture_path)
 	if resolved != null:
 		return resolved

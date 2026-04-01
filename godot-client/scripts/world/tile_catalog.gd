@@ -299,7 +299,7 @@ static func _load_tile_image(tile_name: String) -> Image:
 	var relative_path = AssetManifest.resolve_relative_path("tiles", lookup_name)
 	if relative_path.is_empty():
 		relative_path = "tiles/%s.png" % lookup_name
-	var asset_path = AssetBootstrap.resolve_asset(relative_path, "res://assets/tiles/%s.png" % lookup_name)
+	var asset_path = AssetBootstrap.resolve_asset(relative_path, "res://assets/generated/tiles/%s.png" % lookup_name)
 	if asset_path.is_empty() or not FileAccess.file_exists(asset_path):
 		return null
 

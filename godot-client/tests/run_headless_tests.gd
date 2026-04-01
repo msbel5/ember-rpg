@@ -88,6 +88,9 @@ func _test_campaign_backend_routes() -> void:
 	var noop := func(_data = null) -> void:
 		pass
 
+	probe.get_campaign_creation_catalog(noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/creation/catalog", "get_campaign_creation_catalog uses the catalog route")
+
 	probe.start_campaign_creation("Chaos", "fantasy_ember", noop, "standard", 42, "Harbor Town")
 	var creation_body = JSON.parse_string(str(probe.last_request.get("body", "{}")))
 	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/creation/start", "start_campaign_creation uses the campaign creation start route")
@@ -161,6 +164,26 @@ func _test_game_state_normalization() -> void:
 		"adapter_id": "fantasy_ember",
 		"profile_id": "standard",
 		"seed": 42,
+		"catalog": {
+			"default_class_id": "warrior",
+			"default_adapter_id": "fantasy_ember",
+			"default_profile_id": "standard",
+			"ability_order": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
+			"class_catalog": [
+				{"id": "warrior", "label": "Warrior", "ability_priority": ["MIG", "END", "AGI", "PRE", "INS", "MND"]},
+				{"id": "rogue", "label": "Rogue", "ability_priority": ["AGI", "INS", "PRE", "MND", "END", "MIG"]},
+				{"id": "mage", "label": "Mage", "ability_priority": ["MND", "INS", "AGI", "PRE", "END", "MIG"]},
+				{"id": "priest", "label": "Priest", "ability_priority": ["INS", "PRE", "END", "MND", "MIG", "AGI"]},
+			],
+			"adapter_catalog": [
+				{"id": "fantasy_ember", "label": "Fantasy Ember"},
+				{"id": "scifi_frontier", "label": "Sci-Fi Frontier"},
+			],
+			"profile_catalog": [{"id": "standard", "label": "Standard Continental World"}],
+			"settlement_labels": {"border_keep": "border keep"},
+			"faction_labels": {"guard_captains": "guard captains"},
+			"genesis_defaults": {"settlement_label": "frontier settlement", "faction_label": "local power brokers"},
+		},
 		"questions": [{"id": "q1", "text": "Test?", "answers": [{"id": "a1", "text": "Yes"}]}],
 		"current_roll": [15, 14, 13, 12, 10, 8],
 		"recommended_class": "warrior",
@@ -428,6 +451,26 @@ func _test_scene_instantiation() -> void:
 			"adapter_id": "fantasy_ember",
 			"profile_id": "standard",
 			"seed": 42,
+			"catalog": {
+				"default_class_id": "warrior",
+				"default_adapter_id": "fantasy_ember",
+				"default_profile_id": "standard",
+				"ability_order": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
+				"class_catalog": [
+					{"id": "warrior", "label": "Warrior", "ability_priority": ["MIG", "END", "AGI", "PRE", "INS", "MND"]},
+					{"id": "rogue", "label": "Rogue", "ability_priority": ["AGI", "INS", "PRE", "MND", "END", "MIG"]},
+					{"id": "mage", "label": "Mage", "ability_priority": ["MND", "INS", "AGI", "PRE", "END", "MIG"]},
+					{"id": "priest", "label": "Priest", "ability_priority": ["INS", "PRE", "END", "MND", "MIG", "AGI"]},
+				],
+				"adapter_catalog": [
+					{"id": "fantasy_ember", "label": "Fantasy Ember"},
+					{"id": "scifi_frontier", "label": "Sci-Fi Frontier"},
+				],
+				"profile_catalog": [{"id": "standard", "label": "Standard Continental World"}],
+				"settlement_labels": {"border_keep": "border keep"},
+				"faction_labels": {"guard_captains": "guard captains"},
+				"genesis_defaults": {"settlement_label": "frontier settlement", "faction_label": "local power brokers"},
+			},
 			"questions": [
 				{
 					"id": "q_intro",

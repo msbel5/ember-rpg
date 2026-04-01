@@ -93,6 +93,9 @@ func create_campaign(player_name: String, player_class: String, adapter_id: Stri
 		body["seed"] = seed
 	_post("/game/campaigns", JSON.stringify(body), callback)
 
+func get_campaign_creation_catalog(callback: Callable) -> void:
+	_http_get("/game/campaigns/creation/catalog", callback)
+
 func start_campaign_creation(player_name: String, adapter_id: String, callback: Callable, profile_id: String = "standard", seed: int = -1, location: String = "") -> void:
 	var body := {
 		"player_name": player_name,

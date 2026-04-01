@@ -21,7 +21,7 @@
 
 | Gate | Status | Evidence | Owner | Notes |
 |------|--------|----------|-------|-------|
-| Campaign-first route family is the documented player-facing contract | Green | `docs/PRD_save_load.md`, this file | Docs | Campaign-first flow remains the public contract. |
+| Campaign-first route family is the documented player-facing contract | Green | `docs/prd/active/PRD_save_load.md`, this file | Docs | Campaign-first flow remains the public contract. |
 | Demo docs classify current closure gates honestly | Green | `docs/qa/vqr_scorecard.md`, this file | Docs | The old `3.1` snapshot is retired as the current verdict. |
 
 ## Backend and Terminal Gates

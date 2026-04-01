@@ -128,6 +128,8 @@ def _install_topdown_stubs(monkeypatch):
 def test_render_map_smoke(monkeypatch):
     _install_topdown_stubs(monkeypatch)
     sys.modules.pop("tools.play_topdown", None)
+    sys.modules.pop("tools.play_topdown_view", None)
+    sys.modules.pop("tools.play_topdown_saves", None)
 
     play_topdown = importlib.import_module("tools.play_topdown")
 
@@ -143,6 +145,8 @@ def test_render_map_smoke(monkeypatch):
 def test_render_header_uses_combat_ap(monkeypatch):
     _install_topdown_stubs(monkeypatch)
     sys.modules.pop("tools.play_topdown", None)
+    sys.modules.pop("tools.play_topdown_view", None)
+    sys.modules.pop("tools.play_topdown_saves", None)
 
     play_topdown = importlib.import_module("tools.play_topdown")
 
@@ -159,6 +163,8 @@ def test_render_header_uses_combat_ap(monkeypatch):
 def test_render_character_sheet_includes_creation_summary(monkeypatch):
     _install_topdown_stubs(monkeypatch)
     sys.modules.pop("tools.play_topdown", None)
+    sys.modules.pop("tools.play_topdown_view", None)
+    sys.modules.pop("tools.play_topdown_saves", None)
 
     play_topdown = importlib.import_module("tools.play_topdown")
 
@@ -193,6 +199,8 @@ def test_render_character_sheet_includes_creation_summary(monkeypatch):
 def test_character_creation_smoke(monkeypatch):
     _install_topdown_stubs(monkeypatch)
     sys.modules.pop("tools.play_topdown", None)
+    sys.modules.pop("tools.play_topdown_view", None)
+    sys.modules.pop("tools.play_topdown_saves", None)
 
     play_topdown = importlib.import_module("tools.play_topdown")
     monkeypatch.setattr(play_topdown.time, "sleep", lambda *_args, **_kwargs: None)
@@ -201,7 +209,7 @@ def test_character_creation_smoke(monkeypatch):
 
     assert creation["name"] == "Stranger"
     assert creation["player_class"] in {"warrior", "rogue", "mage", "priest"}
-    assert creation["map_type"] in {"town", "dungeon", "wilderness"}
+    assert creation["map_type"] in {"town", "dungeon", "wilderness", "campaign_region"}
     assert creation["stats"]
     assert creation["character_sheet"]["name"] == "Stranger"
     assert creation["creation_state"]["questions"]
@@ -210,6 +218,8 @@ def test_character_creation_smoke(monkeypatch):
 def test_start_or_load_campaign_can_load_existing_save(monkeypatch):
     _install_topdown_stubs(monkeypatch)
     sys.modules.pop("tools.play_topdown", None)
+    sys.modules.pop("tools.play_topdown_view", None)
+    sys.modules.pop("tools.play_topdown_saves", None)
 
     play_topdown = importlib.import_module("tools.play_topdown")
 

@@ -112,7 +112,7 @@ Connect actual LLMs to the game engine.
 - Procedural renderer as fallback while assets load (crossfade)
 - ~20 generations per new location, ~50MB per campaign
 - Cross-campaign shared asset library (barrel, chest, torch = universal)
-- PRD: `docs/PRD_asset_pipeline.md`
+- PRD: `docs/deprecated/prd/PRD_asset_pipeline.md`
 
 ### 5b-legacy. Tile Map Renderer (Top-down view)
 - 32x32 pixel tiles
