@@ -3,7 +3,7 @@
 **Phase:** 0  
 **Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-31  
-**Status:** Draft  
+**Status:** Approved  
 
 ---
 
@@ -202,3 +202,6 @@ AC-12 [FR-12]: Given the creation shell is visible, when the player triggers vie
 ## 10. Test Coverage Target
 - Minimum coverage target for changed backend creation behavior: 95%.
 - Minimum coverage target for title-screen flow touched in headless tests: all AC branches above must have direct assertions.
+
+## Changelog
+- 2026-04-01: Promoted to approved after title-shell headless coverage and headless automation scenario proof (`title_creation_bridge`) validated the current creation workspace contract.

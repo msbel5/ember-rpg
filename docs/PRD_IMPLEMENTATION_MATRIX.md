@@ -87,6 +87,7 @@ AC-06 [FR-06]: Each authoritative entry states the subsystem it owns.
 - Manual review only. The matrix is validated by doc consistency checks during implementation review.
 
 ## Changelog
+- 2026-04-01c: Synced authoritative runtime docs with the canonical `kernel_world_state` / `kernel_game_state` save/load contract, promoted creation and automation authority docs after fresh headless and automation proof, and refreshed the recovery/DF checklists.
 - 2026-04-01b: Added 10 GemRB-synthesis PRDs: spell_system, projectile_system, item_system_kernel, store_trade, level_progression, dialog_system, gamescript_ai, pathfinding, area_map, game_state. All 16 GemRB mechanisms now have authoritative PRDs.
 - 2026-04-01a: Added 7 new authoritative PRDs (effect_system, combat_resolution, medical_system, systems_closure, colony_v2, job_v2). Superseded colony_v1 and job_v1. Updated all sparse kernel PRDs with dataclass definitions and algorithms.
 - 2026-03-27: Initial implementation matrix for the shipable demo recovery plan.

@@ -68,6 +68,22 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 - [x] Persist `kernel_game_state` inside `campaign_v2` metadata
 - [x] Validate `GameState.from_dict()` during campaign load for fail-fast kernel save compatibility
 - [x] Keep campaign API and campaign client save/load regression tests green after `GameState` cutover
+- [x] Persist canonical `kernel_world_state` and `kernel_game_state` aliases at the top level of serialized session state for campaign saves
+- [x] Fail fast during strict campaign load when `kernel_world_state` or `kernel_game_state` is invalid
+- [x] Keep Godot-ready campaign payload shape tests green while migrating the client toward canonical slices
+
+## Wave 3: Authoritative Runtime Alignment
+- [x] Reconcile save/load docs with canonical kernel save roots and strict validation behavior
+- [x] Reconcile Godot client docs with canonical `world_state` / `game_state` consumption
+- [x] Update runtime authority notes to describe canonical kernel save roots and remaining shim boundaries
+- [x] Keep implementation checklists aligned with the actual runtime/save/load contract
+
+## Wave 4: Godot / Creation / Automation Closure
+- [x] Keep Godot headless suite green while storing canonical `campaign.world_state` and `campaign.game_state` in `GameState`
+- [x] Keep Python automation suite green for headless bridge and Win32 fallback capability handling
+- [x] Produce fresh headless scenario proof for title/creation through `title_creation_bridge`
+- [x] Keep creation-shell keyboard/mouse flow, preview, roll/save/swap, and dossier steps covered in headless tests
+- [x] Keep automation docs aligned with headless-primary, Win32-fallback policy and synthetic-capture labeling
 
 ## Global Rules
 - [x] PRD first
@@ -87,12 +103,16 @@ This checklist is the anti-context-loss surface for the recovery program. Update
 - [x] Backend targeted suite passed on 2026-04-01 for canonical world-state payload, save/load, command bus, and travel graph coverage
 - [x] Backend targeted suite passed on 2026-04-01 for colony, hybrid, and systems kernel coverage
 - [x] Backend targeted suite passed on 2026-04-01 for campaign API/client `GameState` cutover and save/load metadata validation
+- [x] Backend targeted suite passed on 2026-04-01 for strict invalid-kernel save rejection and Godot payload-shape regression coverage
 - [x] Godot headless suite passed on 2026-03-31 after creation-shell and automation-bridge changes
+- [x] Godot headless suite passed on 2026-04-01 after canonical `world_state` / `game_state` client normalization changes
 - [x] Python automation suite passed on 2026-03-31 including atomic command-file fallback coverage
+- [x] Python automation suite passed on 2026-04-01 after Wave 4 contract verification (`27 passed`)
 - [x] Desktop smoke scenario produced title and questionnaire screenshots on 2026-03-31
+- [x] Headless automation scenario `title_creation_bridge` passed on 2026-04-01 and produced deterministic viewport artifacts
 
 ## Current Risks
 - [ ] Win32 keyboard injection is still weaker than the headless bridge path
-- [ ] Sprint 1 still leaves legacy save/load and some non-combat runtime surfaces on compatibility shims
-- [ ] Runtime payloads now expose `GameState`, but command handlers and session serialization still need deeper migration off legacy session/entity shims
-- [ ] Sprint closure is typed-authority complete, but deeper simulation balance and UI ergonomics still need manual cleanup
+- [ ] Some non-campaign legacy session/runtime surfaces still rely on compatibility shims and remain a follow-up cleanup target
+- [ ] Full backend suite merge gate still needs either one bounded green run or an explicitly maintained sharded equivalent
+- [ ] Sprint closure is typed-authority complete, but deeper simulation balance and wider UX cleanup still need manual cleanup

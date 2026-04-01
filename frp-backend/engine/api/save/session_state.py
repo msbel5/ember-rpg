@@ -12,6 +12,58 @@ from .combat_state import SaveCombatStateMixin
 class SaveSessionStateMixin:
     """GameSession serialization and deserialization."""
 
+    _KERNEL_CAMPAIGN_KEYS = (
+        "kernel_world_state",
+        "kernel_game_state",
+        "kernel_actors",
+        "kernel_jobs",
+        "kernel_reactions",
+        "kernel_worksites",
+        "kernel_colony_pressure",
+        "kernel_production_ledger",
+        "kernel_path_authority",
+        "kernel_local_map_state",
+        "kernel_military",
+        "kernel_systems",
+    )
+
+    @classmethod
+    def _campaign_kernel_payloads(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        payloads: Dict[str, Any] = {}
+        campaign_state = data.get("campaign_state", {})
+        campaign_v2 = {}
+        if isinstance(campaign_state, dict):
+            raw_campaign_v2 = campaign_state.get("campaign_v2")
+            if isinstance(raw_campaign_v2, dict):
+                campaign_v2 = raw_campaign_v2
+        for key in cls._KERNEL_CAMPAIGN_KEYS:
+            value = data.get(key)
+            if value is None:
+                value = campaign_v2.get(key)
+            if value is not None:
+                payloads[key] = copy.deepcopy(value)
+        return payloads
+
+    @classmethod
+    def _validate_campaign_kernel_payloads(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        payloads = cls._campaign_kernel_payloads(data)
+        if not payloads:
+            return {}
+
+        from engine.kernel import GameState, WorldState as KernelWorldState
+
+        kernel_game_state = payloads.get("kernel_game_state")
+        if not isinstance(kernel_game_state, dict):
+            raise ValueError("Campaign save is missing kernel_game_state")
+        GameState.from_dict(dict(kernel_game_state))
+
+        kernel_world_state = payloads.get("kernel_world_state")
+        if not isinstance(kernel_world_state, dict):
+            raise ValueError("Campaign save is missing kernel_world_state")
+        KernelWorldState.from_dict(dict(kernel_world_state))
+
+        return payloads
+
     @staticmethod
     def _serialize_session(session) -> Dict[str, Any]:
         if hasattr(session, "ensure_consistency"):
@@ -89,6 +141,8 @@ class SaveSessionStateMixin:
             default_source="authored",
         )
         data["campaign_state"] = dict(getattr(session, "campaign_state", {}))
+        for key, payload in SaveSessionStateMixin._campaign_kernel_payloads(data).items():
+            data[key] = copy.deepcopy(payload)
         data["narration_context"] = dict(getattr(session, "narration_context", {}))
         data["conversation_state"] = dict(getattr(session, "conversation_state", {}))
         data["timed_conditions"] = copy.deepcopy(getattr(session, "timed_conditions", {}))
@@ -204,6 +258,13 @@ class SaveSessionStateMixin:
             default_source="authored",
         )
         session.campaign_state = dict(data.get("campaign_state", {}))
+        kernel_payloads = SaveSessionStateMixin._validate_campaign_kernel_payloads(data)
+        if kernel_payloads:
+            campaign_v2_state = dict(session.campaign_state.get("campaign_v2", {}))
+            for key, payload in kernel_payloads.items():
+                session.campaign_state[key] = copy.deepcopy(payload)
+                campaign_v2_state[key] = copy.deepcopy(payload)
+            session.campaign_state["campaign_v2"] = campaign_v2_state
         session.narration_context = dict(data.get("narration_context", {}))
         session.conversation_state = normalize_conversation_state(data.get("conversation_state", {}))
         session.timed_conditions = copy.deepcopy(data.get("timed_conditions", {}))

@@ -3,7 +3,7 @@
 **Phase:** 0  
 **Author:** Alcyone (CAPTAIN)  
 **Date:** 2026-03-31  
-**Status:** Draft  
+**Status:** Approved  
 
 ---
 
@@ -120,3 +120,6 @@ AC-07 [FR-07]: Given an unsupported capability is requested, when the runner rec
 ## 10. Test Coverage Target
 - 100% coverage of environment-health branches for automation executors.
 - Scenario/runner tests must cover capability gaps, viewport capture, and missing dependency handling.
+
+## Changelog
+- 2026-04-01: Promoted to approved after the headless and Win32 automation pytest suite passed and the `title_creation_bridge` headless scenario produced deterministic viewport artifacts with explicit synthetic labeling.

@@ -33,3 +33,8 @@ stateDiagram-v2
 - `Summary`
   - dossier view, not CSV-like dump
   - campaign premise, colony pressure, world/culture bias, and final build
+
+## Current Evidence
+
+- Godot headless coverage exercises identity, questionnaire, roll, build, and summary state transitions in `godot-client/tests/run_headless_tests.gd`.
+- Headless automation scenario `title_creation_bridge` proves the title surface, opening New Game, identity input, and questionnaire transition through the automation bridge without desktop-coordinate assumptions.

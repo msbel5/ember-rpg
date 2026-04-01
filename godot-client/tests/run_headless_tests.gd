@@ -220,6 +220,18 @@ func _test_game_state_normalization() -> void:
 		"narrative": "Chaos enters Dragon Eyrie.",
 		"campaign": {
 			"world": {"adapter_id": "fantasy_ember", "profile_id": "standard"},
+			"world_state": {"seed": 42, "active_region_id": "region_001", "regions": {"region_001": {"region_id": "region_001"}}},
+			"game_state": {"campaign_id": "camp_1", "seed": 42, "party": ["player"]},
+			"actors": [{"identity": {"actor_id": "player"}}],
+			"jobs": [{"job_id": "job_1", "label": "Haul supplies"}],
+			"reactions": [{"reaction_id": "reaction_1", "label": "Forge blade"}],
+			"worksites": [{"worksite_id": "forge_1", "label": "Forge"}],
+			"colony_pressure": {"food": 3, "safety": 5},
+			"production_ledger": {"shortages": ["iron"]},
+			"path_authority": {"active_region_id": "region_001"},
+			"local_map_state": {"region_id": "region_001"},
+			"military": {"squads": [{"squad_id": "squad_1"}]},
+			"systems": {"power_network": {"total_required": 0}},
 			"world_graph": {
 				"active_region_id": "region_001",
 				"dimensions": {"columns": 8, "rows": 6},
@@ -251,6 +263,11 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.has_active_campaign(), "GameState enters campaign runtime when campaign payload arrives")
 	_assert_true(game_state.location == "Dragon Eyrie", "GameState falls back to settlement name when campaign location is blank")
 	_assert_true(game_state.get_display_location() == "Dragon Eyrie", "display location falls back to settlement name for campaign payloads")
+	_assert_true(int(game_state.world_state.get("seed", 0)) == 42, "GameState stores canonical campaign world_state instead of the summary world slice")
+	_assert_true(game_state.campaign_game_state.get("campaign_id", "") == "camp_1", "GameState stores the canonical campaign game_state root")
+	_assert_true(game_state.actor_roster.size() == 1 and game_state.job_records.size() == 1, "GameState stores canonical actor and job slices from campaign payloads")
+	_assert_true(game_state.colony_pressure.get("food", -1) == 3, "GameState stores colony pressure from canonical campaign payloads")
+	_assert_true(game_state.systems_state.get("power_network", {}).get("total_required", -1) == 0, "GameState stores canonical systems payload slices")
 	_assert_true(game_state.world_graph.get("nodes", []).size() == 2, "GameState stores macro world graph nodes from campaign payloads")
 	_assert_true(game_state.travel_options.size() == 1, "GameState stores reachable travel options from campaign payloads")
 	_assert_true(game_state.selected_world_node == "node_region_001_00", "GameState tracks the selected world node from current region summary")

@@ -91,13 +91,13 @@ class CampaignSnapshotEnvelope(TypedDict):
 - `load_campaign(save_id, callback)`
 - `list_saves(callback, player_id="")` for player-scoped save discovery
 
-`godot-client/autoloads/game_state.gd` SHALL own normalized `creation_state`, `character_sheet`, `map_data`, `world_entities`, `settlement_state`, `recent_event_log`, and `last_save_slot`. Scene scripts SHALL not invent gameplay outcomes locally.
+`godot-client/autoloads/game_state.gd` SHALL own normalized `creation_state`, `character_sheet`, `map_data`, `world_entities`, `settlement_state`, `recent_event_log`, `last_save_slot`, canonical `world_state`, canonical `campaign_game_state`, and the campaign kernel side slices (`actors`, `jobs`, `reactions`, `worksites`, `colony_pressure`, `systems`). Scene scripts SHALL not invent gameplay outcomes locally.
 
 ## 6. Acceptance Criteria
 AC-01 [FR-01]: The title flow can start a new campaign using the campaign creation route family without using legacy session creation.
 AC-02 [FR-02]: The wizard displays questionnaire answers, current and saved rolls, recommended class/alignment/skills, and preserves manual build edits across wizard navigation.
 AC-03 [FR-03]: Both adapters are selectable and produce distinct labels, locations, and palette treatment without separate scene code paths.
-AC-04 [FR-04]: After finalize or load, the gameplay shell is hydrated from `CampaignSnapshotEnvelope`, current region, and current settlement data.
+AC-04 [FR-04]: After finalize or load, the gameplay shell is hydrated from `CampaignSnapshotEnvelope`, current region, current settlement data, and the canonical `campaign.world_state` / `campaign.game_state` slices.
 AC-05 [FR-05]: Terrain and entities render from normalized campaign payloads in the active gameplay scene.
 AC-06 [FR-06]: Narrative, status, inventory, minimap, quest, settlement, combat, save/load, and character-sheet surfaces remain visible and update from normalized state.
 AC-07 [FR-07]: Clickable world objects, inventory rows, quest rows, settlement directives, and save/load entries either perform a meaningful action or clearly indicate that they are inert.
@@ -135,4 +135,5 @@ AC-10 [FR-10]: Asset fallback and missing backend responses surface a visible pl
 - Visual QA must cover both adapters, creation wizard proof, gameplay proof, save/load proof, and the long-form `100-turn`, `30-minute`, and final chaos matrices tracked in QA.
 
 ## Changelog
+- 2026-04-01: Clarified that the Godot client stores canonical `world_state`, `campaign_game_state`, and campaign kernel side slices instead of treating the summary `campaign.world` block as authoritative runtime state.
 - 2026-03-28: Rewritten to match the live `/game/campaigns/...` contract, the shipped character-sheet payload, and the remaining Godot demo signoff gates.

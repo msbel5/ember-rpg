@@ -31,6 +31,10 @@ flowchart LR
   campaign runtime from typed kernel state. It is not a second independent
   simulation authority, but it is the primary persistence and client handoff
   root for campaign-local play state.
+- Campaign save/session serialization now persists canonical kernel roots
+  (`kernel_world_state`, `kernel_game_state`) at the session-state top level as
+  well as inside `campaign_v2`, and strict load validates those roots before
+  hydrating the runtime.
 - Campaign payloads should now expose both:
   - typed kernel slices (`world_state`, `actors`, `jobs`, `systems`, ...)
   - a `game_state` root container for save/load round-trip and local runtime continuity
@@ -39,8 +43,8 @@ flowchart LR
 
 ## Active Problems This Sprint Fixes
 
-- Character creation state does not yet shape world/campaign setup deeply
-- World graph exists but is not discoverable enough in live UI
-- Desktop automation depends on an undeclared Windows environment
-- Some API/session surfaces still carry legacy compatibility shims even after the
-  `GameState` cutover and need follow-up cleanup
+- Character creation state still influences campaign setup through a constrained
+  deterministic profile rather than a deeper authored background graph
+- Some API/session surfaces still carry legacy compatibility shims, but campaign
+  save/load now fails fast on invalid kernel roots instead of rebuilding from
+  those shims silently

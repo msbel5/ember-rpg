@@ -93,7 +93,9 @@ Honest assessment of what exists as running simulation vs metadata-only typed st
 ## Notes
 - "PRD seed" means the owning PRD family exists but the mechanism still needs a dedicated implementation slice and tests.
 - "Initial typed runtime" means canonical structures, payload wiring, and targeted tests exist, but the mechanic may still need deeper simulation depth or balance cleanup.
+- Campaign save/load and Godot client handoff now persist and consume canonical `kernel_world_state` / `kernel_game_state` roots explicitly; remaining mechanism gaps are about deeper logic, not the primary campaign payload contract.
 - This checklist should be updated whenever a mechanism moves from PRD-only to typed runtime, or from typed runtime to tested integration.
 
 ## Changelog
+- 2026-04-01b: Noted that campaign save/load and Godot client handoff now use canonical kernel roots explicitly.
 - 2026-04-01: Added Implementation Reality Audit with honest dataclass vs logic coverage percentages. Added 6 new PRDs to close logic gaps.

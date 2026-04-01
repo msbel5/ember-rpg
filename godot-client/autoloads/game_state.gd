@@ -26,7 +26,19 @@ var active_quests: Array = []
 var quest_offers: Array = []
 var narrative_stream: Array = []
 var last_save_slot: String = ""
+var world: Dictionary = {}
 var world_state: Dictionary = {}
+var campaign_game_state: Dictionary = {}
+var actor_roster: Array = []
+var job_records: Array = []
+var reaction_defs: Array = []
+var worksite_records: Array = []
+var colony_pressure: Dictionary = {}
+var production_ledger: Dictionary = {}
+var path_authority: Dictionary = {}
+var local_map_state: Dictionary = {}
+var military_state: Dictionary = {}
+var systems_state: Dictionary = {}
 var world_graph: Dictionary = {}
 var travel_options: Array = []
 var current_region_summary: Dictionary = {}
@@ -71,12 +83,6 @@ func update_from_response(data: Dictionary) -> void:
 		campaign_id = str(data.get("campaign_id", campaign_id))
 		adapter_id = str(data.get("adapter_id", data["campaign"].get("world", {}).get("adapter_id", adapter_id)))
 		profile_id = str(data.get("profile_id", data["campaign"].get("world", {}).get("profile_id", profile_id)))
-		world_state = data["campaign"].get("world", {})
-		settlement_state = data["campaign"].get("settlement", {})
-		character_sheet = data["campaign"].get("character_sheet", {})
-		if not character_sheet.is_empty():
-			character_sheet_updated.emit(character_sheet)
-		recent_event_log = data["campaign"].get("recent_event_log", [])
 		var flattened_campaign = ResponseNormalizer.flatten_campaign_response(data, map_data)
 		update_from_response(flattened_campaign)
 		return
@@ -90,8 +96,32 @@ func update_from_response(data: Dictionary) -> void:
 		adapter_id = str(data["adapter_id"])
 	if data.has("profile_id"):
 		profile_id = str(data["profile_id"])
+	if data.has("world") and data["world"] is Dictionary:
+		world = data["world"]
 	if data.has("world_state") and data["world_state"] is Dictionary:
 		world_state = data["world_state"]
+	if data.has("game_state_root") and data["game_state_root"] is Dictionary:
+		campaign_game_state = data["game_state_root"]
+	if data.has("actor_roster") and data["actor_roster"] is Array:
+		actor_roster = data["actor_roster"]
+	if data.has("job_records") and data["job_records"] is Array:
+		job_records = data["job_records"]
+	if data.has("reaction_defs") and data["reaction_defs"] is Array:
+		reaction_defs = data["reaction_defs"]
+	if data.has("worksite_records") and data["worksite_records"] is Array:
+		worksite_records = data["worksite_records"]
+	if data.has("colony_pressure") and data["colony_pressure"] is Dictionary:
+		colony_pressure = data["colony_pressure"]
+	if data.has("production_ledger") and data["production_ledger"] is Dictionary:
+		production_ledger = data["production_ledger"]
+	if data.has("path_authority") and data["path_authority"] is Dictionary:
+		path_authority = data["path_authority"]
+	if data.has("local_map_state") and data["local_map_state"] is Dictionary:
+		local_map_state = data["local_map_state"]
+	if data.has("military_state") and data["military_state"] is Dictionary:
+		military_state = data["military_state"]
+	if data.has("systems_state") and data["systems_state"] is Dictionary:
+		systems_state = data["systems_state"]
 	if data.has("world_graph") and data["world_graph"] is Dictionary:
 		world_graph = data["world_graph"]
 	if data.has("travel_options") and data["travel_options"] is Array:
@@ -220,7 +250,19 @@ func reset() -> void:
 	quest_offers = []
 	narrative_stream = []
 	last_save_slot = ""
+	world = {}
 	world_state = {}
+	campaign_game_state = {}
+	actor_roster = []
+	job_records = []
+	reaction_defs = []
+	worksite_records = []
+	colony_pressure = {}
+	production_ledger = {}
+	path_authority = {}
+	local_map_state = {}
+	military_state = {}
+	systems_state = {}
 	world_graph = {}
 	travel_options = []
 	current_region_summary = {}
