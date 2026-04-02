@@ -1,0 +1,286 @@
+[scenario]
+name = "full_creation_desktop"
+description = "Desktop proof for the full title -> creation -> gameplay boot flow using semantic node controls."
+adapter_id = "fantasy_ember"
+player_name = "VisualSmoke"
+create_new = true
+requires_backend = true
+tags = ["title", "creation", "gameplay", "desktop", "proof", "semantic"]
+
+[[steps]]
+id = "focus_window"
+action = "activate_window"
+capture_os = true
+capture_viewport = true
+expected = "title screen is visible in a desktop window"
+
+[[steps]]
+id = "wait_for_backend_ready"
+action = "wait"
+duration_ms = 6500
+capture_os = true
+capture_viewport = true
+expected = "title screen finishes backend bootstrap and catalog loading"
+
+[[steps]]
+id = "wait_for_new_game_button"
+action = "wait_for_node_visible"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"
+duration_ms = 4000
+expected = "title menu is ready for semantic interaction"
+
+[[steps]]
+id = "open_new_game"
+action = "activate_node"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "new game shell opens"
+expect_artifact_differs_from = "wait_for_backend_ready:viewport_capture"
+
+[[steps]]
+id = "wait_for_name_input"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/NameInput"
+duration_ms = 3000
+expected = "identity step is visible"
+
+[[steps]]
+id = "type_name"
+action = "set_text_node"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/NameInput"
+text = "VisualSmoke"
+wait_ms = 200
+expected = "identity name is entered"
+
+[[steps]]
+id = "choose_fantasy"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/GenreCards/FantasyCard"
+wait_ms = 250
+expected = "fantasy adapter card is selected"
+
+[[steps]]
+id = "advance_identity"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/ButtonRow/NextButton"
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "questionnaire step opens"
+expect_artifact_differs_from = "open_new_game:viewport_capture"
+
+[[steps]]
+id = "wait_question_1"
+action = "wait_for_node_text"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/QuestionProgress"
+text = "Question 1 of 5"
+duration_ms = 3000
+expected = "first question is visible"
+
+[[steps]]
+id = "wait_answer_1"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
+duration_ms = 3000
+expected = "first question answers are visible"
+
+[[steps]]
+id = "answer_question_1"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
+wait_ms = 900
+expected = "first question is answered"
+
+[[steps]]
+id = "wait_question_2"
+action = "wait_for_node_text"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/QuestionProgress"
+text = "Question 2 of 5"
+duration_ms = 3000
+expected = "second question is visible"
+
+[[steps]]
+id = "wait_answer_2"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
+duration_ms = 3000
+expected = "second question answers are visible"
+
+[[steps]]
+id = "answer_question_2"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
+wait_ms = 900
+expected = "second question is answered"
+
+[[steps]]
+id = "wait_question_3"
+action = "wait_for_node_text"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/QuestionProgress"
+text = "Question 3 of 5"
+duration_ms = 3000
+expected = "third question is visible"
+
+[[steps]]
+id = "wait_answer_3"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
+duration_ms = 3000
+expected = "third question answers are visible"
+
+[[steps]]
+id = "answer_question_3"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
+wait_ms = 900
+expected = "third question is answered"
+
+[[steps]]
+id = "wait_question_4"
+action = "wait_for_node_text"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/QuestionProgress"
+text = "Question 4 of 5"
+duration_ms = 3000
+expected = "fourth question is visible"
+
+[[steps]]
+id = "wait_answer_4"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
+duration_ms = 3000
+expected = "fourth question answers are visible"
+
+[[steps]]
+id = "answer_question_4"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
+wait_ms = 900
+expected = "fourth question is answered"
+
+[[steps]]
+id = "wait_question_5"
+action = "wait_for_node_text"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/QuestionProgress"
+text = "Question 5 of 5"
+duration_ms = 3000
+expected = "fifth question is visible"
+
+[[steps]]
+id = "wait_answer_5"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
+duration_ms = 3000
+expected = "fifth question answers are visible"
+
+[[steps]]
+id = "answer_question_5"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
+wait_ms = 1400
+capture_os = true
+capture_viewport = true
+expected = "history reveal opens after the final answer"
+expect_artifact_differs_from = "advance_identity:viewport_capture"
+
+[[steps]]
+id = "wait_for_history"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/HistorySection/HistoryText"
+duration_ms = 3000
+expected = "history reveal is visible"
+
+[[steps]]
+id = "wait_for_history_text"
+action = "wait_for_node_text"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/HistorySection/HistoryText"
+text = "Year"
+duration_ms = 3000
+expected = "history reveal contains streamed world events"
+
+[[steps]]
+id = "advance_history"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/ButtonRow/NextButton"
+wait_ms = 800
+capture_os = true
+capture_viewport = true
+expected = "roll step opens"
+expect_artifact_differs_from = "answer_question_5:viewport_capture"
+
+[[steps]]
+id = "wait_for_roll"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/RollSection/SilhouetteBoard"
+duration_ms = 3000
+expected = "roll step is visible"
+
+[[steps]]
+id = "advance_roll"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/ButtonRow/NextButton"
+wait_ms = 700
+capture_os = true
+capture_viewport = true
+expected = "build step opens"
+expect_artifact_differs_from = "advance_history:viewport_capture"
+
+[[steps]]
+id = "wait_for_build"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/BuildSection/ClassGrid/Class_warrior"
+duration_ms = 3000
+expected = "build step is visible"
+
+[[steps]]
+id = "advance_build"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/ButtonRow/NextButton"
+wait_ms = 700
+capture_os = true
+capture_viewport = true
+expected = "dossier step opens"
+expect_artifact_differs_from = "advance_roll:viewport_capture"
+
+[[steps]]
+id = "wait_for_dossier"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/ButtonRow/StartButton"
+duration_ms = 3000
+expected = "dossier step is visible"
+
+[[steps]]
+id = "wait_for_dossier_text"
+action = "wait_for_node_text"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/DossierSection/DossierText"
+text = "World Premise"
+duration_ms = 3000
+expected = "dossier contains the world premise summary"
+
+[[steps]]
+id = "begin_story"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/ButtonRow/StartButton"
+wait_ms = 6500
+capture_os = true
+capture_viewport = true
+expected = "gameplay shell loads after full creation"
+expect_artifact_differs_from = "advance_build:viewport_capture"
+
+[[steps]]
+id = "wait_for_game_session"
+action = "wait_for_scene"
+scene_name = "GameSession"
+duration_ms = 12000
+capture_os = true
+capture_viewport = true
+expected = "gameplay scene loads after creation"
+expect_note_contains = "GameSession"
+
+[[steps]]
+id = "wait_for_world_view"
+action = "wait_for_node_visible"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer"
+duration_ms = 5000
+expected = "world viewport is visible in the gameplay shell"

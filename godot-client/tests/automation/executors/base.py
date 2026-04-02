@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 from automation.artifacts import ArtifactManager
 from automation.models import ArtifactRecord, AutomationScenario, IssueRecord, Severity
@@ -19,6 +20,9 @@ class AutomationExecutor(ABC):
         self.scenario = scenario
         self.artifacts = artifacts
         self.issues: list[IssueRecord] = []
+        self.backend_url = scenario.backend_url
+        self.backend_host = scenario.backend_host
+        self.backend_port = scenario.backend_port
 
     @property
     @abstractmethod
@@ -89,6 +93,37 @@ class AutomationExecutor(ABC):
     @abstractmethod
     def capture_viewport(self, tag: str) -> ArtifactRecord:
         raise NotImplementedError
+
+    def focus_node(self, node_path: str) -> None:
+        raise CapabilityUnavailableError(f"{self.name} does not support semantic node focus.")
+
+    def activate_node(self, node_path: str) -> None:
+        raise CapabilityUnavailableError(f"{self.name} does not support semantic node activation.")
+
+    def set_text_node(self, node_path: str, text: str) -> None:
+        raise CapabilityUnavailableError(f"{self.name} does not support semantic text input.")
+
+    def select_option_node(self, node_path: str, option_text: str) -> None:
+        raise CapabilityUnavailableError(f"{self.name} does not support semantic option selection.")
+
+    def click_node(
+        self,
+        node_path: str,
+        *,
+        normalized_x: float = 0.5,
+        normalized_y: float = 0.5,
+        button: str = "left",
+    ) -> None:
+        raise CapabilityUnavailableError(f"{self.name} does not support semantic node clicks.")
+
+    def current_scene_name(self) -> str:
+        raise CapabilityUnavailableError(f"{self.name} does not support scene-state queries.")
+
+    def node_exists(self, node_path: str) -> bool:
+        raise CapabilityUnavailableError(f"{self.name} does not support semantic node existence checks.")
+
+    def query_node_state(self, node_path: str | None = None) -> dict[str, Any]:
+        raise CapabilityUnavailableError(f"{self.name} does not support semantic node state queries.")
 
     def environment_health(self) -> dict:
         return {

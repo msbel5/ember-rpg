@@ -23,7 +23,7 @@ func _ready() -> void:
 	offset_bottom = -72.0
 
 	var vbox := VBoxContainer.new()
-	vbox.name = "BrowserVBox"
+	vbox.name = "VBox"
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 12)
@@ -37,6 +37,7 @@ func _ready() -> void:
 	vbox.add_child(header)
 
 	var player_row := HBoxContainer.new()
+	player_row.name = "PlayerRow"
 	player_row.add_theme_constant_override("separation", 8)
 	vbox.add_child(player_row)
 
@@ -45,27 +46,32 @@ func _ready() -> void:
 	player_row.add_child(player_label)
 
 	_player_input = LineEdit.new()
+	_player_input.name = "PlayerInput"
 	_player_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_player_input.placeholder_text = "Enter player name"
 	_player_input.text_submitted.connect(func(_t: String): refresh())
 	player_row.add_child(_player_input)
 
 	_refresh_button = Button.new()
+	_refresh_button.name = "RefreshButton"
 	_refresh_button.text = "Refresh"
 	_refresh_button.pressed.connect(refresh)
 	player_row.add_child(_refresh_button)
 
 	_status_label = Label.new()
+	_status_label.name = "StatusLabel"
 	_status_label.text = "Choose a save slot to continue."
 	_status_label.add_theme_font_size_override("font_size", 14)
 	_status_label.add_theme_color_override("font_color", Color(0.65, 0.62, 0.58))
 	vbox.add_child(_status_label)
 
 	var scroll := ScrollContainer.new()
+	scroll.name = "SaveScroll"
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(scroll)
 
 	_save_list = VBoxContainer.new()
+	_save_list.name = "SaveList"
 	_save_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_save_list.add_theme_constant_override("separation", 6)
 	scroll.add_child(_save_list)
@@ -75,6 +81,7 @@ func _ready() -> void:
 	vbox.add_child(btn_row)
 
 	_close_button = Button.new()
+	_close_button.name = "BackButton"
 	_close_button.text = "Back"
 	_close_button.pressed.connect(close)
 	btn_row.add_child(_close_button)
@@ -114,8 +121,8 @@ func populate_saves(entries: Array) -> void:
 		return
 	var sorted := entries.duplicate()
 	sorted.sort_custom(func(a, b): return str(a.get("timestamp", "")) > str(b.get("timestamp", "")))
-	for entry in sorted:
-		_save_list.add_child(_build_row(entry))
+	for index in range(sorted.size()):
+		_save_list.add_child(_build_row(sorted[index], index))
 	_status_label.text = "Found %d save(s)." % sorted.size()
 
 
@@ -131,8 +138,9 @@ func _on_saves_listed(data) -> void:
 	populate_saves(entries)
 
 
-func _build_row(entry: Dictionary) -> Control:
+func _build_row(entry: Dictionary, index: int) -> Control:
 	var row := HBoxContainer.new()
+	row.name = "SaveRow%d" % index
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var info := VBoxContainer.new()
@@ -154,6 +162,7 @@ func _build_row(entry: Dictionary) -> Control:
 
 	var save_id := str(entry.get("save_id", slot))
 	var load_btn := Button.new()
+	load_btn.name = "LoadButton%d" % index
 	load_btn.text = "Load"
 	load_btn.disabled = _is_busy
 	load_btn.pressed.connect(func(): _load_save(save_id))
@@ -170,6 +179,7 @@ func _load_save(save_id: String) -> void:
 
 func _clear_rows() -> void:
 	for child in _save_list.get_children():
+		_save_list.remove_child(child)
 		child.queue_free()
 
 

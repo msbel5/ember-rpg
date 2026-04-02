@@ -1,80 +1,72 @@
 [scenario]
 name = "world_click_smoke"
-description = "Click a visible world tile or prop and verify an interaction fires."
+description = "Click a logical position inside the world viewport and verify an interaction fires."
 adapter_id = "fantasy_ember"
 player_name = "Chaos"
 create_new = false
 requires_backend = true
-tags = ["gameplay", "world-click"]
-
-[[steps]]
-id = "focus_title"
-action = "activate_window"
-wait_ms = 300
-capture_os = true
-capture_viewport = true
-expected = "title screen is focused"
+tags = ["gameplay", "world-click", "semantic"]
 
 [[steps]]
 id = "open_continue"
-action = "mouse_click"
-x = 640
-y = 390
+action = "activate_node"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 700
-capture_os = true
+capture_viewport = true
 expected = "continue browser opens"
 
 [[steps]]
-id = "focus_player_lookup"
-action = "mouse_click"
-x = 820
-y = 198
-wait_ms = 100
-expected = "player lookup field receives focus"
-
-[[steps]]
-id = "clear_player_lookup"
-action = "key_press"
-key = "backspace"
-repeat = 40
-wait_ms = 50
-expected = "previous player lookup text is cleared"
-
-[[steps]]
-id = "type_player_lookup"
-action = "text"
+id = "set_player_lookup"
+action = "set_text_node"
+node_path = "LoadBrowser/VBox/PlayerRow/PlayerInput"
 text = "Chaos"
 wait_ms = 100
 expected = "player lookup contains Chaos"
 
 [[steps]]
 id = "refresh_player_saves"
-action = "mouse_click"
-x = 930
-y = 198
-wait_ms = 900
-capture_os = true
+action = "wait"
+duration_ms = 400
+expected = "continue browser auto-refresh settles for Chaos"
+
+[[steps]]
+id = "wait_for_load_button"
+action = "wait_for_node_visible"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+duration_ms = 6000
+capture_viewport = true
 expected = "continue browser shows campaign saves for Chaos"
-expect_artifact_differs_from = "open_continue:os_screenshot"
 
 [[steps]]
 id = "load_first_save"
-action = "mouse_click"
-x = 890
-y = 296
-wait_ms = 1200
-capture_os = true
+action = "activate_node"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+wait_ms = 200
+expected = "campaign load starts"
+
+[[steps]]
+id = "wait_for_game_session"
+action = "wait_for_scene"
+scene_name = "GameSession"
+duration_ms = 10000
 capture_viewport = true
 expected = "gameplay scene loads"
-expect_note_contains = "phase2\\game"
+expect_note_contains = "GameSession"
+
+[[steps]]
+id = "wait_for_world_view"
+action = "wait_for_node"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer"
+duration_ms = 3000
+expected = "world viewport is available"
 
 [[steps]]
 id = "click_world_target"
-action = "mouse_click"
-x = 518
-y = 275
+action = "click_node"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer"
+normalized_x = 0.54
+normalized_y = 0.42
 wait_ms = 1000
-capture_os = true
 capture_viewport = true
 expected = "world click triggers movement or interaction"
-expect_note_contains = "phase2\\game"
+expect_note_contains = "GameSession"

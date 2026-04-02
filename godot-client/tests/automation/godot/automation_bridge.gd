@@ -53,6 +53,7 @@ func poll_once() -> void:
 		return
 	state.last_seq = seq
 
+	_sync_current_scene_root()
 	var result = await _dispatch_command(payload)
 	result["seq"] = seq
 	_write_json(state.result_file, result)
@@ -96,6 +97,7 @@ func _load_scene(scene_path: String) -> void:
 	current_scene_root = packed.instantiate()
 	playback_viewport.add_child(current_scene_root)
 	await _settle_frames(3)
+	_sync_current_scene_root()
 
 
 func _dispatch_command(command: Dictionary) -> Dictionary:
@@ -127,6 +129,56 @@ func _dispatch_command(command: Dictionary) -> Dictionary:
 			_dispatch_key(str(command.get("key", "")), false)
 		"text":
 			_dispatch_text(str(command.get("text", "")))
+		"focus_node":
+			var focus_target = _resolve_node(str(command.get("node_path", "")))
+			if focus_target == null:
+				return {"status": "error", "message": "Node not found for focus."}
+			if not _focus_node(focus_target):
+				return {"status": "error", "message": "Node does not support focus."}
+		"activate_node":
+			var activate_target = _resolve_node(str(command.get("node_path", "")))
+			if activate_target == null:
+				return {"status": "error", "message": "Node not found for activation."}
+			if not await _activate_node(activate_target):
+				return {"status": "error", "message": "Node does not support activation."}
+		"set_text_node":
+			var text_target = _resolve_node(str(command.get("node_path", "")))
+			if text_target == null:
+				return {"status": "error", "message": "Node not found for text update."}
+			if not _set_text_on_node(text_target, str(command.get("text", ""))):
+				return {"status": "error", "message": "Node does not support text updates."}
+		"select_option_node":
+			var option_target = _resolve_node(str(command.get("node_path", "")))
+			if option_target == null:
+				return {"status": "error", "message": "Node not found for option selection."}
+			if not _select_option_on_node(option_target, str(command.get("option_text", ""))):
+				return {"status": "error", "message": "Node does not support option selection."}
+		"click_node":
+			var click_target = _resolve_node(str(command.get("node_path", "")))
+			if click_target == null:
+				return {"status": "error", "message": "Node not found for logical click."}
+			var node_button = str(command.get("button", "left"))
+			var local_x = float(command.get("normalized_x", 0.5))
+			var local_y = float(command.get("normalized_y", 0.5))
+			if not _click_node(click_target, node_button, local_x, local_y):
+				return {"status": "error", "message": "Node does not support logical click."}
+		"query_state":
+			var target_path = str(command.get("node_path", "")).strip_edges()
+			var target = _resolve_node(target_path) if not target_path.is_empty() else null
+			var focus_owner = null
+			if current_scene_root != null and is_instance_valid(current_scene_root):
+				focus_owner = current_scene_root.get_viewport().gui_get_focus_owner()
+			var target_visible = false
+			if target is CanvasItem:
+				target_visible = (target as CanvasItem).is_visible_in_tree()
+			return {
+				"status": "ok",
+				"scene_name": current_scene_root.name if current_scene_root != null else "",
+				"node_exists": target != null,
+				"node_visible": target_visible,
+				"node_text": _node_text(target),
+				"focused_node_path": _node_path_from_scene_root(focus_owner) if focus_owner != null else "",
+			}
 		"capture_viewport":
 			var tag = str(command.get("tag", "automation_capture")).strip_edges()
 			var capture_result = await _capture_viewport_with_fallback(tag)
@@ -137,6 +189,7 @@ func _dispatch_command(command: Dictionary) -> Dictionary:
 				"status": "ok",
 				"path": capture_path,
 				"synthetic": bool(capture_result.get("synthetic", false)),
+				"scene_name": current_scene_root.name if current_scene_root != null else "",
 			}
 		"record_start":
 			_record_folder = str(command.get("folder", "recording")).strip_edges()
@@ -156,6 +209,7 @@ func _dispatch_command(command: Dictionary) -> Dictionary:
 			return {"status": "error", "message": "Unsupported automation action %s" % action}
 
 	await _settle_frames(2)
+	_sync_current_scene_root()
 	return {"status": "ok"}
 
 
@@ -205,6 +259,88 @@ func _dispatch_text(text: String) -> void:
 		_push_input(release_event)
 
 
+func _resolve_node(node_path: String) -> Node:
+	var normalized = node_path.strip_edges()
+	if normalized.is_empty():
+		return null
+	if current_scene_root == null or not is_instance_valid(current_scene_root):
+		return null
+	if normalized.begins_with("/root/"):
+		return get_node_or_null(normalized)
+	if normalized.begins_with("%s/" % current_scene_root.name):
+		var relative_path = normalized.trim_prefix("%s/" % current_scene_root.name)
+		return current_scene_root.get_node_or_null(NodePath(relative_path))
+	if current_scene_root.has_node(NodePath(normalized)):
+		return current_scene_root.get_node(NodePath(normalized))
+	return current_scene_root.find_child(normalized, true, false)
+
+
+func _focus_node(target: Node) -> bool:
+	if target is Control:
+		var control: Control = target
+		control.grab_focus()
+		return true
+	return false
+
+
+func _activate_node(target: Node) -> bool:
+	if target is BaseButton:
+		var button: BaseButton = target
+		if button.disabled:
+			return false
+		button.grab_focus()
+		button.emit_signal("pressed")
+		return true
+	if target is OptionButton:
+		var option_button: OptionButton = target
+		option_button.grab_focus()
+		return true
+	if target is LineEdit:
+		var line_edit: LineEdit = target
+		line_edit.grab_focus()
+		line_edit.emit_signal("text_submitted", line_edit.text)
+		return true
+	return _focus_node(target)
+
+
+func _set_text_on_node(target: Node, text: String) -> bool:
+	if target is LineEdit:
+		var line_edit: LineEdit = target
+		line_edit.grab_focus()
+		line_edit.text = text
+		line_edit.caret_column = line_edit.text.length()
+		line_edit.emit_signal("text_changed", line_edit.text)
+		return true
+	return false
+
+
+func _select_option_on_node(target: Node, option_text: String) -> bool:
+	if target is OptionButton:
+		var option_button: OptionButton = target
+		for index in range(option_button.item_count):
+			if option_button.get_item_text(index) == option_text:
+				option_button.select(index)
+				option_button.emit_signal("item_selected", index)
+				return true
+	return false
+
+
+func _click_node(target: Node, button_name: String, normalized_x: float, normalized_y: float) -> bool:
+	if not (target is Control):
+		return false
+	var control: Control = target
+	var rect = control.get_global_rect()
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return false
+	var clamped_x = clampf(normalized_x, 0.0, 1.0)
+	var clamped_y = clampf(normalized_y, 0.0, 1.0)
+	var position = rect.position + Vector2(rect.size.x * clamped_x, rect.size.y * clamped_y)
+	_dispatch_mouse_move(position)
+	_dispatch_mouse_button(button_name, true)
+	_dispatch_mouse_button(button_name, false)
+	return true
+
+
 func _settle_frames(count: int) -> void:
 	for _index in range(max(count, 1)):
 		await get_tree().process_frame
@@ -227,17 +363,42 @@ func _ensure_playback_viewport() -> void:
 
 
 func _push_input(event: InputEvent) -> void:
+	if current_scene_root != null and is_instance_valid(current_scene_root):
+		var target_viewport = current_scene_root.get_viewport()
+		if target_viewport != null:
+			target_viewport.push_input(event, true)
+			return
 	if playback_viewport != null and is_instance_valid(playback_viewport):
 		playback_viewport.push_input(event, true)
 	else:
 		Input.parse_input_event(event)
 
 
+func _sync_current_scene_root() -> void:
+	var tree_scene = get_tree().current_scene
+	if tree_scene == null or not is_instance_valid(tree_scene):
+		return
+	if tree_scene == self:
+		return
+	if tree_scene == current_scene_root:
+		return
+	var previous_scene = current_scene_root
+	current_scene_root = tree_scene
+	if previous_scene != null and is_instance_valid(previous_scene) and previous_scene.get_parent() == playback_viewport:
+		previous_scene.queue_free()
+
+
 func _capture_viewport_with_fallback(tag: String) -> Dictionary:
 	# Try real viewport capture first
-	if playback_viewport != null and is_instance_valid(playback_viewport):
+	var active_viewport: Viewport = null
+	if current_scene_root != null and is_instance_valid(current_scene_root):
+		active_viewport = current_scene_root.get_viewport()
+	elif playback_viewport != null and is_instance_valid(playback_viewport):
+		active_viewport = playback_viewport
+	if DisplayServer.get_name() != "headless" and active_viewport != null:
 		await _settle_frames(2)
-		var image = playback_viewport.get_texture().get_image()
+		var viewport_texture = active_viewport.get_texture() if active_viewport.has_method("get_texture") else null
+		var image = viewport_texture.get_image() if viewport_texture != null else null
 		if image != null and image.get_width() > 0 and image.get_height() > 0:
 			# Check if image is not all-black (renderer actually drew something)
 			var has_content = false
@@ -255,13 +416,20 @@ func _capture_viewport_with_fallback(tag: String) -> Dictionary:
 					return {"path": real_path, "synthetic": false}
 
 	# Fallback to synthetic image
+	var viewport_size = Vector2i(1280, 720)
+	if active_viewport != null:
+		viewport_size = Vector2i(
+			maxi(int(active_viewport.get_visible_rect().size.x), 1),
+			maxi(int(active_viewport.get_visible_rect().size.y), 1)
+		)
 	var fallback = Image.create(
-		max(playback_viewport.size.x if playback_viewport != null else 1280, 1),
-		max(playback_viewport.size.y if playback_viewport != null else 720, 1),
+		maxi(viewport_size.x, 1),
+		maxi(viewport_size.y, 1),
 		false,
 		Image.FORMAT_RGBA8
 	)
 	fallback.fill(Color(0.07, 0.08, 0.1, 1.0))
+	_draw_signature_markers(fallback, _scene_signature())
 	_draw_cursor_marker(fallback, state.cursor_position)
 	var fallback_path = ScreenshotCapture.capture_image(fallback, "phase2/headless", "%s_synthetic" % tag)
 	return {"path": fallback_path, "synthetic": true}
@@ -275,6 +443,75 @@ func _draw_cursor_marker(image: Image, cursor: Vector2i) -> void:
 		var y = clampi(center_y + delta, 0, image.get_height() - 1)
 		image.set_pixel(x, center_y, Color(0.9, 0.2, 0.2, 1.0))
 		image.set_pixel(center_x, y, Color(0.9, 0.2, 0.2, 1.0))
+
+
+func _scene_signature() -> String:
+	if current_scene_root == null or not is_instance_valid(current_scene_root):
+		return "no-scene"
+	var parts: PackedStringArray = []
+	parts.append(current_scene_root.name)
+	var focus_owner = current_scene_root.get_viewport().gui_get_focus_owner()
+	if focus_owner != null:
+		parts.append("focus:%s" % _node_path_from_scene_root(focus_owner))
+	_collect_signature_parts(current_scene_root, parts, 0)
+	return "|".join(parts)
+
+
+func _collect_signature_parts(node: Node, parts: PackedStringArray, depth: int) -> void:
+	if depth > 2 or parts.size() >= 16:
+		return
+	if node is Label:
+		parts.append("label:%s:%s" % [node.name, (node as Label).text])
+	elif node is Button:
+		parts.append("button:%s:%s:%s" % [node.name, (node as Button).text, str((node as Button).visible)])
+	elif node is LineEdit:
+		parts.append("line:%s:%s" % [node.name, (node as LineEdit).text])
+	for child in node.get_children():
+		if child is Node:
+			_collect_signature_parts(child, parts, depth + 1)
+
+
+func _node_path_from_scene_root(node: Node) -> String:
+	if current_scene_root == null or not is_instance_valid(current_scene_root):
+		return node.name
+	var root_path = str(current_scene_root.get_path())
+	var node_path = str(node.get_path())
+	if node_path.begins_with(root_path):
+		return node_path.trim_prefix(root_path).trim_prefix("/")
+	return node_path
+
+
+func _node_text(target: Node) -> String:
+	if target == null:
+		return ""
+	if target is Label:
+		return (target as Label).text
+	if target is RichTextLabel:
+		return (target as RichTextLabel).text
+	if target is LineEdit:
+		return (target as LineEdit).text
+	if target is BaseButton:
+		return (target as BaseButton).text
+	return ""
+
+
+func _draw_signature_markers(image: Image, signature: String) -> void:
+	var hash_value = abs(signature.hash())
+	var red = float(hash_value % 255) / 255.0
+	var green = float((hash_value / 255) % 255) / 255.0
+	var blue = float((hash_value / 65025) % 255) / 255.0
+	var accent = Color(red, green, blue, 1.0)
+	for x in range(image.get_width()):
+		image.set_pixel(x, 0, accent)
+		image.set_pixel(x, min(5, image.get_height() - 1), accent.darkened(0.2))
+	var bar_width = max(12, image.get_width() / 12)
+	for index in range(6):
+		var enabled = ((hash_value >> index) & 1) == 1
+		if not enabled:
+			continue
+		for x in range(index * bar_width, min((index + 1) * bar_width, image.get_width())):
+			for y in range(max(image.get_height() - 18, 0), image.get_height()):
+				image.set_pixel(x, y, accent.lightened(0.2))
 
 
 func _button_index_for_name(button_name: String) -> MouseButton:

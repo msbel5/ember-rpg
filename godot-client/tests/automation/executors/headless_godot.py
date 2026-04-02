@@ -4,11 +4,25 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+import os
 
 from automation.artifacts import ArtifactManager
 from automation.executors.base import AutomationExecutor, CapabilityUnavailableError
 from automation.models import ArtifactRecord, AutomationScenario
-from automation.process_utils import read_json, terminate_process, wait_for_json, wait_http, write_json_atomic
+from automation.process_utils import (
+    build_backend_url,
+    find_available_port,
+    is_port_available,
+    read_json,
+    terminate_process,
+    wait_backend_contract,
+    wait_for_json,
+    write_json_atomic,
+    backend_supports_paths,
+)
+
+
+BACKEND_ENV = "EMBER_RPG_BACKEND_URL"
 
 
 class HeadlessGodotExecutor(AutomationExecutor):
@@ -27,15 +41,16 @@ class HeadlessGodotExecutor(AutomationExecutor):
 
     @property
     def capabilities(self) -> set[str]:
-        return {"keyboard", "mouse", "viewport_capture", "issue_reporting", "headless"}
+        return {"keyboard", "mouse", "viewport_capture", "issue_reporting", "headless", "semantic_controls"}
 
     def launch_backend(self) -> None:
-        docs_url = self._docs_url()
-        try:
-            wait_http(docs_url, timeout=1.0)
+        if backend_supports_paths(self.backend_url):
             return
-        except RuntimeError:
-            pass
+        port = self.backend_port
+        if not is_port_available(self.backend_host, port):
+            port = find_available_port(self.backend_host, max(port + 1, 8765))
+        self.backend_port = port
+        self.backend_url = build_backend_url(self.backend_host, port, self.backend_url)
         self._backend_process = subprocess.Popen(
             [
                 sys.executable,
@@ -43,9 +58,9 @@ class HeadlessGodotExecutor(AutomationExecutor):
                 "uvicorn",
                 "main:app",
                 "--host",
-                self.scenario.backend_host,
+                self.backend_host,
                 "--port",
-                str(self.scenario.backend_port),
+                str(self.backend_port),
             ],
             cwd=self.scenario.backend_cwd,
             stdout=subprocess.DEVNULL,
@@ -53,7 +68,7 @@ class HeadlessGodotExecutor(AutomationExecutor):
             text=True,
         )
         self._backend_started_here = True
-        wait_http(docs_url, timeout=25.0)
+        wait_backend_contract(self.backend_url, timeout=25.0)
 
     def stop_backend(self) -> None:
         if self._backend_started_here:
@@ -88,6 +103,7 @@ class HeadlessGodotExecutor(AutomationExecutor):
         self._client_process = subprocess.Popen(
             args,
             cwd=self.scenario.godot_project_dir,
+            env={**os.environ, BACKEND_ENV: self.backend_url},
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             text=True,
@@ -132,6 +148,48 @@ class HeadlessGodotExecutor(AutomationExecutor):
     def type_text(self, text: str) -> None:
         self._send_command("text", text=text)
 
+    def focus_node(self, node_path: str) -> None:
+        self._send_command("focus_node", node_path=node_path)
+
+    def activate_node(self, node_path: str) -> None:
+        self._send_command("activate_node", node_path=node_path)
+
+    def set_text_node(self, node_path: str, text: str) -> None:
+        self._send_command("set_text_node", node_path=node_path, text=text)
+
+    def select_option_node(self, node_path: str, option_text: str) -> None:
+        self._send_command("select_option_node", node_path=node_path, option_text=option_text)
+
+    def click_node(
+        self,
+        node_path: str,
+        *,
+        normalized_x: float = 0.5,
+        normalized_y: float = 0.5,
+        button: str = "left",
+    ) -> None:
+        self._send_command(
+            "click_node",
+            node_path=node_path,
+            normalized_x=normalized_x,
+            normalized_y=normalized_y,
+            button=button,
+        )
+
+    def current_scene_name(self) -> str:
+        response = self.query_node_state()
+        return str(response.get("scene_name", "")).strip()
+
+    def node_exists(self, node_path: str) -> bool:
+        response = self.query_node_state(node_path)
+        return bool(response.get("node_exists", False))
+
+    def query_node_state(self, node_path: str | None = None) -> dict[str, Any]:
+        payload: dict[str, Any] = {}
+        if node_path:
+            payload["node_path"] = node_path
+        return self._send_command("query_state", **payload)
+
     def capture_os(self, tag: str) -> ArtifactRecord:
         raise CapabilityUnavailableError("Headless Godot cannot capture an OS/window screenshot.")
 
@@ -140,11 +198,17 @@ class HeadlessGodotExecutor(AutomationExecutor):
         source_path = Path(str(response.get("path", "")))
         if not source_path.exists():
             raise RuntimeError(f"Headless bridge reported a missing viewport artifact: {source_path}")
-        note = "synthetic headless fallback" if bool(response.get("synthetic", False)) else ""
+        scene_name = str(response.get("scene_name", "")).strip()
+        if bool(response.get("synthetic", False)):
+            note = "synthetic headless fallback"
+            if scene_name:
+                note = f"{note} [{scene_name}]"
+        else:
+            note = scene_name
         return self.artifacts.register(tag, "viewport_capture", source_path, note=note)
 
     def _docs_url(self) -> str:
-        return f"{self.scenario.backend_url.rstrip('/')}/docs"
+        return f"{self.backend_url.rstrip('/')}/docs"
 
     def _send_command(self, action: str, **payload: Any) -> dict[str, Any]:
         if self._client_process is None or self._client_process.poll() is not None:

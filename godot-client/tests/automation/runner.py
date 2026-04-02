@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 from pathlib import Path
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from urllib import request
 
 from automation.artifacts import ArtifactManager
 from automation.executors.base import AutomationExecutor, CapabilityUnavailableError
@@ -13,6 +16,7 @@ from automation.executors.win32_desktop import Win32DesktopExecutor
 from automation.models import ActionStep, ArtifactRecord, RunReport
 from automation.report_writer import write_report
 from automation.scenario_loader import load_scenario
+from tools.reset_dev_state import reset_dev_state
 
 
 EXECUTOR_TYPES = {
@@ -49,6 +53,7 @@ def main() -> int:
 
 def run_scenario(scenario_path: str | Path, executor_name: str) -> RunnerResult:
     scenario = load_scenario(scenario_path)
+    reset_dev_state()
     artifacts = ArtifactManager(Path(scenario.run_root), scenario.name)
     executor = _build_executor(executor_name, scenario, artifacts)
     started_at = datetime.now(timezone.utc).isoformat()
@@ -65,8 +70,15 @@ def run_scenario(scenario_path: str | Path, executor_name: str) -> RunnerResult:
         if not _check_environment(executor, report):
             json_report, markdown_report = write_report(report, artifacts)
             return RunnerResult(json_report=json_report, markdown_report=markdown_report, report=report)
+        prepared_slot = ""
         if scenario.requires_backend:
             executor.launch_backend()
+            if executor.backend_url != scenario.backend_url:
+                report.add_note(
+                    f"Automation selected backend `{executor.backend_url}` because `{scenario.backend_url}` did not satisfy the campaign contract."
+                )
+            prepared_slot = _ensure_resume_fixture(scenario, report, executor.backend_url)
+        _seed_godot_profile(scenario, prepared_slot)
         executor.launch_client()
         for step in scenario.steps:
             report.steps_run.append(step.id)
@@ -89,6 +101,61 @@ def run_scenario(scenario_path: str | Path, executor_name: str) -> RunnerResult:
 def _build_executor(executor_name: str, scenario, artifacts) -> AutomationExecutor:
     executor_type = EXECUTOR_TYPES[executor_name]
     return executor_type(scenario, artifacts)
+
+
+def _ensure_resume_fixture(scenario, report: RunReport, backend_url: str) -> str:
+    if scenario.create_new:
+        return ""
+    seed = sum(ord(character) for character in f"{scenario.player_name}:{scenario.adapter_id}:{scenario.name}") % 100000
+    payload = {
+        "player_name": scenario.player_name,
+        "player_class": "warrior",
+        "adapter_id": scenario.adapter_id,
+        "profile_id": "standard",
+        "seed": seed,
+    }
+    created = _json_request(f"{backend_url.rstrip('/')}/game/campaigns", payload)
+    campaign_id = str(created.get("campaign_id", "")).strip()
+    if not campaign_id:
+        raise RuntimeError("Fixture campaign creation did not return campaign_id.")
+    slot_name = f"auto_{scenario.name}_{scenario.player_name}".replace(" ", "_").lower()
+    _json_request(
+        f"{backend_url.rstrip('/')}/game/campaigns/{campaign_id}/save",
+        {"player_id": scenario.player_name, "slot_name": slot_name},
+    )
+    report.add_note(f"Prepared canonical campaign save fixture `{slot_name}` for player `{scenario.player_name}`.")
+    return slot_name
+
+
+def _seed_godot_profile(scenario, prepared_slot: str = "") -> None:
+    appdata = os.environ.get("APPDATA", "").strip()
+    if not appdata:
+        return
+    profile_path = Path(appdata) / "Godot" / "app_userdata" / "Ember RPG" / "client_profile.cfg"
+    profile_path.parent.mkdir(parents=True, exist_ok=True)
+    profile_text = "\n".join(
+        [
+            "[profile]",
+            f'last_player_id="{scenario.player_name}"',
+            f'last_resume_player_id="{scenario.player_name}"',
+            f'last_adapter_id="{scenario.adapter_id}"',
+            f'last_campaign_save_id="{prepared_slot}"' if prepared_slot else "",
+            "",
+        ]
+    )
+    profile_path.write_text(profile_text, encoding="utf-8")
+
+
+def _json_request(url: str, payload: dict[str, object]) -> dict[str, object]:
+    raw = json.dumps(payload).encode("utf-8")
+    req = request.Request(
+        url,
+        data=raw,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with request.urlopen(req, timeout=20) as response:
+        return json.loads(response.read().decode("utf-8"))
 
 
 def _check_environment(executor: AutomationExecutor, report: RunReport) -> bool:
@@ -152,6 +219,44 @@ def _dispatch_action(executor: AutomationExecutor, step: ActionStep) -> Artifact
     elif action == "mouse_click":
         _require_xy(step)
         executor.mouse_click(step.x, step.y, step.button)  # type: ignore[arg-type]
+    elif action == "focus_node":
+        _require_node_path(step)
+        executor.focus_node(step.node_path or "")
+    elif action == "activate_node":
+        _require_node_path(step)
+        executor.activate_node(step.node_path or "")
+    elif action == "set_text_node":
+        _require_node_path(step)
+        if step.text is None:
+            raise ValueError(f"Step {step.id} requires text")
+        executor.set_text_node(step.node_path or "", step.text)
+    elif action == "select_option_node":
+        _require_node_path(step)
+        if not step.option_text:
+            raise ValueError(f"Step {step.id} requires option_text")
+        executor.select_option_node(step.node_path or "", step.option_text)
+    elif action == "click_node":
+        _require_node_path(step)
+        executor.click_node(
+            step.node_path or "",
+            normalized_x=step.normalized_x if step.normalized_x is not None else 0.5,
+            normalized_y=step.normalized_y if step.normalized_y is not None else 0.5,
+            button=step.button,
+        )
+    elif action == "wait_for_scene":
+        _require_scene_name(step)
+        _wait_for_scene(executor, step.scene_name or "", _step_timeout_seconds(step))
+    elif action == "wait_for_node":
+        _require_node_path(step)
+        _wait_for_node(executor, step.node_path or "", _step_timeout_seconds(step))
+    elif action == "wait_for_node_visible":
+        _require_node_path(step)
+        _wait_for_node_visible(executor, step.node_path or "", _step_timeout_seconds(step))
+    elif action == "wait_for_node_text":
+        _require_node_path(step)
+        if step.text is None:
+            raise ValueError(f"Step {step.id} requires text")
+        _wait_for_node_text(executor, step.node_path or "", step.text, _step_timeout_seconds(step))
     elif action == "key_down":
         _require_key(step)
         executor.key_down(step.key or "")
@@ -256,6 +361,70 @@ def _require_xy(step: ActionStep) -> None:
 def _require_key(step: ActionStep) -> None:
     if not step.key:
         raise ValueError(f"Step {step.id} requires a key")
+
+
+def _require_node_path(step: ActionStep) -> None:
+    if not step.node_path:
+        raise ValueError(f"Step {step.id} requires node_path")
+
+
+def _require_scene_name(step: ActionStep) -> None:
+    if not step.scene_name:
+        raise ValueError(f"Step {step.id} requires scene_name")
+
+
+def _step_timeout_seconds(step: ActionStep) -> float:
+    timeout_ms = max(step.duration_ms, step.wait_ms, 1000)
+    return timeout_ms / 1000.0
+
+
+def _wait_for_scene(executor: AutomationExecutor, scene_name: str, timeout_seconds: float) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    last_scene = ""
+    while time.monotonic() <= deadline:
+        last_scene = executor.current_scene_name()
+        if last_scene == scene_name:
+            return
+        time.sleep(0.1)
+    raise RuntimeError(f"Timed out waiting for scene `{scene_name}`. Last scene was `{last_scene or 'unknown'}`.")
+
+
+def _wait_for_node(executor: AutomationExecutor, node_path: str, timeout_seconds: float) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() <= deadline:
+        if executor.node_exists(node_path):
+            return
+        time.sleep(0.1)
+    raise RuntimeError(f"Timed out waiting for node `{node_path}`.")
+
+
+def _wait_for_node_visible(executor: AutomationExecutor, node_path: str, timeout_seconds: float) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() <= deadline:
+        state = executor.query_node_state(node_path)
+        if bool(state.get("node_exists", False)) and bool(state.get("node_visible", False)):
+            return
+        time.sleep(0.1)
+    raise RuntimeError(f"Timed out waiting for visible node `{node_path}`.")
+
+
+def _wait_for_node_text(
+    executor: AutomationExecutor,
+    node_path: str,
+    expected_text: str,
+    timeout_seconds: float,
+) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    last_text = ""
+    while time.monotonic() <= deadline:
+        state = executor.query_node_state(node_path)
+        last_text = str(state.get("node_text", ""))
+        if bool(state.get("node_exists", False)) and expected_text in last_text:
+            return
+        time.sleep(0.1)
+    raise RuntimeError(
+        f"Timed out waiting for text `{expected_text}` in node `{node_path}`. Last text was `{last_text}`."
+    )
 
 
 if __name__ == "__main__":

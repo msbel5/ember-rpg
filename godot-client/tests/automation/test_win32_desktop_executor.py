@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 
 from automation.artifacts import ArtifactManager
 from automation.executors import win32_desktop
@@ -102,3 +103,100 @@ def test_win32_executor_reports_missing_environment_dependencies(monkeypatch, tm
     assert health["ok"] is False
     assert "pywin32" in health["missing"]
     assert "Pillow" in health["missing"]
+
+
+def test_win32_executor_launch_backend_uses_fallback_port(monkeypatch, tmp_path: Path) -> None:
+    executor = Win32DesktopExecutor(_scenario(tmp_path), ArtifactManager(tmp_path, "desktop", run_id="five"))
+    popen_calls: list[list[str]] = []
+
+    monkeypatch.setattr(win32_desktop, "backend_supports_paths", lambda *_args, **_kwargs: False)
+    monkeypatch.setattr(win32_desktop, "is_port_available", lambda *_args, **_kwargs: False)
+    monkeypatch.setattr(win32_desktop, "find_available_port", lambda *_args, **_kwargs: 8765)
+    monkeypatch.setattr(win32_desktop, "wait_backend_contract", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(subprocess, "Popen", lambda args, **kwargs: popen_calls.append(list(args)) or object())
+
+    executor.launch_backend()
+
+    assert executor.backend_url == "http://127.0.0.1:8765"
+    assert popen_calls[0][-1] == "8765"
+
+
+def test_win32_executor_launch_client_passes_backend_and_bridge_envs(
+    monkeypatch, tmp_path: Path
+) -> None:
+    scenario = _scenario(tmp_path)
+    (tmp_path / "godot-client").mkdir()
+    artifacts = ArtifactManager(tmp_path, "desktop", run_id="six")
+    executor = Win32DesktopExecutor(scenario, artifacts)
+    executor.backend_url = "http://127.0.0.1:8765"
+    popen_envs: list[dict[str, str]] = []
+
+    class DummyProcess:
+        pid = 1234
+
+        def poll(self):
+            return None
+
+    monkeypatch.setattr(win32_desktop, "WIN32_AVAILABLE", True)
+    monkeypatch.setattr(subprocess, "Popen", lambda *args, **kwargs: popen_envs.append(kwargs["env"]) or DummyProcess())
+    monkeypatch.setattr(executor, "_find_hwnd", lambda _pid: 100)
+    monkeypatch.setattr(executor, "activate_window", lambda: None)
+    monkeypatch.setattr(
+        win32_desktop,
+        "wait_for_json",
+        lambda path, predicate, timeout=10.0: {"ready": True, "status": "ok"} if predicate({"ready": True, "status": "ok"}) else {},
+    )
+
+    executor.launch_client()
+
+    env = popen_envs[0]
+    assert env["EMBER_RPG_BACKEND_URL"] == "http://127.0.0.1:8765"
+    assert env["EMBER_AUTOMATION_COMMAND_FILE"].endswith("bridge\\command.json")
+    assert env["EMBER_AUTOMATION_RESULT_FILE"].endswith("bridge\\result.json")
+    assert env["EMBER_AUTOMATION_STATUS_FILE"].endswith("bridge\\status.json")
+
+
+def test_win32_executor_semantic_actions_proxy_to_runtime_bridge(monkeypatch, tmp_path: Path) -> None:
+    executor = Win32DesktopExecutor(_scenario(tmp_path), ArtifactManager(tmp_path, "desktop", run_id="seven"))
+    recorded: list[tuple[str, dict]] = []
+
+    def fake_send_command(action: str, **payload):
+        recorded.append((action, payload))
+        if action == "query_state":
+            response = {"status": "ok", "scene_name": "TitleScreen", "node_exists": False}
+            if payload.get("node_path") == "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton":
+                response["node_exists"] = True
+            return response
+        return {"status": "ok"}
+
+    monkeypatch.setattr(executor, "_send_command", fake_send_command)
+
+    executor.focus_node("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton")
+    executor.activate_node("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton")
+    executor.set_text_node("CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/NameInput", "Nova")
+    executor.click_node("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton", normalized_x=0.5, normalized_y=0.5)
+    assert executor.current_scene_name() == "TitleScreen"
+    assert executor.node_exists("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton") is True
+
+    assert recorded == [
+        ("focus_node", {"node_path": "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"}),
+        ("activate_node", {"node_path": "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"}),
+        (
+            "set_text_node",
+            {
+                "node_path": "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/NameInput",
+                "text": "Nova",
+            },
+        ),
+        (
+            "click_node",
+            {
+                "node_path": "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton",
+                "normalized_x": 0.5,
+                "normalized_y": 0.5,
+                "button": "left",
+            },
+        ),
+        ("query_state", {}),
+        ("query_state", {"node_path": "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"}),
+    ]

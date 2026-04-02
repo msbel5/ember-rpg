@@ -11,7 +11,17 @@ import importlib.util
 from automation.artifacts import ArtifactManager
 from automation.executors.base import AutomationExecutor, CapabilityUnavailableError
 from automation.models import ArtifactRecord, AutomationScenario
-from automation.process_utils import terminate_process, wait_http
+from automation.process_utils import (
+    backend_supports_paths,
+    build_backend_url,
+    find_available_port,
+    is_port_available,
+    read_json,
+    terminate_process,
+    wait_backend_contract,
+    wait_for_json,
+    write_json_atomic,
+)
 
 try:  # pragma: no cover - import availability depends on host setup
     import win32con
@@ -31,6 +41,11 @@ except Exception:  # pragma: no cover - exercised by import fallback tests
 
 
 SCREENSHOT_ROOT = Path(os.path.expandvars(r"%APPDATA%\Godot\app_userdata\Ember RPG\screenshots"))
+BACKEND_ENV = "EMBER_RPG_BACKEND_URL"
+AUTOMATION_COMMAND_ENV = "EMBER_AUTOMATION_COMMAND_FILE"
+AUTOMATION_RESULT_ENV = "EMBER_AUTOMATION_RESULT_FILE"
+AUTOMATION_STATUS_ENV = "EMBER_AUTOMATION_STATUS_FILE"
+AUTOMATION_ARTIFACT_ENV = "EMBER_AUTOMATION_ARTIFACT_ROOT"
 DESKTOP_REQUIREMENTS = {
     "pywin32": ("win32gui", "Install desktop automation support with `pip install -r godot-client/tests/automation/requirements-desktop.txt`."),
     "Pillow": ("PIL", "Install image capture support with `pip install -r godot-client/tests/automation/requirements-desktop.txt`."),
@@ -69,12 +84,17 @@ class Win32DesktopExecutor(AutomationExecutor):
         self._backend_started_here = False
         self._hwnd: int | None = None
         self._cursor = (0, 0)
+        self._sequence = 0
+        self._bridge_dir = self.artifacts.run_dir / "bridge"
+        self._command_path = self._bridge_dir / "command.json"
+        self._result_path = self._bridge_dir / "result.json"
+        self._status_path = self._bridge_dir / "status.json"
 
     @property
     def capabilities(self) -> set[str]:
         capabilities = {"keyboard", "mouse", "viewport_capture", "issue_reporting"}
         if WIN32_AVAILABLE:
-            capabilities.update({"os_capture", "window_activation"})
+            capabilities.update({"os_capture", "window_activation", "semantic_controls"})
         return capabilities
 
     def environment_health(self) -> dict:
@@ -100,12 +120,13 @@ class Win32DesktopExecutor(AutomationExecutor):
         }
 
     def launch_backend(self) -> None:
-        docs_url = self._docs_url()
-        try:
-            wait_http(docs_url, timeout=1.0)
+        if backend_supports_paths(self.backend_url):
             return
-        except RuntimeError:
-            pass
+        port = self.backend_port
+        if not is_port_available(self.backend_host, port):
+            port = find_available_port(self.backend_host, max(port + 1, 8765))
+        self.backend_port = port
+        self.backend_url = build_backend_url(self.backend_host, port, self.backend_url)
         self._backend_process = subprocess.Popen(
             [
                 sys.executable,
@@ -113,9 +134,9 @@ class Win32DesktopExecutor(AutomationExecutor):
                 "uvicorn",
                 "main:app",
                 "--host",
-                self.scenario.backend_host,
+                self.backend_host,
                 "--port",
-                str(self.scenario.backend_port),
+                str(self.backend_port),
             ],
             cwd=self.scenario.backend_cwd,
             stdout=subprocess.DEVNULL,
@@ -123,7 +144,7 @@ class Win32DesktopExecutor(AutomationExecutor):
             text=True,
         )
         self._backend_started_here = True
-        wait_http(docs_url, timeout=25.0)
+        wait_backend_contract(self.backend_url, timeout=25.0)
 
     def stop_backend(self) -> None:
         if self._backend_started_here:
@@ -133,12 +154,22 @@ class Win32DesktopExecutor(AutomationExecutor):
 
     def launch_client(self) -> None:
         self._require_win32("launch_client", "Win32 desktop automation dependencies are not available.")
+        self._bridge_dir.mkdir(parents=True, exist_ok=True)
+        for path in (self._command_path, self._result_path, self._status_path):
+            if path.exists():
+                path.unlink()
         args = [self.scenario.godot_executable, "--path", self.scenario.godot_project_dir]
-        if self.scenario.initial_scene:
-            args.append(self.scenario.initial_scene)
         self._client_process = subprocess.Popen(
             args,
             cwd=self.scenario.godot_project_dir,
+            env={
+                **os.environ,
+                BACKEND_ENV: self.backend_url,
+                AUTOMATION_COMMAND_ENV: str(self._command_path),
+                AUTOMATION_RESULT_ENV: str(self._result_path),
+                AUTOMATION_STATUS_ENV: str(self._status_path),
+                AUTOMATION_ARTIFACT_ENV: str(self.artifacts.run_dir),
+            },
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             text=True,
@@ -148,6 +179,9 @@ class Win32DesktopExecutor(AutomationExecutor):
             raise RuntimeError("Godot client exited before the desktop executor could attach.")
         self._hwnd = self._find_hwnd(self._client_process.pid)
         self.activate_window()
+        status = wait_for_json(self._status_path, lambda payload: payload.get("ready") is True, timeout=20.0)
+        if str(status.get("status", "")) == "error":
+            raise RuntimeError(str(status.get("message", "Runtime automation bridge failed to launch.")))
 
     def close_client(self) -> None:
         terminate_process(self._client_process)
@@ -158,14 +192,14 @@ class Win32DesktopExecutor(AutomationExecutor):
         self._require_win32("activate_window", "Window activation requires Win32 automation support.")
         hwnd = self._require_hwnd()
         win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 80, 80, 1280, 720, 0)
+        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 80, 80, 1600, 900, 0)
         win32gui.SetWindowPos(
             hwnd,
             win32con.HWND_NOTOPMOST,
             80,
             80,
-            1280,
-            720,
+            1600,
+            900,
             win32con.SWP_SHOWWINDOW,
         )
         try:  # pragma: no cover - host policy may reject foreground changes
@@ -230,6 +264,17 @@ class Win32DesktopExecutor(AutomationExecutor):
         return self.artifacts.register(tag, "os_screenshot", destination)
 
     def capture_viewport(self, tag: str) -> ArtifactRecord:
+        if self._status_path.exists():
+            response = self._send_command("capture_viewport", tag=tag)
+            source_path = Path(str(response.get("path", "")))
+            if not source_path.exists():
+                raise RuntimeError(f"Runtime automation bridge reported a missing viewport artifact: {source_path}")
+            scene_name = str(response.get("scene_name", "")).strip()
+            note = scene_name
+            destination = self.artifacts.artifact_path("viewport_captures", tag, ".png")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source_path, destination)
+            return self.artifacts.register(tag, "viewport_capture", destination, note=note)
         baseline = self._latest_png()
         self.key_press("f12")
         captured_path = self._wait_for_viewport_capture(baseline)
@@ -238,8 +283,71 @@ class Win32DesktopExecutor(AutomationExecutor):
         shutil.copy2(captured_path, destination)
         return self.artifacts.register(tag, "viewport_capture", destination, note=str(captured_path))
 
+    def focus_node(self, node_path: str) -> None:
+        self._send_command("focus_node", node_path=node_path)
+
+    def activate_node(self, node_path: str) -> None:
+        self._send_command("activate_node", node_path=node_path)
+
+    def set_text_node(self, node_path: str, text: str) -> None:
+        self._send_command("set_text_node", node_path=node_path, text=text)
+
+    def select_option_node(self, node_path: str, option_text: str) -> None:
+        self._send_command("select_option_node", node_path=node_path, option_text=option_text)
+
+    def click_node(
+        self,
+        node_path: str,
+        *,
+        normalized_x: float = 0.5,
+        normalized_y: float = 0.5,
+        button: str = "left",
+    ) -> None:
+        self._send_command(
+            "click_node",
+            node_path=node_path,
+            normalized_x=normalized_x,
+            normalized_y=normalized_y,
+            button=button,
+        )
+
+    def current_scene_name(self) -> str:
+        response = self.query_node_state()
+        return str(response.get("scene_name", "")).strip()
+
+    def node_exists(self, node_path: str) -> bool:
+        response = self.query_node_state(node_path)
+        return bool(response.get("node_exists", False))
+
+    def query_node_state(self, node_path: str | None = None) -> dict:
+        payload = {}
+        if node_path:
+            payload["node_path"] = node_path
+        return self._send_command("query_state", **payload)
+
+    def bridge_status(self) -> dict:
+        return read_json(self._status_path)
+
     def _docs_url(self) -> str:
-        return f"{self.scenario.backend_url.rstrip('/')}/docs"
+        return f"{self.backend_url.rstrip('/')}/docs"
+
+    def _send_command(self, action: str, **payload) -> dict:
+        if self._client_process is None or self._client_process.poll() is not None:
+            raise RuntimeError("Windowed Godot runtime bridge is not running.")
+        self._sequence += 1
+        command = {"seq": self._sequence, "action": action, **payload}
+        write_json_atomic(self._command_path, command)
+        result = wait_for_json(
+            self._result_path,
+            lambda entry: int(entry.get("seq", -1)) == self._sequence,
+            timeout=15.0,
+        )
+        status = str(result.get("status", "ok"))
+        if status == "gap":
+            raise CapabilityUnavailableError(str(result.get("message", "Executor capability gap.")))
+        if status == "error":
+            raise RuntimeError(str(result.get("message", "Runtime automation bridge command failed.")))
+        return result
 
     def _require_win32(self, capability: str, message: str) -> None:
         if not WIN32_AVAILABLE:

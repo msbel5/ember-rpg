@@ -91,6 +91,9 @@ func _test_campaign_backend_routes() -> void:
 	probe.get_campaign_creation_catalog(noop)
 	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/creation/catalog", "get_campaign_creation_catalog uses the catalog route")
 
+	probe.get_campaign_client_health(noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/health/campaign-client", "get_campaign_client_health uses the campaign health route")
+
 	probe.start_campaign_creation("Chaos", "fantasy_ember", noop, "standard", 42, "Harbor Town")
 	var creation_body = JSON.parse_string(str(probe.last_request.get("body", "{}")))
 	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/creation/start", "start_campaign_creation uses the campaign creation start route")
@@ -407,9 +410,34 @@ func _test_scene_instantiation() -> void:
 		root.add_child(title_instance)
 		await process_frame
 		var creation_form_root := "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent"
+		var creation_catalog = {
+			"default_class_id": "warrior",
+			"default_adapter_id": "fantasy_ember",
+			"default_profile_id": "standard",
+			"ability_order": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
+			"class_catalog": [
+				{"id": "warrior", "label": "Warrior", "description": "Hold the line.", "ability_priority": ["MIG", "END", "AGI", "PRE", "INS", "MND"], "skill_pool": ["athletics", "intimidation", "survival"], "default_skills": ["athletics"], "skill_pick_count": 2},
+				{"id": "rogue", "label": "Rogue", "description": "Slip the knife.", "ability_priority": ["AGI", "INS", "PRE", "MND", "END", "MIG"], "skill_pool": ["stealth", "sleight", "perception"], "default_skills": ["stealth"], "skill_pick_count": 2},
+				{"id": "mage", "label": "Mage", "description": "Bend occult law.", "ability_priority": ["MND", "INS", "AGI", "PRE", "END", "MIG"], "skill_pool": ["arcana", "history", "insight"], "default_skills": ["arcana"], "skill_pick_count": 2},
+				{"id": "priest", "label": "Priest", "description": "Interpret the signs.", "ability_priority": ["INS", "PRE", "END", "MND", "MIG", "AGI"], "skill_pool": ["medicine", "religion", "insight"], "default_skills": ["medicine"], "skill_pick_count": 2},
+			],
+			"adapter_catalog": [
+				{"id": "fantasy_ember", "label": "Fantasy Ember"},
+				{"id": "scifi_frontier", "label": "Sci-Fi Frontier"},
+			],
+			"profile_catalog": [{"id": "standard", "label": "Standard Continental World"}],
+			"settlement_labels": {"border_keep": "border keep"},
+			"faction_labels": {"guard_captains": "guard captains"},
+			"genesis_defaults": {"settlement_label": "frontier settlement", "faction_label": "local power brokers"},
+		}
 		_assert_true(is_instance_valid(title_instance), "TitleScreen instantiates")
 		_assert_true(title_instance.theme != null, "TitleScreen applies a shared authored theme")
 		_assert_true(title_instance.get_node_or_null("HeroPanel") != null, "TitleScreen installs a hero panel for first-impression copy")
+		title_instance._on_new_game()
+		await process_frame
+		_assert_true(not title_instance.get_node("CharacterCreation").visible, "TitleScreen waits for a catalog before opening the wizard shell")
+		title_instance._on_creation_catalog_loaded(creation_catalog)
+		await process_frame
 		title_instance._on_new_game()
 		await process_frame
 		_assert_true(title_instance.get_node("CharacterCreation").visible, "TitleScreen opens the creation wizard")
@@ -426,6 +454,8 @@ func _test_scene_instantiation() -> void:
 			title_instance.get_node_or_null("CharacterCreation/VBox/CreationBody/PreviewPane/PreviewMargin/PreviewVBox/PreviewText") != null,
 			"TitleScreen installs a dedicated live preview pane"
 		)
+		_assert_true(title_instance.get_node_or_null("%s/IdentitySection/GenreCards/FantasyCard" % creation_form_root) != null, "TitleScreen exposes genre cards instead of an adapter dropdown")
+		_assert_true(title_instance.get_node_or_null("%s/IdentitySection/AdapterOption" % creation_form_root) == null, "TitleScreen no longer uses adapter dropdowns")
 		_assert_true(not title_instance.get_node("%s/IdentitySection/AdvancedSection" % creation_form_root).visible, "TitleScreen hides advanced settings by default")
 		title_instance.get_node("%s/IdentitySection/NameInput" % creation_form_root).text = "Chaos"
 		_assert_true(title_instance._primary_wizard_action_for_key(KEY_ENTER) == "next", "TitleScreen maps Enter to the primary identity action once the shell is open")
@@ -451,26 +481,7 @@ func _test_scene_instantiation() -> void:
 			"adapter_id": "fantasy_ember",
 			"profile_id": "standard",
 			"seed": 42,
-			"catalog": {
-				"default_class_id": "warrior",
-				"default_adapter_id": "fantasy_ember",
-				"default_profile_id": "standard",
-				"ability_order": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
-				"class_catalog": [
-					{"id": "warrior", "label": "Warrior", "ability_priority": ["MIG", "END", "AGI", "PRE", "INS", "MND"]},
-					{"id": "rogue", "label": "Rogue", "ability_priority": ["AGI", "INS", "PRE", "MND", "END", "MIG"]},
-					{"id": "mage", "label": "Mage", "ability_priority": ["MND", "INS", "AGI", "PRE", "END", "MIG"]},
-					{"id": "priest", "label": "Priest", "ability_priority": ["INS", "PRE", "END", "MND", "MIG", "AGI"]},
-				],
-				"adapter_catalog": [
-					{"id": "fantasy_ember", "label": "Fantasy Ember"},
-					{"id": "scifi_frontier", "label": "Sci-Fi Frontier"},
-				],
-				"profile_catalog": [{"id": "standard", "label": "Standard Continental World"}],
-				"settlement_labels": {"border_keep": "border keep"},
-				"faction_labels": {"guard_captains": "guard captains"},
-				"genesis_defaults": {"settlement_label": "frontier settlement", "faction_label": "local power brokers"},
-			},
+			"catalog": creation_catalog,
 			"questions": [
 				{
 					"id": "q_intro",
@@ -484,6 +495,11 @@ func _test_scene_instantiation() -> void:
 			"answers": [],
 			"current_roll": [15, 14, 13, 12, 10, 8],
 			"saved_roll": [13, 12, 12, 10, 9, 8],
+			"campaign_genesis": {
+				"world_premise": "Ash and iron grip the frontier.",
+				"starting_pressure": "Food is short, nerves are shorter.",
+				"history_events": ["Year 1: The First Age begins.", "Year 47: The border keep falls silent."],
+			},
 			"recommended_class": "warrior",
 			"recommended_alignment": "LG",
 			"recommended_skills": ["athletics", "perception"],
@@ -492,55 +508,52 @@ func _test_scene_instantiation() -> void:
 		title_instance.get_node("LoadBrowser").visible = false
 		title_instance._go_to_step(title_instance.STEP_QUESTIONNAIRE)
 		await process_frame
-		var title_next_button = title_instance.get_node("CharacterCreation/VBox/ButtonRow/NextButton")
-		var first_selector = title_instance._questionnaire_selectors.get("q_intro")
 		var title_preview_text = title_instance.get_node("CharacterCreation/VBox/CreationBody/PreviewPane/PreviewMargin/PreviewVBox/PreviewText")
+		var question_prompt = title_instance.get_node("%s/QuestionSection/QuestionPrompt" % creation_form_root)
+		var answer_buttons = title_instance.get_node("%s/QuestionSection/AnswerButtons" % creation_form_root)
 		_assert_true(
-			first_selector != null and title_instance.get_viewport().gui_get_focus_owner() == first_selector,
-			"TitleScreen focuses the first questionnaire selector on the questionnaire step"
+			question_prompt.text.contains("How do you react?"),
+			"TitleScreen renders one question at a time in the questionnaire step"
 		)
 		_assert_true(
-			title_preview_text.text.contains("Live Genesis Preview"),
-			"TitleScreen mirrors questionnaire guidance into the live preview pane"
+			answer_buttons.get_child_count() == 2 and answer_buttons.get_child(0) is Button,
+			"TitleScreen renders visible answer buttons instead of dropdown selectors"
 		)
-		_assert_true(title_instance._primary_wizard_action_for_key(KEY_ENTER) == "next", "TitleScreen maps Enter to the wizard Next action")
+		_assert_true(
+			title_preview_text.text.contains("World Premise") and title_preview_text.text.contains("Ash and iron"),
+			"TitleScreen mirrors creation guidance into the live preview pane"
+		)
+		_assert_true((answer_buttons.get_child(0) as Button).focus_mode != Control.FOCUS_NONE, "TitleScreen keeps the first answer button keyboard-focusable on the questionnaire step")
 		title_instance._go_to_step(title_instance.STEP_BUILD)
 		await process_frame
-		var title_class_option = title_instance.get_node("%s/BuildSection/ClassOption" % creation_form_root)
-		var title_alignment_input = title_instance.get_node("%s/BuildSection/AlignmentInput" % creation_form_root)
-		var title_skills_input = title_instance.get_node("%s/BuildSection/SkillsInput" % creation_form_root)
-		var title_mig_input = title_instance.get_node("%s/BuildSection/StatsGrid/MIGInput" % creation_form_root)
-		_assert_true(title_class_option.item_count >= 4, "TitleScreen build step exposes class overrides")
-		_assert_true(title_alignment_input.text == "LG", "TitleScreen pre-fills recommended alignment in the build step")
-		title_class_option.select(2)
-		title_alignment_input.text = "CG"
-		title_skills_input.text = "arcana, history"
-		title_mig_input.text = "18"
+		var title_class_grid = title_instance.get_node("%s/BuildSection/ClassGrid" % creation_form_root)
+		var title_alignment_grid = title_instance.get_node("%s/BuildSection/AlignmentGrid" % creation_form_root)
+		var title_skill_grid = title_instance.get_node("%s/BuildSection/SkillGrid" % creation_form_root)
+		_assert_true(title_instance.get_node_or_null("%s/BuildSection/ClassOption" % creation_form_root) == null, "TitleScreen no longer uses a class dropdown in build step")
+		_assert_true(title_class_grid.get_child_count() >= 4, "TitleScreen build step exposes class cards")
+		_assert_true(title_alignment_grid.get_child_count() == 9, "TitleScreen build step exposes a 3x3 alignment grid")
+		_assert_true(title_skill_grid.get_child_count() >= 2, "TitleScreen build step exposes visible skill toggles")
+		(title_class_grid.get_child(2) as Button).emit_signal("pressed")
+		(title_alignment_grid.get_child(2) as Button).emit_signal("pressed")
+		(title_skill_grid.get_child(0) as Button).set_pressed_no_signal(true)
 		title_instance._go_to_step(title_instance.STEP_SUMMARY)
 		await process_frame
-		var title_summary = title_instance.get_node("%s/SummarySection/SummaryText" % creation_form_root)
+		var title_summary = title_instance.get_node("%s/DossierSection/DossierText" % creation_form_root)
 		var title_start_button = title_instance.get_node("CharacterCreation/VBox/ButtonRow/StartButton")
-		_assert_true(title_summary.text.contains("World Premise") and title_summary.text.contains("Recommended Frame"), "TitleScreen summary renders dossier-style creation preview text")
+		_assert_true(title_summary.text.contains("History") and title_summary.text.contains("World Premise"), "TitleScreen dossier step renders world premise and history")
 		_assert_true(title_instance.get_viewport().gui_get_focus_owner() == title_start_button, "TitleScreen focuses Start Campaign on the summary step")
 		_assert_true(title_instance._primary_wizard_action_for_key(KEY_SPACE) == "start", "TitleScreen maps Space to Start Campaign on the summary step")
-		title_instance._go_to_step(title_instance.STEP_BUILD)
-		await process_frame
-		_assert_true(str(title_class_option.get_item_metadata(title_class_option.selected)) == "mage", "TitleScreen preserves manual class edits when returning from summary")
-		_assert_true(title_alignment_input.text == "CG", "TitleScreen preserves manual alignment edits when returning from summary")
-		_assert_true(title_skills_input.text == "arcana, history", "TitleScreen preserves manual skill edits when returning from summary")
-		_assert_true(title_mig_input.text == "18", "TitleScreen preserves manual stat edits when returning from summary")
 		title_instance._clear_load_rows()
 		title_instance._on_saves_listed([
-			{"save_id": "legacy_a", "slot_name": "legacy_a", "campaign_compatible": false, "location": "Harbor Town", "timestamp": "2026-03-28T09:00:00"},
-			{"save_id": "campaign_a", "slot_name": "campaign_a", "campaign_compatible": true, "location": "Dragon Eyrie", "timestamp": "2026-03-28T10:00:00"},
+			{"save_id": "campaign_a", "slot_name": "campaign_a", "location": "Dragon Eyrie", "timestamp": "2026-03-28T10:00:00"},
 		])
 		var load_save_list = title_instance.get_node("LoadBrowser/VBox/SaveScroll/SaveList")
-		_assert_true(load_save_list.get_child_count() == 1, "TitleScreen hides incompatible save rows in continue flow")
-		_assert_true(title_instance.get_node("LoadBrowser/VBox/StatusLabel").text.contains("campaign save"), "TitleScreen reports campaign-compatible save counts")
+		_assert_true(load_save_list.get_child_count() == 1, "TitleScreen renders canonical campaign save rows in continue flow")
+		_assert_true(title_instance.get_node("LoadBrowser/VBox/StatusLabel").text.contains("save"), "TitleScreen reports canonical campaign save counts")
 		title_instance._set_load_browser_busy(true, "Loading saves...")
 		await process_frame
 		var load_row = load_save_list.get_child(0)
-		var load_button = load_row.get_node_or_null("LoadButton")
+		var load_button = load_row.get_node_or_null("LoadButton0")
 		_assert_true(load_button != null and load_button.disabled, "TitleScreen disables load buttons while the browser is busy")
 		title_instance.free()
 		await process_frame
