@@ -63,7 +63,7 @@ static func humanize_id(raw_id: String) -> String:
 
 
 static func modifier(value: int) -> int:
-	return (value - 10) / 2
+	return int(floor(float(value - 10) / 2.0))
 
 
 static func roll_text(values) -> String:

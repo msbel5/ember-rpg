@@ -90,28 +90,28 @@ func list_saves(callback: Callable, player_id: String = "") -> void:
 func delete_save(save_id: String, callback: Callable) -> void:
 	_http_delete("/game/saves/%s" % save_id, callback)
 
-func create_campaign(player_name: String, player_class: String, adapter_id: String, callback: Callable, profile_id: String = "standard", seed: int = -1) -> void:
+func create_campaign(player_name: String, player_class: String, adapter_id: String, callback: Callable, profile_id: String = "standard", world_seed: int = -1) -> void:
 	var body := {
 		"player_name": player_name,
 		"player_class": player_class,
 		"adapter_id": adapter_id,
 		"profile_id": profile_id,
 	}
-	if seed >= 0:
-		body["seed"] = seed
+	if world_seed >= 0:
+		body["seed"] = world_seed
 	_post("/game/campaigns", JSON.stringify(body), callback)
 
 func get_campaign_creation_catalog(callback: Callable) -> void:
 	_http_get("/game/campaigns/creation/catalog", callback)
 
-func start_campaign_creation(player_name: String, adapter_id: String, callback: Callable, profile_id: String = "standard", seed: int = -1, location: String = "") -> void:
+func start_campaign_creation(player_name: String, adapter_id: String, callback: Callable, profile_id: String = "standard", world_seed: int = -1, location: String = "") -> void:
 	var body := {
 		"player_name": player_name,
 		"adapter_id": adapter_id,
 		"profile_id": profile_id,
 	}
-	if seed >= 0:
-		body["seed"] = seed
+	if world_seed >= 0:
+		body["seed"] = world_seed
 	if not location.is_empty():
 		body["location"] = location
 	_post("/game/campaigns/creation/start", JSON.stringify(body), callback)

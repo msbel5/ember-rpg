@@ -3,63 +3,75 @@ class_name CreationStepHistoryRoll
 
 
 
-static func build_history_section(owner) -> Control:
+static func build_history_section(owner) -> Dictionary:
 	var section := VBoxContainer.new()
 	section.name = "HistorySection"
 	var prompt := Label.new()
 	prompt.text = "World history settles into place..."
 	section.add_child(prompt)
 
-	owner._history_text = RichTextLabel.new()
-	owner._history_text.name = "HistoryText"
-	owner._history_text.bbcode_enabled = true
-	owner._history_text.fit_content = false
-	owner._history_text.scroll_active = true
-	owner._history_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	owner._history_text.custom_minimum_size = Vector2(0, 360)
-	section.add_child(owner._history_text)
+	var history_text := RichTextLabel.new()
+	history_text.name = "HistoryText"
+	history_text.bbcode_enabled = true
+	history_text.fit_content = false
+	history_text.scroll_active = true
+	history_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	history_text.custom_minimum_size = Vector2(0, 360)
+	section.add_child(history_text)
 
-	owner._history_timer = Timer.new()
-	owner._history_timer.wait_time = 0.033
-	owner._history_timer.timeout.connect(owner._on_history_tick)
-	section.add_child(owner._history_timer)
-	return section
+	var history_timer := Timer.new()
+	history_timer.wait_time = 0.033
+	history_timer.timeout.connect(owner._on_history_tick)
+	section.add_child(history_timer)
+
+	return {
+		"root": section,
+		"history_text": history_text,
+		"history_timer": history_timer,
+	}
 
 
-static func build_roll_section(owner) -> Control:
+static func build_roll_section(owner) -> Dictionary:
 	var section := VBoxContainer.new()
 	section.name = "RollSection"
 
-	owner._roll_pool_label = Label.new()
-	section.add_child(owner._roll_pool_label)
+	var roll_pool_label := Label.new()
+	section.add_child(roll_pool_label)
 
-	owner._saved_roll_label = Label.new()
-	section.add_child(owner._saved_roll_label)
+	var saved_roll_label := Label.new()
+	section.add_child(saved_roll_label)
 
-	owner._silhouette = Control.new()
-	owner._silhouette.name = "SilhouetteBoard"
-	owner._silhouette.custom_minimum_size = Vector2(0, 220)
-	section.add_child(owner._silhouette)
+	var silhouette := Control.new()
+	silhouette.name = "SilhouetteBoard"
+	silhouette.custom_minimum_size = Vector2(0, 220)
+	section.add_child(silhouette)
 
-	owner._stat_rows = VBoxContainer.new()
-	owner._stat_rows.name = "StatRows"
-	section.add_child(owner._stat_rows)
+	var stat_rows := VBoxContainer.new()
+	stat_rows.name = "StatRows"
+	section.add_child(stat_rows)
 
 	var button_row := HBoxContainer.new()
 	button_row.add_theme_constant_override("separation", 10)
 	section.add_child(button_row)
 
 	for pair in [
-		["RerollButton", "Reroll", func() -> void: owner.reroll_requested.emit()],
-		["SaveRollButton", "Lock Pool", func() -> void: owner.save_roll_requested.emit()],
-		["SwapRollButton", "Swap Pool", func() -> void: owner.swap_roll_requested.emit()],
+		["RerollButton", "Reroll", func() -> void: owner.emit_reroll()],
+		["SaveRollButton", "Lock Pool", func() -> void: owner.emit_save_roll()],
+		["SwapRollButton", "Swap Pool", func() -> void: owner.emit_swap_roll()],
 	]:
 		var button := Button.new()
 		button.name = pair[0]
 		button.text = pair[1]
 		button.pressed.connect(pair[2])
 		button_row.add_child(button)
-	return section
+
+	return {
+		"root": section,
+		"roll_pool_label": roll_pool_label,
+		"saved_roll_label": saved_roll_label,
+		"stat_rows": stat_rows,
+		"silhouette": silhouette,
+	}
 
 
 static func render_history(owner) -> void:
@@ -97,6 +109,7 @@ static func history_reveal_complete(owner) -> bool:
 static func on_history_tick(owner) -> void:
 	owner._history_visible_events += 1
 	owner._history_text.text = _formatted_timeline(owner._history_timeline_data.slice(0, owner._history_visible_events))
+	owner._history_text.scroll_to_line(owner._history_text.get_line_count())
 	if owner._history_visible_events >= owner._history_timeline_data.size():
 		owner._history_timer.stop()
 

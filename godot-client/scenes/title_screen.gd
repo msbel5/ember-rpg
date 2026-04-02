@@ -99,10 +99,10 @@ func _close_load_browser() -> void:
 	title_menu.focus_default()
 
 
-func _start_creation_flow(player_name: String, adapter_id: String, profile_id: String, seed: int) -> void:
+func _start_creation_flow(player_name: String, adapter_id: String, profile_id: String, world_seed: int) -> void:
 	creation_wizard.set_busy(true)
 	status_label.text = "Starting creation..."
-	Backend.start_campaign_creation(player_name, adapter_id, _on_creation_started, profile_id, seed, "")
+	Backend.start_campaign_creation(player_name, adapter_id, _on_creation_started, profile_id, world_seed, "")
 
 
 func _on_creation_started(data) -> void:

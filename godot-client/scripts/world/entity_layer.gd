@@ -12,6 +12,7 @@ var _shadow_texture: Texture2D
 var _entities_by_tile: Dictionary = {}
 var _actors_by_id: Dictionary = {}
 var _motion_time: float = 0.0
+var _path_walker := WorldWalk.new()
 
 
 static func adapter_bucket_tint(bucket: String, adapter_id: String) -> Color:
@@ -154,10 +155,20 @@ func _update_actor(actor: Node2D, entry: Dictionary, tile_pos: Vector2i) -> void
 	var target := _tile_to_world(tile_pos)
 	var delta := target - actor.position
 	var bucket := str(entry.get("bucket", "npc"))
+	var old_tile: Vector2i = actor.get_meta("tile_position", tile_pos)
 	actor.set_meta("bucket", bucket)
 	actor.set_meta("tile_position", tile_pos)
 	actor.z_index = tile_pos.y * 10 + EntityVisuals.z_bias(bucket)
 	_apply_visual(actor, entry, delta)
+	if old_tile == tile_pos:
+		return
+	# If NPC moved more than 1 tile, reconstruct path and animate step-by-step
+	var tile_dist: float = Vector2(old_tile).distance_to(Vector2(tile_pos))
+	if tile_dist > 1.5 and bucket != "player":
+		var path: Array[Vector2i] = _path_walker.compute_path(old_tile, tile_pos, GameState.map_data)
+		if path.size() > 1:
+			_animate_path(actor, path, bucket)
+			return
 	_move_to(actor, target)
 
 
@@ -189,6 +200,23 @@ func _apply_visual(actor: Node2D, entry: Dictionary, movement: Vector2) -> void:
 	actor.set_meta("shadow_scale", EntityVisuals.shadow_scale(bucket))
 	aura.modulate = EntityVisuals.aura_modulate(bucket, _adapter_id())
 	shadow.modulate = Color(0.0, 0.0, 0.0, EntityVisuals.shadow_alpha(bucket))
+
+
+func _animate_path(actor: Node2D, path: Array[Vector2i], bucket: String) -> void:
+	var prev = actor.get_meta("move_tween") if actor.has_meta("move_tween") else null
+	if prev is Tween and is_instance_valid(prev):
+		prev.kill()
+	var tween := create_tween()
+	for tile in path:
+		var world_pos := _tile_to_world(tile)
+		tween.tween_property(actor, "position", world_pos, MOVE_TWEEN_DURATION).set_trans(Tween.TRANS_LINEAR)
+		var captured_tile := tile
+		var captured_bucket := bucket
+		tween.tween_callback(func() -> void:
+			actor.z_index = captured_tile.y * 10 + EntityVisuals.z_bias(captured_bucket)
+		)
+	actor.set_meta("move_tween", tween)
+	actor.set_meta("last_world_position", _tile_to_world(path[path.size() - 1]))
 
 
 func _move_to(actor: Node2D, target: Vector2) -> void:

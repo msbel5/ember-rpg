@@ -10,7 +10,7 @@ const STEP_BUILD := 4
 const STEP_DOSSIER := 5
 
 signal canceled()
-signal start_creation_requested(player_name: String, adapter_id: String, profile_id: String, seed: int)
+signal start_creation_requested(player_name: String, adapter_id: String, profile_id: String, world_seed: int)
 signal answer_requested(question_id: String, answer_id: String)
 signal reroll_requested()
 signal save_roll_requested()
@@ -59,6 +59,7 @@ var _dossier_identity: RichTextLabel
 var _dossier_world: RichTextLabel
 var _dossier_history: RichTextLabel
 var _dossier_stats_grid: GridContainer
+var _preview_pane: PanelContainer
 var _back_button: Button
 var _next_button: Button
 var _start_button: Button
@@ -206,10 +207,11 @@ func _build_ui() -> void:
 	form_content.add_theme_constant_override("separation", 14)
 	form_scroll.add_child(form_content)
 
-	var preview := PanelContainer.new()
-	preview.name = "PreviewPane"
-	preview.custom_minimum_size = Vector2(360, 0)
-	split.add_child(preview)
+	_preview_pane = PanelContainer.new()
+	_preview_pane.name = "PreviewPane"
+	_preview_pane.custom_minimum_size = Vector2(360, 0)
+	split.add_child(_preview_pane)
+	var preview := _preview_pane
 
 	var preview_margin := MarginContainer.new()
 	preview_margin.name = "PreviewMargin"
@@ -245,12 +247,50 @@ func _build_ui() -> void:
 	_preview_meta.scroll_active = false
 	preview_vbox.add_child(_preview_meta)
 
-	_sections["genre"] = CreationStepGenreQuestion.build_genre_section(self)
-	_sections["question"] = CreationStepGenreQuestion.build_question_section(self)
-	_sections["history"] = CreationStepHistoryRoll.build_history_section(self)
-	_sections["roll"] = CreationStepHistoryRoll.build_roll_section(self)
-	_sections["build"] = CreationStepBuildDossier.build_build_section(self)
-	_sections["dossier"] = CreationStepBuildDossier.build_dossier_section(self)
+	var genre_refs := CreationStepGenreQuestion.build_genre_section()
+	_name_input = genre_refs.name_input
+	_seed_input = genre_refs.seed_input
+	_advanced_section = genre_refs.advanced_section
+	_advanced_toggle = genre_refs.advanced_toggle
+	_profile_hint = genre_refs.profile_hint
+	_advanced_toggle.pressed.connect(func() -> void:
+		_advanced_open = not _advanced_open
+		CreationStepGenreQuestion.sync_advanced_section(self)
+	)
+	_sections["genre"] = genre_refs.root
+
+	var question_refs := CreationStepGenreQuestion.build_question_section()
+	_question_progress = question_refs.question_progress
+	_question_prompt = question_refs.question_prompt
+	_answer_buttons = question_refs.answer_buttons
+	_sections["question"] = question_refs.root
+
+	var history_refs := CreationStepHistoryRoll.build_history_section(self)
+	_history_text = history_refs.history_text
+	_history_timer = history_refs.history_timer
+	_sections["history"] = history_refs.root
+
+	var roll_refs := CreationStepHistoryRoll.build_roll_section(self)
+	_roll_pool_label = roll_refs.roll_pool_label
+	_saved_roll_label = roll_refs.saved_roll_label
+	_stat_rows = roll_refs.stat_rows
+	_silhouette = roll_refs.silhouette
+	_sections["roll"] = roll_refs.root
+
+	var build_refs := CreationStepBuildDossier.build_build_section()
+	_class_grid = build_refs.class_grid
+	_alignment_grid = build_refs.alignment_grid
+	_skill_grid = build_refs.skill_grid
+	_skill_budget_label = build_refs.skill_budget_label
+	_sections["build"] = build_refs.root
+
+	var dossier_refs := CreationStepBuildDossier.build_dossier_section()
+	_dossier_identity = dossier_refs.dossier_identity
+	_dossier_world = dossier_refs.dossier_world
+	_dossier_history = dossier_refs.dossier_history
+	_dossier_stats_grid = dossier_refs.dossier_stats_grid
+	_sections["dossier"] = dossier_refs.root
+
 	for section in _sections.values():
 		form_content.add_child(section)
 
@@ -297,7 +337,9 @@ func _render() -> void:
 	CreationStepHistoryRoll.render_roll(self)
 	CreationStepBuildDossier.render_build(self)
 	CreationStepBuildDossier.render_dossier(self)
-	CreationStepBuildDossier.render_preview(self)
+	_preview_pane.visible = _step != STEP_DOSSIER
+	if _preview_pane.visible:
+		CreationStepBuildDossier.render_preview(self)
 	CreationStepBuildDossier.sync_footer(self)
 	call_deferred("_focus_current_step")
 
@@ -435,6 +477,22 @@ func _focus_control(control) -> void:
 		return
 	get_viewport().gui_release_focus()
 	control.grab_focus()
+
+
+func emit_answer(question_id: String, answer_id: String) -> void:
+	answer_requested.emit(question_id, answer_id)
+
+
+func emit_reroll() -> void:
+	reroll_requested.emit()
+
+
+func emit_save_roll() -> void:
+	save_roll_requested.emit()
+
+
+func emit_swap_roll() -> void:
+	swap_roll_requested.emit()
 
 
 func _clear_children(node: Node) -> void:
