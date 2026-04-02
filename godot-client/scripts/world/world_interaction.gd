@@ -64,17 +64,23 @@ static func build_entity_menu_items(entity: Dictionary) -> Array[Dictionary]:
 	var entity_name := str(entity.get("name", "target")).strip_edges()
 	var bucket := str(entity.get("bucket", "npc"))
 
-	items.append({"label": "Talk to %s" % entity_name,    "id": 0})
-	items.append({"label": "Examine %s" % entity_name,    "id": 1})
-
 	match bucket:
 		"enemy":
-			items.append({"label": "Attack %s" % entity_name,     "id": 2})
+			items.append({"label": "Attack %s" % entity_name, "id": 2})
+			items.append({"label": "Examine %s" % entity_name, "id": 1})
 		"npc":
-			items.append({"label": "Attack %s" % entity_name,     "id": 2})
-			items.append({"label": "Pickpocket %s" % entity_name, "id": 3})
+			items.append({"label": "Talk to %s" % entity_name, "id": 0})
+			items.append({"label": "Examine %s" % entity_name, "id": 1})
+			items.append({"label": "Attack %s" % entity_name, "id": 2})
 		"item":
-			items.append({"label": "Pick up %s" % entity_name,    "id": 4})
+			items.append({"label": "Use %s" % entity_name, "id": 4})
+			items.append({"label": "Examine %s" % entity_name, "id": 1})
+		"furniture":
+			items.append({"label": "Use %s" % entity_name, "id": 4})
+			items.append({"label": "Examine %s" % entity_name, "id": 1})
+		_:
+			items.append({"label": "Talk to %s" % entity_name, "id": 0})
+			items.append({"label": "Examine %s" % entity_name, "id": 1})
 	return items
 
 
@@ -100,7 +106,6 @@ static func resolve_context_command(
 		0:  return "talk %s" % entity_name
 		1:  return "examine %s" % entity_name
 		2:  return "attack %s" % entity_name
-		3:  return "pickpocket %s" % entity_name
 		4:  return "pick up %s" % entity_name
 		10: return "move to %d,%d" % [tile.x, tile.y]
 		11: return "search area"

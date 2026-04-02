@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/command_bar.gd" id="1"]
 
 [node name="CommandBar" type="PanelContainer"]
-custom_minimum_size = Vector2(0, 118)
+custom_minimum_size = Vector2(0, 128)
 script = ExtResource("1")
 
 [node name="CommandVBox" type="VBoxContainer" parent="."]
@@ -11,6 +11,7 @@ layout_mode = 2
 
 [node name="HistoryLabel" type="Label" parent="CommandVBox"]
 layout_mode = 2
+autowrap_mode = 3
 text = "Recent: none"
 
 [node name="FocusLabel" type="Label" parent="CommandVBox"]
@@ -24,39 +25,27 @@ layout_mode = 2
 [node name="FocusActionOne" type="Button" parent="CommandVBox/FocusActionsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Look Around"
+text = "Talk"
 
 [node name="FocusActionTwo" type="Button" parent="CommandVBox/FocusActionsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Inventory"
+text = "Attack"
 
-[node name="RosterRow" type="HBoxContainer" parent="CommandVBox"]
-layout_mode = 2
-
-[node name="RosterOne" type="Button" parent="CommandVBox/RosterRow"]
-custom_minimum_size = Vector2(0, 34)
+[node name="FocusActionThree" type="Button" parent="CommandVBox/FocusActionsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Scout"
-icon_alignment = 0
-expand_icon = true
+text = "Examine"
 
-[node name="RosterTwo" type="Button" parent="CommandVBox/RosterRow"]
-custom_minimum_size = Vector2(0, 34)
+[node name="FocusActionFour" type="Button" parent="CommandVBox/FocusActionsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Contact"
-icon_alignment = 0
-expand_icon = true
+text = "Use"
 
-[node name="RosterThree" type="Button" parent="CommandVBox/RosterRow"]
-custom_minimum_size = Vector2(0, 34)
+[node name="FocusActionFive" type="Button" parent="CommandVBox/FocusActionsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Loot"
-icon_alignment = 0
-expand_icon = true
+text = "Rest"
 
 [node name="InputRow" type="HBoxContainer" parent="CommandVBox"]
 layout_mode = 2

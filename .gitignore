@@ -15,6 +15,7 @@ tmp/
 .vscode/
 .idea/
 .DS_Store
+*.uid
 
 # Test coverage
 .coverage

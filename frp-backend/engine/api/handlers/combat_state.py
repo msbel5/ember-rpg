@@ -15,13 +15,17 @@ class CombatStateMixin:
     def _combat_state(self, combat: Optional[CombatManager]) -> Optional[dict]:
         if combat is None:
             return None
+        active_combatant = combat.active_combatant if not combat.combat_ended else None
         return {
             "round": combat.round,
-            "active": combat.active_combatant.name if not combat.combat_ended else None,
+            "phase": "ended" if combat.combat_ended else "active_turn",
+            "active": active_combatant.name if active_combatant is not None else None,
+            "turn_actor_id": getattr(getattr(active_combatant, "character", None), "_entity_id", None) if active_combatant is not None else None,
             "ended": combat.combat_ended,
             "combatants": [
                 {
                     "name": combatant.name,
+                    "entity_id": getattr(combatant.character, "_entity_id", None),
                     "hp": combatant.character.hp,
                     "max_hp": combatant.character.max_hp,
                     "ap": combatant.ap,
@@ -44,6 +48,18 @@ class CombatStateMixin:
                 }
                 for combatant in combat.combatants
             ],
+            "available_actions": [] if combat.combat_ended else ["attack", "defend", "use", "disengage", "flee"],
+            "targets": [
+                {
+                    "name": combatant.name,
+                    "entity_id": getattr(combatant.character, "_entity_id", None),
+                    "hp": combatant.character.hp,
+                    "max_hp": combatant.character.max_hp,
+                }
+                for combatant in combat.combatants
+                if active_combatant is not None and combatant.name != active_combatant.name and not combatant.is_dead
+            ],
+            "log_entries": [],
         }
 
     def _combat_player_index(self, combat: CombatManager, player_name: str) -> Optional[int]:

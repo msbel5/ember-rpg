@@ -26,6 +26,7 @@ from engine.data_loader import (
     get_creation_questions,
     get_creation_settlement_labels,
 )
+from engine.worldgen.registries import load_world_profiles
 
 CLASS_SKILL_OPTIONS: Dict[str, List[str]] = get_creation_class_skill_options()
 CLASS_SKILL_COUNTS: Dict[str, int] = get_creation_class_skill_counts()
@@ -41,6 +42,8 @@ SETTLEMENT_LABELS = get_creation_settlement_labels()
 FACTION_LABELS = get_creation_faction_labels()
 GENESIS_DEFAULTS = get_creation_genesis_defaults()
 GENESIS_TEMPLATES = get_creation_genesis_templates()
+WORLD_PROFILES = load_world_profiles()
+DEFAULT_HISTORY_END_YEAR = int(WORLD_PROFILES.get("standard", {}).get("history_end_year", 1200))
 
 
 def _readable_token(token: str) -> str:
@@ -117,14 +120,36 @@ def _dedupe_strings(values: List[str], limit: int = 4) -> List[str]:
     return ordered
 
 
-def _history_years(seed: Optional[int], count: int) -> List[int]:
+def _history_end_year(profile_id: str = "standard") -> int:
+    profile = WORLD_PROFILES.get(str(profile_id).strip() or "standard", {})
+    return int(profile.get("history_end_year", DEFAULT_HISTORY_END_YEAR))
+
+
+def _macro_history_years(seed: Optional[int], count: int, end_year: int) -> List[int]:
+    event_count = max(8, count)
+    target_year = max(int(end_year), 1000)
+    if event_count == 1:
+        return [1]
     rng = random.Random(int(seed or 0) + 913)
-    year = 1
-    years: List[int] = []
-    for _ in range(max(1, count)):
-        years.append(year)
-        year += rng.randint(11, 23)
+    min_gap = max(36, target_year // max(event_count * 3, 1))
+    band = max(24, target_year // max(event_count * 4, 1))
+    years: List[int] = [1]
+    for index in range(1, event_count - 1):
+        anchor = int(round((target_year - 1) * float(index) / float(event_count - 1)))
+        remaining = event_count - index - 1
+        lower = max(years[-1] + min_gap, anchor - band)
+        upper = min(target_year - remaining * min_gap, anchor + band)
+        if upper < lower:
+            upper = lower
+        years.append(rng.randint(lower, upper))
+    years.append(target_year)
     return years
+
+
+def _first_phrase(values: List[str], fallback: str) -> str:
+    if values:
+        return _readable_token(values[0])
+    return fallback
 
 
 def recommended_skills_for_class(state: Dict[str, Any], class_name: str) -> List[str]:
@@ -324,43 +349,92 @@ class CreationState:
             pressure_bits.append(tone_tags[0].replace("_", " "))
         if not pressure_bits:
             pressure_bits.append(GENESIS_TEMPLATES.get("fallback_pressure", ""))
-        history_events: List[str] = []
-        years = _history_years(self.rng_seed, max(4, len(selected) + 2))
-        history_events.append(
-            "Year %d: The %s age opens around the %s." % (
-                years[0],
-                adapter_name.lower(),
-                top_settlement.lower(),
-            )
-        )
-        if selected:
-            history_events.append(
-                "Year %d: %s becomes the first law of the frontier." % (
-                    years[1],
-                    str(selected[0].get("text", "An old oath")).strip(),
-                )
-            )
-        history_events.append(
-            "Year %d: %s tighten their hold over the %s routes." % (
-                years[min(2, len(years) - 1)],
-                top_faction.title(),
-                top_settlement.lower(),
-            )
-        )
-        if quest_themes:
-            history_events.append(
-                "Year %d: Rumors of %s spread from watchfires to market halls." % (
-                    years[min(3, len(years) - 1)],
-                    quest_themes[0].replace("_", " "),
-                )
-            )
-        if tone_tags:
-            history_events.append(
-                "Year %d: A %s mood settles over the marches." % (
-                    years[min(4, len(years) - 1)] if len(years) > 4 else years[-1] + 13,
-                    tone_tags[0].replace("_", " "),
-                )
-            )
+        end_year = _history_end_year()
+        years = _macro_history_years(self.rng_seed, max(10, len(selected) + len(world_tags) + 4), end_year)
+        primary_world_tag = _first_phrase(world_tags, "hard roads")
+        secondary_world_tag = _first_phrase(world_tags[1:], primary_world_tag)
+        primary_tone = _first_phrase(tone_tags, "anxious")
+        primary_quest_theme = _first_phrase(quest_themes, "border pressure")
+        settlement_lower = top_settlement.lower()
+        faction_lower = top_faction.lower()
+        faction_title = top_faction.title()
+        adapter_lower = adapter_name.lower()
+        history_timeline: List[Dict[str, Any]] = [
+            {
+                "year": years[0],
+                "headline": "First Surveys",
+                "summary": "Surveyors mark the %s frontier beneath a %s sky." % (settlement_lower, adapter_lower),
+                "tags": [adapter_name, top_settlement, "survey"],
+                "importance": 5,
+            },
+            {
+                "year": years[1],
+                "headline": "Caravan Roads Open",
+                "summary": "Caravans and settlers carry %s customs across the outer roads." % primary_world_tag,
+                "tags": [primary_world_tag, "trade", "migration"],
+                "importance": 3,
+            },
+            {
+                "year": years[2],
+                "headline": "Charters Sworn",
+                "summary": "%s issue the earliest charters and storehouse oaths." % faction_title,
+                "tags": [top_faction, "law", "settlement"],
+                "importance": 4,
+            },
+            {
+                "year": years[3],
+                "headline": "Frontier Generation",
+                "summary": "A generation raised on %s duties turns the frontier outward." % primary_quest_theme,
+                "tags": [primary_quest_theme, "culture", "frontier"],
+                "importance": 2,
+            },
+            {
+                "year": years[4],
+                "headline": "Routes Contested",
+                "summary": "Rival captains contest the %s routes, forcing new walls and watchfires." % secondary_world_tag,
+                "tags": [secondary_world_tag, "war", "security"],
+                "importance": 4,
+            },
+            {
+                "year": years[5],
+                "headline": "Map Redrawn",
+                "summary": "Trade, migration, and hunger redraw the map around the %s." % settlement_lower,
+                "tags": [top_settlement, "migration", "trade"],
+                "importance": 3,
+            },
+            {
+                "year": years[6],
+                "headline": "Calamity Years",
+                "summary": "The %s decades end in a calamity that empties old hamlets." % primary_tone,
+                "tags": [primary_tone, "calamity", "loss"],
+                "importance": 5,
+            },
+            {
+                "year": years[7],
+                "headline": "Reconstruction",
+                "summary": "Rebuilders knit the marches back together under %s influence." % faction_lower,
+                "tags": [top_faction, "rebuild", "order"],
+                "importance": 4,
+            },
+            {
+                "year": years[8],
+                "headline": "Rumors Spread",
+                "summary": "Fresh rumors of %s spread from beacon towers to market fires." % primary_quest_theme,
+                "tags": [primary_quest_theme, "rumor", "pressure"],
+                "importance": 2,
+            },
+            {
+                "year": years[-1],
+                "headline": "Opening Season",
+                "summary": "The current opening begins as %s braces for one more hard season." % settlement_lower,
+                "tags": [top_settlement, "opening", primary_tone],
+                "importance": 5,
+            },
+        ]
+        history_events: List[str] = [
+            "Year %d: %s. %s" % (int(entry["year"]), str(entry["headline"]), str(entry["summary"]))
+            for entry in history_timeline
+        ]
         return {
             "adapter_bias": adapter_rank[0][0] if adapter_rank else DEFAULT_ADAPTER_ID,
             "adapter_label": adapter_name,
@@ -377,6 +451,9 @@ class CreationState:
             "quest_seed_themes": quest_themes,
             "tone_tags": tone_tags,
             "world_tags": world_tags,
+            "history_end_year": end_year,
+            "history_span_years": years[-1] - years[0],
+            "history_timeline": history_timeline,
             "history_events": history_events,
         }
 

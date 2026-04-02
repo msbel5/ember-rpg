@@ -52,6 +52,9 @@ def test_create_campaign_returns_campaign_snapshot():
     assert "syndrome_registry" in payload["campaign"]["systems"]
     assert payload["campaign"]["world_graph"]["nodes"]
     assert payload["campaign"]["travel_options"]
+    assert all(entry["route_id"] for entry in payload["campaign"]["travel_options"])
+    assert all(entry["reachable"] is True for entry in payload["campaign"]["travel_options"])
+    assert all("is_current" in entry for entry in payload["campaign"]["travel_options"])
     assert payload["campaign"]["current_region_summary"]["settlement_node_id"]
     assert payload["campaign"]["settlement"]["residents"]
     assert payload["campaign"]["region"]["width"] == 80
@@ -125,6 +128,9 @@ def test_campaign_talk_command_returns_dialog_payload_when_conversation_is_activ
     assert body["dialog_text"]
     assert body["dialog_options"]
     assert body["dialog_options"][0]["command"] == "ask about work"
+    assert all("enabled" in option for option in body["dialog_options"])
+    assert all("disabled_reason" in option for option in body["dialog_options"])
+    assert any("skill_check" in option for option in body["dialog_options"])
 
 
 def test_campaign_attack_command_marks_scene_as_combat_when_combat_payload_exists():
@@ -137,6 +143,11 @@ def test_campaign_attack_command_marks_scene_as_combat_when_combat_payload_exist
 
     assert body["campaign"]["combat"]
     assert body["campaign"]["scene"] == "combat"
+    assert body["campaign"]["combat"]["phase"]
+    assert "turn_actor_id" in body["campaign"]["combat"]
+    assert "available_actions" in body["campaign"]["combat"]
+    assert "targets" in body["campaign"]["combat"]
+    assert "log_entries" in body["campaign"]["combat"]
 
 
 def test_campaign_save_and_load_round_trip():

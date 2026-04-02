@@ -32,11 +32,11 @@ static func adapter_bucket_tint(bucket: String, adapter_id: String) -> Color:
 
 static func display_size(bucket: String) -> int:
 	match bucket.strip_edges().to_lower():
-		"player": return 36
-		"enemy": return 28
-		"npc": return 26
+		"player": return 44
+		"enemy": return 36
+		"npc": return 32
 		"furniture": return 24
-		"item": return 20
+		"item": return 18
 		_: return 24
 
 
@@ -44,7 +44,7 @@ static func body_modulate(bucket: String, adapter_id: String, using_fallback: bo
 	if using_fallback:
 		return adapter_bucket_tint(bucket, adapter_id)
 	var tint := adapter_bucket_tint(bucket, adapter_id)
-	var blend := 0.08 if bucket == "player" else 0.16
+	var blend := 0.18 if bucket == "player" else 0.28
 	return Color.WHITE.lerp(tint, blend)
 
 
@@ -71,44 +71,29 @@ static func shadow_scale(bucket: String) -> float:
 
 
 static func aura_scale(bucket: String) -> float:
-	match bucket.strip_edges().to_lower():
-		"player": return 1.34
-		"enemy": return 1.18
-		"npc": return 1.08
-		"furniture": return 0.92
-		_: return 0.0
+	return 0.0
 
 
 static func aura_modulate(bucket: String, adapter_id: String) -> Color:
-	var alpha := 0.0
-	match bucket.strip_edges().to_lower():
-		"player": alpha = 0.22
-		"enemy": alpha = 0.18
-		"npc": alpha = 0.14
-		"furniture": alpha = 0.08
-		_: alpha = 0.0
-	if alpha <= 0.0:
-		return Color(1.0, 1.0, 1.0, 0.0)
-	var tint := adapter_bucket_tint(bucket, adapter_id).lightened(0.28)
-	return Color(tint.r, tint.g, tint.b, alpha)
+	return Color(1.0, 1.0, 1.0, 0.0)
 
 
 static func idle_amplitude(bucket: String) -> float:
 	match bucket.strip_edges().to_lower():
-		"player": return 1.00
-		"enemy": return 0.82
-		"npc": return 0.68
-		"furniture": return 0.18
-		"item": return 0.28
-		_: return 0.52
+		"player": return 0.42
+		"enemy": return 0.28
+		"npc": return 0.20
+		"furniture": return 0.05
+		"item": return 0.08
+		_: return 0.16
 
 
 static func idle_speed(bucket: String) -> float:
 	match bucket.strip_edges().to_lower():
-		"player": return 2.3
-		"enemy": return 2.0
-		"item": return 1.6
-		_: return 1.8
+		"player": return 1.5
+		"enemy": return 1.4
+		"item": return 1.1
+		_: return 1.2
 
 
 static func z_bias(bucket: String) -> int:
@@ -123,11 +108,11 @@ static func z_bias(bucket: String) -> int:
 
 static func name_label_color(bucket: String) -> Color:
 	match bucket:
-		"player": return Color(1.0, 1.0, 1.0)
-		"npc": return Color(0.80, 0.68, 0.26)
-		"enemy": return Color(0.96, 0.30, 0.30)
-		"item": return Color(0.40, 0.85, 0.40)
-		_: return Color(0.70, 0.70, 0.70)
+		"player": return Color(1.0, 0.98, 0.94)
+		"npc": return Color(0.98, 0.88, 0.44)
+		"enemy": return Color(1.0, 0.46, 0.40)
+		"item": return Color(0.64, 0.94, 0.68)
+		_: return Color(0.90, 0.90, 0.90)
 
 
 static func build_circle_texture(color: Color) -> Texture2D:

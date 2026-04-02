@@ -12,13 +12,17 @@ class SessionSerializationMixin:
     def _combat_payload(self) -> dict | None:
         if not self.in_combat() or self.combat is None:
             return None
+        active_combatant = self.combat.active_combatant if not self.combat.combat_ended else None
         return {
             "round": self.combat.round,
-            "active": self.combat.active_combatant.name if not self.combat.combat_ended else None,
+            "phase": "ended" if self.combat.combat_ended else "active_turn",
+            "active": active_combatant.name if active_combatant is not None else None,
+            "turn_actor_id": getattr(getattr(active_combatant, "character", None), "_entity_id", None) if active_combatant is not None else None,
             "ended": self.combat.combat_ended,
             "combatants": [
                 {
                     "name": combatant.name,
+                    "entity_id": getattr(combatant.character, "_entity_id", None),
                     "hp": combatant.character.hp,
                     "max_hp": combatant.character.max_hp,
                     "ap": combatant.ap,
@@ -41,6 +45,18 @@ class SessionSerializationMixin:
                 }
                 for combatant in self.combat.combatants
             ],
+            "available_actions": [] if self.combat.combat_ended else ["attack", "defend", "use", "disengage", "flee"],
+            "targets": [
+                {
+                    "name": combatant.name,
+                    "entity_id": getattr(combatant.character, "_entity_id", None),
+                    "hp": combatant.character.hp,
+                    "max_hp": combatant.character.max_hp,
+                }
+                for combatant in self.combat.combatants
+                if active_combatant is not None and combatant.name != active_combatant.name and not combatant.is_dead
+            ],
+            "log_entries": [],
         }
 
     def to_dict(self) -> dict:

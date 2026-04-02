@@ -4,6 +4,7 @@ const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const PovRendererConfig = preload("res://scripts/pov_renderer_config.gd")
 const WorldOverlay = preload("res://scripts/world/world_overlay.gd")
 const WorldIntentRouter = preload("res://scripts/world/world_intent_router.gd")
+const ENABLE_WORLD_OVERLAY := false
 
 signal command_requested(command_text: String)
 signal command_sequence_requested(commands: Array[String])
@@ -34,9 +35,10 @@ var _walker := WorldWalk.new()
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_exited.connect(_on_mouse_exited)
-	_world_overlay = WorldOverlay.new()
-	_world_overlay.name = "WorldOverlay"
-	add_child(_world_overlay)
+	if ENABLE_WORLD_OVERLAY:
+		_world_overlay = WorldOverlay.new()
+		_world_overlay.name = "WorldOverlay"
+		add_child(_world_overlay)
 	_placeholder_banner = Label.new()
 	_placeholder_banner.name = "PlaceholderBanner"
 	_placeholder_banner.visible = false
@@ -222,7 +224,7 @@ func _refresh_from_state(_payload = null) -> void:
 	_update_attention_layers(map_payload)
 	_rebuild_atmosphere(map_payload)
 	_background_key = _resolve_background_key()
-	if _world_overlay != null and _world_overlay.has_method("configure"):
+	if ENABLE_WORLD_OVERLAY and _world_overlay != null and _world_overlay.has_method("configure"):
 		_world_overlay.configure(_current_adapter_id(), _background_key, _atmosphere_motes, _is_placeholder())
 	var player_tile := GameState.player_map_pos
 	if player_tile == Vector2i.ZERO and map_payload.has("spawn_point"):

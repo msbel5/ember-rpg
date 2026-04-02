@@ -104,11 +104,9 @@ func _refresh_world_graph(world_graph: Dictionary) -> void:
 	map_texture.texture = ImageTexture.create_from_image(image)
 	_graph_texture_size = Vector2i(image_width, image_height)
 	_refresh_route_buttons()
-	summary_label.text = "World Graph  %d regions  |  %d settlements  |  %d routes\nActive: %s" % [
-		world_graph.get("regions", []).size(),
-		world_graph.get("nodes", []).size(),
-		world_graph.get("edges", []).size(),
+	summary_label.text = "Travel Network\nCurrent: %s\nRoutes: %d available" % [
 		_current_region_label(world_graph),
+		GameState.travel_options.size(),
 	]
 	intel_text.text = _build_world_graph_intel(world_graph)
 
@@ -121,7 +119,7 @@ func _refresh_local_map() -> void:
 	if map_data.is_empty():
 		map_texture.texture = null
 		summary_label.text = "No live survey. Map feed is offline."
-		intel_text.text = "[b]Scene Read[/b]  Awaiting a live terrain feed.\n[b]Intel[/b]  Contacts and threats will appear here."
+		intel_text.text = "[b]Survey[/b]\nAwaiting a live terrain feed."
 		return
 	var width = int(map_data.get("width", 0))
 	var height = int(map_data.get("height", 0))
@@ -129,7 +127,7 @@ func _refresh_local_map() -> void:
 	if width <= 0 or height <= 0 or tiles.is_empty():
 		map_texture.texture = null
 		summary_label.text = "Placeholder map loaded. Awaiting live campaign terrain." if bool(map_data.get("placeholder", false)) else "No live survey. Map feed is offline."
-		intel_text.text = "[b]Scene Read[/b]  Placeholder silhouettes only.\n[b]Intel[/b]  The client is waiting for authored terrain."
+		intel_text.text = "[b]Survey[/b]\nPlaceholder silhouettes only."
 		return
 
 	var image = Image.create(width, height, false, Image.FORMAT_RGBA8)
@@ -158,7 +156,7 @@ func _refresh_local_map() -> void:
 	if bool(map_data.get("placeholder", false)):
 		summary_label.text = "Placeholder map  %dx%d  |  %s\n%s  |  %d locals  %d threats  %d loot" % [width, height, scene_label, scene_read, npc_count, enemy_count, item_count]
 	else:
-		summary_label.text = "%s  |  %s\n%s  |  %d locals  %d threats  %d loot" % [GameState.get_display_location(), scene_label, scene_read, npc_count, enemy_count, item_count]
+		summary_label.text = "%s  |  %s\nLocals %d  |  Threats %d  |  Loot %d" % [GameState.get_display_location(), scene_label, npc_count, enemy_count, item_count]
 	intel_text.text = _build_intel_text(map_data)
 
 
@@ -173,8 +171,8 @@ func _refresh_route_buttons() -> void:
 			continue
 		var button := Button.new()
 		button.name = "RouteButton%d" % index
-		button.text = "Travel to %s (%sh)" % [str(option.get("destination_name", "Unknown")), int(option.get("travel_hours", 0))]
-		button.tooltip_text = "Travel to %s" % str(option.get("destination_region_id", "unknown"))
+		button.text = "%s  ·  %sh" % [str(option.get("destination_name", "Unknown")), int(option.get("travel_hours", 0))]
+		button.tooltip_text = "Travel route %s" % str(option.get("route_id", option.get("destination_region_id", "unknown")))
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.pressed.connect(func() -> void:
 			travel_requested.emit(str(option.get("destination_region_id", "")), str(option.get("destination_settlement_id", "")))
@@ -279,11 +277,11 @@ func _draw_rect_outline(image: Image, rect: Rect2i, color: Color) -> void:
 func _build_world_graph_intel(world_graph: Dictionary) -> String:
 	var current_summary = GameState.current_region_summary
 	var region_label = _current_region_label(world_graph)
-	var travel_lines: Array[String] = []
-	for option in GameState.travel_options.slice(0, 3):
-		if not (option is Dictionary):
-			continue
-		travel_lines.append("%s (%sh)" % [str(option.get("destination_name", "Unknown")), int(option.get("travel_hours", 0))])
+	var alerts: Array[String] = []
+	for raw_alert in current_summary.get("alerts", []):
+		alerts.append(str(raw_alert))
+		if alerts.size() >= 3:
+			break
 	var selected = _find_node(world_graph, GameState.selected_world_node)
 	var selected_text = ""
 	if not selected.is_empty():
@@ -291,10 +289,10 @@ func _build_world_graph_intel(world_graph: Dictionary) -> String:
 			str(selected.get("name", "")),
 			str(selected.get("region_id", "")),
 		]
-	return "[b]World Layer[/b]  %s\n[b]Reachable[/b]  %s\n[b]Local Survey[/b]  %s%s" % [
+	return "[b]Region[/b]  %s\n[b]Survey[/b]  %s%s%s" % [
 		region_label,
-		", ".join(travel_lines) if not travel_lines.is_empty() else "No connected travel routes.",
 		_scene_read(GameState.map_data) if not GameState.map_data.is_empty() else "No active local survey.",
+		"\n[b]Alerts[/b]  %s" % ", ".join(alerts) if not alerts.is_empty() else "",
 		selected_text,
 	]
 

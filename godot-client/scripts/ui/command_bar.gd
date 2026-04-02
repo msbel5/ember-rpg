@@ -1,8 +1,6 @@
 extends PanelContainer
 class_name CommandBarWidget
 
-const EntitySpriteCatalog = preload("res://scripts/world/entity_sprite_catalog.gd")
-
 signal command_submitted(command_text: String)
 signal quick_save_requested
 signal saves_requested
@@ -11,16 +9,24 @@ signal saves_requested
 @onready var focus_label: Label = $CommandVBox/FocusLabel
 @onready var focus_action_one: Button = $CommandVBox/FocusActionsRow/FocusActionOne
 @onready var focus_action_two: Button = $CommandVBox/FocusActionsRow/FocusActionTwo
-@onready var roster_row: HBoxContainer = $CommandVBox/RosterRow
-@onready var roster_one: Button = $CommandVBox/RosterRow/RosterOne
-@onready var roster_two: Button = $CommandVBox/RosterRow/RosterTwo
-@onready var roster_three: Button = $CommandVBox/RosterRow/RosterThree
+@onready var focus_action_three: Button = $CommandVBox/FocusActionsRow/FocusActionThree
+@onready var focus_action_four: Button = $CommandVBox/FocusActionsRow/FocusActionFour
+@onready var focus_action_five: Button = $CommandVBox/FocusActionsRow/FocusActionFive
 @onready var text_input: LineEdit = $CommandVBox/InputRow/TextInput
 @onready var send_btn: Button = $CommandVBox/InputRow/SendButton
 @onready var quick_save_btn: Button = $CommandVBox/InputRow/QuickSaveButton
 @onready var saves_btn: Button = $CommandVBox/InputRow/SavesButton
 
 var _history: Array[String] = []
+var _action_buttons: Dictionary = {}
+const VERB_ORDER := ["talk", "attack", "examine", "use", "rest"]
+const VERB_LABELS := {
+	"talk": "Talk",
+	"attack": "Attack",
+	"examine": "Examine",
+	"use": "Use",
+	"rest": "Rest",
+}
 
 
 func _ready() -> void:
@@ -32,18 +38,22 @@ func _ready() -> void:
 	saves_btn.pressed.connect(func() -> void:
 		saves_requested.emit()
 	)
-	focus_action_one.pressed.connect(_on_focus_action_pressed.bind(focus_action_one))
-	focus_action_two.pressed.connect(_on_focus_action_pressed.bind(focus_action_two))
-	roster_one.pressed.connect(_on_focus_action_pressed.bind(roster_one))
-	roster_two.pressed.connect(_on_focus_action_pressed.bind(roster_two))
-	roster_three.pressed.connect(_on_focus_action_pressed.bind(roster_three))
-	text_input.placeholder_text = "Talk, attack, examine, use, rest..."
+	_action_buttons = {
+		"talk": focus_action_one,
+		"attack": focus_action_two,
+		"examine": focus_action_three,
+		"use": focus_action_four,
+		"rest": focus_action_five,
+	}
+	for verb in _action_buttons.keys():
+		var button: Button = _action_buttons[verb]
+		button.pressed.connect(_on_focus_action_pressed.bind(button))
+	text_input.placeholder_text = "Type a command or choose a verb..."
 	send_btn.text = "Act"
 	quick_save_btn.text = "Save"
 	saves_btn.text = "Loads"
 	set_focus_summary("")
 	set_focus_actions([])
-	set_scene_roster([])
 	_refresh_history()
 
 
@@ -64,9 +74,7 @@ func set_waiting(waiting: bool) -> void:
 	send_btn.disabled = waiting
 	quick_save_btn.disabled = waiting
 	saves_btn.disabled = waiting
-	focus_action_one.disabled = waiting or str(focus_action_one.get_meta("command", "")).strip_edges().is_empty()
-	focus_action_two.disabled = waiting or str(focus_action_two.get_meta("command", "")).strip_edges().is_empty()
-	for button in [roster_one, roster_two, roster_three]:
+	for button in _action_buttons.values():
 		button.disabled = waiting or str(button.get_meta("command", "")).strip_edges().is_empty()
 	if waiting:
 		history_label.text = "Orders locked while the world catches up..."
@@ -77,27 +85,25 @@ func set_waiting(waiting: bool) -> void:
 func set_focus_summary(summary: String) -> void:
 	var next_summary = summary.strip_edges()
 	if next_summary.is_empty():
-		next_summary = "Focus: click a prop, person, or threat for the clearest next action."
+		next_summary = "Focus: choose a person, threat, or landmark to reveal the next useful verb."
 	focus_label.text = next_summary
 
 
 func set_focus_actions(actions: Array) -> void:
-	var next_actions = actions.duplicate(true)
-	if next_actions.is_empty():
-		next_actions = [
-			{"label": "Examine Area", "command": "look around"},
-			{"label": "Rest", "command": "rest"},
-		]
-	_apply_focus_action_button(focus_action_one, next_actions[0] if next_actions.size() > 0 else {})
-	_apply_focus_action_button(focus_action_two, next_actions[1] if next_actions.size() > 1 else {})
-
-
-func set_scene_roster(entries: Array) -> void:
-	var next_entries = entries.duplicate(true)
-	_apply_roster_button(roster_one, next_entries[0] if next_entries.size() > 0 else {})
-	_apply_roster_button(roster_two, next_entries[1] if next_entries.size() > 1 else {})
-	_apply_roster_button(roster_three, next_entries[2] if next_entries.size() > 2 else {})
-	roster_row.visible = roster_one.visible or roster_two.visible or roster_three.visible
+	var by_verb: Dictionary = {}
+	for action in actions:
+		if not (action is Dictionary):
+			continue
+		var verb := _resolve_verb(action)
+		if verb.is_empty() or by_verb.has(verb):
+			continue
+		by_verb[verb] = action
+	if not by_verb.has("examine"):
+		by_verb["examine"] = {"verb": "examine", "label": "Examine area", "command": "look around"}
+	if not by_verb.has("rest"):
+		by_verb["rest"] = {"verb": "rest", "label": "Rest and recover", "command": "rest"}
+	for verb in VERB_ORDER:
+		_apply_focus_action_button(_action_buttons[verb], by_verb.get(verb, {}), verb)
 
 
 func submit_command(text: String) -> void:
@@ -140,24 +146,14 @@ func _refresh_history() -> void:
 	history_label.text = "Recent Orders: %s" % " | ".join(_history.slice(maxi(_history.size() - 3, 0), _history.size()))
 
 
-func _apply_focus_action_button(button: Button, action: Dictionary) -> void:
-	var label = str(action.get("label", "")).strip_edges()
+func _apply_focus_action_button(button: Button, action: Dictionary, verb: String) -> void:
+	var label = str(action.get("label", VERB_LABELS.get(verb, ""))).strip_edges()
 	var command = str(action.get("command", "")).strip_edges()
-	button.text = label
-	button.visible = not label.is_empty()
+	button.text = str(VERB_LABELS.get(verb, label))
+	button.visible = not command.is_empty()
 	button.disabled = command.is_empty()
 	button.set_meta("command", command)
-
-
-func _apply_roster_button(button: Button, entry: Dictionary) -> void:
-	var label = str(entry.get("label", "")).strip_edges()
-	var command = str(entry.get("command", "")).strip_edges()
-	var template_name = str(entry.get("template", "")).strip_edges().to_lower()
-	button.text = label
-	button.visible = not label.is_empty()
-	button.disabled = command.is_empty()
-	button.set_meta("command", command)
-	button.icon = EntitySpriteCatalog.resolve_texture(template_name) if not template_name.is_empty() else null
+	button.tooltip_text = label if not label.is_empty() else ""
 
 
 func _on_focus_action_pressed(button: Button) -> void:
@@ -165,3 +161,25 @@ func _on_focus_action_pressed(button: Button) -> void:
 	if command.is_empty():
 		return
 	command_submitted.emit(command)
+
+
+func _resolve_verb(action: Dictionary) -> String:
+	var explicit = str(action.get("verb", "")).strip_edges().to_lower()
+	if not explicit.is_empty():
+		return explicit
+	var command = str(action.get("command", "")).strip_edges().to_lower()
+	if command.begins_with("talk "):
+		return "talk"
+	if command.begins_with("attack "):
+		return "attack"
+	if command == "rest":
+		return "rest"
+	if command.begins_with("examine ") or command == "look around" or command == "search area":
+		return "examine"
+	if command.begins_with("pick up ") or command.begins_with("use ") or command.begins_with("trade ") or command.begins_with("open "):
+		return "use"
+	var label = str(action.get("label", "")).strip_edges().to_lower()
+	for verb in VERB_ORDER:
+		if label.begins_with(verb):
+			return verb
+	return ""

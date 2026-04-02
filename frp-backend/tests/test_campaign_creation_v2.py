@@ -12,14 +12,14 @@ client = TestClient(app)
 ABILITY_ORDER = ["MIG", "AGI", "END", "MND", "INS", "PRE"]
 
 
-def _start_creation(adapter_id: str = "fantasy_ember") -> dict:
+def _start_creation(adapter_id: str = "fantasy_ember", seed: int = 77) -> dict:
     response = client.post(
         "/game/campaigns/creation/start",
         json={
             "player_name": "Creator",
             "adapter_id": adapter_id,
             "profile_id": "standard",
-            "seed": 77,
+            "seed": seed,
             "location": "Harbor Town",
         },
     )
@@ -156,10 +156,51 @@ def test_creation_answers_emit_history_reveal_lines():
         started = response.json()
 
     history_events = started["campaign_genesis"].get("history_events", [])
+    history_timeline = started["campaign_genesis"].get("history_timeline", [])
 
     assert history_events
-    assert len(history_events) >= 4
+    assert history_timeline
+    assert len(history_events) >= 8
+    assert len(history_timeline) >= 8
     assert all(str(entry).startswith("Year ") for entry in history_events)
+    years = [int(str(entry).split(":")[0].replace("Year", "").strip()) for entry in history_events]
+    timeline_years = [int(entry["year"]) for entry in history_timeline]
+    assert years[0] == 1
+    assert years[-1] >= 1000
+    assert years[-1] - years[0] >= 900
+    assert timeline_years[0] == 1
+    assert timeline_years[-1] >= 1000
+    assert timeline_years[-1] - timeline_years[0] >= 900
+    assert all(entry["headline"] for entry in history_timeline)
+    assert all(entry["summary"] for entry in history_timeline)
+    assert all(isinstance(entry["tags"], list) for entry in history_timeline)
+    assert all(int(entry["importance"]) >= 1 for entry in history_timeline)
+
+
+def test_creation_history_changes_with_seed_and_answer_signature():
+    first = _start_creation("fantasy_ember", seed=77)
+    second = _start_creation("fantasy_ember", seed=901)
+
+    for question in first["questions"]:
+        answer = question["answers"][0]
+        response = client.post(
+            f"/game/campaigns/creation/{first['creation_id']}/answer",
+            json={"question_id": question["id"], "answer_id": answer["id"]},
+        )
+        assert response.status_code == 200
+        first = response.json()
+
+    for question in second["questions"]:
+        answers = question["answers"]
+        answer = answers[min(1, len(answers) - 1)]
+        response = client.post(
+            f"/game/campaigns/creation/{second['creation_id']}/answer",
+            json={"question_id": question["id"], "answer_id": answer["id"]},
+        )
+        assert response.status_code == 200
+        second = response.json()
+
+    assert first["campaign_genesis"]["history_events"] != second["campaign_genesis"]["history_events"]
 
 
 def test_creation_answers_change_world_selection_with_same_seed():

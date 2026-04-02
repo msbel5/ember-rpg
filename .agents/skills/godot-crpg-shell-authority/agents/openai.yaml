@@ -1,0 +1,4 @@
+interface:
+  display_name: "Godot CRPG Shell"
+  short_description: "Audit and enforce Ember's Godot shell authority rules"
+  default_prompt: "Audit the active Godot shell for duplicate owners, contract drift, readability failures, and missing manual proof. Then propose or implement the smallest correct fix set."

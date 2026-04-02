@@ -101,12 +101,12 @@ duration_ms = 4000
 expected = "command bar unlocks after the move resolves"
 
 [[steps]]
-id = "wait_for_talk_action"
+id = "wait_for_focus_on_dialog_npc"
 action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionOne"
-text = "Talk: Hale Pike"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/FocusLabel"
+text = "Hale Pike"
 duration_ms = 4000
-expected = "world focus exposes a talk action for the nearby NPC"
+expected = "world focus locks onto the nearby NPC before the talk verb is used"
 
 [[steps]]
 id = "send_talk"

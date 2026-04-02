@@ -8,10 +8,11 @@ const CreationWizardState = preload("res://scripts/ui/creation_wizard_state.gd")
 static func build_build_section(owner) -> Control:
 	var section := VBoxContainer.new()
 	section.name = "BuildSection"
+	section.add_theme_constant_override("separation", 12)
 
 	owner._class_grid = GridContainer.new()
 	owner._class_grid.name = "ClassGrid"
-	owner._class_grid.columns = 3
+	owner._class_grid.columns = 2
 	section.add_child(owner._class_grid)
 
 	owner._alignment_grid = GridContainer.new()
@@ -30,15 +31,70 @@ static func build_build_section(owner) -> Control:
 
 
 static func build_dossier_section(owner) -> Control:
-	var section := VBoxContainer.new()
+	var section := HBoxContainer.new()
 	section.name = "DossierSection"
-	owner._dossier_text = RichTextLabel.new()
-	owner._dossier_text.name = "DossierText"
-	owner._dossier_text.bbcode_enabled = true
-	owner._dossier_text.fit_content = false
-	owner._dossier_text.scroll_active = true
-	owner._dossier_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	section.add_child(owner._dossier_text)
+	section.add_theme_constant_override("separation", 14)
+
+	var left := VBoxContainer.new()
+	left.name = "DossierPrimary"
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left.add_theme_constant_override("separation", 10)
+	section.add_child(left)
+
+	var identity_panel := PanelContainer.new()
+	identity_panel.custom_minimum_size = Vector2(0, 140)
+	left.add_child(identity_panel)
+	var identity_margin := MarginContainer.new()
+	identity_margin.add_theme_constant_override("margin_left", 12)
+	identity_margin.add_theme_constant_override("margin_top", 12)
+	identity_margin.add_theme_constant_override("margin_right", 12)
+	identity_margin.add_theme_constant_override("margin_bottom", 12)
+	identity_panel.add_child(identity_margin)
+	owner._dossier_identity = RichTextLabel.new()
+	owner._dossier_identity.name = "DossierIdentity"
+	owner._dossier_identity.bbcode_enabled = true
+	owner._dossier_identity.fit_content = true
+	owner._dossier_identity.scroll_active = false
+	identity_margin.add_child(owner._dossier_identity)
+
+	var stats_panel := PanelContainer.new()
+	stats_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left.add_child(stats_panel)
+	var stats_margin := MarginContainer.new()
+	stats_margin.add_theme_constant_override("margin_left", 12)
+	stats_margin.add_theme_constant_override("margin_top", 12)
+	stats_margin.add_theme_constant_override("margin_right", 12)
+	stats_margin.add_theme_constant_override("margin_bottom", 12)
+	stats_panel.add_child(stats_margin)
+	owner._dossier_stats_grid = GridContainer.new()
+	owner._dossier_stats_grid.name = "DossierStatsGrid"
+	owner._dossier_stats_grid.columns = 2
+	owner._dossier_stats_grid.add_theme_constant_override("h_separation", 14)
+	owner._dossier_stats_grid.add_theme_constant_override("v_separation", 8)
+	stats_margin.add_child(owner._dossier_stats_grid)
+
+	var right := VBoxContainer.new()
+	right.name = "DossierSecondary"
+	right.custom_minimum_size = Vector2(360, 0)
+	right.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right.add_theme_constant_override("separation", 10)
+	section.add_child(right)
+
+	owner._dossier_world = RichTextLabel.new()
+	owner._dossier_world.name = "DossierWorld"
+	owner._dossier_world.bbcode_enabled = true
+	owner._dossier_world.fit_content = true
+	owner._dossier_world.scroll_active = false
+	right.add_child(_framed_block(owner._dossier_world))
+
+	owner._dossier_history = RichTextLabel.new()
+	owner._dossier_history.name = "DossierHistory"
+	owner._dossier_history.bbcode_enabled = true
+	owner._dossier_history.fit_content = false
+	owner._dossier_history.scroll_active = true
+	owner._dossier_history.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right.add_child(_framed_block(owner._dossier_history))
 	return section
 
 
@@ -50,23 +106,47 @@ static func render_build(owner) -> void:
 
 static func render_dossier(owner) -> void:
 	var genesis: Dictionary = owner._payload.get("campaign_genesis", {})
-	var stats: Array[String] = []
+	var stat_cards: Array[String] = []
 	for ability in CreationCatalog.ability_order(owner._catalog):
-		stats.append("%s %d" % [ability, int(owner._assigned_stats.get(ability, 10))])
+		var value := int(owner._assigned_stats.get(ability, 10))
+		stat_cards.append("[b]%s[/b] %d (%+d)" % [ability, value, CreationCatalog.modifier(value)])
 
-	var history_text := CreationWizardState.history_source(owner._payload)
-	owner._dossier_text.text = (
-		"[b]World Premise[/b]\n%s\n\n[b]Starting Pressure[/b]\n%s\n\n[b]History[/b]\n%s\n\n[b]Build[/b]\nClass: %s\nAlignment: %s\nSkills: %s\nStats: %s"
+	owner._dossier_identity.text = (
+		"[b]%s[/b]\nClass: %s\nAlignment: %s\nSkills: %s"
 		% [
-			str(genesis.get("world_premise", "A frontier waits.")),
-			str(genesis.get("starting_pressure", "")),
-			history_text,
+			owner._name_input.text.strip_edges(),
 			owner._selected_class_id.capitalize(),
 			owner._selected_alignment,
 			", ".join(owner._selected_skills),
-			" | ".join(stats),
 		]
 	)
+
+	owner._clear_children(owner._dossier_stats_grid)
+	for stat_line in stat_cards:
+		var label := Label.new()
+		label.text = stat_line.replace("[b]", "").replace("[/b]", "")
+		label.add_theme_font_size_override("font_size", 15)
+		owner._dossier_stats_grid.add_child(label)
+
+	owner._dossier_world.text = (
+		"[b]World Premise[/b]\n%s\n\n[b]Starting Pressure[/b]\n%s\n\n[b]Quest Seeds[/b]\n%s"
+		% [
+			str(genesis.get("world_premise", "A frontier waits.")),
+			str(genesis.get("starting_pressure", "")),
+			", ".join(genesis.get("quest_seed_themes", [])),
+		]
+	)
+
+	var timeline_entries: Array = CreationWizardState.history_timeline(owner._payload)
+	var history_sections: Array[String] = []
+	for entry in timeline_entries.slice(0, min(5, timeline_entries.size())):
+		if not (entry is Dictionary):
+			continue
+		history_sections.append(
+			"[b]Year %d - %s[/b]\n%s"
+			% [int(entry.get("year", 0)), str(entry.get("headline", "")), str(entry.get("summary", ""))]
+		)
+	owner._dossier_history.text = "[b]Chronicle Highlights[/b]\n\n%s" % "\n\n".join(history_sections)
 
 
 static func render_preview(owner) -> void:
@@ -98,7 +178,7 @@ static func _rebuild_class_grid(owner) -> void:
 		var button := Button.new()
 		button.name = "Class_%s" % str(entry.get("id", "class"))
 		button.text = "%s\n%s" % [str(entry.get("label", entry.get("id", ""))), str(entry.get("description", ""))]
-		button.custom_minimum_size = Vector2(0, 92)
+		button.custom_minimum_size = Vector2(0, 110)
 		button.pressed.connect(func() -> void:
 			owner._selected_class_id = str(entry.get("id", ""))
 			owner._selected_skills = CreationWizardState.string_array(entry.get("default_skills", []))
@@ -148,3 +228,17 @@ static func _rebuild_skill_grid(owner) -> void:
 			owner._render()
 		)
 		owner._skill_grid.add_child(button)
+
+
+static func _framed_block(content: Control) -> Control:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	panel.add_child(margin)
+	margin.add_child(content)
+	return panel

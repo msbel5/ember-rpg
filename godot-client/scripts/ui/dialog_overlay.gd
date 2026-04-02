@@ -108,7 +108,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 
 ## Show dialog overlay with NPC text and player response options.
-## options: Array of {text: String, command: String, check: String, available: bool}
+## options: Array of {text, command, skill_check?, enabled, disabled_reason}
 func show_dialog(npc_name: String, npc_text: String, options: Array) -> void:
 	_npc_name_label.text = npc_name
 	_npc_text.text = npc_text
@@ -124,10 +124,14 @@ func show_dialog(npc_name: String, npc_text: String, options: Array) -> void:
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 
+		var skill_check = opt.get("skill_check", {})
 		var check_tag := str(opt.get("check", "")).strip_edges()
+		if skill_check is Dictionary and check_tag.is_empty():
+			check_tag = str(skill_check.get("label", "")).strip_edges()
 		var option_text := str(opt.get("text", "..."))
-		var available := bool(opt.get("available", true))
+		var available := bool(opt.get("enabled", opt.get("available", true)))
 		var command := str(opt.get("command", ""))
+		var disabled_reason := str(opt.get("disabled_reason", "")).strip_edges()
 		btn.name = "OptionButton%d" % i
 
 		if not check_tag.is_empty():
@@ -142,7 +146,7 @@ func show_dialog(npc_name: String, npc_text: String, options: Array) -> void:
 		else:
 			btn.add_theme_color_override("font_color", Color(0.45, 0.43, 0.40))
 			btn.disabled = true
-			btn.tooltip_text = "Requirement not met: %s" % check_tag
+			btn.tooltip_text = disabled_reason if not disabled_reason.is_empty() else "Requirement not met: %s" % check_tag
 
 		btn.set_meta("command", command)
 		_options_container.add_child(btn)

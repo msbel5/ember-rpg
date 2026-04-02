@@ -22,7 +22,6 @@ const QUICKSAVE_SLOT := "quicksave"
 @onready var minimap_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel
 @onready var command_bar = $MainMargin/MainVBox/CommandBar
 @onready var quest_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/QuestPanel
-@onready var combat_panel = $OverlayCanvas/CombatPanel
 @onready var save_load_panel = $OverlayCanvas/SaveLoadPanel
 
 var is_waiting := false
@@ -58,7 +57,6 @@ func _ready() -> void:
 	settlement_panel.command_requested.connect(_submit_action)
 	minimap_panel.travel_requested.connect(_on_world_graph_travel_requested)
 	quest_panel.command_requested.connect(_submit_action)
-	combat_panel.command_requested.connect(_submit_action)
 	save_load_panel.save_requested.connect(_save_sync.on_save_requested)
 	save_load_panel.load_requested.connect(_save_sync.on_load_requested)
 	save_load_panel.delete_requested.connect(_save_sync.on_delete_save_requested)
@@ -75,7 +73,6 @@ func _ready() -> void:
 	_world_sync.initialize_runtime()
 	command_bar.set_focus_summary(world_view.get_focus_summary())
 	command_bar.set_focus_actions(world_view.get_focus_actions())
-	_refresh_scene_roster()
 	command_bar.focus_input()
 
 
@@ -98,9 +95,12 @@ func _install_dialog_overlay() -> void:
 
 func _install_combat_overlay() -> void:
 	_combat_overlay_widget = CombatOverlayScript.new()
+	var overlay_canvas = $OverlayCanvas
 	var world_pane = $MainMargin/MainVBox/ContentSplit/WorldPane
-	if world_pane != null:
-		world_pane.add_child(_combat_overlay_widget)
+	if overlay_canvas != null:
+		overlay_canvas.add_child(_combat_overlay_widget)
+	if _combat_overlay_widget != null and world_pane != null and _combat_overlay_widget.has_method("attach_to_surface"):
+		_combat_overlay_widget.attach_to_surface(world_pane)
 		_combat_overlay_widget.command_requested.connect(_submit_action)
 
 
@@ -224,8 +224,8 @@ func _on_campaign_action_response(data, _issued_text: String) -> void:
 func _set_waiting(waiting: bool) -> void:
 	is_waiting = waiting
 	command_bar.set_waiting(waiting)
-	if combat_panel.has_method("set_waiting"):
-		combat_panel.set_waiting(waiting)
+	if _combat_overlay_widget != null and _combat_overlay_widget.has_method("set_waiting"):
+		_combat_overlay_widget.set_waiting(waiting)
 	if quest_panel.has_method("set_waiting"):
 		quest_panel.set_waiting(waiting)
 	if settlement_panel.has_method("set_waiting"):
@@ -245,7 +245,6 @@ func _finish_turn_sync() -> void:
 
 func _on_state_updated() -> void:
 	_save_sync.remember_player_id()
-	_refresh_scene_roster()
 
 
 func _on_combat_started() -> void:
@@ -354,53 +353,6 @@ func _on_world_graph_travel_requested(destination_region_id: String, destination
 			"destination_settlement_id": destination_settlement_id,
 		},
 	)
-
-
-func _refresh_scene_roster() -> void:
-	command_bar.set_scene_roster(_scene_roster_entries())
-
-
-func _scene_roster_entries() -> Array:
-	var entries: Array = []
-	_append_roster_bucket(entries, GameState.entities.get("npcs", []), 2)
-	_append_roster_bucket(entries, GameState.entities.get("enemies", []), 1)
-	if entries.size() < 3:
-		_append_roster_bucket(entries, GameState.entities.get("items", []), 3 - entries.size())
-	return entries.slice(0, 3)
-
-
-func _append_roster_bucket(entries: Array, bucket_entries: Array, limit: int) -> void:
-	for entry in bucket_entries:
-		if entries.size() >= 3 or limit <= 0 or not (entry is Dictionary):
-			return
-		var label := _clean_scene_label(str(entry.get("name", entry.get("id", ""))).strip_edges())
-		if label.is_empty():
-			continue
-		entries.append(
-			{
-				"label": label,
-				"command": world_view.command_for_entity(entry),
-				"template": str(entry.get("template", _template_for_bucket(str(entry.get("bucket", ""))))).strip_edges().to_lower(),
-			}
-		)
-		limit -= 1
-
-
-func _template_for_bucket(bucket: String) -> String:
-	match bucket:
-		"enemy":
-			return "wolf"
-		"item":
-			return "chest"
-		_:
-			return "merchant"
-
-
-func _clean_scene_label(label: String) -> String:
-	var words := label.strip_edges().split(" ", false)
-	if words.size() == 2 and str(words[0]).to_lower() == str(words[1]).to_lower():
-		return str(words[0])
-	return label.strip_edges()
 
 
 func _capture_visual_proof(folder: String, prefix: String, include_world: bool) -> void:

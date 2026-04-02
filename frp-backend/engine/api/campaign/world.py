@@ -181,6 +181,7 @@ def build_travel_options(world: WorldBlueprint) -> list[dict[str, Any]]:
     if active_node is None:
         return []
     options: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, int]] = set()
     for edge in world.travel_edges:
         if edge["from_settlement_id"] == active_node["id"]:
             destination_id = edge["to_settlement_id"]
@@ -196,13 +197,20 @@ def build_travel_options(world: WorldBlueprint) -> list[dict[str, Any]]:
         )
         if destination_node is None:
             continue
+        key = (str(destination_region_id), str(destination_id), int(edge.get("travel_hours", 4)))
+        if destination_region_id == active_region_id or key in seen:
+            continue
+        seen.add(key)
         options.append(
             {
+                "route_id": str(edge.get("id", f"{active_node['id']}->{destination_id}")),
                 "destination_settlement_id": destination_id,
                 "destination_region_id": destination_region_id,
                 "destination_name": destination_node["name"],
                 "travel_hours": int(edge.get("travel_hours", 4)),
                 "biome_id": destination_node.get("biome_id", ""),
+                "reachable": True,
+                "is_current": False,
             }
         )
     options.sort(key=lambda item: (item["travel_hours"], item["destination_name"]))

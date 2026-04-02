@@ -897,7 +897,7 @@ func _test_ui_panels() -> void:
 	var status_hp_bar = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/HPBar")
 	_assert_true(status_hp_bar.has_theme_stylebox_override("fill"), "Status bar applies authored fill styling to the health bar")
 	var location_label = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/LocationLabel")
-	_assert_true(location_label.text.contains("Harbor") and location_label.text.contains("Exploration") and location_label.text.contains("locals"), "Status bar reflects the current location, scene, and encounter summary")
+	_assert_true(location_label.text.contains("Harbor") and location_label.text.contains("Exploration"), "Status bar reflects the current location and active scene without duplicating encounter noise")
 
 	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
 	_assert_true(inventory_grid.get_child_count() >= 2, "Inventory panel populates grid items")
@@ -976,15 +976,17 @@ func _test_ui_panels() -> void:
 	var focus_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusLabel")
 	var focus_action_one = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionOne")
 	var focus_action_two = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionTwo")
-	var roster_one = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/RosterRow/RosterOne")
-	var roster_two = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/RosterRow/RosterTwo")
 	_assert_true(str(focus_label.text).contains("Focus:"), "Command bar surfaces a persistent focus summary instead of leaving world actions implicit")
 	_assert_true(
-		(str(focus_action_one.text).contains("Talk") or str(focus_action_one.text).contains("Attack") or str(focus_action_one.text).contains("Examine"))
-		and (str(focus_action_two.text).contains("Attack") or str(focus_action_two.text).contains("Use") or str(focus_action_two.text).contains("Rest") or str(focus_action_two.text).contains("Examine")),
-		"Command bar exposes visible world-aware action chips instead of a dead text strip"
+		str(focus_action_one.text) == "Talk"
+		and str(focus_action_two.text) == "Attack",
+		"Command bar exposes fixed verb chips instead of weak ad-hoc action labels"
 	)
-	_assert_true(roster_one.visible and roster_one.icon != null and roster_two.visible, "Command bar surfaces a visible actor roster instead of leaving all contacts offscreen")
+	_assert_true(
+		str(focus_action_one.tooltip_text).contains("Talk")
+		and str(focus_action_two.tooltip_text).contains("Attack"),
+		"Command bar uses tooltips to carry target-specific intent while the visible shell stays compact"
+	)
 	var dialog_overlay = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay")
 	dialog_overlay.show_dialog("Harbor Guard", "State your business.", [
 		{"text": "Ask about work", "command": "ask about work", "available": true},

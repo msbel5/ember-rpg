@@ -136,12 +136,13 @@ func _create_actor(actor_id: String, entry: Dictionary, tile_pos: Vector2i) -> N
 		lbl.name = "NameLabel"
 		lbl.text = entity_name
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl.position = Vector2(-40, -14)
-		lbl.size = Vector2(80, 16)
-		lbl.add_theme_font_size_override("font_size", 10)
+		var label_width := maxi(108, entity_name.length() * 9)
+		lbl.position = Vector2(-float(label_width) / 2.0, -28.0)
+		lbl.size = Vector2(label_width, 24)
+		lbl.add_theme_font_size_override("font_size", 12)
 		lbl.add_theme_color_override("font_color", EntityVisuals.name_label_color(bucket))
-		lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-		lbl.add_theme_constant_override("outline_size", 2)
+		lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.96))
+		lbl.add_theme_constant_override("outline_size", 4)
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		actor.add_child(lbl)
 
@@ -217,12 +218,12 @@ func _update_idle_motion(actor: Node2D) -> void:
 	var bob := sin(_motion_time * spd + seed_val) * amp
 	var lift := float(actor.get_meta("body_lift", EntityVisuals.body_lift(bucket)))
 	body.position = Vector2(0.0, -lift + bob)
-	aura.position = Vector2(0.0, 3.0 + bob * 0.08)
-	shadow.position = Vector2(0.0, 4.0 + bob * 0.16)
+	aura.position = Vector2(0.0, 3.0)
+	shadow.position = Vector2(0.0, 4.0 + bob * 0.08)
 	var a_scale := EntityVisuals.aura_scale(bucket)
-	aura.scale = Vector2.ONE * a_scale * (1.0 + sin(_motion_time * spd * 0.7 + seed_val) * 0.05)
+	aura.scale = Vector2.ONE * a_scale
 	var s_scale := float(actor.get_meta("shadow_scale", EntityVisuals.shadow_scale(bucket)))
-	shadow.scale = Vector2.ONE * s_scale * (1.0 + sin(_motion_time * spd * 0.5 + seed_val) * 0.03)
+	shadow.scale = Vector2.ONE * s_scale * (1.0 + sin(_motion_time * spd * 0.5 + seed_val) * 0.015)
 
 
 func _remove_stale(desired_ids: Dictionary) -> void:

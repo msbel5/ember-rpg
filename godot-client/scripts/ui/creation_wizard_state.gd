@@ -29,21 +29,56 @@ static func answer_map(payload: Dictionary) -> Dictionary:
 	return result
 
 
-static func history_source(payload: Dictionary) -> String:
+static func history_timeline(payload: Dictionary) -> Array:
 	var genesis: Dictionary = payload.get("campaign_genesis", {})
-	var lines: Array[String] = []
+	var timeline = genesis.get("history_timeline", [])
+	if timeline is Array and not timeline.is_empty():
+		return timeline
+	var fallback: Array = []
 	for raw_event in genesis.get("history_events", []):
 		var event_text := str(raw_event).strip_edges()
-		if not event_text.is_empty():
-			lines.append(event_text)
+		if event_text.is_empty():
+			continue
+		var year := 0
+		if event_text.begins_with("Year "):
+			var colon_index := event_text.find(":")
+			if colon_index > 5:
+				year = int(event_text.substr(5, colon_index - 5))
+		fallback.append({
+			"year": year,
+			"headline": "Recorded Event",
+			"summary": event_text,
+			"tags": [],
+			"importance": 2,
+		})
+	return fallback
+
+
+static func history_source(payload: Dictionary) -> String:
+	var lines: Array[String] = []
+	for entry in history_timeline(payload):
+		if not (entry is Dictionary):
+			continue
+		var headline := str(entry.get("headline", "")).strip_edges()
+		var summary := _ensure_sentence(str(entry.get("summary", "")).strip_edges())
+		var year := int(entry.get("year", 0))
+		if year > 0 and not headline.is_empty():
+			lines.append("[b]Year %d - %s[/b]\n%s" % [year, headline, summary])
+		elif year > 0:
+			lines.append("[b]Year %d[/b]\n%s" % [year, summary])
+		elif not headline.is_empty():
+			lines.append("[b]%s[/b]\n%s" % [headline, summary])
+		elif not summary.is_empty():
+			lines.append(summary)
 	if lines.is_empty():
+		var genesis: Dictionary = payload.get("campaign_genesis", {})
 		var premise := _ensure_sentence(str(genesis.get("world_premise", "A frontier waits to be named.")).strip_edges())
 		var pressure := _ensure_sentence(
 			str(genesis.get("starting_pressure", "The first campfire burns under a suspicious dark.")).strip_edges()
 		)
-		lines.append("Year 1: %s" % premise)
-		lines.append("Year 19: %s" % pressure)
-	return "\n".join(lines)
+		lines.append("[b]Year 1 - First Omen[/b]\n%s" % premise)
+		lines.append("[b]Year 19 - Opening Pressure[/b]\n%s" % pressure)
+	return "\n\n".join(lines)
 
 
 static func sync_build_defaults(owner) -> void:

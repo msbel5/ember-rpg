@@ -1,18 +1,16 @@
-[gd_scene load_steps=17 format=3 uid="uid://cgamesession"]
+[gd_scene load_steps=15 format=3 uid="uid://cgamesession"]
 
 [ext_resource type="Script" path="res://scenes/game_session.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/world/world_view.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/world/tilemap_controller.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/world/entity_layer.gd" id="4"]
 [ext_resource type="Script" path="res://scripts/world/camera_controller.gd" id="5"]
-[ext_resource type="PackedScene" path="res://scenes/components/status_bar.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://scenes/components/narrative_panel.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://scenes/components/inventory_panel.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/components/minimap_panel.tscn" id="9"]
 [ext_resource type="PackedScene" path="res://scenes/components/command_bar.tscn" id="10"]
 [ext_resource type="Script" path="res://scripts/world/selection_overlay.gd" id="11"]
 [ext_resource type="PackedScene" path="res://scenes/components/quest_panel.tscn" id="12"]
-[ext_resource type="PackedScene" path="res://scenes/components/combat_panel.tscn" id="13"]
 [ext_resource type="PackedScene" path="res://scenes/components/save_load_panel.tscn" id="14"]
 [ext_resource type="PackedScene" path="res://scenes/components/settlement_panel.tscn" id="15"]
 [ext_resource type="PackedScene" path="res://scenes/components/character_panel.tscn" id="16"]
@@ -46,9 +44,6 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="MainVBox" type="VBoxContainer" parent="MainMargin"]
-layout_mode = 2
-
-[node name="StatusBar" parent="MainMargin/MainVBox" instance=ExtResource("6")]
 layout_mode = 2
 
 [node name="ContentSplit" type="HSplitContainer" parent="MainMargin/MainVBox"]
@@ -136,7 +131,5 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="OverlayCanvas" type="CanvasLayer" parent="."]
-
-[node name="CombatPanel" parent="OverlayCanvas" instance=ExtResource("13")]
 
 [node name="SaveLoadPanel" parent="OverlayCanvas" instance=ExtResource("14")]

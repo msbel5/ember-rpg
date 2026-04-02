@@ -45,11 +45,13 @@ ember-rpg/
 - [PRD_godot_client.md](C:/Users/msbel/projects/ember-rpg/docs/prd/active/PRD_godot_client.md): active Godot runtime contract
 - [PRD_automation_authority_v1.md](C:/Users/msbel/projects/ember-rpg/docs/prd/active/PRD_automation_authority_v1.md): semantic automation authority
 - [runtime_authority.md](C:/Users/msbel/projects/ember-rpg/docs/architecture/runtime_authority.md): canonical live runtime slice rules
+- [godot-crpg-shell-authority](C:/Users/msbel/projects/ember-rpg/.agents/skills/godot-crpg-shell-authority/SKILL.md): project-local shell authority checklist for any Godot shell rewrite or review
 
 Active PRDs live only under `docs/prd/active`. Superseded PRDs and planning notes live under `docs/deprecated`.
 
 ## Verification Lanes
 
+- Manual Godot runtime from a clean reset is the primary truth lane
 - Backend targeted pytest for campaign creation, save/load, and runtime projections
 - Headless Godot regression via `godot-client/tests/run_headless_tests.gd`
 - Semantic desktop proof via `godot-client/tests/automation`

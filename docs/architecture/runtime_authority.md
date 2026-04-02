@@ -57,6 +57,9 @@ Every world advance or commander command must run the deterministic campaign pip
 
 - Godot is the active player-facing client.
 - The title scene and gameplay shell consume canonical payload slices only.
+- The gameplay shell follows a single-authority rule: exactly one active owner for status, combat, dialog, and save/load surfaces.
+- Scene-instanced and programmatically inserted surfaces may not coexist for the same shell concern.
+- Shell-touching changes must be reviewed against [godot-crpg-shell-authority](C:/Users/msbel/projects/ember-rpg/.agents/skills/godot-crpg-shell-authority/SKILL.md).
 - Headless Godot automation is the authoritative QA path for repeatable UI proof.
 - Win32 desktop automation is a fallback proof layer for desktop/window screenshots and window activation only.
 - Long `100`/`500` turn chaos is a soak lane, not the default release gate.

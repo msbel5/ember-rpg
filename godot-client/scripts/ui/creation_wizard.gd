@@ -50,6 +50,8 @@ var _answer_buttons: VBoxContainer
 var _history_text: RichTextLabel
 var _history_timer: Timer
 var _history_source := ""
+var _history_timeline_data: Array = []
+var _history_visible_events := 0
 var _roll_pool_label: Label
 var _saved_roll_label: Label
 var _stat_rows: VBoxContainer
@@ -58,7 +60,10 @@ var _class_grid: GridContainer
 var _alignment_grid: GridContainer
 var _skill_grid: GridContainer
 var _skill_budget_label: Label
-var _dossier_text: RichTextLabel
+var _dossier_identity: RichTextLabel
+var _dossier_world: RichTextLabel
+var _dossier_history: RichTextLabel
+var _dossier_stats_grid: GridContainer
 var _back_button: Button
 var _next_button: Button
 var _start_button: Button
@@ -397,6 +402,8 @@ func _seed_value() -> int:
 func _reset_state() -> void:
 	_payload = {}
 	_history_source = ""
+	_history_timeline_data = []
+	_history_visible_events = 0
 	_selected_adapter_id = "fantasy_ember"
 	_selected_profile_id = CreationCatalog.default_profile_id(_catalog)
 	_selected_class_id = CreationCatalog.default_class_id(_catalog)
