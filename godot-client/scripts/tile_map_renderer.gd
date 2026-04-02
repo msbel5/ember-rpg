@@ -210,8 +210,8 @@ func _draw_entity(entity: Dictionary) -> void:
 	entity_nodes.append(container)
 	entity_containers[entity_id] = container
 
+## Fade in an entity when the DM narrative mentions it.
 func reveal_entity(entity_id: String) -> void:
-	"""Fade in an entity when the DM narrative mentions it."""
 	if not entity_containers.has(entity_id):
 		return
 	var container = entity_containers[entity_id]
@@ -221,8 +221,8 @@ func reveal_entity(entity_id: String) -> void:
 	var tween = create_tween()
 	tween.tween_property(container, "modulate", Color(1, 1, 1, 1), 1.0)
 
+## Reveal all entities immediately.
 func reveal_all() -> void:
-	"""Reveal all entities immediately."""
 	for eid in entity_containers:
 		var container = entity_containers[eid]
 		if is_instance_valid(container):
