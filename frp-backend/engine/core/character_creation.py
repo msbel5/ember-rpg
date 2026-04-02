@@ -350,7 +350,7 @@ class CreationState:
         if not pressure_bits:
             pressure_bits.append(GENESIS_TEMPLATES.get("fallback_pressure", ""))
         end_year = _history_end_year()
-        years = _macro_history_years(self.rng_seed, max(10, len(selected) + len(world_tags) + 4), end_year)
+        years = _macro_history_years(self.rng_seed, max(30, len(selected) * 3 + len(world_tags) * 2 + 10), end_year)
         primary_world_tag = _first_phrase(world_tags, "hard roads")
         secondary_world_tag = _first_phrase(world_tags[1:], primary_world_tag)
         primary_tone = _first_phrase(tone_tags, "anxious")
@@ -431,6 +431,46 @@ class CreationState:
                 "importance": 5,
             },
         ]
+        # Generate additional procedural events to fill the timeline
+        _procedural_templates = [
+            ("Plague Sweeps the Coast", "A devastating plague spreads through %s, killing one in five." % settlement_lower, ["plague", "death"], 4),
+            ("New Ore Discovered", "Miners near %s uncover a rich vein of rare ore." % settlement_lower, ["mining", "wealth"], 3),
+            ("Great Fire", "Fire consumes half of the old quarter. Rebuilding takes years." , ["fire", "destruction"], 4),
+            ("Border Skirmish", "%s militia clashes with raiders on the frontier roads." % faction_title, ["war", "frontier"], 3),
+            ("Trade Alliance Forged", "Three settlements sign a mutual trade pact along the %s corridor." % primary_world_tag, ["trade", "diplomacy"], 3),
+            ("Religious Schism", "A doctrinal split divides the faithful. Two temples rise where one stood.", ["religion", "culture"], 2),
+            ("Dragon Sighting", "Travelers report a great beast in the high passes. Panic spreads.", ["beast", "fear"], 4),
+            ("Harvest Festival", "The greatest harvest in memory. Granaries overflow and debts are forgiven.", ["harvest", "joy"], 2),
+            ("Earthquake", "The ground shakes. Old tunnels collapse and new caves open.", ["disaster", "geology"], 4),
+            ("Hero Emerges", "A wanderer defeats a bandit lord and is hailed across the region.", ["hero", "legend"], 3),
+            ("Famine Years", "Three years of failed crops drive families from their lands.", ["famine", "migration"], 5),
+            ("University Founded", "Scholars establish a place of learning near the old library ruins.", ["education", "culture"], 2),
+            ("Bridge Built", "A great stone bridge spans the river, cutting travel time in half.", ["infrastructure", "trade"], 2),
+            ("Assassination", "A prominent leader is found dead. Suspicion poisons every alliance.", ["intrigue", "politics"], 4),
+            ("Flood", "The river swells beyond memory. Lowland farms are destroyed.", ["flood", "disaster"], 4),
+            ("Peace Treaty", "%s and their old rivals sign a fragile peace after decades of tension." % faction_title, ["peace", "diplomacy"], 3),
+            ("Comet Appears", "A bright comet hangs in the sky for weeks. Prophets speak of change.", ["omen", "wonder"], 2),
+            ("Mine Collapse", "Dozens are trapped underground. Rescue efforts unite the community.", ["mining", "tragedy"], 3),
+            ("New Settlement", "Pioneers break ground on a new outpost deeper into the frontier.", ["expansion", "frontier"], 3),
+            ("Cultural Renaissance", "Art and music flourish under a generation of relative peace.", ["art", "culture"], 2),
+        ]
+        rng = random.Random(int(self.rng_seed or 0) + 7777)
+        rng.shuffle(_procedural_templates)
+        used_years = {entry["year"] for entry in history_timeline}
+        for i, year in enumerate(years):
+            if year in used_years or i >= len(years):
+                continue
+            if not _procedural_templates:
+                break
+            headline, summary, tags, importance = _procedural_templates.pop()
+            history_timeline.append({
+                "year": year,
+                "headline": headline,
+                "summary": summary,
+                "tags": tags,
+                "importance": importance,
+            })
+        history_timeline.sort(key=lambda e: e.get("year", 0))
         history_events: List[str] = [
             "Year %d: %s. %s" % (int(entry["year"]), str(entry["headline"]), str(entry["summary"]))
             for entry in history_timeline
