@@ -41,15 +41,15 @@ The current creation has these critical UX problems:
 
 ## 3. Functional Requirements (FR)
 
-### Step 0: Genre Discovery
+### Step 0: Commander Identity
 
-**FR-01:** Replace the adapter OptionButton with two full-width atmospheric cards displayed side by side. Left card: "Fantasy Ember" with description "Shape a realm of magic and steel. Command a settlement on the frontier of a world shaped by gods and history." Right card: "Sci-Fi Frontier" with description "Chart the edge of a dying galaxy. Build a colony where the old empires left only ruins and radiation."
+**FR-01:** Step 0 presents a name input field and optional advanced settings (world seed, profile). Genre is determined implicitly by the questionnaire answers (adapter weights accumulate from each answer's `adapter_weights` field). The default adapter is `"fantasy_ember"`.
 
-**FR-02:** Each genre card is a large clickable PanelContainer (minimum 400x300px at 1600x900) with: genre title (28px bold), 3-line description (18px), and visual mood (background color tint — warm amber for fantasy, cool cyan for sci-fi). On hover: subtle glow. On click: card scales slightly, other card fades, 0.3s transition to Step 1.
+**FR-02:** Advanced settings (world seed, adapter override, profile hint) are hidden behind a "Show Advanced Settings" toggle to keep the default flow clean.
 
-**FR-03:** Keyboard navigation: Left/Right arrows to toggle focus between cards. Enter to select. Tab cycles focus.
+**FR-03:** Keyboard navigation: Tab to cycle fields, Enter to proceed to Step 1.
 
-**FR-04:** The selected genre maps to `adapter_id` ("fantasy_ember" or "scifi_frontier") passed to `Backend.start_campaign_creation()`. The player never sees the word "adapter."
+**FR-04:** The adapter_id ("fantasy_ember" or "scifi_frontier") defaults to "fantasy_ember" and is passed to `Backend.start_campaign_creation()`. Advanced users can override it in the advanced settings panel.
 
 ### Step 1: Identity + Personality Questions
 
@@ -73,7 +73,7 @@ The current creation has these critical UX problems:
 
 **FR-10:** After all questions answered, transition to a full-screen dark panel with streaming text. The backend worldgen results (from `creation_payload.campaign_genesis`) are displayed as DF-style history events appearing one line at a time with 0.3s delay between lines.
 
-**FR-11:** History text format: "Year [N]: [Event description]" using data from `campaign_genesis.world_premise` and `campaign_genesis.history_events` if available. If the backend doesn't provide explicit year events, synthesize from `world_premise` by splitting sentences and prefixing with generated years.
+**FR-11:** History text format: "Year [N] - [Headline]\n[Summary]\n[Tags]" using data from `campaign_genesis.history_timeline[]`. Each entry has `year`, `headline`, `summary`, `tags[]`, `importance`. The backend generates 30 events spanning ~1200 years. If `history_timeline` is empty, fall back to `history_events[]` string array.
 
 **FR-12:** Text appears with typewriter effect (characters appearing left-to-right at 30 chars/second). Gold text on dark background. Each new line starts with a subtle fade-in.
 
