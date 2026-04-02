@@ -27,8 +27,10 @@ expected = "title screen focused"
 
 [[steps]]
 id = "name_text"
-action = "text"
+action = "set_text_node"
+node_path = "CharacterCreation/VBox/IdentitySection/NameInput"
 text = "Nova"
+scene_name = "TitleScreen"
 wait_ms = 50
 custom_tag = "kept"
 """.strip(),
@@ -46,9 +48,13 @@ custom_tag = "kept"
     assert len(scenario.steps) == 2
     assert scenario.steps[0].capture_os is True
     assert scenario.steps[1].text == "Nova"
+    assert scenario.steps[1].scene_name == "TitleScreen"
+    assert scenario.steps[1].node_path == "CharacterCreation/VBox/IdentitySection/NameInput"
     assert scenario.steps[1].metadata["custom_tag"] == "kept"
     assert scenario.godot_project_dir.endswith("godot-client")
     assert scenario.backend_cwd.endswith("frp-backend")
+    assert scenario.backend_url == "http://127.0.0.1:8741"
+    assert scenario.backend_port == 8741
 
 
 def test_load_scenario_requires_steps(tmp_path: Path) -> None:

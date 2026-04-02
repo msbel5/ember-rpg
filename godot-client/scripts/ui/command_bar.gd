@@ -37,7 +37,7 @@ func _ready() -> void:
 	roster_one.pressed.connect(_on_focus_action_pressed.bind(roster_one))
 	roster_two.pressed.connect(_on_focus_action_pressed.bind(roster_two))
 	roster_three.pressed.connect(_on_focus_action_pressed.bind(roster_three))
-	text_input.placeholder_text = "Move, talk, trade, defend, save..."
+	text_input.placeholder_text = "Talk, attack, examine, use, rest..."
 	send_btn.text = "Act"
 	quick_save_btn.text = "Save"
 	saves_btn.text = "Loads"
@@ -85,8 +85,8 @@ func set_focus_actions(actions: Array) -> void:
 	var next_actions = actions.duplicate(true)
 	if next_actions.is_empty():
 		next_actions = [
-			{"label": "Look Around", "command": "look around"},
-			{"label": "Inventory", "command": "inventory"},
+			{"label": "Examine Area", "command": "look around"},
+			{"label": "Rest", "command": "rest"},
 		]
 	_apply_focus_action_button(focus_action_one, next_actions[0] if next_actions.size() > 0 else {})
 	_apply_focus_action_button(focus_action_two, next_actions[1] if next_actions.size() > 1 else {})

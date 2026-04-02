@@ -30,10 +30,15 @@ class ActionStep:
     id: str
     action: str
     description: str = ""
+    scene_name: str | None = None
     key: str | None = None
     text: str | None = None
+    node_path: str | None = None
+    option_text: str | None = None
     x: int | None = None
     y: int | None = None
+    normalized_x: float | None = None
+    normalized_y: float | None = None
     button: str = "left"
     duration_ms: int = 0
     repeat: int = 1

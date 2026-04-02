@@ -21,7 +21,18 @@
         "docs/deprecated/prd/PRD_visual_automation_headless_executor_v1.md",
         "docs/deprecated/prd/PRD_visual_automation_reporting_v1.md"
       ],
-      "note": "Canonical automation and evidence contract for backend and Godot verification."
+      "note": "Canonical semantic automation and evidence contract for backend and Godot verification."
+    },
+    "PRD_character_creation_v2.md": {
+      "owner": "client_creation_ux",
+      "mechanism_ids": ["CLIENT:CREATION:UX", "GEMRB:M16", "DF:M12"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd",
+        "frp-backend/engine/core/character_creation.py"
+      ],
+      "supersedes": [],
+      "note": "Canonical immersive six-stage creation UX for genre choice, questions, history reveal, stat rolling, build, and dossier."
     },
     "PRD_creation_surface_v2.md": {
       "owner": "client_creation",
@@ -31,7 +42,14 @@
         "docs/deprecated/prd/PRD_character_system.md",
         "docs/deprecated/prd/PRD_game_flow_architecture.md"
       ],
-      "note": "Authoritative commander identity and creation workspace contract."
+      "note": "Authoritative commander identity and full-shell creation workspace contract."
+    },
+    "PRD_godot_ux_accessibility_v1.md": {
+      "owner": "client_ux",
+      "mechanism_ids": ["CLIENT:UX", "CLIENT:ACCESSIBILITY"],
+      "runtime_surface": ["godot-client/scenes/title_screen.gd", "godot-client/scenes/game_session.gd", "godot-client/tests/automation"],
+      "supersedes": [],
+      "note": "Canonical UX and accessibility audit contract for the Godot-first release surface."
     },
     "PRD_actor_kernel_v1.md": {
       "owner": "kernel_actor",
@@ -110,7 +128,7 @@
       "mechanism_ids": ["DF:M11", "DF:M12", "DF:M20", "GEMRB:M13", "GEMRB:M14"],
       "runtime_surface": [
         "frp-backend/engine/api/campaign/live_kernel.py",
-        "frp-backend/engine/api/campaign/runtime.py",
+        "frp-backend/engine/api/campaign/runtime_macro_society.py",
         "frp-backend/engine/kernel/world_state.py",
         "frp-backend/engine/kernel/store.py"
       ],
@@ -154,6 +172,19 @@
       "runtime_surface": ["frp-backend/engine/kernel/hybrid.py", "frp-backend/engine/api/campaign_commands.py"],
       "supersedes": [],
       "note": "Canonical avatar-plus-commander loop sharing one deterministic tick."
+    },
+    "PRD_IMPLEMENTATION_MATRIX.md": {
+      "owner": "docs_governance",
+      "mechanism_ids": ["DOCS:MATRIX"],
+      "runtime_surface": [
+        "docs/PRD_IMPLEMENTATION_MATRIX.md",
+        "docs/doc_registry.json",
+        "frp-backend/tools/doc_inventory.py"
+      ],
+      "supersedes": [
+        "docs/deprecated/prd/PRD_IMPLEMENTATION_MATRIX_legacy_20260401.md"
+      ],
+      "note": "Governance pointer for the generated implementation matrix; the canonical rendered artifact lives at docs/PRD_IMPLEMENTATION_MATRIX.md."
     },
     "PRD_colony_simulation_v2.md": {
       "owner": "kernel_colony",
@@ -204,7 +235,7 @@
       "mechanism_ids": ["EMBER:SAVELOAD", "GEMRB:M16"],
       "runtime_surface": ["frp-backend/engine/api/save", "frp-backend/engine/save"],
       "supersedes": [],
-      "note": "Canonical backward-compatible save/load contract for session and campaign runtimes."
+      "note": "Canonical Godot-first save/load contract rooted in the kernel campaign slices."
     },
     "PRD_godot_client.md": {
       "owner": "client_runtime",
@@ -234,6 +265,17 @@
       "runtime_surface": ["frp-backend/engine/kernel/systems.py", "frp-backend/engine/kernel/effects.py"],
       "supersedes": [],
       "note": "Canonical closure for syndromes, power, traps, fluids, temperature, and strange moods."
+    },
+    "PRD_ux_gameplay_v1.md": {
+      "owner": "client_gameplay_ux",
+      "mechanism_ids": ["CLIENT:GAMEPLAY:UX", "GEMRB:M09", "GEMRB:M10", "DF:M15"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/scripts/world/world_view.gd",
+        "godot-client/scripts/ui/dialog_overlay.gd"
+      ],
+      "supersedes": [],
+      "note": "Canonical gameplay-shell UX contract for movement, interaction, dialog, camera, inventory, combat, and world travel."
     }
   }
 }

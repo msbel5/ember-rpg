@@ -1,92 +1,86 @@
 [scenario]
 name = "resume_and_command"
-description = "Resume a campaign from title and issue a narrative command."
+description = "Resume a campaign from title and issue a narrative command using semantic scene actions."
 adapter_id = "fantasy_ember"
 player_name = "Chaos"
 create_new = false
 requires_backend = true
-tags = ["title", "resume", "command"]
-
-[[steps]]
-id = "focus_title"
-action = "activate_window"
-expected = "title screen is focused"
+tags = ["title", "resume", "command", "semantic"]
 
 [[steps]]
 id = "open_continue"
-action = "mouse_click"
-x = 640
-y = 390
+action = "activate_node"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 700
-capture_os = true
+capture_viewport = true
 expected = "continue browser opens"
 
 [[steps]]
-id = "focus_player_lookup"
-action = "mouse_click"
-x = 820
-y = 198
-wait_ms = 100
-expected = "player lookup field receives focus"
-
-[[steps]]
-id = "clear_player_lookup"
-action = "key_press"
-key = "backspace"
-repeat = 40
-wait_ms = 50
-expected = "previous player lookup text is cleared"
-
-[[steps]]
-id = "type_player_lookup"
-action = "text"
+id = "set_player_lookup"
+action = "set_text_node"
+node_path = "LoadBrowser/VBox/PlayerRow/PlayerInput"
 text = "Chaos"
 wait_ms = 100
 expected = "player lookup contains Chaos"
 
 [[steps]]
 id = "refresh_player_saves"
-action = "mouse_click"
-x = 930
-y = 198
-wait_ms = 900
-capture_os = true
+action = "wait"
+duration_ms = 400
+expected = "continue browser auto-refresh settles for Chaos"
+
+[[steps]]
+id = "wait_for_load_button"
+action = "wait_for_node_visible"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+duration_ms = 6000
+capture_viewport = true
 expected = "continue browser shows campaign saves for Chaos"
-expect_artifact_differs_from = "open_continue:os_screenshot"
 
 [[steps]]
 id = "load_first_save"
-action = "mouse_click"
-x = 890
-y = 296
-wait_ms = 1200
-capture_os = true
+action = "activate_node"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+wait_ms = 200
+expected = "campaign load starts"
+
+[[steps]]
+id = "wait_for_game_session"
+action = "wait_for_scene"
+scene_name = "GameSession"
+duration_ms = 10000
 capture_viewport = true
 expected = "gameplay scene loads"
-expect_note_contains = "phase2\\game"
+expect_note_contains = "GameSession"
+
+[[steps]]
+id = "wait_for_command_bar"
+action = "wait_for_node_visible"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+duration_ms = 3000
+expected = "command bar is available"
 
 [[steps]]
 id = "focus_command_bar"
-action = "mouse_click"
-x = 320
-y = 688
+action = "focus_node"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
 wait_ms = 100
 expected = "command input receives focus"
 
 [[steps]]
-id = "look_around"
-action = "text"
+id = "set_command"
+action = "set_text_node"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
 text = "look around"
 wait_ms = 100
 expected = "command text appears in input"
 
 [[steps]]
 id = "submit_command"
-action = "key_press"
-key = "enter"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SendButton"
 wait_ms = 1200
-capture_os = true
 capture_viewport = true
 expected = "narrative updates after command"
-expect_note_contains = "phase2\\game"
-expect_artifact_differs_from = "load_first_save:os_screenshot"
+expect_note_contains = "GameSession"
+expect_artifact_differs_from = "wait_for_game_session:viewport_capture"

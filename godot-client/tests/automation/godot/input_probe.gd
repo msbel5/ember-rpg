@@ -3,6 +3,8 @@ extends Control
 
 @onready var input_field: LineEdit = $Margin/VBox/InputField
 @onready var status_label: Label = $Margin/VBox/StatusLabel
+@onready var probe_option: OptionButton = $Margin/VBox/ProbeOption
+@onready var probe_button: Button = $Margin/VBox/ProbeButton
 
 var last_key_down: String = ""
 var last_key_up: String = ""
@@ -12,9 +14,20 @@ var mouse_move_count: int = 0
 var mouse_down_count: int = 0
 var mouse_up_count: int = 0
 var last_mouse_position: Vector2 = Vector2.ZERO
+var button_press_count: int = 0
+var last_option_index: int = -1
 
 
 func _ready() -> void:
+	probe_option.add_item("Alpha")
+	probe_option.add_item("Beta")
+	probe_option.item_selected.connect(func(index: int) -> void:
+		last_option_index = index
+	)
+	probe_button.pressed.connect(func() -> void:
+		button_press_count += 1
+		status_label.text = "Probe action fired"
+	)
 	input_field.grab_focus()
 	status_label.text = "Probe ready"
 

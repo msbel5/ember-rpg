@@ -1,0 +1,174 @@
+[scenario]
+name = "dialog_interaction_desktop"
+description = "Desktop proof for a real NPC conversation overlay using semantic controls."
+adapter_id = "fantasy_ember"
+player_name = "DialogSmoke"
+create_new = false
+requires_backend = true
+tags = ["desktop", "dialog", "semantic", "proof"]
+
+[[steps]]
+id = "focus_window"
+action = "activate_window"
+capture_os = true
+capture_viewport = true
+expected = "title screen is visible in a desktop window"
+
+[[steps]]
+id = "wait_for_continue_button"
+action = "wait_for_node_visible"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+duration_ms = 4000
+expected = "continue button is ready"
+
+[[steps]]
+id = "open_continue"
+action = "activate_node"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "continue browser opens with campaign saves"
+
+[[steps]]
+id = "set_player_lookup"
+action = "set_text_node"
+node_path = "LoadBrowser/VBox/PlayerRow/PlayerInput"
+text = "DialogSmoke"
+wait_ms = 100
+expected = "continue browser filters to the dialog proof player"
+
+[[steps]]
+id = "wait_for_load_button"
+action = "wait_for_node_visible"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+duration_ms = 6000
+expected = "continue browser shows a canonical campaign save"
+
+[[steps]]
+id = "load_first_save"
+action = "activate_node"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "gameplay shell opens from the selected save"
+
+[[steps]]
+id = "wait_for_game_session"
+action = "wait_for_scene"
+scene_name = "GameSession"
+duration_ms = 10000
+expected = "gameplay scene loads"
+expect_note_contains = "GameSession"
+
+[[steps]]
+id = "wait_for_command_input"
+action = "wait_for_node_visible"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+duration_ms = 3000
+expected = "command bar is ready"
+
+[[steps]]
+id = "move_to_dialog_npc"
+action = "set_text_node"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+text = "move to 33,11"
+wait_ms = 100
+expected = "dialog proof moves into speaking range"
+
+[[steps]]
+id = "send_move_to_dialog_npc"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SendButton"
+wait_ms = 1200
+expected = "movement command is submitted"
+
+[[steps]]
+id = "wait_for_move_history"
+action = "wait_for_node_text"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
+text = "move to 33,11"
+duration_ms = 3000
+expected = "movement is recorded by the shell"
+
+[[steps]]
+id = "wait_for_move_unlock"
+action = "wait_for_node_text"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
+text = "Recent Orders"
+duration_ms = 4000
+expected = "command bar unlocks after the move resolves"
+
+[[steps]]
+id = "wait_for_talk_action"
+action = "wait_for_node_text"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionOne"
+text = "Talk: Hale Pike"
+duration_ms = 4000
+expected = "world focus exposes a talk action for the nearby NPC"
+
+[[steps]]
+id = "send_talk"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionOne"
+wait_ms = 2000
+capture_os = true
+capture_viewport = true
+expected = "talk command opens the dialog overlay"
+
+[[steps]]
+id = "wait_for_dialog"
+action = "wait_for_node_visible"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay"
+duration_ms = 12000
+expected = "dialog overlay is visible"
+
+[[steps]]
+id = "wait_for_dialog_npc_name"
+action = "wait_for_node_text"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/NpcNameLabel"
+text = "Hale Pike"
+duration_ms = 3000
+expected = "dialog overlay shows the NPC name"
+
+[[steps]]
+id = "remember_dialog_text"
+action = "remember_node_text"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/NpcText"
+wait_ms = 100
+expected = "dialog baseline text is captured before selecting a response"
+
+[[steps]]
+id = "choose_first_dialog_option"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/OptionsScroll/OptionsContainer/OptionButton0"
+wait_ms = 2000
+capture_os = true
+capture_viewport = true
+expected = "dialog option submits a real conversation command"
+expect_artifact_differs_from = "send_talk:viewport_capture"
+
+[[steps]]
+id = "wait_for_dialog_followup"
+action = "wait_for_node_text_changed"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/NpcText"
+reference_step_id = "remember_dialog_text"
+duration_ms = 20000
+expected = "dialog option updates the overlay with follow-up NPC text"
+
+[[steps]]
+id = "close_dialog"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/CloseButton"
+wait_ms = 400
+expected = "dialog close control dismisses the overlay"
+
+[[steps]]
+id = "wait_for_dialog_hidden"
+action = "wait_for_node_hidden"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay"
+duration_ms = 3000
+capture_os = true
+capture_viewport = true
+expected = "dialog overlay closes cleanly"

@@ -524,6 +524,65 @@ func _test_scene_instantiation() -> void:
 			"TitleScreen mirrors creation guidance into the live preview pane"
 		)
 		_assert_true((answer_buttons.get_child(0) as Button).focus_mode != Control.FOCUS_NONE, "TitleScreen keeps the first answer button keyboard-focusable on the questionnaire step")
+		title_instance._apply_creation_state({
+			"creation_id": "create_history_fallback",
+			"player_name": "Chaos",
+			"adapter_id": "fantasy_ember",
+			"profile_id": "standard",
+			"seed": 42,
+			"catalog": creation_catalog,
+			"questions": [],
+			"answers": [],
+			"current_roll": [15, 14, 13, 12, 10, 8],
+			"campaign_genesis": {
+				"world_premise": "Ash and iron grip the frontier.",
+				"starting_pressure": "Food is short, nerves are shorter.",
+				"history_events": [],
+			},
+			"recommended_class": "warrior",
+			"recommended_alignment": "LG",
+			"recommended_skills": ["athletics", "perception"],
+		})
+		await process_frame
+		var history_text = title_instance.get_node("%s/HistorySection/HistoryText" % creation_form_root)
+		_assert_true(
+			title_instance._primary_wizard_action_for_key(KEY_ENTER) == "next",
+			"TitleScreen exposes a primary action on the history step even when backend history is empty"
+		)
+		_assert_true(
+			history_text.text.contains("Year 1") and history_text.text.contains("Ash and iron"),
+			"TitleScreen synthesizes fallback history text instead of recursing when history_events is empty"
+		)
+		title_instance._apply_creation_state({
+			"creation_id": "create_1",
+			"player_name": "Chaos",
+			"adapter_id": "fantasy_ember",
+			"profile_id": "standard",
+			"seed": 42,
+			"catalog": creation_catalog,
+			"questions": [
+				{
+					"id": "q_intro",
+					"text": "How do you react?",
+					"answers": [
+						{"id": "a_1", "text": "Stand firm"},
+						{"id": "a_2", "text": "Slip away"},
+					],
+				}
+			],
+			"answers": [],
+			"current_roll": [15, 14, 13, 12, 10, 8],
+			"saved_roll": [13, 12, 12, 10, 9, 8],
+			"campaign_genesis": {
+				"world_premise": "Ash and iron grip the frontier.",
+				"starting_pressure": "Food is short, nerves are shorter.",
+				"history_events": ["Year 1: The First Age begins.", "Year 47: The border keep falls silent."],
+			},
+			"recommended_class": "warrior",
+			"recommended_alignment": "LG",
+			"recommended_skills": ["athletics", "perception"],
+		})
+		await process_frame
 		title_instance._go_to_step(title_instance.STEP_BUILD)
 		await process_frame
 		var title_class_grid = title_instance.get_node("%s/BuildSection/ClassGrid" % creation_form_root)
@@ -723,6 +782,38 @@ func _test_entity_rendering() -> void:
 	_assert_true(session_world_view.get_atmosphere_state().get("mote_count", 0) > 0, "World view exposes live atmosphere state once map data is present")
 	_assert_true(str(session_world_view.get_atmosphere_state().get("background_key", "")).is_empty() == false, "World view selects a themed background layer for live map rendering")
 	_assert_true(TileCatalog.render_tile_name("cobblestone", Vector2i(4, 4), [["cobblestone", "cobblestone", "cobblestone"], ["cobblestone", "cobblestone", "cobblestone"], ["cobblestone", "cobblestone", "cobblestone"]]) != "", "TileCatalog exposes visual tile substitution for authored surface variation")
+	game_state.player_map_pos = Vector2i(1, 1)
+	game_state.map_data = {
+		"width": 5,
+		"height": 3,
+		"tiles": [
+			["grass", "grass", "grass", "grass", "grass"],
+			["grass", "grass", "grass", "grass", "grass"],
+			["grass", "grass", "grass", "grass", "grass"],
+		],
+	}
+	game_state.entities = {
+		"npcs": [],
+		"items": [],
+		"enemies": [],
+		"furniture": [],
+	}
+	session_world_view.refresh_from_state()
+	await process_frame
+	var walk_path: Array[Vector2i] = session_world_view._walker.compute_path(Vector2i(1, 1), Vector2i(3, 1), game_state.map_data)
+	var queued_commands: Array[String] = session_world_view._commands_for_path(Vector2i(1, 1), walk_path)
+	_assert_true(
+		queued_commands == ["move east", "move east"],
+		"World view converts long tile clicks into per-step movement commands"
+	)
+	var adjacent_tile: Vector2i = session_world_view._find_adjacent(Vector2i(4, 1), Vector2i(1, 1))
+	var entity_path: Array[Vector2i] = session_world_view._walker.compute_path(Vector2i(1, 1), adjacent_tile, game_state.map_data)
+	queued_commands = session_world_view._commands_for_path(Vector2i(1, 1), entity_path)
+	queued_commands.append("talk merchant")
+	_assert_true(
+		queued_commands == ["move east", "move east", "talk merchant"],
+		"World view walks adjacent to distant entities before emitting the interaction command"
+	)
 	game_state.map_data = {
 		"width": 2,
 		"height": 1,
@@ -843,6 +934,8 @@ func _test_ui_panels() -> void:
 	_assert_true(minimap_texture.texture != null, "Minimap panel renders a texture from world graph data")
 	_assert_true(minimap_summary.text.contains("World Graph") and minimap_summary.text.contains("Active"), "Minimap panel promotes the Map tab to a macro world graph summary")
 	_assert_true(minimap_intel.text.contains("Reachable") and minimap_intel.text.contains("Harbor Reach"), "Minimap panel surfaces graph travel options and local survey together")
+	var route_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList")
+	_assert_true(route_list.get_child_count() >= 1, "Minimap panel renders semantic route buttons for reachable destinations")
 
 	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/NarrativePanel")
 	_assert_true(narrative_widget.narrative_log.autowrap_mode != TextServer.AUTOWRAP_OFF, "Narrative panel wraps long lines instead of clipping them")
@@ -887,11 +980,23 @@ func _test_ui_panels() -> void:
 	var roster_two = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/RosterRow/RosterTwo")
 	_assert_true(str(focus_label.text).contains("Focus:"), "Command bar surfaces a persistent focus summary instead of leaving world actions implicit")
 	_assert_true(
-		(str(focus_action_one.text).contains("Talk") or str(focus_action_one.text).contains("Look"))
-		and (str(focus_action_two.text).contains("Scout") or str(focus_action_two.text).contains("Inventory") or str(focus_action_two.text).contains("Loot")),
+		(str(focus_action_one.text).contains("Talk") or str(focus_action_one.text).contains("Attack") or str(focus_action_one.text).contains("Examine"))
+		and (str(focus_action_two.text).contains("Attack") or str(focus_action_two.text).contains("Use") or str(focus_action_two.text).contains("Rest") or str(focus_action_two.text).contains("Examine")),
 		"Command bar exposes visible world-aware action chips instead of a dead text strip"
 	)
 	_assert_true(roster_one.visible and roster_one.icon != null and roster_two.visible, "Command bar surfaces a visible actor roster instead of leaving all contacts offscreen")
+	var dialog_overlay = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay")
+	dialog_overlay.show_dialog("Harbor Guard", "State your business.", [
+		{"text": "Ask about work", "command": "ask about work", "available": true},
+		{"text": "Probe for rumors", "command": "ask about rumors", "check": "INS 12", "available": false},
+	])
+	await process_frame
+	_assert_true(dialog_overlay.visible, "Dialog overlay becomes visible when dialog payload is shown")
+	var dialog_option = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/OptionsScroll/OptionsContainer/OptionButton0")
+	_assert_true(dialog_option.text.contains("Ask about work"), "Dialog overlay renders named semantic option buttons")
+	dialog_overlay.hide_dialog()
+	await process_frame
+	_assert_true(not dialog_overlay.visible, "Dialog overlay hides cleanly after close")
 	var live_inventory_button = inventory_grid.get_child(0)
 	if live_inventory_button is Button:
 		live_inventory_button.pressed.emit()

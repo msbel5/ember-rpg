@@ -1,51 +1,49 @@
 # PRD: Automation Authority V1
-**Project:** Ember RPG  
-**Phase:** 0  
-**Author:** Alcyone (CAPTAIN)  
-**Date:** 2026-03-31  
-**Status:** Approved  
+**Project:** Ember RPG
+**Phase:** 0
+**Author:** Alcyone (CAPTAIN)
+**Date:** 2026-04-01
+**Status:** Approved
 
 ---
 
 ## 1. Purpose
-Automation Authority V1 defines the authoritative QA stack for Ember RPG on desktop platforms. Its purpose is to remove ambiguity about which automation surface is trusted, prevent false confidence from broken OS-level tools, and ensure scene-level automation, screenshot capture, and recording are deterministic and reproducible.
+Automation Authority V1 defines the authoritative QA stack for Ember RPG on desktop platforms. Its purpose is to keep gameplay proof deterministic, Godot-first, and semantically driven. Headless Godot is the truth path for repeatable QA; Win32 desktop remains the fallback proof lane, but it may use the runtime automation bridge to assert scene and node state instead of relying on blind coordinate clicks alone.
 
 ## 2. Scope
-- In scope: headless Godot automation bridge, Win32 desktop fallback, dependency health checks, screenshot and recording authority, scenario expectations, viewport capture behavior.
-- Out of scope: fixing external Claude computer-use support on Windows, cloud device labs, generalized browser automation, full gameplay AI playtesting.
+- In scope: headless Godot automation bridge, runtime automation bridge, semantic scene actions, logical-coordinate input, Win32 fallback, dependency health checks, viewport and OS screenshot capture, capability-gap reporting, and bounded scenario evidence.
+- Out of scope: `computer_use`, browser automation, cloud device labs, full autonomous play, and long chaos proof as the default release gate.
 
-## 3. Functional Requirements (FR)
-FR-01: The authoritative automation path for gameplay and title-screen QA on Windows must be the Godot automation bridge, not external computer-use tooling.
+## 3. Functional Requirements
+FR-01: The authoritative automation path for title, creation, gameplay shell, and save/load QA on Windows SHALL be the Godot automation bridge.
 
-FR-02: The fallback desktop executor must fail with explicit remediation when required Windows dependencies are unavailable.
+FR-02: The fallback desktop executor SHALL fail with explicit remediation when required dependencies are unavailable.
 
-FR-03: Headless automation must support:
-- keyboard input
-- mouse input in logical client coordinates
-- text input
-- viewport capture
-- recording controls
+FR-03: Headless automation SHALL support keyboard input, logical mouse input, text input, viewport capture, recording controls, and semantic scene actions.
 
-FR-04: Desktop automation must support:
-- window activation
-- OS/window screenshot capture
-- forwarding keyboard and mouse input
+FR-04: Semantic scene actions SHALL support at minimum:
+- focus a control by scene path
+- activate a control by scene path
+- set text on a control by scene path
+- select an option on an option control by scene path
+- click a control-relative position by scene path
+- wait for a node to become visible or hidden
+- wait for node text to match or change
 
-FR-05: Automation scenarios used for creation and title-screen validation must not depend on absolute monitor-space coordinates.
+FR-05: Automation scenarios used for title, creation, continue, and save/load validation SHALL avoid absolute monitor-space coordinates.
 
-FR-06: Viewport capture must remain available even when OS screenshot support is missing.
+FR-06: Viewport capture SHALL remain available even when OS screenshot support is unavailable.
 
-FR-07: Automation reports must distinguish capability gaps from assertion failures.
+FR-07: Automation reports SHALL distinguish capability gaps from assertion failures.
+
+FR-08: Win32 desktop execution SHALL remain a fallback proof lane and, when the runtime automation bridge is available, SHALL support scene/node visibility and text assertions in addition to window activation, keyboard/mouse forwarding, and desktop proof screenshots.
+
+FR-09: The default release gate SHALL use bounded headless and targeted desktop proofs rather than `100`/`500` turn chaos runs.
+
+FR-10: The required semantic desktop proof pack SHALL include fresh creation/resume proof plus dedicated dialog, travel, combat, sidebar, and save/load scenarios.
 
 ## 4. Data Structures
 ```python
-@dataclass
-class AutomationHealthReport:
-    ok: bool
-    summary: str
-    notes: list[str]
-
-
 @dataclass
 class AutomationCapabilities:
     keyboard: bool
@@ -53,6 +51,7 @@ class AutomationCapabilities:
     viewport_capture: bool
     os_capture: bool
     recording: bool
+    semantic_controls: bool
 
 
 @dataclass
@@ -69,57 +68,62 @@ class AutomationExecutor:
     def environment_health(self) -> dict[str, Any]: ...
     def capture_viewport(self, tag: str) -> ArtifactRecord: ...
 ```
-- Preconditions: executor is initialized.
-- Postconditions: reports health or emits an artifact.
-- Exceptions raised: `CapabilityUnavailableError` only for genuine capability gaps.
 
 ```python
 class HeadlessGodotExecutor(AutomationExecutor):
-    def mouse_click(self, x: int, y: int, button: str = "left") -> None: ...
+    def focus_node(self, node_path: str) -> None: ...
+    def activate_node(self, node_path: str) -> None: ...
+    def set_text_node(self, node_path: str, text: str) -> None: ...
+    def select_option_node(self, node_path: str, option_text: str) -> None: ...
+    def click_node(self, node_path: str, normalized_x: float = 0.5, normalized_y: float = 0.5) -> None: ...
 ```
-- Coordinates are logical client/viewport coordinates, not OS desktop coordinates.
 
-```python
-class Win32DesktopExecutor(AutomationExecutor):
-    def environment_health(self) -> dict[str, Any]: ...
-```
-- Must validate `pywin32`, `Pillow`, and `requests` before scenario execution.
+## 6. Acceptance Criteria
+AC-01 [FR-01]: `headless_godot` is documented and tested as the primary deterministic QA authority.
 
-## 6. Acceptance Criteria (AC)
-AC-01 [FR-01]: Given the project runs on Windows, when the automation stack is documented and tested, then `headless_godot` is identified as the primary authority for deterministic QA.
+AC-02 [FR-02]: Missing Win32 dependencies fail health checks before scenario execution with explicit remediation notes.
 
-AC-02 [FR-02]: Given a missing Win32 dependency, when the desktop executor health check runs, then it returns `ok = false` and reports remediation notes before scenario launch.
+AC-03 [FR-03]: The headless bridge accepts keyboard, logical mouse, text, record, viewport capture, and semantic node commands.
 
-AC-03 [FR-03]: Given a running headless bridge, when a scenario sends keyboard, mouse, text, record, and viewport capture commands, then the bridge returns successful responses for supported operations.
+AC-04 [FR-04]: Semantic actions can focus, activate, set text, select options, click control-relative positions, and assert visibility/text state by scene path.
 
-AC-04 [FR-04]: Given a healthy Win32 executor, when a desktop smoke scenario runs, then it can activate the game window and capture an OS screenshot.
+AC-05 [FR-05]: Title, creation, continue, and save/load scenarios no longer rely on desktop-space `x/y` coordinates in the default headless path.
 
-AC-05 [FR-05]: Given a title-screen automation scenario, when it is executed, then the scenario uses logical client coordinates or keyboard focus paths rather than desktop-space assumptions.
+AC-06 [FR-06]: Viewport capture still succeeds when OS screenshot capture is unavailable.
 
-AC-06 [FR-06]: Given OS screenshot capture is unavailable, when viewport capture is requested through the headless bridge, then a viewport artifact is still produced.
+AC-07 [FR-07]: Capability gaps are reported separately from behavior/assertion failures.
 
-AC-07 [FR-07]: Given an unsupported capability is requested, when the runner records the result, then the report marks a capability gap rather than a false test failure.
+AC-08 [FR-08]: The desktop executor remains non-authoritative for gameplay rules, but it can verify real scene/node state through the runtime bridge while capturing desktop proof.
+
+AC-09 [FR-09]: The default QA gate is bounded deterministic scenario proof, while long chaos remains a soak lane.
+
+AC-10 [FR-10]: Versioned semantic desktop proofs exist for creation/resume, save/load, sidebar hydration, dialog, travel, and combat.
 
 ## 7. Performance Requirements
-- Automation health checks must complete in under 250 ms excluding import cold start.
-- Headless bridge command round-trips must complete within 15 seconds or fail with a structured error.
+- Automation health checks should complete in under 250 ms excluding import cold start.
+- Headless bridge command round-trips should complete within 15 seconds or fail with structured errors.
 
 ## 8. Error Handling
 - Missing Win32 dependencies must never degrade silently.
 - Missing viewport artifact files must raise structured runner errors.
-- Unsupported OS capture in headless mode must raise `CapabilityUnavailableError`.
+- Unsupported headless actions or missing node targets must produce explicit command failures.
 
 ## 9. Integration Points
 - `godot-client/tests/automation/runner.py`
+- `godot-client/tests/automation/models.py`
+- `godot-client/tests/automation/scenario_loader.py`
 - `godot-client/tests/automation/executors/base.py`
 - `godot-client/tests/automation/executors/headless_godot.py`
 - `godot-client/tests/automation/executors/win32_desktop.py`
 - `godot-client/tests/automation/godot/automation_bridge.gd`
+- `godot-client/autoloads/runtime_automation_bridge.gd`
 - `godot-client/scripts/ui/screenshot_capture.gd`
 
 ## 10. Test Coverage Target
-- 100% coverage of environment-health branches for automation executors.
-- Scenario/runner tests must cover capability gaps, viewport capture, and missing dependency handling.
+- Environment-health branches for all executors.
+- Scenario/runner coverage for capability gaps, semantic headless actions, and viewport capture.
+- Required scenario fixtures must prove semantic title/creation/continue/save-load/dialog/travel/combat flows.
 
 ## Changelog
-- 2026-04-01: Promoted to approved after the headless and Win32 automation pytest suite passed and the `title_creation_bridge` headless scenario produced deterministic viewport artifacts with explicit synthetic labeling.
+- 2026-04-01: Updated to semantic headless automation, bounded proof gating, and explicit deprecation of long-chaos as a default release requirement.
+- 2026-04-02: Added semantic text-change assertions and made dialog, travel, combat, sidebar, and save/load part of the required desktop proof pack.

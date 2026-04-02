@@ -17,9 +17,9 @@ def _scenario(tmp_path: Path) -> AutomationScenario:
         player_name="Chaos",
         create_new=True,
         requires_backend=False,
-        backend_url="http://127.0.0.1:8000",
+        backend_url="http://127.0.0.1:8741",
         backend_host="127.0.0.1",
-        backend_port=8000,
+        backend_port=8741,
         godot_executable="godot.exe",
         godot_console_executable="godot.console.exe",
         godot_project_dir=str(tmp_path / "godot-client"),
@@ -109,7 +109,6 @@ def test_win32_executor_launch_backend_uses_fallback_port(monkeypatch, tmp_path:
     executor = Win32DesktopExecutor(_scenario(tmp_path), ArtifactManager(tmp_path, "desktop", run_id="five"))
     popen_calls: list[list[str]] = []
 
-    monkeypatch.setattr(win32_desktop, "backend_supports_paths", lambda *_args, **_kwargs: False)
     monkeypatch.setattr(win32_desktop, "is_port_available", lambda *_args, **_kwargs: False)
     monkeypatch.setattr(win32_desktop, "find_available_port", lambda *_args, **_kwargs: 8765)
     monkeypatch.setattr(win32_desktop, "wait_backend_contract", lambda *_args, **_kwargs: None)

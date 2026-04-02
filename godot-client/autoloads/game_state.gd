@@ -275,7 +275,7 @@ func reset() -> void:
 	player_facing = 2
 
 func is_in_combat() -> bool:
-	return scene == "combat" and not combat_state.is_empty()
+	return (scene == "combat" or (not combat_state.is_empty() and not bool(combat_state.get("ended", false)))) and not combat_state.is_empty()
 
 func has_active_campaign() -> bool:
 	return active_runtime == "campaign" and not campaign_id.is_empty()

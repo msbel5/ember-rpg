@@ -193,21 +193,21 @@ def trigger_viewport_capture(hwnd: int, folder: str) -> str:
 
 def _start_backend_if_needed() -> subprocess.Popen[str] | None:
     try:
-        wait_http("http://127.0.0.1:8000/docs", timeout=1.0)
+        wait_http("http://127.0.0.1:8741/docs", timeout=1.0)
         return None
     except RuntimeError:
         backend = subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8000"],
+            [sys.executable, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8741"],
             cwd=BACKEND_CWD,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        wait_http("http://127.0.0.1:8000/docs")
+        wait_http("http://127.0.0.1:8741/docs")
         return backend
 
 
 def _campaign_post(path: str, payload: dict | None = None) -> dict:
-    response = requests.post(f"http://127.0.0.1:8000{path}", json=payload or {}, timeout=20)
+    response = requests.post(f"http://127.0.0.1:8741{path}", json=payload or {}, timeout=20)
     response.raise_for_status()
     return response.json()
 
@@ -447,7 +447,7 @@ def run_sequence(
 
     godot: subprocess.Popen[str] | None = None
     try:
-        wait_http("http://127.0.0.1:8000/docs")
+        wait_http("http://127.0.0.1:8741/docs")
         godot = subprocess.Popen([str(GODOT_EXE), "--path", str(GODOT_CWD)], cwd=GODOT_CWD)
         hwnd = find_hwnd(godot.pid)
         ensure_window_visible(hwnd)

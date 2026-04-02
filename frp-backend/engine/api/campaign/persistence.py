@@ -47,6 +47,10 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     session_data = context.session.to_dict()
     runtime_state = runtime_region_state(context.world, context.region_snapshot.region_id)
     kernel_payload = build_kernel_payload(context)
+    combat_state = session_data.get("combat")
+    payload_scene = str(session_data.get("scene", "exploration"))
+    if isinstance(combat_state, dict) and combat_state and not bool(combat_state.get("ended", False)):
+        payload_scene = "combat"
     return {
         "world": {
             "seed": context.world.seed,
@@ -66,9 +70,9 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "travel_options": build_travel_options(context.world),
         "current_region_summary": build_current_region_summary(context.world, context.region_snapshot),
         "player": session_data["player"],
-        "scene": session_data["scene"],
+        "scene": payload_scene,
         "location": session_data["location"],
-        "combat": session_data.get("combat"),
+        "combat": combat_state,
         "conversation_state": session_data.get("conversation_state", {}),
         "region": region_payload(context),
         "map_data": map_payload_from_region(context.region_snapshot),

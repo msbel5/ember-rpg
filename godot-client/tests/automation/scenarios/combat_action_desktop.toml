@@ -1,0 +1,135 @@
+[scenario]
+name = "combat_action_desktop"
+description = "Desktop proof for entering combat and using a combat action from the overlay."
+adapter_id = "fantasy_ember"
+player_name = "CombatSmoke"
+create_new = false
+requires_backend = true
+tags = ["desktop", "combat", "semantic", "proof"]
+
+[[steps]]
+id = "focus_window"
+action = "activate_window"
+capture_os = true
+capture_viewport = true
+expected = "title screen is visible in a desktop window"
+
+[[steps]]
+id = "wait_for_continue_button"
+action = "wait_for_node_visible"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+duration_ms = 4000
+expected = "continue button is ready"
+
+[[steps]]
+id = "open_continue"
+action = "activate_node"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "continue browser opens with campaign saves"
+
+[[steps]]
+id = "set_player_lookup"
+action = "set_text_node"
+node_path = "LoadBrowser/VBox/PlayerRow/PlayerInput"
+text = "CombatSmoke"
+wait_ms = 100
+expected = "continue browser filters to the combat proof player"
+
+[[steps]]
+id = "wait_for_load_button"
+action = "wait_for_node_visible"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+duration_ms = 6000
+expected = "continue browser shows a canonical campaign save"
+
+[[steps]]
+id = "load_first_save"
+action = "activate_node"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "gameplay shell opens from the selected save"
+
+[[steps]]
+id = "wait_for_game_session"
+action = "wait_for_scene"
+scene_name = "GameSession"
+duration_ms = 10000
+expected = "gameplay scene loads"
+expect_note_contains = "GameSession"
+
+[[steps]]
+id = "wait_for_command_input"
+action = "wait_for_node_visible"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+duration_ms = 3000
+expected = "command bar is ready"
+
+[[steps]]
+id = "wait_for_shell_unlock"
+action = "wait_for_node_text"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
+text = "Recent Orders"
+duration_ms = 6000
+expected = "gameplay shell is no longer locked after loading the save"
+
+[[steps]]
+id = "prepare_attack"
+action = "set_text_node"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+text = "attack wolf"
+wait_ms = 100
+expected = "combat proof primes a known combat trigger command"
+
+[[steps]]
+id = "enter_combat"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SendButton"
+wait_ms = 1000
+capture_os = true
+capture_viewport = true
+expected = "combat trigger command is submitted"
+
+[[steps]]
+id = "wait_for_attack_history"
+action = "wait_for_node_text"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
+text = "attack wolf"
+duration_ms = 20000
+expected = "combat trigger command is remembered by the shell"
+
+[[steps]]
+id = "wait_for_combat_panel"
+action = "wait_for_node_visible"
+node_path = "OverlayCanvas/CombatPanel"
+duration_ms = 20000
+expected = "combat overlay is visible"
+
+[[steps]]
+id = "wait_for_combat_round"
+action = "wait_for_node_text"
+node_path = "OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/HeaderRow/RoundLabel"
+text = "Round 1"
+duration_ms = 10000
+expected = "combat overlay shows the round header"
+
+[[steps]]
+id = "use_disengage"
+action = "activate_node"
+node_path = "OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/QuickActions/DisengageButton"
+wait_ms = 1600
+capture_os = true
+capture_viewport = true
+expected = "combat overlay submits a defensive action"
+
+[[steps]]
+id = "wait_for_disengage_history"
+action = "wait_for_node_text"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
+text = "disengage"
+duration_ms = 20000
+expected = "combat action is remembered by the shell"

@@ -12,7 +12,6 @@ from automation.artifacts import ArtifactManager
 from automation.executors.base import AutomationExecutor, CapabilityUnavailableError
 from automation.models import ArtifactRecord, AutomationScenario
 from automation.process_utils import (
-    backend_supports_paths,
     build_backend_url,
     find_available_port,
     is_port_available,
@@ -120,8 +119,6 @@ class Win32DesktopExecutor(AutomationExecutor):
         }
 
     def launch_backend(self) -> None:
-        if backend_supports_paths(self.backend_url):
-            return
         port = self.backend_port
         if not is_port_available(self.backend_host, port):
             port = find_available_port(self.backend_host, max(port + 1, 8765))

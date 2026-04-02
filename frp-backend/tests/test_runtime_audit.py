@@ -28,8 +28,9 @@ def test_runtime_audit_has_no_unexpected_violations():
 
 
 def test_oversize_exceptions_are_explicitly_documented():
-    assert "frp-backend/engine/data_loader.py" in ALLOWED_OVERSIZE
-    assert "frp-backend/engine/world/interactions.py" in ALLOWED_OVERSIZE
+    assert "frp-backend/engine/core/combat.py" in ALLOWED_OVERSIZE
+    assert "godot-client/tests/automation/godot/automation_bridge.gd" in ALLOWED_OVERSIZE
+    assert "godot-client/tests/run_headless_tests.gd" in ALLOWED_OVERSIZE
 
 
 def test_runtime_module_map_document_matches_generated_output():

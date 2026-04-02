@@ -202,6 +202,33 @@ expect_note_contains = "phase2/game"
     assert any(issue.step_id == "load_first_save" for issue in result.report.issues)
 
 
+def test_runner_restart_client_action_relaunches_client(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scenario_path = tmp_path / "scenario.toml"
+    scenario_path.write_text(
+        """
+[scenario]
+name = "restart_client_smoke"
+description = "Runner relaunches the client"
+requires_backend = false
+run_root = "__RUN_ROOT__"
+
+[[steps]]
+id = "restart"
+action = "restart_client"
+""".strip().replace("__RUN_ROOT__", str(tmp_path / "out").replace("\\", "\\\\")),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setitem(EXECUTOR_TYPES, "fake", FakeExecutor)
+
+    result = run_scenario(scenario_path, "fake")
+
+    assert result.report.success is True
+    assert result.report.steps_run == ["restart"]
+
+
 def test_runner_fails_when_artifact_does_not_change(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -395,6 +422,89 @@ duration_ms = 50
             return super().query_node_state(node_path)
 
     monkeypatch.setitem(EXECUTOR_TYPES, "fake", VisibleExecutor)
+
+    result = run_scenario(scenario_path, "fake")
+
+    assert result.report.success is True
+    assert not result.report.issues
+
+
+def test_runner_waits_for_hidden_node(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    scenario_path = tmp_path / "scenario.toml"
+    scenario_path.write_text(
+        """
+[scenario]
+name = "semantic_hidden"
+description = "semantic hidden node wait"
+requires_backend = false
+run_root = "__RUN_ROOT__"
+
+[[steps]]
+id = "wait_hidden"
+action = "wait_for_node_hidden"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay"
+duration_ms = 50
+""".strip().replace("__RUN_ROOT__", str(tmp_path / "out").replace("\\", "\\\\")),
+        encoding="utf-8",
+    )
+
+    class HiddenExecutor(FakeExecutor):
+        def query_node_state(self, node_path: str | None = None) -> dict[str, object]:
+            self.node_states["MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay"] = {
+                "node_exists": True,
+                "node_visible": False,
+            }
+            return super().query_node_state(node_path)
+
+    monkeypatch.setitem(EXECUTOR_TYPES, "fake", HiddenExecutor)
+
+    result = run_scenario(scenario_path, "fake")
+
+    assert result.report.success is True
+    assert not result.report.issues
+
+
+def test_runner_can_remember_node_text_and_wait_for_change(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scenario_path = tmp_path / "scenario.toml"
+    scenario_path.write_text(
+        """
+[scenario]
+name = "semantic_text_change"
+description = "semantic remembered text wait"
+requires_backend = false
+run_root = "__RUN_ROOT__"
+
+[[steps]]
+id = "remember_dialog"
+action = "remember_node_text"
+node_path = "DialogOverlay/NpcText"
+
+[[steps]]
+id = "wait_dialog_changed"
+action = "wait_for_node_text_changed"
+node_path = "DialogOverlay/NpcText"
+reference_step_id = "remember_dialog"
+duration_ms = 50
+""".strip().replace("__RUN_ROOT__", str(tmp_path / "out").replace("\\", "\\\\")),
+        encoding="utf-8",
+    )
+
+    class ChangedTextExecutor(FakeExecutor):
+        _queries = 0
+
+        def query_node_state(self, node_path: str | None = None) -> dict[str, object]:
+            if node_path == "DialogOverlay/NpcText":
+                self._queries += 1
+                self.node_states[node_path] = {
+                    "node_exists": True,
+                    "node_visible": True,
+                    "node_text": "First line" if self._queries == 1 else "Second line",
+                }
+            return super().query_node_state(node_path)
+
+    monkeypatch.setitem(EXECUTOR_TYPES, "fake", ChangedTextExecutor)
 
     result = run_scenario(scenario_path, "fake")
 

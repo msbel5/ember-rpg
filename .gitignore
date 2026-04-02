@@ -26,3 +26,6 @@ frp-backend/tests/coverage.json
 *.egg-info/
 dist/
 build/
+
+# Runtime state
+frp-backend/saves/

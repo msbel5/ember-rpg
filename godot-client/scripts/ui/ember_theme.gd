@@ -18,15 +18,14 @@ static func apply_title_screen(root: Control) -> void:
 	if background is ColorRect:
 		background.color = Color(0.05, 0.04, 0.07, 1.0)
 
-	var title_label = root.get_node_or_null("TitleLabel")
+	var title_label = root.get_node_or_null("TitleMenu/Shell/RootVBox/TitleBlock/TitleLabel")
 	if title_label is Label:
-		title_label.add_theme_font_size_override("font_size", 36)
+		title_label.add_theme_font_size_override("font_size", 42)
 		title_label.add_theme_color_override("font_color", IVORY)
 
-	var subtitle_label = root.get_node_or_null("SubtitleLabel")
+	var subtitle_label = root.get_node_or_null("TitleMenu/Shell/RootVBox/TitleBlock/SubtitleLabel")
 	if subtitle_label is Label:
-		subtitle_label.text = "Campaign-first colony drama with hard choices and fragile victories"
-		subtitle_label.add_theme_font_size_override("font_size", 17)
+		subtitle_label.add_theme_font_size_override("font_size", 19)
 		subtitle_label.add_theme_color_override("font_color", MUTED)
 
 	var status_label = root.get_node_or_null("StatusLabel")
@@ -34,32 +33,27 @@ static func apply_title_screen(root: Control) -> void:
 		status_label.add_theme_font_size_override("font_size", 15)
 		status_label.add_theme_color_override("font_color", WARNING)
 
-	var menu = root.get_node_or_null("VBoxContainer")
-	if menu is VBoxContainer:
-		menu.add_theme_constant_override("separation", 12)
-		menu.offset_top = -10.0
-		menu.offset_bottom = 110.0
-
-	_style_primary_button(root.get_node_or_null("VBoxContainer/NewGameButton"))
-	_style_secondary_button(root.get_node_or_null("VBoxContainer/ContinueButton"))
-	_style_secondary_button(root.get_node_or_null("VBoxContainer/QuitButton"))
-	_style_primary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/NextButton"), Vector2(124, 40))
-	_style_primary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/StartButton"), Vector2(156, 40))
-	_style_secondary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/BackStepButton"), Vector2(120, 40))
-	_style_secondary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/BackButton"), Vector2(120, 40))
-	_style_secondary_button(root.get_node_or_null("CharacterCreation/VBox/IdentitySection/AdvancedToggleButton"), Vector2(220, 36))
-	_style_secondary_button(root.get_node_or_null("LoadBrowser/VBox/PlayerRow/RefreshButton"), Vector2(116, 36))
-	_style_secondary_button(root.get_node_or_null("LoadBrowser/VBox/ButtonRow/CloseButton"), Vector2(120, 40))
+	_style_primary_button(root.get_node_or_null("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"), Vector2(280, 56))
+	_style_secondary_button(root.get_node_or_null("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"), Vector2(280, 56))
+	_style_secondary_button(root.get_node_or_null("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/QuitButton"), Vector2(280, 52))
+	_style_primary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/NextButton"), Vector2(148, 44))
+	_style_primary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/StartButton"), Vector2(188, 44))
+	_style_secondary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/BackButton"), Vector2(132, 44))
+	_style_secondary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/CancelButton"), Vector2(132, 44))
 
 	var creation_panel = root.get_node_or_null("CharacterCreation")
-	if creation_panel is Panel:
-		creation_panel.add_theme_stylebox_override("panel", _panel_style(PANEL_ALT, 10, ACCENT_SOFT))
+	if creation_panel is PanelContainer:
+		creation_panel.add_theme_stylebox_override("panel", _panel_style(PANEL_ALT, 12, ACCENT_SOFT))
 
 	var load_browser = root.get_node_or_null("LoadBrowser")
 	if load_browser is Panel:
-		load_browser.add_theme_stylebox_override("panel", _panel_style(PANEL_ALT, 10, ACCENT_SOFT))
+		load_browser.add_theme_stylebox_override("panel", _panel_style(PANEL_ALT, 12, ACCENT_SOFT))
 
-	_install_title_hero(root)
+	var backend_panel = root.get_node_or_null("BackendDiagnostics")
+	if backend_panel is PanelContainer:
+		backend_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.13, 0.10, 0.10, 0.96), 10, WARNING))
+
+	_style_secondary_button(root.get_node_or_null("BackendDiagnostics/Margin/VBox/RetryButton"), Vector2(180, 40))
 
 
 static func apply_game_session(root: Control) -> void:
@@ -94,10 +88,10 @@ static func _install_title_hero(root: Control) -> void:
 	hero_panel.anchors_preset = Control.PRESET_CENTER_TOP
 	hero_panel.anchor_left = 0.5
 	hero_panel.anchor_right = 0.5
-	hero_panel.offset_left = -260.0
-	hero_panel.offset_top = 148.0
-	hero_panel.offset_right = 260.0
-	hero_panel.offset_bottom = 250.0
+	hero_panel.offset_left = -360.0
+	hero_panel.offset_top = 176.0
+	hero_panel.offset_right = 360.0
+	hero_panel.offset_bottom = 302.0
 	hero_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hero_panel.add_theme_stylebox_override("panel", _panel_style(PANEL_ALT, 12, ACCENT_SOFT))
 

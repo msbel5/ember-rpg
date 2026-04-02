@@ -173,7 +173,8 @@ def list_saves(player_id: str):
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    return [_build_summary(save.save_id) for save in saves]
+    summaries = [_build_summary(save.save_id) for save in saves]
+    return [summary for summary in summaries if summary.campaign_compatible]
 
 
 @router.get("/saves/file/{save_id}", response_model=SaveSummary)

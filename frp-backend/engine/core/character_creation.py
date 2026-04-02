@@ -117,6 +117,16 @@ def _dedupe_strings(values: List[str], limit: int = 4) -> List[str]:
     return ordered
 
 
+def _history_years(seed: Optional[int], count: int) -> List[int]:
+    rng = random.Random(int(seed or 0) + 913)
+    year = 1
+    years: List[int] = []
+    for _ in range(max(1, count)):
+        years.append(year)
+        year += rng.randint(11, 23)
+    return years
+
+
 def recommended_skills_for_class(state: Dict[str, Any], class_name: str) -> List[str]:
     normalized_class = str(class_name or DEFAULT_CLASS_ID).lower()
     options = list(CLASS_SKILL_OPTIONS.get(normalized_class, CLASS_DEFAULT_SKILLS.get(DEFAULT_CLASS_ID, [])))
@@ -314,6 +324,43 @@ class CreationState:
             pressure_bits.append(tone_tags[0].replace("_", " "))
         if not pressure_bits:
             pressure_bits.append(GENESIS_TEMPLATES.get("fallback_pressure", ""))
+        history_events: List[str] = []
+        years = _history_years(self.rng_seed, max(4, len(selected) + 2))
+        history_events.append(
+            "Year %d: The %s age opens around the %s." % (
+                years[0],
+                adapter_name.lower(),
+                top_settlement.lower(),
+            )
+        )
+        if selected:
+            history_events.append(
+                "Year %d: %s becomes the first law of the frontier." % (
+                    years[1],
+                    str(selected[0].get("text", "An old oath")).strip(),
+                )
+            )
+        history_events.append(
+            "Year %d: %s tighten their hold over the %s routes." % (
+                years[min(2, len(years) - 1)],
+                top_faction.title(),
+                top_settlement.lower(),
+            )
+        )
+        if quest_themes:
+            history_events.append(
+                "Year %d: Rumors of %s spread from watchfires to market halls." % (
+                    years[min(3, len(years) - 1)],
+                    quest_themes[0].replace("_", " "),
+                )
+            )
+        if tone_tags:
+            history_events.append(
+                "Year %d: A %s mood settles over the marches." % (
+                    years[min(4, len(years) - 1)] if len(years) > 4 else years[-1] + 13,
+                    tone_tags[0].replace("_", " "),
+                )
+            )
         return {
             "adapter_bias": adapter_rank[0][0] if adapter_rank else DEFAULT_ADAPTER_ID,
             "adapter_label": adapter_name,
@@ -330,6 +377,7 @@ class CreationState:
             "quest_seed_themes": quest_themes,
             "tone_tags": tone_tags,
             "world_tags": world_tags,
+            "history_events": history_events,
         }
 
     def allocation_rules(self) -> Dict[str, Any]:

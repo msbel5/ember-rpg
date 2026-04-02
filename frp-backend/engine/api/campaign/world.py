@@ -15,6 +15,7 @@ from engine.worldgen import (
     simulate_history,
 )
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
+from engine.worldgen.world_seed import stable_seed_from_parts
 
 if TYPE_CHECKING:
     from .context import CampaignContext
@@ -39,6 +40,96 @@ def build_world(*, adapter_id: str, profile_id: str, seed: int) -> WorldBlueprin
     world = initialize_simulation(world)
     world.metadata["adapter_id"] = adapter_id
     return world
+
+
+def derive_creation_world_seed(
+    *,
+    adapter_id: str,
+    profile_id: str,
+    seed: int,
+    creation_profile: dict[str, Any] | None = None,
+    creation_answers: list[dict[str, Any]] | None = None,
+) -> int:
+    profile = dict(creation_profile or {})
+    answers = list(creation_answers or [])
+    if not profile and not answers:
+        return int(seed)
+    answer_signature = "|".join(
+        sorted(
+            f"{str(item.get('question_id', '')).strip()}:{str(item.get('answer_id', '')).strip()}"
+            for item in answers
+            if str(item.get("question_id", "")).strip() and str(item.get("answer_id", "")).strip()
+        )
+    )
+    settlement_bias = tuple(sorted((str(key), int(value)) for key, value in dict(profile.get("settlement_bias", {})).items()))
+    faction_bias = tuple(sorted((str(key), int(value)) for key, value in dict(profile.get("faction_bias", {})).items()))
+    adapter_bias = tuple(sorted((str(key), int(value)) for key, value in dict(profile.get("adapter_bias", {})).items()))
+    return int(
+        stable_seed_from_parts(
+            int(seed),
+            adapter_id,
+            profile_id,
+            answer_signature,
+            settlement_bias,
+            faction_bias,
+            adapter_bias,
+        )
+    )
+
+
+def choose_starting_settlement(
+    world: WorldBlueprint,
+    *,
+    creation_profile: dict[str, Any] | None = None,
+    creation_answers: list[dict[str, Any]] | None = None,
+) -> Any:
+    if not world.settlements:
+        return None
+    profile = dict(creation_profile or {})
+    settlement_bias = {str(key): int(value) for key, value in dict(profile.get("settlement_bias", {})).items()}
+    hints = dict(profile.get("world_seed_hints", {}))
+    genesis = dict(profile.get("campaign_genesis", {}))
+    preferred_settlement = str(hints.get("preferred_settlement", "")).strip()
+    world_tags = {str(tag).strip().lower() for tag in list(genesis.get("world_tags", []))}
+    answers = list(creation_answers or [])
+    signature = "|".join(
+        sorted(
+            f"{str(item.get('question_id', '')).strip()}:{str(item.get('answer_id', '')).strip()}"
+            for item in answers
+            if str(item.get("question_id", "")).strip() and str(item.get("answer_id", "")).strip()
+        )
+    ) or str(world.seed)
+    region_by_id = {str(region["id"]): region for region in world.regions}
+    biome_bias = {
+        "harbor": "coast",
+        "coast": "coast",
+        "sea": "coast",
+        "ocean": "coast",
+        "mountain": "mountain",
+        "highland": "mountain",
+        "forest": "temperate_forest",
+        "wildwood": "temperate_forest",
+        "marsh": "swamp",
+        "swamp": "swamp",
+        "frontier": "plains",
+        "border": "plains",
+        "desert": "desert",
+    }
+
+    def settlement_score(settlement: Any) -> float:
+        region = region_by_id.get(str(settlement.region_id), {})
+        score = float(settlement.population) / 1000.0
+        score += float(settlement_bias.get(str(settlement.settlement_type), 0)) * 2.75
+        if preferred_settlement and str(settlement.settlement_type) == preferred_settlement:
+            score += 1.75
+        biome_id = str(region.get("biome_id", "")).lower()
+        for tag in world_tags:
+            if biome_bias.get(tag, "") == biome_id:
+                score += 1.15
+        jitter = float(stable_seed_from_parts(signature, settlement.id) % 1000) / 10000.0
+        return score + jitter
+
+    return max(world.settlements, key=settlement_score)
 
 
 def region_payload(context: "CampaignContext") -> dict[str, Any]:

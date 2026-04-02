@@ -42,6 +42,7 @@ func _ready() -> void:
 	add_theme_stylebox_override("panel", bg)
 
 	var vbox := VBoxContainer.new()
+	vbox.name = "DialogVBox"
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 8)
@@ -49,12 +50,14 @@ func _ready() -> void:
 
 	# NPC name
 	_npc_name_label = Label.new()
+	_npc_name_label.name = "NpcNameLabel"
 	_npc_name_label.add_theme_font_size_override("font_size", 18)
 	_npc_name_label.add_theme_color_override("font_color", Color(0.80, 0.66, 0.26))
 	vbox.add_child(_npc_name_label)
 
 	# NPC text
 	_npc_text = RichTextLabel.new()
+	_npc_text.name = "NpcText"
 	_npc_text.bbcode_enabled = true
 	_npc_text.fit_content = true
 	_npc_text.custom_minimum_size = Vector2(0, 60)
@@ -70,17 +73,20 @@ func _ready() -> void:
 
 	# Player options
 	var scroll := ScrollContainer.new()
+	scroll.name = "OptionsScroll"
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_child(scroll)
 
 	_options_container = VBoxContainer.new()
+	_options_container.name = "OptionsContainer"
 	_options_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_options_container.add_theme_constant_override("separation", 4)
 	scroll.add_child(_options_container)
 
 	# Close / Goodbye button
 	_close_button = Button.new()
+	_close_button.name = "CloseButton"
 	_close_button.text = "[Esc] Leave conversation"
 	_close_button.add_theme_font_size_override("font_size", 14)
 	_close_button.add_theme_color_override("font_color", Color(0.65, 0.62, 0.58))
@@ -122,12 +128,10 @@ func show_dialog(npc_name: String, npc_text: String, options: Array) -> void:
 		var option_text := str(opt.get("text", "..."))
 		var available := bool(opt.get("available", true))
 		var command := str(opt.get("command", ""))
+		btn.name = "OptionButton%d" % i
 
 		if not check_tag.is_empty():
-			if available:
-				btn.text = "%d. [color=gold][%s][/color] %s" % [i + 1, check_tag, option_text]
-			else:
-				btn.text = "%d. [%s] %s" % [i + 1, check_tag, option_text]
+			btn.text = "%d. [%s] %s" % [i + 1, check_tag, option_text]
 		else:
 			btn.text = "%d. %s" % [i + 1, option_text]
 

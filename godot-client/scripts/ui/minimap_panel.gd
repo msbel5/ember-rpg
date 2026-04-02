@@ -7,6 +7,8 @@ signal travel_requested(destination_region_id: String, destination_settlement_id
 
 @onready var map_texture: TextureRect = $MinimapMargin/MinimapVBox/MapTexture
 @onready var summary_label: Label = $MinimapMargin/MinimapVBox/SummaryLabel
+@onready var routes_label: Label = $MinimapMargin/MinimapVBox/RoutesLabel
+@onready var routes_list: VBoxContainer = $MinimapMargin/MinimapVBox/RoutesList
 @onready var intel_text: RichTextLabel = $MinimapMargin/MinimapVBox/IntelText
 
 var _graph_nodes: Array = []
@@ -101,6 +103,7 @@ func _refresh_world_graph(world_graph: Dictionary) -> void:
 
 	map_texture.texture = ImageTexture.create_from_image(image)
 	_graph_texture_size = Vector2i(image_width, image_height)
+	_refresh_route_buttons()
 	summary_label.text = "World Graph  %d regions  |  %d settlements  |  %d routes\nActive: %s" % [
 		world_graph.get("regions", []).size(),
 		world_graph.get("nodes", []).size(),
@@ -113,6 +116,7 @@ func _refresh_world_graph(world_graph: Dictionary) -> void:
 func _refresh_local_map() -> void:
 	_graph_nodes.clear()
 	_graph_texture_size = Vector2i.ZERO
+	_refresh_route_buttons()
 	var map_data = GameState.map_data
 	if map_data.is_empty():
 		map_texture.texture = null
@@ -156,6 +160,26 @@ func _refresh_local_map() -> void:
 	else:
 		summary_label.text = "%s  |  %s\n%s  |  %d locals  %d threats  %d loot" % [GameState.get_display_location(), scene_label, scene_read, npc_count, enemy_count, item_count]
 	intel_text.text = _build_intel_text(map_data)
+
+
+func _refresh_route_buttons() -> void:
+	for child in routes_list.get_children():
+		child.queue_free()
+	routes_label.visible = not GameState.travel_options.is_empty()
+	routes_list.visible = routes_label.visible
+	for index in range(GameState.travel_options.size()):
+		var option = GameState.travel_options[index]
+		if not (option is Dictionary):
+			continue
+		var button := Button.new()
+		button.name = "RouteButton%d" % index
+		button.text = "Travel to %s (%sh)" % [str(option.get("destination_name", "Unknown")), int(option.get("travel_hours", 0))]
+		button.tooltip_text = "Travel to %s" % str(option.get("destination_region_id", "unknown"))
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.pressed.connect(func() -> void:
+			travel_requested.emit(str(option.get("destination_region_id", "")), str(option.get("destination_settlement_id", "")))
+		)
+		routes_list.add_child(button)
 
 
 func _on_map_texture_gui_input(event: InputEvent) -> void:

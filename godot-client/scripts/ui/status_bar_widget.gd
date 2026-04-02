@@ -95,7 +95,11 @@ func _refresh(_data = null) -> void:
 	else:
 		_time_label.text = ""
 
-	var gold := int(GameState.player.get("gold", GameState.player.get("inventory", {}).get("gold", 0)))
+	var inventory_state = GameState.player.get("inventory", [])
+	var inventory_gold := 0
+	if inventory_state is Dictionary:
+		inventory_gold = int(inventory_state.get("gold", 0))
+	var gold := int(GameState.player.get("gold", inventory_gold))
 	_gold_label.text = "Gold: %d" % gold
 
 	var hp := int(GameState.player.get("hp", GameState.player.get("current_hp", 0)))

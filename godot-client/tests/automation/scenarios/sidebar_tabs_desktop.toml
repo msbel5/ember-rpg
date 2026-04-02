@@ -1,0 +1,92 @@
+[scenario]
+name = "sidebar_tabs_desktop"
+description = "Desktop proof for the main gameplay sidebar tabs with real OS and viewport captures."
+adapter_id = "fantasy_ember"
+player_name = "Chaos"
+create_new = false
+requires_backend = true
+tags = ["desktop", "gameplay", "tabs", "proof"]
+
+[[steps]]
+id = "focus_window"
+action = "activate_window"
+capture_os = true
+capture_viewport = true
+expected = "title screen is visible in a desktop window"
+
+[[steps]]
+id = "wait_for_continue_button"
+action = "wait_for_node_visible"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+duration_ms = 4000
+expected = "continue button is ready"
+
+[[steps]]
+id = "open_continue"
+action = "activate_node"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "continue browser opens with campaign saves"
+
+[[steps]]
+id = "wait_for_load_button"
+action = "wait_for_node_visible"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+duration_ms = 6000
+expected = "continue browser shows a canonical campaign save"
+
+[[steps]]
+id = "load_first_save"
+action = "activate_node"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "gameplay shell opens from the selected save"
+
+[[steps]]
+id = "open_hero_tab"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/CharacterPanelTabButton"
+wait_ms = 600
+capture_os = true
+capture_viewport = true
+expected = "hero tab is visible"
+
+[[steps]]
+id = "open_town_tab"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/SettlementPanelTabButton"
+wait_ms = 600
+capture_os = true
+capture_viewport = true
+expected = "town tab is visible"
+
+[[steps]]
+id = "open_quests_tab"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/QuestPanelTabButton"
+wait_ms = 600
+capture_os = true
+capture_viewport = true
+expected = "quests tab is visible"
+
+[[steps]]
+id = "open_items_tab"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/InventoryPanelTabButton"
+wait_ms = 600
+capture_os = true
+capture_viewport = true
+expected = "items tab is visible"
+
+[[steps]]
+id = "open_map_tab"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/MinimapPanelTabButton"
+wait_ms = 600
+capture_os = true
+capture_viewport = true
+expected = "map tab is visible"

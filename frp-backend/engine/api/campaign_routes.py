@@ -19,6 +19,7 @@ from engine.api.campaign_models import (
 )
 from engine.core.creation_catalog import get_creation_catalog
 from engine.api.campaign_runtime import CampaignRuntime
+from engine.save.save_models import CURRENT_SCHEMA_VERSION
 
 
 router = APIRouter()
@@ -31,6 +32,17 @@ def _make_llm_callable():
 
 
 campaign_runtime = CampaignRuntime(llm=_make_llm_callable())
+
+
+@router.get("/health/campaign-client")
+def get_campaign_client_health():
+    return {
+        "ok": True,
+        "campaign_creation": True,
+        "campaign_runtime": True,
+        "campaign_save_load": True,
+        "schema_version": CURRENT_SCHEMA_VERSION,
+    }
 
 
 def _creation_response(context) -> CampaignCreationStateResponse:

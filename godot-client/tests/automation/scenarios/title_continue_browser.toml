@@ -1,59 +1,43 @@
 [scenario]
 name = "title_continue_browser"
-description = "Open the campaign-first Continue browser from the title screen."
+description = "Open the canonical continue browser from the title screen using semantic scene actions."
 adapter_id = "fantasy_ember"
 player_name = "Chaos"
 create_new = false
 requires_backend = true
-tags = ["title", "continue", "save-browser"]
+tags = ["title", "continue", "save-browser", "semantic"]
 
 [[steps]]
-id = "focus_title"
-action = "activate_window"
-capture_os = true
-capture_viewport = true
+id = "capture_title"
+action = "capture_viewport"
 expected = "title screen is visible"
 
 [[steps]]
 id = "open_continue_browser"
-action = "mouse_click"
-x = 640
-y = 390
+action = "activate_node"
+node_path = "VBoxContainer/ContinueButton"
 wait_ms = 750
-capture_os = true
 capture_viewport = true
 expected = "continue browser opens"
 
 [[steps]]
-id = "focus_player_lookup"
-action = "mouse_click"
-x = 820
-y = 198
-wait_ms = 100
-expected = "player lookup field receives focus"
-
-[[steps]]
-id = "clear_player_lookup"
-action = "key_press"
-key = "backspace"
-repeat = 40
-wait_ms = 50
-expected = "previous player lookup text is cleared"
-
-[[steps]]
-id = "type_player_lookup"
-action = "text"
+id = "set_player_lookup"
+action = "set_text_node"
+node_path = "LoadBrowser/VBox/PlayerRow/PlayerInput"
 text = "Chaos"
 wait_ms = 100
 expected = "player lookup contains Chaos"
 
 [[steps]]
 id = "refresh_player_saves"
-action = "mouse_click"
-x = 930
-y = 198
-wait_ms = 1000
-capture_os = true
+action = "wait"
+duration_ms = 400
+expected = "continue browser auto-refresh settles for Chaos"
+
+[[steps]]
+id = "wait_for_load_button"
+action = "wait_for_node"
+node_path = "LoadButton"
+duration_ms = 6000
 capture_viewport = true
 expected = "continue browser shows campaign saves for Chaos"
-expect_artifact_differs_from = "open_continue_browser:os_screenshot"

@@ -9,7 +9,7 @@
 
 ## 1. Purpose
 
-Define the complete gameplay interface for the Avatar-Commander hybrid: a player who is both a colony manager (RimWorld-style oversight) and an avatar explorer (Baldur's Gate-style adventurer). The current gameplay shell has the right structure (world viewport + sidebar + command bar) but fails at basic interaction: movement teleports instead of walks, entities can't be interacted with properly, there's no context menu, no map scroll, no equipment management, no dialog UI, and combat is invisible.
+Define the complete gameplay interface for the Avatar-Commander hybrid: a player who is both a colony manager (RimWorld-style oversight) and an avatar explorer (Baldur's Gate-style adventurer). The current gameplay shell now has bounded play-validation for click-to-walk, semantic interaction, dialog, travel, combat entry, save/load, and sidebar hydration. The remaining gap is not basic operability; it is consistency, clarity, and visual polish across those already-wired systems.
 
 Reference: Baldur's Gate 2 (bottom action bar, right portraits, left mode buttons, click-to-walk with pathfinding), RimWorld (colony overview, job assignment, resource bars), Fallout 1/2 (dialog with visible options and skill checks).
 
@@ -244,3 +244,6 @@ AC-16 [FR-23]: Click backpack item → click Equip → item appears in equipment
 - Travel: map click → travel sequence → arrival
 - Status bar: updates on state change
 - All interactions keyboard-accessible
+
+## Changelog
+- 2026-04-02: Updated the purpose section to reflect that the shell is now bounded-playable and that the remaining work is polish and UX closure rather than basic feature absence.

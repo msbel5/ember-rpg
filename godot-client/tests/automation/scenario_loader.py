@@ -39,9 +39,9 @@ def load_scenario(path: str | Path) -> AutomationScenario:
         player_name=str(scenario_data.get("player_name", "VisualSmoke")).strip(),
         create_new=bool(scenario_data.get("create_new", True)),
         requires_backend=bool(scenario_data.get("requires_backend", True)),
-        backend_url=str(scenario_data.get("backend_url", "http://127.0.0.1:8000")).strip(),
+        backend_url=str(scenario_data.get("backend_url", "http://127.0.0.1:8741")).strip(),
         backend_host=str(scenario_data.get("backend_host", "127.0.0.1")).strip(),
-        backend_port=int(scenario_data.get("backend_port", 8000)),
+        backend_port=int(scenario_data.get("backend_port", 8741)),
         godot_executable=_expand_path(str(scenario_data.get("godot_executable", DEFAULT_GODOT_EXE))),
         godot_console_executable=_expand_path(
             str(scenario_data.get("godot_console_executable", DEFAULT_GODOT_CONSOLE))
@@ -65,10 +65,15 @@ def _load_step(entry: dict[str, Any]) -> ActionStep:
         "id",
         "action",
         "description",
+        "scene_name",
         "key",
         "text",
+        "node_path",
+        "option_text",
         "x",
         "y",
+        "normalized_x",
+        "normalized_y",
         "button",
         "duration_ms",
         "repeat",
@@ -87,10 +92,15 @@ def _load_step(entry: dict[str, Any]) -> ActionStep:
         id=step_id,
         action=action,
         description=str(entry.get("description", "")).strip(),
+        scene_name=_optional_string(entry.get("scene_name")),
         key=_optional_string(entry.get("key")),
         text=_optional_string(entry.get("text")),
+        node_path=_optional_string(entry.get("node_path")),
+        option_text=_optional_string(entry.get("option_text")),
         x=_optional_int(entry.get("x")),
         y=_optional_int(entry.get("y")),
+        normalized_x=_optional_float(entry.get("normalized_x")),
+        normalized_y=_optional_float(entry.get("normalized_y")),
         button=str(entry.get("button", "left")).strip() or "left",
         duration_ms=int(entry.get("duration_ms", 0)),
         repeat=max(1, int(entry.get("repeat", 1))),
@@ -117,3 +127,9 @@ def _optional_int(value: Any) -> int | None:
     if value is None:
         return None
     return int(value)
+
+
+def _optional_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    return float(value)

@@ -1,85 +1,82 @@
 # Ember RPG — Godot Client
 
-Top-down 2D game client built with Godot 4.6 (Compatibility renderer).
+Godot 4.6 player-facing client for Ember RPG. This is the active shipped surface for title, creation, gameplay, save/load, and semantic UI proof.
 
 ## Requirements
 
-- Godot 4.6+ (Standard, not .NET)
-- Backend server running at `http://127.0.0.1:8000`
+- Godot 4.6+ (standard build, not .NET)
+- Local backend available through `BackendRuntime`
+- Default local backend port: `8741`
 
-## Setup
+## Runtime Bootstrap
 
-1. Open `project.godot` in Godot
-2. Edit `autoloads/backend.gd` line 5 — set your backend URL
-3. Press F5 to run
+- `autoloads/backend.gd` is the HTTP client only.
+- `autoloads/backend_runtime.gd` resolves and validates the backend URL for manual editor runs and automation.
+- Resolution order:
+  1. `EMBER_RPG_BACKEND_URL`
+  2. configured project URL
+  3. preferred local probe ports
+  4. managed debug bootstrap
+
+If the campaign contract is unavailable, the title scene blocks creation and shows backend diagnostics instead of opening an empty wizard.
+
+## Play Loop
+
+1. Run `python tools/reset_dev_state.py`
+2. Open [project.godot](C:/Users/msbel/projects/ember-rpg/godot-client/project.godot)
+3. Press `F5`
+4. Create a new campaign or continue a canonical save
 
 ## Controls
 
 | Key | Action |
-|-----|--------|
-| Enter | Focus command bar / send command |
-| Arrow Keys / WASD | Move (when not typing) |
-| I | Open inventory (when not typing) |
-| F5 / Ctrl+S | Quick save |
-| F9 / Ctrl+L | Open save/load panel |
-| Escape | Close panels |
-| F12 | Capture visual proof screenshot |
-| Click entity | Context action (examine, talk, trade) |
-| Click tile | Move to tile |
+| --- | --- |
+| `Enter` | Focus command bar / activate current prompt |
+| `WASD` / Arrow Keys | Camera pan or focused UI navigation |
+| `Home` | Re-center camera on player |
+| Mouse wheel | Zoom |
+| Middle mouse drag | Pan camera |
+| `F5` | Quicksave during gameplay |
+| `F9` | Open save/load panel |
+| `Esc` | Close modal overlay / cancel focused flow |
+| `F12` | Capture visual proof screenshot |
 
-## UI Layout
+## Active Layout
 
-```
-+--StatusBar (HP/SP/AP/Location)---------------------------+
-|                          |  [Tabs]                       |
-|   World Viewport         |  Narrative | Hero | Town |    |
-|   (top-down tile map)    |  Quests | Items | Map         |
-|                          |                               |
-+--CommandBar (input + Act/Save/Loads + roster)------------+
-```
+- `1600x900` is the primary desktop target.
+- `1280x720` is supported as a degraded fallback.
+- The gameplay shell is:
+  - status bar on top
+  - world viewport center-left
+  - sidebar panels on the right
+  - command / action bar on the bottom
 
-The sidebar uses **TabContainer** — each tab shows one panel at a time (no scrolling).
+## Project Structure
 
-## Structure
-
-```
+```text
 godot-client/
-  autoloads/
-    backend.gd         # HTTP client (campaign-first routes)
-    game_state.gd      # Global state singleton
-  scenes/
-    title_screen.*     # Title + character creation wizard
-    game_session.*     # Main gameplay screen
-    components/        # UI panel scenes (narrative, inventory, etc.)
-  scripts/
-    ui/                # Panel logic (command_bar, status_bar, etc.)
-    world/             # Tile rendering, entity layer, camera, overlay
-    net/               # Response normalization
-    asset/             # Sprite/tile catalog, HF asset bootstrap
-  assets/
-    fonts/             # Game fonts
-    sprites/           # Hand-drawn entity sprites
-    tiles/             # Tile textures
-    generated/         # AI-generated sprites and tiles
-    ui/                # UI bar textures
-  tests/
-    run_headless_tests.gd  # 183 headless tests
-    automation/            # Desktop automation harness
+  autoloads/          backend, backend_runtime, game_state
+  scenes/             title screen, title menu, gameplay session
+  scripts/ui/         creation, overlays, panels, save sync, theming
+  scripts/world/      world viewport, camera, entity rendering, interaction
+  tests/              headless regression and semantic desktop automation
 ```
 
-## Backend API (Campaign-First)
+## Automation
 
-> **Note**: Legacy `/session/` routes are deprecated. Use campaign routes.
+- Headless Godot is the authoritative UI regression lane.
+- Win32 desktop is the semantic real-window proof lane.
+- Critical scenarios must use semantic node visibility/text assertions instead of monitor-space clicks.
 
-- `POST /game/campaigns/create` — Start campaign creation
-- `POST /game/campaigns/{id}/commands` — Send player command
-- `GET /game/campaigns/{id}` — Get campaign snapshot
-- `GET /game/campaigns/{id}/settlement` — Get settlement state
-- `POST /game/campaigns/{id}/save` — Save campaign
-- `GET /game/campaigns/{id}/saves` — List saves
-- `POST /game/campaigns/load/{save_id}` — Load save
+## Active Backend Contract
 
-## Content Adapters
+- `POST /game/campaigns/creation/start`
+- `POST /game/campaigns/creation/{creation_id}/answer`
+- `POST /game/campaigns/creation/{creation_id}/reroll`
+- `POST /game/campaigns/creation/{creation_id}/finalize`
+- `POST /game/campaigns/{campaign_id}/commands`
+- `POST /game/campaigns/{campaign_id}/save`
+- `GET /game/campaigns/saves`
+- `POST /game/campaigns/load/{save_id}`
 
-- `fantasy_ember` — Medieval fantasy (default)
-- `scifi_frontier` — Space opera variant
+Legacy session-first gameplay is deprecated and not part of the active client contract.

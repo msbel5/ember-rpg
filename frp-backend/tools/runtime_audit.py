@@ -14,30 +14,10 @@ RUNTIME_ROOTS = [
 ]
 MAX_RUNTIME_LINES = 450
 ALLOWED_OVERSIZE: Dict[str, str] = {
-    "frp-backend/engine/world/inventory.py": "Pending split of inventory domain models from container logic.",
-    "frp-backend/engine/world/interactions.py": "Pending split of interaction catalog from handlers.",
     "frp-backend/engine/core/combat.py": "Combat core remains monolithic until rules/narration are peeled apart.",
     "frp-backend/engine/core/dm_agent.py": "DM agent still mixes prompting, fallback, and formatting.",
     "frp-backend/engine/map/__init__.py": "Map generation package still centralizes multiple generators.",
-    "frp-backend/engine/world/institutions.py": "Institution simulation remains unsplit.",
-    "frp-backend/engine/worldgen/pipeline.py": "Initial worldgen vertical slice keeps pipeline stages together until the package is split by subsystem.",
-    "frp-backend/engine/api/campaign_runtime.py": "Campaign runtime still centralizes orchestration while campaign-first flows settle.",
-    "frp-backend/engine/api/campaign_state.py": "Campaign payload and session projection remain centralized during client cutover.",
-    "frp-backend/engine/data_loader.py": "Pure data loader exception.",
-    "frp-backend/engine/kernel/__init__.py": "Kernel export barrel remains centralized while the post-cutover API surface stabilizes.",
-    "frp-backend/engine/kernel/actor.py": "Actor kernel still centralizes canonical actor/body conversion and compatibility sync helpers.",
-    "frp-backend/engine/kernel/colony.py": "Colony kernel still combines pressure formulas, needs, morale, and quest seed helpers pending a later split.",
-    "frp-backend/engine/kernel/combat.py": "Combat kernel deliberately keeps d20 orchestration and material-physics strike resolution together for deterministic authority.",
-    "frp-backend/engine/kernel/hybrid.py": "Hybrid commander loop still centralizes travel, path authority, local map hydration, and squad order execution.",
-    "frp-backend/engine/kernel/jobs.py": "Job kernel still combines labor assignment, reactions, worksites, and quality helpers pending a later split.",
-    "frp-backend/engine/kernel/pathfinding.py": "Pathfinding kernel still keeps search map, movement state, bump logic, and path execution together.",
-    "frp-backend/engine/kernel/systems.py": "Systems-closure kernel still combines syndromes, power, traps, fluids, temperature, and strange moods by design.",
-    "frp-backend/tools/play_topdown.py": "Terminal renderer surface exception.",
-    "frp-backend/tools/play.py": "CLI surface exception.",
-    "godot-client/scenes/game_session.gd": "Godot campaign orchestration is still centralized while the client cutover settles.",
-    "godot-client/scenes/title_screen.gd": "Title and creation flow remain centralized until the wizard split lands.",
-    "godot-client/scripts/world/entity_layer.gd": "Entity presentation still combines sprite staging and motion until renderer helpers split out.",
-    "godot-client/scripts/world/world_view.gd": "World interaction orchestration still combines click routing, overlays, and affordance copy.",
+    "godot-client/tests/automation/godot/automation_bridge.gd": "Semantic automation bridge remains centralized as a test-only control surface.",
     "godot-client/tests/run_headless_tests.gd": "Godot smoke harness intentionally centralizes lightweight client contract checks.",
 }
 FORBIDDEN_SNIPPETS: Dict[str, List[str]] = {

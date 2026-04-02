@@ -3,7 +3,7 @@
 **Phase:** 6
 **Author:** Alcyone (CAPTAIN)
 **Date:** 2026-04-01
-**Status:** Draft
+**Status:** Approved
 
 ---
 
@@ -52,8 +52,8 @@ deterministic sequence:
 
 Authoritative runtime surfaces:
 - `frp-backend/engine/api/campaign/live_kernel.py`
-- `frp-backend/engine/api/campaign/runtime.py`
-- `frp-backend/engine/api/campaign/persistence.py`
+- `frp-backend/engine/api/campaign/runtime_macro_society.py`
+- `frp-backend/engine/api/campaign/runtime_settlement.py`
 - `frp-backend/engine/kernel/world_state.py`
 - `frp-backend/engine/kernel/store.py`
 
@@ -114,3 +114,4 @@ Primary runtime evidence:
 - `frp-backend/tests/test_campaign_logic_live.py`
 - `frp-backend/tests/test_campaign_save_load_v2.py`
 - `frp-backend/tests/test_command_bus.py`
+- `godot-client/tests/automation/scenarios/resume_and_command.toml`

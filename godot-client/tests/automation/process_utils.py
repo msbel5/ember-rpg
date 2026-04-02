@@ -6,8 +6,17 @@ import subprocess
 import time
 from pathlib import Path
 from typing import Any, Callable
-from urllib.error import URLError
+from urllib.parse import urlsplit, urlunsplit
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
+
+
+REQUIRED_CAMPAIGN_PATHS = (
+    "/game/campaigns",
+    "/game/campaigns/creation/catalog",
+    "/game/campaigns/load/{save_id}",
+)
+CAMPAIGN_HEALTH_PATH = "/game/health/campaign-client"
 
 
 def wait_http(url: str, timeout: float = 25.0) -> int:
@@ -21,6 +30,82 @@ def wait_http(url: str, timeout: float = 25.0) -> int:
             last_error = exc
             time.sleep(0.25)
     raise RuntimeError(f"Timed out waiting for {url}: {last_error}")
+
+
+def build_backend_url(host: str, port: int, template_url: str = "http://127.0.0.1:8741") -> str:
+    parsed = urlsplit(template_url)
+    scheme = parsed.scheme or "http"
+    return urlunsplit((scheme, f"{host}:{port}", "", "", ""))
+
+
+def fetch_backend_health(base_url: str, timeout: float = 2.0) -> dict[str, object] | None:
+    try:
+        with urlopen(f"{base_url.rstrip('/')}{CAMPAIGN_HEALTH_PATH}", timeout=timeout) as response:  # noqa: S310
+            payload = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, socket.timeout, ConnectionError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    required_keys = {"ok", "campaign_creation", "campaign_runtime", "campaign_save_load"}
+    if not required_keys.issubset(payload.keys()):
+        return None
+    return payload
+
+
+def backend_supports_paths(
+    base_url: str,
+    required_paths: tuple[str, ...] = REQUIRED_CAMPAIGN_PATHS,
+    timeout: float = 2.0,
+) -> bool:
+    health = fetch_backend_health(base_url, timeout=timeout)
+    if health is not None:
+        return bool(
+            health.get("ok")
+            and health.get("campaign_creation")
+            and health.get("campaign_runtime")
+            and health.get("campaign_save_load")
+        )
+    try:
+        with urlopen(f"{base_url.rstrip('/')}/openapi.json", timeout=timeout) as response:  # noqa: S310
+            payload = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, socket.timeout, ConnectionError, json.JSONDecodeError):
+        return False
+    paths = payload.get("paths", {})
+    if not isinstance(paths, dict):
+        return False
+    return all(path in paths for path in required_paths)
+
+
+def wait_backend_contract(
+    base_url: str,
+    required_paths: tuple[str, ...] = REQUIRED_CAMPAIGN_PATHS,
+    timeout: float = 25.0,
+) -> None:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if backend_supports_paths(base_url, required_paths=required_paths, timeout=1.0):
+            return
+        time.sleep(0.25)
+    raise RuntimeError(f"Timed out waiting for backend contract at {base_url}.")
+
+
+def is_port_available(host: str, port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind((host, port))
+        except OSError:
+            return False
+    return True
+
+
+def find_available_port(host: str, start_port: int, attempts: int = 50) -> int:
+    candidate = start_port
+    for _ in range(attempts):
+        if is_port_available(host, candidate):
+            return candidate
+        candidate += 1
+    raise RuntimeError(f"Could not find an available port on {host} starting at {start_port}.")
 
 
 def terminate_process(process: subprocess.Popen[object] | None, timeout: float = 5.0) -> None:

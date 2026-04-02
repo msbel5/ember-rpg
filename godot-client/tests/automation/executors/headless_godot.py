@@ -18,7 +18,6 @@ from automation.process_utils import (
     wait_backend_contract,
     wait_for_json,
     write_json_atomic,
-    backend_supports_paths,
 )
 
 
@@ -44,8 +43,6 @@ class HeadlessGodotExecutor(AutomationExecutor):
         return {"keyboard", "mouse", "viewport_capture", "issue_reporting", "headless", "semantic_controls"}
 
     def launch_backend(self) -> None:
-        if backend_supports_paths(self.backend_url):
-            return
         port = self.backend_port
         if not is_port_available(self.backend_host, port):
             port = find_available_port(self.backend_host, max(port + 1, 8765))

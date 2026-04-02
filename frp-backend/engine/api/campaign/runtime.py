@@ -9,15 +9,22 @@ from engine.api.game_engine import GameEngine
 from engine.api.save_system import SaveSystem
 from engine.core.character_creation import ABILITY_ORDER, CreationState, assign_stats_to_class
 from engine.kernel import GameState
-from engine.worldgen import WorldSeed, load_world_snapshot, realize_region, tick_global
+from engine.worldgen import WorldSeed, initialize_simulation, load_world_snapshot, realize_region, tick_global
 
 from .context import CampaignContext, CampaignCreationContext
 from .controls import merge_settlement_controls
+from .dialog import build_dialog_payload
 from .live_kernel import advance_kernel_runtime, ensure_kernel_runtime
 from .persistence import campaign_payload, persist_campaign_state
 from .session import apply_region_to_session
 from .settlement import build_character_sheet, build_settlement_state
-from .world import alerts_from_events, build_world, region_payload
+from .world import (
+    alerts_from_events,
+    build_world,
+    choose_starting_settlement,
+    derive_creation_world_seed,
+    region_payload,
+)
 from ..campaign_commands import (
     handle_travel,
     hours_for_avatar_command,
@@ -50,9 +57,21 @@ class CampaignRuntime:
         creation_answers: Optional[list[dict[str, Any]]] = None,
         creation_profile: Optional[dict[str, Any]] = None,
     ) -> CampaignContext:
-        chosen_seed = seed if seed is not None else int(WorldSeed(f"{player_name}:{adapter_id}:{profile_id}"))
+        requested_seed = seed if seed is not None else int(WorldSeed(f"{player_name}:{adapter_id}:{profile_id}"))
+        chosen_seed = derive_creation_world_seed(
+            adapter_id=adapter_id,
+            profile_id=profile_id,
+            seed=requested_seed,
+            creation_profile=creation_profile,
+            creation_answers=creation_answers,
+        )
         world = build_world(adapter_id=adapter_id, profile_id=profile_id, seed=chosen_seed)
-        settlement = world.settlements[0]
+        settlement = choose_starting_settlement(
+            world,
+            creation_profile=creation_profile,
+            creation_answers=creation_answers,
+        ) or world.settlements[0]
+        initialize_simulation(world, settlement.region_id)
         region_snapshot = realize_region(world, settlement.region_id)
         session = self.engine.new_session(
             player_name=player_name,
@@ -192,6 +211,7 @@ class CampaignRuntime:
             "adapter_id": effective_adapter_id,
             "profile_id": effective_profile_id,
             "seed": effective_seed,
+            "requested_seed": creation_context.seed,
         }
         merged_creation_profile.update(dict(creation_profile or {}))
         context = self.create_campaign(
@@ -365,6 +385,7 @@ class CampaignRuntime:
         context.settlement_state["current_day"] = context.world.simulation_snapshot.current_day
         context.settlement_state["season"] = context.world.simulation_snapshot.season
         persist_campaign_state(context)
+        dialog_payload = build_dialog_payload(context, narrative) if command_type == "avatar" else {}
         return {
             "campaign_id": context.campaign_id,
             "narrative": narrative,
@@ -372,6 +393,7 @@ class CampaignRuntime:
             "hours_advanced": hours_advanced,
             "generated_events": generated_events,
             "campaign": campaign_payload(context),
+            **dialog_payload,
         }
 
     def snapshot(self, campaign_id: str, narrative: str = "") -> dict[str, Any]:

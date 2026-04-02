@@ -1,87 +1,60 @@
 # Ember RPG
 
-A top-down RPG with **deterministic world simulation**, **real tabletop mechanics**, and an **AI enrichment layer**. Inspired by Daggerfall, Bard's Tale, Dwarf Fortress, RimWorld, Zork, and Hitchhiker's Guide to the Galaxy.
+Ember RPG is a Godot-first colony-command RPG built on a deterministic Python backend. The shipped player surface is the Godot client; terminal-first and legacy compatibility paths are deprecated.
 
-## Design Philosophy
+## Current Product Surface
 
-**Deterministic first, AI second.** The game engine runs a fully algorithmic world — NPCs have schedules, economies tick, quests trigger from world state, combat resolves with dice. The entire game works without any LLM calls. AI layers (DM narration, NPC conversation, world description) are hooked in via API interfaces to enrich — not replace — the deterministic simulation.
+- Godot 4.6 client for title, creation, gameplay, save/load, and semantic desktop proof
+- FastAPI backend with campaign-first routes and canonical kernel payload slices
+- Two active adapters: `fantasy_ember` and `scifi_frontier`
+- Deterministic simulation for actors, effects, jobs, colony pressure, stores, travel, and systems closure
 
-Each conscious entity (NPC, DM) will have its own persistent session so it remembers context across interactions. The LLM layer makes the world feel alive; the deterministic layer makes it actually alive.
-
-## Architecture
-
-```
-Godot 4.6 Client (PC)
-    |
-    | HTTP REST API (campaign-first routes)
-    |
-FastAPI Backend (Python 3.11+)
-    |
-    +-- CampaignSession (canonical state: world, map, entities, quests, inventory)
-    +-- Game Engine (deterministic rules, combat, crafting, world tick)
-    +-- LLM Router (Claude / GPT via Copilot API — optional enrichment)
-    +-- Living World (NPC schedules, rumors, economy, consequences)
-    +-- Save/Load (named slots + autosave)
-    +-- Content Adapters (fantasy_ember, scifi_frontier)
-```
-
-## Quick Start
+## Local Quick Start
 
 ### Backend
+
 ```bash
 cd frp-backend
-python3 -m venv ../venv && source ../venv/bin/activate
+python -m venv ..\\venv
+..\\venv\\Scripts\\activate
 pip install -r requirements.txt
-uvicorn main:app --host 127.0.0.1 --port 8000
+python dev_server.py --port 8741
 ```
 
-### Client
-1. Install [Godot 4.6](https://godotengine.org/download)
-2. Open `godot-client/project.godot`
-3. Set `EMBER_RPG_BACKEND_URL` or `ember_rpg/backend_url` in `godot-client/project.godot`
-4. Press F5 to play
+### Godot Client
 
-## Project Structure
+1. Install [Godot 4.6](https://godotengine.org/download).
+2. Open [project.godot](C:/Users/msbel/projects/ember-rpg/godot-client/project.godot).
+3. Press `F5`.
+4. In debug/editor runs, `BackendRuntime` will prefer `EMBER_RPG_BACKEND_URL`, then the configured URL, then managed local bootstrap on port `8741`.
 
-```
+## Repo Layout
+
+```text
 ember-rpg/
-  docs/              # Mechanics canon, generated matrix, live architecture and QA docs
-  docs/prd/active/   # Authoritative implementation PRDs
-  docs/deprecated/   # Superseded PRDs, prompts, and legacy notes
-  frp-backend/       # Python backend and audit/test tooling
-  godot-client/      # Godot 4.6 game client
+  docs/              authoritative PRDs, architecture docs, QA signoff, generated matrix
+  frp-backend/       FastAPI backend, deterministic runtime, tests, audit tools
+  godot-client/      Godot scenes, autoloads, UI/gameplay scripts, automation fixtures
+  tools/             local developer reset and support scripts
 ```
-
-## Current State (March 2026)
-
-- **Backend**: Deterministic combat, magic (50+ spells), crafting, economy, living-world NPC simulation, campaign-first API, full save/load
-- **Client**: Top-down tile map, tab-based sidebar (Narrative/Hero/Town/Quests/Items/Map), entity rendering with authored sprites, AI narrative panel
-- **Adapters**: `fantasy_ember` (medieval fantasy), `scifi_frontier` (space opera)
-- **VQS**: 5.0/10 — minimum demo bar reached, not impressive yet
-- **Next**: Deterministic world generation, deeper interaction, animation, atmospheric density
-
-## Roadmap Vision
-
-1. **Now**: Algorithmic deterministic world (Daggerfall/DF quality procedural generation)
-2. **Next**: API hooks for DM interface + NPC agent sessions (each NPC remembers)
-3. **Then**: LLM enrichment layer on top of working deterministic base
-4. **Future**: 3D world rendering (Bard's Tale 4 style), persistent universe
 
 ## Documentation
 
-- `docs/PRD_IMPLEMENTATION_MATRIX.md` — Master doc governance (authoritative vs superseded)
-- `docs/architecture/ember_mechanics_canon_v1.md` — Canonical Ember hybrid mechanics map
-- `docs/prd/active/PRD_STANDARD.md` — Template all active PRDs follow
-- `docs/prd/active/PRD_godot_client.md` — Current client contract
-- `docs/qa/vqr_scorecard.md` — Visual quality tracking
-- `docs/qa/bug_registry.md` — Known issues
+- [PRD_IMPLEMENTATION_MATRIX.md](C:/Users/msbel/projects/ember-rpg/docs/PRD_IMPLEMENTATION_MATRIX.md): generated authoritative documentation inventory
+- [ember_mechanics_canon_v1.md](C:/Users/msbel/projects/ember-rpg/docs/architecture/ember_mechanics_canon_v1.md): canonical DF + GemRB synthesis map
+- [PRD_godot_client.md](C:/Users/msbel/projects/ember-rpg/docs/prd/active/PRD_godot_client.md): active Godot runtime contract
+- [PRD_automation_authority_v1.md](C:/Users/msbel/projects/ember-rpg/docs/prd/active/PRD_automation_authority_v1.md): semantic automation authority
+- [runtime_authority.md](C:/Users/msbel/projects/ember-rpg/docs/architecture/runtime_authority.md): canonical live runtime slice rules
 
-> **Note**: Active PRDs live only under `docs/prd/active/`. Superseded PRDs and old planning notes are archived under `docs/deprecated/`.
+Active PRDs live only under `docs/prd/active`. Superseded PRDs and planning notes live under `docs/deprecated`.
+
+## Verification Lanes
+
+- Backend targeted pytest for campaign creation, save/load, and runtime projections
+- Headless Godot regression via `godot-client/tests/run_headless_tests.gd`
+- Semantic desktop proof via `godot-client/tests/automation`
+- Long `100` / `500` turn chaos runs are soak lanes, not the default release gate
 
 ## License
 
-Open source — code is free, game assets are proprietary.
-
-## Credits
-
-Built by [msbel5](https://github.com/msbel5) with Alcyone (AI companion on Raspberry Pi 5).
+Source code is open; shipped game assets remain proprietary unless explicitly marked otherwise.

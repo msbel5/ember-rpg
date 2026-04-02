@@ -1,0 +1,39 @@
+[scenario]
+name = "title_continue_desktop"
+description = "Desktop proof for opening the continue browser and capturing real OS and viewport artifacts."
+adapter_id = "fantasy_ember"
+player_name = "Chaos"
+create_new = false
+requires_backend = true
+tags = ["title", "continue", "desktop", "proof"]
+
+[[steps]]
+id = "focus_window"
+action = "activate_window"
+capture_os = true
+capture_viewport = true
+expected = "title screen is visible in a desktop window"
+
+[[steps]]
+id = "wait_for_backend_ready"
+action = "wait"
+duration_ms = 6500
+capture_os = true
+capture_viewport = true
+expected = "title screen finishes backend bootstrap and save discovery"
+
+[[steps]]
+id = "focus_continue"
+action = "key_press"
+key = "tab"
+wait_ms = 150
+expected = "continue button receives focus"
+
+[[steps]]
+id = "open_continue"
+action = "key_press"
+key = "enter"
+wait_ms = 2200
+capture_os = true
+capture_viewport = true
+expected = "continue browser opens with campaign saves"

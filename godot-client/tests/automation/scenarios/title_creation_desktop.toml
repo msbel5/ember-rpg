@@ -11,22 +11,38 @@ tags = ["title", "creation", "desktop", "proof"]
 id = "focus_window"
 action = "activate_window"
 capture_os = true
+capture_viewport = true
 expected = "title screen is visible in a desktop window"
 
 [[steps]]
-id = "open_new_game"
-action = "mouse_click"
-x = 632
-y = 340
-wait_ms = 700
+id = "wait_for_backend_ready"
+action = "wait"
+duration_ms = 6500
 capture_os = true
+capture_viewport = true
+expected = "title screen finishes backend bootstrap and catalog loading"
+
+[[steps]]
+id = "open_new_game"
+action = "key_press"
+key = "enter"
+wait_ms = 2200
+capture_os = true
+capture_viewport = true
 expected = "new game shell opens"
 
 [[steps]]
+id = "type_name"
+action = "text"
+text = "VisualSmoke"
+wait_ms = 150
+expected = "identity name is entered"
+
+[[steps]]
 id = "advance_identity"
-action = "mouse_click"
-x = 1019
-y = 645
-wait_ms = 1200
+action = "key_press"
+key = "enter"
+wait_ms = 1600
 capture_os = true
+capture_viewport = true
 expected = "questionnaire step opens"

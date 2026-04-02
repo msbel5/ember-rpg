@@ -58,6 +58,19 @@ def test_create_campaign_returns_campaign_snapshot():
     assert payload["campaign"]["region"]["height"] == 60
 
 
+def test_campaign_client_health_endpoint_reports_required_capabilities():
+    response = client.get("/game/health/campaign-client")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "ok": True,
+        "campaign_creation": True,
+        "campaign_runtime": True,
+        "campaign_save_load": True,
+        "schema_version": "2.0",
+    }
+
+
 def test_create_scifi_campaign_returns_scifi_world_state():
     payload = _create_campaign("scifi_frontier")
     assert payload["adapter_id"] == "scifi_frontier"
@@ -86,6 +99,44 @@ def test_campaign_command_and_region_endpoints_work():
     settlement = client.get(f"/game/campaigns/{campaign_id}/settlement/current")
     assert settlement.status_code == 200
     assert settlement.json()["rooms"]
+
+
+def test_campaign_talk_command_returns_dialog_payload_when_conversation_is_active():
+    payload = _create_campaign()
+    campaign_id = payload["campaign_id"]
+    talkable = next(
+        entity
+        for entity in payload["campaign"]["world_entities"]
+        if entity.get("entity_type") == "npc" and "talk" in entity.get("context_actions", [])
+    )
+    target_name = str(talkable["name"])
+    target_position = talkable["position"]
+    move_x = max(0, int(target_position[0]) - 3)
+    move_y = int(target_position[1])
+
+    moved = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": f"move to {move_x},{move_y}"})
+    assert moved.status_code == 200
+
+    response = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": f"talk {target_name}"})
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["dialog_npc"] == target_name
+    assert body["dialog_text"]
+    assert body["dialog_options"]
+    assert body["dialog_options"][0]["command"] == "ask about work"
+
+
+def test_campaign_attack_command_marks_scene_as_combat_when_combat_payload_exists():
+    payload = _create_campaign()
+    campaign_id = payload["campaign_id"]
+
+    response = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": "attack wolf"})
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["campaign"]["combat"]
+    assert body["campaign"]["scene"] == "combat"
 
 
 def test_campaign_save_and_load_round_trip():
@@ -152,9 +203,9 @@ def test_campaign_save_listing_filters_legacy_and_other_campaign_slots(tmp_path:
         player_saves = client.get("/game/saves/CampaignTester")
         assert player_saves.status_code == 200
         player_entries = {entry["save_id"]: entry for entry in player_saves.json()}
+        assert set(player_entries) == {"first_slot", "second_slot"}
         assert player_entries["first_slot"]["campaign_compatible"] is True
         assert player_entries["second_slot"]["campaign_compatible"] is True
-        assert player_entries["legacy_slot"]["campaign_compatible"] is False
 
         detail = client.get("/game/saves/file/legacy_slot")
         assert detail.status_code == 200

@@ -1,13 +1,12 @@
-## Core world viewport — renders map, entities, handles input, camera, walk.
-## Delegates command generation to WorldInteraction, focus to WorldFocus,
-## and walk animation to WorldWalk.  Each helper is under 150 lines.
 extends SubViewportContainer
 
 const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const PovRendererConfig = preload("res://scripts/pov_renderer_config.gd")
 const WorldOverlay = preload("res://scripts/world/world_overlay.gd")
+const WorldIntentRouter = preload("res://scripts/world/world_intent_router.gd")
 
 signal command_requested(command_text: String)
+signal command_sequence_requested(commands: Array[String])
 signal focus_changed(summary: String)
 signal focus_actions_changed(actions: Array)
 
@@ -23,23 +22,15 @@ var _atmosphere_motes: Array = []
 var _background_key: String = ""
 var _focus_summary_text: String = ""
 var _focus_actions: Array = []
-
-# Camera state
 var _is_camera_dragging: bool = false
 const EDGE_SCROLL_MARGIN := 20.0
 const EDGE_SCROLL_SPEED := 200.0
 
-# Context menu state
 var _context_menu: PopupMenu
 var _context_target_entity: Dictionary = {}
 var _context_target_tile: Vector2i = Vector2i.ZERO
 
-# Walk animation state
 var _walker := WorldWalk.new()
-var _walk_tween: Tween
-var _walk_pending_interact: Dictionary = {}
-
-
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_exited.connect(_on_mouse_exited)
@@ -61,10 +52,6 @@ func _ready() -> void:
 		GameState.entities_loaded.connect(_refresh_from_state)
 		GameState.state_updated.connect(_refresh_from_state)
 	_refresh_from_state()
-
-
-# --- public ----------------------------------------------------------------
-
 func refresh_from_state() -> void:
 	_refresh_from_state()
 
@@ -93,7 +80,9 @@ func command_for_tile(tile_position: Vector2i) -> String:
 	return WorldInteraction.command_for_tile(tile_position, _tile_name_at(tile_position))
 
 
-# --- per-frame -------------------------------------------------------------
+func _describe_hover(tile_position: Vector2i, entity: Dictionary) -> String:
+	var tile_name := _tile_name_at(tile_position)
+	return WorldInteraction.describe_hover(entity, tile_name, tile_position)
 
 func _process(delta: float) -> void:
 	_handle_edge_scroll(delta)
@@ -123,9 +112,6 @@ func _handle_home_key() -> void:
 		var player_tile := GameState.player_map_pos
 		if player_tile != Vector2i.ZERO:
 			world_camera.position = Vector2(player_tile) * TileCatalog.TILE_SIZE + Vector2(TileCatalog.TILE_SIZE / 2.0, TileCatalog.TILE_SIZE / 2.0)
-
-
-# --- input -----------------------------------------------------------------
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
@@ -165,7 +151,7 @@ func _on_left_click(screen_pos: Vector2) -> void:
 		selection_layer.set_selected_tile(tile)
 	if selection_layer.has_method("flash_tile"):
 		selection_layer.flash_tile(tile)
-	var entity := entity_layer.get_entity_at_tile(tile)
+	var entity: Dictionary = entity_layer.get_entity_at_tile(tile)
 	_emit_focus(tile, entity)
 	_handle_walk_or_interact(tile, entity)
 
@@ -174,88 +160,32 @@ func _on_right_click(screen_pos: Vector2) -> void:
 	var tile := _screen_to_tile(screen_pos)
 	if not _tile_in_bounds(tile):
 		return
-	var entity := entity_layer.get_entity_at_tile(tile)
+	var entity: Dictionary = entity_layer.get_entity_at_tile(tile)
 	_show_context_menu(screen_pos, tile, entity)
 
-
-# --- click-to-walk ---------------------------------------------------------
-
 func _handle_walk_or_interact(tile: Vector2i, entity: Dictionary) -> void:
-	_walker.cancel()
-	var player_tile := GameState.player_map_pos
-	if player_tile == Vector2i.ZERO:
-		_emit_command(tile, entity)
+	var route := WorldIntentRouter.route_walk_or_interact(
+		_walker,
+		GameState.player_map_pos,
+		tile,
+		entity,
+		GameState.map_data,
+		Callable(self, "_tile_name_at"),
+		Callable(self, "_tile_in_bounds"),
+	)
+	if route.has("commands"):
+		command_sequence_requested.emit(route["commands"])
 		return
-
-	if not entity.is_empty():
-		var dist := abs(tile.x - player_tile.x) + abs(tile.y - player_tile.y)
-		if dist <= 1:
-			command_requested.emit(WorldInteraction.command_for_entity(entity))
-			return
-		var adjacent := _find_adjacent(tile, player_tile)
-		var path := _walker.compute_path(player_tile, adjacent, GameState.map_data)
-		if path.is_empty():
-			command_requested.emit(WorldInteraction.command_for_entity(entity))
-			return
-		_walk_pending_interact = entity
-		_walker.start_walk(path)
-		_animate_walk(path)
-	else:
-		var tile_name := _tile_name_at(tile)
-		if tile_name in WorldInteraction.INTERACTIVE_TILE_NAMES:
-			command_requested.emit(WorldInteraction.command_for_tile(tile, tile_name))
-			return
-		var path := _walker.compute_path(player_tile, tile, GameState.map_data)
-		if path.is_empty():
-			command_requested.emit(WorldInteraction.command_for_tile(tile, tile_name))
-			return
-		_walk_pending_interact = {}
-		_walker.start_walk(path)
-		_animate_walk(path)
-		command_requested.emit("move to %d,%d" % [tile.x, tile.y])
-
-
-func _animate_walk(path: Array[Vector2i]) -> void:
-	if path.is_empty():
-		return
-	if _walk_tween != null and _walk_tween.is_valid():
-		_walk_tween.kill()
-	var player_actor := entity_layer.get_node_or_null("player")
-	if player_actor == null:
-		return
-	_walk_tween = create_tween().set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
-	for tile in path:
-		var target := Vector2(tile.x * TileCatalog.TILE_SIZE + TileCatalog.TILE_SIZE / 2.0,
-							  tile.y * TileCatalog.TILE_SIZE + TileCatalog.TILE_SIZE / 2.0)
-		_walk_tween.tween_property(player_actor, "position", target, WorldWalk.STEP_DURATION)
-	_walk_tween.finished.connect(_on_walk_finished)
-
-
-func _on_walk_finished() -> void:
-	_walker.is_walking = false
-	if not _walk_pending_interact.is_empty():
-		command_requested.emit(WorldInteraction.command_for_entity(_walk_pending_interact))
-		_walk_pending_interact = {}
+	if route.has("command"):
+		command_requested.emit(str(route["command"]))
 
 
 func _find_adjacent(target: Vector2i, from: Vector2i) -> Vector2i:
-	var best := target
-	var best_dist := 99999
-	for dir in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]:
-		var c := target + dir
-		if not _tile_in_bounds(c):
-			continue
-		var n := _tile_name_at(c)
-		if n in ["wall", "water", "void"]:
-			continue
-		var d := abs(c.x - from.x) + abs(c.y - from.y)
-		if d < best_dist:
-			best = c
-			best_dist = d
-	return best
+	return WorldIntentRouter._find_adjacent(target, from, Callable(self, "_tile_name_at"), Callable(self, "_tile_in_bounds"))
 
 
-# --- context menu ----------------------------------------------------------
+func _commands_for_path(from_tile: Vector2i, path: Array[Vector2i]) -> Array[String]:
+	return WorldIntentRouter._commands_for_path(from_tile, path)
 
 func _show_context_menu(screen_pos: Vector2, tile: Vector2i, entity: Dictionary) -> void:
 	if _context_menu != null:
@@ -282,9 +212,6 @@ func _on_context_menu_selected(id: int) -> void:
 	if not cmd.is_empty():
 		command_requested.emit(cmd)
 
-
-# --- state refresh ---------------------------------------------------------
-
 func _refresh_from_state(_payload = null) -> void:
 	var has_real_map := not GameState.map_data.is_empty()
 	var map_payload: Dictionary = GameState.map_data if has_real_map else TileCatalog.build_placeholder_map()
@@ -309,9 +236,6 @@ func _refresh_from_state(_payload = null) -> void:
 	_set_focus_summary(WorldFocus.default_summary(GameState.get_display_location(), GameState.entities))
 	_set_focus_actions(WorldFocus.default_actions(GameState.entities))
 
-
-# --- hover -----------------------------------------------------------------
-
 func _update_hover(screen_pos: Vector2) -> void:
 	var tile := _screen_to_tile(screen_pos)
 	if not _tile_in_bounds(tile):
@@ -321,7 +245,7 @@ func _update_hover(screen_pos: Vector2) -> void:
 		return
 	if selection_layer.has_method("set_hover_tile"):
 		selection_layer.set_hover_tile(tile)
-	var entity := entity_layer.get_entity_at_tile(tile)
+	var entity: Dictionary = entity_layer.get_entity_at_tile(tile)
 	var tile_name := _tile_name_at(tile)
 	tooltip_text = WorldInteraction.describe_hover(entity, tile_name, tile) if not _is_placeholder() else _placeholder_banner.text
 	_emit_focus(tile, entity)
@@ -333,9 +257,6 @@ func _on_mouse_exited() -> void:
 		selection_layer.clear_hover()
 	_set_focus_summary(WorldFocus.default_summary(GameState.get_display_location(), GameState.entities))
 	_set_focus_actions(WorldFocus.default_actions(GameState.entities))
-
-
-# --- internal helpers ------------------------------------------------------
 
 func _emit_focus(tile: Vector2i, entity: Dictionary) -> void:
 	var tile_name := _tile_name_at(tile)
@@ -480,7 +401,7 @@ func _camera_focus_tiles(player_tile: Vector2i) -> Array:
 		for e in GameState.entities.get(bucket, []):
 			if not (e is Dictionary):
 				continue
-			var t := _entity_tile(e)
+			var t: Vector2i = _entity_tile(e)
 			if t == Vector2i.ZERO or abs(t.x - player_tile.x) + abs(t.y - player_tile.y) > 12:
 				continue
 			tiles.append(t)

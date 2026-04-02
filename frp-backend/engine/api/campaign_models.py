@@ -135,3 +135,6 @@ class CampaignCommandResponse(BaseModel):
     hours_advanced: int
     generated_events: List[Dict[str, Any]] = Field(default_factory=list)
     campaign: Dict[str, Any]
+    dialog_npc: Optional[str] = None
+    dialog_text: Optional[str] = None
+    dialog_options: List[Dict[str, Any]] = Field(default_factory=list)

@@ -1,69 +1,50 @@
 [scenario]
 name = "new_game_keyboard_flow"
-description = "Keyboard-first title flow through the creation wizard."
+description = "Keyboard-first title flow through the creation wizard using semantic scene actions."
 adapter_id = "fantasy_ember"
 player_name = "VisualSmoke"
 create_new = true
 requires_backend = true
-tags = ["title", "creation", "keyboard"]
+tags = ["title", "creation", "keyboard", "semantic"]
 
 [[steps]]
-id = "title_focus"
-action = "activate_window"
-capture_os = true
-capture_viewport = true
-expected = "title screen is focused"
+id = "capture_title"
+action = "capture_viewport"
+expected = "title screen is visible"
 
 [[steps]]
-id = "prime_primary_focus"
-action = "key_press"
-key = "tab"
+id = "focus_new_game"
+action = "focus_node"
+node_path = "VBoxContainer/NewGameButton"
 wait_ms = 150
-expected = "primary title button receives keyboard focus"
+expected = "new game button receives keyboard focus"
 
 [[steps]]
 id = "open_new_game"
-action = "key_press"
-key = "enter"
+action = "activate_node"
+node_path = "VBoxContainer/NewGameButton"
 wait_ms = 500
 capture_viewport = true
 expected = "new game wizard opens"
 
 [[steps]]
-id = "focus_name_field"
-action = "mouse_click"
-x = 820
-y = 225
-wait_ms = 100
-expected = "name field receives focus"
-
-[[steps]]
-id = "clear_name_field"
-action = "key_press"
-key = "backspace"
-repeat = 40
-wait_ms = 50
-expected = "name field is cleared"
-
-[[steps]]
-id = "type_name"
-action = "text"
+id = "set_player_name"
+action = "set_text_node"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/NameInput"
 text = "VisualSmoke"
 wait_ms = 150
 expected = "name field receives input"
 
 [[steps]]
 id = "capture_identity_ready"
-action = "capture_os"
+action = "capture_viewport"
 expected = "identity step is ready to advance"
 
 [[steps]]
 id = "advance_identity"
-action = "mouse_click"
-x = 388
-y = 394
+action = "activate_node"
+node_path = "CharacterCreation/VBox/ButtonRow/NextButton"
 wait_ms = 800
-capture_os = true
 capture_viewport = true
 expected = "wizard advances past identity"
-expect_artifact_differs_from = "capture_identity_ready:os_screenshot"
+expect_artifact_differs_from = "capture_identity_ready:viewport_capture"

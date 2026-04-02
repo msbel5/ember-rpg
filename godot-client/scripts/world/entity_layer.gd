@@ -4,6 +4,7 @@ extends Node2D
 
 const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const EntitySpriteCatalog = preload("res://scripts/world/entity_sprite_catalog.gd")
+const EntityVisuals = preload("res://scripts/world/entity_visuals.gd")
 const MOVE_TWEEN_DURATION := 0.24
 
 var _marker_textures: Dictionary = {}
@@ -11,6 +12,10 @@ var _shadow_texture: Texture2D
 var _entities_by_tile: Dictionary = {}
 var _actors_by_id: Dictionary = {}
 var _motion_time: float = 0.0
+
+
+static func adapter_bucket_tint(bucket: String, adapter_id: String) -> Color:
+	return EntityVisuals.adapter_bucket_tint(bucket, adapter_id)
 
 
 func _ready() -> void:
@@ -66,6 +71,12 @@ func get_entity_at_tile(tile_position: Vector2i) -> Dictionary:
 		if entry is Dictionary and str(entry.get("bucket", "")) != "player":
 			return entry
 	return entries[0] if entries[0] is Dictionary else {}
+
+
+func get_actor_for_entity(entry) -> Node2D:
+	var payload: Dictionary = entry if entry is Dictionary else {"id": str(entry)}
+	var actor_id = _actor_id_for(payload, -1)
+	return _actors_by_id.get(actor_id, null)
 
 
 # --- actor lifecycle -------------------------------------------------------
@@ -233,7 +244,7 @@ func _remove_stale(desired_ids: Dictionary) -> void:
 
 func _with_bucket(entry, bucket: String) -> Dictionary:
 	if entry is Dictionary:
-		var d := entry.duplicate(true)
+		var d: Dictionary = entry.duplicate(true)
 		d["bucket"] = bucket
 		return d
 	return {"bucket": bucket}

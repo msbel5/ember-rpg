@@ -17,11 +17,11 @@ static func catalog_entries(catalog: Dictionary, key: String) -> Array:
 
 
 static func adapter_entries(catalog: Dictionary) -> Array:
-	return catalog_entries(catalog, "adapters")
+	return catalog_entries(catalog, "adapter_catalog")
 
 
 static func class_entries(catalog: Dictionary) -> Array:
-	return catalog_entries(catalog, "classes")
+	return catalog_entries(catalog, "class_catalog")
 
 
 static func ability_order(catalog: Dictionary) -> Array:
@@ -86,19 +86,13 @@ static func adapter_label_map(catalog: Dictionary) -> Dictionary:
 
 
 static func settlement_label_map(catalog: Dictionary) -> Dictionary:
-	var result := {}
-	for entry in catalog_entries(catalog, "settlement_types"):
-		if entry is Dictionary:
-			result[str(entry.get("id", ""))] = str(entry.get("label", entry.get("id", "")))
-	return result
+	var raw = catalog.get("settlement_labels", {})
+	return raw if raw is Dictionary else {}
 
 
 static func faction_label_map(catalog: Dictionary) -> Dictionary:
-	var result := {}
-	for entry in catalog_entries(catalog, "faction_types"):
-		if entry is Dictionary:
-			result[str(entry.get("id", ""))] = str(entry.get("label", entry.get("id", "")))
-	return result
+	var raw = catalog.get("faction_labels", {})
+	return raw if raw is Dictionary else {}
 
 
 static func genesis_defaults(catalog: Dictionary) -> Dictionary:

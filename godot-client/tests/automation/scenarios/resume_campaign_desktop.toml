@@ -1,0 +1,62 @@
+[scenario]
+name = "resume_campaign_desktop"
+description = "Desktop proof for loading the first campaign save into the gameplay shell."
+adapter_id = "fantasy_ember"
+player_name = "Chaos"
+create_new = false
+requires_backend = true
+tags = ["resume", "desktop", "proof"]
+
+[[steps]]
+id = "focus_window"
+action = "activate_window"
+capture_os = true
+capture_viewport = true
+expected = "title screen is visible in a desktop window"
+
+[[steps]]
+id = "wait_for_backend_ready"
+action = "wait"
+duration_ms = 6500
+capture_os = true
+capture_viewport = true
+expected = "title screen finishes backend bootstrap and save discovery"
+
+[[steps]]
+id = "focus_continue"
+action = "key_press"
+key = "tab"
+wait_ms = 150
+expected = "continue button receives focus"
+
+[[steps]]
+id = "open_continue"
+action = "key_press"
+key = "enter"
+wait_ms = 2200
+capture_os = true
+capture_viewport = true
+expected = "continue browser opens with campaign saves"
+
+[[steps]]
+id = "focus_refresh_button"
+action = "key_press"
+key = "tab"
+wait_ms = 150
+expected = "refresh button receives focus"
+
+[[steps]]
+id = "focus_first_load"
+action = "key_press"
+key = "tab"
+wait_ms = 150
+expected = "first load button receives focus"
+
+[[steps]]
+id = "load_first_save"
+action = "key_press"
+key = "enter"
+wait_ms = 6000
+capture_os = true
+capture_viewport = true
+expected = "gameplay shell loads from the first save"

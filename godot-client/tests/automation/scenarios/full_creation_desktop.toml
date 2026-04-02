@@ -200,6 +200,13 @@ duration_ms = 3000
 expected = "history reveal contains streamed world events"
 
 [[steps]]
+id = "skip_history_reveal"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/ButtonRow/NextButton"
+wait_ms = 300
+expected = "history reveal finishes streaming text immediately"
+
+[[steps]]
 id = "advance_history"
 action = "activate_node"
 node_path = "CharacterCreation/VBox/ButtonRow/NextButton"
@@ -284,3 +291,94 @@ action = "wait_for_node_visible"
 node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer"
 duration_ms = 5000
 expected = "world viewport is visible in the gameplay shell"
+
+[[steps]]
+id = "wait_for_command_bar"
+action = "wait_for_node_visible"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+duration_ms = 4000
+expected = "command bar is visible after gameplay boot"
+
+[[steps]]
+id = "quicksave_campaign"
+action = "key_press"
+key = "f5"
+wait_ms = 1800
+capture_os = true
+capture_viewport = true
+expected = "fresh campaign is quicksaved before desktop restart"
+expect_note_contains = "GameSession"
+
+[[steps]]
+id = "restart_client"
+action = "restart_client"
+wait_ms = 500
+capture_os = true
+capture_viewport = true
+expected = "client restarts back to the title screen"
+
+[[steps]]
+id = "wait_for_title_after_restart"
+action = "wait_for_scene"
+scene_name = "TitleScreen"
+duration_ms = 12000
+expected = "title screen loads after restarting the client"
+
+[[steps]]
+id = "wait_for_continue_after_restart"
+action = "wait_for_node_visible"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+duration_ms = 4000
+expected = "continue is visible after the restart"
+
+[[steps]]
+id = "open_continue_after_restart"
+action = "activate_node"
+node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "continue browser opens after the restart"
+
+[[steps]]
+id = "wait_for_new_save_after_restart"
+action = "wait_for_node_visible"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+duration_ms = 6000
+expected = "freshly created campaign save is listed after the restart"
+
+[[steps]]
+id = "load_new_save_after_restart"
+action = "activate_node"
+node_path = "LoadBrowser/VBox/SaveScroll/SaveList/SaveRow0/LoadButton0"
+wait_ms = 1200
+expected = "continue loads the save created in this same proof run"
+
+[[steps]]
+id = "wait_for_game_session_after_restart"
+action = "wait_for_scene"
+scene_name = "GameSession"
+duration_ms = 12000
+capture_os = true
+capture_viewport = true
+expected = "gameplay shell returns after continue"
+expect_note_contains = "GameSession"
+
+[[steps]]
+id = "wait_for_world_view_after_restart"
+action = "wait_for_node_visible"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer"
+duration_ms = 5000
+expected = "world viewport is visible after continue"
+
+[[steps]]
+id = "click_world_target_after_restart"
+action = "click_node"
+node_path = "MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer"
+normalized_x = 0.54
+normalized_y = 0.42
+wait_ms = 1200
+capture_os = true
+capture_viewport = true
+expected = "continued campaign accepts a semantic world click"
+expect_note_contains = "GameSession"

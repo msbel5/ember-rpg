@@ -65,6 +65,7 @@ def run_scenario(scenario_path: str | Path, executor_name: str) -> RunnerResult:
         success=True,
         report_dir=str(artifacts.run_dir),
     )
+    step_memory: dict[str, str] = {}
 
     try:
         if not _check_environment(executor, report):
@@ -82,7 +83,7 @@ def run_scenario(scenario_path: str | Path, executor_name: str) -> RunnerResult:
         executor.launch_client()
         for step in scenario.steps:
             report.steps_run.append(step.id)
-            _run_step(executor, report, step)
+            _run_step(executor, report, step, step_memory)
     except Exception as exc:  # pragma: no cover - exercised by higher-level scenario runs
         report.success = False
         report.add_note(f"Unhandled runner error: {exc}")
@@ -178,10 +179,15 @@ def _check_environment(executor: AutomationExecutor, report: RunReport) -> bool:
     return False
 
 
-def _run_step(executor: AutomationExecutor, report: RunReport, step: ActionStep) -> None:
+def _run_step(
+    executor: AutomationExecutor,
+    report: RunReport,
+    step: ActionStep,
+    step_memory: dict[str, str],
+) -> None:
     for _ in range(step.repeat):
         try:
-            artifact = _dispatch_action(executor, step)
+            artifact = _dispatch_action(executor, step, step_memory)
         except CapabilityUnavailableError as exc:
             gap = executor.mark_gap(f"{step.id}:{step.action}")
             report.add_gap(gap)
@@ -199,7 +205,11 @@ def _run_step(executor: AutomationExecutor, report: RunReport, step: ActionStep)
         _capture(report, executor, step, "viewport")
 
 
-def _dispatch_action(executor: AutomationExecutor, step: ActionStep) -> ArtifactRecord | None:
+def _dispatch_action(
+    executor: AutomationExecutor,
+    step: ActionStep,
+    step_memory: dict[str, str],
+) -> ArtifactRecord | None:
     action = step.action
     if action == "activate_window":
         executor.activate_window()
@@ -252,11 +262,34 @@ def _dispatch_action(executor: AutomationExecutor, step: ActionStep) -> Artifact
     elif action == "wait_for_node_visible":
         _require_node_path(step)
         _wait_for_node_visible(executor, step.node_path or "", _step_timeout_seconds(step))
+    elif action == "wait_for_node_hidden":
+        _require_node_path(step)
+        _wait_for_node_hidden(executor, step.node_path or "", _step_timeout_seconds(step))
     elif action == "wait_for_node_text":
         _require_node_path(step)
         if step.text is None:
             raise ValueError(f"Step {step.id} requires text")
         _wait_for_node_text(executor, step.node_path or "", step.text, _step_timeout_seconds(step))
+    elif action == "remember_node_text":
+        _require_node_path(step)
+        state = executor.query_node_state(step.node_path or "")
+        if not bool(state.get("node_exists", False)):
+            raise RuntimeError(f"Cannot remember text for missing node `{step.node_path}`.")
+        step_memory[_memory_key(step)] = str(state.get("node_text", ""))
+    elif action == "wait_for_node_text_changed":
+        _require_node_path(step)
+        baseline_key = _reference_key(step)
+        baseline_text = step_memory.get(baseline_key)
+        if baseline_text is None:
+            raise RuntimeError(
+                f"Step {step.id} requires remembered text for reference `{baseline_key}`."
+            )
+        _wait_for_node_text_changed(
+            executor,
+            step.node_path or "",
+            baseline_text,
+            _step_timeout_seconds(step),
+        )
     elif action == "key_down":
         _require_key(step)
         executor.key_down(step.key or "")
@@ -273,6 +306,9 @@ def _dispatch_action(executor: AutomationExecutor, step: ActionStep) -> Artifact
         if step.text is None:
             raise ValueError(f"Step {step.id} requires text")
         executor.type_text(step.text)
+    elif action == "restart_client":
+        executor.close_client()
+        executor.launch_client()
     else:
         raise ValueError(f"Unsupported action `{action}` in step {step.id}")
     return None
@@ -408,6 +444,16 @@ def _wait_for_node_visible(executor: AutomationExecutor, node_path: str, timeout
     raise RuntimeError(f"Timed out waiting for visible node `{node_path}`.")
 
 
+def _wait_for_node_hidden(executor: AutomationExecutor, node_path: str, timeout_seconds: float) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() <= deadline:
+        state = executor.query_node_state(node_path)
+        if not bool(state.get("node_exists", False)) or not bool(state.get("node_visible", False)):
+            return
+        time.sleep(0.1)
+    raise RuntimeError(f"Timed out waiting for hidden node `{node_path}`.")
+
+
 def _wait_for_node_text(
     executor: AutomationExecutor,
     node_path: str,
@@ -425,6 +471,36 @@ def _wait_for_node_text(
     raise RuntimeError(
         f"Timed out waiting for text `{expected_text}` in node `{node_path}`. Last text was `{last_text}`."
     )
+
+
+def _wait_for_node_text_changed(
+    executor: AutomationExecutor,
+    node_path: str,
+    baseline_text: str,
+    timeout_seconds: float,
+) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    last_text = baseline_text
+    while time.monotonic() <= deadline:
+        state = executor.query_node_state(node_path)
+        last_text = str(state.get("node_text", ""))
+        if bool(state.get("node_exists", False)) and last_text.strip() and last_text != baseline_text:
+            return
+        time.sleep(0.1)
+    raise RuntimeError(
+        f"Timed out waiting for text in node `{node_path}` to change from `{baseline_text}`. "
+        f"Last text was `{last_text}`."
+    )
+
+
+def _memory_key(step: ActionStep) -> str:
+    custom_key = str(step.metadata.get("store_as", "")).strip()
+    return custom_key or step.id
+
+
+def _reference_key(step: ActionStep) -> str:
+    reference_key = str(step.metadata.get("reference_step_id", "")).strip()
+    return reference_key or step.id
 
 
 if __name__ == "__main__":

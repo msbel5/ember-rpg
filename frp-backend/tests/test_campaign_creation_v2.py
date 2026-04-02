@@ -140,3 +140,88 @@ def test_creation_seed_produces_deterministic_initial_and_reroll_values():
     assert rerolled_first.status_code == 200
     assert rerolled_second.status_code == 200
     assert rerolled_first.json()["current_roll"] == rerolled_second.json()["current_roll"]
+
+
+def test_creation_answers_emit_history_reveal_lines():
+    started = _start_creation("fantasy_ember")
+    creation_id = started["creation_id"]
+
+    for question in started["questions"]:
+        answer = question["answers"][0]
+        response = client.post(
+            f"/game/campaigns/creation/{creation_id}/answer",
+            json={"question_id": question["id"], "answer_id": answer["id"]},
+        )
+        assert response.status_code == 200
+        started = response.json()
+
+    history_events = started["campaign_genesis"].get("history_events", [])
+
+    assert history_events
+    assert len(history_events) >= 4
+    assert all(str(entry).startswith("Year ") for entry in history_events)
+
+
+def test_creation_answers_change_world_selection_with_same_seed():
+    first = _start_creation("fantasy_ember")
+    second = _start_creation("fantasy_ember")
+
+    for question in first["questions"]:
+        answer = question["answers"][0]
+        response = client.post(
+            f"/game/campaigns/creation/{first['creation_id']}/answer",
+            json={"question_id": question["id"], "answer_id": answer["id"]},
+        )
+        assert response.status_code == 200
+        first = response.json()
+
+    for question in second["questions"]:
+        answers = question["answers"]
+        answer = answers[min(1, len(answers) - 1)]
+        response = client.post(
+            f"/game/campaigns/creation/{second['creation_id']}/answer",
+            json={"question_id": question["id"], "answer_id": answer["id"]},
+        )
+        assert response.status_code == 200
+        second = response.json()
+
+    first_stats = {ability: int(first["current_roll"][index]) for index, ability in enumerate(ABILITY_ORDER)}
+    second_stats = {ability: int(second["current_roll"][index]) for index, ability in enumerate(ABILITY_ORDER)}
+
+    first_finalized = client.post(
+        f"/game/campaigns/creation/{first['creation_id']}/finalize",
+        json={
+            "player_class": "warrior",
+            "alignment": "TN",
+            "skill_proficiencies": ["athletics"],
+            "assigned_stats": first_stats,
+        },
+    )
+    second_finalized = client.post(
+        f"/game/campaigns/creation/{second['creation_id']}/finalize",
+        json={
+            "player_class": "warrior",
+            "alignment": "TN",
+            "skill_proficiencies": ["athletics"],
+            "assigned_stats": second_stats,
+        },
+    )
+
+    assert first_finalized.status_code == 200
+    assert second_finalized.status_code == 200
+
+    first_campaign = first_finalized.json()["campaign"]
+    second_campaign = second_finalized.json()["campaign"]
+
+    first_signature = (
+        first_campaign["world_state"]["seed"],
+        first_campaign["settlement"]["name"],
+        first_campaign["current_region_summary"]["region_id"],
+    )
+    second_signature = (
+        second_campaign["world_state"]["seed"],
+        second_campaign["settlement"]["name"],
+        second_campaign["current_region_summary"]["region_id"],
+    )
+
+    assert first_signature != second_signature

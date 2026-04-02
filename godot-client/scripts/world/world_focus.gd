@@ -40,24 +40,24 @@ static func default_actions(entities: Dictionary) -> Array:
 	if not contact.is_empty():
 		actions.append({
 			"label": "Talk: %s" % _short_label(WorldInteraction.display_entity_name(contact)),
-			"command": WorldInteraction.command_for_entity(contact),
+			"command": "talk %s" % str(contact.get("name", "contact")).strip_edges().to_lower(),
 		})
 	var threat := _first_entity(entities, "enemies")
 	if not threat.is_empty():
 		actions.append({
-			"label": "Scout: %s" % _short_label(WorldInteraction.display_entity_name(threat)),
-			"command": "examine %s" % str(threat.get("name", "threat")).strip_edges().to_lower(),
+			"label": "Attack: %s" % _short_label(WorldInteraction.display_entity_name(threat)),
+			"command": "attack %s" % str(threat.get("name", "threat")).strip_edges().to_lower(),
 		})
 	var loot := _first_entity(entities, "items")
 	if actions.size() < 2 and not loot.is_empty():
 		actions.append({
-			"label": "Loot: %s" % _short_label(WorldInteraction.display_entity_name(loot)),
+			"label": "Use: %s" % _short_label(WorldInteraction.display_entity_name(loot)),
 			"command": WorldInteraction.command_for_entity(loot),
 		})
 	if actions.size() < 2:
-		actions.append({"label": "Inventory", "command": "inventory"})
+		actions.append({"label": "Rest", "command": "rest"})
 	if actions.size() < 2:
-		actions.append({"label": "Look Around", "command": "look around"})
+		actions.append({"label": "Examine Area", "command": "look around"})
 	return actions.slice(0, 2)
 
 
@@ -72,21 +72,22 @@ static func actions_for_tile(tile_position: Vector2i, tile_name: String, entity:
 				if norm.is_empty():
 					continue
 				result.append({
-					"label": norm.capitalize(),
+					"label": _label_for_action(norm, entity_name),
 					"command": WorldInteraction.command_for_context_action(norm, entity_name, str(entity.get("bucket", "npc"))),
 				})
 				if result.size() >= 2:
 					return result
-		result.append({"label": "Primary", "command": WorldInteraction.command_for_entity(entity)})
-		result.append({"label": "Inventory", "command": "inventory"})
+		result.append(_named_action_for_entity(entity))
+		result.append({"label": "Rest", "command": "rest"})
 		return result
 	if tile_name.is_empty():
 		return []
-	var actions: Array = [{"label": "Primary", "command": WorldInteraction.command_for_tile(tile_position, tile_name)}]
+	var primary_command := WorldInteraction.command_for_tile(tile_position, tile_name)
+	var actions: Array = [{"label": _label_for_tile_command(primary_command, tile_name), "command": primary_command}]
 	if not str(actions[0].get("command", "")).begins_with("move to"):
-		actions.append({"label": "Move There", "command": "move to %d,%d" % [tile_position.x, tile_position.y]})
+		actions.append({"label": "Use Ground", "command": "move to %d,%d" % [tile_position.x, tile_position.y]})
 	else:
-		actions.append({"label": "Look Around", "command": "look around"})
+		actions.append({"label": "Rest", "command": "rest"})
 	return actions
 
 
@@ -116,3 +117,43 @@ static func _short_label(label: String) -> String:
 	if trimmed.length() <= 14:
 		return trimmed
 	return trimmed.substr(0, 13) + "…"
+
+
+static func _named_action_for_entity(entity: Dictionary) -> Dictionary:
+	var bucket := str(entity.get("bucket", "npc")).strip_edges().to_lower()
+	var name := _short_label(WorldInteraction.display_entity_name(entity))
+	match bucket:
+		"enemy":
+			return {"label": "Attack: %s" % name, "command": "attack %s" % str(entity.get("name", "threat")).strip_edges().to_lower()}
+		"item":
+			return {"label": "Use: %s" % name, "command": WorldInteraction.command_for_entity(entity)}
+		"furniture":
+			return {"label": "Examine: %s" % name, "command": WorldInteraction.command_for_entity(entity)}
+		_:
+			return {"label": "Talk: %s" % name, "command": WorldInteraction.command_for_entity(entity)}
+
+
+static func _label_for_action(action: String, entity_name: String) -> String:
+	var display_name := _short_label(WorldInteraction.display_entity_name({"name": entity_name}))
+	match action:
+		"talk":
+			return "Talk: %s" % display_name
+		"attack":
+			return "Attack: %s" % display_name
+		"trade", "pick up":
+			return "Use: %s" % display_name
+		"examine":
+			return "Examine: %s" % display_name
+		"rest":
+			return "Rest"
+	return action.capitalize()
+
+
+static func _label_for_tile_command(command: String, tile_name: String) -> String:
+	if command.begins_with("open "):
+		return "Use: %s" % WorldInteraction.display_tile_name(tile_name)
+	if command.begins_with("examine "):
+		return "Examine: %s" % WorldInteraction.display_tile_name(tile_name)
+	if command.begins_with("move to"):
+		return "Use Ground"
+	return "Examine Area"

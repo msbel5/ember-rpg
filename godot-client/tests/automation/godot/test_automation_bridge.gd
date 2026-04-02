@@ -20,6 +20,7 @@ func _run_tests() -> void:
 	await _test_mouse_input()
 	await _test_keyboard_input()
 	await _test_text_input()
+	await _test_semantic_node_actions()
 	await _test_viewport_capture()
 	await _test_playback_steps()
 	await _cleanup()
@@ -77,8 +78,33 @@ func _test_text_input() -> void:
 	_assert_true(probe.get_node("Margin/VBox/InputField").text == "Chaos", "automation bridge forwards text input")
 
 
+func _test_semantic_node_actions() -> void:
+	var probe = bridge.current_scene_root
+	_write_json(state.command_file, {"seq": 7, "action": "focus_node", "node_path": "Margin/VBox/InputField"})
+	await bridge.poll_once()
+	_assert_true(probe.get_viewport().gui_get_focus_owner() == probe.get_node("Margin/VBox/InputField"), "automation bridge can focus nodes semantically")
+
+	_write_json(state.command_file, {"seq": 8, "action": "set_text_node", "node_path": "Margin/VBox/InputField", "text": "Semantic"})
+	await bridge.poll_once()
+	_assert_true(probe.get_node("Margin/VBox/InputField").text == "Semantic", "automation bridge can set text on a node")
+
+	_write_json(state.command_file, {"seq": 9, "action": "select_option_node", "node_path": "Margin/VBox/ProbeOption", "option_text": "Beta"})
+	await bridge.poll_once()
+	_assert_true(probe.last_option_index == 1, "automation bridge can select option button entries semantically")
+
+	_write_json(state.command_file, {"seq": 10, "action": "activate_node", "node_path": "Margin/VBox/ProbeButton"})
+	await bridge.poll_once()
+	_assert_true(probe.button_press_count == 1, "automation bridge can activate buttons semantically")
+
+	_write_json(state.command_file, {"seq": 11, "action": "query_state", "node_path": "Margin/VBox/ProbeButton"})
+	await bridge.poll_once()
+	var query_result = _read_json(state.result_file)
+	_assert_true(str(query_result.get("scene_name", "")) == "InputProbe", "automation bridge reports the active scene name")
+	_assert_true(bool(query_result.get("node_exists", false)), "automation bridge reports semantic node existence")
+
+
 func _test_viewport_capture() -> void:
-	_write_json(state.command_file, {"seq": 7, "action": "capture_viewport", "tag": "probe"})
+	_write_json(state.command_file, {"seq": 12, "action": "capture_viewport", "tag": "probe"})
 	await bridge.poll_once()
 	var result = _read_json(state.result_file)
 	var capture_path = str(result.get("path", ""))

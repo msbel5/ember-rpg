@@ -12,6 +12,11 @@ def test_action_step_defaults_are_safe() -> None:
     assert step.wait_ms == 0
     assert step.capture_os is False
     assert step.capture_viewport is False
+    assert step.scene_name is None
+    assert step.node_path is None
+    assert step.option_text is None
+    assert step.normalized_x is None
+    assert step.normalized_y is None
     assert step.metadata == {}
 
 
