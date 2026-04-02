@@ -1,7 +1,6 @@
 extends RefCounted
 class_name CreationStepGenreQuestion
 
-const CreationCatalog = preload("res://scripts/ui/creation_catalog.gd")
 
 
 static func build_genre_section(owner) -> Control:

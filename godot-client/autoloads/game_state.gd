@@ -2,7 +2,7 @@ extends Node
 
 # GameState Singleton — central state store
 # Updated after every HTTP response from backend
-const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
+# ResponseNormalizer available via class_name
 const RESUME_SEED_TEXT := "You step back into the campaign."
 
 # Session / Campaign

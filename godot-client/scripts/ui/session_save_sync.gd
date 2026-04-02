@@ -1,7 +1,6 @@
 extends RefCounted
 class_name SessionSaveSync
 
-const ProfileStorage = preload("res://scripts/ui/profile_storage.gd")
 
 
 var _owner

@@ -1,7 +1,6 @@
 extends RefCounted
 class_name CreationWizardState
 
-const CreationCatalog = preload("res://scripts/ui/creation_catalog.gd")
 
 
 static func current_question(payload: Dictionary) -> Dictionary:

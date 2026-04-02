@@ -1,14 +1,9 @@
 extends Control
 
-const ResponseNormalizer = preload("res://scripts/net/response_normalizer.gd")
 const ScreenshotCapture = preload("res://scripts/ui/screenshot_capture.gd")
-const EmberTheme = preload("res://scripts/ui/ember_theme.gd")
-const ProfileStorage = preload("res://scripts/ui/profile_storage.gd")
-const StatusBarWidget = preload("res://scripts/ui/status_bar_widget.gd")
-const DialogOverlayScript = preload("res://scripts/ui/dialog_overlay.gd")
-const CombatOverlayScript = preload("res://scripts/ui/combat_overlay.gd")
-const SessionSaveSync = preload("res://scripts/ui/session_save_sync.gd")
-const SessionWorldSync = preload("res://scripts/ui/session_world_sync.gd")
+# ResponseNormalizer, EmberTheme, ProfileStorage, StatusBarWidget,
+# DialogOverlay, CombatOverlay, SessionSaveSync, SessionWorldSync
+# are all available globally via class_name — no preload needed.
 
 const PROFILE_PATH := ProfileStorage.PROFILE_PATH
 const QUICKSAVE_SLOT := "quicksave"
@@ -86,7 +81,7 @@ func _install_status_bar() -> void:
 
 
 func _install_dialog_overlay() -> void:
-	_dialog_overlay = DialogOverlayScript.new()
+	_dialog_overlay = DialogOverlay.new()
 	var world_pane = $MainMargin/MainVBox/ContentSplit/WorldPane
 	if world_pane != null:
 		world_pane.add_child(_dialog_overlay)
@@ -94,7 +89,7 @@ func _install_dialog_overlay() -> void:
 
 
 func _install_combat_overlay() -> void:
-	_combat_overlay_widget = CombatOverlayScript.new()
+	_combat_overlay_widget = CombatOverlay.new()
 	var overlay_canvas = $OverlayCanvas
 	var world_pane = $MainMargin/MainVBox/ContentSplit/WorldPane
 	if overlay_canvas != null:

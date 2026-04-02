@@ -1,11 +1,6 @@
 extends PanelContainer
 class_name CreationWizard
 
-const CreationCatalog = preload("res://scripts/ui/creation_catalog.gd")
-const CreationWizardState = preload("res://scripts/ui/creation_wizard_state.gd")
-const CreationStepGenreQuestion = preload("res://scripts/ui/creation_step_genre_question.gd")
-const CreationStepHistoryRoll = preload("res://scripts/ui/creation_step_history_roll.gd")
-const CreationStepBuildDossier = preload("res://scripts/ui/creation_step_build_dossier.gd")
 
 const STEP_GENRE := 0
 const STEP_QUESTION := 1

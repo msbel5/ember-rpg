@@ -1,8 +1,6 @@
 extends RefCounted
 class_name CreationStepBuildDossier
 
-const CreationCatalog = preload("res://scripts/ui/creation_catalog.gd")
-const CreationWizardState = preload("res://scripts/ui/creation_wizard_state.gd")
 
 
 static func build_build_section(owner) -> Control:

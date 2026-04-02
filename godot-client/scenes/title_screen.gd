@@ -1,17 +1,15 @@
 extends Control
 
 const ScreenshotCapture = preload("res://scripts/ui/screenshot_capture.gd")
-const EmberTheme = preload("res://scripts/ui/ember_theme.gd")
-const ProfileStorage = preload("res://scripts/ui/profile_storage.gd")
-const CreationWizardScript = preload("res://scripts/ui/creation_wizard.gd")
+# EmberTheme, ProfileStorage, CreationWizard available via class_name
 
 const PROFILE_PATH := ProfileStorage.PROFILE_PATH
-const STEP_GENRE := CreationWizardScript.STEP_GENRE
-const STEP_QUESTIONNAIRE := CreationWizardScript.STEP_QUESTION
-const STEP_HISTORY_REVEAL := CreationWizardScript.STEP_HISTORY
-const STEP_ROLL := CreationWizardScript.STEP_ROLL
-const STEP_BUILD := CreationWizardScript.STEP_BUILD
-const STEP_SUMMARY := CreationWizardScript.STEP_DOSSIER
+const STEP_GENRE := CreationWizard.STEP_GENRE
+const STEP_QUESTIONNAIRE := CreationWizard.STEP_QUESTION
+const STEP_HISTORY_REVEAL := CreationWizard.STEP_HISTORY
+const STEP_ROLL := CreationWizard.STEP_ROLL
+const STEP_BUILD := CreationWizard.STEP_BUILD
+const STEP_SUMMARY := CreationWizard.STEP_DOSSIER
 
 @onready var title_menu: Control = $TitleMenu
 @onready var status_label: Label = $StatusLabel

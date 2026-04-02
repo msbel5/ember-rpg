@@ -1,8 +1,6 @@
 extends RefCounted
 class_name CreationStepHistoryRoll
 
-const CreationCatalog = preload("res://scripts/ui/creation_catalog.gd")
-const CreationWizardState = preload("res://scripts/ui/creation_wizard_state.gd")
 
 
 static func build_history_section(owner) -> Control:
@@ -104,8 +102,10 @@ static func on_history_tick(owner) -> void:
 
 
 static func render_roll(owner) -> void:
-	var current_roll: Array = owner._payload.get("current_roll", [])
-	var saved_roll: Array = owner._payload.get("saved_roll", [])
+	var raw_roll = owner._payload.get("current_roll", [])
+	var current_roll: Array = raw_roll if raw_roll is Array else []
+	var raw_saved = owner._payload.get("saved_roll", null)
+	var saved_roll: Array = raw_saved if raw_saved is Array else []
 	var total := 0
 	for value in current_roll:
 		total += int(value)
