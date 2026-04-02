@@ -63,23 +63,20 @@ func _test_backend_routes() -> void:
 	game_state.reset()
 	game_state.player = {"name": "Chaos"}
 
-	probe.load_game("slot_a", noop)
-	_assert_true(probe.last_request.get("path", "") == "/game/session/load/slot_a", "load_game uses session load route")
+	probe.list_player_campaign_saves("Chaos", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/saves/player/Chaos", "list_player_campaign_saves uses the player campaign save route")
 
-	probe.list_saves(noop)
-	_assert_true(probe.last_request.get("path", "") == "/game/saves/Chaos", "list_saves uses player-scoped route")
-
-	probe.get_inventory("session_1", noop)
-	_assert_true(probe.last_request.get("path", "") == "/game/session/session_1/inventory", "get_inventory uses inventory route")
-
-	probe.save_game("session_1", noop, "campfire", "Chaos")
+	probe.save_campaign("camp_1", noop, "campfire", "Chaos")
 	var save_body = JSON.parse_string(str(probe.last_request.get("body", "{}")))
-	_assert_true(probe.last_request.get("path", "") == "/game/session/session_1/save", "save_game uses session save route")
-	_assert_true(save_body is Dictionary and save_body.get("player_id", "") == "Chaos", "save_game sends player_id")
-	_assert_true(save_body is Dictionary and save_body.get("slot_name", "") == "campfire", "save_game sends optional slot_name")
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/camp_1/save", "save_campaign uses the canonical campaign save route")
+	_assert_true(save_body is Dictionary and save_body.get("player_id", "") == "Chaos", "save_campaign sends player_id")
+	_assert_true(save_body is Dictionary and save_body.get("slot_name", "") == "campfire", "save_campaign sends optional slot_name")
 
-	probe.delete_save("campfire", noop)
-	_assert_true(probe.last_request.get("path", "") == "/game/saves/campfire", "delete_save uses the save delete route")
+	probe.load_campaign("campfire", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/load/campfire", "load_campaign uses the canonical campaign load route")
+
+	probe.delete_campaign_save("campfire", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/saves/campfire", "delete_campaign_save uses the canonical campaign delete route")
 	probe.free()
 
 
@@ -144,8 +141,8 @@ func _test_campaign_backend_routes() -> void:
 	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/camp_1/save", "save_campaign uses the campaign save route")
 	_assert_true(save_body is Dictionary and save_body.get("slot_name", "") == "frontier", "save_campaign sends slot_name")
 
-	probe.list_campaign_saves("camp_1", noop)
-	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/camp_1/saves", "list_campaign_saves uses the campaign save listing route")
+	probe.list_player_campaign_saves("Chaos", noop)
+	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/saves/player/Chaos", "list_player_campaign_saves uses the player campaign save listing route")
 
 	probe.load_campaign("frontier", noop)
 	_assert_true(probe.last_request.get("path", "") == "/game/campaigns/load/frontier", "load_campaign uses the campaign load route")
@@ -857,7 +854,13 @@ func _test_ui_panels() -> void:
 			"max_hp": 20,
 			"spell_points": 5,
 			"max_spell_points": 8,
-			"ap": {"current": 3, "max": 4},
+			"turn_resources": {
+				"action_available": true,
+				"bonus_action_available": true,
+				"reaction_available": true,
+				"movement_remaining": 6,
+				"speed": 6,
+			},
 			"xp": 45,
 			"gold": 12,
 		},
@@ -1029,8 +1032,8 @@ func _test_ui_panels() -> void:
 			"active": "Chaos",
 			"ended": false,
 			"combatants": [
-				{"name": "Chaos", "hp": 18, "max_hp": 20, "ap": 2, "dead": false, "resources": {"movement_remaining": 3, "speed": 6}},
-				{"name": "Wolf", "hp": 7, "max_hp": 9, "ap": 2, "dead": false, "resources": {"movement_remaining": 4, "speed": 8}},
+				{"name": "Chaos", "hp": 18, "max_hp": 20, "dead": false, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 3, "speed": 6}},
+				{"name": "Wolf", "hp": 7, "max_hp": 9, "dead": false, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 4, "speed": 8}},
 			],
 		},
 		"active_quests": [{"quest_id": "q1", "title": "Bread Run", "status": "active", "deadline": 16}],
@@ -1059,8 +1062,8 @@ func _test_ui_panels() -> void:
 			"active": "Wolf",
 			"ended": false,
 			"combatants": [
-				{"name": "Chaos", "hp": 18, "max_hp": 20, "ap": 2, "dead": false, "resources": {"movement_remaining": 3, "speed": 6}},
-				{"name": "Wolf", "hp": 7, "max_hp": 9, "ap": 2, "dead": false, "resources": {"movement_remaining": 4, "speed": 8}},
+				{"name": "Chaos", "hp": 18, "max_hp": 20, "dead": false, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 3, "speed": 6}},
+				{"name": "Wolf", "hp": 7, "max_hp": 9, "dead": false, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 4, "speed": 8}},
 			],
 		},
 	})

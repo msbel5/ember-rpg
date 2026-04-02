@@ -46,16 +46,16 @@ class SaveRepositoryMixin:
         return str(filepath)
 
     @staticmethod
-    def _campaign_v2_state(save_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _campaign_state_root(save_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         session_state = save_data.get("session_state", {})
         if not isinstance(session_state, dict):
             return None
         campaign_state = session_state.get("campaign_state", {})
         if not isinstance(campaign_state, dict):
             return None
-        campaign_v2 = campaign_state.get("campaign_v2")
-        if isinstance(campaign_v2, dict):
-            return campaign_v2
+        campaign_root = campaign_state.get("campaign")
+        if isinstance(campaign_root, dict):
+            return campaign_root
         return None
 
     def read_save(self, slot_name: str) -> Optional[Dict[str, Any]]:
@@ -71,7 +71,7 @@ class SaveRepositoryMixin:
             return None
         if save_data is None:
             return None
-        campaign_v2 = self._campaign_v2_state(save_data)
+        campaign_root = self._campaign_state_root(save_data)
         return {
             "slot_name": save_data.get("slot_name", slot_name),
             "player_name": save_data.get("player_name", "Unknown"),
@@ -81,8 +81,8 @@ class SaveRepositoryMixin:
             "game_time": save_data.get("game_time_display", ""),
             "schema_version": save_data.get("schema_version", ""),
             "session_id": save_data.get("session_state", {}).get("session_id"),
-            "campaign_compatible": campaign_v2 is not None,
-            "campaign_id": str(campaign_v2.get("campaign_id", "")) if campaign_v2 else "",
+            "campaign_compatible": campaign_root is not None,
+            "campaign_id": str(campaign_root.get("campaign_id", "")) if campaign_root else "",
         }
 
     def find_slot_by_session_id(self, session_id: str) -> Optional[str]:
@@ -114,7 +114,7 @@ class SaveRepositoryMixin:
         for path in sorted(self.save_dir.glob("*.json"), key=os.path.getmtime, reverse=True):
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
-                campaign_v2 = self._campaign_v2_state(data)
+                campaign_root = self._campaign_state_root(data)
                 entry = {
                     "slot_name": data.get("slot_name", path.stem),
                     "player_name": data.get("player_name", "Unknown"),
@@ -124,8 +124,8 @@ class SaveRepositoryMixin:
                     "game_time": data.get("game_time_display", ""),
                     "schema_version": data.get("schema_version", ""),
                     "session_id": data.get("session_state", {}).get("session_id"),
-                    "campaign_compatible": campaign_v2 is not None,
-                    "campaign_id": str(campaign_v2.get("campaign_id", "")) if campaign_v2 else "",
+                    "campaign_compatible": campaign_root is not None,
+                    "campaign_id": str(campaign_root.get("campaign_id", "")) if campaign_root else "",
                 }
                 if player_name and entry["player_name"] != player_name:
                     continue

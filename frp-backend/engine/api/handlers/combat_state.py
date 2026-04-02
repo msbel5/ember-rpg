@@ -28,11 +28,10 @@ class CombatStateMixin:
                     "entity_id": getattr(combatant.character, "_entity_id", None),
                     "hp": combatant.character.hp,
                     "max_hp": combatant.character.max_hp,
-                    "ap": combatant.ap,
                     "dead": combatant.is_dead,
                     "initiative": combatant.initiative,
                     "conditions": list(getattr(combatant.character, "conditions", [])),
-                    "resources": {
+                    "turn_resources": {
                         "action_available": bool(getattr(combatant, "action_available", True)),
                         "bonus_action_available": bool(getattr(combatant, "bonus_action_available", True)),
                         "reaction_available": bool(getattr(combatant, "reaction_available", True)),

@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import copy
+import logging
 from typing import Any, Optional
 
+from engine.api.campaign.debug_trace import trace_event
 from engine.api.action_parser import ParsedAction
 from engine.api.game_session import GameSession
 from engine.kernel import (
@@ -19,6 +21,9 @@ from engine.core.dm_agent import DMEvent, EventType, SceneType
 from engine.world.body_parts import BodyPartTracker
 
 from engine.api.runtime_constants import HOSTILE_KEYWORDS, XP_REWARDS
+
+
+logger = logging.getLogger(__name__)
 
 
 class CombatActionsMixin:
@@ -162,6 +167,16 @@ class CombatActionsMixin:
                         sync_body_state_to_tracker(defender_record.body_state, entity_ref.body)
                         entity_record["body"] = entity_ref.body
                         state_changes["kernel_strike"] = resolution.to_dict()
+                        trace_event(
+                            "combat_resolution",
+                            campaign_id=str(session.campaign_state.get("campaign_id", "")),
+                            attacker_id=attacker_record.identity.actor_id,
+                            defender_id=defender_record.identity.actor_id,
+                            hit_part=resolution.hit_part_id,
+                            armor_absorbed=int(resolution.armor_absorbed),
+                            effective_damage=int(resolution.effective_damage),
+                            defender_viable=bool(resolution.defender_viable),
+                        )
                 corrected_hp = target_combatant.character.hp + raw_damage - effective_damage
                 target_combatant.character.hp = max(0, min(target_combatant.character.max_hp, corrected_hp))
                 target_combatant.is_dead = target_combatant.character.hp <= 0

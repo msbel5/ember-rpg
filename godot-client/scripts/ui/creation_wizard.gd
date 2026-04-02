@@ -34,6 +34,7 @@ var _seed_input: LineEdit
 var _advanced_section: VBoxContainer
 var _advanced_toggle: Button
 var _profile_hint: Label
+var _genre_card_buttons: Dictionary = {}
 var _sections: Dictionary = {}
 var _step_label: Label
 var _preview_title: Label
@@ -55,6 +56,7 @@ var _class_grid: GridContainer
 var _alignment_grid: GridContainer
 var _skill_grid: GridContainer
 var _skill_budget_label: Label
+var _dossier_text: RichTextLabel
 var _dossier_identity: RichTextLabel
 var _dossier_world: RichTextLabel
 var _dossier_history: RichTextLabel
@@ -253,10 +255,14 @@ func _build_ui() -> void:
 	_advanced_section = genre_refs.advanced_section
 	_advanced_toggle = genre_refs.advanced_toggle
 	_profile_hint = genre_refs.profile_hint
+	_genre_card_buttons = genre_refs.genre_cards
 	_advanced_toggle.pressed.connect(func() -> void:
 		_advanced_open = not _advanced_open
 		CreationStepGenreQuestion.sync_advanced_section(self)
 	)
+	for adapter_id in _genre_card_buttons.keys():
+		var card: Button = _genre_card_buttons[adapter_id]
+		card.pressed.connect(_on_genre_card_pressed.bind(str(adapter_id)))
 	_sections["genre"] = genre_refs.root
 
 	var question_refs := CreationStepGenreQuestion.build_question_section()
@@ -285,6 +291,7 @@ func _build_ui() -> void:
 	_sections["build"] = build_refs.root
 
 	var dossier_refs := CreationStepBuildDossier.build_dossier_section()
+	_dossier_text = dossier_refs.dossier_text
 	_dossier_identity = dossier_refs.dossier_identity
 	_dossier_world = dossier_refs.dossier_world
 	_dossier_history = dossier_refs.dossier_history
@@ -332,6 +339,7 @@ func _render() -> void:
 		control.visible = key == section_order[_step]
 	_step_label.text = CreationWizardState.step_name(_step)
 	CreationStepGenreQuestion.sync_advanced_section(self)
+	CreationStepGenreQuestion.render_genre_cards(self)
 	CreationStepGenreQuestion.render_question(self)
 	CreationStepHistoryRoll.render_history(self)
 	CreationStepHistoryRoll.render_roll(self)
@@ -434,6 +442,11 @@ func _shift_stat_value(ability: String, direction: int) -> void:
 func _seed_value() -> int:
 	var raw := _seed_input.text.strip_edges()
 	return int(raw) if raw.is_valid_int() else -1
+
+
+func _on_genre_card_pressed(adapter_id: String) -> void:
+	_selected_adapter_id = adapter_id
+	_render()
 
 
 func _reset_state() -> void:

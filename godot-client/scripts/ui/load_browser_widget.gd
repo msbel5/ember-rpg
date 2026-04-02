@@ -110,7 +110,7 @@ func refresh() -> void:
 		_clear_rows()
 		return
 	_set_busy(true, "Loading saves for %s..." % player_id)
-	Backend.list_saves(_on_saves_listed, player_id)
+	Backend.list_player_campaign_saves(player_id, _on_saves_listed)
 
 
 func populate_saves(entries: Array) -> void:

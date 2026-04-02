@@ -25,71 +25,6 @@ func get_base_url() -> String:
 
 # --- API Methods ---
 
-func create_session(player_name: String, player_class: String, callback: Callable) -> void:
-	var body = JSON.stringify({"player_name": player_name, "player_class": player_class})
-	_post("/game/session/new", body, callback)
-
-func start_creation(player_name: String, callback: Callable, location: String = "") -> void:
-	var body = JSON.stringify({
-		"player_name": player_name,
-		"location": location if not location.is_empty() else null
-	})
-	_post("/game/session/creation/start", body, callback)
-
-func finalize_creation(creation_id: String, player_class: String, alignment: String, callback: Callable, location: String = "") -> void:
-	var body = JSON.stringify({
-		"player_class": player_class,
-		"alignment": alignment,
-		"location": location if not location.is_empty() else null
-	})
-	_post("/game/session/creation/%s/finalize" % creation_id, body, callback)
-
-func submit_action(session_id: String, input_text: String, callback: Callable) -> void:
-	var body = JSON.stringify({"input": input_text})
-	_post("/game/session/%s/action" % session_id, body, callback)
-
-func get_session(session_id: String, callback: Callable) -> void:
-	_http_get("/game/session/%s" % session_id, callback)
-
-func delete_session(session_id: String, callback: Callable) -> void:
-	_http_delete("/game/session/%s" % session_id, callback)
-
-func get_map(session_id: String, callback: Callable) -> void:
-	_http_get("/game/session/%s/map" % session_id, callback)
-
-func get_inventory(session_id: String, callback: Callable) -> void:
-	_http_get("/game/session/%s/inventory" % session_id, callback)
-
-func enter_scene(session_id: String, location: String, callback: Callable, location_type: String = "") -> void:
-	var p = _get_player_state()
-	var player_name = p.get("name", "Adventurer")
-	var player_level = int(p.get("level", 1))
-	var body = JSON.stringify({
-		"session_id": session_id,
-		"location": location,
-		"location_type": location_type if not location_type.is_empty() else _infer_location_type(location),
-		"player_name": player_name,
-		"player_level": player_level
-	})
-	_post("/game/scene/enter", body, callback)
-
-func save_game(session_id: String, callback: Callable, slot_name: String = "", player_id: String = "") -> void:
-	var body = {
-		"player_id": _resolve_player_id(player_id),
-	}
-	if not slot_name.is_empty():
-		body["slot_name"] = slot_name
-	_post("/game/session/%s/save" % session_id, JSON.stringify(body), callback)
-
-func load_game(save_id: String, callback: Callable) -> void:
-	_post("/game/session/load/%s" % save_id, "{}", callback)
-
-func list_saves(callback: Callable, player_id: String = "") -> void:
-	_http_get("/game/saves/%s" % _resolve_player_id(player_id), callback)
-
-func delete_save(save_id: String, callback: Callable) -> void:
-	_http_delete("/game/saves/%s" % save_id, callback)
-
 func create_campaign(player_name: String, player_class: String, adapter_id: String, callback: Callable, profile_id: String = "standard", world_seed: int = -1) -> void:
 	var body := {
 		"player_name": player_name,
@@ -165,8 +100,14 @@ func save_campaign(campaign_id: String, callback: Callable, slot_name: String = 
 func list_campaign_saves(campaign_id: String, callback: Callable) -> void:
 	_http_get("/game/campaigns/%s/saves" % campaign_id, callback)
 
+func list_player_campaign_saves(player_id: String, callback: Callable) -> void:
+	_http_get("/game/campaigns/saves/player/%s" % _resolve_player_id(player_id), callback)
+
 func load_campaign(save_id: String, callback: Callable) -> void:
 	_post("/game/campaigns/load/%s" % save_id, "{}", callback)
+
+func delete_campaign_save(save_id: String, callback: Callable) -> void:
+	_http_delete("/game/campaigns/saves/%s" % save_id, callback)
 
 func delete_campaign(campaign_id: String, callback: Callable) -> void:
 	_http_delete("/game/campaigns/%s" % campaign_id, callback)
@@ -310,12 +251,12 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 func _not_found_message_for(path: String) -> String:
 	if path.begins_with("/game/campaigns/load/"):
 		return "Save not found. Choose another save."
+	if path.begins_with("/game/campaigns/saves/player/"):
+		return "No campaign saves found for that player."
+	if path.begins_with("/game/campaigns/saves/"):
+		return "Campaign save not found."
 	if path.begins_with("/game/campaigns/creation/"):
 		return "Character creation expired. Start a new campaign."
 	if path.begins_with("/game/campaigns/"):
 		return "Campaign not found. Start a new campaign or load a different save."
-	if path.begins_with("/game/saves/"):
-		return "No saves found for that player."
-	if path.begins_with("/game/session/"):
-		return "Session not found. Start a new game?"
 	return "Requested content was not found."

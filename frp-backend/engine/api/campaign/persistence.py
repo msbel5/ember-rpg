@@ -28,7 +28,7 @@ from engine.kernel import (
 from engine.worldgen import snapshot_world
 
 from .session import build_world_entities
-from .settlement import build_character_sheet
+from .settlement import build_character_sheet, current_player_turn_resources
 from .live_kernel import ensure_kernel_runtime, serialize_kernel_runtime
 from .world import (
     build_current_region_summary,
@@ -51,6 +51,8 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     payload_scene = str(session_data.get("scene", "exploration"))
     if isinstance(combat_state, dict) and combat_state and not bool(combat_state.get("ended", False)):
         payload_scene = "combat"
+    player_payload = copy.deepcopy(session_data["player"])
+    player_payload["turn_resources"] = current_player_turn_resources(context.session)
     return {
         "world": {
             "seed": context.world.seed,
@@ -69,7 +71,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "world_graph": build_world_graph(context.world),
         "travel_options": build_travel_options(context.world),
         "current_region_summary": build_current_region_summary(context.world, context.region_snapshot),
-        "player": session_data["player"],
+        "player": player_payload,
         "scene": payload_scene,
         "location": session_data["location"],
         "combat": combat_state,
@@ -88,29 +90,30 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
 
 def persist_campaign_state(context: "CampaignContext") -> None:
     kernel_payload = build_kernel_payload(context)
-    context.session.campaign_state["campaign_v2"] = {
+    context.session.campaign_state["campaign"] = {
         "campaign_id": context.campaign_id,
         "adapter_id": context.adapter_id,
         "profile_id": context.profile_id,
         "seed": context.seed,
         "active_region_id": context.region_snapshot.region_id,
         "world_snapshot": snapshot_world(context.world),
-        "kernel_world_state": kernel_payload["world_state"],
-        "kernel_game_state": kernel_payload["game_state"],
-        "kernel_actors": kernel_payload["actors"],
-        "kernel_jobs": kernel_payload["jobs"],
-        "kernel_reactions": kernel_payload["reactions"],
-        "kernel_worksites": kernel_payload["worksites"],
-        "kernel_colony_pressure": kernel_payload["colony_pressure"],
-        "kernel_production_ledger": kernel_payload["production_ledger"],
-        "kernel_path_authority": kernel_payload["path_authority"],
-        "kernel_local_map_state": kernel_payload["local_map_state"],
-        "kernel_military": kernel_payload["military"],
-        "kernel_systems": kernel_payload["systems"],
-        "kernel_stores": kernel_payload["stores"],
+        "world_state": kernel_payload["world_state"],
+        "game_state": kernel_payload["game_state"],
+        "actors": kernel_payload["actors"],
+        "jobs": kernel_payload["jobs"],
+        "reactions": kernel_payload["reactions"],
+        "worksites": kernel_payload["worksites"],
+        "colony_pressure": kernel_payload["colony_pressure"],
+        "production_ledger": kernel_payload["production_ledger"],
+        "path_authority": kernel_payload["path_authority"],
+        "local_map_state": kernel_payload["local_map_state"],
+        "military": kernel_payload["military"],
+        "systems": kernel_payload["systems"],
+        "stores": kernel_payload["stores"],
         "settlement_state": copy.deepcopy(context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-20:]),
     }
+    context.session.campaign_state.pop("campaign_v2", None)
 
 
 def build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:

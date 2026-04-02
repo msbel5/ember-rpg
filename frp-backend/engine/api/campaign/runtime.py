@@ -5,6 +5,7 @@ import copy
 import uuid
 from typing import Any, Callable, Optional
 
+from engine.api.campaign.debug_trace import snapshot_hash, trace_event
 from engine.api.game_engine import GameEngine
 from engine.api.save_system import SaveSystem
 from engine.core.character_creation import ABILITY_ORDER, CreationState, assign_stats_to_class
@@ -262,7 +263,14 @@ class CampaignRuntime:
         persist_campaign_state(context)
         chosen_player = (player_id or context.session.player.name or "player").strip() or "player"
         chosen_slot = slot_name.strip() if slot_name else f"{campaign_id[:8]}_{context.adapter_id}"
+        hashed_snapshot = snapshot_hash(campaign_payload(context))
         self.save_system.save_game(context.session, chosen_slot, player_name=chosen_player)
+        trace_event(
+            "campaign_save_written",
+            campaign_id=context.campaign_id,
+            slot_name=chosen_slot,
+            snapshot_hash=hashed_snapshot,
+        )
         return self.save_system.get_save_metadata(chosen_slot) or {
             "slot_name": chosen_slot,
             "timestamp": "",
@@ -278,15 +286,29 @@ class CampaignRuntime:
             if entry.get("campaign_compatible") and str(entry.get("campaign_id", "")) == context.campaign_id
         ]
 
+    def list_player_campaign_saves(self, player_id: str) -> list[dict[str, Any]]:
+        return [
+            entry
+            for entry in self.save_system.list_saves(player_name=player_id)
+            if entry.get("campaign_compatible")
+        ]
+
+    def delete_campaign_save(self, save_id: str) -> dict[str, Any]:
+        if not self.save_system.delete_save(save_id):
+            raise FileNotFoundError(save_id)
+        trace_event("campaign_save_deleted", save_id=save_id)
+        return {"status": "deleted", "save_id": save_id, "slot_name": save_id}
+
     def load_campaign(self, save_id: str) -> CampaignContext:
         session = self.save_system.load_game(save_id, strict=True)
         if session is None:
             raise FileNotFoundError(save_id)
-        meta = dict(session.campaign_state.get("campaign_v2") or {})
+        meta = dict(session.campaign_state.get("campaign") or {})
         if not meta:
-            raise ValueError(f"Save {save_id} does not contain campaign_v2 state")
-        if "kernel_game_state" in meta:
-            GameState.from_dict(dict(meta["kernel_game_state"]))
+            trace_event("campaign_save_validation_failed", save_id=save_id, reason="missing_campaign_root")
+            raise ValueError(f"Save {save_id} does not contain canonical campaign state")
+        if "game_state" in meta:
+            GameState.from_dict(dict(meta["game_state"]))
         world = load_world_snapshot(meta["world_snapshot"])
         active_region_id = str(meta.get("active_region_id") or world.simulation_snapshot.active_region_id)
         region_snapshot = realize_region(world, active_region_id)
@@ -319,6 +341,12 @@ class CampaignRuntime:
             seed=context.seed,
         )
         ensure_kernel_runtime(context, rebuild_projection=True)
+        trace_event(
+            "campaign_load_completed",
+            campaign_id=context.campaign_id,
+            save_id=save_id,
+            snapshot_hash=snapshot_hash(campaign_payload(context)),
+        )
         return context
 
     def run_command(
@@ -331,6 +359,14 @@ class CampaignRuntime:
         context = self.get_campaign(campaign_id)
         command_args = dict(args or {})
         issued = resolve_command_text(input_text=input_text, shortcut=shortcut, args=command_args)
+        pre_hash = snapshot_hash(campaign_payload(context))
+        trace_event(
+            "campaign_command_input",
+            campaign_id=context.campaign_id,
+            command_text=issued,
+            shortcut=str(shortcut or ""),
+            pre_snapshot_hash=pre_hash,
+        )
         lower = issued.lower()
         if lower.startswith("travel"):
             narrative = handle_travel(context, issued, command_args)
@@ -386,13 +422,22 @@ class CampaignRuntime:
         context.settlement_state["season"] = context.world.simulation_snapshot.season
         persist_campaign_state(context)
         dialog_payload = build_dialog_payload(context, narrative) if command_type == "avatar" else {}
+        final_payload = campaign_payload(context)
+        trace_event(
+            "campaign_command_output",
+            campaign_id=context.campaign_id,
+            command_text=issued,
+            command_type=command_type,
+            pre_snapshot_hash=pre_hash,
+            post_snapshot_hash=snapshot_hash(final_payload),
+        )
         return {
             "campaign_id": context.campaign_id,
             "narrative": narrative,
             "command_type": command_type,
             "hours_advanced": hours_advanced,
             "generated_events": generated_events,
-            "campaign": campaign_payload(context),
+            "campaign": final_payload,
             **dialog_payload,
         }
 

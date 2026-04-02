@@ -11,7 +11,7 @@ func _init(owner) -> void:
 
 
 func on_quick_save_requested() -> void:
-	save_session(_owner.QUICKSAVE_SLOT, false)
+	save_campaign(_owner.QUICKSAVE_SLOT, false)
 
 
 func open_save_load_panel() -> void:
@@ -23,23 +23,11 @@ func open_save_load_panel() -> void:
 
 
 func on_save_requested(slot_name: String) -> void:
-	save_session(slot_name, true)
+	save_campaign(slot_name, true)
 
 
 func save_session(slot_name: String, keep_panel_open: bool) -> void:
-	if GameState.has_active_campaign():
-		save_campaign(slot_name, keep_panel_open)
-		return
-	if GameState.session_id.is_empty():
-		_owner.narrative_panel.append_system_text("[color=red]No active session to save.[/color]")
-		return
-	var normalized_slot := slot_name.strip_edges()
-	if normalized_slot.is_empty():
-		normalized_slot = GameState.last_save_slot if not GameState.last_save_slot.is_empty() else _owner.QUICKSAVE_SLOT
-	if keep_panel_open:
-		_owner.save_load_panel.set_status("Saving %s..." % normalized_slot)
-	_owner._set_waiting(true)
-	Backend.save_game(GameState.session_id, on_save_completed.bind(keep_panel_open), normalized_slot)
+	save_campaign(slot_name, keep_panel_open)
 
 
 func save_campaign(slot_name: String, keep_panel_open: bool) -> void:
@@ -72,20 +60,15 @@ func on_save_completed(data, keep_panel_open: bool) -> void:
 
 
 func refresh_save_list() -> void:
-	if GameState.has_active_campaign():
-		if GameState.campaign_id.is_empty():
-			_owner.save_load_panel.set_status("No active campaign is available for save browsing.")
-			_owner.save_load_panel.set_save_summaries([])
-			return
-		_owner.save_load_panel.set_busy(true)
-		Backend.list_campaign_saves(GameState.campaign_id, on_save_list_loaded)
-		return
-	if GameState.player.is_empty():
+	var player_id := str(GameState.player.get("name", "")).strip_edges()
+	if player_id.is_empty():
+		player_id = ProfileStorage.preferred_resume_player_id()
+	if player_id.is_empty():
 		_owner.save_load_panel.set_status("No active adventurer is available for save browsing.")
 		_owner.save_load_panel.set_save_summaries([])
 		return
 	_owner.save_load_panel.set_busy(true)
-	Backend.list_saves(on_save_list_loaded)
+	Backend.list_player_campaign_saves(player_id, on_save_list_loaded)
 
 
 func on_save_list_loaded(data) -> void:
@@ -103,42 +86,7 @@ func on_load_requested(save_id: String) -> void:
 		return
 	_owner.save_load_panel.set_status("Loading %s..." % save_id)
 	_owner._set_waiting(true)
-	if GameState.has_active_campaign():
-		Backend.load_campaign(save_id, on_campaign_load_completed.bind(save_id))
-	else:
-		Backend.load_game(save_id, on_load_completed.bind(save_id))
-
-
-func on_load_completed(data, requested_save_id: String) -> void:
-	if data == null:
-		_owner._set_waiting(false)
-		return
-	var session_data = data.get("session_data", {})
-	if not (session_data is Dictionary):
-		_owner._set_waiting(false)
-		_owner.save_load_panel.set_status("Invalid save payload received.")
-		return
-	GameState.reset()
-	_owner.narrative_panel.load_history([])
-	GameState.update_from_response(session_data)
-	GameState.last_save_slot = str(data.get("slot_name", requested_save_id))
-	remember_player_id()
-	remember_resume_player_id()
-	_owner.save_load_panel.close_panel()
-	_owner.narrative_panel.append_system_text("[color=green]Loaded %s.[/color]" % GameState.last_save_slot)
-	if GameState.session_id.is_empty():
-		_owner._set_waiting(false)
-		return
-	_owner._pending_sync_callbacks = 3
-	Backend.get_session(GameState.session_id, on_loaded_session_resynced)
-	Backend.get_map(GameState.session_id, _owner._world_sync.on_map_resynced)
-	Backend.get_inventory(GameState.session_id, _owner._world_sync.on_inventory_resynced)
-
-
-func on_loaded_session_resynced(data) -> void:
-	if data != null:
-		GameState.update_from_response(data)
-	_owner._world_sync.complete_followup_sync()
+	Backend.load_campaign(save_id, on_campaign_load_completed.bind(save_id))
 
 
 func on_delete_save_requested(save_id: String) -> void:
@@ -146,7 +94,7 @@ func on_delete_save_requested(save_id: String) -> void:
 		return
 	_owner.save_load_panel.set_busy(true)
 	_owner.save_load_panel.set_status("Deleting %s..." % save_id)
-	Backend.delete_save(save_id, on_delete_save_completed.bind(save_id))
+	Backend.delete_campaign_save(save_id, on_delete_save_completed.bind(save_id))
 
 
 func on_delete_save_completed(data, save_id: String) -> void:

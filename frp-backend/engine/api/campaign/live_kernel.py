@@ -46,15 +46,15 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
     if context.kernel_runtime and not rebuild_projection:
         _sync_runtime_from_session(context, context.kernel_runtime)
         return context.kernel_runtime
-    meta = dict(context.session.campaign_state.get("campaign_v2") or {})
+    meta = dict(context.session.campaign_state.get("campaign") or {})
     runtime = {
         "world_state": saved_or(
-            meta.get("kernel_world_state"),
+            meta.get("world_state"),
             WorldState,
             lambda: WorldState.from_dict(build_canonical_world_state(context.world)),
         ),
         "game_state": saved_or(
-            meta.get("kernel_game_state"),
+            meta.get("game_state"),
             GameState,
             lambda: build_canonical_game_state(
                 context.session,
@@ -64,37 +64,37 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
                 active_site_id=active_site_id(context),
             ),
         ),
-        "actors": _load_actors(meta.get("kernel_actors"), context),
-        "jobs": saved_list_or(meta.get("kernel_jobs"), JobRecord, lambda: []),
-        "reactions": saved_list_or(meta.get("kernel_reactions"), ReactionDef, lambda: []),
-        "worksites": saved_list_or(meta.get("kernel_worksites"), WorksiteRecord, lambda: []),
+        "actors": _load_actors(meta.get("actors"), context),
+        "jobs": saved_list_or(meta.get("jobs"), JobRecord, lambda: []),
+        "reactions": saved_list_or(meta.get("reactions"), ReactionDef, lambda: []),
+        "worksites": saved_list_or(meta.get("worksites"), WorksiteRecord, lambda: []),
         "colony_pressure": saved_or(
-            meta.get("kernel_colony_pressure"),
+            meta.get("colony_pressure"),
             type(colony_pressure_from_settlement(context.settlement_state)),
             lambda: colony_pressure_from_settlement(context.settlement_state),
         ),
         "production_ledger": saved_or(
-            meta.get("kernel_production_ledger"),
+            meta.get("production_ledger"),
             ProductionLedger,
             lambda: production_ledger_from_settlement(context.settlement_state),
         ),
         "path_authority": saved_or(
-            meta.get("kernel_path_authority"),
+            meta.get("path_authority"),
             PathAuthorityState,
             lambda: path_authority_from_world(context.world, context.region_snapshot),
         ),
         "local_map_state": saved_or(
-            meta.get("kernel_local_map_state"),
+            meta.get("local_map_state"),
             type(local_map_state_from_region(context.region_snapshot)),
             lambda: local_map_state_from_region(context.region_snapshot),
         ),
         "military": saved_or(
-            meta.get("kernel_military"),
+            meta.get("military"),
             MilitaryState,
             lambda: military_state_from_settlement(context.settlement_state),
         ),
-        "systems": load_systems(meta.get("kernel_systems"), context),
-        "stores": load_stores(meta.get("kernel_stores"), context),
+        "systems": load_systems(meta.get("systems"), context),
+        "stores": load_stores(meta.get("stores"), context),
     }
     context.kernel_runtime = runtime
     rebase_projection_slices(context, runtime, force=True)
@@ -248,6 +248,7 @@ def _sync_runtime_to_session(context: "CampaignContext", runtime: dict[str, Any]
 def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
     target.action_points = fresh.action_points
     target.max_action_points = fresh.max_action_points
+    target.turn_resources = dict(fresh.turn_resources)
     target.alive = target.alive and fresh.alive
     for key, value in fresh.stats.items():
         if key in {"hp", "max_hp"} or key not in target.stats:

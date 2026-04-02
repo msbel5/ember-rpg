@@ -199,11 +199,12 @@ func _refresh(combat_state: Dictionary) -> void:
 func _refresh_buttons(combat_state: Dictionary) -> void:
 	var is_player_turn = _is_player_turn(combat_state)
 	var living_enemies := _living_enemies(combat_state.get("combatants", []))
-	_attack_button.disabled = _is_waiting or living_enemies.is_empty() or not is_player_turn
-	_defend_button.disabled = _is_waiting or not is_player_turn
-	_use_button.disabled = _is_waiting or not is_player_turn
-	_disengage_button.disabled = _is_waiting or not is_player_turn
-	_flee_button.disabled = _is_waiting or not is_player_turn
+	var action_available := _active_player_action_available(combat_state)
+	_attack_button.disabled = _is_waiting or living_enemies.is_empty() or not is_player_turn or not action_available
+	_defend_button.disabled = _is_waiting or not is_player_turn or not action_available
+	_use_button.disabled = _is_waiting or not is_player_turn or not action_available
+	_disengage_button.disabled = _is_waiting or not is_player_turn or not action_available
+	_flee_button.disabled = _is_waiting or not is_player_turn or not action_available
 
 
 func _build_turn_chip(combatant: Dictionary, active_name: String) -> Control:
@@ -241,11 +242,7 @@ func _build_row(combatant: Dictionary, active_name: String) -> Control:
 	top.add_child(name_label)
 
 	var detail := Label.new()
-	detail.text = "HP %d/%d  AP %d" % [
-		int(combatant.get("hp", 0)),
-		int(combatant.get("max_hp", 1)),
-		int(combatant.get("ap", 0)),
-	]
+	detail.text = _combatant_turn_summary(combatant)
 	top.add_child(detail)
 
 	var hp := ProgressBar.new()
@@ -277,6 +274,25 @@ func _is_player_combatant(combatant: Dictionary) -> bool:
 
 func _is_player_turn(combat_state: Dictionary) -> bool:
 	return str(combat_state.get("active", "")).strip_edges() == str(GameState.player.get("name", "")).strip_edges()
+
+
+func _active_player_action_available(combat_state: Dictionary) -> bool:
+	for combatant in combat_state.get("combatants", []):
+		if combatant is Dictionary and _is_player_combatant(combatant):
+			return bool(combatant.get("turn_resources", {}).get("action_available", true))
+	return true
+
+
+func _combatant_turn_summary(combatant: Dictionary) -> String:
+	var turn_resources: Dictionary = combatant.get("turn_resources", {})
+	var action_text = "Act ready" if bool(turn_resources.get("action_available", false)) else "Act spent"
+	return "HP %d/%d  |  %s  |  Move %d/%d" % [
+		int(combatant.get("hp", 0)),
+		int(combatant.get("max_hp", 1)),
+		action_text,
+		int(turn_resources.get("movement_remaining", 0)),
+		int(turn_resources.get("speed", 0)),
+	]
 
 
 func _clear_rows() -> void:

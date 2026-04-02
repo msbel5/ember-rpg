@@ -165,7 +165,7 @@ func _update_actor(actor: Node2D, entry: Dictionary, tile_pos: Vector2i) -> void
 	# If NPC moved more than 1 tile, reconstruct path and animate step-by-step
 	var tile_dist: float = Vector2(old_tile).distance_to(Vector2(tile_pos))
 	if tile_dist > 1.5 and bucket != "player":
-		var path: Array[Vector2i] = _path_walker.compute_path(old_tile, tile_pos, GameState.map_data)
+		var path: Array[Vector2i] = _path_walker.compute_path(old_tile, tile_pos, _current_map_data())
 		if path.size() > 1:
 			_animate_path(actor, path, bucket)
 			return
@@ -321,3 +321,12 @@ func _adapter_id() -> String:
 		if gs != null:
 			return str(gs.adapter_id)
 	return "fantasy_ember"
+
+
+func _current_map_data() -> Dictionary:
+	var loop = Engine.get_main_loop()
+	if loop is SceneTree:
+		var gs = loop.root.get_node_or_null("GameState")
+		if gs != null:
+			return gs.map_data
+	return {}

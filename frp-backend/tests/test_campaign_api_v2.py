@@ -6,8 +6,7 @@ from fastapi.testclient import TestClient
 
 from engine.api.campaign_runtime import CampaignRuntime
 from engine.api.game_engine import GameEngine
-from engine.api.save_routes import SaveManagerCompat
-from engine.api import campaign_routes, save_routes
+from engine.api import campaign_routes
 from main import app
 
 
@@ -70,7 +69,7 @@ def test_campaign_client_health_endpoint_reports_required_capabilities():
         "campaign_creation": True,
         "campaign_runtime": True,
         "campaign_save_load": True,
-        "schema_version": "2.0",
+        "schema_version": "3.0",
     }
 
 
@@ -155,7 +154,7 @@ def test_campaign_save_and_load_round_trip():
     campaign_id = payload["campaign_id"]
     saved = client.post(
         f"/game/campaigns/{campaign_id}/save",
-        json={"player_id": "CampaignTester", "slot_name": "campaign_v2_slot"},
+        json={"player_id": "CampaignTester", "slot_name": "campaign_v3_slot"},
     )
     assert saved.status_code == 200
     save_id = saved.json()["save_id"]
@@ -181,9 +180,7 @@ def test_campaign_save_listing_filters_legacy_and_other_campaign_slots(tmp_path:
     runtime.save_system.save_dir = tmp_path / "campaign_api_saves"
     runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
     old_runtime = campaign_routes.campaign_runtime
-    old_save_manager = save_routes.save_manager
     campaign_routes.campaign_runtime = runtime
-    save_routes.save_manager = SaveManagerCompat(save_system=runtime.save_system)
     try:
         first = client.post(
             "/game/campaigns",
@@ -211,20 +208,23 @@ def test_campaign_save_listing_filters_legacy_and_other_campaign_slots(tmp_path:
         legacy_session = GameEngine(llm=None).new_session("CampaignTester", "warrior", location="Harbor Town")
         runtime.save_system.save_game(legacy_session, "legacy_slot", player_name="CampaignTester")
 
-        player_saves = client.get("/game/saves/CampaignTester")
+        player_saves = client.get("/game/campaigns/saves/player/CampaignTester")
         assert player_saves.status_code == 200
         player_entries = {entry["save_id"]: entry for entry in player_saves.json()}
         assert set(player_entries) == {"first_slot", "second_slot"}
-        assert player_entries["first_slot"]["campaign_compatible"] is True
-        assert player_entries["second_slot"]["campaign_compatible"] is True
-
-        detail = client.get("/game/saves/file/legacy_slot")
-        assert detail.status_code == 200
-        assert detail.json()["campaign_compatible"] is False
+        assert player_entries["first_slot"]["player_id"] == "CampaignTester"
+        assert player_entries["second_slot"]["player_id"] == "CampaignTester"
 
         scoped = client.get(f"/game/campaigns/{first_id}/saves")
         assert scoped.status_code == 200
         assert [entry["save_id"] for entry in scoped.json()] == ["first_slot"]
     finally:
         campaign_routes.campaign_runtime = old_runtime
-        save_routes.save_manager = old_save_manager
+
+
+def test_legacy_session_routes_are_not_mounted():
+    create_response = client.post("/game/session/new", json={"player_name": "Legacy", "player_class": "warrior"})
+    save_response = client.get("/game/saves/Legacy")
+
+    assert create_response.status_code == 404
+    assert save_response.status_code == 404

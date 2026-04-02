@@ -46,9 +46,10 @@ func _refresh() -> void:
 
 	var living_enemies := _living_enemies(combatants)
 	summary_label.text = "%d combatant(s), %d hostile target(s)" % [combatants.size(), living_enemies.size()]
-	attack_button.disabled = _is_waiting or living_enemies.is_empty() or not is_player_turn
-	disengage_button.disabled = _is_waiting or not is_player_turn
-	inventory_button.disabled = _is_waiting or not is_player_turn
+	var action_available := _active_player_action_available(combat_state)
+	attack_button.disabled = _is_waiting or living_enemies.is_empty() or not is_player_turn or not action_available
+	disengage_button.disabled = _is_waiting or not is_player_turn or not action_available
+	inventory_button.disabled = _is_waiting or not is_player_turn or not action_available
 
 	_clear_rows()
 	for combatant in combatants:
@@ -93,14 +94,14 @@ func _build_row(combatant: Dictionary) -> Control:
 	row.add_child(hp_progress)
 
 	var detail_label = Label.new()
-	var resources: Dictionary = combatant.get("resources", {})
+	var turn_resources: Dictionary = combatant.get("turn_resources", {})
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_label.text = "HP %d/%d  AP %d  Move %d/%d" % [
+	detail_label.text = "HP %d/%d  |  %s  |  Move %d/%d" % [
 		int(combatant.get("hp", 0)),
 		int(combatant.get("max_hp", 1)),
-		int(combatant.get("ap", 0)),
-		int(resources.get("movement_remaining", 0)),
-		int(resources.get("speed", 0)),
+		"Act ready" if bool(turn_resources.get("action_available", false)) else "Act spent",
+		int(turn_resources.get("movement_remaining", 0)),
+		int(turn_resources.get("speed", 0)),
 	]
 	row.add_child(detail_label)
 
@@ -133,6 +134,13 @@ func _is_player_combatant(combatant: Dictionary) -> bool:
 
 func _is_player_turn(combat_state: Dictionary) -> bool:
 	return str(combat_state.get("active", "")).strip_edges() == str(GameState.player.get("name", "")).strip_edges()
+
+
+func _active_player_action_available(combat_state: Dictionary) -> bool:
+	for combatant in combat_state.get("combatants", []):
+		if combatant is Dictionary and _is_player_combatant(combatant):
+			return bool(combatant.get("turn_resources", {}).get("action_available", true))
+	return true
 
 
 func _clear_rows() -> void:

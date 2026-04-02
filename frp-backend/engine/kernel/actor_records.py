@@ -19,6 +19,7 @@ class ActorRecord:
     action_points: int
     max_action_points: int
     alive: bool
+    turn_resources: dict[str, int | bool] = field(default_factory=dict)
     stats: dict[str, int | float] = field(default_factory=dict)
     skills: dict[str, int] = field(default_factory=dict)
     needs: NeedState = field(default_factory=NeedState)
@@ -31,11 +32,21 @@ class ActorRecord:
     raw_payload: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        return serialize_value(self)
+        payload = serialize_value(self)
+        payload.pop("action_points", None)
+        payload.pop("max_action_points", None)
+        return payload
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ActorRecord":
         payload = dict(data)
+        if not isinstance(payload.get("turn_resources"), dict):
+            payload["turn_resources"] = _turn_resources_from_legacy_points(
+                int(payload.get("action_points", 0) or 0),
+                int(payload.get("max_action_points", 0) or 0),
+            )
+        payload.setdefault("action_points", int(payload["turn_resources"].get("movement_remaining", 0)))
+        payload.setdefault("max_action_points", int(payload["turn_resources"].get("speed", 0)))
         payload["identity"] = ActorIdentity.from_dict(payload["identity"])
         payload["position"] = ActorPosition.from_dict(payload["position"])
         needs = payload.get("needs")
@@ -85,6 +96,10 @@ def actor_record_from_entity(
         position=position,
         action_points=entity.ap,
         max_action_points=entity.max_ap,
+        turn_resources=_turn_resources_from_legacy_points(
+            int(getattr(entity, "ap", 0) or 0),
+            int(getattr(entity, "max_ap", 0) or 0),
+        ),
         alive=entity.alive,
         stats={"hp": entity.hp, "max_hp": entity.max_hp},
         skills=dict(entity.skills or {}),
@@ -138,6 +153,10 @@ def actor_record_from_character(
         position=ActorPosition(x=int(position[0]), y=int(position[1]), region_id=region_id, site_id=site_id),
         action_points=int(getattr(character, "ap", 0) or 0),
         max_action_points=int(getattr(character, "max_ap", getattr(character, "ap", 0) or 0) or 0),
+        turn_resources=_turn_resources_from_legacy_points(
+            int(getattr(character, "ap", 0) or 0),
+            int(getattr(character, "max_ap", getattr(character, "ap", 0) or 0) or 0),
+        ),
         alive=int(getattr(character, "hp", 0)) > 0,
         stats=dict(getattr(character, "stats", {}) or {}),
         skills=dict(getattr(character, "skills", {}) or {}),
@@ -160,6 +179,17 @@ def sync_body_state_to_tracker(body_state: BodyState, tracker: BodyPartTracker) 
     for part_id, state in body_state.parts.items():
         tracker.max_hp[part_id] = int(state.max_hp)
         tracker.current_hp[part_id] = max(0, int(state.current_hp))
+
+
+def _turn_resources_from_legacy_points(current_points: int, max_points: int) -> dict[str, int | bool]:
+    speed = max(6, int(max_points or current_points or 6))
+    return {
+        "action_available": int(current_points) > 0,
+        "bonus_action_available": int(current_points) > 1,
+        "reaction_available": True,
+        "movement_remaining": max(0, int(current_points or speed)),
+        "speed": speed,
+    }
 
 
 __all__ = [

@@ -54,6 +54,14 @@ static func build_dossier_section() -> Dictionary:
 	section.name = "DossierSection"
 	section.add_theme_constant_override("separation", 14)
 
+	var dossier_text := RichTextLabel.new()
+	dossier_text.name = "DossierText"
+	dossier_text.visible = false
+	dossier_text.bbcode_enabled = true
+	dossier_text.fit_content = true
+	dossier_text.scroll_active = false
+	section.add_child(dossier_text)
+
 	var left := VBoxContainer.new()
 	left.name = "DossierPrimary"
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -117,6 +125,7 @@ static func build_dossier_section() -> Dictionary:
 
 	return {
 		"root": section,
+		"dossier_text": dossier_text,
 		"dossier_identity": dossier_identity,
 		"dossier_world": dossier_world,
 		"dossier_history": dossier_history,
@@ -140,6 +149,10 @@ static func render_dossier(owner) -> void:
 	var alignment_label: String = str(owner._selected_alignment)
 	if ALIGNMENT_INFO.has(alignment_label):
 		alignment_label = "%s (%s)" % [ALIGNMENT_INFO[owner._selected_alignment].name, owner._selected_alignment]
+	var world_premise := str(genesis.get("world_premise", "Shape the world."))
+	var starting_pressure := str(genesis.get("starting_pressure", ""))
+	var quest_seeds: Array = genesis.get("quest_seed_themes", [])
+	var quest_seed_text := ", ".join(quest_seeds) if not quest_seeds.is_empty() else "No quest seeds surfaced yet."
 
 	owner._dossier_identity.text = (
 		"[b]%s[/b]\nClass: %s\nAlignment: %s\nSkills: %s"
@@ -158,12 +171,11 @@ static func render_dossier(owner) -> void:
 		label.add_theme_font_size_override("font_size", 15)
 		owner._dossier_stats_grid.add_child(label)
 
-	# Dossier right panel shows Quest Seeds (no duplicate of preview sidebar)
-	var quest_seeds: Array = genesis.get("quest_seed_themes", [])
-	if not quest_seeds.is_empty():
-		owner._dossier_world.text = "[b]Quest Seeds[/b]\n%s" % ", ".join(quest_seeds)
-	else:
-		owner._dossier_world.text = ""
+	owner._dossier_world.text = "[b]World Premise[/b]\n%s\n\n[b]Starting Pressure[/b]\n%s\n\n[b]Quest Seeds[/b]\n%s" % [
+		world_premise,
+		starting_pressure if not starting_pressure.is_empty() else "No immediate pressure recorded.",
+		quest_seed_text,
+	]
 
 	var timeline_entries: Array = CreationWizardState.history_timeline(owner._payload)
 	var history_sections: Array[String] = []
@@ -175,6 +187,14 @@ static func render_dossier(owner) -> void:
 			% [int(entry.get("year", 0)), str(entry.get("headline", "")), str(entry.get("summary", ""))]
 		)
 	owner._dossier_history.text = "[b]Chronicle Highlights[/b]\n\n%s" % "\n\n".join(history_sections)
+	if owner._dossier_text != null:
+		owner._dossier_text.text = "[b]World Premise[/b]\n%s\n\n[b]History[/b]\n%s\n\n[b]Build[/b]\n%s  |  %s\nSkills: %s" % [
+			world_premise,
+			"\n\n".join(history_sections),
+			owner._selected_class_id.capitalize(),
+			alignment_label,
+			", ".join(owner._selected_skills),
+		]
 
 
 static func render_preview(owner) -> void:

@@ -152,16 +152,16 @@ def actor_bab(actor: ActorRecord) -> int:
 
 def attack_stat(actor: ActorRecord, weapon: ItemStack | None) -> int:
     use_dex = bool(weapon and (weapon.payload.get("finesse") or weapon.payload.get("ranged")))
-    stat_name = "DEX" if use_dex else "STR"
+    stat_name = "AGI" if use_dex else "MIG"
     if stat_name in actor.stats:
         return compute_effective_stat(actor, stat_name)
-    fallback = ("AGI",) if use_dex else ("MIG",)
+    fallback = ("DEX",) if use_dex else ("STR",)
     return stat_value(actor, stat_name, *fallback)
 
 
 def defense_dex_stat(actor: ActorRecord) -> int:
-    if "DEX" in actor.stats:
-        return compute_effective_stat(actor, "DEX")
+    if "AGI" in actor.stats:
+        return compute_effective_stat(actor, "AGI")
     return stat_value(actor, "AGI", "DEX")
 
 

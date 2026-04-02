@@ -24,11 +24,34 @@ const INVENTORY_COMMAND_MARKERS := [
 
 
 static func normalize_combat(data: Dictionary) -> Dictionary:
+	var combat_state: Dictionary = {}
 	if data.has("combat_state") and data["combat_state"] is Dictionary:
-		return data["combat_state"]
-	if data.has("combat") and data["combat"] is Dictionary:
-		return data["combat"]
-	return {}
+		combat_state = data["combat_state"]
+	elif data.has("combat") and data["combat"] is Dictionary:
+		combat_state = data["combat"]
+	if combat_state.is_empty():
+		return {}
+	var normalized := combat_state.duplicate(true)
+	var normalized_combatants: Array = []
+	for combatant in normalized.get("combatants", []):
+		if not (combatant is Dictionary):
+			normalized_combatants.append(combatant)
+			continue
+		var normalized_combatant: Dictionary = combatant.duplicate(true)
+		if not normalized_combatant.has("turn_resources"):
+			if normalized_combatant.has("resources") and normalized_combatant["resources"] is Dictionary:
+				normalized_combatant["turn_resources"] = normalized_combatant["resources"]
+			else:
+				normalized_combatant["turn_resources"] = {
+					"action_available": true,
+					"bonus_action_available": true,
+					"reaction_available": true,
+					"movement_remaining": 6,
+					"speed": 6,
+				}
+		normalized_combatants.append(normalized_combatant)
+	normalized["combatants"] = normalized_combatants
+	return normalized
 
 
 static func flatten_campaign_response(data: Dictionary, current_map: Dictionary = {}) -> Dictionary:

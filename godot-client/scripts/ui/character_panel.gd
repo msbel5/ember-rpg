@@ -86,9 +86,17 @@ func _build_sheet_text(sheet: Dictionary) -> String:
 func _build_vitals_text() -> String:
 	var hp = _int_value(GameState.player.get("hp", 0), 0)
 	var max_hp = _int_value(GameState.player.get("max_hp", hp), hp)
-	var ap = _int_value(GameState.player.get("action_points", GameState.player.get("ap", 0)), 0)
-	var max_ap = _int_value(GameState.player.get("max_action_points", GameState.player.get("max_ap", ap)), ap)
-	return "HP %d/%d  |  AP %d/%d" % [hp, maxi(max_hp, hp), ap, maxi(max_ap, ap)]
+	var turn_resources: Dictionary = GameState.player.get("turn_resources", {})
+	if turn_resources.is_empty():
+		return "HP %d/%d  |  Turn idle" % [hp, maxi(max_hp, hp)]
+	return "HP %d/%d  |  %s  |  %s  |  Move %d/%d" % [
+		hp,
+		maxi(max_hp, hp),
+		"Action ready" if bool(turn_resources.get("action_available", false)) else "Action spent",
+		"Bonus ready" if bool(turn_resources.get("bonus_action_available", false)) else "Bonus spent",
+		int(turn_resources.get("movement_remaining", 0)),
+		int(turn_resources.get("speed", 0)),
+	]
 
 
 func _resolve_template_name(sheet: Dictionary) -> String:

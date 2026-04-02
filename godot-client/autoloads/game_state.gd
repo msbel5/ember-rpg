@@ -6,7 +6,7 @@ extends Node
 const RESUME_SEED_TEXT := "You step back into the campaign."
 
 # Session / Campaign
-var active_runtime: String = "session"
+var active_runtime: String = "campaign"
 var session_id: String = ""
 var campaign_id: String = ""
 var adapter_id: String = "fantasy_ember"
@@ -230,7 +230,7 @@ func update_from_response(data: Dictionary) -> void:
 	state_updated.emit()
 
 func reset() -> void:
-	active_runtime = "session"
+	active_runtime = "campaign"
 	session_id = ""
 	campaign_id = ""
 	adapter_id = "fantasy_ember"

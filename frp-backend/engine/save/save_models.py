@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any, Dict
 
 
-CURRENT_SCHEMA_VERSION = "2.0"
+CURRENT_SCHEMA_VERSION = "3.0"
 
 
 @dataclass

@@ -9,9 +9,31 @@ static func build_genre_section() -> Dictionary:
 	section.add_theme_constant_override("separation", 14)
 	var heading := Label.new()
 	heading.name = "IdentityLabel"
-	heading.text = "Name your commander and optionally pin a deterministic seed."
+	heading.text = "Choose the campaign genre, name your commander, and optionally pin a deterministic seed."
 	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	section.add_child(heading)
+
+	var genre_cards := HBoxContainer.new()
+	genre_cards.name = "GenreCards"
+	genre_cards.add_theme_constant_override("separation", 10)
+	section.add_child(genre_cards)
+
+	var genre_group := ButtonGroup.new()
+	var fantasy_card := _build_genre_card(
+		"FantasyCard",
+		"Fantasy Ember",
+		"Ash, iron, frontier keeps, and oathbound warbands.",
+		genre_group
+	)
+	genre_cards.add_child(fantasy_card)
+
+	var scifi_card := _build_genre_card(
+		"SciFiCard",
+		"Sci-Fi Frontier",
+		"Pressure domes, colony ledgers, and hard vacuum logistics.",
+		genre_group
+	)
+	genre_cards.add_child(scifi_card)
 
 	var name_input := LineEdit.new()
 	name_input.name = "NameInput"
@@ -47,6 +69,10 @@ static func build_genre_section() -> Dictionary:
 		"advanced_section": advanced_section,
 		"advanced_toggle": advanced_toggle,
 		"profile_hint": profile_hint,
+		"genre_cards": {
+			"fantasy_ember": fantasy_card,
+			"scifi_frontier": scifi_card,
+		},
 	}
 
 
@@ -119,3 +145,44 @@ static func sync_advanced_section(owner) -> void:
 		owner._advanced_toggle.text = "Hide Advanced Settings" if owner._advanced_open else "Show Advanced Settings"
 	if owner._profile_hint != null:
 		owner._profile_hint.text = "World profile: %s" % CreationCatalog.humanize_id(owner._selected_profile_id)
+
+
+static func render_genre_cards(owner) -> void:
+	for adapter_id in owner._genre_card_buttons.keys():
+		var card: Button = owner._genre_card_buttons[adapter_id]
+		var is_selected: bool = str(adapter_id) == str(owner._selected_adapter_id)
+		card.button_pressed = is_selected
+		card.add_theme_stylebox_override("normal", _genre_card_style(is_selected))
+		card.add_theme_stylebox_override("hover", _genre_card_style(is_selected))
+		card.add_theme_stylebox_override("pressed", _genre_card_style(is_selected))
+		card.add_theme_stylebox_override("focus", _genre_card_style(is_selected))
+
+
+static func _build_genre_card(node_name: String, title: String, subtitle: String, group: ButtonGroup) -> Button:
+	var button := Button.new()
+	button.name = node_name
+	button.toggle_mode = true
+	button.button_group = group
+	button.custom_minimum_size = Vector2(0, 96)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.text = "%s\n%s" % [title, subtitle]
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	return button
+
+
+static func _genre_card_style(selected: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.set_corner_radius_all(10)
+	style.content_margin_left = 12
+	style.content_margin_top = 10
+	style.content_margin_right = 12
+	style.content_margin_bottom = 10
+	if selected:
+		style.bg_color = Color(0.18, 0.12, 0.08)
+		style.border_color = Color(0.84, 0.68, 0.28)
+		style.set_border_width_all(2)
+	else:
+		style.bg_color = Color(0.10, 0.11, 0.14)
+		style.border_color = Color(0.32, 0.34, 0.40)
+		style.set_border_width_all(1)
+	return style

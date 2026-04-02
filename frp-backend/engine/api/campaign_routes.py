@@ -251,6 +251,23 @@ def list_campaign_saves(campaign_id: str):
     ]
 
 
+@router.get("/campaigns/saves/player/{player_id}", response_model=list[CampaignSaveSummary])
+def list_player_campaign_saves(player_id: str):
+    saves = campaign_runtime.list_player_campaign_saves(player_id)
+    return [
+        CampaignSaveSummary(
+            save_id=str(entry.get("slot_name", "")),
+            slot_name=str(entry.get("slot_name", "")),
+            player_id=str(entry.get("player_name", "")),
+            timestamp=str(entry.get("timestamp", "")),
+            schema_version=str(entry.get("schema_version", "")),
+            location=entry.get("location"),
+            game_time=entry.get("game_time"),
+        )
+        for entry in saves
+    ]
+
+
 @router.post("/campaigns/load/{save_id}", response_model=CampaignSnapshotResponse)
 def load_campaign(save_id: str):
     try:
@@ -263,6 +280,14 @@ def load_campaign(save_id: str):
         context.campaign_id,
         narrative=f"Loaded campaign from {save_id}.",
     )
+
+
+@router.delete("/campaigns/saves/{save_id}")
+def delete_campaign_save(save_id: str):
+    try:
+        return campaign_runtime.delete_campaign_save(save_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=f"Save not found: {save_id}") from exc
 
 
 @router.delete("/campaigns/{campaign_id}")

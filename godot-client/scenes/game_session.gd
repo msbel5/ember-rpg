@@ -146,10 +146,7 @@ func _submit_action(text: String) -> void:
 	if text.is_empty() or is_waiting:
 		return
 	command_bar.remember_command(text)
-	if GameState.has_active_campaign():
-		_submit_campaign_action(text)
-		return
-	if GameState.session_id.is_empty():
+	if GameState.campaign_id.is_empty():
 		narrative_panel.append_system_text("[color=red]No active game. Start a new adventure.[/color]")
 		return
 	var hp := int(GameState.player.get("hp", 1))
@@ -158,46 +155,10 @@ func _submit_action(text: String) -> void:
 		return
 	_set_waiting(true)
 	command_bar.clear_input()
-	Backend.submit_action(GameState.session_id, text, _on_action_response.bind(text, GameState.location))
-	await get_tree().create_timer(3.0).timeout
-	if is_waiting:
-		narrative_panel.show_thinking_indicator()
-
-
-func _submit_campaign_action(text: String) -> void:
-	if GameState.campaign_id.is_empty():
-		narrative_panel.append_system_text("[color=red]No active campaign. Start a new campaign.[/color]")
-		return
-	_set_waiting(true)
-	command_bar.clear_input()
 	Backend.submit_campaign_command(GameState.campaign_id, text, _on_campaign_action_response.bind(text))
 	await get_tree().create_timer(3.0).timeout
 	if is_waiting:
 		narrative_panel.show_thinking_indicator()
-
-
-func _on_action_response(data, issued_text: String, previous_location: String) -> void:
-	if data == null:
-		_finish_turn_sync()
-		return
-	GameState.update_from_response(data)
-	Backend.get_session(GameState.session_id, _on_session_resynced.bind(issued_text, previous_location))
-
-
-func _on_session_resynced(data, issued_text: String, previous_location: String) -> void:
-	if data != null:
-		GameState.update_from_response(data)
-	var needs_map_refresh := GameState.map_data.is_empty() or (not previous_location.is_empty() and GameState.location != previous_location)
-	var needs_inventory_refresh := ResponseNormalizer.command_requires_inventory_refresh(issued_text) or GameState.inventory_items.is_empty()
-	_pending_sync_callbacks = 0
-	if needs_map_refresh:
-		_pending_sync_callbacks += 1
-		Backend.get_map(GameState.session_id, _world_sync.on_map_resynced)
-	if needs_inventory_refresh:
-		_pending_sync_callbacks += 1
-		Backend.get_inventory(GameState.session_id, _world_sync.on_inventory_resynced)
-	if _pending_sync_callbacks == 0:
-		_finish_turn_sync()
 
 
 func _on_campaign_action_response(data, _issued_text: String) -> void:

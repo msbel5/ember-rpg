@@ -29,6 +29,7 @@ func _refresh() -> void:
 	if player.is_empty():
 		player_info.text = "No active hero"
 		location_label.text = "No live survey"
+		ap_label.text = "Turn idle"
 		return
 
 	var player_name = str(player.get("name", "Unknown"))
@@ -55,28 +56,12 @@ func _refresh() -> void:
 	xp_bar.max_value = 100
 	xp_bar.value = int(player.get("xp", 0)) % 100
 
-	var ap_payload = player.get("ap", null)
-	var action_points = int(player.get("action_points", 0))
-	var max_action_points = int(player.get("max_action_points", player.get("max_ap", 0)))
-	if ap_payload is Dictionary:
-		action_points = int(ap_payload.get("current", action_points))
-		max_action_points = int(ap_payload.get("max", max_action_points))
-	elif ap_payload != null:
-		action_points = int(ap_payload)
-	max_action_points = maxi(max_action_points, 0)
-	if max_action_points > 0:
-		ap_label.text = "AP %d/%d" % [action_points, max_action_points]
-	else:
-		ap_label.text = "Scene %s" % GameState.scene.capitalize()
+	ap_label.text = _build_turn_summary(player)
 
 	var display_location = GameState.get_display_location()
 	if display_location == "Unknown" and not GameState.settlement_state.is_empty():
 		display_location = str(GameState.settlement_state.get("name", "Unknown"))
-	var npc_count = GameState.entities.get("npcs", []).size()
-	var enemy_count = GameState.entities.get("enemies", []).size()
-	var item_count = GameState.entities.get("items", []).size()
-	var encounter_summary = "  |  %d locals  %d threats  %d loot" % [npc_count, enemy_count, item_count]
-	location_label.text = "%s  |  %s%s" % [display_location, GameState.scene.capitalize(), encounter_summary]
+	location_label.text = "%s  |  %s" % [display_location, GameState.scene.capitalize()]
 	location_label.queue_redraw()
 
 
@@ -126,3 +111,19 @@ func _on_scene_changed(_new_scene: String) -> void:
 
 func _on_settlement_updated(_settlement: Dictionary) -> void:
 	call_deferred("_refresh")
+
+
+func _build_turn_summary(player: Dictionary) -> String:
+	var turn_resources: Dictionary = player.get("turn_resources", {})
+	if turn_resources.is_empty():
+		return "Turn idle"
+	var action_text = "Act ready" if bool(turn_resources.get("action_available", false)) else "Act spent"
+	var bonus_text = "Bonus ready" if bool(turn_resources.get("bonus_action_available", false)) else "Bonus spent"
+	var reaction_text = "React ready" if bool(turn_resources.get("reaction_available", false)) else "React spent"
+	return "%s  |  %s  |  %s  |  Move %d/%d" % [
+		action_text,
+		bonus_text,
+		reaction_text,
+		int(turn_resources.get("movement_remaining", 0)),
+		int(turn_resources.get("speed", 0)),
+	]

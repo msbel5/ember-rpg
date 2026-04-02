@@ -104,7 +104,7 @@ func _refresh_world_graph(world_graph: Dictionary) -> void:
 	map_texture.texture = ImageTexture.create_from_image(image)
 	_graph_texture_size = Vector2i(image_width, image_height)
 	_refresh_route_buttons()
-	summary_label.text = "Travel Network\nCurrent: %s\nRoutes: %d available" % [
+	summary_label.text = "World Graph\nActive: %s\nRoutes: %d available" % [
 		_current_region_label(world_graph),
 		GameState.travel_options.size(),
 	]
@@ -119,7 +119,7 @@ func _refresh_local_map() -> void:
 	if map_data.is_empty():
 		map_texture.texture = null
 		summary_label.text = "No live survey. Map feed is offline."
-		intel_text.text = "[b]Survey[/b]\nAwaiting a live terrain feed."
+		intel_text.text = "[b]Scene Read[/b]  Awaiting a live terrain feed."
 		return
 	var width = int(map_data.get("width", 0))
 	var height = int(map_data.get("height", 0))
@@ -127,7 +127,7 @@ func _refresh_local_map() -> void:
 	if width <= 0 or height <= 0 or tiles.is_empty():
 		map_texture.texture = null
 		summary_label.text = "Placeholder map loaded. Awaiting live campaign terrain." if bool(map_data.get("placeholder", false)) else "No live survey. Map feed is offline."
-		intel_text.text = "[b]Survey[/b]\nPlaceholder silhouettes only."
+		intel_text.text = "[b]Scene Read[/b]  Placeholder silhouettes only."
 		return
 
 	var image = Image.create(width, height, false, Image.FORMAT_RGBA8)
@@ -289,8 +289,17 @@ func _build_world_graph_intel(world_graph: Dictionary) -> String:
 			str(selected.get("name", "")),
 			str(selected.get("region_id", "")),
 		]
-	return "[b]Region[/b]  %s\n[b]Survey[/b]  %s%s%s" % [
+	var reachable: Array[String] = []
+	for option in GameState.travel_options:
+		if option is Dictionary:
+			reachable.append("%s (%sh)" % [
+				str(option.get("destination_name", "Unknown")),
+				int(option.get("travel_hours", 0)),
+			])
+	var reachable_text = ", ".join(reachable) if not reachable.is_empty() else "No reachable destinations."
+	return "[b]World Graph[/b]  Active %s\n[b]Reachable[/b]  %s\n[b]Scene Read[/b]  %s%s%s" % [
 		region_label,
+		reachable_text,
 		_scene_read(GameState.map_data) if not GameState.map_data.is_empty() else "No active local survey.",
 		"\n[b]Alerts[/b]  %s" % ", ".join(alerts) if not alerts.is_empty() else "",
 		selected_text,

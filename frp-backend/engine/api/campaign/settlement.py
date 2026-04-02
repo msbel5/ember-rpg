@@ -147,10 +147,7 @@ def build_character_sheet(session: GameSession, settlement_state: dict[str, Any]
     resources = {
         "hp": {"current": int(player.hp), "max": int(player.max_hp)},
         "sp": {"current": int(player.spell_points), "max": int(player.max_spell_points)},
-        "ap": {
-            "current": int(getattr(session.ap_tracker, "current_ap", 0) or 0),
-            "max": int(getattr(session.ap_tracker, "max_ap", 0) or 0),
-        },
+        "turn": current_player_turn_resources(session),
     }
     creation_profile = dict(player.creation_profile or {})
     creation_summary = {
@@ -191,4 +188,28 @@ def build_character_sheet(session: GameSession, settlement_state: dict[str, Any]
     }
 
 
-__all__ = ["build_character_sheet", "build_settlement_state"]
+def current_player_turn_resources(session: GameSession) -> dict[str, int | bool]:
+    combat = getattr(session, "combat", None)
+    player_name = str(getattr(session.player, "name", "")).strip()
+    if combat is not None:
+        for combatant in getattr(combat, "combatants", []):
+            if str(getattr(combatant, "name", "")).strip() != player_name:
+                continue
+            return {
+                "action_available": bool(getattr(combatant, "action_available", True)),
+                "bonus_action_available": bool(getattr(combatant, "bonus_action_available", True)),
+                "reaction_available": bool(getattr(combatant, "reaction_available", True)),
+                "movement_remaining": int(getattr(combatant, "movement_remaining", 0)),
+                "speed": int(getattr(combatant, "speed", 6)),
+            }
+    speed = max(6, int(getattr(getattr(session, "ap_tracker", None), "max_ap", 6) or 6))
+    return {
+        "action_available": True,
+        "bonus_action_available": True,
+        "reaction_available": True,
+        "movement_remaining": speed,
+        "speed": speed,
+    }
+
+
+__all__ = ["build_character_sheet", "build_settlement_state", "current_player_turn_resources"]

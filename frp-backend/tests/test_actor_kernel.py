@@ -56,13 +56,18 @@ def test_actor_record_preserves_body_inventory_and_legacy_payload():
 
 def test_actor_record_round_trip_keeps_identity_and_body_state():
     original = actor_record_from_entity(_legacy_entity(EntityType.NPC), site_id="site_alpha", species_id="human")
-    restored = ActorRecord.from_dict(original.to_dict())
+    serialized = original.to_dict()
+    restored = ActorRecord.from_dict(serialized)
 
     assert restored.identity.actor_id == original.identity.actor_id
     assert restored.position.x == 7
     assert restored.body_state is not None
     assert restored.body_state.parts["left_arm"].current_hp == original.body_state.parts["left_arm"].current_hp
     assert restored.inventory[0].instance_id == original.inventory[0].instance_id
+    assert "action_points" not in serialized
+    assert "max_action_points" not in serialized
+    assert restored.turn_resources["action_available"] is True
+    assert restored.turn_resources["movement_remaining"] == 3
 
 
 def test_body_state_apply_wound_marks_vital_part_non_viable():
