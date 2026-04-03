@@ -31,6 +31,8 @@ from engine.world.entity import Entity
 from .actor_body import BodyState, ConditionRecord
 from .actor_foundation import ActorIdentity, ActorPosition, NeedState, ScheduleState
 from .actor_items import EquipmentLoadout, ItemStack, item_stack_from_legacy_payload
+from engine.kernel.effects import EffectQueue
+
 
 
 @dataclass
