@@ -50,14 +50,14 @@ class TestUnknownCommandRejection:
             result = rt.run_command(ctx.campaign_id, cmd)
             assert result["command_type"] != "unknown", f"'{cmd}' was rejected as unknown"
 
-    def test_look_around_is_unknown_without_avatar(self):
-        """'look around' was previously handled by legacy avatar fallback.
-        Now it should be rejected as unknown (or handled by a campaign handler)."""
+    def test_look_around_routed_via_scene_bridge(self):
+        """'look around' is a scene verb routed via the quarantine bridge,
+        not through the removed catch-all fallback."""
         rt, ctx = _make_campaign()
         result = rt.run_command(ctx.campaign_id, "look around")
-        # This is intentionally 'unknown' — the legacy game_engine handler is gone.
-        # If a campaign-native 'look' handler is added later, update this test.
-        assert result["command_type"] == "unknown"
+        # Routed through _dispatch_scene_command (allowlist), not catch-all.
+        assert result["command_type"] in ("avatar", "combat")
+        assert "narrative" in result
 
 
 # ---------------------------------------------------------------------------
