@@ -55,6 +55,7 @@ def build_dialog_payload(context: "CampaignContext", narrative: str) -> dict[str
         logger.debug("Dialog start failed for %s: %s", npc_id, exc)
         return _fallback_payload(npc_name, narrative)
 
+    store_dialog_state(context, dialog_state, dialog_def, npc_actor)
     options = _transitions_to_options(transitions, player_actor, npc_actor, global_vars)
     dialog_text = narrative.strip() or state_node.text or f"{npc_name} studies you in silence."
     return {
@@ -91,9 +92,30 @@ def _get_npc_actor(context: "CampaignContext", npc_id: str, npc_name: str) -> "A
 # ---------------------------------------------------------------------------
 
 def _resolve_dialog_def(context: "CampaignContext", npc_id: str, npc_name: str) -> DialogDef:
-    """Look up NPC's dialog def from data, or generate a default."""
-    # TODO: load NPC-specific dialog defs from data files when available.
+    """Look up NPC's dialog def from data, falling back to generated default."""
+    from engine.data._shared import dialog_defs_registry
+    registry = dialog_defs_registry()
+    # Exact NPC ID match.
+    if npc_id and npc_id in registry:
+        return DialogDef.from_dict(registry[npc_id])
+    # Role-based match: extract NPC role from kernel runtime.
+    role = _extract_npc_role(context, npc_id)
+    if role:
+        for def_data in registry.values():
+            if str(def_data.get("role", "")).lower() == role.lower():
+                logger.debug("Dialog: role-based match '%s' for NPC '%s'", role, npc_id)
+                return DialogDef.from_dict(def_data)
     return _default_dialog_def(npc_id or npc_name, npc_name, context)
+
+
+def _extract_npc_role(context: "CampaignContext", npc_id: str) -> str:
+    """Get the role string for an NPC from kernel runtime."""
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    actor = actors.get(npc_id)
+    if actor is not None:
+        return str(getattr(actor, "raw_payload", {}).get("role", ""))
+    return ""
 
 
 def _default_dialog_def(npc_id: str, npc_name: str, context: "CampaignContext") -> DialogDef:
@@ -195,4 +217,28 @@ def _fallback_payload(npc_name: str, narrative: str) -> dict[str, Any]:
     }
 
 
-__all__ = ["build_dialog_payload"]
+def store_dialog_state(
+    context: "CampaignContext",
+    dialog_state: DialogState,
+    dialog_def: DialogDef,
+    npc_actor: "ActorRecord",
+) -> None:
+    """Persist dialog state into kernel runtime for later transition selection."""
+    runtime = context.kernel_runtime
+    if runtime is None:
+        return
+    runtime["dialog_state"] = dialog_state
+    runtime.setdefault("dialog_defs", {})[dialog_def.dialog_id] = dialog_def
+    runtime["dialog_npc_id"] = getattr(npc_actor.identity, "actor_id", "")
+
+
+def clear_dialog_state(context: "CampaignContext") -> None:
+    """Remove dialog state from kernel runtime."""
+    runtime = context.kernel_runtime
+    if runtime is None:
+        return
+    runtime.pop("dialog_state", None)
+    runtime.pop("dialog_npc_id", None)
+
+
+__all__ = ["build_dialog_payload", "store_dialog_state", "clear_dialog_state"]

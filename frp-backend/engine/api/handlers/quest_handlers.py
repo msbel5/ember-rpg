@@ -286,10 +286,11 @@ class QuestMixin:
     def _generate_emergent_quests(self, session: GameSession, force: bool = False) -> List[Dict[str, Any]]:
         offers: List[Dict[str, Any]] = []
         existing_quests = set(session.quest_tracker.quests.keys())
+        from engine.data._shared import quest_config_registry
+        raw_specs = quest_config_registry().get("emergent_shortages", [])
         shortage_specs = [
-            ("bread", "Bread Shortage", "The taverns need fresh bread before tonight.", 2, 20, 35),
-            ("ale", "Dry Casks", "Cellars are running low on ale. Bring stock before evening trade.", 2, 18, 35),
-            ("healing_potion", "Remedy Run", "The local healer is running short on remedies.", 1, 24, 50),
+            (s["item_id"], s["title"], s["description"], s["quantity"], s["reward_gold"], s["deadline_hours"])
+            for s in raw_specs
         ]
         for item_id, title, description, qty, deadline, reward in shortage_specs:
             baseline = session.location_stock.baseline.get(item_id, 0)

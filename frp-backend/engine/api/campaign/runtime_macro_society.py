@@ -103,10 +103,13 @@ def default_stores(context) -> list[StoreDef]:
         if int(quantity) > 0
     ]
     if not items:
-        items = [StoreItem(item_def_id="food", quantity=10), StoreItem(item_def_id="materials", quantity=6)]
-    services = [
+        from engine.data._shared import economy_config_registry
+        eco = economy_config_registry()
+        items = [StoreItem(item_def_id=e["item_def_id"], quantity=e["quantity"]) for e in eco.get("default_store_inventory", [])]
+    from engine.data._shared import economy_config_registry as _eco_reg
+    svc_data = _eco_reg().get("default_store_services", [])
+    services = [StoreService(**s) for s in svc_data] if svc_data else [
         StoreService(service_id="rest", service_type="room", label="Room for the night", price=5, room_quality=1.0),
-        StoreService(service_id="identify", service_type="identify", label="Identify item", price=10),
     ]
     return [
         StoreDef(

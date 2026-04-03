@@ -311,7 +311,8 @@ class GameEngineRuntimeMixin:
             parts.append("[Rumors] " + "; ".join(f"'{rumor.fact}' (confidence: {rumor.confidence:.0%})" for rumor in active_rumors[:3]))
 
         price_notes = []
-        for item in ["food", "iron_bar", "healing_potion"]:
+        from engine.data._shared import economy_config_registry
+        for item in economy_config_registry().get("price_tracking_items", []):
             modifier = session.location_stock.get_price_modifier(item)
             if modifier != 1.0:
                 price_notes.append(f"{item}: {modifier:.1f}x price")

@@ -309,7 +309,9 @@ class SaveSessionStateMixin:
             session.history_seed = HistorySeed().generate(seed=random.randint(0, 999999))
         if session.ap_tracker is None:
             _classes = getattr(player, "classes", None) or (getattr(player, "raw_payload", None) or {}).get("classes", {})
-            dominant_class = (getattr(player, "dominant_class", None) or next(iter(_classes), "warrior") or "warrior")
+            from engine.data.classes import get_creation_default_class
+            _fallback = get_creation_default_class()
+            dominant_class = (getattr(player, "dominant_class", None) or next(iter(_classes), _fallback) or _fallback)
             session.ap_tracker = ActionPointTracker(max_ap=CLASS_AP.get(str(dominant_class).lower(), 4))
 
         if player_entity is None:

@@ -166,6 +166,7 @@ def advance_kernel_runtime(
             }
             for source_id, target_id in infections
         )
+        events.extend(_medical_tick_events(actors, current_tick))
         events.extend(job_and_farm_events(context, runtime, seed + step))
         events.extend(macro_society_events(context, runtime))
         events.extend(systems_events(context, runtime, seed + step))
@@ -270,6 +271,33 @@ def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
             existing_part.current_hp = min(existing_part.current_hp, part.current_hp)
     if target.schedule.owner_id == "" and fresh.schedule.owner_id:
         target.schedule = fresh.schedule
+
+
+def _medical_tick_events(actors: list, current_tick: int) -> list[dict[str, Any]]:
+    """Advance infection and recovery states for all actors."""
+    from engine.kernel.medical import InfectionState, RecoveryState, tick_infection, tick_recovery
+    events: list[dict[str, Any]] = []
+    for actor in actors:
+        for infection in actor.raw_payload.get("medical_infections", []):
+            if isinstance(infection, InfectionState):
+                prev = infection.infection_level
+                tick_infection(infection, 1)
+                if infection.infection_level > prev:
+                    events.append({
+                        "event_type": "infection_progress",
+                        "summary": f"{actor.identity.display_name}: infection advanced to {infection.infection_level:.0%}.",
+                        "actor_id": actor.identity.actor_id,
+                    })
+        for recovery in actor.raw_payload.get("medical_recoveries", []):
+            if isinstance(recovery, RecoveryState):
+                healed = tick_recovery(recovery, 1)
+                if healed > 0:
+                    events.append({
+                        "event_type": "medical_recovery",
+                        "summary": f"{actor.identity.display_name}: recovered {healed} hp.",
+                        "actor_id": actor.identity.actor_id,
+                    })
+    return events
 
 
 __all__ = ["advance_kernel_runtime", "ensure_kernel_runtime", "serialize_kernel_runtime"]

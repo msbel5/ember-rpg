@@ -44,23 +44,26 @@ def compute_mood(needs: NeedState) -> tuple[str, dict[str, Any]]:
     for need_id, need_def in NEED_DEFS.items():
         weighted += float(needs.values.get(need_id, 100.0)) * need_def.weight
     average = weighted / total_weight
-    if average >= 75.0:
+    for tier in MORALE_CASCADE_TIERS:
+        if average >= float(tier.unrest_max):
+            continue
+        if average >= float(tier.unrest_min) or tier == MORALE_CASCADE_TIERS[-1]:
+            return tier.tier, {
+                "work_speed_mult": tier.work_speed_mult,
+                "social_hostility": tier.social_hostility,
+                "task_refusal": tier.task_refusal,
+                "tantrum_risk": tier.tantrum_risk,
+            }
+    # Fallback: use thresholds from colony_config.
+    from engine.data._shared import colony_config_registry
+    thresholds = colony_config_registry().get("thresholds", {}).get("mood", {})
+    if average >= float(thresholds.get("content", 75)):
         return "content", {"work_speed_mult": 1.0}
-    if average >= 50.0:
+    if average >= float(thresholds.get("unhappy", 50)):
         return "unhappy", {"work_speed_mult": 0.8}
-    if average >= 25.0:
-        return "miserable", {
-            "work_speed_mult": 0.5,
-            "social_hostility": True,
-            "task_refusal": True,
-            "tantrum_risk": 0.02,
-        }
-    return "breakdown", {
-        "work_speed_mult": 0.2,
-        "social_hostility": True,
-        "task_refusal": True,
-        "tantrum_risk": 0.10,
-    }
+    if average >= float(thresholds.get("miserable", 25)):
+        return "miserable", {"work_speed_mult": 0.5, "social_hostility": True, "task_refusal": True, "tantrum_risk": 0.02}
+    return "breakdown", {"work_speed_mult": 0.2, "social_hostility": True, "task_refusal": True, "tantrum_risk": 0.10}
 
 
 def apply_morale_cascade(actors: list[ActorRecord], unrest: int) -> None:
@@ -108,20 +111,27 @@ def pressure_tags_from_metrics(
     housing: int,
     unrest: int,
 ) -> list[str]:
+    from engine.data._shared import colony_config_registry
+    cfg = colony_config_registry().get("pressure_tags", {})
+    metrics = {"food": food, "safety": safety, "morale": morale, "supply": supply, "housing": housing, "unrest": unrest}
     pressure_tags: list[str] = []
-    if int(food) < 55:
-        pressure_tags.append("food_insecure")
-    if int(safety) < 55:
-        pressure_tags.append("unsafe")
-    if int(supply) < 55:
-        pressure_tags.append("resource_strain")
-    if int(housing) < 55:
-        pressure_tags.append("housing_strain")
-    if int(unrest) >= 50:
-        pressure_tags.append("unrest")
-    if int(housing) > 80 and int(morale) > 70 and int(food) > 60:
-        pressure_tags.append("migration_candidate")
+    for tag, rule in cfg.items():
+        if rule.get("type") == "compound":
+            if all(_check_op(metrics.get(c["metric"], 0), c["operator"], c["threshold"]) for c in rule["conditions"]):
+                pressure_tags.append(tag)
+        else:
+            if _check_op(metrics.get(rule["metric"], 0), rule["operator"], rule["threshold"]):
+                pressure_tags.append(tag)
     return pressure_tags
+
+
+def _check_op(value: int, operator: str, threshold: int) -> bool:
+    v, t = int(value), int(threshold)
+    if operator == "<": return v < t
+    if operator == "<=": return v <= t
+    if operator == ">": return v > t
+    if operator == ">=": return v >= t
+    return v == t
 
 
 def room_morale_bonus(rooms: list[dict[str, Any]]) -> int:
@@ -137,18 +147,13 @@ def production_ledger_from_settlement(settlement_state: dict[str, Any]) -> Produ
     economy = dict(settlement_state.get("economy", {}))
     shortages: list[str] = []
     surpluses: list[str] = []
-    if int(needs.get("food", 0)) >= 3:
-        shortages.append("food")
-    else:
-        surpluses.append("food")
-    if int(needs.get("materials", 0)) >= 3:
-        shortages.append("materials")
-    else:
-        surpluses.append("materials")
-    if int(needs.get("security", 0)) >= 3:
-        shortages.append("security")
-    else:
-        surpluses.append("security")
+    from engine.data._shared import colony_config_registry
+    shortage_threshold = int(colony_config_registry().get("thresholds", {}).get("shortage", 3))
+    for resource_type in ("food", "materials", "security"):
+        if int(needs.get(resource_type, 0)) >= shortage_threshold:
+            shortages.append(resource_type)
+        else:
+            surpluses.append(resource_type)
     if float(economy.get("trade_balance", 0)) > 0:
         surpluses.append("trade")
     quest_seeds = quest_seeds_from_shortages(shortages)

@@ -1,0 +1,14 @@
+{
+  "economy_config": {
+    "trade_items": ["food", "ale", "iron_bar", "healing_potion", "bread"],
+    "price_tracking_items": ["food", "iron_bar", "healing_potion"],
+    "default_store_inventory": [
+      {"item_def_id": "food", "quantity": 10},
+      {"item_def_id": "materials", "quantity": 6}
+    ],
+    "default_store_services": [
+      {"service_id": "rest", "service_type": "room", "label": "Room for the night", "price": 5, "room_quality": 1.0},
+      {"service_id": "identify", "service_type": "identify", "label": "Identify item", "price": 10}
+    ]
+  }
+}

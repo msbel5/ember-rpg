@@ -34,35 +34,17 @@ class ActiveCaravan:
     delayed_hours: int = 0
 
 
-CARAVANS: Dict[str, CaravanRoute] = {
-    "iron_caravan": CaravanRoute(
-        name="Iron Caravan",
-        origin="ironhold_mines",
-        destination="riverside_market",
-        goods={"iron_ore": 40, "coal": 20, "iron_bar": 10},
-        travel_hours=8,
-        frequency_hours=24,
-        value=300,
-    ),
-    "food_caravan": CaravanRoute(
-        name="Food Caravan",
-        origin="greenfield_farms",
-        destination="riverside_market",
-        goods={"grain": 60, "bread": 20, "ale": 15, "herb": 10},
-        travel_hours=6,
-        frequency_hours=18,
-        value=180,
-    ),
-    "luxury_caravan": CaravanRoute(
-        name="Luxury Caravan",
-        origin="silverpeak",
-        destination="capital_city",
-        goods={"silver_bar": 5, "silver_ring": 8, "glass_vial": 20, "cloth": 15},
-        travel_hours=12,
-        frequency_hours=48,
-        value=800,
-    ),
-}
+def _load_caravans() -> Dict[str, CaravanRoute]:
+    """Load caravan routes from data/caravans.json."""
+    from engine.data._shared import caravans_registry
+    result = {}
+    for k, v in caravans_registry().items():
+        fields = {f: v[f] for f in CaravanRoute.__dataclass_fields__ if f in v}
+        result[k] = CaravanRoute(**fields)
+    return result
+
+
+CARAVANS: Dict[str, CaravanRoute] = _load_caravans()
 
 
 class CaravanManager:

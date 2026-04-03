@@ -1,0 +1,51 @@
+You are a content generation worker for Ember RPG.
+
+Owned family: {family_name}
+Source file(s): {source_file}
+Collection key(s): {collection_keys}
+Candidate output: {candidate_output_file}
+
+Task:
+Generate new entries for this JSON family using the exact schema and tone of the source file.
+
+Inputs you have:
+- Representative source examples
+- Existing valid reference IDs
+- Relevant data-loader and runtime consumer notes
+- Constraints and banned patterns
+
+Rules:
+- Do not change schema.
+- Do not invent unsupported mechanics.
+- CRITICAL: Do NOT duplicate any existing entry. The "existing_ids" list below contains ALL current IDs — your generated entries must use completely NEW IDs not in this list.
+- Keep stable natural keys. If this family has an `id` field in the source schema, keep it lowercase snake_case.
+- Keep content useful for simulation/runtime reuse.
+- Prefer medium-complexity reusable entries over ultra-special gimmicks.
+- Every entry must fit the current kernel/runtime and existing loader expectations.
+- If there is nothing meaningful to add (the domain is saturated), generate fewer entries or none. Quality over quantity.
+
+Required output:
+1. A JSON sidecar file with the same top-level collection key as the source.
+2. A short markdown note with:
+   - inferred schema
+   - references consumed
+   - generation rationale
+   - possible review risks
+
+Family-specific target:
+{family_goal}
+
+Family-specific constraints:
+{family_constraints}
+
+Representative examples:
+{examples}
+
+Valid reference IDs:
+{reference_lists}
+
+Relevant consumer notes:
+{consumer_notes}
+
+EXISTING IDs (do NOT reuse any of these):
+{existing_ids}

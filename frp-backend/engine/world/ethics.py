@@ -8,179 +8,19 @@ from dataclasses import dataclass
 from typing import Optional
 
 # ---------------------------------------------------------------------------
-# Reaction severity scale
+# All faction/ethics data loaded from data/factions.json
 # ---------------------------------------------------------------------------
-REACTION_LEVELS: dict[str, int] = {
-    "unthinkable": -100,
-    "serious_crime": -50,
-    "crime": -30,
-    "distasteful": -10,
-    "tolerated": -5,
-    "acceptable": 0,
-    "valued": 5,
-    "honored": 15,
-}
+def _load_factions() -> dict:
+    from engine.data._shared import factions_registry
+    return factions_registry()
 
-# ---------------------------------------------------------------------------
-# Action types recognised by the ethics engine
-# ---------------------------------------------------------------------------
-ACTION_TYPES = [
-    "KILL_CITIZEN",
-    "THEFT",
-    "ASSAULT",
-    "TRADE",
-    "KILL_ENEMY",
-    "BETRAYAL",
-    "HELP_POOR",
-    "DESECRATE",
-]
 
-# ---------------------------------------------------------------------------
-# FACTION_ETHICS -- per-faction moral reactions to each action type
-# Key: faction_id -> action_type -> reaction_level (str from REACTION_LEVELS)
-# ---------------------------------------------------------------------------
-FACTION_ETHICS: dict[str, dict[str, str]] = {
-    "harbor_guard": {
-        "KILL_CITIZEN": "serious_crime",
-        "THEFT": "crime",
-        "ASSAULT": "crime",
-        "TRADE": "valued",
-        "KILL_ENEMY": "honored",
-        "BETRAYAL": "unthinkable",
-        "HELP_POOR": "valued",
-        "DESECRATE": "distasteful",
-    },
-    "thieves_guild": {
-        "KILL_CITIZEN": "distasteful",
-        "THEFT": "valued",
-        "ASSAULT": "tolerated",
-        "TRADE": "acceptable",
-        "KILL_ENEMY": "acceptable",
-        "BETRAYAL": "unthinkable",
-        "HELP_POOR": "tolerated",
-        "DESECRATE": "acceptable",
-    },
-    "merchant_guild": {
-        "KILL_CITIZEN": "serious_crime",
-        "THEFT": "serious_crime",
-        "ASSAULT": "crime",
-        "TRADE": "honored",
-        "KILL_ENEMY": "acceptable",
-        "BETRAYAL": "crime",
-        "HELP_POOR": "valued",
-        "DESECRATE": "distasteful",
-    },
-    "forest_elves": {
-        "KILL_CITIZEN": "unthinkable",
-        "THEFT": "crime",
-        "ASSAULT": "crime",
-        "TRADE": "acceptable",
-        "KILL_ENEMY": "tolerated",
-        "BETRAYAL": "serious_crime",
-        "HELP_POOR": "honored",
-        "DESECRATE": "unthinkable",
-    },
-    "mountain_dwarves": {
-        "KILL_CITIZEN": "serious_crime",
-        "THEFT": "crime",
-        "ASSAULT": "tolerated",
-        "TRADE": "valued",
-        "KILL_ENEMY": "honored",
-        "BETRAYAL": "unthinkable",
-        "HELP_POOR": "acceptable",
-        "DESECRATE": "serious_crime",
-    },
-    "temple_order": {
-        "KILL_CITIZEN": "unthinkable",
-        "THEFT": "serious_crime",
-        "ASSAULT": "crime",
-        "TRADE": "acceptable",
-        "KILL_ENEMY": "tolerated",
-        "BETRAYAL": "serious_crime",
-        "HELP_POOR": "honored",
-        "DESECRATE": "unthinkable",
-    },
-}
-
-# ---------------------------------------------------------------------------
-# FACTION_VALUES -- cultural value weights per faction (0-100)
-# ---------------------------------------------------------------------------
-FACTION_VALUES: dict[str, dict[str, int]] = {
-    "harbor_guard": {
-        "order": 90,
-        "commerce": 40,
-        "tradition": 60,
-        "nature": 20,
-        "wealth": 30,
-        "art": 15,
-        "honor": 85,
-        "faith": 45,
-    },
-    "thieves_guild": {
-        "order": 10,
-        "commerce": 55,
-        "tradition": 30,
-        "nature": 10,
-        "wealth": 90,
-        "art": 40,
-        "honor": 20,
-        "faith": 5,
-    },
-    "merchant_guild": {
-        "order": 60,
-        "commerce": 95,
-        "tradition": 35,
-        "nature": 15,
-        "wealth": 85,
-        "art": 50,
-        "honor": 45,
-        "faith": 25,
-    },
-    "forest_elves": {
-        "order": 40,
-        "commerce": 15,
-        "tradition": 80,
-        "nature": 95,
-        "wealth": 10,
-        "art": 75,
-        "honor": 70,
-        "faith": 60,
-    },
-    "mountain_dwarves": {
-        "order": 70,
-        "commerce": 60,
-        "tradition": 90,
-        "nature": 30,
-        "wealth": 75,
-        "art": 65,
-        "honor": 80,
-        "faith": 50,
-    },
-    "temple_order": {
-        "order": 75,
-        "commerce": 20,
-        "tradition": 70,
-        "nature": 45,
-        "wealth": 10,
-        "art": 55,
-        "honor": 60,
-        "faith": 95,
-    },
-}
-
-# ---------------------------------------------------------------------------
-# Consequence descriptions keyed by reaction level
-# ---------------------------------------------------------------------------
-_CONSEQUENCE_MAP: dict[str, Optional[str]] = {
-    "unthinkable": "Faction declares you an enemy. All members attack on sight.",
-    "serious_crime": "Bounty placed on your head. Faction reputation severely damaged.",
-    "crime": "Guards alerted. Possible arrest or fine.",
-    "distasteful": "Faction members express disapproval. Minor reputation loss.",
-    "tolerated": None,
-    "acceptable": None,
-    "valued": None,
-    "honored": None,
-}
+_FACTIONS_DATA: dict = _load_factions()
+REACTION_LEVELS: dict[str, int] = _FACTIONS_DATA.get("reaction_levels", {})
+ACTION_TYPES: list[str] = _FACTIONS_DATA.get("action_types", [])
+FACTION_ETHICS: dict[str, dict[str, str]] = _FACTIONS_DATA.get("ethics", {})
+FACTION_VALUES: dict[str, dict[str, int]] = _FACTIONS_DATA.get("values", {})
+_CONSEQUENCE_MAP: dict[str, Optional[str]] = _FACTIONS_DATA.get("consequences", {})
 
 
 # ---------------------------------------------------------------------------

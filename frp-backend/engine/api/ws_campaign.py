@@ -25,7 +25,7 @@ from typing import Any
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from engine.api.campaign.debug_trace import trace_event
-from engine.api.campaign.tick_loop import start_tick_loop, stop_tick_loop
+from engine.api.campaign.tick_loop import get_tick_loop
 
 logger = logging.getLogger(__name__)
 ws_router = APIRouter()
@@ -95,8 +95,10 @@ async def ws_campaign(websocket: WebSocket, campaign_id: str):
         return
 
     _register(campaign_id, websocket)
-    # Start tick loop on first connection.
-    await start_tick_loop(runtime, campaign_id, on_tick=push_tick_events, interval=30.0)
+    # Register push callback on tick loop (lifecycle managed by CampaignRuntime).
+    tick_loop = get_tick_loop(campaign_id)
+    if tick_loop is not None:
+        tick_loop.set_on_tick(push_tick_events)
 
     try:
         snapshot = runtime.snapshot(campaign_id, narrative="Connected.")
@@ -151,7 +153,9 @@ async def ws_campaign(websocket: WebSocket, campaign_id: str):
     finally:
         _unregister(campaign_id, websocket)
         if not _connections.get(campaign_id):
-            await stop_tick_loop(campaign_id)
+            tick_loop = get_tick_loop(campaign_id)
+            if tick_loop is not None:
+                tick_loop.set_on_tick(None)
 
 
 __all__ = ["get_connections", "push_tick_events", "set_runtime", "ws_router"]

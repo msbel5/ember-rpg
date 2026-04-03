@@ -10,6 +10,25 @@ from engine.world.npc_needs import NPCNeeds
 from engine.api.runtime_constants import THINK_TOPIC_SKILLS
 
 
+def _think_dc(lowered_topic: str) -> int:
+    """Determine DC for think action based on topic keywords, loaded from quest_config."""
+    from engine.data._shared import quest_config_registry
+    dc_config = quest_config_registry().get("think_dc_keywords", {})
+    if not dc_config:
+        # Fallback if quest_config doesn't have the section yet.
+        if any(w in lowered_topic for w in ("secret", "cult", "artifact", "true name")):
+            return 25
+        if any(w in lowered_topic for w in ("town", "road", "guard", "merchant", "common")):
+            return 5
+        return 15
+    for level_name in ("very_hard", "hard", "easy"):
+        entry = dc_config.get(level_name, {})
+        keywords = entry.get("keywords", [])
+        if keywords and any(w in lowered_topic for w in keywords):
+            return int(entry.get("dc", 15))
+    return int(dc_config.get("hard", {}).get("dc", 15))
+
+
 class SocialActionsMixin:
     """Focused social handlers for talking, influence, and trade flows."""
 
@@ -163,9 +182,7 @@ class SocialActionsMixin:
             if any(keyword in lowered for keyword in keywords):
                 chosen_skill = skill
                 break
-        dc = 5 if any(word in lowered for word in ("town", "road", "guard", "merchant", "common", "bread")) else 15
-        if any(word in lowered for word in ("secret", "cult", "artifact", "true name", "gizli", "sır")):
-            dc = 25
+        dc = _think_dc(lowered)
         result = self._roll_player_skill_check(session, chosen_skill, dc)
         check_text = self._format_skill_check(result, chosen_skill.title(), dc)
         deterministic = (
@@ -362,7 +379,8 @@ class SocialActionsMixin:
 
         npc_personality = self._get_npc_personality(target)
         price_info = []
-        for item in ["food", "ale", "iron_bar", "healing_potion", "bread"]:
+        from engine.data._shared import economy_config_registry
+        for item in economy_config_registry().get("trade_items", []):
             stock = session.location_stock.get_stock(item)
             price = session.location_stock.get_effective_price(item)
             if stock > 0:

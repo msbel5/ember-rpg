@@ -6,50 +6,24 @@ from typing import Any
 from engine.kernel.common import serialize_value
 
 
-SKILL_XP_THRESHOLDS: list[int] = [
-    0,
-    500,
-    1100,
-    1800,
-    2600,
-    3500,
-    4500,
-    5600,
-    6800,
-    8100,
-    9500,
-    11000,
-    12600,
-    14300,
-    16100,
-]
+def _load_skill_data() -> tuple[list[int], dict[int, str]]:
+    from engine.data._shared import progression_registry
+    prog = progression_registry()
+    thresholds = [int(x) for x in prog.get("skill_xp_thresholds", [0])]
+    names = {int(k): str(v) for k, v in prog.get("skill_level_names", {}).items()}
+    return thresholds, names
 
-SKILL_LEVEL_NAMES: dict[int, str] = {
-    0: "Dabbling",
-    1: "Novice",
-    2: "Adequate",
-    3: "Competent",
-    4: "Skilled",
-    5: "Proficient",
-    6: "Talented",
-    7: "Adept",
-    8: "Expert",
-    9: "Professional",
-    10: "Accomplished",
-    11: "Great",
-    12: "Master",
-    13: "High Master",
-    14: "Grand Master",
-}
 
-QUALITY_LEVELS: dict[int, str] = {
-    0: "ordinary",
-    1: "well-crafted",
-    2: "finely-crafted",
-    3: "superior",
-    4: "exceptional",
-    5: "masterwork",
-}
+def _load_quality_levels() -> dict[int, str]:
+    from engine.data._shared import _load_json
+    raw = _load_json("quality_tiers.json")
+    if isinstance(raw, dict):
+        return {int(k): str(v.get("label", v) if isinstance(v, dict) else v) for k, v in raw.items()}
+    return {0: "ordinary"}
+
+
+SKILL_XP_THRESHOLDS, SKILL_LEVEL_NAMES = _load_skill_data()
+QUALITY_LEVELS: dict[int, str] = _load_quality_levels()
 
 
 @dataclass
@@ -222,13 +196,13 @@ class RoomZoneDef:
         return cls(**payload)
 
 
-ROOM_ZONE_DEFS: dict[str, RoomZoneDef] = {
-    "bedroom": RoomZoneDef("bedroom", required_furniture=["bed"]),
-    "dining": RoomZoneDef("dining", required_furniture=["table", "chair"]),
-    "workshop": RoomZoneDef("workshop", required_furniture=["worksite"]),
-    "hospital": RoomZoneDef("hospital", required_furniture=["bed", "table"]),
-    "temple": RoomZoneDef("temple", required_furniture=["altar"]),
-}
+def _load_room_zones() -> dict[str, RoomZoneDef]:
+    from engine.data._shared import colony_config_registry
+    raw = colony_config_registry().get("room_zones", {})
+    return {k: RoomZoneDef(zone_type=k, **v) for k, v in raw.items()}
+
+
+ROOM_ZONE_DEFS: dict[str, RoomZoneDef] = _load_room_zones()
 
 
 __all__ = [

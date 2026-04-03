@@ -79,6 +79,10 @@ class CampaignTickLoop:
         """Resume ticking after pause."""
         self._paused = False
 
+    def set_on_tick(self, callback: Optional[Callable]) -> None:
+        """Update the push callback. Pass None to stop pushing events."""
+        self._on_tick = callback
+
     async def _loop(self) -> None:
         """Main tick loop — runs until cancelled."""
         while True:

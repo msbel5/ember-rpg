@@ -105,6 +105,7 @@ class CampaignRuntime:
         ensure_kernel_runtime(context)
         self._campaigns[campaign_id] = context
         persist_campaign_state(context)
+        _try_start_tick_loop(self, campaign_id)
         return context
 
     def start_creation(
@@ -232,6 +233,7 @@ class CampaignRuntime:
 
     def delete_campaign(self, campaign_id: str) -> None:
         self.get_campaign(campaign_id)
+        _try_stop_tick_loop(campaign_id)
         self._campaigns.pop(campaign_id, None)
 
     def get_current_region(self, campaign_id: str) -> dict[str, Any]:
@@ -332,6 +334,7 @@ class CampaignRuntime:
             seed=context.seed,
         )
         ensure_kernel_runtime(context, rebuild_projection=True)
+        _try_start_tick_loop(self, context.campaign_id)
         trace_event(
             "campaign_load_completed",
             campaign_id=context.campaign_id,
@@ -379,6 +382,30 @@ class CampaignRuntime:
         if sorted(normalized.values()) == sorted(int(value) for value in state.current_roll):
             return normalized, "rolled_assignment"
         return normalized, "custom_override"
+
+
+def _try_start_tick_loop(runtime: "CampaignRuntime", campaign_id: str) -> None:
+    """Start tick loop if an asyncio event loop is running."""
+    import asyncio
+    from engine.api.campaign.tick_loop import start_tick_loop
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.ensure_future(start_tick_loop(runtime, campaign_id, interval=30.0))
+    except RuntimeError:
+        pass  # No event loop (sync tests).
+
+
+def _try_stop_tick_loop(campaign_id: str) -> None:
+    """Stop tick loop if an asyncio event loop is running."""
+    import asyncio
+    from engine.api.campaign.tick_loop import stop_tick_loop
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.ensure_future(stop_tick_loop(campaign_id))
+    except RuntimeError:
+        pass
 
 
 __all__ = ["CampaignRuntime"]

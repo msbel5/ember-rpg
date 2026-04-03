@@ -23,16 +23,17 @@ class NeedDef:
         return cls(**data)
 
 
-NEED_DEFS: dict[str, NeedDef] = {
-    "eat": NeedDef("eat", "Hunger", decay_rate=0.8, fulfillment_base=60.0, desperate_threshold=10.0, weight=1.5),
-    "drink": NeedDef("drink", "Thirst", decay_rate=1.0, fulfillment_base=70.0, desperate_threshold=10.0, weight=1.5),
-    "sleep": NeedDef("sleep", "Rest", decay_rate=0.4, fulfillment_base=80.0, desperate_threshold=15.0, weight=1.2),
-    "pray": NeedDef("pray", "Spirituality", decay_rate=0.2, fulfillment_base=40.0, desperate_threshold=5.0, weight=0.6),
-    "socialize": NeedDef("socialize", "Social", decay_rate=0.3, fulfillment_base=35.0, desperate_threshold=10.0, weight=0.8),
-    "craft": NeedDef("craft", "Industry", decay_rate=0.15, fulfillment_base=30.0, desperate_threshold=5.0, weight=0.5),
-    "train": NeedDef("train", "Training", decay_rate=0.15, fulfillment_base=30.0, desperate_threshold=5.0, weight=0.5),
-    "admire_art": NeedDef("admire_art", "Aesthetics", decay_rate=0.1, fulfillment_base=25.0, desperate_threshold=5.0, weight=0.4),
-}
+def _load_colony_config() -> dict:
+    from engine.data._shared import colony_config_registry
+    return colony_config_registry()
+
+
+def _build_need_defs() -> dict[str, NeedDef]:
+    cfg = _load_colony_config()
+    return {k: NeedDef(need_id=k, **v) for k, v in cfg.get("needs", {}).items()}
+
+
+NEED_DEFS: dict[str, NeedDef] = _build_need_defs()
 
 
 @dataclass
@@ -69,18 +70,14 @@ class MoraleCascade:
         return cls(**data)
 
 
-MORALE_CASCADE_TIERS: list[MoraleCascade] = [
-    MoraleCascade("content", 0, 25, work_speed_mult=1.0, social_hostility=False, task_refusal=False, tantrum_risk=0.0),
-    MoraleCascade("unhappy", 25, 50, work_speed_mult=0.8, social_hostility=False, task_refusal=False, tantrum_risk=0.0),
-    MoraleCascade("miserable", 50, 75, work_speed_mult=0.5, social_hostility=True, task_refusal=True, tantrum_risk=0.02),
-    MoraleCascade("breakdown", 75, 101, work_speed_mult=0.2, social_hostility=True, task_refusal=True, tantrum_risk=0.10),
-]
+def _build_morale_tiers() -> list[MoraleCascade]:
+    cfg = _load_colony_config()
+    return [MoraleCascade(**t) for t in cfg.get("morale_tiers", [])]
 
-SHORTAGE_QUEST_MAP: dict[str, dict[str, Any]] = {
-    "food": {"kind": "food", "title": "Address Food Pressure", "priority": 1},
-    "materials": {"kind": "materials", "title": "Address Materials Pressure", "priority": 2},
-    "security": {"kind": "security", "title": "Address Security Pressure", "priority": 1},
-}
+
+MORALE_CASCADE_TIERS: list[MoraleCascade] = _build_morale_tiers()
+
+SHORTAGE_QUEST_MAP: dict[str, dict[str, Any]] = _load_colony_config().get("shortage_quests", {})
 
 
 @dataclass

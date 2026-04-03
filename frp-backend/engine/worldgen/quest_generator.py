@@ -18,24 +18,17 @@ def _pick_giver(npcs: list[dict[str, Any]], preferred_roles: list[str]) -> dict[
 
 
 def _reward_for(kind: str, severity: float, rng: random.Random) -> tuple[int, int]:
-    base_gold = {
-        "fetch": 25,
-        "kill": 55,
-        "escort": 45,
-        "deliver": 30,
-        "investigate": 35,
-        "defend": 65,
-    }.get(kind, 25)
-    base_xp = {
-        "fetch": 35,
-        "kill": 70,
-        "escort": 55,
-        "deliver": 40,
-        "investigate": 50,
-        "defend": 80,
-    }.get(kind, 35)
-    scale = 1.0 + severity * 0.7
-    return (int(base_gold * scale) + rng.randint(0, 12), int(base_xp * scale) + rng.randint(0, 16))
+    from engine.data._shared import quest_config_registry
+    cfg = quest_config_registry()
+    scales = cfg.get("reward_scales", {})
+    entry = scales.get(kind, {"gold": 25, "xp": 35})
+    base_gold = int(entry.get("gold", 25))
+    base_xp = int(entry.get("xp", 35))
+    sev_mult = float(cfg.get("severity_multiplier", 0.7))
+    gold_rng = cfg.get("rng_gold_range", [0, 12])
+    xp_rng = cfg.get("rng_xp_range", [0, 16])
+    scale = 1.0 + severity * sev_mult
+    return (int(base_gold * scale) + rng.randint(*gold_rng), int(base_xp * scale) + rng.randint(*xp_rng))
 
 
 def generate_quest_offers(

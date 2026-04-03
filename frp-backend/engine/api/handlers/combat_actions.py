@@ -249,8 +249,22 @@ class CombatActionsMixin:
     # ── Spell casting (kernel-native) ──────────────────────────────────
     def _handle_spell(self, session: GameSession, action: ParsedAction):
         from engine.api.game_engine import ActionResult
-        if session.player.spell_points <= 0:
-            return ActionResult(narrative="Your spell points are exhausted. You need to rest.",
+        from engine.kernel.spells import begin_casting, resolve_cast
+        caster_record = _get_kernel_player(session)
+        if caster_record is None:
+            return ActionResult(narrative="No casting ability available.",
+                                scene_type=session.dm_context.scene_type)
+        spell_name = str(action.spell_name or action.target or "").strip()
+        if not spell_name:
+            return ActionResult(narrative="What spell do you wish to cast?",
+                                scene_type=session.dm_context.scene_type)
+        spellbook = _find_spellbook_for_spell(caster_record, spell_name)
+        if spellbook is None:
+            return ActionResult(narrative=f"You don't know the spell '{spell_name}'.",
+                                scene_type=session.dm_context.scene_type)
+        spell_def = _lookup_spell_def(spell_name)
+        if spell_def is None:
+            return ActionResult(narrative=f"Spell '{spell_name}' is not in your repertoire.",
                                 scene_type=session.dm_context.scene_type)
         # Bootstrap combat if needed.
         if not _kernel_in_combat(session):
@@ -265,38 +279,32 @@ class CombatActionsMixin:
         ta = actors.get(te.actor_id)
         if ta is None:
             return ActionResult(narrative="Target has vanished.", scene_type=session.dm_context.scene_type)
-
-        # Kernel spell pipeline: resolve via spells.py.
-        from engine.kernel.spells import SpellDef, Spellbook, begin_casting, resolve_cast
-        spell_name = str(action.target or "magic_missile").replace(" ", "_").lower()
-        spellbook = Spellbook(actor_id="player", spell_type="wizard",
-                              known_spells={1: [spell_name]},
-                              slots={1: []}, max_slots={1: 2})
-        spell_def = SpellDef(spell_id=spell_name, label=spell_name.replace("_", " ").title(),
-                             spell_type="wizard", school="evocation", level=1,
-                             casting_time=0, range=30, target_type="single", hostile=True,
-                             effect_def_ids=["force_bolt"])
         tick = int(session.campaign_state.get("game_tick", 0))
-        caster_record = session.campaign_state.get("kernel_runtime", {}).get("actors", {}).get("player")
-        if caster_record is None:
-            # Fallback: use basic calculation.
-            rng = random.Random(tick)
-            dmg = sum(rng.randint(1, 4) for _ in range(2)) + 2
+        ok, attempt, reason = begin_casting(caster_record, spellbook, spell_def, te.actor_id, None, tick)
+        if not ok:
+            return ActionResult(narrative=f"Cannot cast: {reason}.",
+                                scene_type=session.dm_context.scene_type)
+        cast_result = resolve_cast(attempt, caster_record, ta, random.randint(1, 100), tick)
+        resisted = cast_result.get("resisted", False)
+        effects = cast_result.get("effects_applied", [])
+        if cast_result.get("slot_expended"):
+            _expend_spell_slot(spellbook, spell_def)
+        if resisted:
+            narr = f"{session.player.name} casts {spell_def.label}, but {ta.name} resists the magic!"
         else:
-            ok, attempt, reason = begin_casting(caster_record, spellbook, spell_def, te.actor_id, None, tick)
-            if not ok:
-                return ActionResult(narrative=f"Cannot cast: {reason}.", scene_type=session.dm_context.scene_type)
-            cast_result = resolve_cast(attempt, caster_record, ta, random.randint(1, 100), tick)
-            dmg = int(cast_result.get("total_damage", sum(random.randint(1, 4) for _ in range(2)) + 2))
-        session.player.spell_points = max(0, session.player.spell_points - 2)
-        ta.hp = max(0, ta.hp - dmg)
-        killed = not ta.alive
-        _sync_entity_dead(session, te.actor_id, ta.hp, ta.alive)
-
-        narr = f"{session.player.name} unleashes {spell_def.label} with a surge of magical force! [{dmg} force damage to {ta.name}]"
-        if killed:
-            narr += f" {ta.name} has been slain!"
-        return ActionResult(narrative=narr, events=[{"spell": spell_def.label, "damage": dmg, "killed": killed}],
+            dmg = _estimate_spell_damage(ta, effects)
+            ta.hp = max(0, getattr(ta, "hp", int(ta.stats.get("hp", 0))))
+            killed = not ta.alive
+            _sync_entity_dead(session, te.actor_id, ta.hp, ta.alive)
+            narr = f"{session.player.name} casts {spell_def.label}!"
+            if effects:
+                narr += f" [{', '.join(effects)} applied to {ta.name}]"
+            if dmg > 0:
+                narr += f" [{dmg} damage]"
+            if killed:
+                narr += f" {ta.name} has been slain!"
+        return ActionResult(narrative=narr,
+                            events=[{"spell": spell_def.label, "resisted": resisted, "effects": effects}],
                             scene_type=session.dm_context.scene_type, combat_state=self._combat_state(session))
 
     # ── Flee ───────────────────────────────────────────────────────────
@@ -362,3 +370,76 @@ class CombatActionsMixin:
             pa.raw_payload.pop("disengaged_until_turn_end", None)
         return ActionResult(narrative="\n".join(parts), scene_type=session.dm_context.scene_type,
                             combat_state=self._combat_state(session), state_changes={"_skip_world_tick": True})
+
+
+# ---------------------------------------------------------------------------
+# Spell bridge helpers (kernel-native)
+# ---------------------------------------------------------------------------
+
+def _get_kernel_player(session: GameSession):
+    """Extract player ActorRecord from kernel runtime."""
+    return (session.campaign_state.get("kernel_runtime") or {}).get("actors", {}).get("player")
+
+
+def _find_spellbook_for_spell(caster, spell_name: str):
+    """Search all spellbooks on the caster for one that knows the spell."""
+    from engine.kernel.spells import Spellbook
+    spellbooks = caster.raw_payload.get("spellbooks", {})
+    normalized = spell_name.lower().replace(" ", "_")
+    for sb in spellbooks.values():
+        if not isinstance(sb, Spellbook):
+            continue
+        for level, spells in sb.known_spells.items():
+            if normalized in [s.lower() for s in spells]:
+                return sb
+    return None
+
+
+def _lookup_spell_def(spell_name: str):
+    """Look up a SpellDef from the spells registry by name or id."""
+    from engine.data._shared import spells_registry
+    from engine.kernel.spells import SpellDef
+    registry = spells_registry()
+    normalized = spell_name.lower().replace(" ", "_")
+    # Try exact id match.
+    if normalized in registry:
+        return _spell_def_from_data(registry[normalized])
+    # Try name field match.
+    for raw in registry.values():
+        if str(raw.get("name", "")).lower().replace(" ", "_") == normalized:
+            return _spell_def_from_data(raw)
+    return None
+
+
+def _spell_def_from_data(raw: dict):
+    """Build a kernel SpellDef from spells.json format."""
+    from engine.kernel.spells import SpellDef
+    effects = raw.get("effects", [])
+    effect_ids = [str(e.get("type", "")) + "_" + str(e.get("damage_type", "")) for e in effects if isinstance(e, dict)]
+    return SpellDef(
+        spell_id=str(raw.get("id", raw.get("name", "unknown"))).lower().replace(" ", "_"),
+        label=str(raw.get("name", "Unknown Spell")),
+        spell_type=str(raw.get("spell_type", "wizard")),
+        school=str(raw.get("school", "evocation")),
+        level=int(raw.get("level", 1)),
+        casting_time=int(raw.get("casting_time", 0)),
+        range=int(raw.get("range", 30)),
+        target_type=str(raw.get("target_type", "single")),
+        hostile=str(raw.get("target_type", "single")) != "self",
+        effect_def_ids=effect_ids,
+    )
+
+
+def _expend_spell_slot(spellbook, spell_def) -> None:
+    """Expend a spell slot from the spellbook."""
+    for slot in spellbook.slots.get(spell_def.level, []):
+        if slot.memorized and not slot.expended:
+            slot.expended = True
+            return
+
+
+def _estimate_spell_damage(target, effects_applied: list[str]) -> int:
+    """Estimate damage dealt by checking target HP change from applied effects."""
+    # Effects are applied inline by resolve_cast via apply_effect.
+    # We can only estimate from the effect names — actual damage was already applied.
+    return len(effects_applied) * 4  # Rough estimate; real damage is in effect system

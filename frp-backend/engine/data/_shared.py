@@ -170,3 +170,27 @@ def history_tables_registry() -> Dict[str, Any]:
 def runtime_config_registry() -> Dict[str, Any]:
     return _unwrap(_load_json("runtime_config.json"), "runtime_config") or {}
 
+
+def dialog_defs_registry() -> Dict[str, Dict[str, Any]]:
+    return load_registry_map("dialog_defs.json", "dialog_defs", id_field="dialog_id")
+
+
+def caravans_registry() -> Dict[str, Dict[str, Any]]:
+    return load_registry_map("caravans.json", "caravans")
+
+
+def factions_registry() -> Dict[str, Any]:
+    return _unwrap(_load_json("factions.json"), "factions") or {}
+
+
+def colony_config_registry() -> Dict[str, Any]:
+    return _unwrap(_load_json("colony_config.json"), "colony_config") or {}
+
+
+def economy_config_registry() -> Dict[str, Any]:
+    return _unwrap(_load_json("economy_config.json"), "economy_config") or {}
+
+
+def quest_config_registry() -> Dict[str, Any]:
+    return _unwrap(_load_json("quest_config.json"), "quest_config") or {}
+

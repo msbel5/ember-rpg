@@ -1,0 +1,51 @@
+{
+  "colony_config": {
+    "needs": {
+      "eat": {"label": "Hunger", "decay_rate": 0.8, "fulfillment_base": 60.0, "desperate_threshold": 10.0, "weight": 1.5},
+      "drink": {"label": "Thirst", "decay_rate": 1.0, "fulfillment_base": 70.0, "desperate_threshold": 10.0, "weight": 1.5},
+      "sleep": {"label": "Rest", "decay_rate": 0.4, "fulfillment_base": 80.0, "desperate_threshold": 15.0, "weight": 1.2},
+      "pray": {"label": "Spirituality", "decay_rate": 0.2, "fulfillment_base": 40.0, "desperate_threshold": 5.0, "weight": 0.6},
+      "socialize": {"label": "Social", "decay_rate": 0.3, "fulfillment_base": 35.0, "desperate_threshold": 10.0, "weight": 0.8},
+      "craft": {"label": "Industry", "decay_rate": 0.15, "fulfillment_base": 30.0, "desperate_threshold": 5.0, "weight": 0.5},
+      "train": {"label": "Training", "decay_rate": 0.15, "fulfillment_base": 30.0, "desperate_threshold": 5.0, "weight": 0.5},
+      "admire_art": {"label": "Aesthetics", "decay_rate": 0.1, "fulfillment_base": 25.0, "desperate_threshold": 5.0, "weight": 0.4}
+    },
+    "morale_tiers": [
+      {"tier": "content", "unrest_min": 0, "unrest_max": 25, "work_speed_mult": 1.0, "social_hostility": false, "task_refusal": false, "tantrum_risk": 0.0},
+      {"tier": "unhappy", "unrest_min": 25, "unrest_max": 50, "work_speed_mult": 0.8, "social_hostility": false, "task_refusal": false, "tantrum_risk": 0.0},
+      {"tier": "miserable", "unrest_min": 50, "unrest_max": 75, "work_speed_mult": 0.5, "social_hostility": true, "task_refusal": true, "tantrum_risk": 0.02},
+      {"tier": "breakdown", "unrest_min": 75, "unrest_max": 101, "work_speed_mult": 0.2, "social_hostility": true, "task_refusal": true, "tantrum_risk": 0.10}
+    ],
+    "shortage_quests": {
+      "food": {"kind": "food", "title": "Address Food Pressure", "priority": 1},
+      "materials": {"kind": "materials", "title": "Address Materials Pressure", "priority": 2},
+      "security": {"kind": "security", "title": "Address Security Pressure", "priority": 1}
+    },
+    "thresholds": {
+      "mood": {"content": 75.0, "unhappy": 50.0, "miserable": 25.0},
+      "shortage": 3
+    },
+    "pressure_tags": {
+      "food_insecure": {"metric": "food", "threshold": 55, "operator": "<"},
+      "unsafe": {"metric": "safety", "threshold": 55, "operator": "<"},
+      "resource_strain": {"metric": "supply", "threshold": 55, "operator": "<"},
+      "housing_strain": {"metric": "housing", "threshold": 55, "operator": "<"},
+      "unrest": {"metric": "unrest", "threshold": 50, "operator": ">="},
+      "migration_candidate": {
+        "type": "compound",
+        "conditions": [
+          {"metric": "housing", "threshold": 80, "operator": ">"},
+          {"metric": "morale", "threshold": 70, "operator": ">"},
+          {"metric": "food", "threshold": 60, "operator": ">"}
+        ]
+      }
+    },
+    "room_zones": {
+      "bedroom": {"required_furniture": ["bed"]},
+      "dining": {"required_furniture": ["table", "chair"]},
+      "workshop": {"required_furniture": ["worksite"]},
+      "hospital": {"required_furniture": ["bed", "table"]},
+      "temple": {"required_furniture": ["altar"]}
+    }
+  }
+}

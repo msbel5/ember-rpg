@@ -1,0 +1,310 @@
+{
+  "dialog_defs": [
+    {
+      "dialog_id": "guard_gate",
+      "npc_id": "guard",
+      "role": "guard",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "The guard blocks the path, hand resting on a weapon.",
+          "transitions": [
+            {
+              "transition_id": "show_papers",
+              "text": "Show travel papers",
+              "condition": {"condition_type": "item_check", "params": {"item_def_id": "travel_papers"}},
+              "next_state_id": "pass_granted",
+              "actions": [{"action_type": "take_item", "params": {"item_def_id": "travel_papers", "quantity": 1}}]
+            },
+            {
+              "transition_id": "bribe_guard",
+              "text": "Offer a bribe [PRE 12]",
+              "condition": {"condition_type": "stat_check", "params": {"stat": "PRE", "operator": ">=", "value": 12}},
+              "next_state_id": "pass_granted",
+              "actions": [{"action_type": "take_gold", "params": {"amount": 10}}]
+            },
+            {
+              "transition_id": "intimidate_guard",
+              "text": "Force your way past [MIG 14]",
+              "condition": {"condition_type": "stat_check", "params": {"stat": "MIG", "operator": ">=", "value": 14}},
+              "next_state_id": "pass_granted",
+              "hostile": true,
+              "actions": [{"action_type": "set_variable", "params": {"name": "guard_hostile", "value": true}}]
+            },
+            {
+              "transition_id": "ask_work_guard",
+              "text": "Ask about local trouble",
+              "next_state_id": "guard_info"
+            },
+            {
+              "transition_id": "leave_guard",
+              "text": "Leave",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "pass_granted",
+          "text": "The guard steps aside. \"Move along.\"",
+          "transitions": [
+            {"transition_id": "pass_done", "text": "Continue on", "terminates": true}
+          ]
+        },
+        {
+          "state_id": "guard_info",
+          "text": "\"Wolves have been raiding caravans on the north road. Watch yourself out there.\"",
+          "transitions": [
+            {"transition_id": "guard_info_done", "text": "Noted. Farewell.", "terminates": true}
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "merchant_shop",
+      "npc_id": "merchant",
+      "role": "merchant",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "The merchant spreads their hands over the wares. \"See anything you like?\"",
+          "transitions": [
+            {
+              "transition_id": "browse_wares",
+              "text": "Browse the inventory",
+              "next_state_id": "wares"
+            },
+            {
+              "transition_id": "haggle",
+              "text": "Negotiate a discount [PRE 13]",
+              "condition": {"condition_type": "stat_check", "params": {"stat": "PRE", "operator": ">=", "value": 13}},
+              "next_state_id": "discount_offered",
+              "actions": [{"action_type": "set_variable", "params": {"name": "merchant_discount", "value": true, "scope": "global"}}]
+            },
+            {
+              "transition_id": "ask_rumors_merchant",
+              "text": "Ask about rumors",
+              "next_state_id": "merchant_rumors"
+            },
+            {
+              "transition_id": "leave_merchant",
+              "text": "Leave",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "wares",
+          "text": "\"I've got supplies for the road, weapons for the bold, and a few curiosities besides.\"",
+          "transitions": [
+            {"transition_id": "wares_back", "text": "Back", "next_state_id": "greeting"},
+            {"transition_id": "wares_done", "text": "That's all", "terminates": true}
+          ]
+        },
+        {
+          "state_id": "discount_offered",
+          "text": "\"Alright, alright. I'll knock a bit off the price for you. But don't tell anyone.\"",
+          "transitions": [
+            {"transition_id": "discount_done", "text": "Thanks. Let me browse.", "next_state_id": "wares"},
+            {"transition_id": "discount_leave", "text": "Good. Farewell.", "terminates": true}
+          ]
+        },
+        {
+          "state_id": "merchant_rumors",
+          "text": "\"They say the old mine south of town has been overrun. Goblins, maybe worse.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_mine_quest",
+              "text": "I'll clear it out",
+              "next_state_id": "quest_offered",
+              "actions": [{"action_type": "start_quest", "params": {"quest_id": "clear_mine", "stage": "accepted"}}]
+            },
+            {"transition_id": "rumors_done", "text": "I'll keep that in mind", "terminates": true}
+          ]
+        },
+        {
+          "state_id": "quest_offered",
+          "text": "\"Brave soul. Bring back proof and I'll make it worth your while.\"",
+          "transitions": [
+            {"transition_id": "quest_done", "text": "Consider it done.", "terminates": true}
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "innkeeper_tavern",
+      "npc_id": "innkeeper",
+      "role": "innkeeper",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "The innkeeper wipes down the bar. \"Welcome, traveler. What'll it be?\"",
+          "transitions": [
+            {
+              "transition_id": "rent_room_inn",
+              "text": "Rent a room for the night",
+              "next_state_id": "room_rented",
+              "actions": [{"action_type": "take_gold", "params": {"amount": 5}}]
+            },
+            {
+              "transition_id": "ask_rumors_inn",
+              "text": "What's the local gossip?",
+              "next_state_id": "inn_rumors"
+            },
+            {
+              "transition_id": "ask_supplies_inn",
+              "text": "Do you have supplies for the road?",
+              "next_state_id": "inn_supplies"
+            },
+            {
+              "transition_id": "leave_inn",
+              "text": "Nothing, thanks.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "room_rented",
+          "text": "\"Room's upstairs, second door on the left. Rest well.\"",
+          "transitions": [
+            {"transition_id": "room_done", "text": "Rest for the night", "terminates": true}
+          ]
+        },
+        {
+          "state_id": "inn_rumors",
+          "text": "\"A strange fellow passed through last week. Asked about the ruins up north. Nobody goes there anymore.\"",
+          "transitions": [
+            {"transition_id": "inn_rumors_back", "text": "Interesting. Anything else?", "next_state_id": "greeting"},
+            {"transition_id": "inn_rumors_done", "text": "Thanks.", "terminates": true}
+          ]
+        },
+        {
+          "state_id": "inn_supplies",
+          "text": "\"I've got dried rations and a few torches. Nothing fancy, but it'll keep you going.\"",
+          "transitions": [
+            {"transition_id": "inn_supplies_back", "text": "Back", "next_state_id": "greeting"},
+            {"transition_id": "inn_supplies_done", "text": "I'll manage.", "terminates": true}
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "blacksmith_forge",
+      "npc_id": "blacksmith",
+      "role": "blacksmith",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "Sparks fly as the blacksmith sets down the hammer. \"Need something made or mended?\"",
+          "transitions": [
+            {
+              "transition_id": "buy_weapons",
+              "text": "Show me your weapons",
+              "next_state_id": "weapons_list"
+            },
+            {
+              "transition_id": "repair_item",
+              "text": "I need something repaired",
+              "next_state_id": "repair_offer"
+            },
+            {
+              "transition_id": "ask_craft",
+              "text": "Can you craft something custom?",
+              "condition": {"condition_type": "item_check", "params": {"item_def_id": "iron_bar"}},
+              "next_state_id": "custom_craft"
+            },
+            {
+              "transition_id": "leave_smith",
+              "text": "Just looking.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "weapons_list",
+          "text": "\"Iron swords, axes, a few spearheads. All solid work.\"",
+          "transitions": [
+            {"transition_id": "weapons_back", "text": "Back", "next_state_id": "greeting"},
+            {"transition_id": "weapons_done", "text": "Maybe later.", "terminates": true}
+          ]
+        },
+        {
+          "state_id": "repair_offer",
+          "text": "\"Bring me the piece and I'll see what I can do. Won't be cheap, mind.\"",
+          "transitions": [
+            {"transition_id": "repair_back", "text": "Back", "next_state_id": "greeting"},
+            {"transition_id": "repair_done", "text": "I'll think about it.", "terminates": true}
+          ]
+        },
+        {
+          "state_id": "custom_craft",
+          "text": "\"You've got the materials. I can work with that. What did you have in mind?\"",
+          "transitions": [
+            {"transition_id": "craft_back", "text": "Back", "next_state_id": "greeting"},
+            {"transition_id": "craft_done", "text": "Let me think on it.", "terminates": true}
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "healer_temple",
+      "npc_id": "healer",
+      "role": "healer",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "The healer looks up from a mortar of herbs. \"You look like you could use some tending.\"",
+          "transitions": [
+            {
+              "transition_id": "heal_me",
+              "text": "I need healing",
+              "next_state_id": "healing_done",
+              "actions": [
+                {"action_type": "take_gold", "params": {"amount": 15}},
+                {"action_type": "give_xp", "params": {"amount": 5}}
+              ]
+            },
+            {
+              "transition_id": "buy_potions",
+              "text": "Do you sell potions?",
+              "next_state_id": "potion_list"
+            },
+            {
+              "transition_id": "ask_identify",
+              "text": "Can you identify this item? [INS 11]",
+              "condition": {"condition_type": "stat_check", "params": {"stat": "INS", "operator": ">=", "value": 11}},
+              "next_state_id": "identify_offer"
+            },
+            {
+              "transition_id": "leave_healer",
+              "text": "I'm fine, thanks.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "healing_done",
+          "text": "\"There. The herbs will do their work. Rest if you can.\"",
+          "transitions": [
+            {"transition_id": "healing_done_leave", "text": "Thank you.", "terminates": true}
+          ]
+        },
+        {
+          "state_id": "potion_list",
+          "text": "\"I have a few remedies. Healing salves, antidotes, and a rare restorative.\"",
+          "transitions": [
+            {"transition_id": "potions_back", "text": "Back", "next_state_id": "greeting"},
+            {"transition_id": "potions_done", "text": "Not today.", "terminates": true}
+          ]
+        },
+        {
+          "state_id": "identify_offer",
+          "text": "\"Bring the item here. My knowledge of the old texts may reveal its nature.\"",
+          "transitions": [
+            {"transition_id": "identify_back", "text": "Back", "next_state_id": "greeting"},
+            {"transition_id": "identify_done", "text": "I'll come back.", "terminates": true}
+          ]
+        }
+      ]
+    }
+  ]
+}

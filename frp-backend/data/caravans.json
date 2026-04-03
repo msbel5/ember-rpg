@@ -1,0 +1,31 @@
+{
+  "caravans": {
+    "iron_caravan": {
+      "name": "Iron Caravan",
+      "origin": "ironhold_mines",
+      "destination": "riverside_market",
+      "goods": {"iron_ore": 40, "coal": 20, "iron_bar": 10},
+      "travel_hours": 8,
+      "frequency_hours": 24,
+      "value": 300
+    },
+    "food_caravan": {
+      "name": "Food Caravan",
+      "origin": "greenfield_farms",
+      "destination": "riverside_market",
+      "goods": {"grain": 60, "bread": 20, "ale": 15, "herb": 10},
+      "travel_hours": 6,
+      "frequency_hours": 18,
+      "value": 180
+    },
+    "luxury_caravan": {
+      "name": "Luxury Caravan",
+      "origin": "silverpeak",
+      "destination": "capital_city",
+      "goods": {"silver_bar": 5, "silver_ring": 8, "glass_vial": 20, "cloth": 15},
+      "travel_hours": 12,
+      "frequency_hours": 48,
+      "value": 800
+    }
+  }
+}

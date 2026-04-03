@@ -221,6 +221,87 @@ def merge_avatar_narrative(context: "CampaignContext", narrative: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Dialog commands (kernel dialog authority)
+# ---------------------------------------------------------------------------
+
+def maybe_handle_dialog_command(
+    context: "CampaignContext", command_text: str,
+) -> Optional[tuple[str, str, int]]:
+    """Handle dialog transition selection via kernel dialog state machine."""
+    from engine.kernel.dialog import DialogDef, DialogState, get_available_transitions, select_transition
+    lower = command_text.lower().strip()
+    if not lower.startswith("dialog "):
+        return None
+    transition_id = command_text[7:].strip()
+    if not transition_id:
+        return None
+    runtime = context.kernel_runtime or {}
+    dialog_state = runtime.get("dialog_state")
+    if not isinstance(dialog_state, DialogState):
+        return ("No active dialog.", "dialog", 0)
+    dialog_defs = runtime.get("dialog_defs", {})
+    dialog_def = dialog_defs.get(dialog_state.dialog_id)
+    if not isinstance(dialog_def, DialogDef):
+        return ("Dialog definition not found.", "dialog", 0)
+    current_node = next((n for n in dialog_def.states if n.state_id == dialog_state.current_state_id), None)
+    if current_node is None:
+        return ("Dialog state is invalid.", "dialog", 0)
+    actors = runtime.get("actors", {})
+    player, npc = actors.get("player"), actors.get(runtime.get("dialog_npc_id", ""))
+    if player is None or npc is None:
+        return ("Dialog actors not available.", "dialog", 0)
+    global_vars = _dialog_global_vars(context)
+    available = get_available_transitions(current_node, player, npc, dialog_state.variables, global_vars)
+    transition = None
+    for t in available:
+        if t.transition_id == transition_id:
+            transition = t
+            break
+    if transition is None:
+        return ("That dialog option is not available.", "dialog", 0)
+    # Execute transition via kernel.
+    new_state, next_node, events = select_transition(
+        dialog_state, transition, dialog_defs, player, npc, global_vars,
+    )
+    logger.info("Dialog transition: %s → %s (events=%d)", transition_id,
+                next_node.state_id if next_node else "END", len(events))
+    # Build narrative from events and next node.
+    event_summaries = _summarize_dialog_events(events)
+    if not new_state.active or next_node is None:
+        from engine.api.campaign.dialog import clear_dialog_state
+        clear_dialog_state(context)
+        narrative = event_summaries + " The conversation ends."
+    else:
+        runtime["dialog_state"] = new_state
+        narrative = event_summaries + (f" {next_node.text}" if next_node.text else "")
+    return (narrative.strip(), "dialog", 0)
+
+
+def _dialog_global_vars(context: "CampaignContext") -> dict[str, Any]:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    return dict(getattr(game_state, "global_variables", {})) if game_state else {}
+
+
+_EVENT_TEMPLATES = {
+    "give_item": lambda e: f"Received {e.get('item_def_id', 'an item')}.",
+    "take_item": lambda e: f"Gave {e.get('item_def_id', 'an item')}.",
+    "give_gold": lambda e: f"Received {e.get('amount', 0)} gold.",
+    "take_gold": lambda e: f"Paid {e.get('amount', 0)} gold.",
+    "give_xp": lambda e: f"Gained {e.get('amount', 0)} experience.",
+    "start_quest": lambda e: f"Quest '{e.get('quest_id', '')}' accepted.",
+    "advance_quest": lambda e: f"Quest '{e.get('quest_id', '')}' advanced.",
+    "set_hostile": lambda _: "They turn hostile!",
+}
+
+
+def _summarize_dialog_events(events: list[dict[str, Any]]) -> str:
+    return " ".join(
+        _EVENT_TEMPLATES[e.get("type", "")](e) for e in events if e.get("type", "") in _EVENT_TEMPLATES
+    )
+
+
+# ---------------------------------------------------------------------------
 # Commerce commands (kernel store authority)
 # ---------------------------------------------------------------------------
 
@@ -229,7 +310,7 @@ def maybe_handle_commerce_command(
     command_text: str,
 ) -> Optional[tuple[str, str, int]]:
     """Handle buy/sell/rent/identify via kernel store.py."""
-    from engine.kernel.store import buy_item, sell_item, rent_room
+    from engine.kernel.store import buy_identification, buy_item, sell_item, rent_room
     lower = command_text.lower().strip()
     runtime = context.kernel_runtime or {}
     stores = runtime.get("stores", [])
@@ -280,7 +361,20 @@ def maybe_handle_commerce_command(
         return (f"Rented a room. You rest for the night.", "avatar", 8)
     if lower.startswith("identify "):
         item_name = command_text[9:].strip()
-        return (f"Identifying {item_name} requires a sage or scholarly merchant.", "avatar", 1)
+        store = _find_store_with_service(stores, "identify")
+        if store is None:
+            return ("No merchant with identification services found.", "avatar", 1)
+        item_instance = _find_inventory_item(player, item_name)
+        if item_instance is None:
+            return (f"You don't have '{item_name}' to identify.", "avatar", 1)
+        item_def = _item_def_from_registry(item_instance.item_def_id, item_registry)
+        if item_def is None:
+            return (f"Unknown item definition for '{item_name}'.", "avatar", 1)
+        ok, msg = buy_identification(player, store, item_instance, item_def)
+        if not ok:
+            return (f"Cannot identify: {msg}.", "avatar", 1)
+        logger.info("Identify: %s identified %s", player.identity.display_name, item_name)
+        return (f"Identified {item_name}. {msg}", "avatar", 1)
     return None
 
 
@@ -308,59 +402,40 @@ def _item_registry() -> dict:
         return {}
 
 
-# ---------------------------------------------------------------------------
-# Medical commands (kernel medical authority)
-# ---------------------------------------------------------------------------
+def _find_store_with_service(stores: list, service_type: str) -> Any:
+    for store in stores:
+        if any(getattr(s, "service_type", "") == service_type for s in getattr(store, "services", [])):
+            return store
+    return None
 
-def maybe_handle_medical_command(
-    context: "CampaignContext",
-    command_text: str,
-) -> Optional[tuple[str, str, int]]:
-    """Handle diagnose/treat/surgery via kernel medical.py."""
-    from engine.kernel.medical import check_lethal_conditions
-    lower = command_text.lower().strip()
-    runtime = context.kernel_runtime or {}
-    actors = runtime.get("actors", {})
-    player = actors.get("player")
-    if player is None:
+
+def _find_inventory_item(player: Any, item_name: str) -> Any:
+    name_lower = item_name.lower().replace(" ", "_")
+    for item in player.inventory:
+        def_id = getattr(item, "item_def_id", "")
+        if def_id == name_lower or name_lower in def_id.lower():
+            return item
+    return None
+
+
+def _item_def_from_registry(item_def_id: str, registry: dict) -> Any:
+    raw = registry.get(item_def_id)
+    if raw is None:
         return None
-    if lower.startswith("diagnose"):
-        target_name = command_text[8:].strip() or "self"
-        target = _resolve_medical_target(actors, target_name, player)
-        if target is None:
-            return (f"No target '{target_name}' found to diagnose.", "avatar", 1)
-        if target.body_state is None:
-            return (f"{target.identity.display_name} has no injuries to diagnose.", "avatar", 1)
-        # Check for wounds across body parts.
-        wound_summaries = []
-        for part_id, part in target.body_state.parts.items():
-            if part.current_hp < part.max_hp:
-                wound_summaries.append(f"{part_id}: {part.current_hp}/{part.max_hp} hp")
-        lethal, reason = check_lethal_conditions(target)
-        status = f"CRITICAL ({reason})" if lethal else "stable"
-        summary = ", ".join(wound_summaries[:3]) if wound_summaries else "no visible wounds"
-        return (f"Diagnosis for {target.identity.display_name}: {summary}. Status: {status}.", "avatar", 1)
-    if lower.startswith("treat ") or lower.startswith("surgery "):
-        target_name = command_text[8 if lower.startswith("surgery") else 6:].strip() or "self"
-        target = _resolve_medical_target(actors, target_name, player)
-        if target is None:
-            return (f"No target '{target_name}' found to treat.", "avatar", 1)
-        if target.body_state is None:
-            return (f"{target.identity.display_name} has nothing to treat.", "avatar", 2)
-        # Apply basic healing to most damaged body part.
-        worst_part = min(target.body_state.parts.values(), key=lambda p: p.current_hp / max(1, p.max_hp), default=None)
-        if worst_part is None:
-            return (f"No wounds found on {target.identity.display_name}.", "avatar", 2)
-        healed = min(5, worst_part.max_hp - worst_part.current_hp)
-        worst_part.current_hp = min(worst_part.max_hp, worst_part.current_hp + healed)
-        return (f"Treated {target.identity.display_name}: healed {healed} hp.", "avatar", 2)
-    return None
+    try:
+        from engine.kernel.items import ItemDef
+        return ItemDef(
+            item_def_id=str(raw.get("id", item_def_id)), label=str(raw.get("name", item_def_id)),
+            item_type=str(raw.get("type", "misc")), rarity=str(raw.get("rarity", "common")).upper(),
+            base_price=int(raw.get("value", 0)), weight=float(raw.get("weight", 0.0)),
+            lore_to_identify=int(raw.get("lore_to_identify", 0)),
+        )
+    except Exception:
+        return None
 
 
-def _resolve_medical_target(actors: dict, name: str, player: Any) -> Any:
-    if name.lower() in ("self", "me", "player"):
-        return player
-    for actor in actors.values():
-        if hasattr(actor, "identity") and name.lower() in actor.identity.display_name.lower():
-            return actor
-    return None
+# ---------------------------------------------------------------------------
+# Medical commands — delegated to medical_bridge.py for kernel pipeline
+# ---------------------------------------------------------------------------
+
+from engine.api.medical_bridge import maybe_handle_medical_command  # noqa: E402, F811
