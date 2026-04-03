@@ -16,6 +16,7 @@ from .context import CampaignContext, CampaignCreationContext
 from .live_kernel import ensure_kernel_runtime
 from .persistence import campaign_payload, persist_campaign_state
 from .runtime_commands import run_command as _run_command
+from .controls import merge_settlement_controls
 from .session import apply_region_to_session
 from .settlement import build_character_sheet, build_settlement_state
 from .world import (

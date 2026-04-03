@@ -170,8 +170,69 @@ def advance_kernel_runtime(
         events.extend(job_and_farm_events(context, runtime, seed + step))
         events.extend(macro_society_events(context, runtime))
         events.extend(systems_events(context, runtime, seed + step))
+    # ── Progression: check for level-up after all ticks ──────────
+    player = runtime["actors"].get("player")
+    if player is not None:
+        events.extend(_check_level_up(player))
     refresh_runtime_views(context, runtime)
     _sync_runtime_to_session(context, runtime)
+    return events
+
+
+def _check_level_up(player: ActorRecord) -> list[dict[str, Any]]:
+    """Check if the player has enough XP to level up and apply the change.
+
+    Reads XP thresholds from progression.json.  When the player's
+    accumulated XP exceeds the threshold for their next level, the level
+    is incremented, max_hp is raised (class-based), and a ``level_up``
+    event is emitted.  Repeats until no further level-ups are possible
+    so that large XP grants can jump multiple levels.
+    """
+    from engine.data.runtime import get_hp_per_level, get_xp_thresholds
+
+    events: list[dict[str, Any]] = []
+    xp_thresholds = get_xp_thresholds()
+    hp_per_level = get_hp_per_level()
+
+    if not xp_thresholds:
+        return events
+
+    current_xp = int(player.raw_payload.get("xp", 0))
+    current_level = int(player.raw_payload.get("level", 1))
+    class_name = str(player.raw_payload.get("class_name", "warrior")).lower()
+    hp_gain_per_level = hp_per_level.get(class_name, 8)
+    end_mod = (int(player.stats.get("END", 10)) - 10) // 2
+
+    # Allow multi-level jumps.
+    while True:
+        next_level = current_level + 1
+        # xp_thresholds[0] is level 1, xp_thresholds[1] is level 2, etc.
+        if next_level > len(xp_thresholds):
+            break  # At cap.
+        threshold = xp_thresholds[next_level - 1]
+        if current_xp < threshold:
+            break  # Not enough XP.
+
+        # Level up!
+        current_level = next_level
+        hp_gained = max(1, hp_gain_per_level + end_mod)
+        new_max_hp = int(player.stats.get("max_hp", 1)) + hp_gained
+        player.stats["max_hp"] = new_max_hp
+        player.stats["hp"] = new_max_hp  # Full heal on level-up.
+        player.raw_payload["level"] = current_level
+
+        events.append({
+            "event_type": "level_up",
+            "summary": (
+                f"{player.identity.display_name} reached level {current_level}! "
+                f"(+{hp_gained} HP, max HP now {new_max_hp})"
+            ),
+            "actor_id": player.identity.actor_id,
+            "new_level": current_level,
+            "hp_gained": hp_gained,
+            "new_max_hp": new_max_hp,
+        })
+
     return events
 
 
@@ -218,6 +279,11 @@ def _sync_runtime_to_session(context: "CampaignContext", runtime: dict[str, Any]
         context.session.player.hp = int(player.stats.get("hp", context.session.player.hp))
         context.session.player.max_hp = int(player.stats.get("max_hp", context.session.player.max_hp))
         context.session.player.conditions = [condition.name for condition in player.conditions]
+        # Sync XP and level from kernel ActorRecord to session player.
+        # ActorRecord.level is a read-only property backed by raw_payload,
+        # so we write to raw_payload directly.  xp has a proper setter.
+        context.session.player.xp = int(player.raw_payload.get("xp", 0))
+        context.session.player.raw_payload["level"] = int(player.raw_payload.get("level", 1))
         if context.session.body_tracker is None:
             context.session.body_tracker = BodyPartTracker()
         if player.body_state is not None:
@@ -258,7 +324,14 @@ def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
         target.skills.setdefault(key, value)
     target.inventory = fresh.inventory
     target.equipment = fresh.equipment
+    # Preserve progression fields (xp, level) that the kernel owns.
+    preserved_xp = target.raw_payload.get("xp")
+    preserved_level = target.raw_payload.get("level")
     target.raw_payload.update(fresh.raw_payload)
+    if preserved_xp is not None:
+        target.raw_payload["xp"] = max(int(preserved_xp), int(target.raw_payload.get("xp", 0)))
+    if preserved_level is not None:
+        target.raw_payload["level"] = max(int(preserved_level), int(target.raw_payload.get("level", 1)))
     if target.body_state is None:
         target.body_state = fresh.body_state
     elif target.body_state is not None and fresh.body_state is not None:
@@ -300,4 +373,4 @@ def _medical_tick_events(actors: list, current_tick: int) -> list[dict[str, Any]
     return events
 
 
-__all__ = ["advance_kernel_runtime", "ensure_kernel_runtime", "serialize_kernel_runtime"]
+__all__ = ["advance_kernel_runtime", "ensure_kernel_runtime", "serialize_kernel_runtime", "_check_level_up"]

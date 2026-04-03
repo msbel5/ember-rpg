@@ -107,6 +107,34 @@ def _dispatch(
     medical = maybe_handle_medical_command(context, issued)
     if medical is not None:
         return medical
+    # Combat handler.
+    from engine.api.combat_bridge import maybe_handle_combat_command  # noqa: E402
+    combat = maybe_handle_combat_command(context, issued)
+    if combat is not None:
+        return combat
+    # Gameplay handlers (equipment, inventory, crafting, rest, spells).
+    from engine.api.gameplay_bridge import (  # noqa: E402
+        maybe_handle_equipment_command,
+        maybe_handle_inventory_command,
+        maybe_handle_craft_command,
+        maybe_handle_rest_command,
+        maybe_handle_spell_command,
+    )
+    equipment = maybe_handle_equipment_command(context, issued)
+    if equipment is not None:
+        return equipment
+    inventory = maybe_handle_inventory_command(context, issued)
+    if inventory is not None:
+        return inventory
+    craft = maybe_handle_craft_command(context, issued)
+    if craft is not None:
+        return craft
+    rest = maybe_handle_rest_command(context, issued)
+    if rest is not None:
+        return rest
+    spell = maybe_handle_spell_command(context, issued)
+    if spell is not None:
+        return spell
     result = engine.process_action(context.session, issued)
     narrative = merge_avatar_narrative(context, result.narrative)
     return narrative, "avatar", hours_for_avatar_command(lower)

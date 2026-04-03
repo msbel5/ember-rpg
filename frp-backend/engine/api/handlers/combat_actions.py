@@ -10,7 +10,7 @@ from typing import Any, Optional
 
 from engine.api.campaign.debug_trace import trace_event
 from engine.api.action_parser import ParsedAction
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.api.runtime_constants import HOSTILE_KEYWORDS, XP_REWARDS
 from engine.kernel import item_stack_from_legacy_payload, resolve_strike
 from engine.kernel.actor_records import ActorRecord
@@ -56,6 +56,22 @@ def _weapon_from_equipment(equipment: dict) -> Optional[Any]:
         "damage_type": wp.get("damage_type", "slashing"), "ac_bonus": int(wp.get("ac_bonus", 0)),
     }
     return item_stack_from_legacy_payload(payload, index=0)
+
+def _award_combat_xp(player: ActorRecord, target: ActorRecord) -> int:
+    """Award XP to the player's kernel ActorRecord for defeating a target.
+
+    XP is derived from the target's level or challenge rating.  The amount
+    is written into ``player.raw_payload["xp"]`` so that the campaign
+    runtime level-up check can pick it up.
+    """
+    target_level = int(target.raw_payload.get("level", 0))
+    target_cr = float(target.raw_payload.get("cr", 0))
+    effective_level = max(1, target_level, int(target_cr))
+    base_xp = effective_level * 50
+    player.raw_payload.setdefault("xp", 0)
+    player.raw_payload["xp"] = int(player.raw_payload["xp"]) + base_xp
+    return base_xp
+
 
 def _sync_entity_dead(session: GameSession, entity_id: str, hp: int, alive: bool) -> None:
     """Push HP/alive state into session.entities for one combatant."""
@@ -195,6 +211,12 @@ class CombatActionsMixin:
         # Kill consequences.
         if killed:
             parts.append(self._build_death_narrative(session, dname))
+            # Award per-kill XP to the kernel ActorRecord.
+            player_actor = actors.get("player")
+            if player_actor is not None and defender is not None:
+                kill_xp = _award_combat_xp(player_actor, defender)
+                sc["kill_xp"] = kill_xp
+                parts.append(f"[+{kill_xp} XP]")
             qevts = self._update_quest_progress_for_kill(session, dname)
             if qevts:
                 sc.setdefault("world_events", []).extend(copy.deepcopy(qevts))
@@ -303,6 +325,11 @@ class CombatActionsMixin:
                 narr += f" [{dmg} damage]"
             if killed:
                 narr += f" {ta.name} has been slain!"
+                # Award per-kill XP to the kernel player ActorRecord.
+                player_actor = actors.get("player") if actors else None
+                if player_actor is not None:
+                    kill_xp = _award_combat_xp(player_actor, ta)
+                    narr += f" [+{kill_xp} XP]"
         return ActionResult(narrative=narr,
                             events=[{"spell": spell_def.label, "resisted": resisted, "effects": effects}],
                             scene_type=session.dm_context.scene_type, combat_state=self._combat_state(session))
