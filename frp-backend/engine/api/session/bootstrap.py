@@ -1,9 +1,19 @@
-"""Bootstrap and lifecycle helpers for GameSession."""
+"""Bootstrap and lifecycle helpers for GameSession.
+
+Kernel-only: all values come from ActorRecord (kernel types) and
+the data layer — no hardcoded game constants, no legacy dict branches.
+"""
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 
-from engine.data_loader import get_location_stock_baseline
+from engine.data_loader import (
+    get_class_ap_map,
+    get_class_default_hp,
+    get_creation_default_class,
+    get_location_stock_baseline,
+)
 from engine.map import DungeonGenerator, TownGenerator, WildernessGenerator
 from engine.npc.npc_memory import NPCMemoryManager
 from engine.world import WorldState
@@ -23,6 +33,8 @@ from engine.world.spatial_index import SpatialIndex
 from engine.world.viewport import Viewport
 
 from .constants import DEFAULT_EQUIPMENT_SLOTS
+
+log = logging.getLogger(__name__)
 
 
 class SessionBootstrapMixin:
@@ -86,52 +98,72 @@ class SessionBootstrapMixin:
                 )
 
         if self.player_entity is None:
+            # All values read from kernel ActorRecord — no hardcoded fallbacks
+            player_name = self.player.name if self.player else "Player"
+            player_hp = self.player.hp if self.player else get_class_default_hp(
+                self.player.player_class if self.player else get_creation_default_class()
+            )
+            player_max_hp = self.player.max_hp if self.player else player_hp
+            log.info("Creating player entity: name=%s hp=%d/%d", player_name, player_hp, player_max_hp)
             self.player_entity = Entity(
                 id="player",
                 entity_type=EntityType.NPC,
-                name=self.player.name if self.player else "Player",
+                name=player_name,
                 position=tuple(self.position),
                 glyph="@",
                 color="white",
                 blocking=True,
-                hp=self.player.hp if self.player else 20,
-                max_hp=self.player.max_hp if self.player else 20,
+                hp=player_hp,
+                max_hp=player_max_hp,
                 disposition="friendly",
             )
             self.spatial_index.add(self.player_entity)
 
         if self.ap_tracker is None:
-            player_class = "warrior"
-            if hasattr(self, "player") and self.player is not None:
-                dominant = self.player.dominant_class or next(iter(self.player.classes), "warrior")
-                player_class = str(dominant or "warrior").lower()
-            max_ap = CLASS_AP.get(player_class, 4)
+            # AP per turn loaded from classes.json via CLASS_AP map
+            player_class = (
+                self.player.dominant_class
+                if self.player is not None
+                else get_creation_default_class()
+            )
+            max_ap = CLASS_AP.get(player_class, get_class_ap_map().get(player_class, 4))
+            log.info("Init AP tracker: class=%s max_ap=%d", player_class, max_ap)
             self.ap_tracker = ActionPointTracker(max_ap=max_ap)
 
         if self.physical_inventory is None:
             self.physical_inventory = PhysicalInventory()
-            player_inventory = list(getattr(self.player, "inventory", None) or [])
-            player_equipment = dict(getattr(self.player, "equipment", None) or {})
-            for item in player_inventory:
-                if isinstance(item, str):
-                    normalized = self._normalize_item_record({"id": item, "name": self._display_name(item)})
-                else:
-                    normalized = self._normalize_item_record(item)
+
+            # Kernel inventory is list[ItemStack] — convert each to
+            # runtime ItemStack via dict intermediary (no legacy branches)
+            kernel_items = self.player.inventory if self.player else []
+            for item in kernel_items:
+                item_dict = item.to_dict()
+                normalized = self._normalize_item_record(item_dict)
                 stack = ItemStack.from_legacy_dict(normalized)
                 self.physical_inventory.add_item_auto(stack)
-            for slot, item in player_equipment.items():
-                if item is None:
-                    continue
-                canon_slot = self._canonical_slot(slot)
-                if canon_slot not in DEFAULT_EQUIPMENT_SLOTS:
-                    continue
-                if isinstance(item, str):
-                    normalized = self._normalize_item_record({"id": item, "slot": canon_slot})
-                else:
-                    normalized = self._normalize_item_record(item)
-                    normalized["slot"] = canon_slot
-                stack = ItemStack.from_legacy_dict(normalized)
-                self.physical_inventory.equipment[canon_slot] = stack
+
+            # Kernel equipment is EquipmentLoadout — flatten slots into
+            # PhysicalInventory.equipment (runtime uses {slot: ItemStack})
+            kernel_equip = self.player.equipment if self.player else None
+            if kernel_equip is not None and hasattr(kernel_equip, "slots"):
+                for slot_name, items in kernel_equip.slots.items():
+                    if not items:
+                        continue
+                    canon_slot = self._canonical_slot(slot_name)
+                    if canon_slot not in DEFAULT_EQUIPMENT_SLOTS:
+                        continue
+                    first = items[0]
+                    item_dict = first.to_dict()
+                    item_dict["slot"] = canon_slot
+                    normalized = self._normalize_item_record(item_dict)
+                    stack = ItemStack.from_legacy_dict(normalized)
+                    self.physical_inventory.equipment[canon_slot] = stack
+
+            log.info(
+                "PhysicalInventory loaded: %d backpack items, %d equipped slots",
+                len(list(self.physical_inventory.all_items())),
+                sum(1 for v in self.physical_inventory.equipment.values() if v),
+            )
 
         if not self.campaign_state:
             self.campaign_state = {

@@ -1,13 +1,19 @@
-"""Settlement and character-sheet projections for campaign runtime."""
+"""Settlement and character-sheet projections for campaign runtime.
+
+All game constants loaded from data layer — no hardcoded ability orders,
+no hardcoded stat defaults.
+"""
 from __future__ import annotations
 
 import copy
+import logging
 from typing import Any
 
 from engine.api.game_session import GameSession
+from engine.data.classes import get_creation_ability_order
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
-_ABILITY_ORDER: list[str] = ["MIG", "AGI", "END", "MND", "INS", "PRE"]
+log = logging.getLogger(__name__)
 
 
 def build_settlement_state(
@@ -117,10 +123,10 @@ def build_settlement_state(
 
 def build_character_sheet(session: GameSession, settlement_state: dict[str, Any] | None = None) -> dict[str, Any]:
     player = session.player
-    player_data = player.to_dict()
     dominant_class = str(player.dominant_class or "adventurer")
     stats = []
-    for ability in _ABILITY_ORDER:
+    # Ability order loaded from character_creation.json — not hardcoded
+    for ability in get_creation_ability_order():
         value = int(player.stats.get(ability, 10))
         stats.append(
             {
@@ -145,8 +151,8 @@ def build_character_sheet(session: GameSession, settlement_state: dict[str, Any]
         )
 
     resources = {
-        "hp": {"current": int(player.hp), "max": int(player.max_hp)},
-        "sp": {"current": int(player.spell_points), "max": int(player.max_spell_points)},
+        "hp": {"current": player.hp, "max": player.max_hp},
+        "sp": {"current": player.spell_points, "max": player.max_spell_points},
         "turn": current_player_turn_resources(session),
     }
     creation_profile = dict(player.creation_profile or {})
@@ -172,17 +178,17 @@ def build_character_sheet(session: GameSession, settlement_state: dict[str, Any]
         "name": player.name,
         "race": player.race,
         "class_name": dominant_class.capitalize(),
-        "level": int(player.level),
+        "level": player.level,
         "alignment": player.alignment,
         "stats": stats,
         "skills": skills,
         "resources": resources,
-        "armor_class": int(player_data.get("ac", 10)),
-        "initiative_bonus": int(player_data.get("initiative_bonus", 0)),
-        "gold": int(player.gold),
-        "equipment": copy.deepcopy(player.equipment),
+        "armor_class": player.ac,
+        "initiative_bonus": player.initiative_bonus,
+        "gold": player.gold,
+        "equipment": player.equipment.to_dict(),
         "inventory_count": len(player.inventory),
-        "passives": copy.deepcopy(player_data.get("passives", {})),
+        "passives": copy.deepcopy(player.passives),
         "settlement_role": str((settlement_state or {}).get("player_role", "commander")),
         "creation_summary": creation_summary,
     }

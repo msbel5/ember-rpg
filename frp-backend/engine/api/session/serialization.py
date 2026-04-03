@@ -1,9 +1,17 @@
-"""Serialization helpers for GameSession."""
+"""Serialization helpers for GameSession.
+
+Kernel-native: player is always an ActorRecord — no getattr defensive
+reads needed.  All properties are defined on ActorRecord with proper
+data-driven fallbacks.
+"""
 from __future__ import annotations
 
 import copy
+import logging
 
 from engine.world.entity import EntityType
+
+log = logging.getLogger(__name__)
 
 
 class SessionSerializationMixin:
@@ -28,7 +36,10 @@ class SessionSerializationMixin:
                     "ap": combatant.ap,
                     "dead": combatant.is_dead,
                     "initiative": combatant.initiative,
-                    "conditions": list(getattr(combatant.character, "conditions", [])),
+                    "conditions": [
+                        c.name if hasattr(c, "name") else str(c)
+                        for c in getattr(combatant.character, "conditions", [])
+                    ],
                     "resources": {
                         "action_available": bool(getattr(combatant, "action_available", True)),
                         "bonus_action_available": bool(getattr(combatant, "bonus_action_available", True)),
@@ -61,6 +72,8 @@ class SessionSerializationMixin:
 
     def to_dict(self) -> dict:
         self.ensure_consistency()
+        # All reads go directly through ActorRecord typed properties
+        # — no getattr defense needed, kernel guarantees the API
         player_payload = {
             "name": self.player.name,
             "level": self.player.level,
@@ -70,35 +83,35 @@ class SessionSerializationMixin:
             "max_spell_points": self.player.max_spell_points,
             "xp": self.player.xp,
             "classes": self.player.classes,
-            "stats": copy.deepcopy(getattr(self.player, "stats", {})),
-            "skills": copy.deepcopy(getattr(self.player, "skills", {})),
-            "ac": int(getattr(self.player, "ac", 10)),
-            "initiative_bonus": int(getattr(self.player, "initiative_bonus", 0)),
-            "gold": getattr(self.player, "gold", 0),
+            "stats": copy.deepcopy(self.player.stats),
+            "skills": copy.deepcopy(self.player.skills),
+            "ac": self.player.ac,
+            "initiative_bonus": self.player.initiative_bonus,
+            "gold": self.player.gold,
             "inventory": copy.deepcopy(self.inventory),
             "equipment": {slot: copy.deepcopy(item) for slot, item in self.equipment.items() if item is not None},
             "position": list(self.position),
             "facing": self.facing,
-            "conditions": list(self.player.conditions),
-            "skill_proficiencies": list(getattr(self.player, "skill_proficiencies", [])),
-            "expertise_skills": list(getattr(self.player, "expertise_skills", [])),
-            "proficiency_bonus": int(getattr(self.player, "proficiency_bonus", 2)),
-            "passives": dict(getattr(self.player, "passives", {})),
-            "alignment": getattr(self.player, "alignment", "TN"),
-            "alignment_axes": dict(getattr(self.player, "alignment_axes", {})),
+            "conditions": [c.name for c in self.player.conditions],
+            "skill_proficiencies": list(self.player.skill_proficiencies),
+            "expertise_skills": list(self.player.expertise_skills),
+            "proficiency_bonus": self.player.proficiency_bonus,
+            "passives": dict(self.player.passives),
+            "alignment": self.player.alignment,
+            "alignment_axes": dict(self.player.alignment_axes),
             "hit_dice": {
-                "size": int(getattr(self.player, "hit_die_size", 8)),
-                "total": int(getattr(self.player, "hit_dice_total", 0)),
-                "remaining": int(getattr(self.player, "hit_dice_remaining", 0)),
+                "size": self.player.hit_die_size,
+                "total": self.player.hit_dice_total,
+                "remaining": self.player.hit_dice_remaining,
             },
-            "exhaustion_level": int(getattr(self.player, "exhaustion_level", 0)),
+            "exhaustion_level": self.player.exhaustion_level,
             "death_saves": {
-                "successes": int(getattr(self.player, "death_save_successes", 0)),
-                "failures": int(getattr(self.player, "death_save_failures", 0)),
-                "stable": bool(getattr(self.player, "is_stable", False)),
+                "successes": self.player.death_save_successes,
+                "failures": self.player.death_save_failures,
+                "stable": self.player.is_stable,
             },
-            "creation_answers": copy.deepcopy(getattr(self.player, "creation_answers", [])),
-            "creation_profile": copy.deepcopy(getattr(self.player, "creation_profile", {})),
+            "creation_answers": copy.deepcopy(self.player.creation_answers),
+            "creation_profile": copy.deepcopy(self.player.creation_profile),
         }
         result = {
             "session_id": self.session_id,

@@ -14,6 +14,17 @@
       "wizard": "mage"
     },
     "ability_order": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
+    "stat_key_mapping": {
+      "str": "MIG", "dex": "AGI", "con": "END",
+      "int": "MND", "wis": "INS", "cha": "PRE"
+    },
+    "skill_stat_map": {
+      "melee": "MIG", "athletics": "MIG",
+      "stealth": "AGI", "acrobatics": "AGI", "sleight_of_hand": "AGI",
+      "perception": "INS", "insight": "INS", "medicine": "INS", "survival": "INS",
+      "persuasion": "PRE", "intimidation": "PRE", "deception": "PRE",
+      "arcana": "MND", "history": "MND", "investigation": "MND", "religion": "MND"
+    },
     "allocation_rules": {
       "mode": "rolled_array_assignment",
       "abilities": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
