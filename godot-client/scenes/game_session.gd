@@ -201,6 +201,7 @@ func _finish_turn_sync() -> void:
 
 func _on_state_updated() -> void:
 	_save_sync.remember_player_id()
+	_ensure_campaign_socket()
 
 
 func _on_combat_started() -> void:

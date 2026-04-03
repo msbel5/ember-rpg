@@ -16,6 +16,20 @@ LEGACY_PATTERNS = [
     r"from engine\.api\.npc_memory_routes import",
     r"from engine\.api\.scene_routes import",
     r"from engine\.world\.world_routes import",
+    r"from engine\.api\.game_session import",
+    r"import engine\.api\.game_session\b",
+    r"from engine\.api\.save_system import",
+    r"import engine\.api\.save_system\b",
+    r"from engine\.api\.handlers\.combat_handlers import",
+    r"import engine\.api\.handlers\.combat_handlers\b",
+    r"from engine\.api\.handlers\.exploration_handlers import",
+    r"import engine\.api\.handlers\.exploration_handlers\b",
+    r"from engine\.api\.handlers\.helpers import",
+    r"import engine\.api\.handlers\.helpers\b",
+    r"from engine\.api\.handlers\.inventory_handlers import",
+    r"import engine\.api\.handlers\.inventory_handlers\b",
+    r"from engine\.api\.handlers\.social_handlers import",
+    r"import engine\.api\.handlers\.social_handlers\b",
 ]
 
 
@@ -52,6 +66,13 @@ class TestNoLegacyImports:
             "engine/api/npc_memory_routes.py",
             "engine/api/scene_routes.py",
             "engine/world/world_routes.py",
+            "engine/api/game_session.py",
+            "engine/api/save_system.py",
+            "engine/api/handlers/combat_handlers.py",
+            "engine/api/handlers/exploration_handlers.py",
+            "engine/api/handlers/helpers.py",
+            "engine/api/handlers/inventory_handlers.py",
+            "engine/api/handlers/social_handlers.py",
         ]
         for f in legacy_files:
             full = os.path.join(BACKEND_ROOT, f)

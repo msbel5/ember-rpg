@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.kernel.actor_records import ActorRecord
 from engine.world.action_points import ACTION_COSTS
 from engine.world.skill_checks import SkillCheckResult, ability_modifier, contested_check

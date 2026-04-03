@@ -240,6 +240,17 @@ func _test_game_state_normalization() -> void:
 		"campaign_id": "camp_1",
 		"adapter_id": "fantasy_ember",
 		"profile_id": "standard",
+		"transport": {
+			"mode": "ws",
+			"bootstrap": "http",
+			"command_transport": "ws",
+			"snapshot_mode": "full",
+			"idle_world_ticks": true,
+			"tick_interval_seconds": 30.0,
+			"tick_hours_per_interval": 1,
+			"ws_path": "/ws/campaigns/camp_1",
+			"ws_url": "ws://127.0.0.1:8741/ws/campaigns/camp_1",
+		},
 		"narrative": "Chaos enters Dragon Eyrie.",
 		"campaign": {
 			"world": {"adapter_id": "fantasy_ember", "profile_id": "standard"},
@@ -294,6 +305,9 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.world_graph.get("nodes", []).size() == 2, "GameState stores macro world graph nodes from campaign payloads")
 	_assert_true(game_state.travel_options.size() == 1, "GameState stores reachable travel options from campaign payloads")
 	_assert_true(game_state.selected_world_node == "node_region_001_00", "GameState tracks the selected world node from current region summary")
+	_assert_true(game_state.runtime_transport == "ws", "GameState stores WS as the authoritative runtime transport")
+	_assert_true(game_state.bootstrap_transport == "http", "GameState stores HTTP as the bootstrap transport")
+	_assert_true(game_state.ws_path == "/ws/campaigns/camp_1", "GameState stores the canonical campaign WS path")
 	_assert_true(game_state._clean_narrative("resume_campaign_ok.") == "You step back into the campaign.", "GameState humanizes token-like narrative text with concise seeded copy")
 	game_state.seed_campaign_resume_narrative("Loaded campaign from resume_campaign_ok.")
 	_assert_true(

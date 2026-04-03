@@ -18,6 +18,69 @@ class SessionSerializationMixin:
     """API serialization methods."""
 
     def _combat_payload(self) -> dict | None:
+        kernel_state = self.campaign_state.get("combat_state") if isinstance(self.campaign_state, dict) else None
+        if kernel_state is not None:
+            actors = self.campaign_state.get("combat_actors", {})
+            active_entry = (
+                kernel_state.active_combatant
+                if getattr(kernel_state, "combatants", None) and str(getattr(kernel_state, "phase", "active")) != "resolved"
+                else None
+            )
+            active_actor = actors.get(active_entry.actor_id) if active_entry is not None else None
+            return {
+                "round": int(getattr(kernel_state, "round_number", 1)),
+                "phase": str(getattr(kernel_state, "phase", "active")),
+                "active": getattr(active_actor, "name", None),
+                "turn_actor_id": getattr(active_entry, "actor_id", None),
+                "ended": str(getattr(kernel_state, "phase", "active")) == "resolved",
+                "combatants": [
+                    {
+                        "name": getattr(actor, "name", entry.actor_id),
+                        "entity_id": entry.actor_id,
+                        "hp": int(getattr(actor, "hp", actor.stats.get("hp", 0) if actor is not None else 0)),
+                        "max_hp": int(getattr(actor, "max_hp", actor.stats.get("max_hp", 0) if actor is not None else 0)),
+                        "ap": int(getattr(entry.turn_resources, "movement", 0)),
+                        "dead": not bool(getattr(actor, "alive", False)),
+                        "initiative": int(getattr(entry, "initiative", 0)),
+                        "conditions": list(getattr(actor, "condition_names", [])) if actor is not None else [],
+                        "resources": {
+                            "action_available": bool(getattr(entry.turn_resources, "action", False)),
+                            "bonus_action_available": bool(getattr(entry.turn_resources, "bonus_action", False)),
+                            "reaction_available": bool(getattr(entry.turn_resources, "reaction", False)),
+                            "movement_remaining": int(getattr(entry.turn_resources, "movement", 0)),
+                            "speed": int(getattr(entry.turn_resources, "max_movement", 0)),
+                            "disengaged_until_turn_end": bool(
+                                getattr(actor, "raw_payload", {}).get("disengaged_until_turn_end", False)
+                            ) if actor is not None else False,
+                        },
+                        "death_saves": {
+                            "successes": int(getattr(actor, "death_save_successes", 0)) if actor is not None else 0,
+                            "failures": int(getattr(actor, "death_save_failures", 0)) if actor is not None else 0,
+                        },
+                        "stable": bool(getattr(actor, "is_stable", False)) if actor is not None else False,
+                    }
+                    for entry in getattr(kernel_state, "combatants", [])
+                    for actor in [actors.get(entry.actor_id)]
+                ],
+                "available_actions": []
+                if str(getattr(kernel_state, "phase", "active")) == "resolved"
+                else ["attack", "defend", "use", "disengage", "flee"],
+                "targets": [
+                    {
+                        "name": getattr(actor, "name", entry.actor_id),
+                        "entity_id": entry.actor_id,
+                        "hp": int(getattr(actor, "hp", actor.stats.get("hp", 0) if actor is not None else 0)),
+                        "max_hp": int(getattr(actor, "max_hp", actor.stats.get("max_hp", 0) if actor is not None else 0)),
+                    }
+                    for entry in getattr(kernel_state, "combatants", [])
+                    for actor in [actors.get(entry.actor_id)]
+                    if active_entry is not None
+                    and entry.actor_id != active_entry.actor_id
+                    and actor is not None
+                    and bool(getattr(actor, "alive", False))
+                ],
+                "log_entries": list(self.campaign_state.get("combat_log", [])),
+            }
         if not self.in_combat() or self.combat is None:
             return None
         active_combatant = self.combat.active_combatant if not self.combat.combat_ended else None

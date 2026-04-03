@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.kernel.actor_records import ActorRecord
 from engine.kernel.combat_engine import CombatState, CombatantEntry, is_combat_over
 

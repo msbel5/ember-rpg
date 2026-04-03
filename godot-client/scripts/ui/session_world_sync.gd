@@ -38,20 +38,13 @@ func resync_campaign() -> void:
 	if GameState.campaign_id.is_empty():
 		return
 	_owner._set_waiting(true)
-	_owner._pending_sync_callbacks = 2
+	_owner._pending_sync_callbacks = 1
 	Backend.get_campaign(GameState.campaign_id, on_campaign_snapshot_loaded)
-	Backend.get_campaign_settlement(GameState.campaign_id, on_campaign_settlement_loaded)
 
 
 func on_campaign_snapshot_loaded(data) -> void:
 	if data != null:
 		GameState.update_from_response(data)
-	complete_followup_sync()
-
-
-func on_campaign_settlement_loaded(data) -> void:
-	if data != null and data is Dictionary:
-		GameState.update_from_response({"settlement_state": data})
 	complete_followup_sync()
 
 

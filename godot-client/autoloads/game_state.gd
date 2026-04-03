@@ -11,6 +11,11 @@ var session_id: String = ""
 var campaign_id: String = ""
 var adapter_id: String = "fantasy_ember"
 var profile_id: String = "standard"
+var transport: Dictionary = {}
+var runtime_transport: String = "http"
+var bootstrap_transport: String = "http"
+var ws_url: String = ""
+var ws_path: String = ""
 var player: Dictionary = {}
 var scene: String = "exploration"  # exploration | combat | dialogue | rest
 var location: String = ""
@@ -96,6 +101,20 @@ func update_from_response(data: Dictionary) -> void:
 		adapter_id = str(data["adapter_id"])
 	if data.has("profile_id"):
 		profile_id = str(data["profile_id"])
+	if data.has("transport") and data["transport"] is Dictionary:
+		transport = data["transport"]
+		runtime_transport = str(transport.get("mode", runtime_transport))
+		bootstrap_transport = str(transport.get("bootstrap", bootstrap_transport))
+		ws_url = str(transport.get("ws_url", ws_url))
+		ws_path = str(transport.get("ws_path", ws_path))
+	if data.has("runtime_transport"):
+		runtime_transport = str(data["runtime_transport"])
+	if data.has("bootstrap_transport"):
+		bootstrap_transport = str(data["bootstrap_transport"])
+	if data.has("ws_url"):
+		ws_url = str(data["ws_url"])
+	if data.has("ws_path"):
+		ws_path = str(data["ws_path"])
 	if data.has("world") and data["world"] is Dictionary:
 		world = data["world"]
 	if data.has("world_state") and data["world_state"] is Dictionary:

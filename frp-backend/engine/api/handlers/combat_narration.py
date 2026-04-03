@@ -1,7 +1,7 @@
 """Combat narration helper methods."""
 from __future__ import annotations
 
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.kernel.actor_records import ActorRecord
 from engine.kernel.narrator import DMEvent, EventType
 

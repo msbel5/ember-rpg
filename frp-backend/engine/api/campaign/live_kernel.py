@@ -142,7 +142,7 @@ def advance_kernel_runtime(
     _sync_runtime_from_session(context, runtime)
     game_state: GameState = runtime["game_state"]
     actors = list(runtime["actors"].values())
-    step_count = max(1, int(hours_advanced))
+    step_count = max(0, int(hours_advanced))
     seed = stable_seed(
         context.seed,
         context.campaign_id,
@@ -151,7 +151,8 @@ def advance_kernel_runtime(
         context.world.simulation_snapshot.current_hour,
     )
     events: list[dict[str, Any]] = []
-    game_state.world_time.advance(step_count * max(1, int(game_state.world_time.ticks_per_hour)))
+    if step_count > 0:
+        game_state.world_time.advance(step_count * max(1, int(game_state.world_time.ticks_per_hour)))
     for step in range(step_count):
         current_tick = int(game_state.world_time.game_tick) + step
         for actor in actors:
@@ -180,68 +181,126 @@ def advance_kernel_runtime(
 
 
 def _check_level_up(player: ActorRecord) -> list[dict[str, Any]]:
-    """Check if the player has enough XP to level up and apply the change.
+    """Advance the shared progression adapter for an ActorRecord.
 
-    Reads XP thresholds from progression.json.  When the player's
-    accumulated XP exceeds the threshold for their next level, the level
-    is incremented, max_hp is raised (class-based), and a ``level_up``
-    event is emitted.  Repeats until no further level-ups are possible
-    so that large XP grants can jump multiple levels.
-
-    TODO(kernel-progression): This should use kernel/progression.py
-    ``execute_level_up(ProgressionState, ClassDef, ...)`` instead of
-    direct raw_payload writes.  Blocked because execute_level_up requires
-    a full ClassDef with xp_table (per-class) whereas we use the shared
-    progression.json thresholds, and it requires a hit-die RNG roll
-    whereas we use deterministic hp_per_level averages.  Refactor when
-    ProgressionState is stored on ActorRecord.raw_payload["progression"].
+    Campaign runtime still uses a shared XP table from progression.json
+    instead of per-class AD&D tables. This helper formalizes that as a
+    narrow adapter over kernel/progression.py so level-up behavior stays
+    data-driven and testable without reviving legacy progression code.
     """
-    from engine.data.runtime import get_hp_per_level, get_xp_thresholds
+    from engine.kernel.progression import can_level_up, execute_level_up
 
     events: list[dict[str, Any]] = []
-    xp_thresholds = get_xp_thresholds()
-    hp_per_level = get_hp_per_level()
-
-    if not xp_thresholds:
+    progression_state, class_id, class_def = _progression_adapter(player)
+    if progression_state is None or class_def is None:
         return events
 
-    current_xp = int(player.raw_payload.get("xp", 0))
-    current_level = int(player.raw_payload.get("level", 1))
-    class_name = str(player.raw_payload.get("class_name", "warrior")).lower()
-    hp_gain_per_level = hp_per_level.get(class_name, 8)
     end_mod = (int(player.stats.get("END", 10)) - 10) // 2
+    hit_die_roll = _deterministic_hit_die_roll(player, class_id)
 
-    # Allow multi-level jumps.
-    while True:
-        next_level = current_level + 1
-        # xp_thresholds[0] is level 1, xp_thresholds[1] is level 2, etc.
-        if next_level > len(xp_thresholds):
-            break  # At cap.
-        threshold = xp_thresholds[next_level - 1]
-        if current_xp < threshold:
-            break  # Not enough XP.
-
-        # Level up!
-        current_level = next_level
-        hp_gained = max(1, hp_gain_per_level + end_mod)
-        new_max_hp = int(player.stats.get("max_hp", 1)) + hp_gained
-        player.stats["max_hp"] = new_max_hp
-        player.stats["hp"] = new_max_hp  # Full heal on level-up.
-        player.raw_payload["level"] = current_level
-
+    while can_level_up(progression_state, {class_id: class_def}):
+        result = execute_level_up(
+            progression_state,
+            class_id,
+            class_def,
+            hit_die_roll=hit_die_roll,
+            end_modifier=end_mod,
+        )
+        _apply_progression_state(player, progression_state, result.hp_gained)
         events.append({
             "event_type": "level_up",
             "summary": (
-                f"{player.identity.display_name} reached level {current_level}! "
-                f"(+{hp_gained} HP, max HP now {new_max_hp})"
+                f"{player.identity.display_name} reached level {progression_state.level}! "
+                f"(+{result.hp_gained} HP, max HP now {int(player.stats.get('max_hp', 1))})"
             ),
             "actor_id": player.identity.actor_id,
-            "new_level": current_level,
-            "hp_gained": hp_gained,
-            "new_max_hp": new_max_hp,
+            "new_level": progression_state.level,
+            "hp_gained": result.hp_gained,
+            "new_max_hp": int(player.stats.get("max_hp", 1)),
         })
 
     return events
+
+
+def _progression_adapter(player: ActorRecord):
+    from engine.data.classes import get_class
+    from engine.data.runtime import get_xp_thresholds
+    from engine.kernel.progression import ClassDef, ProgressionState
+
+    class_id = str(player.raw_payload.get("class_name", "warrior")).lower()
+    thresholds = get_xp_thresholds()
+    class_data = get_class(class_id)
+    if not thresholds:
+        return None, None, None
+
+    progression_state = ProgressionState(
+        actor_id=player.identity.actor_id,
+        xp=int(player.raw_payload.get("xp", 0)),
+        level=int(player.raw_payload.get("level", 1)),
+        classes=[class_id],
+        class_levels={class_id: int(player.raw_payload.get("level", 1))},
+        bab=int(player.raw_payload.get("bab", 0)),
+        saves=dict(player.raw_payload.get("saves", {})),
+    )
+    class_def = ClassDef(
+        class_id=class_id,
+        label=str(class_data.get("name", class_id.title())),
+        hit_die=int(class_data.get("hit_die_size", player.raw_payload.get("hit_die_size", 8) or 8)),
+        bab_rate=_adapter_bab_rate(player, class_data),
+        good_saves=[],
+        proficiency_rate=4,
+        skill_points_per_level=int(class_data.get("skill_pick_count", 0) or 0),
+        spell_type="",
+        hp_after_cap=_deterministic_hit_die_roll(player, class_id),
+        hit_die_cap_level=len(thresholds),
+        xp_table=list(thresholds),
+    )
+    return progression_state, class_id, class_def
+
+
+def _adapter_bab_rate(player: ActorRecord, class_data: dict[str, Any]) -> str:
+    raw_rate = player.raw_payload.get("bab_rate")
+    if isinstance(raw_rate, str):
+        return raw_rate
+    if raw_rate is not None:
+        rate = float(raw_rate)
+        if rate >= 1.0:
+            return "full"
+        if rate >= 0.75:
+            return "three_quarter"
+        return "half"
+    hit_die = int(class_data.get("hit_die_size", player.raw_payload.get("hit_die_size", 8) or 8))
+    if hit_die >= 10:
+        return "full"
+    if hit_die >= 8:
+        return "three_quarter"
+    return "half"
+
+
+def _deterministic_hit_die_roll(player: ActorRecord, class_id: str) -> int:
+    from engine.data.runtime import get_hp_per_level
+
+    hp_per_level = get_hp_per_level()
+    return max(
+        1,
+        int(
+            hp_per_level.get(
+                class_id,
+                player.raw_payload.get("hit_die_size", 8) or 8,
+            )
+        ),
+    )
+
+
+def _apply_progression_state(player: ActorRecord, progression_state: Any, hp_gained: int) -> None:
+    new_max_hp = int(player.stats.get("max_hp", 1)) + int(hp_gained)
+    player.stats["max_hp"] = new_max_hp
+    player.stats["hp"] = new_max_hp
+    player.raw_payload["level"] = int(progression_state.level)
+    player.raw_payload["xp"] = int(progression_state.xp)
+    player.raw_payload["bab"] = int(progression_state.bab)
+    player.raw_payload["saves"] = dict(progression_state.saves)
+    player.raw_payload["progression"] = progression_state.to_dict()
 
 
 def _load_actors(saved_payload: Any, context: "CampaignContext") -> dict[str, ActorRecord]:

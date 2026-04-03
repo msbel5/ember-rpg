@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from engine.api.action_parser import ActionIntent, ParsedAction
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.kernel.narrator import DMEvent, EventType, SceneType
 from engine.data_loader import list_npc_templates
 from engine.world.npc_needs import NPCNeeds

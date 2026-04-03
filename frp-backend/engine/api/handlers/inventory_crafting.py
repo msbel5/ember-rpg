@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Optional
 
 from engine.api.action_parser import ParsedAction
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.world.crafting import ALL_RECIPES, CraftingRecipe, CraftingSystem
 
 

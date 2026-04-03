@@ -4,10 +4,10 @@ from __future__ import annotations
 import pytest
 
 from engine.api.campaign.runtime import CampaignRuntime
-from engine.api.campaign.dialog import build_dialog_payload, _default_dialog_def
+from engine.api.campaign.dialog import build_dialog_payload
 from engine.kernel.dialog import (
     DialogDef, DialogStateNode, DialogTransition, DialogCondition,
-    start_dialog, get_available_transitions, evaluate_condition,
+    start_dialog,
 )
 
 
@@ -49,29 +49,23 @@ def _mock_actor(name="TestNPC", stats=None):
 
 
 # ---------------------------------------------------------------------------
-# Default dialog def generation
+# Authored dialog resolution
 # ---------------------------------------------------------------------------
 
-class TestDefaultDialogDef:
-    def test_generates_valid_dialog_def(self):
+class TestAuthoredDialogResolution:
+    def test_returns_empty_when_no_authored_dialog_exists(self):
         _, ctx = _make_campaign()
-        dialog_def = _default_dialog_def("npc_1", "Guard", ctx)
-        assert isinstance(dialog_def, DialogDef)
-        assert len(dialog_def.states) >= 1
+        _inject_npc(ctx, "test_unknown", "Unknowner")
+        ctx.kernel_runtime["actors"]["test_unknown"].raw_payload["role"] = "unwritten_role"
+        ctx.session.conversation_state = {
+            "target_type": "npc",
+            "npc_id": "test_unknown",
+            "npc_name": "Unknowner",
+        }
 
-    def test_has_greeting_state_with_transitions(self):
-        _, ctx = _make_campaign()
-        dialog_def = _default_dialog_def("npc_1", "Guard", ctx)
-        greeting = dialog_def.states[0]
-        assert greeting.state_id == "greeting"
-        assert len(greeting.transitions) >= 3
+        result = build_dialog_payload(ctx, "The stranger stares silently.")
 
-    def test_stat_check_conditions_present(self):
-        _, ctx = _make_campaign()
-        dialog_def = _default_dialog_def("npc_1", "Guard", ctx)
-        greeting = dialog_def.states[0]
-        stat_checks = [t for t in greeting.transitions if t.condition and t.condition.condition_type == "stat_check"]
-        assert len(stat_checks) >= 2
+        assert result == {}
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +128,6 @@ class TestBuildDialogPayload:
 
     def test_returns_dialog_when_talking_to_npc(self):
         _, ctx = _make_campaign()
-        # Inject a kernel NPC actor so dialog can resolve.
         _inject_npc(ctx, "test_guard", "Guard")
         ctx.session.conversation_state = {
             "target_type": "npc",
@@ -153,8 +146,10 @@ class TestBuildDialogPayload:
             "target_type": "npc", "npc_id": "test_merchant", "npc_name": "Merchant",
         }
         result = build_dialog_payload(ctx, "Hello.")
+        assert result["dialog_options"]
         for opt in result.get("dialog_options", []):
             assert "text" in opt
             assert "command" in opt
             assert "available" in opt
             assert "enabled" in opt
+            assert opt["command"].startswith("dialog ")

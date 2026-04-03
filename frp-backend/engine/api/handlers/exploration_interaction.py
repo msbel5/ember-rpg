@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from engine.api.action_parser import ParsedAction
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.kernel.narrator import DMEvent, EventType, SceneType
 from engine.world.entity import EntityType
 from engine.world.skill_checks import roll_check

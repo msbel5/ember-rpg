@@ -124,7 +124,7 @@ class SaveSessionStateMixin:
         if session.history_seed is not None:
             data["history_seed"] = session.history_seed.to_dict()
 
-        from engine.api.game_session import GameSession
+        from engine.api.session.core import GameSession
 
         data["quest_offers"] = GameSession.normalize_quest_offers(
             getattr(session, "quest_offers", []),
@@ -141,7 +141,7 @@ class SaveSessionStateMixin:
     def _deserialize_session(data: Dict[str, Any]):
         from datetime import datetime as dt
 
-        from engine.api.game_session import GameSession
+        from engine.api.session.core import GameSession
         from engine.kernel.actor_records import ActorRecord
         from engine.kernel.narrator import DMContext, SceneType
         from engine.map import MapData

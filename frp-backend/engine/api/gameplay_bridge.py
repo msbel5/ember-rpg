@@ -8,23 +8,17 @@ from __future__ import annotations
 
 import logging
 import re
-import uuid
 from typing import TYPE_CHECKING, Any, Optional
 
 from engine.data._shared import items_registry, load_registry_list, recipes_registry, spells_registry
-from engine.kernel.items import (
-    EQUIPMENT_SLOTS,
-    ItemDef,
-    ItemInstance,
-    equip_item,
-    unequip_item,
-)
-from engine.kernel.spells import (
-    Spellbook,
-    SpellDef,
-    begin_casting,
-    resolve_cast,
-    rest_refresh_spellbook,
+from engine.kernel.gameplay import (
+    cast_registry_spell,
+    craft_recipe,
+    drop_inventory_item,
+    equip_inventory_item,
+    pickup_ground_item,
+    resolve_rest,
+    unequip_actor_slot,
 )
 
 if TYPE_CHECKING:
@@ -111,18 +105,6 @@ def _slot_for_item_type(item_type: str) -> str:
     return mapping.get(item_type.lower(), "quick_item_1")
 
 
-def _build_item_def(raw: dict) -> ItemDef:
-    """Build a kernel ItemDef from a raw registry dict."""
-    return ItemDef(
-        item_def_id=str(raw.get("id", "")),
-        label=str(raw.get("name", raw.get("id", ""))),
-        item_type=str(raw.get("type", "misc")),
-        item_category=str(raw.get("category", raw.get("type", "misc"))),
-        weight=int(float(raw.get("weight", 0))),
-        base_price=int(raw.get("value", 0)),
-    )
-
-
 def _summarize_events(events: list[dict]) -> str:
     parts = []
     for ev in events:
@@ -161,18 +143,9 @@ def maybe_handle_equipment_command(
         raw_def = _item_def_from_registry(item.item_def_id)
         if raw_def is None:
             return (f"Unknown item definition for '{item_name}'.", "equipment", 0)
-        item_def = _build_item_def(raw_def)
-        slot = _slot_for_item_type(item_def.item_type)
-        # Build a kernel ItemInstance from the inventory ItemStack.
-        kernel_item = ItemInstance(
-            instance_id=getattr(item, "instance_id", str(uuid.uuid4())),
-            item_def_id=item.item_def_id,
-            material_id=getattr(item, "material_id", None) or "iron",
-            quality=int(getattr(item, "quality", 0)),
-            wear=int(getattr(item, "wear", 0)),
-        )
+        slot = _slot_for_item_type(str(raw_def.get("type", "misc")))
         try:
-            events = equip_item(player, kernel_item, slot, item_def)
+            events = equip_inventory_item(player, item=item, slot=slot)
         except ValueError as exc:
             return (f"Cannot equip: {exc}", "equipment", 0)
         narrative = _summarize_events(events)
@@ -194,7 +167,7 @@ def maybe_handle_equipment_command(
                 break
         if target_slot is None:
             return (f"No equipped item matching '{item_name}' found.", "equipment", 0)
-        events = unequip_item(player, target_slot)
+        events = unequip_actor_slot(player, slot=target_slot)
         narrative = _summarize_events(events)
         logger.info("Unequip: %s unequipped %s", player.name, target_slot)
         return (narrative, "equipment", 0)
@@ -221,27 +194,24 @@ def maybe_handle_inventory_command(
     match = _PICKUP_RE.match(command_text.strip())
     if match:
         item_name = match.group(1).strip()
-        item_name_lower = item_name.lower().replace(" ", "_")
-        # Search ground / session entities for matching item.
-        from engine.kernel.actor_items import ItemStack
-        new_item = ItemStack(
-            instance_id=f"pickup_{uuid.uuid4().hex[:8]}",
-            item_def_id=item_name_lower,
-            quantity=1,
-        )
-        player.inventory.append(new_item)
+        pickup_result = pickup_ground_item(context.session, query=item_name)
+        if not pickup_result["success"]:
+            if pickup_result.get("reason") == "overweight":
+                return (_inventory_add_failure_message(context, str(pickup_result.get("item_name", item_name))), "inventory", 0)
+            return (f"There's nothing to pick up here matching '{item_name}'.", "inventory", 0)
         logger.info("Pickup: %s picked up %s", player.name, item_name)
-        return (f"Picked up {item_name}.", "inventory", 0)
+        return (f"Picked up {pickup_result.get('item_name', item_name)}.", "inventory", 0)
 
     match = _DROP_RE.match(command_text.strip())
     if match:
         item_name = match.group(1).strip()
-        item = _find_inventory_item_by_name(player, item_name)
-        if item is None:
+        if context.session.find_inventory_item(item_name.lower()) is None:
             return (f"You don't have '{item_name}' to drop.", "inventory", 0)
-        player.inventory.remove(item)
+        drop_result = drop_inventory_item(context.session, query=item_name.lower())
+        if not drop_result["success"]:
+            return (f"You don't have '{item_name}' to drop.", "inventory", 0)
         logger.info("Drop: %s dropped %s", player.name, item_name)
-        return (f"Dropped {item_name}.", "inventory", 0)
+        return (f"Dropped {drop_result.get('item_name', item_name)}.", "inventory", 0)
 
     return None
 
@@ -272,64 +242,24 @@ def maybe_handle_craft_command(
         return (f"No recipe found for '{recipe_name}'.", "craft", 0)
     recipe_id, recipe = found
 
-    # Check skill requirement.
-    skill_name = str(recipe.get("skill", ""))
-    skill_dc = int(recipe.get("skill_dc", 0))
-    if skill_name and skill_dc > 0:
-        player_skill = int(player.skills.get(skill_name, 0))
-        if player_skill < skill_dc:
+    crafted_result = craft_recipe(player, recipe=recipe, item_catalog=items_registry(), instance_prefix="craft")
+    if not crafted_result.get("success", False):
+        if crafted_result.get("reason") == "skill_too_low":
             return (
-                f"Crafting {recipe.get('name', recipe_id)} requires {skill_name} "
-                f"{skill_dc} (you have {player_skill}).",
+                f"Crafting {recipe.get('name', recipe_id)} requires {crafted_result['skill']} "
+                f"{crafted_result['required']} (you have {crafted_result['actual']}).",
                 "craft", 0,
             )
-
-    # Check and consume ingredients.
-    ingredients = list(recipe.get("ingredients", []))
-    for ingredient in ingredients:
-        needed_id = str(ingredient.get("item_id", ""))
-        needed_qty = int(ingredient.get("quantity", 1))
-        count = sum(
-            1 for inv_item in player.inventory
-            if getattr(inv_item, "item_def_id", "") == needed_id
-        )
-        if count < needed_qty:
+        if crafted_result.get("reason") == "missing_ingredient":
             return (
-                f"Missing ingredient: need {needed_qty}x {needed_id} (have {count}).",
+                f"Missing ingredient: need {crafted_result['required']}x {crafted_result['item_id']} "
+                f"(have {crafted_result['available']}).",
                 "craft", 0,
             )
-
-    # Consume ingredients.
-    for ingredient in ingredients:
-        needed_id = str(ingredient.get("item_id", ""))
-        needed_qty = int(ingredient.get("quantity", 1))
-        removed = 0
-        for inv_item in list(player.inventory):
-            if removed >= needed_qty:
-                break
-            if getattr(inv_item, "item_def_id", "") == needed_id:
-                player.inventory.remove(inv_item)
-                removed += 1
-
-    # Create products.
-    from engine.kernel.actor_items import ItemStack
+        return (f"Cannot craft {recipe.get('name', recipe_id)}.", "craft", 0)
     products = list(recipe.get("products", []))
-    product_names = []
-    for product in products:
-        product_id = str(product.get("item_id", recipe_id))
-        product_qty = int(product.get("quantity", 1))
-        for _ in range(product_qty):
-            new_item = ItemStack(
-                instance_id=f"craft_{uuid.uuid4().hex[:8]}",
-                item_def_id=product_id,
-                quantity=1,
-            )
-            player.inventory.append(new_item)
-        product_names.append(f"{product_qty}x {product_id}")
-
-    xp_reward = int(recipe.get("xp_reward", 0))
-    if xp_reward > 0:
-        player.raw_payload["xp"] = int(player.raw_payload.get("xp", 0)) + xp_reward
+    product_names = [f"{int(product.get('quantity', 1))}x {str(product.get('item_id', recipe_id))}" for product in products]
+    xp_reward = int(crafted_result["xp_reward"])
 
     crafted = ", ".join(product_names)
     logger.info("Craft: %s crafted %s", player.name, crafted)
@@ -362,58 +292,26 @@ def maybe_handle_rest_command(
 
     current_tick = int(player.raw_payload.get("game_tick", 0))
 
-    if is_long:
-        # Check 24h cooldown (24 ticks).
-        last_long_rest = int(player.raw_payload.get("last_long_rest_tick", 0))
-        if current_tick - last_long_rest < 24 and last_long_rest > 0:
-            return (
-                "You cannot take a long rest yet. You must wait before resting again.",
-                "rest", 0,
-            )
-        # Full HP restore.
-        player.stats["hp"] = int(player.stats.get("max_hp", player.stats.get("hp", 1)))
-        # Restore spell points.
-        player.raw_payload["spell_points"] = int(
-            player.raw_payload.get("max_spell_points", player.raw_payload.get("spell_points", 0))
+    rest_result = resolve_rest(player, long_rest=is_long, current_tick=current_tick)
+    if not rest_result.get("success", False):
+        return (
+            "You cannot take a long rest yet. You must wait before resting again.",
+            "rest", 0,
         )
-        # Refresh spellbooks.
-        spellbooks_raw = player.raw_payload.get("spellbooks", {})
-        for _book_key, book_data in spellbooks_raw.items():
-            if isinstance(book_data, dict):
-                book = Spellbook.from_dict(book_data)
-                rest_refresh_spellbook(book)
-                spellbooks_raw[_book_key] = book.to_dict()
-            elif isinstance(book_data, Spellbook):
-                rest_refresh_spellbook(book_data)
-        # Reduce exhaustion.
-        exhaustion = int(player.raw_payload.get("exhaustion_level", 0))
-        if exhaustion > 0:
-            player.raw_payload["exhaustion_level"] = max(0, exhaustion - 1)
-        player.raw_payload["last_long_rest_tick"] = current_tick
+
+    if is_long:
         logger.info("Long rest: %s fully restored", player.name)
         return (
             f"{player.name} takes a long rest. HP fully restored. Spell slots refreshed.",
             "rest", 8,
         )
-    else:
-        # Short rest: heal by END modifier + level.
-        end_mod = (int(player.stats.get("END", 10)) - 10) // 2
-        level = int(player.raw_payload.get("level", 1))
-        heal_amount = max(1, end_mod + level)
-        current_hp = int(player.stats.get("hp", 0))
-        max_hp = int(player.stats.get("max_hp", current_hp))
-        player.stats["hp"] = min(max_hp, current_hp + heal_amount)
-        # Restore partial spell points (quarter of max).
-        max_sp = int(player.raw_payload.get("max_spell_points", 0))
-        if max_sp > 0:
-            current_sp = int(player.raw_payload.get("spell_points", 0))
-            restore = max(1, max_sp // 4)
-            player.raw_payload["spell_points"] = min(max_sp, current_sp + restore)
-        logger.info("Short rest: %s healed %d hp", player.name, heal_amount)
-        return (
-            f"{player.name} takes a short rest. Healed {heal_amount} HP.",
-            "rest", 1,
-        )
+
+    heal_amount = int(rest_result["healed"])
+    logger.info("Short rest: %s healed %d hp", player.name, heal_amount)
+    return (
+        f"{player.name} takes a short rest. Healed {heal_amount} HP.",
+        "rest", 1,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -451,47 +349,39 @@ def maybe_handle_spell_command(
     else:
         spell_id, spell_raw = found
 
-    # Check player has spell points / cost.
-    cost = int(spell_raw.get("cost", 0))
-    current_sp = int(player.raw_payload.get("spell_points", 0))
-    if cost > 0 and current_sp < cost:
+    # Resolve target actor.
+    target_actor = _resolve_spell_target(context, target_name, spell_raw)
+
+    cast_result = cast_registry_spell(
+        player,
+        spell_id=spell_id,
+        spell_data=spell_raw,
+        target=target_actor,
+        current_tick=int(player.raw_payload.get("game_tick", 0)),
+    )
+    cost = int(cast_result.get("cost", spell_raw.get("cost", 0)))
+    current_sp = player.spell_points
+    if not cast_result.get("success", False) and cast_result.get("reason") == "insufficient_spell_points":
         return (
-            f"Not enough spell points to cast {spell_raw.get('name', spell_id)} "
+            f"Not enough spell points to cast {cast_result.get('spell_label', spell_raw.get('name', spell_id))} "
             f"(need {cost}, have {current_sp}).",
             "spell", 0,
         )
-
-    # Resolve target actor.
-    target_actor = None
-    if target_name:
-        runtime = context.kernel_runtime or {}
-        actors = runtime.get("actors", {})
-        for actor in actors.values():
-            if hasattr(actor, "identity") and target_name.lower() in actor.identity.display_name.lower():
-                target_actor = actor
-                break
-
-    # Expend spell points.
-    if cost > 0:
-        player.raw_payload["spell_points"] = current_sp - cost
-
-    # Build narrative from spell effects.
-    effects = list(spell_raw.get("effects", []))
+    if not cast_result.get("success", False) and cast_result.get("reason"):
+        return (f"Cannot cast {cast_result.get('spell_label', spell_raw.get('name', spell_id))}: {cast_result['reason']}.", "spell", 0)
+    effects = list(cast_result["applied"])
     effect_parts = []
     for effect in effects:
         etype = str(effect.get("type", ""))
         if etype == "damage":
-            amount = effect.get("amount", "?")
-            dtype = effect.get("damage_type", "")
-            recipient = target_name or "the target"
-            effect_parts.append(f"deals {amount} {dtype} damage to {recipient}")
+            recipient = effect.get("target", target_name or "the target")
+            effect_parts.append(f"deals {effect.get('amount', '?')} damage to {recipient}")
         elif etype == "heal":
-            amount = effect.get("amount", "?")
-            effect_parts.append(f"heals for {amount}")
+            effect_parts.append(f"heals {effect.get('target', 'the target')} for {effect.get('amount', '?')}")
         elif etype == "buff":
-            stat = effect.get("stat", "")
-            amount = effect.get("amount", 0)
-            effect_parts.append(f"grants +{amount} {stat}")
+            effect_parts.append(f"empowers {effect.get('target', 'the target')}")
+        elif etype == "status":
+            effect_parts.append(f"affects {effect.get('target', 'the target')} with a status effect")
         else:
             effect_parts.append(f"applies {etype}")
 
@@ -501,3 +391,42 @@ def maybe_handle_spell_command(
 
     logger.info("Cast: %s cast %s (cost %d SP)", player.name, spell_label, cost)
     return (narrative, "spell", 1)
+
+
+def _resolve_spell_target(
+    context: "CampaignContext",
+    target_name: str | None,
+    spell_raw: dict[str, Any],
+):
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    normalized_target = str(target_name or "").strip().lower()
+    if normalized_target in {"self", "me", "myself", context.session.player.name.lower()}:
+        return _player(context)
+    if normalized_target:
+        for actor in actors.values():
+            if not hasattr(actor, "identity"):
+                continue
+            display_name = str(actor.identity.display_name).lower()
+            actor_id = str(actor.identity.actor_id).lower()
+            if normalized_target in display_name or normalized_target == actor_id:
+                return actor
+    hostile = str(spell_raw.get("target_type", "single")).lower() != "self"
+    if hostile:
+        for actor_id, actor in actors.items():
+            if actor_id == "player":
+                continue
+            if getattr(actor, "alive", True):
+                return actor
+    return _player(context) if str(spell_raw.get("target_type", "single")).lower() == "self" else None
+
+
+def _inventory_add_failure_message(context: "CampaignContext", item_name: str) -> str:
+    error = dict(context.session.narration_context.pop("_last_add_item_error", {}) or {})
+    if error.get("reason") == "overweight":
+        return (
+            f"{item_name} is too heavy to carry right now. It would bring you to "
+            f"{float(error.get('projected_weight', 0.0)):.1f}/{float(error.get('max_weight', 0.0)):.1f} kg. "
+            "You wrench your back trying to lift it."
+        )
+    return f"No room for {item_name}. Your containers are full."

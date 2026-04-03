@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 from typing import Any
 
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.kernel.narrator import SceneType
 from engine.map import MapData, Room, TileType
 from engine.world.entity import Entity, EntityType

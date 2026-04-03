@@ -5,7 +5,7 @@ import copy
 import random
 from typing import TYPE_CHECKING, Any
 
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.data_loader import (
     get_role_anchor_map,
     get_role_skill_profiles,

@@ -71,6 +71,12 @@ static func flatten_campaign_response(data: Dictionary, current_map: Dictionary 
 		flattened["adapter_id"] = data["adapter_id"]
 	if data.has("profile_id"):
 		flattened["profile_id"] = data["profile_id"]
+	if data.has("transport") and data["transport"] is Dictionary:
+		flattened["transport"] = data["transport"]
+		flattened["runtime_transport"] = str(data["transport"].get("mode", "http"))
+		flattened["bootstrap_transport"] = str(data["transport"].get("bootstrap", "http"))
+		flattened["ws_url"] = str(data["transport"].get("ws_url", ""))
+		flattened["ws_path"] = str(data["transport"].get("ws_path", ""))
 	if data.has("narrative"):
 		flattened["narrative"] = data["narrative"]
 

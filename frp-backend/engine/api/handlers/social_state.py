@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.world.proximity import get_interaction_range
 
 from engine.api.runtime_constants import DEFAULT_NPC_ATTITUDE, INTERACTION_HOLD_TURNS, SOCIAL_ATTITUDE_DCS

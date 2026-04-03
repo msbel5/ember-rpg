@@ -5,7 +5,7 @@ import re
 from typing import Optional
 
 from engine.api.action_parser import ActionIntent, ParsedAction
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.kernel.narrator import SceneType
 from engine.world.action_points import ACTION_COSTS
 from engine.world.proximity import astar_path, check_proximity, distance, get_interaction_range, manhattan_distance

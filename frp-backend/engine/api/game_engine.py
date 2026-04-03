@@ -2,43 +2,30 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, Optional
 
 from engine.api.action_parser import ActionIntent, ActionParser, ParsedAction
 from engine.api.game_engine_runtime import GameEngineRuntimeMixin
-from engine.api.game_session import GameSession
-from engine.api.handlers.combat_handlers import CombatMixin
-from engine.api.handlers.exploration_handlers import ExplorationMixin
-from engine.api.handlers.helpers import HelperMixin
-from engine.api.handlers.inventory_handlers import InventoryMixin
+from engine.api.handlers.combat_actions import CombatActionsMixin
+from engine.api.handlers.combat_narration import CombatNarrationMixin
+from engine.api.handlers.combat_spawning import CombatSpawningMixin
+from engine.api.handlers.combat_state import CombatStateMixin
+from engine.api.handlers.exploration_interaction import ExplorationInteractionMixin
+from engine.api.handlers.exploration_navigation import ExplorationNavigationMixin
+from engine.api.handlers.helper_checks import HelperChecksMixin
+from engine.api.handlers.helper_world import HelperWorldMixin
+from engine.api.handlers.inventory_crafting import InventoryCraftingMixin
+from engine.api.handlers.inventory_equipment import InventoryEquipmentMixin
+from engine.api.handlers.inventory_management import InventoryManagementMixin
+from engine.api.session.core import GameSession
 from engine.api.handlers.quest_handlers import QuestMixin
 from engine.api.handlers.resource_handlers import ResourceMixin
-from engine.api.handlers.social_handlers import SocialMixin
-from engine.api.runtime_constants import (
-    CLASS_ALIASES,
-    DEFAULT_NPC_ALIGNMENT,
-    DEFAULT_NPC_ATTITUDE,
-    DEFAULT_OPENING_SCENE,
-    DEFAULT_PLAYER_CLASS,
-    HOSTILE_KEYWORDS,
-    INTERACTION_HOLD_TURNS,
-    LOCATION_STOCK_BASELINE,
-    NPC_VISUALS,
-    OPENING_SCENES,
-    ROLE_PRODUCTION,
-    SOCIAL_ATTITUDE_DCS,
-    STARTER_KITS,
-    THINK_TOPIC_SKILLS,
-    WORKSTATION_ANCHORS,
-    WORKSTATION_SPECS,
-    XP_REWARDS,
-)
-from engine.api.save_system import SaveSystem
+from engine.api.handlers.social_actions import SocialActionsMixin
+from engine.api.handlers.social_state import SocialStateMixin
+from engine.api.save import SaveSystem
 from engine.kernel.narrator import DMAIAgent, SceneType
 from engine.data_loader import get_xp_thresholds
-from engine.world.body_parts import roll_hit_location
 from engine.world.need_satisfaction import NeedSatisfactionEngine
-from engine.world.skill_checks import SkillCheckResult, ability_modifier, contested_check, passive_score, roll_check, saving_throw
 from engine.world.tick_scheduler import WorldTickScheduler
 
 
@@ -97,13 +84,21 @@ class ActionResult:
 
 class GameEngine(
     GameEngineRuntimeMixin,
-    CombatMixin,
-    SocialMixin,
-    ExplorationMixin,
-    InventoryMixin,
+    CombatActionsMixin,
+    CombatNarrationMixin,
+    CombatSpawningMixin,
+    CombatStateMixin,
+    SocialActionsMixin,
+    SocialStateMixin,
+    ExplorationNavigationMixin,
+    ExplorationInteractionMixin,
+    InventoryManagementMixin,
+    InventoryEquipmentMixin,
+    InventoryCraftingMixin,
     QuestMixin,
     ResourceMixin,
-    HelperMixin,
+    HelperChecksMixin,
+    HelperWorldMixin,
 ):
     """Public orchestration surface for API-level action processing."""
 

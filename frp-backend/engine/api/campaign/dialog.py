@@ -1,22 +1,14 @@
-"""Dialog payload bridge: kernel dialog authority for campaign responses.
-
-Replaces the old synthetic overlay with the kernel dialog state machine.
-If an NPC has a DialogDef, we use it. Otherwise we generate a default
-dialog tree driven by actual kernel conditions (stat checks, quest state).
-"""
+"""Dialog payload bridge: authored kernel dialog authority for campaigns."""
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from engine.kernel.dialog import (
-    DialogAction,
     DialogCondition,
     DialogDef,
     DialogState,
-    DialogStateNode,
     DialogTransition,
-    get_available_transitions,
     start_dialog,
 )
 
@@ -45,7 +37,10 @@ def build_dialog_payload(context: "CampaignContext", narrative: str) -> dict[str
         logger.debug("Dialog skipped: kernel actors unavailable for %s", npc_id)
         return {}
 
-    dialog_def = _resolve_dialog_def(context, npc_id, npc_name)
+    dialog_def = _resolve_dialog_def(context, npc_id, npc_name, npc_actor)
+    if dialog_def is None:
+        logger.debug("Dialog skipped: no authored dialog for %s", npc_id or npc_name)
+        return {}
     global_vars = _global_variables(context)
 
     try:
@@ -83,7 +78,8 @@ def _get_npc_actor(context: "CampaignContext", npc_id: str, npc_name: str) -> "A
     if npc_id and npc_id in actors:
         return actors[npc_id]
     for actor in actors.values():
-        if getattr(actor.identity, "name", "") == npc_name:
+        display_name = str(getattr(getattr(actor, "identity", None), "display_name", "")).strip()
+        if display_name and display_name.lower() == npc_name.lower():
             return actor
     return None
 
@@ -92,21 +88,24 @@ def _get_npc_actor(context: "CampaignContext", npc_id: str, npc_name: str) -> "A
 # Dialog definition resolution
 # ---------------------------------------------------------------------------
 
-def _resolve_dialog_def(context: "CampaignContext", npc_id: str, npc_name: str) -> DialogDef:
-    """Look up NPC's dialog def from data, falling back to generated default."""
+def _resolve_dialog_def(
+    context: "CampaignContext",
+    npc_id: str,
+    npc_name: str,
+    npc_actor: "ActorRecord",
+) -> Optional[DialogDef]:
+    """Look up an authored dialog def by NPC id or authored role."""
     from engine.data._shared import dialog_defs_registry
     registry = dialog_defs_registry()
-    # Exact NPC ID match.
     if npc_id and npc_id in registry:
         return _dialog_def_from_data(registry[npc_id])
-    # Role-based match: extract NPC role from kernel runtime.
-    role = _extract_npc_role(context, npc_id)
+    role = _extract_npc_role(context, npc_id, npc_name, npc_actor)
     if role:
         for def_data in registry.values():
             if str(def_data.get("role", "")).lower() == role.lower():
                 logger.debug("Dialog: role-based match '%s' for NPC '%s'", role, npc_id)
                 return _dialog_def_from_data(def_data)
-    return _default_dialog_def(npc_id or npc_name, npc_name, context)
+    return None
 
 
 def _dialog_def_from_data(raw: dict) -> DialogDef:
@@ -115,57 +114,27 @@ def _dialog_def_from_data(raw: dict) -> DialogDef:
     return DialogDef.from_dict(clean)
 
 
-def _extract_npc_role(context: "CampaignContext", npc_id: str) -> str:
+def _extract_npc_role(
+    context: "CampaignContext",
+    npc_id: str,
+    npc_name: str,
+    npc_actor: "ActorRecord",
+) -> str:
     """Get the role string for an NPC from kernel runtime."""
+    role = str(getattr(npc_actor, "raw_payload", {}).get("role", "")).strip()
+    if role:
+        return role
     runtime = context.kernel_runtime or {}
     actors = runtime.get("actors", {})
-    actor = actors.get(npc_id)
-    if actor is not None:
-        return str(getattr(actor, "raw_payload", {}).get("role", ""))
+    if npc_id:
+        actor = actors.get(npc_id)
+        if actor is not None:
+            return str(getattr(actor, "raw_payload", {}).get("role", "")).strip()
+    for actor in actors.values():
+        display_name = str(getattr(getattr(actor, "identity", None), "display_name", "")).strip()
+        if display_name and display_name.lower() == npc_name.lower():
+            return str(getattr(actor, "raw_payload", {}).get("role", "")).strip()
     return ""
-
-
-def _default_dialog_def(npc_id: str, npc_name: str, context: "CampaignContext") -> DialogDef:
-    """Generate a kernel-authoritative default dialog tree for generic NPCs."""
-    has_quests = bool(context.session.quest_offers)
-    opener = "Ask about available work" if has_quests else "Ask about the local situation"
-    return DialogDef(
-        dialog_id=f"default_{npc_id}",
-        npc_id=npc_id,
-        states=[DialogStateNode(
-            state_id="greeting",
-            text=f"{npc_name} regards you.",
-            transitions=[
-                DialogTransition(
-                    transition_id="ask_work", text=opener,
-                    next_state_id="farewell",
-                    actions=[DialogAction("set_variable", {"name": "asked_work", "value": True})],
-                ),
-                DialogTransition(
-                    transition_id="probe_rumors", text="Probe for rumors",
-                    condition=DialogCondition("stat_check", {"stat": "INS", "operator": ">=", "value": 12}),
-                    next_state_id="farewell",
-                ),
-                DialogTransition(
-                    transition_id="persuade", text="Appeal for help",
-                    condition=DialogCondition("stat_check", {"stat": "PRE", "operator": ">=", "value": 12}),
-                    next_state_id="farewell",
-                ),
-                DialogTransition(
-                    transition_id="intimidate", text="Threaten for answers",
-                    condition=DialogCondition("stat_check", {"stat": "MIG", "operator": ">=", "value": 11}),
-                    next_state_id="farewell",
-                ),
-                DialogTransition(
-                    transition_id="leave", text="Leave", terminates=True,
-                ),
-            ],
-        ), DialogStateNode(
-            state_id="farewell",
-            text=f"{npc_name} nods.",
-            transitions=[DialogTransition(transition_id="done", text="Farewell", terminates=True)],
-        )],
-    )
 
 
 # ---------------------------------------------------------------------------

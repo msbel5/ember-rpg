@@ -4,7 +4,7 @@ from __future__ import annotations
 import random
 from typing import Optional, List, Dict, Any, TYPE_CHECKING
 
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.api.action_parser import ParsedAction
 from engine.kernel.narrator import DMEvent, EventType, SceneType
 from engine.world.skill_checks import roll_check

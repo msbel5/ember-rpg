@@ -182,4 +182,15 @@ class SessionBootstrapMixin:
 
     def in_combat(self) -> bool:
         """Return True if session has active combat."""
-        return self.combat is not None and not self.combat.combat_ended
+        if self.combat is not None and not self.combat.combat_ended:
+            return True
+        state = self.campaign_state.get("combat_state") if isinstance(self.campaign_state, dict) else None
+        if state is None:
+            return False
+        try:
+            from engine.kernel.combat_engine import is_combat_over
+
+            actors = self.campaign_state.get("combat_actors", {})
+            return str(getattr(state, "phase", "resolved")) != "resolved" and not is_combat_over(state, actors)
+        except Exception:
+            return str(getattr(state, "phase", "resolved")) != "resolved"

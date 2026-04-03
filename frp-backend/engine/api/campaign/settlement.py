@@ -9,7 +9,7 @@ import copy
 import logging
 from typing import Any
 
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.data.classes import get_creation_ability_order
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 

@@ -5,7 +5,7 @@ import copy
 from typing import Any
 
 from engine.api.action_parser import ParsedAction
-from engine.api.game_session import GameSession
+from engine.api.session.core import GameSession
 from engine.world.action_points import ACTION_COSTS
 from engine.world.entity import Entity, EntityType
 
