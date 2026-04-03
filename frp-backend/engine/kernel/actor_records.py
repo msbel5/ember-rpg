@@ -192,9 +192,149 @@ def _turn_resources_from_legacy_points(current_points: int, max_points: int) -> 
     }
 
 
+# ── Kernel-native factory functions (no legacy Character needed) ──────
+
+# D&D stat name -> Ember stat name mapping for monster templates.
+_DND_TO_EMBER = {"str": "MIG", "dex": "AGI", "con": "END", "int": "MND", "wis": "INS", "cha": "PRE"}
+
+# Default HP per class at level 1 (hit_die/2 + 1 + END modifier assumed 0).
+_CLASS_HP = {"warrior": 20, "rogue": 16, "mage": 12, "priest": 16, "ranger": 18, "paladin": 20}
+
+# Default BAB rate per class (full=1, 3/4=0.75, 1/2=0.5).
+_CLASS_BAB_RATE = {"warrior": 1.0, "rogue": 0.75, "mage": 0.5, "priest": 0.75, "ranger": 1.0, "paladin": 1.0}
+
+_MONSTER_COUNTER = 0
+
+
+def create_player_actor(
+    name: str,
+    class_name: str,
+    stats: dict[str, int],
+    *,
+    level: int = 1,
+    actor_id: str = "player",
+    position: tuple[int, int] = (0, 0),
+    skills: dict[str, int] | None = None,
+    faction_id: str | None = None,
+    region_id: str | None = None,
+    site_id: str | None = None,
+) -> ActorRecord:
+    """Create a player ActorRecord directly from creation data.
+
+    No legacy Character object is needed. Stats must use Ember keys
+    (MIG/AGI/END/MND/INS/PRE).
+    """
+    # Ensure all six Ember stats are present.
+    full_stats = dict(stats)
+    for key in ("MIG", "AGI", "END", "MND", "INS", "PRE"):
+        full_stats.setdefault(key, 10)
+
+    # Calculate HP from class defaults + END modifier.
+    end_mod = (int(full_stats.get("END", 10)) - 10) // 2
+    base_hp = _CLASS_HP.get(class_name.lower(), 16)
+    hp = max(1, base_hp + end_mod)
+    full_stats["hp"] = hp
+    full_stats["max_hp"] = hp
+
+    # Calculate BAB from class and level.
+    bab_rate = _CLASS_BAB_RATE.get(class_name.lower(), 0.75)
+    bab = max(0, int(level * bab_rate))
+
+    return ActorRecord(
+        identity=ActorIdentity(
+            actor_id=actor_id,
+            display_name=name,
+            actor_type="pc",
+            faction_id=faction_id,
+            site_id=site_id,
+        ),
+        position=ActorPosition(x=int(position[0]), y=int(position[1]), region_id=region_id, site_id=site_id),
+        action_points=6,
+        max_action_points=6,
+        alive=True,
+        stats=full_stats,
+        skills=dict(skills or {}),
+        body_state=BodyState.from_tracker(BodyPartTracker()),
+        raw_payload={
+            "class_name": class_name.lower(),
+            "level": level,
+            "bab": bab,
+            "bab_rate": bab_rate,
+        },
+    )
+
+
+def create_monster_actor(
+    template: dict[str, Any],
+    *,
+    position: tuple[int, int] = (0, 0),
+    faction_id: str = "hostile",
+    region_id: str | None = None,
+    site_id: str | None = None,
+) -> ActorRecord:
+    """Create a monster ActorRecord directly from a JSON template.
+
+    Maps D&D stat keys (str/dex/con/int/wis/cha) to Ember keys
+    (MIG/AGI/END/MND/INS/PRE).
+    """
+    global _MONSTER_COUNTER
+    _MONSTER_COUNTER += 1
+
+    # Map stats from template (D&D lowercase -> Ember uppercase).
+    raw_stats = dict(template.get("stats", {}))
+    ember_stats: dict[str, int | float] = {}
+    for dnd_key, ember_key in _DND_TO_EMBER.items():
+        ember_stats[ember_key] = int(raw_stats.get(dnd_key, 10))
+
+    hp = int(template.get("hp", 10))
+    ember_stats["hp"] = hp
+    ember_stats["max_hp"] = hp
+
+    # Extract attack bonus from first attack entry.
+    attacks = list(template.get("attacks", []))
+    first_attack = attacks[0] if attacks else {}
+    attack_bonus = int(first_attack.get("attack_bonus", 2))
+    mig_mod = (int(ember_stats.get("MIG", 10)) - 10) // 2
+    melee_skill = max(0, attack_bonus - mig_mod)
+
+    # Estimate BAB from CR.
+    cr = float(template.get("cr", 1.0))
+    bab = max(1, int(cr * 2))
+
+    actor_id = f"{template.get('id', 'monster')}_{_MONSTER_COUNTER}"
+
+    return ActorRecord(
+        identity=ActorIdentity(
+            actor_id=actor_id,
+            display_name=str(template.get("name", "Monster")),
+            actor_type="npc",
+            faction_id=faction_id,
+            site_id=site_id,
+        ),
+        position=ActorPosition(x=int(position[0]), y=int(position[1]), region_id=region_id, site_id=site_id),
+        action_points=6,
+        max_action_points=6,
+        alive=True,
+        stats=ember_stats,
+        skills={"melee": melee_skill},
+        body_state=BodyState.from_tracker(BodyPartTracker()),
+        raw_payload={
+            "monster_id": str(template.get("id", "")),
+            "monster_type": str(template.get("type", "monster")),
+            "cr": cr,
+            "bab": bab,
+            "ac": int(template.get("armor_class", 10)),
+            "attacks": attacks,
+            "loot_table": list(template.get("loot_table", [])),
+        },
+    )
+
+
 __all__ = [
     "ActorRecord",
     "actor_record_from_character",
     "actor_record_from_entity",
+    "create_monster_actor",
+    "create_player_actor",
     "sync_body_state_to_tracker",
 ]
