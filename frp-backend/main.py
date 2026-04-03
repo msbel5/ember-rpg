@@ -3,6 +3,7 @@ Ember RPG - FastAPI Application Entry Point
 """
 from fastapi import FastAPI
 from engine.api.campaign_routes import router as campaign_router
+from engine.api.ws_campaign import ws_router
 
 app = FastAPI(
     title="Ember RPG API",
@@ -10,7 +11,10 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# HTTP campaign routes.
 app.include_router(campaign_router, prefix="/game")
+# WebSocket campaign transport (real-time bidirectional).
+app.include_router(ws_router, prefix="/game")
 
 
 @app.get("/")
