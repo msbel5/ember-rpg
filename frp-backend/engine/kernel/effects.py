@@ -416,33 +416,22 @@ def _save_stat_value(target: ActorRecord, save_key: str) -> int:
 
 
 def _stat_lookup(target: ActorRecord, stat_name: str) -> int:
-    """Resolve a stat name to its value, using Ember canonical keys only."""
-    # Map legacy/lowercase names to canonical Ember stat keys.
-    aliases = {
-        "con": ("END",),
-        "constitution": ("END",),
-        "end": ("END",),
-        "dex": ("AGI",),
-        "dexterity": ("AGI",),
-        "agi": ("AGI",),
-        "wis": ("INS",),
-        "wisdom": ("INS",),
-        "ins": ("INS",),
-        "str": ("MIG",),
-        "strength": ("MIG",),
-        "mig": ("MIG",),
-        "int": ("MND",),
-        "intelligence": ("MND",),
-        "mnd": ("MND",),
-        "cha": ("PRE",),
-        "charisma": ("PRE",),
-        "pre": ("PRE",),
+    """Resolve a stat name to its value, using Ember canonical keys only.
+
+    Accepts lowercase variants (e.g. "mig") and maps them to uppercase
+    Ember keys (e.g. "MIG").  No D&D stat vocabulary is supported.
+    """
+    _EMBER_ALIASES: dict[str, str] = {
+        "mig": "MIG",
+        "agi": "AGI",
+        "end": "END",
+        "mnd": "MND",
+        "ins": "INS",
+        "pre": "PRE",
     }
-    key = str(stat_name).lower()
-    for candidate in aliases.get(key, (stat_name, stat_name.upper(), key)):
-        if candidate in target.stats:
-            return int(target.stats[candidate])
-    return int(target.stats.get(str(stat_name), 0))
+    key = str(stat_name).strip()
+    canonical = _EMBER_ALIASES.get(key.lower(), key.upper())
+    return int(target.stats.get(canonical, target.stats.get(key, 0)))
 
 
 def _ability_modifier(value: int) -> int:

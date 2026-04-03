@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Callable, Optional
 
 from engine.api.campaign_runtime import CampaignRuntime
-from engine.core.character_creation import ABILITY_ORDER, assign_stats_to_class
+from engine.kernel.creation import ABILITY_ORDER, assign_stats_to_class
 from engine.llm import build_game_narrator
 
 

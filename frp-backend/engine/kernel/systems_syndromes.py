@@ -119,8 +119,8 @@ def syndrome_registry_from_actors(actors: list[ActorRecord]) -> list[SyndromeDef
 
 
 def apply_syndrome(actor: ActorRecord, syndrome: SyndromeDef, seed: int) -> bool:
-    disease_resistance = int(actor.stats.get("disease_resistance", actor.stats.get("DISEASE_RESISTANCE", 0)))
-    toughness = int(actor.stats.get("TOUGHNESS", actor.stats.get("END", 10)))
+    disease_resistance = int(actor.stats.get("disease_resistance", 0))
+    toughness = int(actor.stats.get("END", 10))
     d20 = resolve_d20(seed)
     resistance_total = d20 + disease_resistance + (toughness // 2)
     if resistance_total >= int(syndrome.resistance_dc):

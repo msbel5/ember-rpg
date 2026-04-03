@@ -28,8 +28,7 @@ from rich.prompt import Prompt
 from rich.rule import Rule
 from rich.table import Table
 
-from engine.core.character_creation import ABILITY_ORDER, assign_stats_to_class
-from engine.core.creation_catalog import get_creation_catalog
+from engine.kernel.creation import ABILITY_ORDER, assign_stats_to_class, get_creation_catalog
 from tools.campaign_client import CampaignClient
 from tools.play_topdown_saves import (
     append_history as _append_history,

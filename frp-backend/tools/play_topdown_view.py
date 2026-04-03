@@ -8,7 +8,7 @@ from rich.layout import Layout
 from rich.panel import Panel
 from rich.text import Text
 
-from engine.core.character_creation import ABILITY_ORDER, assign_stats_to_class
+from engine.kernel.creation import ABILITY_ORDER, assign_stats_to_class
 from engine.map import TileType
 
 MAP_WIDTH = 40

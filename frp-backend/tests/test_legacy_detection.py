@@ -79,3 +79,34 @@ def test_kernel_adapter_has_no_core_imports():
         stripped = line.strip()
         if stripped.startswith("from engine.core"):
             raise AssertionError(f"kernel_adapter.py:{lineno} imports engine.core: {stripped}")
+
+
+def test_no_legacy_imports_in_tests():
+    """No test file should import from engine.core (dead tests must be deleted)."""
+    test_dir = BACKEND_DIR / "tests"
+    violations = []
+    skip = {"test_legacy_detection.py", "test_kernel_adapter.py", "test_final_cleanup.py"}
+    for py_file in sorted(test_dir.rglob("*.py")):
+        if "__pycache__" in str(py_file) or py_file.name in skip:
+            continue
+        for lineno, line in enumerate(py_file.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+            if re.match(r"^\s*from engine\.core\.", line):
+                violations.append(f"{py_file.name}:{lineno}")
+    assert violations == [], (
+        "Test files must not import engine.core:\n" + "\n".join(violations)
+    )
+
+
+def test_no_legacy_imports_in_tools():
+    """No tools/ file should import from engine.core."""
+    tools_dir = BACKEND_DIR / "tools"
+    violations = []
+    for py_file in sorted(tools_dir.rglob("*.py")):
+        if "__pycache__" in str(py_file):
+            continue
+        for lineno, line in enumerate(py_file.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+            if re.match(r"^\s*from engine\.core\.", line):
+                violations.append(f"{py_file.name}:{lineno}")
+    assert violations == [], (
+        "Tools files must not import engine.core:\n" + "\n".join(violations)
+    )

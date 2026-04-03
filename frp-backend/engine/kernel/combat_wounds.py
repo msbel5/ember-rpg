@@ -51,8 +51,8 @@ def attack_force(
     damage_type: str,
 ) -> int:
     base_damage = max(1, int(raw_damage))
-    mig = int(attacker.stats.get("MIG", attacker.stats.get("strength", 10)))
-    agi = int(attacker.stats.get("AGI", attacker.stats.get("agility", 10)))
+    mig = int(attacker.stats.get("MIG", 10))
+    agi = int(attacker.stats.get("AGI", 10))
     melee_skill = int(attacker.skills.get("melee", attacker.skills.get("sword", attacker.skills.get("axe", 0))))
     stat_bonus = max(0, (mig - 10) // 2)
     velocity = 100 + (agi - 10) * 3 + melee_skill * 4 + (20 if crit else 0)

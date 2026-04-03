@@ -5,17 +5,11 @@ from typing import Any
 
 from engine.kernel.actor import MaterialDef, WoundRecord
 from engine.kernel.common import serialize_value
+from engine.kernel.data_loader import load_quality_tiers
 from engine.world.materials import MATERIALS
 
-QUALITY_MULTIPLIERS = {
-    0: 1.0,
-    1: 1.2,
-    2: 1.4,
-    3: 1.6,
-    4: 1.8,
-    5: 2.0,
-    6: 3.0,
-}
+# Loaded from data/quality_tiers.json -- no hardcoded game constants.
+QUALITY_MULTIPLIERS: dict[int, float] = load_quality_tiers()
 EDGE_DAMAGE_TYPES = {"slash", "slashing", "pierce", "piercing", "cut", "stab", "edge"}
 BLUNT_DAMAGE_TYPES = {"bludgeoning", "blunt", "impact", "smash", "bash"}
 
