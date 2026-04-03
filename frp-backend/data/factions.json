@@ -11,48 +11,138 @@
       "honored": 15
     },
     "action_types": [
-      "KILL_CITIZEN", "THEFT", "ASSAULT", "TRADE",
-      "KILL_ENEMY", "BETRAYAL", "HELP_POOR", "DESECRATE"
+      "KILL_CITIZEN",
+      "THEFT",
+      "ASSAULT",
+      "TRADE",
+      "KILL_ENEMY",
+      "BETRAYAL",
+      "HELP_POOR",
+      "DESECRATE"
     ],
     "ethics": {
       "harbor_guard": {
-        "KILL_CITIZEN": "serious_crime", "THEFT": "crime", "ASSAULT": "crime",
-        "TRADE": "valued", "KILL_ENEMY": "honored", "BETRAYAL": "unthinkable",
-        "HELP_POOR": "valued", "DESECRATE": "distasteful"
+        "KILL_CITIZEN": "serious_crime",
+        "THEFT": "crime",
+        "ASSAULT": "crime",
+        "TRADE": "valued",
+        "KILL_ENEMY": "honored",
+        "BETRAYAL": "unthinkable",
+        "HELP_POOR": "valued",
+        "DESECRATE": "distasteful"
       },
       "thieves_guild": {
-        "KILL_CITIZEN": "distasteful", "THEFT": "valued", "ASSAULT": "tolerated",
-        "TRADE": "acceptable", "KILL_ENEMY": "acceptable", "BETRAYAL": "unthinkable",
-        "HELP_POOR": "tolerated", "DESECRATE": "acceptable"
+        "KILL_CITIZEN": "distasteful",
+        "THEFT": "valued",
+        "ASSAULT": "tolerated",
+        "TRADE": "acceptable",
+        "KILL_ENEMY": "acceptable",
+        "BETRAYAL": "unthinkable",
+        "HELP_POOR": "tolerated",
+        "DESECRATE": "acceptable"
       },
       "merchant_guild": {
-        "KILL_CITIZEN": "serious_crime", "THEFT": "serious_crime", "ASSAULT": "crime",
-        "TRADE": "honored", "KILL_ENEMY": "acceptable", "BETRAYAL": "crime",
-        "HELP_POOR": "valued", "DESECRATE": "distasteful"
+        "KILL_CITIZEN": "serious_crime",
+        "THEFT": "serious_crime",
+        "ASSAULT": "crime",
+        "TRADE": "honored",
+        "KILL_ENEMY": "acceptable",
+        "BETRAYAL": "crime",
+        "HELP_POOR": "valued",
+        "DESECRATE": "distasteful"
       },
       "forest_elves": {
-        "KILL_CITIZEN": "unthinkable", "THEFT": "crime", "ASSAULT": "crime",
-        "TRADE": "acceptable", "KILL_ENEMY": "tolerated", "BETRAYAL": "serious_crime",
-        "HELP_POOR": "honored", "DESECRATE": "unthinkable"
+        "KILL_CITIZEN": "unthinkable",
+        "THEFT": "crime",
+        "ASSAULT": "crime",
+        "TRADE": "acceptable",
+        "KILL_ENEMY": "tolerated",
+        "BETRAYAL": "serious_crime",
+        "HELP_POOR": "honored",
+        "DESECRATE": "unthinkable"
       },
       "mountain_dwarves": {
-        "KILL_CITIZEN": "serious_crime", "THEFT": "crime", "ASSAULT": "tolerated",
-        "TRADE": "valued", "KILL_ENEMY": "honored", "BETRAYAL": "unthinkable",
-        "HELP_POOR": "acceptable", "DESECRATE": "serious_crime"
+        "KILL_CITIZEN": "serious_crime",
+        "THEFT": "crime",
+        "ASSAULT": "tolerated",
+        "TRADE": "valued",
+        "KILL_ENEMY": "honored",
+        "BETRAYAL": "unthinkable",
+        "HELP_POOR": "acceptable",
+        "DESECRATE": "serious_crime"
       },
       "temple_order": {
-        "KILL_CITIZEN": "unthinkable", "THEFT": "serious_crime", "ASSAULT": "crime",
-        "TRADE": "acceptable", "KILL_ENEMY": "tolerated", "BETRAYAL": "serious_crime",
-        "HELP_POOR": "honored", "DESECRATE": "unthinkable"
+        "KILL_CITIZEN": "unthinkable",
+        "THEFT": "serious_crime",
+        "ASSAULT": "crime",
+        "TRADE": "acceptable",
+        "KILL_ENEMY": "tolerated",
+        "BETRAYAL": "serious_crime",
+        "HELP_POOR": "honored",
+        "DESECRATE": "unthinkable"
       }
     },
     "values": {
-      "harbor_guard": {"order": 90, "commerce": 40, "tradition": 60, "nature": 20, "wealth": 30, "art": 15, "honor": 85, "faith": 45},
-      "thieves_guild": {"order": 10, "commerce": 55, "tradition": 30, "nature": 10, "wealth": 90, "art": 40, "honor": 20, "faith": 5},
-      "merchant_guild": {"order": 60, "commerce": 95, "tradition": 35, "nature": 15, "wealth": 85, "art": 50, "honor": 45, "faith": 25},
-      "forest_elves": {"order": 40, "commerce": 15, "tradition": 80, "nature": 95, "wealth": 10, "art": 75, "honor": 70, "faith": 60},
-      "mountain_dwarves": {"order": 70, "commerce": 60, "tradition": 90, "nature": 30, "wealth": 75, "art": 65, "honor": 80, "faith": 50},
-      "temple_order": {"order": 75, "commerce": 20, "tradition": 70, "nature": 45, "wealth": 10, "art": 55, "honor": 60, "faith": 95}
+      "harbor_guard": {
+        "order": 90,
+        "commerce": 40,
+        "tradition": 60,
+        "nature": 20,
+        "wealth": 30,
+        "art": 15,
+        "honor": 85,
+        "faith": 45
+      },
+      "thieves_guild": {
+        "order": 10,
+        "commerce": 55,
+        "tradition": 30,
+        "nature": 10,
+        "wealth": 90,
+        "art": 40,
+        "honor": 20,
+        "faith": 5
+      },
+      "merchant_guild": {
+        "order": 60,
+        "commerce": 95,
+        "tradition": 35,
+        "nature": 15,
+        "wealth": 85,
+        "art": 50,
+        "honor": 45,
+        "faith": 25
+      },
+      "forest_elves": {
+        "order": 40,
+        "commerce": 15,
+        "tradition": 80,
+        "nature": 95,
+        "wealth": 10,
+        "art": 75,
+        "honor": 70,
+        "faith": 60
+      },
+      "mountain_dwarves": {
+        "order": 70,
+        "commerce": 60,
+        "tradition": 90,
+        "nature": 30,
+        "wealth": 75,
+        "art": 65,
+        "honor": 80,
+        "faith": 50
+      },
+      "temple_order": {
+        "order": 75,
+        "commerce": 20,
+        "tradition": 70,
+        "nature": 45,
+        "wealth": 10,
+        "art": 55,
+        "honor": 60,
+        "faith": 95
+      }
     },
     "consequences": {
       "unthinkable": "Faction declares you an enemy. All members attack on sight.",
@@ -63,6 +153,94 @@
       "acceptable": null,
       "valued": null,
       "honored": null
+    },
+    "desert_nomads": {
+      "ethics": {
+        "KILL_CITIZEN": "serious_crime",
+        "THEFT": "tolerated",
+        "ASSAULT": "crime",
+        "TRADE": "valued",
+        "KILL_ENEMY": "honored",
+        "BETRAYAL": "unthinkable",
+        "HELP_POOR": "honored",
+        "DESECRATE": "serious_crime"
+      },
+      "values": {
+        "order": 35,
+        "commerce": 50,
+        "tradition": 85,
+        "nature": 60,
+        "wealth": 40,
+        "art": 30,
+        "honor": 80,
+        "faith": 70
+      }
+    },
+    "arcane_circle": {
+      "ethics": {
+        "KILL_CITIZEN": "crime",
+        "THEFT": "distasteful",
+        "ASSAULT": "crime",
+        "TRADE": "acceptable",
+        "KILL_ENEMY": "valued",
+        "BETRAYAL": "serious_crime",
+        "HELP_POOR": "valued",
+        "DESECRATE": "tolerated"
+      },
+      "values": {
+        "order": 55,
+        "commerce": 35,
+        "tradition": 40,
+        "nature": 25,
+        "wealth": 30,
+        "art": 80,
+        "honor": 50,
+        "faith": 60
+      }
+    },
+    "iron_legion": {
+      "ethics": {
+        "KILL_CITIZEN": "serious_crime",
+        "THEFT": "crime",
+        "ASSAULT": "tolerated",
+        "TRADE": "acceptable",
+        "KILL_ENEMY": "honored",
+        "BETRAYAL": "unthinkable",
+        "HELP_POOR": "acceptable",
+        "DESECRATE": "distasteful"
+      },
+      "values": {
+        "order": 95,
+        "commerce": 30,
+        "tradition": 75,
+        "nature": 10,
+        "wealth": 25,
+        "art": 20,
+        "honor": 90,
+        "faith": 40
+      }
+    },
+    "freefolk": {
+      "ethics": {
+        "KILL_CITIZEN": "crime",
+        "THEFT": "tolerated",
+        "ASSAULT": "tolerated",
+        "TRADE": "valued",
+        "KILL_ENEMY": "valued",
+        "BETRAYAL": "serious_crime",
+        "HELP_POOR": "valued",
+        "DESECRATE": "acceptable"
+      },
+      "values": {
+        "order": 20,
+        "commerce": 60,
+        "tradition": 25,
+        "nature": 55,
+        "wealth": 50,
+        "art": 45,
+        "honor": 35,
+        "faith": 20
+      }
     }
   }
 }

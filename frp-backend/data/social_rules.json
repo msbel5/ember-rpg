@@ -34,7 +34,10 @@
       "healer": "friendly",
       "sage": "friendly",
       "beggar": "indifferent",
-      "spy": "hostile"
+      "spy": "hostile",
+      "noble": "indifferent",
+      "artisan": "indifferent",
+      "outcast": "hostile"
     },
     "default_npc_alignment": {
       "merchant": "LN",
@@ -46,7 +49,10 @@
       "healer": "NG",
       "sage": "TN",
       "beggar": "CN",
-      "spy": "NE"
+      "spy": "NE",
+      "noble": "LN",
+      "artisan": "NG",
+      "outcast": "CN"
     },
     "think_topic_skills": {
       "history": [
@@ -104,6 +110,15 @@
         "neden",
         "who",
         "why"
+      ],
+      "politics": [
+        "council",
+        "election",
+        "law",
+        "noble",
+        "republic",
+        "senate",
+        "vote"
       ]
     },
     "hostile_keywords": [
@@ -124,7 +139,9 @@
       "troll",
       "watchman",
       "wolf",
-      "zombie"
+      "zombie",
+      "assassin",
+      "outcast"
     ]
   }
 }

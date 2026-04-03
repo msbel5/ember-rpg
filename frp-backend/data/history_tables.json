@@ -18,7 +18,12 @@
       "elder",
       "lorekeeper"
     ],
-    "severity_levels": ["low", "moderate", "high", "critical"],
+    "severity_levels": [
+      "low",
+      "moderate",
+      "high",
+      "critical"
+    ],
     "war_names": [
       "War of the Broken Crown",
       "The Ember Crusade",
@@ -136,6 +141,23 @@
       "magical catastrophe",
       "betrayal by its own ruling council",
       "economic collapse"
+    ],
+    "notable_events": [
+      "The Founding of the Glimmering Republic",
+      "The Collapse of the Old Bridge",
+      "The Dwarven-Elven Accord",
+      "The Plague of Withered Fields",
+      "The Night of Falling Stars",
+      "The Great Market Fire",
+      "The Disappearance of the Silver Prince"
+    ],
+    "historic_titles": [
+      "Warden of the North",
+      "Keeper of the Forge",
+      "Mistress of Masks",
+      "High Sage of Erathel",
+      "Champion of the Hollow Gate",
+      "First Merchant of Marath"
     ]
   }
 }

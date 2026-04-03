@@ -4,7 +4,11 @@
       "name": "Iron Caravan",
       "origin": "ironhold_mines",
       "destination": "riverside_market",
-      "goods": {"iron_ore": 40, "coal": 20, "iron_bar": 10},
+      "goods": {
+        "iron_ore": 40,
+        "coal": 20,
+        "iron_bar": 10
+      },
       "travel_hours": 8,
       "frequency_hours": 24,
       "value": 300
@@ -13,7 +17,12 @@
       "name": "Food Caravan",
       "origin": "greenfield_farms",
       "destination": "riverside_market",
-      "goods": {"grain": 60, "bread": 20, "ale": 15, "herb": 10},
+      "goods": {
+        "grain": 60,
+        "bread": 20,
+        "ale": 15,
+        "herb": 10
+      },
       "travel_hours": 6,
       "frequency_hours": 18,
       "value": 180
@@ -22,10 +31,70 @@
       "name": "Luxury Caravan",
       "origin": "silverpeak",
       "destination": "capital_city",
-      "goods": {"silver_bar": 5, "silver_ring": 8, "glass_vial": 20, "cloth": 15},
+      "goods": {
+        "silver_bar": 5,
+        "silver_ring": 8,
+        "glass_vial": 20,
+        "cloth": 15
+      },
       "travel_hours": 12,
       "frequency_hours": 48,
       "value": 800
+    },
+    "Gemstone Caravan": {
+      "name": "Gemstone Caravan",
+      "origin": "granite_quarry",
+      "destination": "capital_city",
+      "goods": {
+        "granite_core": 25,
+        "ruby_gem": 6,
+        "geode_crystal": 12
+      },
+      "travel_hours": 10,
+      "frequency_hours": 36,
+      "value": 650
+    },
+    "Smith's Supply Caravan": {
+      "name": "Smith's Supply Caravan",
+      "origin": "riverside_market",
+      "destination": "ironhold_mines",
+      "goods": {
+        "iron_shortsword": 8,
+        "iron_helmet": 5,
+        "leather_leggings": 10,
+        "quiver": 12
+      },
+      "travel_hours": 8,
+      "frequency_hours": 30,
+      "value": 320
+    },
+    "Arcane Goods Caravan": {
+      "name": "Arcane Goods Caravan",
+      "origin": "capital_city",
+      "destination": "silverpeak",
+      "goods": {
+        "arcane_focus_gem": 4,
+        "scroll_of_fireball": 3,
+        "potion_of_healing": 10,
+        "ember_shard": 6
+      },
+      "travel_hours": 14,
+      "frequency_hours": 48,
+      "value": 900
+    },
+    "Hunter's Haul": {
+      "name": "Hunter's Haul",
+      "origin": "northern_woods",
+      "destination": "riverside_market",
+      "goods": {
+        "wolf_pelt": 18,
+        "bear_pelt": 6,
+        "fang": 20,
+        "arrow": 40
+      },
+      "travel_hours": 7,
+      "frequency_hours": 20,
+      "value": 210
     }
   }
 }

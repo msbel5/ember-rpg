@@ -2314,6 +2314,311 @@
           "rarity": "RARE"
         }
       ]
+    },
+    {
+      "id": "gnoll",
+      "name": "Gnoll",
+      "type": "humanoid",
+      "cr": 1.0,
+      "hp": 22,
+      "armor_class": 15,
+      "speed": 30,
+      "stats": {
+        "MIG": 14,
+        "AGI": 12,
+        "END": 12,
+        "MND": 7,
+        "INS": 10,
+        "PRE": 8
+      },
+      "attacks": [
+        {
+          "name": "Spear",
+          "damage_dice": "1d8+2",
+          "damage_type": "piercing",
+          "attack_bonus": 4
+        },
+        {
+          "name": "Bite",
+          "damage_dice": "1d4+2",
+          "damage_type": "piercing",
+          "attack_bonus": 4
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Rampage"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 200,
+      "loot_table": [
+        {
+          "id": "crude_dagger",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "wolf_pelt",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "silver_coin",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "gorgon",
+      "name": "Gorgon",
+      "type": "beast",
+      "cr": 5.0,
+      "hp": 114,
+      "armor_class": 19,
+      "speed": 40,
+      "stats": {
+        "MIG": 20,
+        "AGI": 11,
+        "END": 18,
+        "MND": 2,
+        "INS": 12,
+        "PRE": 7
+      },
+      "attacks": [
+        {
+          "name": "Gore",
+          "damage_dice": "2d12+5",
+          "damage_type": "piercing",
+          "attack_bonus": 8
+        },
+        {
+          "name": "Hooves",
+          "damage_dice": "2d6+5",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 8
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Petrifying Breath"
+        ],
+        "resistances": [
+          "bludgeoning",
+          "slashing"
+        ],
+        "immunities": []
+      },
+      "xp_reward": 1800,
+      "loot_table": [
+        {
+          "id": "gorgon_eye",
+          "rarity": "RARE"
+        },
+        {
+          "id": "petrification_essence",
+          "rarity": "RARE"
+        },
+        {
+          "id": "iron_shield",
+          "rarity": "UNCOMMON"
+        }
+      ]
+    },
+    {
+      "id": "plague_rat",
+      "name": "Plague Rat",
+      "type": "beast",
+      "cr": 0.25,
+      "hp": 9,
+      "armor_class": 12,
+      "speed": 30,
+      "stats": {
+        "MIG": 8,
+        "AGI": 15,
+        "END": 10,
+        "MND": 2,
+        "INS": 12,
+        "PRE": 4
+      },
+      "attacks": [
+        {
+          "name": "Bite",
+          "damage_dice": "1d4+1",
+          "damage_type": "piercing",
+          "attack_bonus": 3
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Disease Bite"
+        ],
+        "resistances": [],
+        "immunities": [
+          "poison"
+        ]
+      },
+      "xp_reward": 50,
+      "loot_table": [
+        {
+          "id": "plague_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "rotting_flesh",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "ember_wisp",
+      "name": "Ember Wisp",
+      "type": "elemental",
+      "cr": 1.0,
+      "hp": 17,
+      "armor_class": 13,
+      "speed": 50,
+      "stats": {
+        "MIG": 7,
+        "AGI": 18,
+        "END": 10,
+        "MND": 12,
+        "INS": 14,
+        "PRE": 10
+      },
+      "attacks": [
+        {
+          "name": "Fiery Touch",
+          "damage_dice": "2d6",
+          "damage_type": "fire",
+          "attack_bonus": 5
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Ignite"
+        ],
+        "resistances": [
+          "fire"
+        ],
+        "immunities": [
+          "poison"
+        ]
+      },
+      "xp_reward": 200,
+      "loot_table": [
+        {
+          "id": "ember_shard",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "fire_essence",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "ogre_mage",
+      "name": "Ogre Mage",
+      "type": "humanoid",
+      "cr": 5.0,
+      "hp": 85,
+      "armor_class": 15,
+      "speed": 30,
+      "stats": {
+        "MIG": 19,
+        "AGI": 14,
+        "END": 16,
+        "MND": 15,
+        "INS": 12,
+        "PRE": 13
+      },
+      "attacks": [
+        {
+          "name": "Greatsword",
+          "damage_dice": "2d6+5",
+          "damage_type": "slashing",
+          "attack_bonus": 8
+        },
+        {
+          "name": "Spell Blast",
+          "damage_dice": "3d8",
+          "damage_type": "force",
+          "attack_bonus": 7
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Spellcasting",
+          "Regeneration"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 1800,
+      "loot_table": [
+        {
+          "id": "greatsword",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "elixir_of_the_warrior",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "ogre_skin_belt",
+          "rarity": "UNCOMMON"
+        }
+      ]
+    },
+    {
+      "id": "frost_wolf",
+      "name": "Frost Wolf",
+      "type": "beast",
+      "cr": 2.0,
+      "hp": 37,
+      "armor_class": 13,
+      "speed": 40,
+      "stats": {
+        "MIG": 14,
+        "AGI": 16,
+        "END": 14,
+        "MND": 4,
+        "INS": 13,
+        "PRE": 7
+      },
+      "attacks": [
+        {
+          "name": "Bite",
+          "damage_dice": "2d6+3",
+          "damage_type": "cold",
+          "attack_bonus": 6
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Frost Breath",
+          "Pack Tactics"
+        ],
+        "resistances": [
+          "cold"
+        ],
+        "immunities": []
+      },
+      "xp_reward": 450,
+      "loot_table": [
+        {
+          "id": "dire_wolf_pelt",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "frozen_trophy",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "glacial_shard",
+          "rarity": "UNCOMMON"
+        }
+      ]
     }
   ]
 }

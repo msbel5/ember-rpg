@@ -114,7 +114,9 @@
         ],
         "accent": [
           "altar",
-          "candle"
+          "candle",
+          "bookshelf",
+          "torch"
         ]
       },
       "road": {
@@ -254,11 +256,21 @@
           [
             "rocky_ground",
             10
+          ],
+          [
+            "grass",
+            80
+          ],
+          [
+            "dirt_path",
+            20
           ]
         ],
         "accent": [
           "fallen_log",
-          "mushroom"
+          "mushroom",
+          "campfire_remains",
+          "abandoned_cart"
         ]
       },
       "dense_forest": {
@@ -308,11 +320,20 @@
           [
             "rocky_ground",
             10
+          ],
+          [
+            "dirt_path",
+            60
+          ],
+          [
+            "grass",
+            40
           ]
         ],
         "accent": [
           "campfire_pit",
-          "tent"
+          "tent",
+          "barrel"
         ]
       },
       "cave_entrance": {
@@ -618,6 +639,122 @@
           "temple"
         ],
         "is_indoor": true
+      },
+      "healer_hut_3x3": {
+        "size": [
+          3,
+          3
+        ],
+        "tiles": [
+          [
+            "wood_wall",
+            "door",
+            "wood_wall"
+          ],
+          [
+            "wood_floor",
+            "wood_floor",
+            "wood_wall"
+          ],
+          [
+            "wood_wall",
+            "wood_wall",
+            "wood_wall"
+          ]
+        ],
+        "entity_slots": [
+          {
+            "offset": [
+              1,
+              1
+            ],
+            "role": "healer",
+            "type": "npc",
+            "required": true
+          }
+        ],
+        "zone_affinity": [
+          "residential",
+          "temple"
+        ],
+        "is_indoor": true
+      },
+      "sage_tower_3x4": {
+        "size": [
+          3,
+          4
+        ],
+        "tiles": [
+          [
+            "stone_wall",
+            "door",
+            "stone_wall"
+          ],
+          [
+            "stone_wall",
+            "stone_floor",
+            "stone_wall"
+          ],
+          [
+            "stone_wall",
+            "stone_floor",
+            "stone_wall"
+          ],
+          [
+            "stone_wall",
+            "stone_wall",
+            "stone_wall"
+          ]
+        ],
+        "entity_slots": [
+          {
+            "offset": [
+              1,
+              2
+            ],
+            "role": "sage",
+            "type": "npc",
+            "required": true
+          }
+        ],
+        "zone_affinity": [
+          "temple",
+          "residential"
+        ],
+        "is_indoor": true
+      },
+      "campfire_pit_2x2": {
+        "size": [
+          2,
+          2
+        ],
+        "tiles": [
+          [
+            "dirt_path",
+            "dirt_path"
+          ],
+          [
+            "campfire_pit",
+            "dirt_path"
+          ]
+        ],
+        "entity_slots": [
+          {
+            "offset": [
+              0,
+              1
+            ],
+            "role": "ranger",
+            "type": "npc",
+            "required": false
+          }
+        ],
+        "zone_affinity": [
+          "clearing",
+          "camp",
+          "wilderness"
+        ],
+        "is_indoor": false
       }
     },
     "map_generator_tile_sets": {
@@ -751,6 +888,28 @@
             0.6,
             0.1
           ]
+        },
+        {
+          "id": "healer_hut",
+          "name": "Healer's Hut",
+          "type": "building",
+          "bounds_rel": [
+            0.7,
+            0.1,
+            0.9,
+            0.3
+          ]
+        },
+        {
+          "id": "sage_tower",
+          "name": "Sage's Tower",
+          "type": "building",
+          "bounds_rel": [
+            0.8,
+            0.6,
+            1.0,
+            0.9
+          ]
         }
       ],
       "dungeon": [
@@ -878,6 +1037,28 @@
             0.3,
             1.0
           ]
+        },
+        {
+          "id": "forest_clearing",
+          "name": "Forest Clearing",
+          "type": "outdoor",
+          "bounds_rel": [
+            0.4,
+            0.4,
+            0.7,
+            0.7
+          ]
+        },
+        {
+          "id": "ranger_camp",
+          "name": "Ranger's Camp",
+          "type": "camp",
+          "bounds_rel": [
+            0.2,
+            0.7,
+            0.4,
+            0.9
+          ]
         }
       ],
       "cave": [
@@ -945,6 +1126,24 @@
         "cave": [
           "cave_hermit",
           "goblin_scout"
+        ],
+        "temple": [
+          "healer",
+          "sage",
+          "quest_giver"
+        ],
+        "residential": [
+          "merchant",
+          "healer",
+          "sage"
+        ],
+        "camp": [
+          "ranger",
+          "traveling_merchant"
+        ],
+        "clearing": [
+          "ranger",
+          "bandit"
         ]
       },
       "items": {
@@ -976,6 +1175,24 @@
           "glowing_crystal",
           "old_bones",
           "treasure_cache"
+        ],
+        "temple": [
+          "altar",
+          "bookshelf",
+          "torch"
+        ],
+        "residential": [
+          "barrel",
+          "crate",
+          "notice_board"
+        ],
+        "camp": [
+          "campfire_pit",
+          "barrel"
+        ],
+        "clearing": [
+          "campfire_remains",
+          "abandoned_cart"
         ]
       },
       "enemies": {
@@ -996,7 +1213,19 @@
           "goblin"
         ],
         "town": [],
-        "tavern": []
+        "tavern": [],
+        "temple": [
+          "necromancer"
+        ],
+        "camp": [
+          "bandit",
+          "wolf"
+        ],
+        "clearing": [
+          "wolf",
+          "goblin"
+        ],
+        "residential": []
       },
       "context_actions": {
         "npc": {
@@ -1107,7 +1336,9 @@
       "residential": {
         "npcs": [
           "quest_giver",
-          "beggar"
+          "beggar",
+          "merchant",
+          "healer"
         ],
         "items": [
           "barrel",
@@ -1122,9 +1353,12 @@
         ],
         "items": [
           "altar",
-          "bookshelf"
+          "bookshelf",
+          "torch"
         ],
-        "enemies": []
+        "enemies": [
+          "necromancer"
+        ]
       },
       "entrance": {
         "npcs": [
@@ -1171,9 +1405,13 @@
           "traveling_merchant"
         ],
         "items": [
-          "campfire_remains"
+          "campfire_remains",
+          "abandoned_cart"
         ],
-        "enemies": []
+        "enemies": [
+          "wolf",
+          "goblin"
+        ]
       },
       "dense_forest": {
         "npcs": [],
@@ -1186,13 +1424,18 @@
       },
       "camp": {
         "npcs": [
-          "traveling_merchant"
+          "traveling_merchant",
+          "ranger"
         ],
         "items": [
           "campfire_pit",
-          "abandoned_cart"
+          "abandoned_cart",
+          "barrel"
         ],
-        "enemies": []
+        "enemies": [
+          "bandit",
+          "wolf"
+        ]
       }
     },
     "zone_layouts": {
@@ -1286,6 +1529,32 @@
             12
           ],
           "is_indoor": false,
+          "danger_level": 0
+        },
+        {
+          "id": "healer_hut_1",
+          "zone_type": "temple",
+          "name": "Healer's Hut",
+          "bounds": [
+            16,
+            2,
+            19,
+            5
+          ],
+          "is_indoor": true,
+          "danger_level": 0
+        },
+        {
+          "id": "sage_tower_1",
+          "zone_type": "temple",
+          "name": "Sage's Tower",
+          "bounds": [
+            17,
+            8,
+            19,
+            12
+          ],
+          "is_indoor": true,
           "danger_level": 0
         }
       ],
@@ -1434,6 +1703,32 @@
           ],
           "is_indoor": false,
           "danger_level": 0
+        },
+        {
+          "id": "camp_1",
+          "zone_type": "camp",
+          "name": "Ranger's Camp",
+          "bounds": [
+            3,
+            12,
+            7,
+            15
+          ],
+          "is_indoor": false,
+          "danger_level": 1
+        },
+        {
+          "id": "clearing_1",
+          "zone_type": "clearing",
+          "name": "Forest Clearing",
+          "bounds": [
+            10,
+            10,
+            15,
+            14
+          ],
+          "is_indoor": false,
+          "danger_level": 1
         }
       ],
       "cave": [

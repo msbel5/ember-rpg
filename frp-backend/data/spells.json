@@ -954,6 +954,156 @@
           "chain_damage": "5d8"
         }
       ]
+    },
+    {
+      "name": "Lesser Restoration",
+      "cost": 2,
+      "range": 0,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 2,
+      "description": "You touch a creature and end one disease or condition afflicting it.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "cure_condition",
+          "conditions": [
+            "blinded",
+            "deafened",
+            "paralyzed",
+            "poisoned"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Detect Thoughts",
+      "cost": 2,
+      "range": 30,
+      "target_type": "single",
+      "school": "divination",
+      "level": 2,
+      "description": "You sense the surface thoughts of a creature in range.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "read_thoughts",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Barkskin",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "transmutation",
+      "level": 2,
+      "description": "Your skin becomes as hard as bark, increasing your defenses.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "armor_class",
+          "amount": 2,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Disguise Self",
+      "cost": 1,
+      "range": 0,
+      "target_type": "self",
+      "school": "illusion",
+      "level": 1,
+      "description": "You make yourself—including clothing, armor, weapons, and belongings—look different.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "disguised",
+          "duration": 6
+        }
+      ]
+    },
+    {
+      "name": "Bestow Curse",
+      "cost": 3,
+      "range": 30,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 3,
+      "description": "You curse a creature with a debilitating effect of your choice.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "cursed",
+          "duration": 6,
+          "save": "wisdom",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Heroism",
+      "cost": 2,
+      "range": 30,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 1,
+      "description": "A willing creature is imbued with bravery and temporary vitality.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "temporary_hp",
+          "amount": 5,
+          "duration": 5
+        },
+        {
+          "type": "status",
+          "status": "fearless",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "See Invisibility",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 2,
+      "description": "You can see invisible creatures and objects as if they were visible.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "see_invisible",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Enlarge/Reduce",
+      "cost": 2,
+      "range": 30,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 2,
+      "description": "You cause a creature or object to grow larger or smaller for a short time.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "size",
+          "amount": 1,
+          "duration": 5,
+          "choice": [
+            "enlarge",
+            "reduce"
+          ]
+        }
+      ]
     }
   ]
 }

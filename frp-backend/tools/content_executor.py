@@ -44,24 +44,27 @@ def _find_copilot_cli() -> str:
 
 def _call_copilot(prompt: str, model: str = DEFAULT_MODEL, timeout: int = DEFAULT_TIMEOUT,
                   json_mode: bool = True) -> str:
-    """Call Copilot CLI in non-interactive prompt mode."""
+    """Call Copilot CLI via stdin pipe to avoid Windows command-line length limits."""
     cli = _find_copilot_cli()
     final_prompt = prompt
     if json_mode:
         final_prompt += "\n\nCRITICAL: Output ONLY the raw JSON object. No markdown, no code fences, no explanation. Do NOT reuse any ID from the EXISTING IDs list."
+    # Pipe prompt via stdin (no -p flag) — avoids Windows 32K arg limit.
     result = subprocess.run(
         [
             cli,
-            "-p", final_prompt,
-            "-s",                    # silent — no stats/banner
+            "-s",
             "--model", model,
             "--output-format", "text",
             "--no-custom-instructions",
             "--allow-all-tools",
         ],
+        input=final_prompt,
         capture_output=True,
         text=True,
         timeout=timeout,
+        encoding="utf-8",
+        errors="replace",
     )
     if result.returncode != 0:
         stderr = result.stderr.strip()

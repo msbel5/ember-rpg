@@ -402,7 +402,7 @@
       "rarity": "UNCOMMON",
       "value": 1500,
       "weight": 45.0,
-      "description": "Full plate armor \u2014 the pinnacle of mundane protection.",
+      "description": "Full plate armor — the pinnacle of mundane protection.",
       "armor_bonus": 6,
       "armor_type": "heavy",
       "requirements": {
@@ -662,7 +662,7 @@
       "rarity": "COMMON",
       "value": 30,
       "weight": 0.2,
-      "description": "A vial of contact poison \u2014 coat a blade or throw at enemies.",
+      "description": "A vial of contact poison — coat a blade or throw at enemies.",
       "effects": [
         {
           "type": "damage",
@@ -1057,7 +1057,7 @@
       "rarity": "COMMON",
       "value": 8,
       "weight": 0.2,
-      "description": "A sharp bear claw \u2014 prized by alchemists.",
+      "description": "A sharp bear claw — prized by alchemists.",
       "stackable": true
     },
     {
@@ -1108,7 +1108,7 @@
       "rarity": "UNCOMMON",
       "value": 30,
       "weight": 0.3,
-      "description": "An intact venom sac \u2014 potent alchemical ingredient.",
+      "description": "An intact venom sac — potent alchemical ingredient.",
       "stackable": true
     },
     {
@@ -1169,7 +1169,7 @@
       "rarity": "UNCOMMON",
       "value": 40,
       "weight": 0.1,
-      "description": "A vial of distilled plague \u2014 handle carefully.",
+      "description": "A vial of distilled plague — handle carefully.",
       "stackable": true
     },
     {
@@ -1199,7 +1199,7 @@
       "rarity": "UNCOMMON",
       "value": 45,
       "weight": 0.1,
-      "description": "Distilled essence of a wight \u2014 cold to the touch.",
+      "description": "Distilled essence of a wight — cold to the touch.",
       "stackable": true
     },
     {
@@ -1447,7 +1447,7 @@
       "rarity": "RARE",
       "value": 90,
       "weight": 0.8,
-      "description": "A troll's heart \u2014 still beating. Powerful reagent.",
+      "description": "A troll's heart — still beating. Powerful reagent.",
       "stackable": true
     },
     {
@@ -1468,7 +1468,7 @@
       "rarity": "COMMON",
       "value": 8,
       "weight": 0.3,
-      "description": "A blunt ogre tooth \u2014 used in primitive charms.",
+      "description": "A blunt ogre tooth — used in primitive charms.",
       "stackable": true
     },
     {
@@ -1528,7 +1528,7 @@
       "rarity": "LEGENDARY",
       "value": 5000,
       "weight": 5.0,
-      "description": "The heart of an ancient dragon \u2014 ultimate alchemical reagent.",
+      "description": "The heart of an ancient dragon — ultimate alchemical reagent.",
       "stackable": false
     },
     {
@@ -1644,7 +1644,7 @@
       "rarity": "EPIC",
       "value": 800,
       "weight": 0.1,
-      "description": "Distilled essence of hellfire \u2014 impossibly hot.",
+      "description": "Distilled essence of hellfire — impossibly hot.",
       "stackable": true
     },
     {
@@ -1654,7 +1654,7 @@
       "rarity": "LEGENDARY",
       "value": 7000,
       "weight": 0.5,
-      "description": "The central eye of a beholder \u2014 can antimagic on command.",
+      "description": "The central eye of a beholder — can antimagic on command.",
       "stackable": false
     },
     {
@@ -1684,7 +1684,7 @@
       "rarity": "RARE",
       "value": 250,
       "weight": 0.5,
-      "description": "The psionic brain of a mind flayer \u2014 still twitching.",
+      "description": "The psionic brain of a mind flayer — still twitching.",
       "stackable": false
     },
     {
@@ -1928,7 +1928,7 @@
       "rarity": "RARE",
       "value": 300,
       "weight": 0.1,
-      "description": "A noble's signet ring \u2014 proof of a vampire lord's lineage.",
+      "description": "A noble's signet ring — proof of a vampire lord's lineage.",
       "stackable": false
     },
     {
@@ -2395,6 +2395,238 @@
       "value": 350,
       "weight": 0.5,
       "description": "A deep crimson cape worn by a vampire lord."
+    },
+    {
+      "id": "bronze_mace",
+      "name": "Bronze Mace",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 12,
+      "weight": 3.0,
+      "description": "A sturdy mace with a bronze head, effective against armored foes.",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "requirements": {
+        "level": 1
+      }
+    },
+    {
+      "id": "reinforced_leather_armor",
+      "name": "Reinforced Leather Armor",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 45,
+      "weight": 9.0,
+      "description": "Leather armor reinforced with metal studs for extra protection.",
+      "armor_bonus": 2,
+      "armor_type": "light",
+      "requirements": {
+        "level": 2
+      }
+    },
+    {
+      "id": "steel_buckler",
+      "name": "Steel Buckler",
+      "type": "shield",
+      "rarity": "COMMON",
+      "value": 18,
+      "weight": 4.0,
+      "description": "A small steel shield, easy to maneuver.",
+      "armor_bonus": 1,
+      "requirements": {
+        "level": 1
+      }
+    },
+    {
+      "id": "hunter_s_trap",
+      "name": "Hunter's Trap",
+      "type": "equipment",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 2.5,
+      "description": "A spring-loaded trap used for hunting or defense."
+    },
+    {
+      "id": "iron_greatspear",
+      "name": "Iron Greatspear",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 38,
+      "weight": 6.0,
+      "description": "A long, heavy spear designed for reach and power.",
+      "damage_dice": "1d10",
+      "damage_type": "piercing",
+      "requirements": {
+        "level": 3
+      }
+    },
+    {
+      "id": "sturdy_toolbelt",
+      "name": "Sturdy Toolbelt",
+      "type": "equipment",
+      "rarity": "COMMON",
+      "value": 8,
+      "weight": 1.0,
+      "description": "A leather belt with pouches for carrying tools and small items."
+    },
+    {
+      "id": "spiked_gauntlets",
+      "name": "Spiked Gauntlets",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 60,
+      "weight": 2.0,
+      "description": "Metal gauntlets fitted with spikes, offering both protection and offense.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "requirements": {
+        "level": 3
+      }
+    },
+    {
+      "id": "obsidian_dagger",
+      "name": "Obsidian Dagger",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 120,
+      "weight": 1.0,
+      "description": "A razor-sharp dagger crafted from volcanic glass.",
+      "damage_dice": "1d4",
+      "damage_type": "piercing",
+      "requirements": {
+        "level": 4
+      }
+    },
+    {
+      "id": "traveler_s_cloak",
+      "name": "Traveler's Cloak",
+      "type": "equipment",
+      "rarity": "COMMON",
+      "value": 6,
+      "weight": 0.7,
+      "description": "A weather-resistant cloak favored by those on long journeys."
+    },
+    {
+      "id": "iron_spiked_shield",
+      "name": "Iron Spiked Shield",
+      "type": "shield",
+      "rarity": "UNCOMMON",
+      "value": 55,
+      "weight": 6.0,
+      "description": "A heavy iron shield with a spiked boss for bashing.",
+      "armor_bonus": 2,
+      "requirements": {
+        "level": 3
+      }
+    },
+    {
+      "id": "moonlight_dust",
+      "name": "Moonlight Dust",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 60,
+      "weight": 0.1,
+      "description": "A faintly glowing powder collected from rare nocturnal flowers. Used in alchemy and enchanting."
+    },
+    {
+      "id": "ancient_map_fragment",
+      "name": "Ancient Map Fragment",
+      "type": "quest",
+      "rarity": "RARE",
+      "value": 200,
+      "weight": 0.2,
+      "description": "A tattered piece of parchment showing part of a forgotten land. Collect all fragments to reveal a hidden location."
+    },
+    {
+      "id": "mystic_ink",
+      "name": "Mystic Ink",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 35,
+      "weight": 0.05,
+      "description": "A vial of shimmering ink, essential for scribing magical scrolls and runes."
+    },
+    {
+      "id": "elven_bread",
+      "name": "Elven Bread",
+      "type": "consumable",
+      "rarity": "COMMON",
+      "value": 15,
+      "weight": 0.3,
+      "description": "A small loaf that restores energy and staves off hunger.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "1d6"
+        }
+      ],
+      "stackable": true
+    },
+    {
+      "id": "sunstone",
+      "name": "Sunstone",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 250,
+      "weight": 0.4,
+      "description": "A radiant gem that glows with the warmth of sunlight. Highly prized by merchants.",
+      "stackable": true
+    },
+    {
+      "id": "goblin_trade_token",
+      "name": "Goblin Trade Token",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 10,
+      "weight": 0.05,
+      "description": "A crude metal token used as currency in goblin markets.",
+      "stackable": true
+    },
+    {
+      "id": "basilisk_scale",
+      "name": "Basilisk Scale",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 120,
+      "weight": 0.6,
+      "description": "A glossy, petrification-resistant scale from a basilisk. Sought after by armorers and alchemists."
+    },
+    {
+      "id": "potion_of_night_vision",
+      "name": "Potion of Night Vision",
+      "type": "consumable",
+      "rarity": "UNCOMMON",
+      "value": 80,
+      "weight": 0.5,
+      "description": "A dark blue potion that grants the ability to see in darkness for a short time.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "PER",
+          "bonus": 3,
+          "duration": 10
+        }
+      ],
+      "stackable": true
+    },
+    {
+      "id": "enchanted_thread",
+      "name": "Enchanted Thread",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 45,
+      "weight": 0.02,
+      "description": "A spool of thread that shimmers with magical energy. Used in tailoring enchanted garments."
+    },
+    {
+      "id": "mysterious_egg",
+      "name": "Mysterious Egg",
+      "type": "treasure",
+      "rarity": "RARE",
+      "value": 300,
+      "weight": 1.2,
+      "description": "An egg with shifting colors and unknown origin. Collectors and scholars pay handsomely for it.",
+      "stackable": false
     }
   ]
 }

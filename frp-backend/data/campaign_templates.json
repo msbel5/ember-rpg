@@ -16,8 +16,16 @@
             "Clear the rubble blocking the crypt door"
           ],
           "recommended_level": 1,
-          "enemy_ids": ["goblin"],
-          "rewards": {"xp": 200, "gold": 20, "items": ["potion_of_healing"]},
+          "enemy_ids": [
+            "goblin"
+          ],
+          "rewards": {
+            "xp": 200,
+            "gold": 20,
+            "items": [
+              "potion_of_healing"
+            ]
+          },
           "next_quest": "tfc_q2_clear_first_room"
         },
         {
@@ -29,8 +37,18 @@
             "Destroy the zombie blocking the inner door"
           ],
           "recommended_level": 1,
-          "enemy_ids": ["skeleton", "zombie"],
-          "rewards": {"xp": 400, "gold": 30, "items": ["potion_of_healing", "torch"]},
+          "enemy_ids": [
+            "skeleton",
+            "zombie"
+          ],
+          "rewards": {
+            "xp": 400,
+            "gold": 30,
+            "items": [
+              "potion_of_healing",
+              "torch"
+            ]
+          },
           "next_quest": "tfc_q3_mini_boss"
         },
         {
@@ -42,8 +60,18 @@
             "Smash the dark altar to stop future reanimations"
           ],
           "recommended_level": 2,
-          "enemy_ids": ["goblin_shaman"],
-          "rewards": {"xp": 600, "gold": 60, "items": ["potion_of_healing", "scroll_of_light", "silver_dagger"]},
+          "enemy_ids": [
+            "goblin_shaman"
+          ],
+          "rewards": {
+            "xp": 600,
+            "gold": 60,
+            "items": [
+              "potion_of_healing",
+              "scroll_of_light",
+              "silver_dagger"
+            ]
+          },
           "next_quest": null
         }
       ]
@@ -65,8 +93,19 @@
             "Defeat the undead patrol guarding the old mausoleum"
           ],
           "recommended_level": 1,
-          "enemy_ids": ["skeleton", "zombie", "ghoul"],
-          "rewards": {"xp": 500, "gold": 50, "items": ["potion_of_healing", "map_of_ashwood"]},
+          "enemy_ids": [
+            "skeleton",
+            "zombie",
+            "ghoul"
+          ],
+          "rewards": {
+            "xp": 500,
+            "gold": 50,
+            "items": [
+              "potion_of_healing",
+              "map_of_ashwood"
+            ]
+          },
           "next_quest": "sotl_q2_the_first_shard"
         },
         {
@@ -79,8 +118,20 @@
             "Retrieve the first phylactery shard"
           ],
           "recommended_level": 5,
-          "enemy_ids": ["skeleton_knight", "wraith", "shadow"],
-          "rewards": {"xp": 1500, "gold": 200, "items": ["phylactery_shard_1", "ring_of_protection", "potion_of_greater_healing"]},
+          "enemy_ids": [
+            "skeleton_knight",
+            "wraith",
+            "shadow"
+          ],
+          "rewards": {
+            "xp": 1500,
+            "gold": 200,
+            "items": [
+              "phylactery_shard_1",
+              "ring_of_protection",
+              "potion_of_greater_healing"
+            ]
+          },
           "next_quest": "sotl_q3_the_dark_library"
         },
         {
@@ -93,8 +144,21 @@
             "Recover phylactery shards 2 and 3 from the hidden vault"
           ],
           "recommended_level": 10,
-          "enemy_ids": ["vampire", "death_knight", "bone_golem"],
-          "rewards": {"xp": 4000, "gold": 500, "items": ["phylactery_shard_2", "phylactery_shard_3", "cloak_of_shadows", "potion_of_greater_healing"]},
+          "enemy_ids": [
+            "vampire",
+            "death_knight",
+            "bone_golem"
+          ],
+          "rewards": {
+            "xp": 4000,
+            "gold": 500,
+            "items": [
+              "phylactery_shard_2",
+              "phylactery_shard_3",
+              "cloak_of_shadows",
+              "potion_of_greater_healing"
+            ]
+          },
           "next_quest": "sotl_q4_the_necropolis"
         },
         {
@@ -108,8 +172,22 @@
             "Locate the fifth shard hidden in the catacombs below"
           ],
           "recommended_level": 15,
-          "enemy_ids": ["lich_general", "death_knight", "wight", "mummy_lord"],
-          "rewards": {"xp": 10000, "gold": 1000, "items": ["phylactery_shard_4", "phylactery_shard_5", "sword_of_life_stealing", "amulet_of_protection"]},
+          "enemy_ids": [
+            "lich_general",
+            "death_knight",
+            "wight",
+            "mummy_lord"
+          ],
+          "rewards": {
+            "xp": 10000,
+            "gold": 1000,
+            "items": [
+              "phylactery_shard_4",
+              "phylactery_shard_5",
+              "sword_of_life_stealing",
+              "amulet_of_protection"
+            ]
+          },
           "next_quest": "sotl_q5_final_confrontation"
         },
         {
@@ -122,8 +200,18 @@
             "Escape the collapsing Necropolis"
           ],
           "recommended_level": 20,
-          "enemy_ids": ["lich"],
-          "rewards": {"xp": 25000, "gold": 5000, "items": ["legendary_weapon", "crown_of_the_realm", "tome_of_ancient_magic"]},
+          "enemy_ids": [
+            "lich"
+          ],
+          "rewards": {
+            "xp": 25000,
+            "gold": 5000,
+            "items": [
+              "legendary_weapon",
+              "crown_of_the_realm",
+              "tome_of_ancient_magic"
+            ]
+          },
           "next_quest": null
         }
       ]
@@ -146,8 +234,18 @@
             "Report findings to Aldric Voss"
           ],
           "recommended_level": 3,
-          "enemy_ids": ["thug", "bandit"],
-          "rewards": {"xp": 600, "gold": 75, "items": ["potion_of_healing", "letter_of_credit"]},
+          "enemy_ids": [
+            "thug",
+            "bandit"
+          ],
+          "rewards": {
+            "xp": 600,
+            "gold": 75,
+            "items": [
+              "potion_of_healing",
+              "letter_of_credit"
+            ]
+          },
           "next_quest": "md_q2_dungeon_run"
         },
         {
@@ -161,8 +259,20 @@
             "Confront the guild lieutenant responsible for the theft"
           ],
           "recommended_level": 4,
-          "enemy_ids": ["thief", "rogue", "bandit_captain"],
-          "rewards": {"xp": 1000, "gold": 150, "items": ["thieves_tools", "potion_of_greater_healing", "guild_seal"]},
+          "enemy_ids": [
+            "thief",
+            "rogue",
+            "bandit_captain"
+          ],
+          "rewards": {
+            "xp": 1000,
+            "gold": 150,
+            "items": [
+              "thieves_tools",
+              "potion_of_greater_healing",
+              "guild_seal"
+            ]
+          },
           "next_quest": "md_q3_resolution"
         },
         {
@@ -175,8 +285,156 @@
             "Ensure Aldric's safety from guild retaliation"
           ],
           "recommended_level": 4,
-          "enemy_ids": ["guild_master", "assassin"],
-          "rewards": {"xp": 1200, "gold": 300, "items": ["potion_of_healing", "merchants_ring", "letter_of_recommendation"]},
+          "enemy_ids": [
+            "guild_master",
+            "assassin"
+          ],
+          "rewards": {
+            "xp": 1200,
+            "gold": 300,
+            "items": [
+              "potion_of_healing",
+              "merchants_ring",
+              "letter_of_recommendation"
+            ]
+          },
+          "next_quest": null
+        }
+      ]
+    },
+    {
+      "id": "side_echoes_of_the_forge",
+      "name": "Echoes of the Forge",
+      "description": "A mysterious tremor shakes the mountain city of the dwarves. Rumors speak of an ancient forge awakening deep below, and strange creatures emerging from the depths. The players must investigate the source, navigating political tensions between dwarves and elves, and confront what stirs beneath.",
+      "difficulty": "intermediate",
+      "estimated_sessions": 4,
+      "quests": [
+        {
+          "id": "eotf_q1_rumbling_depths",
+          "title": "Rumbling Depths",
+          "description": "The mountain city is on edge after a series of tremors. The dwarven council requests aid in investigating the old mining tunnels.",
+          "objectives": [
+            "Meet with the dwarven council in the mountain city",
+            "Explore the abandoned mining tunnels for signs of danger",
+            "Defeat any hostile creatures encountered"
+          ],
+          "recommended_level": 4,
+          "enemy_ids": [
+            "goblin",
+            "ogre"
+          ],
+          "rewards": {
+            "xp": 800,
+            "gold": 100,
+            "items": [
+              "iron_shield",
+              "torch"
+            ]
+          },
+          "next_quest": "eotf_q2_forge_secrets"
+        },
+        {
+          "id": "eotf_q2_forge_secrets",
+          "title": "Secrets of the Old Forge",
+          "description": "Deeper in the tunnels, the party discovers remnants of an ancient dwarven forge and evidence of sabotage. Elven scouts are spotted nearby.",
+          "objectives": [
+            "Investigate the ancient forge site",
+            "Uncover clues about the saboteurs",
+            "Confront the elven scouts and negotiate or fight"
+          ],
+          "recommended_level": 5,
+          "enemy_ids": [
+            "elf",
+            "goblin"
+          ],
+          "rewards": {
+            "xp": 1200,
+            "gold": 150,
+            "items": [
+              "granite_core",
+              "elven_recurve_bow"
+            ]
+          },
+          "next_quest": "eotf_q3_the_awakening"
+        },
+        {
+          "id": "eotf_q3_the_awakening",
+          "title": "The Awakening Below",
+          "description": "The tremors intensify as a stone giant, long dormant, awakens beneath the city. The party must prevent disaster and decide the fate of the ancient forge.",
+          "objectives": [
+            "Descend to the lowest chamber and confront the stone giant",
+            "Decide whether to destroy, seal, or restore the ancient forge",
+            "Negotiate peace or escalate conflict between dwarves and elves"
+          ],
+          "recommended_level": 6,
+          "enemy_ids": [
+            "stone_giant"
+          ],
+          "rewards": {
+            "xp": 2000,
+            "gold": 300,
+            "items": [
+              "stone_giant_club",
+              "mithral_longsword",
+              "crown_of_the_conqueror"
+            ]
+          },
+          "next_quest": null
+        }
+      ]
+    },
+    {
+      "id": "side_festival_of_masks",
+      "name": "Festival of Masks",
+      "description": "During the annual Festival of Masks in the Glimmering Republic, a series of thefts and disappearances threaten to turn celebration into chaos. The players must unmask the culprits, navigating intrigue, deception, and social challenges.",
+      "difficulty": "beginner",
+      "estimated_sessions": 2,
+      "quests": [
+        {
+          "id": "fom_q1_masquerade_mystery",
+          "title": "Masquerade Mystery",
+          "description": "The festival is in full swing, but a noble's prized artifact vanishes. The party is hired to investigate discreetly.",
+          "objectives": [
+            "Gather information from festival-goers and performers",
+            "Identify suspicious behavior among the masked guests",
+            "Locate the missing artifact"
+          ],
+          "recommended_level": 2,
+          "enemy_ids": [
+            "thief",
+            "bandit"
+          ],
+          "rewards": {
+            "xp": 400,
+            "gold": 50,
+            "items": [
+              "letter_of_recommendation",
+              "stolen_trinket"
+            ]
+          },
+          "next_quest": "fom_q2_unmasking"
+        },
+        {
+          "id": "fom_q2_unmasking",
+          "title": "The Unmasking",
+          "description": "The investigation leads to a masked ball, where the true culprit must be revealed before they escape.",
+          "objectives": [
+            "Attend the masked ball and blend in",
+            "Expose the thief using evidence or social skill",
+            "Recover the artifact and ensure justice is served"
+          ],
+          "recommended_level": 3,
+          "enemy_ids": [
+            "rogue"
+          ],
+          "rewards": {
+            "xp": 600,
+            "gold": 100,
+            "items": [
+              "noble_signet",
+              "cloak_of_shadows"
+            ]
+          },
           "next_quest": null
         }
       ]

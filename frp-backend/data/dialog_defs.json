@@ -12,24 +12,66 @@
             {
               "transition_id": "show_papers",
               "text": "Show travel papers",
-              "condition": {"condition_type": "item_check", "params": {"item_def_id": "travel_papers"}},
+              "condition": {
+                "condition_type": "item_check",
+                "params": {
+                  "item_def_id": "travel_papers"
+                }
+              },
               "next_state_id": "pass_granted",
-              "actions": [{"action_type": "take_item", "params": {"item_def_id": "travel_papers", "quantity": 1}}]
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {
+                    "item_def_id": "travel_papers",
+                    "quantity": 1
+                  }
+                }
+              ]
             },
             {
               "transition_id": "bribe_guard",
               "text": "Offer a bribe [PRE 12]",
-              "condition": {"condition_type": "stat_check", "params": {"stat": "PRE", "operator": ">=", "value": 12}},
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "PRE",
+                  "operator": ">=",
+                  "value": 12
+                }
+              },
               "next_state_id": "pass_granted",
-              "actions": [{"action_type": "take_gold", "params": {"amount": 10}}]
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {
+                    "amount": 10
+                  }
+                }
+              ]
             },
             {
               "transition_id": "intimidate_guard",
               "text": "Force your way past [MIG 14]",
-              "condition": {"condition_type": "stat_check", "params": {"stat": "MIG", "operator": ">=", "value": 14}},
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "MIG",
+                  "operator": ">=",
+                  "value": 14
+                }
+              },
               "next_state_id": "pass_granted",
               "hostile": true,
-              "actions": [{"action_type": "set_variable", "params": {"name": "guard_hostile", "value": true}}]
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {
+                    "name": "guard_hostile",
+                    "value": true
+                  }
+                }
+              ]
             },
             {
               "transition_id": "ask_work_guard",
@@ -47,14 +89,22 @@
           "state_id": "pass_granted",
           "text": "The guard steps aside. \"Move along.\"",
           "transitions": [
-            {"transition_id": "pass_done", "text": "Continue on", "terminates": true}
+            {
+              "transition_id": "pass_done",
+              "text": "Continue on",
+              "terminates": true
+            }
           ]
         },
         {
           "state_id": "guard_info",
           "text": "\"Wolves have been raiding caravans on the north road. Watch yourself out there.\"",
           "transitions": [
-            {"transition_id": "guard_info_done", "text": "Noted. Farewell.", "terminates": true}
+            {
+              "transition_id": "guard_info_done",
+              "text": "Noted. Farewell.",
+              "terminates": true
+            }
           ]
         }
       ]
@@ -76,9 +126,25 @@
             {
               "transition_id": "haggle",
               "text": "Negotiate a discount [PRE 13]",
-              "condition": {"condition_type": "stat_check", "params": {"stat": "PRE", "operator": ">=", "value": 13}},
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "PRE",
+                  "operator": ">=",
+                  "value": 13
+                }
+              },
               "next_state_id": "discount_offered",
-              "actions": [{"action_type": "set_variable", "params": {"name": "merchant_discount", "value": true, "scope": "global"}}]
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {
+                    "name": "merchant_discount",
+                    "value": true,
+                    "scope": "global"
+                  }
+                }
+              ]
             },
             {
               "transition_id": "ask_rumors_merchant",
@@ -96,16 +162,32 @@
           "state_id": "wares",
           "text": "\"I've got supplies for the road, weapons for the bold, and a few curiosities besides.\"",
           "transitions": [
-            {"transition_id": "wares_back", "text": "Back", "next_state_id": "greeting"},
-            {"transition_id": "wares_done", "text": "That's all", "terminates": true}
+            {
+              "transition_id": "wares_back",
+              "text": "Back",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "wares_done",
+              "text": "That's all",
+              "terminates": true
+            }
           ]
         },
         {
           "state_id": "discount_offered",
           "text": "\"Alright, alright. I'll knock a bit off the price for you. But don't tell anyone.\"",
           "transitions": [
-            {"transition_id": "discount_done", "text": "Thanks. Let me browse.", "next_state_id": "wares"},
-            {"transition_id": "discount_leave", "text": "Good. Farewell.", "terminates": true}
+            {
+              "transition_id": "discount_done",
+              "text": "Thanks. Let me browse.",
+              "next_state_id": "wares"
+            },
+            {
+              "transition_id": "discount_leave",
+              "text": "Good. Farewell.",
+              "terminates": true
+            }
           ]
         },
         {
@@ -116,16 +198,32 @@
               "transition_id": "ask_mine_quest",
               "text": "I'll clear it out",
               "next_state_id": "quest_offered",
-              "actions": [{"action_type": "start_quest", "params": {"quest_id": "clear_mine", "stage": "accepted"}}]
+              "actions": [
+                {
+                  "action_type": "start_quest",
+                  "params": {
+                    "quest_id": "clear_mine",
+                    "stage": "accepted"
+                  }
+                }
+              ]
             },
-            {"transition_id": "rumors_done", "text": "I'll keep that in mind", "terminates": true}
+            {
+              "transition_id": "rumors_done",
+              "text": "I'll keep that in mind",
+              "terminates": true
+            }
           ]
         },
         {
           "state_id": "quest_offered",
           "text": "\"Brave soul. Bring back proof and I'll make it worth your while.\"",
           "transitions": [
-            {"transition_id": "quest_done", "text": "Consider it done.", "terminates": true}
+            {
+              "transition_id": "quest_done",
+              "text": "Consider it done.",
+              "terminates": true
+            }
           ]
         }
       ]
@@ -143,7 +241,14 @@
               "transition_id": "rent_room_inn",
               "text": "Rent a room for the night",
               "next_state_id": "room_rented",
-              "actions": [{"action_type": "take_gold", "params": {"amount": 5}}]
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {
+                    "amount": 5
+                  }
+                }
+              ]
             },
             {
               "transition_id": "ask_rumors_inn",
@@ -166,23 +271,43 @@
           "state_id": "room_rented",
           "text": "\"Room's upstairs, second door on the left. Rest well.\"",
           "transitions": [
-            {"transition_id": "room_done", "text": "Rest for the night", "terminates": true}
+            {
+              "transition_id": "room_done",
+              "text": "Rest for the night",
+              "terminates": true
+            }
           ]
         },
         {
           "state_id": "inn_rumors",
           "text": "\"A strange fellow passed through last week. Asked about the ruins up north. Nobody goes there anymore.\"",
           "transitions": [
-            {"transition_id": "inn_rumors_back", "text": "Interesting. Anything else?", "next_state_id": "greeting"},
-            {"transition_id": "inn_rumors_done", "text": "Thanks.", "terminates": true}
+            {
+              "transition_id": "inn_rumors_back",
+              "text": "Interesting. Anything else?",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "inn_rumors_done",
+              "text": "Thanks.",
+              "terminates": true
+            }
           ]
         },
         {
           "state_id": "inn_supplies",
           "text": "\"I've got dried rations and a few torches. Nothing fancy, but it'll keep you going.\"",
           "transitions": [
-            {"transition_id": "inn_supplies_back", "text": "Back", "next_state_id": "greeting"},
-            {"transition_id": "inn_supplies_done", "text": "I'll manage.", "terminates": true}
+            {
+              "transition_id": "inn_supplies_back",
+              "text": "Back",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "inn_supplies_done",
+              "text": "I'll manage.",
+              "terminates": true
+            }
           ]
         }
       ]
@@ -209,7 +334,12 @@
             {
               "transition_id": "ask_craft",
               "text": "Can you craft something custom?",
-              "condition": {"condition_type": "item_check", "params": {"item_def_id": "iron_bar"}},
+              "condition": {
+                "condition_type": "item_check",
+                "params": {
+                  "item_def_id": "iron_bar"
+                }
+              },
               "next_state_id": "custom_craft"
             },
             {
@@ -223,24 +353,48 @@
           "state_id": "weapons_list",
           "text": "\"Iron swords, axes, a few spearheads. All solid work.\"",
           "transitions": [
-            {"transition_id": "weapons_back", "text": "Back", "next_state_id": "greeting"},
-            {"transition_id": "weapons_done", "text": "Maybe later.", "terminates": true}
+            {
+              "transition_id": "weapons_back",
+              "text": "Back",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "weapons_done",
+              "text": "Maybe later.",
+              "terminates": true
+            }
           ]
         },
         {
           "state_id": "repair_offer",
           "text": "\"Bring me the piece and I'll see what I can do. Won't be cheap, mind.\"",
           "transitions": [
-            {"transition_id": "repair_back", "text": "Back", "next_state_id": "greeting"},
-            {"transition_id": "repair_done", "text": "I'll think about it.", "terminates": true}
+            {
+              "transition_id": "repair_back",
+              "text": "Back",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "repair_done",
+              "text": "I'll think about it.",
+              "terminates": true
+            }
           ]
         },
         {
           "state_id": "custom_craft",
           "text": "\"You've got the materials. I can work with that. What did you have in mind?\"",
           "transitions": [
-            {"transition_id": "craft_back", "text": "Back", "next_state_id": "greeting"},
-            {"transition_id": "craft_done", "text": "Let me think on it.", "terminates": true}
+            {
+              "transition_id": "craft_back",
+              "text": "Back",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "craft_done",
+              "text": "Let me think on it.",
+              "terminates": true
+            }
           ]
         }
       ]
@@ -259,8 +413,18 @@
               "text": "I need healing",
               "next_state_id": "healing_done",
               "actions": [
-                {"action_type": "take_gold", "params": {"amount": 15}},
-                {"action_type": "give_xp", "params": {"amount": 5}}
+                {
+                  "action_type": "take_gold",
+                  "params": {
+                    "amount": 15
+                  }
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {
+                    "amount": 5
+                  }
+                }
               ]
             },
             {
@@ -271,7 +435,14 @@
             {
               "transition_id": "ask_identify",
               "text": "Can you identify this item? [INS 11]",
-              "condition": {"condition_type": "stat_check", "params": {"stat": "INS", "operator": ">=", "value": 11}},
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "INS",
+                  "operator": ">=",
+                  "value": 11
+                }
+              },
               "next_state_id": "identify_offer"
             },
             {
@@ -285,23 +456,409 @@
           "state_id": "healing_done",
           "text": "\"There. The herbs will do their work. Rest if you can.\"",
           "transitions": [
-            {"transition_id": "healing_done_leave", "text": "Thank you.", "terminates": true}
+            {
+              "transition_id": "healing_done_leave",
+              "text": "Thank you.",
+              "terminates": true
+            }
           ]
         },
         {
           "state_id": "potion_list",
           "text": "\"I have a few remedies. Healing salves, antidotes, and a rare restorative.\"",
           "transitions": [
-            {"transition_id": "potions_back", "text": "Back", "next_state_id": "greeting"},
-            {"transition_id": "potions_done", "text": "Not today.", "terminates": true}
+            {
+              "transition_id": "potions_back",
+              "text": "Back",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "potions_done",
+              "text": "Not today.",
+              "terminates": true
+            }
           ]
         },
         {
           "state_id": "identify_offer",
           "text": "\"Bring the item here. My knowledge of the old texts may reveal its nature.\"",
           "transitions": [
-            {"transition_id": "identify_back", "text": "Back", "next_state_id": "greeting"},
-            {"transition_id": "identify_done", "text": "I'll come back.", "terminates": true}
+            {
+              "transition_id": "identify_back",
+              "text": "Back",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "identify_done",
+              "text": "I'll come back.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "rogue_alley",
+      "npc_id": "rogue",
+      "role": "rogue",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A shadowy figure leans against the alley wall, flipping a coin. \"Looking for trouble, or just lost?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_job",
+              "text": "Ask if they have work",
+              "next_state_id": "job_offer"
+            },
+            {
+              "transition_id": "threaten_rogue",
+              "text": "Threaten the rogue [MIG 13]",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "MIG",
+                  "operator": ">=",
+                  "value": 13
+                }
+              },
+              "next_state_id": "rogue_intimidated",
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {
+                    "name": "rogue_intimidated",
+                    "value": true
+                  }
+                }
+              ]
+            },
+            {
+              "transition_id": "pickpocket_rogue",
+              "text": "Attempt to pickpocket [AGI 14]",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "AGI",
+                  "operator": ">=",
+                  "value": 14
+                }
+              },
+              "next_state_id": "pickpocket_result",
+              "actions": [
+                {
+                  "action_type": "give_item",
+                  "params": {
+                    "item_def_id": "silver_coin",
+                    "quantity": 3
+                  }
+                }
+              ]
+            },
+            {
+              "transition_id": "leave_rogue",
+              "text": "Leave quietly",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "job_offer",
+          "text": "\"Maybe. The merchant guild's got a shipment coming in. Could use a distraction.\"",
+          "transitions": [
+            {
+              "transition_id": "accept_job",
+              "text": "Accept the job",
+              "next_state_id": "job_accepted",
+              "actions": [
+                {
+                  "action_type": "start_quest",
+                  "params": {
+                    "quest_id": "guild_heist",
+                    "stage": "accepted"
+                  }
+                }
+              ]
+            },
+            {
+              "transition_id": "decline_job",
+              "text": "Not interested",
+              "next_state_id": "greeting"
+            }
+          ]
+        },
+        {
+          "state_id": "job_accepted",
+          "text": "\"Smart choice. Meet me here at midnight. Don't be late.\"",
+          "transitions": [
+            {
+              "transition_id": "job_done",
+              "text": "Nod and leave",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "rogue_intimidated",
+          "text": "The rogue raises their hands. \"Easy, friend. No need for violence.\"",
+          "transitions": [
+            {
+              "transition_id": "intimidate_done",
+              "text": "Back off",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "pickpocket_result",
+          "text": "You deftly slip a few coins from the rogue's pouch. They don't seem to notice.",
+          "transitions": [
+            {
+              "transition_id": "pickpocket_leave",
+              "text": "Slip away",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "commoner_square",
+      "npc_id": "commoner",
+      "role": "commoner",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A weary villager glances up. \"Can I help you with something?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_news",
+              "text": "Ask about recent news",
+              "next_state_id": "news"
+            },
+            {
+              "transition_id": "offer_help",
+              "text": "Offer to help with chores [END 12]",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "END",
+                  "operator": ">=",
+                  "value": 12
+                }
+              },
+              "next_state_id": "chores_helped",
+              "actions": [
+                {
+                  "action_type": "give_item",
+                  "params": {
+                    "item_def_id": "bread",
+                    "quantity": 1
+                  }
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {
+                    "amount": 3
+                  }
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_lost_item",
+              "text": "Ask about a lost trinket",
+              "next_state_id": "lost_item"
+            },
+            {
+              "transition_id": "leave_commoner",
+              "text": "Move on",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "news",
+          "text": "\"The harvest's been poor, and folks are worried about bandits on the road.\"",
+          "transitions": [
+            {
+              "transition_id": "news_done",
+              "text": "Thanks for the info.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "chores_helped",
+          "text": "\"Thank you! Not many lend a hand these days. Here, take this.\"",
+          "transitions": [
+            {
+              "transition_id": "chores_done",
+              "text": "Glad to help.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "lost_item",
+          "text": "\"I did see something shiny by the well. Maybe check there?\"",
+          "transitions": [
+            {
+              "transition_id": "lost_item_done",
+              "text": "I'll look into it.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "villain_hideout",
+      "npc_id": "villain",
+      "role": "villain",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A sinister figure sits atop a crude throne. \"So, you've found me at last.\"",
+          "transitions": [
+            {
+              "transition_id": "challenge_villain",
+              "text": "Challenge the villain [MND 13]",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "MND",
+                  "operator": ">=",
+                  "value": 13
+                }
+              },
+              "next_state_id": "villain_challenged"
+            },
+            {
+              "transition_id": "negotiate_villain",
+              "text": "Attempt to negotiate [PRE 14]",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "PRE",
+                  "operator": ">=",
+                  "value": 14
+                }
+              },
+              "next_state_id": "villain_negotiated",
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {
+                    "name": "villain_truce",
+                    "value": true
+                  }
+                }
+              ]
+            },
+            {
+              "transition_id": "attack_villain",
+              "text": "Attack immediately",
+              "hostile": true,
+              "next_state_id": "villain_fight"
+            },
+            {
+              "transition_id": "leave_villain",
+              "text": "Retreat for now",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "villain_challenged",
+          "text": "\"You think words will sway me? Prove your worth, then!\"",
+          "transitions": [
+            {
+              "transition_id": "villain_challenge_fight",
+              "text": "Prepare to fight",
+              "hostile": true,
+              "next_state_id": "villain_fight"
+            }
+          ]
+        },
+        {
+          "state_id": "villain_negotiated",
+          "text": "The villain narrows their eyes. \"Perhaps we can come to an arrangement... for now.\"",
+          "transitions": [
+            {
+              "transition_id": "villain_truce_done",
+              "text": "Leave under truce",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "villain_fight",
+          "text": "The villain draws a wicked blade. \"Let's end this.\"",
+          "transitions": [
+            {
+              "transition_id": "fight_done",
+              "text": "Fight!",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "quest_giver_square",
+      "npc_id": "quest_giver",
+      "role": "quest_giver",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A robed figure beckons you over. \"You look capable. Are you seeking work?\"",
+          "transitions": [
+            {
+              "transition_id": "accept_quest",
+              "text": "Ask about the job",
+              "next_state_id": "quest_details"
+            },
+            {
+              "transition_id": "decline_quest",
+              "text": "Not interested",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "quest_details",
+          "text": "\"Bandits have been harassing travelers near the old bridge. Deal with them, and you'll be rewarded.\"",
+          "transitions": [
+            {
+              "transition_id": "take_quest",
+              "text": "Accept the quest",
+              "next_state_id": "quest_accepted",
+              "actions": [
+                {
+                  "action_type": "start_quest",
+                  "params": {
+                    "quest_id": "clear_bandits",
+                    "stage": "accepted"
+                  }
+                }
+              ]
+            },
+            {
+              "transition_id": "decline_after_details",
+              "text": "Sounds too risky",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "quest_accepted",
+          "text": "\"Return when the road is safe. The townsfolk will thank you.\"",
+          "transitions": [
+            {
+              "transition_id": "quest_accepted_done",
+              "text": "I'll be back.",
+              "terminates": true
+            }
           ]
         }
       ]

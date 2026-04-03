@@ -310,6 +310,238 @@
       },
       "default_hp": 16,
       "default_spell_points": 12
+    },
+    "Ranger": {
+      "name": "Ranger",
+      "description": "A versatile hunter skilled in archery, tracking, and survival in the wilds.",
+      "hit_die": "d8",
+      "hit_die_size": 8,
+      "ap_per_turn": 5,
+      "ability_priority": [
+        "AGI",
+        "INS",
+        "END",
+        "MIG",
+        "PRE",
+        "MND"
+      ],
+      "save_proficiencies": [
+        "AGI",
+        "INS"
+      ],
+      "skill_pool": [
+        "survival",
+        "nature",
+        "perception",
+        "stealth",
+        "animal_handling",
+        "investigation"
+      ],
+      "skill_pick_count": 3,
+      "default_skills": [
+        "survival",
+        "perception",
+        "nature"
+      ],
+      "starting_equipment": [
+        {
+          "id": "longbow",
+          "name": "Longbow",
+          "type": "weapon",
+          "damage": 6,
+          "material": "wood",
+          "slot": "weapon"
+        },
+        {
+          "id": "leather_armor",
+          "name": "Leather Armor",
+          "type": "armor",
+          "ac_bonus": 2,
+          "material": "leather",
+          "slot": "armor"
+        },
+        {
+          "id": "quiver",
+          "name": "Quiver of Arrows",
+          "type": "tool",
+          "uses": 20
+        },
+        {
+          "id": "rope",
+          "name": "Rope (50ft)",
+          "type": "tool"
+        },
+        {
+          "id": "bread",
+          "name": "Bread",
+          "type": "consumable",
+          "heal": 3,
+          "qty": 2
+        }
+      ],
+      "starting_gold": 35,
+      "armor_type": "leather",
+      "default_stats": {
+        "MIG": 12,
+        "AGI": 15,
+        "END": 12,
+        "MND": 10,
+        "INS": 14,
+        "PRE": 10
+      },
+      "default_hp": 16,
+      "default_spell_points": 0
+    },
+    "Paladin": {
+      "name": "Paladin",
+      "description": "A holy knight who combines martial prowess with divine blessings.",
+      "hit_die": "d10",
+      "hit_die_size": 10,
+      "ap_per_turn": 4,
+      "ability_priority": [
+        "MIG",
+        "END",
+        "PRE",
+        "INS",
+        "AGI",
+        "MND"
+      ],
+      "save_proficiencies": [
+        "MIG",
+        "PRE"
+      ],
+      "skill_pool": [
+        "athletics",
+        "persuasion",
+        "religion",
+        "intimidation",
+        "medicine"
+      ],
+      "skill_pick_count": 2,
+      "default_skills": [
+        "athletics",
+        "persuasion"
+      ],
+      "starting_equipment": [
+        {
+          "id": "longsword",
+          "name": "Longsword",
+          "type": "weapon",
+          "damage": 6,
+          "material": "iron",
+          "slot": "weapon"
+        },
+        {
+          "id": "breastplate",
+          "name": "Breastplate",
+          "type": "armor",
+          "ac_bonus": 4,
+          "material": "iron",
+          "slot": "armor"
+        },
+        {
+          "id": "iron_shield",
+          "name": "Iron Shield",
+          "type": "shield",
+          "ac_bonus": 2,
+          "material": "iron",
+          "slot": "shield"
+        },
+        {
+          "id": "healing_potion",
+          "name": "Healing Potion",
+          "type": "consumable",
+          "heal": 8,
+          "qty": 1
+        }
+      ],
+      "starting_gold": 45,
+      "armor_type": "breastplate",
+      "default_stats": {
+        "MIG": 15,
+        "AGI": 10,
+        "END": 14,
+        "MND": 10,
+        "INS": 10,
+        "PRE": 14
+      },
+      "default_hp": 20,
+      "default_spell_points": 6
+    },
+    "Bard": {
+      "name": "Bard",
+      "description": "A charismatic performer who inspires allies and manipulates magic through music.",
+      "hit_die": "d8",
+      "hit_die_size": 8,
+      "ap_per_turn": 5,
+      "ability_priority": [
+        "PRE",
+        "AGI",
+        "INS",
+        "MND",
+        "END",
+        "MIG"
+      ],
+      "save_proficiencies": [
+        "PRE",
+        "AGI"
+      ],
+      "skill_pool": [
+        "performance",
+        "persuasion",
+        "deception",
+        "insight",
+        "acrobatics",
+        "history"
+      ],
+      "skill_pick_count": 3,
+      "default_skills": [
+        "performance",
+        "persuasion",
+        "insight"
+      ],
+      "starting_equipment": [
+        {
+          "id": "dagger",
+          "name": "Dagger",
+          "type": "weapon",
+          "damage": 4,
+          "material": "iron",
+          "slot": "weapon"
+        },
+        {
+          "id": "padded_armor",
+          "name": "Padded Armor",
+          "type": "armor",
+          "ac_bonus": 1,
+          "material": "cloth",
+          "slot": "armor"
+        },
+        {
+          "id": "lyre",
+          "name": "Lyre",
+          "type": "tool"
+        },
+        {
+          "id": "mana_potion",
+          "name": "Mana Potion",
+          "type": "consumable",
+          "restore_sp": 6,
+          "qty": 1
+        }
+      ],
+      "starting_gold": 38,
+      "armor_type": "padded_armor",
+      "default_stats": {
+        "MIG": 9,
+        "AGI": 14,
+        "END": 10,
+        "MND": 12,
+        "INS": 13,
+        "PRE": 15
+      },
+      "default_hp": 14,
+      "default_spell_points": 10
     }
   }
 }

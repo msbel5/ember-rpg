@@ -1772,6 +1772,173 @@
       ],
       "failure_result": null,
       "xp_reward": 8
+    },
+    {
+      "id": "potion_of_strength",
+      "name": "Potion of Strength",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 16,
+      "ap_cost": 7,
+      "ingredients": [
+        {
+          "item_id": "ogre_tooth",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "herb_heal",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "potion_of_strength",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 20
+    },
+    {
+      "id": "leather_helmet",
+      "name": "Leather Helmet",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 9,
+      "ap_cost": 4,
+      "ingredients": [
+        {
+          "item_id": "leather",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "sinew",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "leather_helmet",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "needle"
+      ],
+      "failure_result": "scrap_leather",
+      "xp_reward": 7
+    },
+    {
+      "id": "chainmail_leggings",
+      "name": "Chainmail Leggings",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 14,
+      "ap_cost": 15,
+      "ingredients": [
+        {
+          "item_id": "iron_bar",
+          "quantity": 4,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "chainmail_leggings",
+          "quantity": 1,
+          "inherit_material": true
+        }
+      ],
+      "tools": [
+        "hammer",
+        "tongs",
+        "wire_draw"
+      ],
+      "failure_result": "scrap_metal",
+      "xp_reward": 28
+    },
+    {
+      "id": "herb_cure",
+      "name": "Herb Cure",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 10,
+      "ap_cost": 4,
+      "ingredients": [
+        {
+          "item_id": "herb_cure",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "spring_water",
+          "quantity": 1,
+          "material_class": null
+        },
+        {
+          "item_id": "glass_vial",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "herb_cure",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "mortar"
+      ],
+      "failure_result": "failed_mixture",
+      "xp_reward": 10
+    },
+    {
+      "id": "padded_armor",
+      "name": "Padded Armor",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 11,
+      "ap_cost": 8,
+      "ingredients": [
+        {
+          "item_id": "cloth",
+          "quantity": 2,
+          "material_class": null
+        },
+        {
+          "item_id": "leather",
+          "quantity": 1,
+          "material_class": null
+        }
+      ],
+      "products": [
+        {
+          "item_id": "padded_armor",
+          "quantity": 1,
+          "inherit_material": false
+        }
+      ],
+      "tools": [
+        "needle"
+      ],
+      "failure_result": "scrap_leather",
+      "xp_reward": 13
     }
   ]
 }

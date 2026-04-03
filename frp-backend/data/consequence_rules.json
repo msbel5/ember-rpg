@@ -3,12 +3,16 @@
     {
       "rule_id": "merchant_killed_price_rise",
       "trigger_type": "npc_killed",
-      "conditions": {"npc_role": "merchant"},
+      "conditions": {
+        "npc_role": "merchant"
+      },
       "effects": [
         {
           "type": "update_location_price",
           "target": "current",
-          "params": {"delta_pct": 30},
+          "params": {
+            "delta_pct": 30
+          },
           "description": "Merchant killed - local prices rise 30%"
         }
       ],
@@ -19,12 +23,16 @@
     {
       "rule_id": "merchant_killed_reputation",
       "trigger_type": "npc_killed",
-      "conditions": {"npc_role": "merchant"},
+      "conditions": {
+        "npc_role": "merchant"
+      },
       "effects": [
         {
           "type": "update_faction_rep",
           "target": "merchants_guild",
-          "params": {"delta": -20},
+          "params": {
+            "delta": -20
+          },
           "description": "Merchants guild reputation -20"
         }
       ],
@@ -34,7 +42,9 @@
     {
       "rule_id": "witnessed_kill_guards_alert",
       "trigger_type": "npc_killed",
-      "conditions": {"witnessed": true},
+      "conditions": {
+        "witnessed": true
+      },
       "effects": [
         {
           "type": "alert_guards",
@@ -49,12 +59,16 @@
     {
       "rule_id": "witnessed_kill_bounty",
       "trigger_type": "npc_killed",
-      "conditions": {"witnessed": true},
+      "conditions": {
+        "witnessed": true
+      },
       "effects": [
         {
           "type": "set_flag",
           "target": "player_has_bounty",
-          "params": {"value": true},
+          "params": {
+            "value": true
+          },
           "description": "Bounty placed on player"
         }
       ],
@@ -64,7 +78,9 @@
     {
       "rule_id": "quest_giver_killed",
       "trigger_type": "npc_killed",
-      "conditions": {"npc_role": "quest_giver"},
+      "conditions": {
+        "npc_role": "quest_giver"
+      },
       "effects": [
         {
           "type": "fail_related_quests",
@@ -84,7 +100,9 @@
         {
           "type": "update_npc_disposition",
           "target": "target_npc",
-          "params": {"delta": 15},
+          "params": {
+            "delta": 15
+          },
           "description": "NPC disposition +15"
         }
       ],
@@ -94,12 +112,17 @@
     {
       "rule_id": "helped_merchant_discount",
       "trigger_type": "npc_helped",
-      "conditions": {"npc_role": "merchant"},
+      "conditions": {
+        "npc_role": "merchant"
+      },
       "effects": [
         {
           "type": "set_npc_flag",
           "target": "target_npc",
-          "params": {"flag": "discount_10pct", "value": true},
+          "params": {
+            "flag": "discount_10pct",
+            "value": true
+          },
           "description": "Merchant offers 10% discount"
         }
       ],
@@ -109,7 +132,9 @@
     {
       "rule_id": "steal_detected_guards",
       "trigger_type": "item_stolen",
-      "conditions": {"detected": true},
+      "conditions": {
+        "detected": true
+      },
       "effects": [
         {
           "type": "alert_guards",
@@ -124,17 +149,210 @@
     {
       "rule_id": "quest_completed_faction_rep",
       "trigger_type": "quest_completed",
-      "conditions": {"reward_type": "faction"},
+      "conditions": {
+        "reward_type": "faction"
+      },
       "effects": [
         {
           "type": "update_faction_rep",
           "target": "quest_faction",
-          "params": {"delta": 15},
+          "params": {
+            "delta": 15
+          },
           "description": "Faction reputation +15 for quest completion"
         }
       ],
       "delay_hours": 0,
       "probability": 1.0
+    },
+    {
+      "rule_id": "arson_building_burned_alert",
+      "trigger_type": "building_burned",
+      "conditions": {
+        "witnessed": true
+      },
+      "effects": [
+        {
+          "type": "alert_guards",
+          "target": "current_location",
+          "params": {},
+          "description": "Guards alerted to arson"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0,
+      "description": "Arson witnessed - guards are alerted"
+    },
+    {
+      "rule_id": "arson_building_burned_price_rise",
+      "trigger_type": "building_burned",
+      "conditions": {
+        "building_type": "shop"
+      },
+      "effects": [
+        {
+          "type": "update_location_price",
+          "target": "current",
+          "params": {
+            "delta_pct": 20
+          },
+          "description": "Shop burned - local prices rise 20%"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0,
+      "description": "Burning a shop increases local prices"
+    },
+    {
+      "rule_id": "poisoning_npc_killed_suspicion",
+      "trigger_type": "npc_killed",
+      "conditions": {
+        "cause": "poison"
+      },
+      "effects": [
+        {
+          "type": "set_flag",
+          "target": "location_has_suspicious_death",
+          "params": {
+            "value": true
+          },
+          "description": "Suspicious death flag set for location"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0,
+      "description": "Poisoning triggers suspicion in the area"
+    },
+    {
+      "rule_id": "poisoning_npc_killed_faction_rep",
+      "trigger_type": "npc_killed",
+      "conditions": {
+        "cause": "poison",
+        "npc_role": "noble"
+      },
+      "effects": [
+        {
+          "type": "update_faction_rep",
+          "target": "nobility",
+          "params": {
+            "delta": -25
+          },
+          "description": "Nobility reputation -25 for poisoning a noble"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0,
+      "description": "Poisoning a noble damages nobility reputation"
+    },
+    {
+      "rule_id": "desertion_player_left_faction",
+      "trigger_type": "player_left_faction",
+      "conditions": {
+        "faction_type": "military"
+      },
+      "effects": [
+        {
+          "type": "set_flag",
+          "target": "player_is_deserter",
+          "params": {
+            "value": true
+          },
+          "description": "Player marked as deserter"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0,
+      "description": "Leaving the military marks player as a deserter"
+    },
+    {
+      "rule_id": "desertion_bounty_set",
+      "trigger_type": "player_left_faction",
+      "conditions": {
+        "faction_type": "military"
+      },
+      "effects": [
+        {
+          "type": "set_flag",
+          "target": "player_has_bounty",
+          "params": {
+            "value": true
+          },
+          "description": "Bounty placed for desertion"
+        }
+      ],
+      "delay_hours": 12,
+      "probability": 0.8,
+      "description": "Desertion may result in a bounty"
+    },
+    {
+      "rule_id": "heresy_detected_inquisition_alerted",
+      "trigger_type": "heresy_committed",
+      "conditions": {
+        "witnessed": true
+      },
+      "effects": [
+        {
+          "type": "alert_guards",
+          "target": "inquisition",
+          "params": {},
+          "description": "Inquisition alerted to heresy"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0,
+      "description": "Heresy witnessed - inquisition alerted"
+    },
+    {
+      "rule_id": "heresy_committed_faction_rep",
+      "trigger_type": "heresy_committed",
+      "conditions": {},
+      "effects": [
+        {
+          "type": "update_faction_rep",
+          "target": "church",
+          "params": {
+            "delta": -30
+          },
+          "description": "Church reputation -30 for heresy"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0,
+      "description": "Committing heresy reduces church reputation"
+    },
+    {
+      "rule_id": "smuggling_detected_goods_confiscated",
+      "trigger_type": "smuggling_detected",
+      "conditions": {},
+      "effects": [
+        {
+          "type": "confiscate_items",
+          "target": "contraband",
+          "params": {},
+          "description": "Contraband goods confiscated"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0,
+      "description": "Smuggling detected - contraband confiscated"
+    },
+    {
+      "rule_id": "smuggling_detected_fine",
+      "trigger_type": "smuggling_detected",
+      "conditions": {},
+      "effects": [
+        {
+          "type": "update_player_gold",
+          "target": "player",
+          "params": {
+            "delta": -100
+          },
+          "description": "Player fined 100 gold for smuggling"
+        }
+      ],
+      "delay_hours": 0,
+      "probability": 1.0,
+      "description": "Smuggling detected - player fined"
     }
   ]
 }

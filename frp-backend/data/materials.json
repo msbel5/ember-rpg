@@ -9,7 +9,10 @@
     "shear_yield": 155,
     "shear_fracture": 310,
     "max_edge": 100,
-    "tags": ["common", "ferrous"]
+    "tags": [
+      "common",
+      "ferrous"
+    ]
   },
   "steel": {
     "material_id": "steel",
@@ -21,7 +24,10 @@
     "shear_yield": 200,
     "shear_fracture": 390,
     "max_edge": 118,
-    "tags": ["refined", "ferrous"]
+    "tags": [
+      "refined",
+      "ferrous"
+    ]
   },
   "bronze": {
     "material_id": "bronze",
@@ -33,7 +39,9 @@
     "shear_yield": 140,
     "shear_fracture": 280,
     "max_edge": 91,
-    "tags": ["common"]
+    "tags": [
+      "common"
+    ]
   },
   "mithril": {
     "material_id": "mithril",
@@ -45,7 +53,10 @@
     "shear_yield": 275,
     "shear_fracture": 520,
     "max_edge": 136,
-    "tags": ["magical", "light"]
+    "tags": [
+      "magical",
+      "light"
+    ]
   },
   "wood": {
     "material_id": "wood",
@@ -57,7 +68,10 @@
     "shear_yield": 95,
     "shear_fracture": 190,
     "max_edge": 70,
-    "tags": ["common", "organic"]
+    "tags": [
+      "common",
+      "organic"
+    ]
   },
   "leather": {
     "material_id": "leather",
@@ -69,7 +83,11 @@
     "shear_yield": 80,
     "shear_fracture": 160,
     "max_edge": 58,
-    "tags": ["common", "organic", "flexible"]
+    "tags": [
+      "common",
+      "organic",
+      "flexible"
+    ]
   },
   "bone": {
     "material_id": "bone",
@@ -81,7 +99,9 @@
     "shear_yield": 125,
     "shear_fracture": 250,
     "max_edge": 82,
-    "tags": ["organic"]
+    "tags": [
+      "organic"
+    ]
   },
   "obsidian": {
     "material_id": "obsidian",
@@ -93,7 +113,10 @@
     "shear_yield": 230,
     "shear_fracture": 450,
     "max_edge": 130,
-    "tags": ["volcanic", "brittle"]
+    "tags": [
+      "volcanic",
+      "brittle"
+    ]
   },
   "silver": {
     "material_id": "silver",
@@ -105,7 +128,10 @@
     "shear_yield": 125,
     "shear_fracture": 250,
     "max_edge": 94,
-    "tags": ["precious", "anti-undead"]
+    "tags": [
+      "precious",
+      "anti-undead"
+    ]
   },
   "gold": {
     "material_id": "gold",
@@ -117,6 +143,91 @@
     "shear_yield": 110,
     "shear_fracture": 220,
     "max_edge": 76,
-    "tags": ["precious", "soft"]
-  }
+    "tags": [
+      "precious",
+      "soft"
+    ]
+  },
+  "materials": [
+    {
+      "material_id": "adamantine",
+      "label": "Adamantine",
+      "category": "metal",
+      "density": 1.2,
+      "impact_yield": 410,
+      "impact_fracture": 820,
+      "shear_yield": 350,
+      "shear_fracture": 700,
+      "max_edge": 150,
+      "tags": [
+        "magical",
+        "mythic",
+        "hard"
+      ]
+    },
+    {
+      "material_id": "dragonbone",
+      "label": "Dragonbone",
+      "category": "organic",
+      "density": 0.7,
+      "impact_yield": 210,
+      "impact_fracture": 420,
+      "shear_yield": 180,
+      "shear_fracture": 360,
+      "max_edge": 110,
+      "tags": [
+        "rare",
+        "organic",
+        "resonant"
+      ]
+    },
+    {
+      "material_id": "darkwood",
+      "label": "Darkwood",
+      "category": "organic",
+      "density": 0.38,
+      "impact_yield": 135,
+      "impact_fracture": 270,
+      "shear_yield": 120,
+      "shear_fracture": 240,
+      "max_edge": 85,
+      "tags": [
+        "rare",
+        "organic",
+        "light"
+      ]
+    },
+    {
+      "material_id": "moonsilver",
+      "label": "Moonsilver",
+      "category": "metal",
+      "density": 0.95,
+      "impact_yield": 210,
+      "impact_fracture": 420,
+      "shear_yield": 180,
+      "shear_fracture": 360,
+      "max_edge": 122,
+      "tags": [
+        "magical",
+        "lunar",
+        "anti-curse"
+      ]
+    },
+    {
+      "material_id": "living_wood",
+      "label": "Living Wood",
+      "category": "organic",
+      "density": 0.42,
+      "impact_yield": 125,
+      "impact_fracture": 250,
+      "shear_yield": 110,
+      "shear_fracture": 220,
+      "max_edge": 78,
+      "tags": [
+        "magical",
+        "organic",
+        "regenerative"
+      ]
+    }
+  ]
 }
