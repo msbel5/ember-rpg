@@ -8,10 +8,11 @@ from engine.kernel.actor import ActorRecord, ConditionRecord, WoundRecord
 from engine.kernel.common import serialize_value
 
 
+# Saving throw -> canonical Ember stat mapping (Ember-only, no D&D aliases).
 SAVE_STAT_MAP = {
-    "fortitude": ("END", "CON", "constitution"),
-    "reflex": ("AGI", "DEX", "dexterity"),
-    "will": ("INS", "WIS", "wisdom"),
+    "fortitude": ("END",),
+    "reflex": ("AGI",),
+    "will": ("INS",),
 }
 
 
@@ -415,19 +416,27 @@ def _save_stat_value(target: ActorRecord, save_key: str) -> int:
 
 
 def _stat_lookup(target: ActorRecord, stat_name: str) -> int:
+    """Resolve a stat name to its value, using Ember canonical keys only."""
+    # Map legacy/lowercase names to canonical Ember stat keys.
     aliases = {
-        "con": ("END", "CON", "constitution"),
-        "constitution": ("END", "CON", "constitution"),
-        "dex": ("AGI", "DEX", "dexterity"),
-        "dexterity": ("AGI", "DEX", "dexterity"),
-        "wis": ("INS", "WIS", "wisdom"),
-        "wisdom": ("INS", "WIS", "wisdom"),
-        "str": ("MIG", "STR", "strength"),
-        "strength": ("MIG", "STR", "strength"),
-        "int": ("MND", "INT", "intelligence"),
-        "intelligence": ("MND", "INT", "intelligence"),
-        "cha": ("PRE", "CHA", "charisma"),
-        "charisma": ("PRE", "CHA", "charisma"),
+        "con": ("END",),
+        "constitution": ("END",),
+        "end": ("END",),
+        "dex": ("AGI",),
+        "dexterity": ("AGI",),
+        "agi": ("AGI",),
+        "wis": ("INS",),
+        "wisdom": ("INS",),
+        "ins": ("INS",),
+        "str": ("MIG",),
+        "strength": ("MIG",),
+        "mig": ("MIG",),
+        "int": ("MND",),
+        "intelligence": ("MND",),
+        "mnd": ("MND",),
+        "cha": ("PRE",),
+        "charisma": ("PRE",),
+        "pre": ("PRE",),
     }
     key = str(stat_name).lower()
     for candidate in aliases.get(key, (stat_name, stat_name.upper(), key)):

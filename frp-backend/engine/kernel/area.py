@@ -193,7 +193,7 @@ class AreaState:
 def open_door(actor: ActorRecord, door: DoorDef, area_state: AreaState, search_map: SearchMap) -> tuple[bool, str]:
     has_key = _actor_has_key(actor, door.key_id)
     lockpick = int(actor.skills.get("lockpick", 0))
-    strength = int(actor.stats.get("STR", actor.stats.get("MIG", 10)))
+    strength = int(actor.stats.get("MIG", 10))
     if door.locked and not has_key and lockpick < int(door.lock_difficulty) and strength < int(door.force_difficulty):
         return False, "door remains locked"
 

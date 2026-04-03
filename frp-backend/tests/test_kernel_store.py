@@ -45,7 +45,7 @@ def _actor(
         action_points=2,
         max_action_points=2,
         alive=True,
-        stats={"gold": gold, "CHA": cha, "hp": hp, "max_hp": max_hp},
+        stats={"gold": gold, "PRE": cha, "hp": hp, "max_hp": max_hp},
         skills={"pickpocket": pickpocket},
         inventory=[],
         effect_queue=EffectQueue(actor_id=actor_id),

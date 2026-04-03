@@ -151,18 +151,19 @@ def actor_bab(actor: ActorRecord) -> int:
 
 
 def attack_stat(actor: ActorRecord, weapon: ItemStack | None) -> int:
-    use_dex = bool(weapon and (weapon.payload.get("finesse") or weapon.payload.get("ranged")))
-    stat_name = "AGI" if use_dex else "MIG"
+    """Return the attack ability score: AGI for finesse/ranged, MIG otherwise."""
+    use_agi = bool(weapon and (weapon.payload.get("finesse") or weapon.payload.get("ranged")))
+    stat_name = "AGI" if use_agi else "MIG"
     if stat_name in actor.stats:
         return compute_effective_stat(actor, stat_name)
-    fallback = ("DEX",) if use_dex else ("STR",)
-    return stat_value(actor, stat_name, *fallback)
+    return stat_value(actor, stat_name)
 
 
 def defense_dex_stat(actor: ActorRecord) -> int:
+    """Return the defensive agility score (AGI) for AC calculation."""
     if "AGI" in actor.stats:
         return compute_effective_stat(actor, "AGI")
-    return stat_value(actor, "AGI", "DEX")
+    return stat_value(actor, "AGI")
 
 
 def weapon_proficiency_bonus(attacker: ActorRecord, weapon: ItemStack | None) -> int:

@@ -172,7 +172,7 @@ def resolve_attack(
     morale_check = None
     if strike_resolution.wound is not None:
         morale_state = MoraleState(
-            base_morale=int(defender.raw_payload.get("morale_bonus", ability_modifier(stat_value(defender, "WIS", "INS")))),
+            base_morale=int(defender.raw_payload.get("morale_bonus", ability_modifier(stat_value(defender, "INS")))),
             leadership_bonus=int(defender.raw_payload.get("leadership_bonus", 0)),
             trait_bonus=int(defender.raw_payload.get("trait_bonus", 0)),
         )

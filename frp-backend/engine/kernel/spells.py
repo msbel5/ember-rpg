@@ -155,7 +155,7 @@ def learn_spell(
     spell_def: SpellDef,
     d100_roll: int,
 ) -> tuple[bool, str]:
-    intelligence = int(actor.stats.get("INT", actor.stats.get("MND", 10)))
+    intelligence = int(actor.stats.get("MND", 10))
     chance = _learn_chance(intelligence)
     if int(d100_roll) <= chance:
         spellbook.known_spells.setdefault(spell_def.level, [])
@@ -200,7 +200,7 @@ def tick_casting(
     if attempt.failed:
         return "failed", attempt
     if damage_taken > 0:
-        concentration_total = int(d20_roll or 1) + _ability_modifier(int(caster.stats.get("CON", caster.stats.get("END", 10))))
+        concentration_total = int(d20_roll or 1) + _ability_modifier(int(caster.stats.get("END", 10)))
         if concentration_total < 10 + int(damage_taken):
             attempt.interrupted = True
             attempt.failed = True
@@ -258,12 +258,13 @@ def rest_refresh_spellbook(spellbook: Spellbook) -> None:
 
 
 def _spell_ability_score(actor: ActorRecord, spell_type: str) -> int:
+    """Return the spellcasting ability score: MND (wizard), INS (priest), PRE (sorcerer)."""
     if spell_type == "wizard":
-        return int(actor.stats.get("INT", actor.stats.get("MND", 10)))
+        return int(actor.stats.get("MND", 10))
     if spell_type == "priest":
-        return int(actor.stats.get("WIS", actor.stats.get("INS", 10)))
+        return int(actor.stats.get("INS", 10))
     if spell_type == "sorcerer":
-        return int(actor.stats.get("CHA", actor.stats.get("PRE", 10)))
+        return int(actor.stats.get("PRE", 10))
     return 10
 
 

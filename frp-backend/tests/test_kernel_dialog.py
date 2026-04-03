@@ -23,7 +23,7 @@ def _actor(actor_id: str, *, cha: int = 10, strength: int = 10) -> ActorRecord:
         action_points=2,
         max_action_points=2,
         alive=True,
-        stats={"CHA": cha, "STR": strength},
+        stats={"PRE": cha, "MIG": strength},
         raw_payload={"relationship_score": 0, "quests": {}, "journal": [], "spawned_creatures": []},
     )
 
@@ -36,7 +36,7 @@ def test_ac01_start_dialog_returns_first_valid_state():
             DialogStateNode(
                 state_id="blocked",
                 text="Blocked",
-                trigger=DialogCondition("stat_check", {"actor": "player", "stat": "CHA", "operator": ">=", "value": 20}),
+                trigger=DialogCondition("stat_check", {"actor": "player", "stat": "PRE", "operator": ">=", "value": 20}),
             ),
             DialogStateNode(state_id="intro", text="Hello there."),
             DialogStateNode(state_id="later", text="Later."),
@@ -57,7 +57,7 @@ def test_ac02_cha_gated_transition_hidden_when_player_fails_requirement():
             DialogTransition(
                 transition_id="cha_gate",
                 text="Persuade",
-                condition=DialogCondition("stat_check", {"actor": "player", "stat": "CHA", "operator": ">=", "value": 16}),
+                condition=DialogCondition("stat_check", {"actor": "player", "stat": "PRE", "operator": ">=", "value": 16}),
             )
         ],
     )
@@ -75,7 +75,7 @@ def test_ac03_cha_gated_transition_visible_when_player_meets_requirement():
             DialogTransition(
                 transition_id="cha_gate",
                 text="Persuade",
-                condition=DialogCondition("stat_check", {"actor": "player", "stat": "CHA", "operator": ">=", "value": 16}),
+                condition=DialogCondition("stat_check", {"actor": "player", "stat": "PRE", "operator": ">=", "value": 16}),
             )
         ],
     )
@@ -170,7 +170,7 @@ def test_ac09_composite_and_condition_requires_all_children():
     condition = DialogCondition(
         "and",
         children=[
-            DialogCondition("stat_check", {"actor": "player", "stat": "STR", "operator": ">=", "value": 14}),
+            DialogCondition("stat_check", {"actor": "player", "stat": "MIG", "operator": ">=", "value": 14}),
             DialogCondition("item_check", {"actor": "player", "item_def_id": "magic_key"}),
         ],
     )

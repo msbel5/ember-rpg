@@ -79,7 +79,7 @@ def _actor(
         action_points=2,
         max_action_points=2,
         alive=True,
-        stats=stats or {"STR": 14, "DEX": 12, "CON": 12, "WIS": 10, "hp": 20, "max_hp": 20},
+        stats=stats or {"MIG": 14, "AGI": 12, "END": 12, "INS": 10, "hp": 20, "max_hp": 20},
         skills={},
         body_state=_body_state(),
         inventory=inventory or [],
@@ -93,7 +93,7 @@ def _effect_def(**overrides) -> EffectDef:
         "effect_def_id": "effect_1",
         "label": "Effect One",
         "category": "stat_mod",
-        "target_stat": "STR",
+        "target_stat": "MIG",
         "modifier_type": "flat",
         "modifier_value": 4.0,
         "timing_mode": "duration",
@@ -126,7 +126,7 @@ def test_effect_def_round_trips_without_loss():
 
 
 def test_apply_effect_marks_instance_saved_when_save_passes_exact_dc():
-    actor = _actor(stats={"WIS": 10, "hp": 20, "max_hp": 20}, save_bonuses={"will": 3})
+    actor = _actor(stats={"INS": 10, "hp": 20, "max_hp": 20}, save_bonuses={"will": 3})
     effect = _effect_def(saving_throw_type="will", saving_throw_dc=15)
 
     applied, instance = apply_effect(actor, effect, source_id="spell_1", current_tick=4, d20_roll=12)
@@ -137,7 +137,7 @@ def test_apply_effect_marks_instance_saved_when_save_passes_exact_dc():
 
 
 def test_condition_effect_is_negated_on_save_but_stat_mod_is_halved():
-    actor = _actor(stats={"WIS": 10, "STR": 14, "hp": 20, "max_hp": 20}, save_bonuses={"will": 3})
+    actor = _actor(stats={"INS": 10, "MIG": 14, "hp": 20, "max_hp": 20}, save_bonuses={"will": 3})
     condition = _effect_def(
         effect_def_id="hold",
         category="condition",
@@ -159,7 +159,7 @@ def test_condition_effect_is_negated_on_save_but_stat_mod_is_halved():
     assert applied_condition is False
     assert applied_stat is True
     assert stat_instance is not None and stat_instance.saved is True
-    assert compute_effective_stat(actor, "STR") == 16
+    assert compute_effective_stat(actor, "MIG") == 16
 
 
 def test_tick_effects_expires_duration_effects():
@@ -226,7 +226,7 @@ def test_overflow_refreshes_oldest_instance_instead_of_adding_new_one():
 
 
 def test_compute_effective_stat_prefers_set_override_over_other_modifiers():
-    actor = _actor(stats={"STR": 14, "hp": 20, "max_hp": 20})
+    actor = _actor(stats={"MIG": 14, "hp": 20, "max_hp": 20})
     effects = [
         EffectInstance("a", "flat_2", _effect_def(effect_def_id="flat_2", modifier_value=2), "a", actor.identity.actor_id),
         EffectInstance("b", "flat_3", _effect_def(effect_def_id="flat_3", modifier_value=3), "b", actor.identity.actor_id),
@@ -235,18 +235,18 @@ def test_compute_effective_stat_prefers_set_override_over_other_modifiers():
     ]
     _effect_queue(actor, *effects)
 
-    assert compute_effective_stat(actor, "STR") == 20
+    assert compute_effective_stat(actor, "MIG") == 20
 
 
 def test_compute_effective_stat_applies_flat_then_percentage():
-    actor = _actor(stats={"STR": 14, "hp": 20, "max_hp": 20})
+    actor = _actor(stats={"MIG": 14, "hp": 20, "max_hp": 20})
     effects = [
         EffectInstance("a", "flat_2", _effect_def(effect_def_id="flat_2", modifier_value=2), "a", actor.identity.actor_id),
         EffectInstance("b", "pct_50", _effect_def(effect_def_id="pct_50", modifier_type="percentage", modifier_value=50), "b", actor.identity.actor_id),
     ]
     _effect_queue(actor, *effects)
 
-    assert compute_effective_stat(actor, "STR") == 24
+    assert compute_effective_stat(actor, "MIG") == 24
 
 
 def test_dot_effect_creates_wound_records_and_halves_when_saved():
@@ -295,7 +295,7 @@ def test_while_equipped_effects_drop_after_item_is_unequipped():
         payload={"slot": "ring", "coverage": []},
     )
     equipment = EquipmentLoadout(slots={"ring": [item]})
-    actor = _actor(stats={"STR": 14, "hp": 20, "max_hp": 20}, inventory=[item], equipment=equipment)
+    actor = _actor(stats={"MIG": 14, "hp": 20, "max_hp": 20}, inventory=[item], equipment=equipment)
     effect = _effect_def(
         effect_def_id="ring_strength",
         modifier_value=4,
@@ -303,13 +303,13 @@ def test_while_equipped_effects_drop_after_item_is_unequipped():
     )
 
     apply_effect(actor, effect, source_id="ring_1", current_tick=0)
-    assert compute_effective_stat(actor, "STR") == 18
+    assert compute_effective_stat(actor, "MIG") == 18
 
     actor.equipment.slots["ring"] = []
     tick_effects(actor, 1)
 
     assert actor.effect_queue.instances == []
-    assert compute_effective_stat(actor, "STR") == 14
+    assert compute_effective_stat(actor, "MIG") == 14
 
 
 def test_dispel_by_tag_removes_only_matching_effects():
@@ -379,15 +379,15 @@ def test_injected_delivery_requires_open_wound():
 
 
 def test_resistance_check_blocks_effect_on_exact_dc():
-    actor = _actor(stats={"CON": 16, "hp": 20, "max_hp": 20})
+    actor = _actor(stats={"END": 16, "hp": 20, "max_hp": 20})
 
-    resisted = check_resistance(actor, "CON", 12, 9)
+    resisted = check_resistance(actor, "END", 12, 9)
 
     assert resisted is True
 
 
 def test_saving_throw_respects_natural_one_and_natural_twenty():
-    actor = _actor(stats={"WIS": 30, "hp": 20, "max_hp": 20}, save_bonuses={"will": 99})
+    actor = _actor(stats={"INS": 30, "hp": 20, "max_hp": 20}, save_bonuses={"will": 99})
 
     assert resolve_saving_throw(actor, "will", 1_000, 1) is False
     assert resolve_saving_throw(actor, "will", 1_000, 20) is True

@@ -36,7 +36,7 @@ def _actor(
         action_points=2,
         max_action_points=2,
         alive=True,
-        stats={"STR": strength},
+        stats={"MIG": strength},
         skills={"lockpick": lockpick},
         inventory=inventory or [],
         raw_payload={},

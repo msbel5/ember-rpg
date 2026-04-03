@@ -58,13 +58,14 @@ class ItemRequirements:
 
     def met_by(self, actor: ActorRecord) -> tuple[bool, list[str]]:
         failures: list[str] = []
+        # Item requirement checks use canonical Ember stat keys.
         checks = [
-            ("min_str", ("STR", "MIG")),
-            ("min_dex", ("DEX", "AGI")),
-            ("min_int", ("INT", "MND")),
-            ("min_wis", ("WIS", "INS")),
-            ("min_con", ("CON", "END")),
-            ("min_cha", ("CHA", "PRE")),
+            ("min_str", ("MIG",)),
+            ("min_dex", ("AGI",)),
+            ("min_int", ("MND",)),
+            ("min_wis", ("INS",)),
+            ("min_con", ("END",)),
+            ("min_cha", ("PRE",)),
         ]
         for field_name, stat_keys in checks:
             required = int(getattr(self, field_name))

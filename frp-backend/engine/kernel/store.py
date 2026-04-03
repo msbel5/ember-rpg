@@ -342,7 +342,8 @@ def _set_actor_gold(actor: ActorRecord, gold: int) -> None:
 
 
 def _actor_cha(actor: ActorRecord) -> int:
-    return int(actor.stats.get("CHA", actor.stats.get("PRE", 10)))
+    """Return the actor's presence (PRE) stat for charisma-based checks."""
+    return int(actor.stats.get("PRE", 10))
 
 
 def _actor_reputation(actor: ActorRecord) -> int:

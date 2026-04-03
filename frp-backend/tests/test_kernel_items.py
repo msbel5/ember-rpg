@@ -62,7 +62,7 @@ def _actor(*, stats: dict[str, int] | None = None, skills: dict[str, int] | None
         action_points=2,
         max_action_points=2,
         alive=True,
-        stats=stats or {"STR": 12, "DEX": 10, "INT": 10, "WIS": 10, "CON": 10, "CHA": 10, "hp": 20, "max_hp": 20},
+        stats=stats or {"MIG": 12, "AGI": 10, "MND": 10, "INS": 10, "END": 10, "PRE": 10, "hp": 20, "max_hp": 20},
         skills=skills or {},
         body_state=_body_state(),
         inventory=[],
@@ -77,7 +77,7 @@ def _effect_registry() -> dict[str, EffectDef]:
             effect_def_id="str_bonus_2",
             label="Strength +2",
             category="stat_mod",
-            target_stat="STR",
+            target_stat="MIG",
             modifier_type="flat",
             modifier_value=2,
             timing_mode="while_equipped",
@@ -94,7 +94,7 @@ def _effect_registry() -> dict[str, EffectDef]:
 
 
 def test_ac01_can_equip_checks_minimum_stat_requirements():
-    actor = _actor(stats={"STR": 12, "DEX": 10, "INT": 10, "WIS": 10, "CON": 10, "CHA": 10, "hp": 20, "max_hp": 20})
+    actor = _actor(stats={"MIG": 12, "AGI": 10, "MND": 10, "INS": 10, "END": 10, "PRE": 10, "hp": 20, "max_hp": 20})
     item_def = ItemDef(
         item_def_id="greatsword",
         label="Greatsword",
@@ -126,10 +126,10 @@ def test_ac02_equip_and_unequip_apply_and_remove_effects():
     actor.inventory.append(item)
 
     equip_item(actor, item, "belt", item_def)
-    assert compute_effective_stat(actor, "STR") == 14
+    assert compute_effective_stat(actor, "MIG") == 14
 
     unequip_item(actor, "belt")
-    assert compute_effective_stat(actor, "STR") == 12
+    assert compute_effective_stat(actor, "MIG") == 12
 
 
 def test_ac03_compute_item_wear_uses_quality_multiplier():

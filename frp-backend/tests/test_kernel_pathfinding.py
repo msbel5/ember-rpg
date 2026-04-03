@@ -32,7 +32,7 @@ def _actor(
         action_points=2,
         max_action_points=2,
         alive=True,
-        stats={"AGI": agi, "STR": strength},
+        stats={"AGI": agi, "MIG": strength},
         raw_payload={"idle": idle},
     )
 

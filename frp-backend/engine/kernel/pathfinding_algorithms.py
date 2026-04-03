@@ -137,7 +137,7 @@ def random_walk_target(
 
 
 def compute_movement_speed(actor: ActorRecord, encumbrance_ratio: float) -> int:
-    agility = int(actor.stats.get("AGI", actor.stats.get("DEX", 10)))
+    agility = int(actor.stats.get("AGI", 10))
     base = max(4, 10 - ((agility - 10) // 2))
     if encumbrance_ratio >= 1.0:
         return base + 8

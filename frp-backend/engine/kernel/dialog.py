@@ -336,7 +336,7 @@ def execute_dialog_action(
 
 
 def compute_npc_reaction(player: ActorRecord, npc: ActorRecord, reputation: int) -> int:
-    cha = int(player.stats.get("CHA", player.stats.get("cha", 10)))
+    cha = int(player.stats.get("PRE", 10))
     relationship_score = int(npc.raw_payload.get("relationship_score", 0))
     return ((cha - 10) * 2) + int(reputation) + relationship_score
 

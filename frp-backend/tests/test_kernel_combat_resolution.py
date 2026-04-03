@@ -144,7 +144,7 @@ def _actor(
         action_points=2,
         max_action_points=2,
         alive=True,
-        stats=stats or {"STR": 10, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20},
+        stats=stats or {"MIG": 10, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20},
         skills=skills or {},
         body_state=_body_state(),
         equipment=equipment or EquipmentLoadout(),
@@ -155,7 +155,7 @@ def _actor(
 
 def test_ac01_compute_attack_roll_uses_bab_ability_and_proficiency():
     attacker = _actor(
-        stats={"STR": 16, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20},
+        stats={"MIG": 16, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20},
         raw_payload={"bab": 5, "weapon_proficiency_bonus": 2},
     )
 
@@ -168,7 +168,7 @@ def test_ac02_compute_defense_ac_uses_armor_shield_and_capped_dex():
     armor = _armor(armor_bonus=5, max_dex=2)
     shield = _shield(shield_bonus=2)
     defender = _actor(
-        stats={"STR": 10, "DEX": 14, "WIS": 10, "hp": 20, "max_hp": 20},
+        stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20},
         equipment=EquipmentLoadout(slots={"armor": [armor], "shield": [shield]}),
         inventory=[armor, shield],
     )
@@ -179,11 +179,11 @@ def test_ac02_compute_defense_ac_uses_armor_shield_and_capped_dex():
 
 
 def test_ac03_attack_misses_when_total_below_ac():
-    attacker = _actor(stats={"STR": 16, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 3})
+    attacker = _actor(stats={"MIG": 16, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 3})
     armor = _armor(armor_bonus=5, max_dex=2)
     shield = _shield(shield_bonus=2)
     defender = _actor(
-        stats={"STR": 10, "DEX": 14, "WIS": 10, "hp": 20, "max_hp": 20},
+        stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20},
         equipment=EquipmentLoadout(slots={"armor": [armor], "shield": [shield]}),
         inventory=[armor, shield],
     )
@@ -194,8 +194,8 @@ def test_ac03_attack_misses_when_total_below_ac():
 
 
 def test_ac04_natural_one_always_misses():
-    attacker = _actor(stats={"STR": 20, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 10})
-    defender = _actor(stats={"STR": 10, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20})
+    attacker = _actor(stats={"MIG": 20, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 10})
+    defender = _actor(stats={"MIG": 10, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20})
 
     result = resolve_attack(attacker, defender, weapon=_weapon(), d20_roll=1, raw_damage=6)
 
@@ -204,11 +204,11 @@ def test_ac04_natural_one_always_misses():
 
 
 def test_ac05_natural_twenty_always_hits():
-    attacker = _actor(stats={"STR": 10, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 0})
+    attacker = _actor(stats={"MIG": 10, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 0})
     armor = _armor(armor_bonus=15, max_dex=0)
     shield = _shield(shield_bonus=5)
     defender = _actor(
-        stats={"STR": 10, "DEX": 20, "WIS": 10, "hp": 20, "max_hp": 20},
+        stats={"MIG": 10, "AGI": 20, "INS": 10, "hp": 20, "max_hp": 20},
         equipment=EquipmentLoadout(slots={"armor": [armor], "shield": [shield]}),
         inventory=[armor, shield],
     )
@@ -220,8 +220,8 @@ def test_ac05_natural_twenty_always_hits():
 
 
 def test_ac06_critical_is_confirmed_when_confirmation_beats_ac():
-    attacker = _actor(stats={"STR": 16, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 6})
-    defender = _actor(stats={"STR": 10, "DEX": 14, "WIS": 10, "hp": 20, "max_hp": 20})
+    attacker = _actor(stats={"MIG": 16, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 6})
+    defender = _actor(stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20})
 
     result = resolve_attack(attacker, defender, weapon=_weapon(damage=6), d20_roll=20, confirm_roll=14, raw_damage=6)
 
@@ -230,11 +230,11 @@ def test_ac06_critical_is_confirmed_when_confirmation_beats_ac():
 
 
 def test_ac07_critical_is_not_confirmed_when_confirmation_misses():
-    attacker = _actor(stats={"STR": 16, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 6})
+    attacker = _actor(stats={"MIG": 16, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 6})
     armor = _armor(armor_bonus=5, max_dex=2)
     shield = _shield(shield_bonus=2)
     defender = _actor(
-        stats={"STR": 10, "DEX": 14, "WIS": 10, "hp": 20, "max_hp": 20},
+        stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20},
         equipment=EquipmentLoadout(slots={"armor": [armor], "shield": [shield]}),
         inventory=[armor, shield],
     )
@@ -247,10 +247,10 @@ def test_ac07_critical_is_not_confirmed_when_confirmation_misses():
 
 def test_ac08_backstab_adds_level_times_weapon_base_damage():
     attacker = _actor(
-        stats={"STR": 16, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20},
+        stats={"MIG": 16, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20},
         raw_payload={"bab": 5, "backstab_level": 3},
     )
-    defender = _actor(stats={"STR": 10, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20})
+    defender = _actor(stats={"MIG": 10, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20})
 
     result = resolve_attack(
         attacker,
@@ -267,7 +267,7 @@ def test_ac08_backstab_adds_level_times_weapon_base_damage():
 
 
 def test_ac09_called_shot_applies_minus_four_penalty():
-    attacker = _actor(stats={"STR": 16, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 5})
+    attacker = _actor(stats={"MIG": 16, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 5})
 
     roll = compute_attack_roll(attacker, weapon=_weapon(), d20_roll=12, called_shot="head")
 
@@ -292,9 +292,9 @@ def test_ac11_willpower_reduces_effective_pain_before_thresholds():
 
 def test_ac12_unconscious_from_pain_drops_items_and_prevents_actions():
     weapon = _weapon(instance_id="main_hand_weapon", damage=20)
-    attacker = _actor(stats={"STR": 20, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 8})
+    attacker = _actor(stats={"MIG": 20, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 8})
     defender = _actor(
-        stats={"STR": 10, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20},
+        stats={"MIG": 10, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20},
         raw_payload={"base_max_pain": 20},
         equipment=EquipmentLoadout(slots={"weapon": [weapon]}),
         inventory=[weapon],
@@ -323,7 +323,7 @@ def test_ac14_blood_state_dead_at_zero():
 
 
 def test_ac15_morale_check_failure_sets_fleeing():
-    actor = _actor(stats={"STR": 10, "DEX": 10, "WIS": 14, "hp": 20, "max_hp": 20})
+    actor = _actor(stats={"MIG": 10, "AGI": 10, "INS": 14, "hp": 20, "max_hp": 20})
     morale = MoraleState(base_morale=4)
 
     result = check_morale(actor, morale, "ally_death", d20_roll=10)
@@ -333,7 +333,7 @@ def test_ac15_morale_check_failure_sets_fleeing():
 
 
 def test_ac16_morale_check_success_does_not_flee():
-    actor = _actor(stats={"STR": 10, "DEX": 10, "WIS": 14, "hp": 20, "max_hp": 20})
+    actor = _actor(stats={"MIG": 10, "AGI": 10, "INS": 14, "hp": 20, "max_hp": 20})
     morale = MoraleState(base_morale=4)
 
     result = check_morale(actor, morale, "ally_death", d20_roll=12)
@@ -368,8 +368,8 @@ def test_ac19_haste_adds_extra_full_bab_attack():
 
 
 def test_ac20_resolve_attack_delegates_to_existing_resolve_strike_force_model(monkeypatch):
-    attacker = _actor(stats={"STR": 16, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 6})
-    defender = _actor(stats={"STR": 10, "DEX": 10, "WIS": 10, "hp": 20, "max_hp": 20})
+    attacker = _actor(stats={"MIG": 16, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20}, raw_payload={"bab": 6})
+    defender = _actor(stats={"MIG": 10, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20})
     captured: dict[str, object] = {}
 
     from engine.kernel import combat as combat_module
@@ -391,7 +391,7 @@ def test_ac20_resolve_attack_delegates_to_existing_resolve_strike_force_model(mo
 
 
 def test_ac21_flat_footed_excludes_dex_bonus():
-    defender = _actor(stats={"STR": 10, "DEX": 14, "WIS": 10, "hp": 20, "max_hp": 20})
+    defender = _actor(stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20})
 
     defense = compute_defense_ac(defender, flat_footed=True)
 
@@ -403,7 +403,7 @@ def test_ac22_touch_attack_ignores_armor_and_shield():
     armor = _armor(armor_bonus=5, max_dex=2)
     shield = _shield(shield_bonus=2)
     defender = _actor(
-        stats={"STR": 10, "DEX": 14, "WIS": 10, "hp": 20, "max_hp": 20},
+        stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20},
         equipment=EquipmentLoadout(slots={"armor": [armor], "shield": [shield]}),
         inventory=[armor, shield],
     )

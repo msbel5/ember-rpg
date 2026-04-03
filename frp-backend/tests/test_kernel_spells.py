@@ -23,7 +23,7 @@ def _actor(*, actor_id: str = "caster", stats: dict[str, int] | None = None, raw
         action_points=2,
         max_action_points=2,
         alive=True,
-        stats=stats or {"INT": 10, "WIS": 10, "CHA": 10, "CON": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20},
+        stats=stats or {"MND": 10, "INS": 10, "PRE": 10, "END": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20},
         skills={},
         raw_payload=raw_payload or {},
     )
@@ -51,7 +51,7 @@ def _effect_registry() -> dict[str, EffectDef]:
 
 def test_ac01_compute_max_spell_slots_adds_ability_bonus():
     actor = _actor(
-        stats={"INT": 16, "WIS": 10, "CHA": 10, "CON": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20},
+        stats={"MND": 16, "INS": 10, "PRE": 10, "END": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20},
         raw_payload={"level": 5},
     )
     class_table = {"wizard": {5: {1: 2, 2: 1}}}
@@ -62,7 +62,7 @@ def test_ac01_compute_max_spell_slots_adds_ability_bonus():
 
 
 def test_ac02_learn_spell_succeeds_when_roll_is_within_int_chance():
-    actor = _actor(stats={"INT": 14, "WIS": 10, "CHA": 10, "CON": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20})
+    actor = _actor(stats={"MND": 14, "INS": 10, "PRE": 10, "END": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20})
     spellbook = Spellbook(actor_id=actor.identity.actor_id, spell_type="wizard")
     spell_def = SpellDef(
         spell_id="magic_missile",
@@ -82,7 +82,7 @@ def test_ac02_learn_spell_succeeds_when_roll_is_within_int_chance():
 
 
 def test_ac03_learn_spell_fails_and_consumes_scroll_on_bad_roll():
-    actor = _actor(stats={"INT": 14, "WIS": 10, "CHA": 10, "CON": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20})
+    actor = _actor(stats={"MND": 14, "INS": 10, "PRE": 10, "END": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20})
     spellbook = Spellbook(actor_id=actor.identity.actor_id, spell_type="wizard")
     spell_def = SpellDef(
         spell_id="magic_missile",
@@ -138,7 +138,7 @@ def test_ac05_begin_casting_returns_attempt_for_memorized_spell():
 
 
 def test_ac06_tick_casting_interrupts_when_concentration_fails():
-    caster = _actor(stats={"INT": 14, "WIS": 10, "CHA": 10, "CON": 14, "magic_resistance": 0, "hp": 20, "max_hp": 20})
+    caster = _actor(stats={"MND": 14, "INS": 10, "PRE": 10, "END": 14, "magic_resistance": 0, "hp": 20, "max_hp": 20})
     attempt = CastingAttempt(
         caster_id="caster",
         spell_def=SpellDef("magic_missile", "Magic Missile", "wizard", "evocation", 1, 2, 60, "creature"),
@@ -153,7 +153,7 @@ def test_ac06_tick_casting_interrupts_when_concentration_fails():
 
 
 def test_ac07_tick_casting_continues_when_concentration_succeeds():
-    caster = _actor(stats={"INT": 14, "WIS": 10, "CHA": 10, "CON": 14, "magic_resistance": 0, "hp": 20, "max_hp": 20})
+    caster = _actor(stats={"MND": 14, "INS": 10, "PRE": 10, "END": 14, "magic_resistance": 0, "hp": 20, "max_hp": 20})
     attempt = CastingAttempt(
         caster_id="caster",
         spell_def=SpellDef("magic_missile", "Magic Missile", "wizard", "evocation", 1, 2, 60, "creature"),
@@ -223,7 +223,7 @@ def test_ac11_begin_casting_allows_after_aura_cooldown_expires():
 
 def test_ac12_resolve_cast_negates_effects_on_magic_resistance():
     caster = _actor(raw_payload={"effect_registry": _effect_registry()})
-    target = _actor(actor_id="target", stats={"INT": 10, "WIS": 10, "CHA": 10, "CON": 10, "magic_resistance": 40, "hp": 20, "max_hp": 20})
+    target = _actor(actor_id="target", stats={"MND": 10, "INS": 10, "PRE": 10, "END": 10, "magic_resistance": 40, "hp": 20, "max_hp": 20})
     attempt = CastingAttempt(
         caster_id="caster",
         spell_def=SpellDef(
@@ -249,7 +249,7 @@ def test_ac12_resolve_cast_negates_effects_on_magic_resistance():
 
 def test_ac13_resolve_cast_applies_effects_when_not_resisted():
     caster = _actor(raw_payload={"effect_registry": _effect_registry()})
-    target = _actor(actor_id="target", stats={"INT": 10, "WIS": 10, "CHA": 10, "CON": 10, "magic_resistance": 40, "hp": 20, "max_hp": 20})
+    target = _actor(actor_id="target", stats={"MND": 10, "INS": 10, "PRE": 10, "END": 10, "magic_resistance": 40, "hp": 20, "max_hp": 20})
     attempt = CastingAttempt(
         caster_id="caster",
         spell_def=SpellDef(
