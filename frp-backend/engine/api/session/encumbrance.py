@@ -17,7 +17,7 @@ class SessionEncumbranceMixin:
     def max_carry_weight(self) -> float:
         if self.physical_inventory is None:
             return 0.0
-        return float(self.physical_inventory.max_carry_weight(self._get_strength_modifier()))
+        return float(self.physical_inventory.max_carry_weight(self._get_mig_modifier()))
 
     def carry_ratio(self) -> float:
         max_weight = self.max_carry_weight()

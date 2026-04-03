@@ -47,12 +47,12 @@ class CombatHeader:
 
 @dataclass
 class ItemRequirements:
-    min_str: int = 0
-    min_dex: int = 0
-    min_int: int = 0
-    min_wis: int = 0
-    min_con: int = 0
-    min_cha: int = 0
+    min_mig: int = 0
+    min_agi: int = 0
+    min_mnd: int = 0
+    min_ins: int = 0
+    min_end: int = 0
+    min_pre: int = 0
     min_level: int = 0
     class_usability: list[str] = field(default_factory=list)
 
@@ -60,12 +60,12 @@ class ItemRequirements:
         failures: list[str] = []
         # Item requirement checks use canonical Ember stat keys.
         checks = [
-            ("min_str", ("MIG",)),
-            ("min_dex", ("AGI",)),
-            ("min_int", ("MND",)),
-            ("min_wis", ("INS",)),
-            ("min_con", ("END",)),
-            ("min_cha", ("PRE",)),
+            ("min_mig", ("MIG",)),
+            ("min_agi", ("AGI",)),
+            ("min_mnd", ("MND",)),
+            ("min_ins", ("INS",)),
+            ("min_end", ("END",)),
+            ("min_pre", ("PRE",)),
         ]
         for field_name, stat_keys in checks:
             required = int(getattr(self, field_name))

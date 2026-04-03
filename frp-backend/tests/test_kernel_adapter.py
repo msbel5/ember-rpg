@@ -60,7 +60,7 @@ def test_full_combat_flow_through_adapter():
         "name": "Goblin",
         "hp": 7,
         "armor_class": 15,
-        "stats": {"str": 8, "dex": 14, "con": 10, "int": 10, "wis": 8, "cha": 8},
+        "stats": {"MIG": 8, "AGI": 14, "END": 10, "MND": 10, "INS": 8, "PRE": 8},
         "attacks": [{"name": "Scimitar", "attack_bonus": 4}],
     }
     monster = create_monster(monster_template)

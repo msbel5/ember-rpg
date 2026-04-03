@@ -152,7 +152,7 @@ class SessionSerializationMixin:
                 result["equipment"] = copy.deepcopy(equipped)
 
         if self.physical_inventory:
-            base_encumbrance = self.physical_inventory.encumbrance_ap_penalty(self._get_strength_modifier())
+            base_encumbrance = self.physical_inventory.encumbrance_ap_penalty(self._get_mig_modifier())
             result["weight"] = {
                 "current": round(self.current_carry_weight(), 1),
                 "max": round(self.max_carry_weight(), 1),

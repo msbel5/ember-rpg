@@ -31,7 +31,6 @@ from engine.world.entity import Entity
 from .actor_body import BodyState, ConditionRecord
 from .actor_foundation import ActorIdentity, ActorPosition, NeedState, ScheduleState
 from .actor_items import EquipmentLoadout, ItemStack, item_stack_from_legacy_payload
-from engine.kernel.effects import EffectQueue
 
 
 
@@ -525,12 +524,6 @@ def _turn_resources_from_legacy_points(
 
 # ── Data-driven lookups (no hardcoded game values) ─────────────
 
-def _stat_key_mapping() -> dict[str, str]:
-    """D&D→Ember stat key map loaded from character_creation.json."""
-    from engine.data.classes import get_stat_key_mapping
-    return get_stat_key_mapping()
-
-
 def _class_default_hp(class_name: str) -> int:
     """Default HP for a class loaded from classes.json."""
     from engine.data.classes import get_class_default_hp
@@ -633,17 +626,16 @@ def create_monster_actor(
 ) -> ActorRecord:
     """Create a monster ActorRecord from a JSON template.
 
-    Maps D&D stat keys to Ember keys.
+    Template stats must use Ember keys (MIG/AGI/END/MND/INS/PRE).
     """
     global _MONSTER_COUNTER
     _MONSTER_COUNTER += 1
 
-    # Map D&D stat keys → Ember keys via character_creation.json
+    # Stats are Ember-native — read directly
     raw_stats = dict(template.get("stats", {}))
-    stat_mapping = _stat_key_mapping()
     ember_stats: dict[str, int | float] = {}
-    for dnd_key, ember_key in stat_mapping.items():
-        ember_stats[ember_key] = int(raw_stats.get(dnd_key, 10))
+    for key in ("MIG", "AGI", "END", "MND", "INS", "PRE"):
+        ember_stats[key] = int(raw_stats.get(key, 10))
 
     hp = int(template.get("hp", 10))
     ember_stats["hp"] = hp

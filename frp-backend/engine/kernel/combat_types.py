@@ -105,7 +105,7 @@ class DefenseProfile:
     base: int = 10
     armor_bonus: int = 0
     shield_bonus: int = 0
-    dex_bonus: int = 0
+    agi_bonus: int = 0
     size_mod: int = 0
     deflection: int = 0
     effect_bonuses: int = 0

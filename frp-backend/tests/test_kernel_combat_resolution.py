@@ -390,12 +390,12 @@ def test_ac20_resolve_attack_delegates_to_existing_resolve_strike_force_model(mo
     assert "seed" in captured
 
 
-def test_ac21_flat_footed_excludes_dex_bonus():
+def test_ac21_flat_footed_excludes_agi_bonus():
     defender = _actor(stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20})
 
     defense = compute_defense_ac(defender, flat_footed=True)
 
-    assert defense.dex_bonus == 0
+    assert defense.agi_bonus == 0
     assert defense.total == 10
 
 

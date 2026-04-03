@@ -137,7 +137,7 @@ def _actor() -> ActorRecord:
         action_points=5,
         max_action_points=5,
         alive=True,
-        stats={"strength": 12},
+        stats={"MIG": 12},
     )
 
 

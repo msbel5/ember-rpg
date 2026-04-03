@@ -61,23 +61,23 @@ def compute_defense_ac(
                     armor_max_dex = int(item_max_dex) if armor_max_dex is None else min(armor_max_dex, int(item_max_dex))
             if slot == "shield":
                 shield_bonus += int(item.payload.get("shield_bonus", 0))
-    dex_bonus = 0
+    agi_bonus = 0
     if not flat_footed:
-        dex_bonus = ability_modifier(defense_dex_stat(defender))
+        agi_bonus = ability_modifier(defense_agi_stat(defender))
         if armor_max_dex is not None:
-            dex_bonus = min(dex_bonus, armor_max_dex)
+            agi_bonus = min(agi_bonus, armor_max_dex)
     size_mod = int(defender.raw_payload.get("size_mod", 0))
     deflection = int(defender.raw_payload.get("deflection_bonus", 0))
     effect_bonuses = int(defender.raw_payload.get("ac_bonus", 0))
     if touch_attack:
         armor_bonus = 0
         shield_bonus = 0
-    total = 10 + armor_bonus + shield_bonus + dex_bonus + size_mod + deflection + effect_bonuses
+    total = 10 + armor_bonus + shield_bonus + agi_bonus + size_mod + deflection + effect_bonuses
     return DefenseProfile(
         base=10,
         armor_bonus=armor_bonus,
         shield_bonus=shield_bonus,
-        dex_bonus=dex_bonus,
+        agi_bonus=agi_bonus,
         size_mod=size_mod,
         deflection=deflection,
         effect_bonuses=effect_bonuses,
@@ -159,7 +159,7 @@ def attack_stat(actor: ActorRecord, weapon: ItemStack | None) -> int:
     return stat_value(actor, stat_name)
 
 
-def defense_dex_stat(actor: ActorRecord) -> int:
+def defense_agi_stat(actor: ActorRecord) -> int:
     """Return the defensive agility score (AGI) for AC calculation."""
     if "AGI" in actor.stats:
         return compute_effective_stat(actor, "AGI")
@@ -211,7 +211,7 @@ __all__ = [
     "compute_attack_roll",
     "compute_attacks_per_round",
     "compute_defense_ac",
-    "defense_dex_stat",
+    "defense_agi_stat",
     "rng_or_default",
     "stat_value",
     "weapon_base_damage",

@@ -121,7 +121,7 @@ def test_effects_survive_round_trip():
 def test_combat_state_survives_round_trip():
     """CombatState from combat_engine.py must serialize cleanly."""
     player = create_player_actor(name="Hero", class_name="warrior", stats={"MIG": 16, "AGI": 14, "END": 14, "MND": 10, "INS": 10, "PRE": 10})
-    enemy = create_monster_actor({"id": "goblin", "name": "Goblin", "hp": 7, "stats": {"str": 8, "dex": 14}})
+    enemy = create_monster_actor({"id": "goblin", "name": "Goblin", "hp": 7, "stats": {"MIG": 8, "AGI": 14}})
     state = start_combat([player, enemy], seed=42)
     data = state.to_dict()
     restored = CombatState.from_dict(data)

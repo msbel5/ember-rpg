@@ -63,17 +63,17 @@ def test_create_monster_from_template():
         "cr": 0.25,
         "hp": 7,
         "armor_class": 15,
-        "stats": {"str": 8, "dex": 14, "con": 10, "int": 10, "wis": 8, "cha": 8},
+        "stats": {"MIG": 8, "AGI": 14, "END": 10, "MND": 10, "INS": 8, "PRE": 8},
         "attacks": [{"name": "Scimitar", "attack_bonus": 4, "damage_dice": "1d6+2"}],
     }
     actor = create_monster_actor(template)
     assert actor.identity.display_name == "Goblin"
     assert actor.identity.actor_type == "npc"
     assert actor.alive is True
-    # D&D stats mapped to Ember
-    assert actor.stats["MIG"] == 8   # str -> MIG
-    assert actor.stats["AGI"] == 14  # dex -> AGI
-    assert actor.stats["END"] == 10  # con -> END
+    # Ember-native stats
+    assert actor.stats["MIG"] == 8
+    assert actor.stats["AGI"] == 14
+    assert actor.stats["END"] == 10
     assert actor.stats["hp"] == 7
     assert actor.stats["max_hp"] == 7
 
@@ -86,7 +86,7 @@ def test_monster_has_valid_body_state():
         "type": "beast",
         "hp": 11,
         "armor_class": 13,
-        "stats": {"str": 12, "dex": 15, "con": 12, "int": 3, "wis": 12, "cha": 6},
+        "stats": {"MIG": 12, "AGI": 15, "END": 12, "MND": 3, "INS": 12, "PRE": 6},
     }
     actor = create_monster_actor(template)
     assert actor.body_state is not None
@@ -100,7 +100,7 @@ def test_monster_maps_attack_bonus_to_skills():
         "type": "humanoid",
         "hp": 15,
         "armor_class": 13,
-        "stats": {"str": 16, "dex": 12, "con": 16, "int": 7, "wis": 11, "cha": 10},
+        "stats": {"MIG": 16, "AGI": 12, "END": 16, "MND": 7, "INS": 11, "PRE": 10},
         "attacks": [{"name": "Greataxe", "attack_bonus": 5, "damage_dice": "1d12+3"}],
     }
     actor = create_monster_actor(template)
@@ -139,7 +139,7 @@ def test_monster_serialization_round_trip():
         "type": "undead",
         "hp": 13,
         "armor_class": 13,
-        "stats": {"str": 10, "dex": 14, "con": 15, "int": 6, "wis": 8, "cha": 5},
+        "stats": {"MIG": 10, "AGI": 14, "END": 15, "MND": 6, "INS": 8, "PRE": 5},
     }
     actor = create_monster_actor(template)
     data = actor.to_dict()

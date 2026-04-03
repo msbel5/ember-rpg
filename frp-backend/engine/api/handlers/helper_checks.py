@@ -8,47 +8,18 @@ from engine.kernel.actor_records import ActorRecord
 from engine.world.action_points import ACTION_COSTS
 from engine.world.skill_checks import SkillCheckResult, ability_modifier, contested_check
 
-# Skill -> governing-stat mappings (formerly on Character class)
-DND_SKILL_STATS = {
-    'athletics': 'MIG',
-    'acrobatics': 'AGI',
-    'sleight_of_hand': 'AGI',
-    'stealth': 'AGI',
-    'arcana': 'MND',
-    'history': 'MND',
-    'investigation': 'MND',
-    'nature': 'MND',
-    'religion': 'MND',
-    'animal_handling': 'INS',
-    'insight': 'INS',
-    'medicine': 'INS',
-    'perception': 'INS',
-    'survival': 'INS',
-    'deception': 'PRE',
-    'intimidation': 'PRE',
-    'performance': 'PRE',
-    'persuasion': 'PRE',
-}
+# Skill → governing-stat map loaded from character_creation.json.
+# Cached at module level on first access.
+_SKILL_STATS_CACHE: dict[str, str] | None = None
 
-LEGACY_SKILL_STATS = {
-    'melee': 'MIG',
-    'ranged': 'AGI',
-    'defense': 'END',
-    'lore': 'MND',
-    'trade': 'PRE',
-    'appraisal': 'MND',
-    'smithing': 'MIG',
-    'cooking': 'MND',
-    'healing': 'INS',
-    'herbalism': 'INS',
-    'divine_magic': 'PRE',
-    'patrol': 'INS',
-    'lockpick': 'AGI',
-    'climb': 'AGI',
-    'sneak': 'AGI',
-}
 
-SKILL_STATS = {**DND_SKILL_STATS, **LEGACY_SKILL_STATS}
+def _skill_stats() -> dict[str, str]:
+    """Load skill→governing-stat map from data layer (cached)."""
+    global _SKILL_STATS_CACHE
+    if _SKILL_STATS_CACHE is None:
+        from engine.data.classes import get_skill_stat_map
+        _SKILL_STATS_CACHE = get_skill_stat_map()
+    return _SKILL_STATS_CACHE
 
 
 class HelperChecksMixin:
@@ -58,8 +29,8 @@ class HelperChecksMixin:
         """Get current encumbrance AP penalty from physical inventory."""
         if session.physical_inventory is None:
             return 0
-        str_mod = session._get_strength_modifier()
-        base_penalty = session.physical_inventory.encumbrance_ap_penalty(str_mod)
+        mig_mod = session._get_mig_modifier()
+        base_penalty = session.physical_inventory.encumbrance_ap_penalty(mig_mod)
         if base_penalty >= 999:
             return 999
         return base_penalty + session.movement_ap_penalty()
@@ -73,7 +44,7 @@ class HelperChecksMixin:
         try:
             return session.player.skill_bonus(skill)
         except Exception:
-            fallback_ability = SKILL_STATS.get(skill, "MIG")
+            fallback_ability = _skill_stats().get(skill, "MIG")
             return ability_modifier(session.player.stats.get(fallback_ability, 10))
 
     def _roll_player_skill_check(
@@ -87,12 +58,12 @@ class HelperChecksMixin:
     ) -> SkillCheckResult:
         import engine.api.game_engine as _ge
 
-        governing_stat = SKILL_STATS.get(skill, "MIG")
+        governing_stat = _skill_stats().get(skill, "MIG")
         ability_score = session.player.stats.get(governing_stat, 10)
         legacy_bonus = int((session.player.skills or {}).get(skill, 0))
         proficient = session.player.has_proficiency(skill)
         expertise = session.player.has_expertise(skill)
-        modifier_bonus = legacy_bonus if skill in DND_SKILL_STATS else 0
+        modifier_bonus = legacy_bonus if skill in _skill_stats() else 0
         result = _ge.roll_check(
             ability_score,
             dc,
@@ -121,7 +92,7 @@ class HelperChecksMixin:
     def _npc_skill_bonus(self, entity: dict, skill: str) -> int:
         skill_lower = str(skill or "").lower().replace(" ", "_")
         if skill_lower in {"insight", "perception", "investigation"}:
-            stat_key = DND_SKILL_STATS.get(skill_lower, "INS")
+            stat_key = _skill_stats().get(skill_lower, "INS")
             base = ability_modifier(int(entity.get("stats", {}).get(stat_key, 10)))
             legacy = int((entity.get("skills") or {}).get(skill_lower, 0))
             return base + legacy

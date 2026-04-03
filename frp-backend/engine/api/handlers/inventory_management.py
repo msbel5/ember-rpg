@@ -48,10 +48,10 @@ class InventoryManagementMixin:
             lines.append("Your inventory is empty.")
 
         if pi:
-            str_mod = session._get_strength_modifier()
+            mig_mod = session._get_mig_modifier()
             total = pi.total_carried_weight()
-            max_weight = pi.max_carry_weight(str_mod)
-            enc = pi.encumbrance_ap_penalty(str_mod)
+            max_weight = pi.max_carry_weight(mig_mod)
+            enc = pi.encumbrance_ap_penalty(mig_mod)
             enc_str = f" [ENCUMBERED +{enc} AP/move]" if enc > 0 and enc < 999 else (" [CANNOT MOVE]" if enc >= 999 else "")
             lines.append(f"\nWeight: {total:.1f}/{max_weight:.1f} kg{enc_str}")
 

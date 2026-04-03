@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 class SessionTimedConditionMixin:
     """Timed-condition and game-time helpers."""
 
-    def _get_strength_modifier(self) -> int:
+    def _get_mig_modifier(self) -> int:
         if self.player is None:
             return 0
         mig = (getattr(self.player, "stats", None) or {}).get("MIG", 10)

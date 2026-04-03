@@ -96,12 +96,12 @@ def test_attack_stat_uses_ember_key():
     assert melee_val == 14  # raw stat, no effect modifiers
 
 
-def test_defense_dex_stat_uses_agi():
-    """defense_dex_stat() must read AGI, not DEX."""
-    from engine.kernel.combat_math import defense_dex_stat
+def test_defense_agi_stat_uses_agi():
+    """defense_agi_stat() must read AGI, not DEX."""
+    from engine.kernel.combat_math import defense_agi_stat
 
     actor = _make_actor()
-    agi_val = defense_dex_stat(actor)
+    agi_val = defense_agi_stat(actor)
     assert agi_val == 12  # AGI value
 
 
@@ -128,12 +128,12 @@ def test_npc_reaction_uses_pre():
 
 
 # ── store: actor CHA helper uses PRE ──────────────────────────────────
-def test_store_actor_cha_uses_pre():
-    """_actor_cha must read PRE, not CHA."""
-    from engine.kernel.store import _actor_cha
+def test_store_actor_pre_uses_pre():
+    """_actor_pre must read PRE, not CHA."""
+    from engine.kernel.store import _actor_pre
 
     actor = _make_actor({"MIG": 10, "AGI": 10, "END": 10, "MND": 10, "INS": 10, "PRE": 16})
-    assert _actor_cha(actor) == 16
+    assert _actor_pre(actor) == 16
 
 
 # ── area: door opening uses MIG ──────────────────────────────────────

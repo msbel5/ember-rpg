@@ -26,7 +26,10 @@ class CombatSpawningMixin:
     """Focused helpers for creating enemies and bootstrapping encounters."""
 
     def _spawn_guard_backup(self, session: GameSession) -> ActorRecord:
-        """Create a generic town guard as an ActorRecord."""
+        """Create a generic town guard as an ActorRecord.
+
+        Uses Ember stat keys directly — no D&D translation needed.
+        """
         template: dict[str, Any] = {
             "id": "town_guard",
             "name": "Town Guard",
@@ -34,7 +37,7 @@ class CombatSpawningMixin:
             "armor_class": 14,
             "type": "guard",
             "cr": 0.5,
-            "stats": {"str": 12, "dex": 10, "con": 12, "int": 8, "wis": 10, "cha": 12},
+            "stats": {"MIG": 12, "AGI": 10, "END": 12, "MND": 8, "INS": 10, "PRE": 12},
             "attacks": [{"attack_bonus": 3}],
             "loot_table": [],
         }
@@ -60,30 +63,25 @@ class CombatSpawningMixin:
         # Build or retrieve the player ActorRecord.
         player_actor = combat_actors.get("player")
         if player_actor is None:
-            player = getattr(session, "player", None)
+            # session.player is always an ActorRecord — read directly
+            player = session.player
             if player is not None:
-                player_stats = dict(getattr(player, "stats", {}) or {})
-                class_name = "warrior"
-                if hasattr(player, "dominant_class"):
-                    class_name = player.dominant_class or "warrior"
-                elif hasattr(player, "classes") and player.classes:
-                    class_name = next(iter(player.classes), "warrior")
                 player_actor = create_player_actor(
-                    name=getattr(player, "name", "Player"),
-                    class_name=class_name,
-                    stats=player_stats,
-                    level=int(getattr(player, "level", 1)),
+                    name=player.name,
+                    class_name=player.dominant_class,
+                    stats=dict(player.stats),
+                    level=player.level,
                     actor_id="player",
                     position=tuple(session.position),
                 )
-                # Preserve actual HP if it differs from the template default.
-                current_hp = int(getattr(player, "hp", player_actor.hp))
-                player_actor.stats["hp"] = current_hp
-                player_actor.stats["max_hp"] = int(getattr(player, "max_hp", player_actor.max_hp))
+                # Preserve actual HP from the live ActorRecord
+                player_actor.stats["hp"] = player.hp
+                player_actor.stats["max_hp"] = player.max_hp
             else:
-                # Fallback: minimal player actor.
+                from engine.data_loader import get_creation_default_class
                 player_actor = create_player_actor(
-                    name="Player", class_name="warrior",
+                    name="Player",
+                    class_name=get_creation_default_class(),
                     stats={"MIG": 10, "AGI": 10, "END": 10, "MND": 10, "INS": 10, "PRE": 10},
                     actor_id="player", position=tuple(session.position),
                 )

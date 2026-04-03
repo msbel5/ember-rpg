@@ -75,18 +75,18 @@ class PhysicalInventory:
         total += sum(stack.weight for stack in self.equipment.values() if stack)
         return total
 
-    def max_carry_weight(self, strength_modifier: int = 0) -> float:
-        return 10.0 + (strength_modifier * 5.0)
+    def max_carry_weight(self, mig_modifier: int = 0) -> float:
+        return 10.0 + (mig_modifier * 5.0)
 
-    def is_overencumbered(self, strength_modifier: int = 0) -> bool:
-        return self.total_carried_weight() > self.max_carry_weight(strength_modifier)
+    def is_overencumbered(self, mig_modifier: int = 0) -> bool:
+        return self.total_carried_weight() > self.max_carry_weight(mig_modifier)
 
-    def encumbrance_ratio(self, strength_modifier: int = 0) -> float:
-        max_weight = self.max_carry_weight(strength_modifier)
+    def encumbrance_ratio(self, mig_modifier: int = 0) -> float:
+        max_weight = self.max_carry_weight(mig_modifier)
         return 999.0 if max_weight <= 0 else self.total_carried_weight() / max_weight
 
-    def encumbrance_ap_penalty(self, strength_modifier: int = 0) -> int:
-        ratio = self.encumbrance_ratio(strength_modifier)
+    def encumbrance_ap_penalty(self, mig_modifier: int = 0) -> int:
+        ratio = self.encumbrance_ratio(mig_modifier)
         if ratio <= 0.75:
             return 0
         if ratio <= 1.0:

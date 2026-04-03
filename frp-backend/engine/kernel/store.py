@@ -75,10 +75,10 @@ class StoreDef:
         return cls(**payload)
 
 
-def compute_buy_price(item_def: ItemDef, store: StoreDef, buyer_cha: int, buyer_rep: int) -> int:
+def compute_buy_price(item_def: ItemDef, store: StoreDef, buyer_pre: int, buyer_rep: int) -> int:
     store_item = _find_store_item(store, item_def.item_def_id)
     base_price = _resolve_base_price(item_def, store_item)
-    multiplier = store.buy_markup * _cha_modifier(int(buyer_cha)) * _rep_modifier(int(buyer_rep))
+    multiplier = store.buy_markup * _pre_modifier(int(buyer_pre)) * _rep_modifier(int(buyer_rep))
     if store_item is not None:
         multiplier *= float(store_item.price_multiplier)
     return max(1, int(base_price * multiplier))
@@ -88,14 +88,14 @@ def compute_sell_price(
     item_def: ItemDef,
     store: StoreDef,
     store_item: StoreItem,
-    seller_cha: int,
+    seller_pre: int,
     seller_rep: int,
 ) -> int:
     base_price = _resolve_base_price(item_def, store_item)
     depreciation = 0.9 ** max(0, int(store_item.sales_count))
     multiplier = (
         store.sell_markup
-        * _cha_modifier(int(seller_cha))
+        * _pre_modifier(int(seller_pre))
         * _rep_modifier(int(seller_rep))
         * depreciation
         * float(store_item.price_multiplier)
@@ -121,7 +121,7 @@ def buy_item(
     if store_item.quantity >= 0 and store_item.quantity < int(quantity):
         return False, "insufficient stock"
 
-    price_each = compute_buy_price(item_def, store, _actor_cha(buyer), _actor_reputation(buyer))
+    price_each = compute_buy_price(item_def, store, _actor_pre(buyer), _actor_reputation(buyer))
     total_price = price_each * int(quantity)
     if _actor_gold(buyer) < total_price:
         return False, "insufficient gold"
@@ -151,7 +151,7 @@ def sell_item(
         item_def,
         store,
         store_item,
-        seller_cha=_actor_cha(seller),
+        seller_pre=_actor_pre(seller),
         seller_rep=_actor_reputation(seller),
     )
     if item_instance in seller.inventory:
@@ -341,8 +341,8 @@ def _set_actor_gold(actor: ActorRecord, gold: int) -> None:
     actor.stats["gold"] = int(gold)
 
 
-def _actor_cha(actor: ActorRecord) -> int:
-    """Return the actor's presence (PRE) stat for charisma-based checks."""
+def _actor_pre(actor: ActorRecord) -> int:
+    """Return the actor's presence (PRE) stat for social checks."""
     return int(actor.stats.get("PRE", 10))
 
 
@@ -356,8 +356,8 @@ def _set_actor_reputation(actor: ActorRecord, reputation: int) -> None:
     actor.raw_payload["reputation"] = int(reputation)
 
 
-def _cha_modifier(cha: int) -> float:
-    return 1.0 - ((int(cha) - 10) * 0.025)
+def _pre_modifier(pre: int) -> float:
+    return 1.0 - ((int(pre) - 10) * 0.025)
 
 
 def _rep_modifier(reputation: int) -> float:

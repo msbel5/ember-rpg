@@ -69,7 +69,7 @@ def test_ac01_compute_buy_price_uses_markup_cha_and_reputation():
     item_def = _item_def("iron_ore", base_price=100)
     store = StoreDef(store_id="smithy", label="Smithy", store_type="shop", buy_markup=1.5)
 
-    assert compute_buy_price(item_def, store, buyer_cha=18, buyer_rep=15) == 108
+    assert compute_buy_price(item_def, store, buyer_pre=18, buyer_rep=15) == 108
 
 
 def test_ac02_compute_sell_price_uses_markup_cha_and_reputation():
@@ -77,7 +77,7 @@ def test_ac02_compute_sell_price_uses_markup_cha_and_reputation():
     store = StoreDef(store_id="smithy", label="Smithy", store_type="shop", sell_markup=0.5)
     store_item = StoreItem(item_def_id="iron_ore")
 
-    assert compute_sell_price(item_def, store, store_item, seller_cha=8, seller_rep=10) == 52
+    assert compute_sell_price(item_def, store, store_item, seller_pre=8, seller_rep=10) == 52
 
 
 def test_ac03_compute_sell_price_applies_depreciation_chain():
@@ -85,7 +85,7 @@ def test_ac03_compute_sell_price_applies_depreciation_chain():
     store = StoreDef(store_id="smithy", label="Smithy", store_type="shop", sell_markup=0.5)
     store_item = StoreItem(item_def_id="iron_ore", sales_count=3)
 
-    assert compute_sell_price(item_def, store, store_item, seller_cha=10, seller_rep=10) == 36
+    assert compute_sell_price(item_def, store, store_item, seller_pre=10, seller_rep=10) == 36
 
 
 def test_ac04_buy_item_succeeds_and_reduces_gold():

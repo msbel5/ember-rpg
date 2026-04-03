@@ -155,8 +155,8 @@ def learn_spell(
     spell_def: SpellDef,
     d100_roll: int,
 ) -> tuple[bool, str]:
-    intelligence = int(actor.stats.get("MND", 10))
-    chance = _learn_chance(intelligence)
+    mind_score = int(actor.stats.get("MND", 10))
+    chance = _learn_chance(mind_score)
     if int(d100_roll) <= chance:
         spellbook.known_spells.setdefault(spell_def.level, [])
         if spell_def.spell_id not in spellbook.known_spells[spell_def.level]:
@@ -275,7 +275,7 @@ def _bonus_slots(ability_score: int, spell_level: int) -> int:
     return max(0, allowance - spell_level + 1)
 
 
-def _learn_chance(intelligence: int) -> int:
+def _learn_chance(mind_score: int) -> int:
     table = [
         (20, 99),
         (19, 95),
@@ -287,7 +287,7 @@ def _learn_chance(intelligence: int) -> int:
         (9, 35),
     ]
     for threshold, chance in table:
-        if intelligence >= threshold:
+        if mind_score >= threshold:
             return chance
     return 25
 

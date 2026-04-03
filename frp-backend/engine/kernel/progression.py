@@ -125,7 +125,7 @@ def execute_level_up(
     class_id: str,
     class_def: ClassDef,
     hit_die_roll: int,
-    con_modifier: int,
+    end_modifier: int,
 ) -> LevelUpResult:
     class_ids = progression.classes or list(progression.class_levels.keys()) or [class_id]
     if class_id not in class_ids and class_id not in progression.class_levels:
@@ -138,7 +138,7 @@ def execute_level_up(
     if shared_xp < int(class_def.xp_table[current_level]):
         raise ValueError(f"{class_id} does not meet next level threshold")
 
-    hp_gained = _hp_gain_for_level(class_def, next_level, int(hit_die_roll), int(con_modifier))
+    hp_gained = _hp_gain_for_level(class_def, next_level, int(hit_die_roll), int(end_modifier))
     updated_levels = dict(progression.class_levels)
     updated_levels[class_id] = next_level
     bab_new = compute_bab(updated_levels, {class_id: class_def, **class_defs_without(class_id, {})})
@@ -206,10 +206,10 @@ def get_skill_level_name(level: int) -> str:
     return SKILL_LEVEL_NAMES[clamped]
 
 
-def _hp_gain_for_level(class_def: ClassDef, next_level: int, hit_die_roll: int, con_modifier: int) -> int:
+def _hp_gain_for_level(class_def: ClassDef, next_level: int, hit_die_roll: int, end_modifier: int) -> int:
     if next_level > int(class_def.hit_die_cap_level):
-        return max(1, int(class_def.hp_after_cap) + int(con_modifier))
-    return max(1, int(hit_die_roll) + int(con_modifier))
+        return max(1, int(class_def.hp_after_cap) + int(end_modifier))
+    return max(1, int(hit_die_roll) + int(end_modifier))
 
 
 def _bab_for_class(level: int, bab_rate: str) -> int:
