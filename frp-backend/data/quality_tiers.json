@@ -1,0 +1,9 @@
+{
+  "0": {"label": "Poor", "multiplier": 1.0},
+  "1": {"label": "Standard", "multiplier": 1.2},
+  "2": {"label": "Fine", "multiplier": 1.4},
+  "3": {"label": "Superior", "multiplier": 1.6},
+  "4": {"label": "Exceptional", "multiplier": 1.8},
+  "5": {"label": "Masterwork", "multiplier": 2.0},
+  "6": {"label": "Legendary", "multiplier": 3.0}
+}

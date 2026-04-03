@@ -1,0 +1,122 @@
+{
+  "iron": {
+    "material_id": "iron",
+    "label": "Iron",
+    "category": "metal",
+    "density": 1.0,
+    "impact_yield": 180,
+    "impact_fracture": 360,
+    "shear_yield": 155,
+    "shear_fracture": 310,
+    "max_edge": 100,
+    "tags": ["common", "ferrous"]
+  },
+  "steel": {
+    "material_id": "steel",
+    "label": "Steel",
+    "category": "metal",
+    "density": 1.05,
+    "impact_yield": 232,
+    "impact_fracture": 465,
+    "shear_yield": 200,
+    "shear_fracture": 390,
+    "max_edge": 118,
+    "tags": ["refined", "ferrous"]
+  },
+  "bronze": {
+    "material_id": "bronze",
+    "label": "Bronze",
+    "category": "metal",
+    "density": 1.1,
+    "impact_yield": 162,
+    "impact_fracture": 325,
+    "shear_yield": 140,
+    "shear_fracture": 280,
+    "max_edge": 91,
+    "tags": ["common"]
+  },
+  "mithril": {
+    "material_id": "mithril",
+    "label": "Mithril",
+    "category": "metal",
+    "density": 0.45,
+    "impact_yield": 320,
+    "impact_fracture": 640,
+    "shear_yield": 275,
+    "shear_fracture": 520,
+    "max_edge": 136,
+    "tags": ["magical", "light"]
+  },
+  "wood": {
+    "material_id": "wood",
+    "label": "Wood",
+    "category": "organic",
+    "density": 0.4,
+    "impact_yield": 110,
+    "impact_fracture": 220,
+    "shear_yield": 95,
+    "shear_fracture": 190,
+    "max_edge": 70,
+    "tags": ["common", "organic"]
+  },
+  "leather": {
+    "material_id": "leather",
+    "label": "Leather",
+    "category": "organic",
+    "density": 0.35,
+    "impact_yield": 92,
+    "impact_fracture": 185,
+    "shear_yield": 80,
+    "shear_fracture": 160,
+    "max_edge": 58,
+    "tags": ["common", "organic", "flexible"]
+  },
+  "bone": {
+    "material_id": "bone",
+    "label": "Bone",
+    "category": "organic",
+    "density": 0.6,
+    "impact_yield": 145,
+    "impact_fracture": 290,
+    "shear_yield": 125,
+    "shear_fracture": 250,
+    "max_edge": 82,
+    "tags": ["organic"]
+  },
+  "obsidian": {
+    "material_id": "obsidian",
+    "label": "Obsidian",
+    "category": "stone",
+    "density": 0.9,
+    "impact_yield": 267,
+    "impact_fracture": 535,
+    "shear_yield": 230,
+    "shear_fracture": 450,
+    "max_edge": 130,
+    "tags": ["volcanic", "brittle"]
+  },
+  "silver": {
+    "material_id": "silver",
+    "label": "Silver",
+    "category": "metal",
+    "density": 1.3,
+    "impact_yield": 145,
+    "impact_fracture": 290,
+    "shear_yield": 125,
+    "shear_fracture": 250,
+    "max_edge": 94,
+    "tags": ["precious", "anti-undead"]
+  },
+  "gold": {
+    "material_id": "gold",
+    "label": "Gold",
+    "category": "metal",
+    "density": 2.4,
+    "impact_yield": 127,
+    "impact_fracture": 255,
+    "shear_yield": 110,
+    "shear_fracture": 220,
+    "max_edge": 76,
+    "tags": ["precious", "soft"]
+  }
+}
