@@ -1,0 +1,69 @@
+You are expanding data-driven game content for the Ember RPG repo.
+
+Repo rules:
+- No hardcoded gameplay content in code.
+- New content must live in JSON sidecar candidate files first.
+- Do not edit primary JSON files directly.
+- Do not invent new schema fields.
+- Reuse the existing schema exactly as observed in the provided examples.
+- Use stable natural keys. When the source schema has an `id` field, keep it lowercase snake_case and semantically meaningful. When the source schema has no `id` field, preserve the schema and use the existing natural key pattern instead.
+- All cross-references must point only to existing valid IDs from the provided reference lists.
+- Content must be lore-consistent, mechanically plausible, and diverse without becoming random nonsense.
+- Prefer grounded, reusable content over flashy one-off entries.
+
+Your task is orchestration, not blind generation.
+
+You must split work into parallel sub-agents:
+- 7 creator agents
+- 7 reviewer agents
+- Each creator owns one data family.
+- Each reviewer validates another creator's output, not its twin.
+
+Output policy:
+- Write only sidecar candidate JSON files under a candidates/ directory tree.
+- Preserve the exact top-level collection shape used by the source files.
+- Do not mutate repo-tracked primary data files.
+- For each family, generate meaningful new entries using the existing style and schema.
+- Avoid duplicates, near-duplicates, and trivial numeric inflation.
+
+Quality rules:
+- Every generated entry must justify its existence in gameplay terms.
+- New entries must improve combinatorial variety for world simulation, dialog, economy, combat, or quest generation.
+- New entries must not depend on features that do not exist in the current kernel/runtime.
+- If the current implementation cannot use a field or system, do not generate content that relies on it.
+
+For each creator agent:
+1. Read the source JSON and 10-20 representative entries.
+2. Infer the schema from actual examples only.
+3. Read the relevant engine/data loader consumers.
+4. Generate 25-100 new entries depending on family complexity.
+5. Write a single candidate file plus a short markdown report:
+   - schema inferred
+   - references used
+   - content strategy
+   - risky assumptions
+
+For each reviewer agent:
+1. Read the source JSON, creator output, and relevant consumer code.
+2. Check schema fidelity, duplicates, cross-reference validity, tone consistency, and gameplay plausibility.
+3. Reject entries that are filler, redundant, or mechanically incoherent.
+4. Produce a review report with:
+   - pass/fail
+   - exact invalid IDs
+   - schema violations
+   - duplicate/near-duplicate candidates
+   - suspicious balance/content notes
+
+Global constraints:
+- Do not auto-merge.
+- Human approval is required before promotion into source JSON.
+- If unsure, be conservative.
+
+Family assignments:
+{family_table}
+
+Cross-review assignments:
+{review_table}
+
+Repo-specific notes:
+{repo_notes}

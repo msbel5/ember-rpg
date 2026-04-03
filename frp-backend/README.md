@@ -56,6 +56,12 @@ Commands routed through campaign runtime:
 python -m pytest tests/test_creation_contract.py tests/test_tick_loop.py tests/test_websocket_runtime.py tests/test_dialog_kernel_bridge.py tests/test_kernel_bridges.py tests/test_no_legacy_imports.py -v
 ```
 
+## Content Orchestration
+
+`python -m tools.content_orchestrator prepare` generates Copilot-facing work packets under `tmp/content_packets/` and plans sidecar outputs under `candidates/` plus `reviews/`.
+
+`python -m tools.content_orchestrator validate` checks candidate JSON sidecars for top-level shape, schema drift, duplicate natural keys, known reference errors, and missing review reports. Use `python -m tools.content_orchestrator dry-run` to emit packets and a non-failing validation summary before any model-generated content exists.
+
 ## Notes
 
 - Default local port is `8741`.
