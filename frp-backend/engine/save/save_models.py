@@ -1,12 +1,28 @@
 """
 Ember RPG — Save/Load Data Models
+
+Schema v4.0: Kernel-pure save format. All state is kernel-native
+(ActorRecord, GameState, WorldState, CombatState). No legacy Character
+or CombatManager objects in the save payload.
 """
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict
 
 
-CURRENT_SCHEMA_VERSION = "3.0"
+CURRENT_SCHEMA_VERSION = "4.0"
+
+
+def validate_schema_version(data: dict) -> None:
+    """Raise ValueError if the save uses an unsupported schema version."""
+    version = str(data.get("schema_version", ""))
+    if version != CURRENT_SCHEMA_VERSION:
+        raise ValueError(
+            f"Unsupported save schema version '{version}'. "
+            f"Expected '{CURRENT_SCHEMA_VERSION}'. "
+            f"Old saves from v{version} are not supported after the "
+            f"kernel-only migration."
+        )
 
 
 @dataclass
