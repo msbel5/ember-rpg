@@ -1,20 +1,21 @@
-"""WebSocket transport for campaign commands and state push.
+"""WebSocket transport for campaign commands and live state push.
 
-Provides real-time bidirectional communication between the Godot client
-and the Python backend. The client sends commands over WebSocket and
-receives state snapshots and events as push messages.
+Primary runtime transport after campaign creation. The client sends
+commands over WebSocket and receives state snapshots, tick events,
+and narrative as push messages.
 
 Protocol (JSON over WebSocket text frames):
   Client -> Server:
     {"type": "command", "input": "attack goblin"}
+    {"type": "command", "input": "", "shortcut": "travel", "args": {...}}
     {"type": "ping"}
 
   Server -> Client:
-    {"type": "state", "snapshot": {...}, "narrative": "..."}
+    {"type": "state", "snapshot": {...}, "narrative": "...", "events": [...]}
+    {"type": "tick", "events": [...], "snapshot": {...}}
     {"type": "error", "message": "..."}
     {"type": "pong"}
 """
-
 from __future__ import annotations
 
 import json
@@ -24,25 +25,59 @@ from typing import Any
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from engine.api.campaign.debug_trace import trace_event
+from engine.api.campaign.tick_loop import start_tick_loop, stop_tick_loop
 
 logger = logging.getLogger(__name__)
 ws_router = APIRouter()
 
-# Registry of active campaign runtimes (set by main.py on startup).
+# Runtime reference (set via lifespan in main.py).
 _runtime_ref: Any = None
+
+# Active WebSocket connections per campaign.
+_connections: dict[str, list[WebSocket]] = {}
 
 
 def set_runtime(runtime: Any) -> None:
     """Register the CampaignRuntime instance for WebSocket handlers."""
     global _runtime_ref
     _runtime_ref = runtime
+    logger.info("CampaignRuntime registered for WebSocket transport")
 
 
 def _get_runtime():
-    """Return the registered CampaignRuntime or raise."""
     if _runtime_ref is None:
         raise RuntimeError("CampaignRuntime not registered for WebSocket")
     return _runtime_ref
+
+
+def get_connections(campaign_id: str) -> list[WebSocket]:
+    """Return active WebSocket connections for a campaign."""
+    return list(_connections.get(campaign_id, []))
+
+
+async def push_tick_events(campaign_id: str, events: list[dict[str, Any]], snapshot: dict[str, Any]) -> None:
+    """Push tick events to all connected WebSocket clients for a campaign."""
+    sockets = _connections.get(campaign_id, [])
+    dead: list[WebSocket] = []
+    for ws in sockets:
+        try:
+            await ws.send_json({"type": "tick", "events": events, "snapshot": snapshot})
+        except Exception:
+            dead.append(ws)
+    for ws in dead:
+        sockets.remove(ws)
+
+
+def _register(campaign_id: str, ws: WebSocket) -> None:
+    _connections.setdefault(campaign_id, []).append(ws)
+
+
+def _unregister(campaign_id: str, ws: WebSocket) -> None:
+    conns = _connections.get(campaign_id, [])
+    if ws in conns:
+        conns.remove(ws)
+    if not conns:
+        _connections.pop(campaign_id, None)
 
 
 @ws_router.websocket("/ws/campaigns/{campaign_id}")
@@ -50,25 +85,25 @@ async def ws_campaign(websocket: WebSocket, campaign_id: str):
     """Handle a WebSocket connection for a single campaign session."""
     await websocket.accept()
     trace_event("ws_connect", campaign_id=campaign_id)
-
     runtime = _get_runtime()
 
-    # Validate campaign exists.
     try:
-        context = runtime.get_campaign(campaign_id)
-    except (KeyError, ValueError) as exc:
+        runtime.get_campaign(campaign_id)
+    except (KeyError, ValueError):
         await websocket.send_json({"type": "error", "message": f"Campaign not found: {campaign_id}"})
         await websocket.close(code=4004, reason="campaign_not_found")
         return
 
-    # Send initial state snapshot.
+    _register(campaign_id, websocket)
+    # Start tick loop on first connection.
+    await start_tick_loop(runtime, campaign_id, on_tick=push_tick_events, interval=30.0)
+
     try:
         snapshot = runtime.snapshot(campaign_id, narrative="Connected.")
         await websocket.send_json({"type": "state", "snapshot": snapshot})
     except Exception as exc:
         logger.warning("Failed to send initial snapshot: %s", exc)
 
-    # Message loop.
     try:
         while True:
             raw = await websocket.receive_text()
@@ -92,28 +127,20 @@ async def ws_campaign(websocket: WebSocket, campaign_id: str):
                 if not input_text and not shortcut:
                     await websocket.send_json({"type": "error", "message": "Empty command"})
                     continue
-
                 try:
-                    result = runtime.run_command(
-                        campaign_id,
-                        input_text,
-                        shortcut=shortcut,
-                        args=args,
-                    )
+                    result = runtime.run_command(campaign_id, input_text, shortcut=shortcut, args=args)
                     narrative = str(result.get("narrative", ""))
-                    snapshot = runtime.snapshot(campaign_id, narrative=narrative)
+                    snap = runtime.snapshot(campaign_id, narrative=narrative)
                     await websocket.send_json({
-                        "type": "state",
-                        "snapshot": snapshot,
+                        "type": "state", "snapshot": snap,
                         "narrative": narrative,
-                        "events": list(result.get("events", [])),
+                        "events": list(result.get("generated_events", [])),
                     })
                 except Exception as exc:
                     logger.exception("Command error: %s", exc)
                     await websocket.send_json({"type": "error", "message": str(exc)})
                 continue
 
-            # Unknown message type.
             await websocket.send_json({"type": "error", "message": f"Unknown type: {msg_type}"})
 
     except WebSocketDisconnect:
@@ -121,6 +148,10 @@ async def ws_campaign(websocket: WebSocket, campaign_id: str):
     except Exception as exc:
         logger.exception("WebSocket error: %s", exc)
         trace_event("ws_error", campaign_id=campaign_id, error=str(exc))
+    finally:
+        _unregister(campaign_id, websocket)
+        if not _connections.get(campaign_id):
+            await stop_tick_loop(campaign_id)
 
 
-__all__ = ["ws_router", "set_runtime"]
+__all__ = ["get_connections", "push_tick_events", "set_runtime", "ws_router"]

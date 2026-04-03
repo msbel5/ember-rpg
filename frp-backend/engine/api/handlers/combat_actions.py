@@ -266,25 +266,37 @@ class CombatActionsMixin:
         if ta is None:
             return ActionResult(narrative="Target has vanished.", scene_type=session.dm_context.scene_type)
 
-        # Inline Magic Missile: always hits, 2d4+2 force damage.
-        spell_name, spell_cost = "Magic Missile", 2
-        rng = random.Random()
-        dmg = sum(rng.randint(1, 4) for _ in range(2)) + 2
-        session.player.spell_points = max(0, session.player.spell_points - spell_cost)
+        # Kernel spell pipeline: resolve via spells.py.
+        from engine.kernel.spells import SpellDef, Spellbook, begin_casting, resolve_cast
+        spell_name = str(action.target or "magic_missile").replace(" ", "_").lower()
+        spellbook = Spellbook(actor_id="player", spell_type="wizard",
+                              known_spells={1: [spell_name]},
+                              slots={1: []}, max_slots={1: 2})
+        spell_def = SpellDef(spell_id=spell_name, label=spell_name.replace("_", " ").title(),
+                             spell_type="wizard", school="evocation", level=1,
+                             casting_time=0, range=30, target_type="single", hostile=True,
+                             effect_def_ids=["force_bolt"])
+        tick = int(session.campaign_state.get("game_tick", 0))
+        caster_record = session.campaign_state.get("kernel_runtime", {}).get("actors", {}).get("player")
+        if caster_record is None:
+            # Fallback: use basic calculation.
+            rng = random.Random(tick)
+            dmg = sum(rng.randint(1, 4) for _ in range(2)) + 2
+        else:
+            ok, attempt, reason = begin_casting(caster_record, spellbook, spell_def, te.actor_id, None, tick)
+            if not ok:
+                return ActionResult(narrative=f"Cannot cast: {reason}.", scene_type=session.dm_context.scene_type)
+            cast_result = resolve_cast(attempt, caster_record, ta, random.randint(1, 100), tick)
+            dmg = int(cast_result.get("total_damage", sum(random.randint(1, 4) for _ in range(2)) + 2))
+        session.player.spell_points = max(0, session.player.spell_points - 2)
         ta.hp = max(0, ta.hp - dmg)
         killed = not ta.alive
         _sync_entity_dead(session, te.actor_id, ta.hp, ta.alive)
 
-        # Narrative.
-        ev = DMEvent(type=EventType.ENCOUNTER, description=f"{session.player.name} unleashes {spell_name}!",
-                     data={"player_name": session.player.name, "spell_name": spell_name, "action": "cast_spell"})
-        narr = self.dm.narrate(ev, session.dm_context, self.llm)
-        if not any(k in narr.lower() for k in ("spell","magic","missile","force","unleash","cast","arcane","surge")):
-            narr = f"{session.player.name} unleashes {spell_name} with a surge of magical force!"
-        narr += f" [{dmg} force damage to {ta.name}]"
+        narr = f"{session.player.name} unleashes {spell_def.label} with a surge of magical force! [{dmg} force damage to {ta.name}]"
         if killed:
             narr += f" {ta.name} has been slain!"
-        return ActionResult(narrative=narr, events=[{"spell": spell_name, "damage": dmg, "killed": killed}],
+        return ActionResult(narrative=narr, events=[{"spell": spell_def.label, "damage": dmg, "killed": killed}],
                             scene_type=session.dm_context.scene_type, combat_state=self._combat_state(session))
 
     # ── Flee ───────────────────────────────────────────────────────────

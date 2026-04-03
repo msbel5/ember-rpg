@@ -13,25 +13,16 @@ from engine.kernel import GameState
 from engine.worldgen import WorldSeed, initialize_simulation, load_world_snapshot, realize_region, tick_global
 
 from .context import CampaignContext, CampaignCreationContext
-from .controls import merge_settlement_controls
-from .dialog import build_dialog_payload
-from .live_kernel import advance_kernel_runtime, ensure_kernel_runtime
+from .live_kernel import ensure_kernel_runtime
 from .persistence import campaign_payload, persist_campaign_state
+from .runtime_commands import run_command as _run_command
 from .session import apply_region_to_session
 from .settlement import build_character_sheet, build_settlement_state
 from .world import (
-    alerts_from_events,
     build_world,
     choose_starting_settlement,
     derive_creation_world_seed,
     region_payload,
-)
-from ..campaign_commands import (
-    handle_travel,
-    hours_for_avatar_command,
-    maybe_handle_commander_command,
-    merge_avatar_narrative,
-    resolve_command_text,
 )
 
 
@@ -357,89 +348,7 @@ class CampaignRuntime:
         args: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         context = self.get_campaign(campaign_id)
-        command_args = dict(args or {})
-        issued = resolve_command_text(input_text=input_text, shortcut=shortcut, args=command_args)
-        pre_hash = snapshot_hash(campaign_payload(context))
-        trace_event(
-            "campaign_command_input",
-            campaign_id=context.campaign_id,
-            command_text=issued,
-            shortcut=str(shortcut or ""),
-            pre_snapshot_hash=pre_hash,
-        )
-        lower = issued.lower()
-        if lower.startswith("travel"):
-            narrative = handle_travel(context, issued, command_args)
-            command_type = "travel"
-            hours_advanced = int(context.session.campaign_state.get("last_travel_hours", 4))
-        else:
-            handled = maybe_handle_commander_command(context, issued)
-            if handled is not None:
-                narrative, command_type, hours_advanced = handled
-            else:
-                result = self.engine.process_action(context.session, issued)
-                narrative = merge_avatar_narrative(context, result.narrative)
-                command_type = "avatar"
-                hours_advanced = hours_for_avatar_command(lower)
-
-        previous_settlement_state = copy.deepcopy(context.settlement_state)
-        tick_result = tick_global(context.world, hours_advanced)
-        generated_events = list(tick_result.generated_events)
-        active_region_id = str(context.world.simulation_snapshot.active_region_id)
-        context.region_snapshot = realize_region(context.world, active_region_id)
-        context.settlement_state = build_settlement_state(
-            context.world,
-            context.region_snapshot,
-            context.adapter_id,
-            context.session.player.name,
-        )
-        if command_type != "travel":
-            context.settlement_state = merge_settlement_controls(context.settlement_state, previous_settlement_state)
-        apply_region_to_session(
-            session=context.session,
-            world=context.world,
-            region_snapshot=context.region_snapshot,
-            settlement_state=context.settlement_state,
-            campaign_id=context.campaign_id,
-            adapter_id=context.adapter_id,
-            profile_id=context.profile_id,
-            seed=context.seed,
-            preserve_position=command_type != "travel",
-        )
-        live_events = advance_kernel_runtime(
-            context,
-            hours_advanced=hours_advanced,
-            command_type=command_type,
-            command_text=issued,
-        )
-        generated_events.extend(live_events)
-        context.recent_event_log.extend(generated_events)
-        context.recent_event_log = context.recent_event_log[-20:]
-        if generated_events:
-            context.settlement_state["alerts"] = alerts_from_events(generated_events)
-        context.settlement_state["current_hour"] = context.world.simulation_snapshot.current_hour
-        context.settlement_state["current_day"] = context.world.simulation_snapshot.current_day
-        context.settlement_state["season"] = context.world.simulation_snapshot.season
-        persist_campaign_state(context)
-        dialog_payload = build_dialog_payload(context, narrative) if command_type == "avatar" else {}
-        final_payload = campaign_payload(context)
-        trace_event(
-            "campaign_command_output",
-            campaign_id=context.campaign_id,
-            command_text=issued,
-            command_type=command_type,
-            pre_snapshot_hash=pre_hash,
-            post_snapshot_hash=snapshot_hash(final_payload),
-        )
-        return {
-            "campaign_id": context.campaign_id,
-            "narrative": narrative,
-            "command_type": command_type,
-            "hours_advanced": hours_advanced,
-            "generated_events": generated_events,
-            "campaign": final_payload,
-            **dialog_payload,
-        }
+        return _run_command(self.engine, context, input_text, shortcut=shortcut, args=args)
 
     def snapshot(self, campaign_id: str, narrative: str = "") -> dict[str, Any]:
         context = self.get_campaign(campaign_id)

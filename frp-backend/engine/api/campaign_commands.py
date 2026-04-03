@@ -1,6 +1,11 @@
-"""Command parsing helpers for campaign-first runtime."""
+"""Command parsing helpers for campaign-first runtime.
+
+Handles text resolution, commander commands, travel, and kernel-delegated
+commands for commerce (buy/sell), medical (diagnose/treat), and spells.
+"""
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any, Optional
 
 from engine.worldgen import realize_region
@@ -9,6 +14,8 @@ from .campaign_state import apply_region_to_session, build_settlement_state
 
 if TYPE_CHECKING:
     from engine.api.campaign_runtime import CampaignContext
+
+logger = logging.getLogger(__name__)
 
 
 def resolve_command_text(*, input_text: str, shortcut: Optional[str], args: dict[str, Any]) -> str:
@@ -211,3 +218,149 @@ def hours_for_avatar_command(command_text: str) -> int:
 def merge_avatar_narrative(context: "CampaignContext", narrative: str) -> str:
     # Explainability metadata is for debug logging only, not player-facing narrative.
     return narrative
+
+
+# ---------------------------------------------------------------------------
+# Commerce commands (kernel store authority)
+# ---------------------------------------------------------------------------
+
+def maybe_handle_commerce_command(
+    context: "CampaignContext",
+    command_text: str,
+) -> Optional[tuple[str, str, int]]:
+    """Handle buy/sell/rent/identify via kernel store.py."""
+    from engine.kernel.store import buy_item, sell_item, rent_room
+    lower = command_text.lower().strip()
+    runtime = context.kernel_runtime or {}
+    stores = runtime.get("stores", [])
+    actors = runtime.get("actors", {})
+    player = actors.get("player")
+    if player is None:
+        return None
+    item_registry = _item_registry()
+    if lower.startswith("buy "):
+        item_name = command_text[4:].strip()
+        npc_part = ""
+        if " from " in item_name:
+            item_name, npc_part = item_name.split(" from ", 1)
+        item_name = item_name.strip()
+        store = _find_store(stores, npc_part.strip())
+        if store is None:
+            return (f"No merchant found to buy '{item_name}' from.", "avatar", 1)
+        ok, msg = buy_item(player, store, item_name, 1, item_registry)
+        if not ok:
+            return (msg, "avatar", 1)
+        logger.info("Buy: %s bought %s", player.identity.display_name, item_name)
+        return (f"Bought {item_name}. {msg}", "avatar", 1)
+    if lower.startswith("sell "):
+        item_name = command_text[5:].strip()
+        npc_part = ""
+        if " to " in item_name:
+            item_name, npc_part = item_name.split(" to ", 1)
+        item_name = item_name.strip()
+        store = _find_store(stores, npc_part.strip())
+        if store is None:
+            return (f"No merchant found to sell '{item_name}' to.", "avatar", 1)
+        # Find item in player inventory by def_id.
+        item_instance = next((i for i in player.inventory if i.item_def_id == item_name), None)
+        if item_instance is None:
+            return (f"You don't have '{item_name}' to sell.", "avatar", 1)
+        ok, msg = sell_item(player, store, item_instance, item_registry)
+        if not ok:
+            return (msg, "avatar", 1)
+        logger.info("Sell: %s sold %s", player.identity.display_name, item_name)
+        return (f"Sold {item_name}. {msg}", "avatar", 1)
+    if lower.startswith("rent room") or lower.startswith("rent a room"):
+        store = _find_store(stores, "")
+        if store is None:
+            return ("No inn found to rent a room.", "avatar", 1)
+        ok, msg = rent_room(player, store, "room")
+        if not ok:
+            return (msg, "avatar", 8)
+        return (f"Rented a room. You rest for the night.", "avatar", 8)
+    if lower.startswith("identify "):
+        item_name = command_text[9:].strip()
+        return (f"Identifying {item_name} requires a sage or scholarly merchant.", "avatar", 1)
+    return None
+
+
+def _find_store(stores: list, npc_hint: str) -> Any:
+    """Find a store from kernel runtime, optionally matching NPC name."""
+    if not stores:
+        return None
+    if npc_hint:
+        for store in stores:
+            npc_id = getattr(store, "npc_id", "") or ""
+            if npc_hint.lower() in npc_id.lower():
+                return store
+    return stores[0] if stores else None
+
+
+def _item_registry() -> dict:
+    """Load item definitions from data registry."""
+    try:
+        from engine.data._shared import items_registry
+        reg = items_registry()
+        if isinstance(reg, dict):
+            return reg
+        return {item.get("id", ""): item for item in reg if isinstance(item, dict)}
+    except Exception:
+        return {}
+
+
+# ---------------------------------------------------------------------------
+# Medical commands (kernel medical authority)
+# ---------------------------------------------------------------------------
+
+def maybe_handle_medical_command(
+    context: "CampaignContext",
+    command_text: str,
+) -> Optional[tuple[str, str, int]]:
+    """Handle diagnose/treat/surgery via kernel medical.py."""
+    from engine.kernel.medical import check_lethal_conditions
+    lower = command_text.lower().strip()
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    player = actors.get("player")
+    if player is None:
+        return None
+    if lower.startswith("diagnose"):
+        target_name = command_text[8:].strip() or "self"
+        target = _resolve_medical_target(actors, target_name, player)
+        if target is None:
+            return (f"No target '{target_name}' found to diagnose.", "avatar", 1)
+        if target.body_state is None:
+            return (f"{target.identity.display_name} has no injuries to diagnose.", "avatar", 1)
+        # Check for wounds across body parts.
+        wound_summaries = []
+        for part_id, part in target.body_state.parts.items():
+            if part.current_hp < part.max_hp:
+                wound_summaries.append(f"{part_id}: {part.current_hp}/{part.max_hp} hp")
+        lethal, reason = check_lethal_conditions(target)
+        status = f"CRITICAL ({reason})" if lethal else "stable"
+        summary = ", ".join(wound_summaries[:3]) if wound_summaries else "no visible wounds"
+        return (f"Diagnosis for {target.identity.display_name}: {summary}. Status: {status}.", "avatar", 1)
+    if lower.startswith("treat ") or lower.startswith("surgery "):
+        target_name = command_text[8 if lower.startswith("surgery") else 6:].strip() or "self"
+        target = _resolve_medical_target(actors, target_name, player)
+        if target is None:
+            return (f"No target '{target_name}' found to treat.", "avatar", 1)
+        if target.body_state is None:
+            return (f"{target.identity.display_name} has nothing to treat.", "avatar", 2)
+        # Apply basic healing to most damaged body part.
+        worst_part = min(target.body_state.parts.values(), key=lambda p: p.current_hp / max(1, p.max_hp), default=None)
+        if worst_part is None:
+            return (f"No wounds found on {target.identity.display_name}.", "avatar", 2)
+        healed = min(5, worst_part.max_hp - worst_part.current_hp)
+        worst_part.current_hp = min(worst_part.max_hp, worst_part.current_hp + healed)
+        return (f"Treated {target.identity.display_name}: healed {healed} hp.", "avatar", 2)
+    return None
+
+
+def _resolve_medical_target(actors: dict, name: str, player: Any) -> Any:
+    if name.lower() in ("self", "me", "player"):
+        return player
+    for actor in actors.values():
+        if hasattr(actor, "identity") and name.lower() in actor.identity.display_name.lower():
+            return actor
+    return None

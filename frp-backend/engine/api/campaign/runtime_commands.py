@@ -1,0 +1,156 @@
+"""Command dispatch and world-tick advancement for campaign runtime.
+
+Extracted from runtime.py to keep files under 450 lines.
+"""
+from __future__ import annotations
+
+import copy
+import logging
+from typing import Any, Optional
+
+from engine.api.campaign.debug_trace import snapshot_hash, trace_event
+from engine.api.campaign.dialog import build_dialog_payload
+from engine.api.campaign.live_kernel import advance_kernel_runtime
+from engine.api.campaign.persistence import campaign_payload, persist_campaign_state
+from engine.api.campaign.session import apply_region_to_session
+from engine.api.campaign.settlement import build_settlement_state
+from engine.api.campaign.controls import merge_settlement_controls
+from engine.api.campaign.world import alerts_from_events
+from engine.api.campaign_commands import (
+    handle_travel,
+    hours_for_avatar_command,
+    maybe_handle_commander_command,
+    maybe_handle_commerce_command,
+    maybe_handle_medical_command,
+    merge_avatar_narrative,
+    resolve_command_text,
+)
+from engine.worldgen import realize_region, tick_global
+
+from .context import CampaignContext
+
+logger = logging.getLogger(__name__)
+
+
+def run_command(
+    engine: Any,
+    context: CampaignContext,
+    input_text: str,
+    shortcut: Optional[str] = None,
+    args: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    """Dispatch a player command, tick the world, and return the result."""
+    command_args = dict(args or {})
+    issued = resolve_command_text(input_text=input_text, shortcut=shortcut, args=command_args)
+    pre_hash = snapshot_hash(campaign_payload(context))
+    trace_event(
+        "campaign_command_input",
+        campaign_id=context.campaign_id,
+        command_text=issued,
+        shortcut=str(shortcut or ""),
+        pre_snapshot_hash=pre_hash,
+    )
+    narrative, command_type, hours_advanced = _dispatch(engine, context, issued, command_args)
+    _advance_world(context, command_type, hours_advanced, issued)
+    dialog_payload = build_dialog_payload(context, narrative) if command_type == "avatar" else {}
+    final_payload = campaign_payload(context)
+    trace_event(
+        "campaign_command_output",
+        campaign_id=context.campaign_id,
+        command_text=issued,
+        command_type=command_type,
+        pre_snapshot_hash=pre_hash,
+        post_snapshot_hash=snapshot_hash(final_payload),
+    )
+    return {
+        "campaign_id": context.campaign_id,
+        "narrative": narrative,
+        "command_type": command_type,
+        "hours_advanced": hours_advanced,
+        "generated_events": list(context.recent_event_log[-20:]),
+        "campaign": final_payload,
+        **dialog_payload,
+    }
+
+
+def advance_world_tick(context: CampaignContext, hours: int = 1) -> list[dict[str, Any]]:
+    """Run a world tick without a player command (idle tick)."""
+    return _advance_world(context, command_type="idle", hours_advanced=hours, command_text="")
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+def _dispatch(
+    engine: Any,
+    context: CampaignContext,
+    issued: str,
+    command_args: dict[str, Any],
+) -> tuple[str, str, int]:
+    """Route command text to the correct handler. Returns (narrative, type, hours)."""
+    lower = issued.lower()
+    if lower.startswith("travel"):
+        narrative = handle_travel(context, issued, command_args)
+        hours = int(context.session.campaign_state.get("last_travel_hours", 4))
+        return narrative, "travel", hours
+    handled = maybe_handle_commander_command(context, issued)
+    if handled is not None:
+        return handled
+    commerce = maybe_handle_commerce_command(context, issued)
+    if commerce is not None:
+        return commerce
+    medical = maybe_handle_medical_command(context, issued)
+    if medical is not None:
+        return medical
+    result = engine.process_action(context.session, issued)
+    narrative = merge_avatar_narrative(context, result.narrative)
+    return narrative, "avatar", hours_for_avatar_command(lower)
+
+
+def _advance_world(
+    context: CampaignContext,
+    command_type: str,
+    hours_advanced: int,
+    command_text: str = "",
+) -> list[dict[str, Any]]:
+    """Tick world, realize region, advance kernel runtime, persist state."""
+    previous_settlement = copy.deepcopy(context.settlement_state)
+    tick_result = tick_global(context.world, hours_advanced)
+    generated_events = list(tick_result.generated_events)
+    active_region_id = str(context.world.simulation_snapshot.active_region_id)
+    context.region_snapshot = realize_region(context.world, active_region_id)
+    context.settlement_state = build_settlement_state(
+        context.world, context.region_snapshot,
+        context.adapter_id, context.session.player.name,
+    )
+    if command_type != "travel":
+        context.settlement_state = merge_settlement_controls(
+            context.settlement_state, previous_settlement,
+        )
+    apply_region_to_session(
+        session=context.session, world=context.world,
+        region_snapshot=context.region_snapshot,
+        settlement_state=context.settlement_state,
+        campaign_id=context.campaign_id, adapter_id=context.adapter_id,
+        profile_id=context.profile_id, seed=context.seed,
+        preserve_position=command_type != "travel",
+    )
+    live_events = advance_kernel_runtime(
+        context, hours_advanced=hours_advanced,
+        command_type=command_type, command_text=command_text,
+    )
+    generated_events.extend(live_events)
+    context.recent_event_log.extend(generated_events)
+    context.recent_event_log = context.recent_event_log[-20:]
+    if generated_events:
+        context.settlement_state["alerts"] = alerts_from_events(generated_events)
+    sim = context.world.simulation_snapshot
+    context.settlement_state["current_hour"] = sim.current_hour
+    context.settlement_state["current_day"] = sim.current_day
+    context.settlement_state["season"] = sim.season
+    persist_campaign_state(context)
+    return generated_events
+
+
+__all__ = ["advance_world_tick", "run_command"]

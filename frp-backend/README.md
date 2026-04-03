@@ -1,14 +1,16 @@
 # Ember RPG — Backend
 
-FastAPI backend for Ember RPG’s deterministic campaign runtime. The active product surface is campaign-first and Godot-first; terminal-first play and backwards-compatibility shims are deprecated.
+Deterministic kernel RPG backend. HTTP for bootstrap/creation/save/load, WebSocket for live runtime.
 
-## Current Responsibilities
+## Architecture
 
-- Campaign creation and finalization
-- Canonical runtime slices: `world_state`, `game_state`, `actors`, `jobs`, `reactions`, `worksites`, `colony_pressure`, `production_ledger`, `stores`, `systems`
-- Deterministic command routing, travel, save/load, and runtime projection
-- Content adapters for `fantasy_ember` and `scifi_frontier`
-- Optional enrichment hooks without replacing deterministic authority
+- **Kernel** (`engine/kernel/`) — single source of truth for all game rules
+- **CampaignRuntime** (`engine/api/campaign/runtime.py`) — orchestration authority
+- **WebSocket** (`engine/api/ws_campaign.py`) — primary live runtime transport
+- **CampaignTickLoop** (`engine/api/campaign/tick_loop.py`) — async idle world simulation
+- **Godot client** — thin state consumer and command sender
+
+All legacy session-first routes have been deleted. There is one authority model.
 
 ## Quick Start
 
@@ -20,43 +22,39 @@ pip install -r requirements.txt
 python dev_server.py --port 8741
 ```
 
-Interactive docs are available at [http://127.0.0.1:8741/docs](http://127.0.0.1:8741/docs).
+## HTTP Routes (bootstrap/admin only)
 
-## Active Route Families
-
-Base URL: `http://127.0.0.1:8741/game`
+Base: `http://127.0.0.1:8741/game`
 
 - `GET /health/campaign-client`
 - `GET /campaigns/creation/catalog`
-- `POST /campaigns/creation/start`
-- `POST /campaigns/creation/{creation_id}/answer`
-- `POST /campaigns/creation/{creation_id}/reroll`
-- `POST /campaigns/creation/{creation_id}/save-roll`
-- `POST /campaigns/creation/{creation_id}/swap-roll`
-- `POST /campaigns/creation/{creation_id}/finalize`
-- `GET /campaigns/{campaign_id}`
-- `GET /campaigns/{campaign_id}/region`
-- `GET /campaigns/{campaign_id}/settlement`
-- `POST /campaigns/{campaign_id}/commands`
-- `POST /campaigns/{campaign_id}/save`
-- `GET /campaigns/saves`
-- `POST /campaigns/load/{save_id}`
+- `POST /campaigns/creation/start` / `answer` / `reroll` / `save-roll` / `swap-roll` / `finalize`
+- `POST /campaigns` (direct create)
+- `GET /campaigns/{id}` / `DELETE /campaigns/{id}`
+- `GET /campaigns/{id}/region/current` / `settlement/current`
+- `POST /campaigns/{id}/save` / `GET saves` / `POST load/{save_id}` / `DELETE saves/{save_id}`
 
-Legacy `/session/*` routes remain only for deprecated tooling and are not part of the active shipped Godot loop.
+## WebSocket Transport (primary runtime)
 
-## Local Verification
+Endpoint: `ws://127.0.0.1:8741/game/ws/campaigns/{campaign_id}`
+
+- Client sends: `{"type": "command", "input": "attack goblin"}`
+- Server pushes: `{"type": "state", ...}`, `{"type": "tick", ...}`, `{"type": "pong"}`
+
+## Kernel-Authoritative Command Dispatch
+
+Commands routed through campaign runtime:
+- **Travel**: `travel <destination>`
+- **Commander**: `assign`, `prioritize`, `build`, `draft`, `recruit`, `defend`
+- **Commerce**: `buy <item>`, `sell <item>`, `rent room`, `identify <item>`
+- **Medical**: `diagnose <target>`, `treat <target>`, `surgery <target>`
+- **Avatar**: any other text routed to GameEngine
+
+## Verification
 
 ```bash
-python -m pytest tests/test_campaign_api_v2.py tests/test_campaign_creation_v2.py tests/test_campaign_save_load_v2.py -q
-python -m pytest tests/test_doc_inventory.py -q
+python -m pytest tests/test_creation_contract.py tests/test_tick_loop.py tests/test_websocket_runtime.py tests/test_dialog_kernel_bridge.py tests/test_kernel_bridges.py tests/test_no_legacy_imports.py -v
 ```
-
-## Important Docs
-
-- [PRD_save_load.md](C:/Users/msbel/projects/ember-rpg/docs/prd/active/PRD_save_load.md)
-- [PRD_macro_society_runtime_v1.md](C:/Users/msbel/projects/ember-rpg/docs/prd/active/PRD_macro_society_runtime_v1.md)
-- [runtime_authority.md](C:/Users/msbel/projects/ember-rpg/docs/architecture/runtime_authority.md)
-- [runtime_module_map.md](C:/Users/msbel/projects/ember-rpg/docs/runtime_module_map.md)
 
 ## Notes
 

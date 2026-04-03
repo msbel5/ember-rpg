@@ -1,13 +1,34 @@
-"""Dialog payload helpers for campaign-first responses."""
+"""Dialog payload bridge: kernel dialog authority for campaign responses.
+
+Replaces the old synthetic overlay with the kernel dialog state machine.
+If an NPC has a DialogDef, we use it. Otherwise we generate a default
+dialog tree driven by actual kernel conditions (stat checks, quest state).
+"""
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
+from engine.kernel.dialog import (
+    DialogAction,
+    DialogCondition,
+    DialogDef,
+    DialogState,
+    DialogStateNode,
+    DialogTransition,
+    get_available_transitions,
+    start_dialog,
+)
+
 if TYPE_CHECKING:
+    from engine.kernel.actor import ActorRecord
     from .context import CampaignContext
+
+logger = logging.getLogger(__name__)
 
 
 def build_dialog_payload(context: "CampaignContext", narrative: str) -> dict[str, Any]:
+    """Build dialog payload using kernel dialog authority."""
     session = context.session
     conversation = dict(session.conversation_state or {})
     if str(conversation.get("target_type", "")).strip() != "npc":
@@ -15,56 +36,162 @@ def build_dialog_payload(context: "CampaignContext", narrative: str) -> dict[str
     if session.in_combat():
         return {}
 
+    npc_id = str(conversation.get("npc_id", "")).strip()
     npc_name = str(conversation.get("npc_name", "")).strip() or "NPC"
-    player_stats = dict(getattr(session.player, "stats", {}) or {})
-    pre = int(player_stats.get("PRE", 10))
-    ins = int(player_stats.get("INS", 10))
-    mig = int(player_stats.get("MIG", 10))
 
-    opener = "Ask about available work" if session.quest_offers else "Ask about the local situation"
-    options: list[dict[str, Any]] = [
-        {
-            "text": opener,
-            "command": "ask about work",
-            "available": True,
-            "enabled": True,
-            "disabled_reason": "",
-            "skill_check": {},
-        },
-        {
-            "text": "Probe for rumors",
-            "command": "ask about rumors",
-            "check": "INS 12",
-            "available": ins >= 12,
-            "enabled": ins >= 12,
-            "disabled_reason": "" if ins >= 12 else "Requires INS 12",
-            "skill_check": {"ability": "INS", "required": 12, "current": ins, "label": "INS 12"},
-        },
-        {
-            "text": "Appeal for help",
-            "command": f"persuade {npc_name}",
-            "check": "PRE 12",
-            "available": pre >= 12,
-            "enabled": pre >= 12,
-            "disabled_reason": "" if pre >= 12 else "Requires PRE 12",
-            "skill_check": {"ability": "PRE", "required": 12, "current": pre, "label": "PRE 12"},
-        },
-        {
-            "text": "Threaten for answers",
-            "command": f"intimidate {npc_name}",
-            "check": "MIG 11",
-            "available": mig >= 11,
-            "enabled": mig >= 11,
-            "disabled_reason": "" if mig >= 11 else "Requires MIG 11",
-            "skill_check": {"ability": "MIG", "required": 11, "current": mig, "label": "MIG 11"},
-        },
-    ]
+    player_actor = _get_player_actor(context)
+    npc_actor = _get_npc_actor(context, npc_id, npc_name)
+    if player_actor is None or npc_actor is None:
+        return _fallback_payload(npc_name, narrative)
 
-    dialog_text = narrative.strip() or f"{npc_name} studies you in silence."
+    dialog_def = _resolve_dialog_def(context, npc_id, npc_name)
+    global_vars = _global_variables(context)
+
+    try:
+        dialog_state, state_node, transitions = start_dialog(
+            dialog_def, npc_actor, player_actor, global_vars,
+        )
+    except (ValueError, KeyError) as exc:
+        logger.debug("Dialog start failed for %s: %s", npc_id, exc)
+        return _fallback_payload(npc_name, narrative)
+
+    options = _transitions_to_options(transitions, player_actor, npc_actor, global_vars)
+    dialog_text = narrative.strip() or state_node.text or f"{npc_name} studies you in silence."
     return {
         "dialog_npc": npc_name,
         "dialog_text": dialog_text,
         "dialog_options": options,
+        "dialog_state": dialog_state.to_dict(),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Actor resolution
+# ---------------------------------------------------------------------------
+
+def _get_player_actor(context: "CampaignContext") -> "ActorRecord | None":
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    return actors.get("player")
+
+
+def _get_npc_actor(context: "CampaignContext", npc_id: str, npc_name: str) -> "ActorRecord | None":
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    if npc_id and npc_id in actors:
+        return actors[npc_id]
+    for actor in actors.values():
+        if getattr(actor.identity, "name", "") == npc_name:
+            return actor
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Dialog definition resolution
+# ---------------------------------------------------------------------------
+
+def _resolve_dialog_def(context: "CampaignContext", npc_id: str, npc_name: str) -> DialogDef:
+    """Look up NPC's dialog def from data, or generate a default."""
+    # TODO: load NPC-specific dialog defs from data files when available.
+    return _default_dialog_def(npc_id or npc_name, npc_name, context)
+
+
+def _default_dialog_def(npc_id: str, npc_name: str, context: "CampaignContext") -> DialogDef:
+    """Generate a kernel-authoritative default dialog tree for generic NPCs."""
+    has_quests = bool(context.session.quest_offers)
+    opener = "Ask about available work" if has_quests else "Ask about the local situation"
+    return DialogDef(
+        dialog_id=f"default_{npc_id}",
+        npc_id=npc_id,
+        states=[DialogStateNode(
+            state_id="greeting",
+            text=f"{npc_name} regards you.",
+            transitions=[
+                DialogTransition(
+                    transition_id="ask_work", text=opener,
+                    next_state_id="farewell",
+                    actions=[DialogAction("set_variable", {"name": "asked_work", "value": True})],
+                ),
+                DialogTransition(
+                    transition_id="probe_rumors", text="Probe for rumors",
+                    condition=DialogCondition("stat_check", {"stat": "INS", "operator": ">=", "value": 12}),
+                    next_state_id="farewell",
+                ),
+                DialogTransition(
+                    transition_id="persuade", text="Appeal for help",
+                    condition=DialogCondition("stat_check", {"stat": "PRE", "operator": ">=", "value": 12}),
+                    next_state_id="farewell",
+                ),
+                DialogTransition(
+                    transition_id="intimidate", text="Threaten for answers",
+                    condition=DialogCondition("stat_check", {"stat": "MIG", "operator": ">=", "value": 11}),
+                    next_state_id="farewell",
+                ),
+                DialogTransition(
+                    transition_id="leave", text="Leave", terminates=True,
+                ),
+            ],
+        ), DialogStateNode(
+            state_id="farewell",
+            text=f"{npc_name} nods.",
+            transitions=[DialogTransition(transition_id="done", text="Farewell", terminates=True)],
+        )],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Transition → client option conversion
+# ---------------------------------------------------------------------------
+
+def _transitions_to_options(
+    transitions: list[DialogTransition],
+    player: "ActorRecord",
+    npc: "ActorRecord",
+    global_vars: dict[str, Any],
+) -> list[dict[str, Any]]:
+    options: list[dict[str, Any]] = []
+    for t in transitions:
+        skill_check = _extract_skill_check(t.condition, player) if t.condition else {}
+        options.append({
+            "text": t.text,
+            "command": f"dialog {t.transition_id}",
+            "transition_id": t.transition_id,
+            "available": True,
+            "enabled": True,
+            "disabled_reason": "",
+            "skill_check": skill_check,
+            "hostile": t.hostile,
+        })
+    return options
+
+
+def _extract_skill_check(condition: DialogCondition, player: "ActorRecord") -> dict[str, Any]:
+    if condition.condition_type == "stat_check":
+        stat = str(condition.params.get("stat", ""))
+        required = int(condition.params.get("value", 0))
+        current = int(player.stats.get(stat, 0))
+        return {"ability": stat, "required": required, "current": current, "label": f"{stat} {required}"}
+    return {}
+
+
+def _global_variables(context: "CampaignContext") -> dict[str, Any]:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if game_state is not None:
+        return dict(getattr(game_state, "global_variables", {}))
+    return {}
+
+
+def _fallback_payload(npc_name: str, narrative: str) -> dict[str, Any]:
+    return {
+        "dialog_npc": npc_name,
+        "dialog_text": narrative.strip() or f"{npc_name} studies you in silence.",
+        "dialog_options": [
+            {"text": "Ask about the local situation", "command": "ask about work",
+             "available": True, "enabled": True, "disabled_reason": "", "skill_check": {}},
+            {"text": "Leave", "command": "leave", "available": True, "enabled": True,
+             "disabled_reason": "", "skill_check": {}},
+        ],
     }
 
 
