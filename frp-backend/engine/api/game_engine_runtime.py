@@ -5,15 +5,15 @@ from typing import Any, Dict, List, Optional
 
 from engine.api.game_session import GameSession
 from engine.api.runtime_constants import CLASS_ALIASES, DEFAULT_PLAYER_CLASS, LOCATION_STOCK_BASELINE, OPENING_SCENES, STARTER_KITS
-from engine.core.character import Character
-from engine.core.character_creation import (
+from engine.kernel.actor_records import create_player_actor
+from engine.kernel.creation import (
     CLASS_DEFAULT_SKILLS,
     CLASS_SKILL_COUNTS,
     CLASS_SKILL_OPTIONS,
     recommended_alignment_from_axes,
     recommended_skills_for_class,
 )
-from engine.core.dm_agent import DMContext, SceneType
+from engine.kernel.narrator import DMContext, SceneType
 from engine.data_loader import (
     get_class,
     get_class_default_hp,
@@ -77,24 +77,37 @@ class GameEngineRuntimeMixin:
                 if len(selected_skills) >= CLASS_SKILL_COUNTS.get(player_class, 2):
                     break
 
-        player = Character(
+        player = create_player_actor(
             name=player_name,
-            classes={player_class: 1},
+            class_name=player_class,
             stats=assigned_stats,
-            hp=hp,
-            max_hp=hp,
-            spell_points=sp,
-            max_spell_points=sp,
             level=1,
-            xp=0,
-            skill_proficiencies=selected_skills,
-            alignment=effective_alignment or "TN",
-            creation_answers=list(creation_answers or []),
-            creation_profile=creation_profile,
-            use_death_saves=True,
+            skills={skill: 0 for skill in selected_skills},
         )
-        player.set_alignment_from_axes() if not alignment and recommended_axes else None
-        player.sync_derived_progression()
+        # Carry over legacy fields in raw_payload
+        player.stats["hp"] = hp
+        player.stats["max_hp"] = hp
+        player.raw_payload.update({
+            "hp": hp,
+            "max_hp": hp,
+            "spell_points": sp,
+            "max_spell_points": sp,
+            "xp": 0,
+            "classes": {player_class: 1},
+            "skill_proficiencies": selected_skills,
+            "alignment": effective_alignment or "TN",
+            "creation_answers": list(creation_answers or []),
+            "creation_profile": creation_profile,
+            "use_death_saves": True,
+        })
+        if not alignment and recommended_axes:
+            # Derive alignment code from axes
+            lc = recommended_axes.get("law_chaos", 0)
+            ge = recommended_axes.get("good_evil", 0)
+            first = "L" if lc > 0 else ("C" if lc < 0 else "T")
+            second = "G" if ge > 0 else ("E" if ge < 0 else "N")
+            player.raw_payload["alignment"] = first + second
+            player.raw_payload["alignment_axes"] = dict(recommended_axes)
 
         loc = OPENING_SCENES[0][0] if location is None else location
         dm_context = DMContext(scene_type=SceneType.EXPLORATION, location=loc, party=[player])

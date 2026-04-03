@@ -31,6 +31,50 @@ class ActorRecord:
     effect_queue: "EffectQueue | None" = None
     raw_payload: dict[str, Any] = field(default_factory=dict)
 
+    # ── Convenience properties for handler compatibility ────────────
+    @property
+    def name(self) -> str:
+        """Display name shortcut."""
+        return self.identity.display_name
+
+    @property
+    def hp(self) -> int:
+        return int(self.stats.get("hp", 0))
+
+    @hp.setter
+    def hp(self, value: int) -> None:
+        self.stats["hp"] = max(0, int(value))
+        if self.stats["hp"] <= 0:
+            self.alive = False
+
+    @property
+    def max_hp(self) -> int:
+        return int(self.stats.get("max_hp", 0))
+
+    @property
+    def ac(self) -> int:
+        return int(self.raw_payload.get("ac", 10))
+
+    @property
+    def level(self) -> int:
+        return int(self.raw_payload.get("level", 1))
+
+    def stat_modifier(self, stat: str) -> int:
+        """Compute (stat - 10) // 2 for any Ember stat."""
+        return (int(self.stats.get(stat, 10)) - 10) // 2
+
+    def skill_bonus(self, skill: str) -> int:
+        """Return skill value from skills dict, or stat modifier fallback."""
+        if skill in self.skills:
+            return int(self.skills[skill])
+        # Fallback: governing stat modifier.
+        _SKILL_STATS = {"melee": "MIG", "athletics": "MIG", "stealth": "AGI",
+                        "acrobatics": "AGI", "perception": "INS", "insight": "INS",
+                        "persuasion": "PRE", "intimidation": "PRE", "arcana": "MND",
+                        "history": "MND", "medicine": "INS", "survival": "INS"}
+        stat = _SKILL_STATS.get(skill, "MIG")
+        return self.stat_modifier(stat)
+
     def to_dict(self) -> dict[str, Any]:
         payload = serialize_value(self)
         payload.pop("action_points", None)

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any, Optional
 
 from engine.api.game_session import GameSession
-from engine.core.character_creation import CreationState
+from engine.kernel.creation import CreationState
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
 

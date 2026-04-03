@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from engine.api.action_parser import ParsedAction
 from engine.api.game_session import GameSession
-from engine.core.dm_agent import DMEvent, EventType
+from engine.kernel.narrator import DMEvent, EventType
 
 
 class InventoryEquipmentMixin:

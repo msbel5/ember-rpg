@@ -1,13 +1,21 @@
-"""Combat bootstrap and enemy spawning helpers."""
+"""Combat bootstrap and enemy spawning helpers -- kernel-native edition.
+
+All actor creation and combat state management uses kernel types directly.
+No engine.core imports are used anywhere in this module.
+"""
 from __future__ import annotations
 
 import random
 from typing import Any, Optional
 
 from engine.api.game_session import GameSession
-from engine.core.character import Character
-from engine.core.combat import CombatManager
-from engine.core.dm_agent import SceneType
+from engine.kernel.actor_records import (
+    ActorRecord,
+    create_monster_actor,
+    create_player_actor,
+)
+from engine.kernel.combat_engine import CombatState, start_combat, start_turn
+from engine.kernel.narrator import SceneType
 from engine.data_loader import list_monsters
 from engine.world.body_parts import BodyPartTracker
 from engine.world.entity import Entity, EntityType
@@ -17,18 +25,71 @@ from engine.world.npc_needs import NPCNeeds
 class CombatSpawningMixin:
     """Focused helpers for creating enemies and bootstrapping encounters."""
 
-    def _spawn_guard_backup(self, session: GameSession) -> Character:
-        guard = Character(
-            name="Town Guard",
-            hp=12,
-            max_hp=12,
-            stats={"MIG": 12, "AGI": 10, "END": 12, "MND": 8, "INS": 10, "PRE": 12},
+    def _spawn_guard_backup(self, session: GameSession) -> ActorRecord:
+        """Create a generic town guard as an ActorRecord."""
+        template: dict[str, Any] = {
+            "id": "town_guard",
+            "name": "Town Guard",
+            "hp": 12,
+            "armor_class": 14,
+            "type": "guard",
+            "cr": 0.5,
+            "stats": {"str": 12, "dex": 10, "con": 12, "int": 8, "wis": 10, "cha": 12},
+            "attacks": [{"attack_bonus": 3}],
+            "loot_table": [],
+        }
+        guard = create_monster_actor(
+            template,
+            position=tuple(session.position),
+            faction_id="town",
         )
-        guard.role = "guard"
         return guard
 
-    def _start_combat(self, session: GameSession, enemies: list[Character]) -> None:
-        combatants = [session.player]
+    def _start_combat(self, session: GameSession, enemies: list[ActorRecord]) -> None:
+        """Bootstrap a combat encounter with kernel types.
+
+        Registers enemy entities in the spatial index, builds a
+        combat_actors lookup dict, and stores a CombatState in
+        session.campaign_state instead of legacy CombatManager.
+        """
+        # Ensure campaign_state sub-dicts exist.
+        if "combat_actors" not in session.campaign_state:
+            session.campaign_state["combat_actors"] = {}
+        combat_actors: dict[str, ActorRecord] = session.campaign_state["combat_actors"]
+
+        # Build or retrieve the player ActorRecord.
+        player_actor = combat_actors.get("player")
+        if player_actor is None:
+            player = getattr(session, "player", None)
+            if player is not None:
+                player_stats = dict(getattr(player, "stats", {}) or {})
+                class_name = "warrior"
+                if hasattr(player, "dominant_class"):
+                    class_name = player.dominant_class or "warrior"
+                elif hasattr(player, "classes") and player.classes:
+                    class_name = next(iter(player.classes), "warrior")
+                player_actor = create_player_actor(
+                    name=getattr(player, "name", "Player"),
+                    class_name=class_name,
+                    stats=player_stats,
+                    level=int(getattr(player, "level", 1)),
+                    actor_id="player",
+                    position=tuple(session.position),
+                )
+                # Preserve actual HP if it differs from the template default.
+                current_hp = int(getattr(player, "hp", player_actor.hp))
+                player_actor.stats["hp"] = current_hp
+                player_actor.stats["max_hp"] = int(getattr(player, "max_hp", player_actor.max_hp))
+            else:
+                # Fallback: minimal player actor.
+                player_actor = create_player_actor(
+                    name="Player", class_name="warrior",
+                    stats={"MIG": 10, "AGI": 10, "END": 10, "MND": 10, "INS": 10, "PRE": 10},
+                    actor_id="player", position=tuple(session.position),
+                )
+        combat_actors["player"] = player_actor
+
+        # Register each enemy in the spatial index and entity dict.
         adjacent_positions = [
             (session.position[0] + 1, session.position[1]),
             (session.position[0] - 1, session.position[1]),
@@ -36,22 +97,23 @@ class CombatSpawningMixin:
             (session.position[0], session.position[1] - 1),
         ]
         for enemy in enemies:
-            entity_id = getattr(enemy, "_entity_id", None)
-            if not entity_id:
-                entity_id = f"combat_enemy_{len(session.entities) + 1}"
-                enemy._entity_id = entity_id
-            if entity_id not in session.entities:
+            actor_id = enemy.identity.actor_id
+            combat_actors[actor_id] = enemy
+
+            if actor_id not in session.entities:
                 spawn_pos = list(session.position)
                 for candidate in adjacent_positions:
                     if session.map_data is not None and not session.map_data.is_walkable(*candidate):
                         continue
                     blockers = session.spatial_index.at(*candidate) if session.spatial_index is not None else []
-                    if any(getattr(blocker, "blocking", False) for blocker in blockers):
+                    if any(getattr(b, "blocking", False) for b in blockers):
                         continue
                     spawn_pos = [candidate[0], candidate[1]]
                     break
+
+                role = enemy.raw_payload.get("monster_type", "monster")
                 live_entity = Entity(
-                    id=entity_id,
+                    id=actor_id,
                     entity_type=EntityType.NPC,
                     name=enemy.name,
                     position=tuple(spawn_pos),
@@ -65,15 +127,15 @@ class CombatSpawningMixin:
                     alignment="CE",
                     body=BodyPartTracker(),
                     needs=NPCNeeds(safety=30, commerce=5, social=10, sustenance=70, duty=60),
-                    job=str(getattr(enemy, "role", "monster")),
+                    job=str(role),
                 )
-                if session.spatial_index is not None and session.spatial_index.get_position(entity_id) is None:
+                if session.spatial_index is not None and session.spatial_index.get_position(actor_id) is None:
                     session.spatial_index.add(live_entity)
-                session.entities[entity_id] = {
+                session.entities[actor_id] = {
                     "name": enemy.name,
                     "type": "npc",
                     "position": list(spawn_pos),
-                    "role": getattr(enemy, "role", "monster"),
+                    "role": role,
                     "faction": "hostile",
                     "hp": enemy.hp,
                     "max_hp": enemy.max_hp,
@@ -86,18 +148,32 @@ class CombatSpawningMixin:
                     "needs": live_entity.needs,
                     "entity_ref": live_entity,
                 }
-                session.sync_entity_record(entity_id, live_entity)
-            combatants.append(enemy)
-        session.combat = CombatManager(combatants, seed=random.randint(0, 9999))
-        session.combat.start_turn()
+                session.sync_entity_record(actor_id, live_entity)
+
+        # Build ordered actor list and start kernel combat.
+        all_actors = [player_actor] + list(enemies)
+        combat_state = start_combat(all_actors, seed=random.randint(0, 9999))
+        # Kick off the first turn.
+        start_turn(combat_state, combat_actors)
+
+        # Store kernel combat state (session.combat is NOT used for kernel combat).
+        session.campaign_state["combat_state"] = combat_state
+
         session.clear_conversation_target()
         self.dm.transition(session.dm_context, SceneType.COMBAT)
 
-    def _spawn_enemy(self, player_level: int, preferred_name: Optional[str] = None) -> Character:
+    def _spawn_enemy(self, player_level: int, preferred_name: Optional[str] = None) -> ActorRecord:
+        """Select and create an enemy ActorRecord from monster data.
+
+        Loads monster templates via list_monsters(), picks the best
+        match by name or challenge rating, then builds an ActorRecord
+        using create_monster_actor() -- no legacy Character needed.
+        """
         monsters = list_monsters()
         query = str(preferred_name or "").strip().lower()
         selected: Optional[dict[str, Any]] = None
 
+        # Try to match by name or id.
         if query:
             for monster in monsters:
                 monster_id = str(monster.get("id", "")).lower()
@@ -106,38 +182,15 @@ class CombatSpawningMixin:
                     selected = monster
                     break
 
+        # Fall back to CR-based selection.
         if selected is None:
             target_cr = max(0.25, float(player_level) * 0.5)
             ranked = sorted(
                 monsters,
-                key=lambda monster: (abs(float(monster.get("cr", 0.25)) - target_cr), str(monster.get("name", ""))),
+                key=lambda m: (abs(float(m.get("cr", 0.25)) - target_cr), str(m.get("name", ""))),
             )
             pool = ranked[: max(1, min(6, len(ranked)))]
             selected = random.choice(pool) if pool else (monsters[0] if monsters else {})
 
-        stats = dict(selected.get("stats", {}))
-        ember_stats = {
-            "MIG": int(stats.get("str", 10)),
-            "AGI": int(stats.get("dex", 10)),
-            "END": int(stats.get("con", 10)),
-            "MND": int(stats.get("int", 10)),
-            "INS": int(stats.get("wis", 10)),
-            "PRE": int(stats.get("cha", 10)),
-        }
-        first_attack = next(iter(selected.get("attacks", [])), {})
-        melee_bonus = int(first_attack.get("attack_bonus", 2))
-        mig_mod = (ember_stats["MIG"] - 10) // 2
-        dex_mod = (ember_stats["AGI"] - 10) // 2
-        enemy = Character(
-            name=str(selected.get("name", preferred_name or "Hostile Foe")),
-            hp=int(selected.get("hp", 10)),
-            max_hp=int(selected.get("hp", 10)),
-            ac=int(selected.get("armor_class", 10)),
-            initiative_bonus=dex_mod,
-            stats=ember_stats,
-            skills={"melee": melee_bonus - mig_mod},
-        )
-        setattr(enemy, "monster_id", selected.get("id"))
-        setattr(enemy, "role", str(selected.get("type", "monster")))
-        setattr(enemy, "loot_table", list(selected.get("loot_table", [])))
-        return enemy
+        # Delegate to kernel factory -- handles D&D-to-Ember stat mapping.
+        return create_monster_actor(selected)

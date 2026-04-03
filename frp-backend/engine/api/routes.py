@@ -18,9 +18,9 @@ from engine.api.models import (
     CreationFinalizeRequest,
     CreationStateResponse,
 )
-from engine.core.creation_catalog import get_creation_catalog
-from engine.core.character_creation import CreationState, assign_stats_to_class
-from engine.core.dm_agent import DMEvent, EventType, SceneType
+from engine.kernel.creation import get_creation_catalog
+from engine.kernel.creation import CreationState, assign_stats_to_class
+from engine.kernel.narrator import DMEvent, EventType, SceneType
 
 router = APIRouter()
 _save_system = SaveSystem()
@@ -84,7 +84,7 @@ def new_session(req: NewSessionRequest):
     _sessions[session.session_id] = session
 
     # Opening narrative
-    from engine.core.dm_agent import DMAIAgent
+    from engine.kernel.narrator import DMAIAgent
     dm = DMAIAgent()
     opening_event = DMEvent(
         type=EventType.DISCOVERY,

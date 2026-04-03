@@ -142,8 +142,8 @@ class SaveSessionStateMixin:
         from datetime import datetime as dt
 
         from engine.api.game_session import GameSession
-        from engine.core.character import Character
-        from engine.core.dm_agent import DMContext, SceneType
+        from engine.kernel.actor_records import ActorRecord
+        from engine.kernel.narrator import DMContext, SceneType
         from engine.map import MapData
         from engine.npc.npc_memory import NPCMemoryManager
         from engine.world import WorldState
@@ -161,7 +161,7 @@ class SaveSessionStateMixin:
         from engine.world.spatial_index import SpatialIndex
         from engine.world.viewport import Viewport
 
-        player = Character.from_dict(data["player"])
+        player = ActorRecord.from_dict(data["player"])
         dm_context = None
         if "dm_context" in data:
             dm_context = DMContext.from_dict(data["dm_context"], party=[player])
@@ -308,7 +308,8 @@ class SaveSessionStateMixin:
 
             session.history_seed = HistorySeed().generate(seed=random.randint(0, 999999))
         if session.ap_tracker is None:
-            dominant_class = (player.dominant_class or next(iter(player.classes), "warrior") or "warrior")
+            _classes = getattr(player, "classes", None) or (getattr(player, "raw_payload", None) or {}).get("classes", {})
+            dominant_class = (getattr(player, "dominant_class", None) or next(iter(_classes), "warrior") or "warrior")
             session.ap_tracker = ActionPointTracker(max_ap=CLASS_AP.get(str(dominant_class).lower(), 4))
 
         if player_entity is None:

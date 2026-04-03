@@ -4,9 +4,51 @@ from __future__ import annotations
 from typing import Optional
 
 from engine.api.game_session import GameSession
-from engine.core.character import Character
+from engine.kernel.actor_records import ActorRecord
 from engine.world.action_points import ACTION_COSTS
 from engine.world.skill_checks import SkillCheckResult, ability_modifier, contested_check
+
+# Skill -> governing-stat mappings (formerly on Character class)
+DND_SKILL_STATS = {
+    'athletics': 'MIG',
+    'acrobatics': 'AGI',
+    'sleight_of_hand': 'AGI',
+    'stealth': 'AGI',
+    'arcana': 'MND',
+    'history': 'MND',
+    'investigation': 'MND',
+    'nature': 'MND',
+    'religion': 'MND',
+    'animal_handling': 'INS',
+    'insight': 'INS',
+    'medicine': 'INS',
+    'perception': 'INS',
+    'survival': 'INS',
+    'deception': 'PRE',
+    'intimidation': 'PRE',
+    'performance': 'PRE',
+    'persuasion': 'PRE',
+}
+
+LEGACY_SKILL_STATS = {
+    'melee': 'MIG',
+    'ranged': 'AGI',
+    'defense': 'END',
+    'lore': 'MND',
+    'trade': 'PRE',
+    'appraisal': 'MND',
+    'smithing': 'MIG',
+    'cooking': 'MND',
+    'healing': 'INS',
+    'herbalism': 'INS',
+    'divine_magic': 'PRE',
+    'patrol': 'INS',
+    'lockpick': 'AGI',
+    'climb': 'AGI',
+    'sneak': 'AGI',
+}
+
+SKILL_STATS = {**DND_SKILL_STATS, **LEGACY_SKILL_STATS}
 
 
 class HelperChecksMixin:
@@ -31,7 +73,7 @@ class HelperChecksMixin:
         try:
             return session.player.skill_bonus(skill)
         except Exception:
-            fallback_ability = Character.SKILL_STATS.get(skill, "MIG")
+            fallback_ability = SKILL_STATS.get(skill, "MIG")
             return ability_modifier(session.player.stats.get(fallback_ability, 10))
 
     def _roll_player_skill_check(
@@ -45,12 +87,12 @@ class HelperChecksMixin:
     ) -> SkillCheckResult:
         import engine.api.game_engine as _ge
 
-        governing_stat = Character.SKILL_STATS.get(skill, "MIG")
+        governing_stat = SKILL_STATS.get(skill, "MIG")
         ability_score = session.player.stats.get(governing_stat, 10)
         legacy_bonus = int((session.player.skills or {}).get(skill, 0))
         proficient = session.player.has_proficiency(skill)
         expertise = session.player.has_expertise(skill)
-        modifier_bonus = legacy_bonus if skill in Character.DND_SKILL_STATS else 0
+        modifier_bonus = legacy_bonus if skill in DND_SKILL_STATS else 0
         result = _ge.roll_check(
             ability_score,
             dc,
@@ -79,7 +121,7 @@ class HelperChecksMixin:
     def _npc_skill_bonus(self, entity: dict, skill: str) -> int:
         skill_lower = str(skill or "").lower().replace(" ", "_")
         if skill_lower in {"insight", "perception", "investigation"}:
-            stat_key = Character.DND_SKILL_STATS.get(skill_lower, "INS")
+            stat_key = DND_SKILL_STATS.get(skill_lower, "INS")
             base = ability_modifier(int(entity.get("stats", {}).get(stat_key, 10)))
             legacy = int((entity.get("skills") or {}).get(skill_lower, 0))
             return base + legacy

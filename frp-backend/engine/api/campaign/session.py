@@ -5,7 +5,7 @@ import copy
 from typing import Any
 
 from engine.api.game_session import GameSession
-from engine.core.dm_agent import SceneType
+from engine.kernel.narrator import SceneType
 from engine.map import MapData, Room, TileType
 from engine.world.entity import Entity, EntityType
 from engine.world.spatial_index import SpatialIndex

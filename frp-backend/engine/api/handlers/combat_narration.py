@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from engine.api.game_session import GameSession
-from engine.core.character import Character
-from engine.core.dm_agent import DMEvent, EventType
+from engine.kernel.actor_records import ActorRecord
+from engine.kernel.narrator import DMEvent, EventType
 
 
 class CombatNarrationMixin:
@@ -96,7 +96,7 @@ class CombatNarrationMixin:
         except Exception:
             return fallback
 
-    def _build_combat_start_result(self, session: GameSession, enemies: list[Character]):
+    def _build_combat_start_result(self, session: GameSession, enemies: list[ActorRecord]):
         from engine.api.game_engine import ActionResult
 
         enemy_names = ", ".join(enemy.name for enemy in enemies) or "an enemy"

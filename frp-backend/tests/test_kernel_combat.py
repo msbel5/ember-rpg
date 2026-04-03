@@ -1,17 +1,19 @@
+"""Kernel combat resolution tests using kernel types only (no legacy Character)."""
+
 from engine.kernel import (
-    actor_record_from_character,
     actor_record_from_entity,
     item_stack_from_legacy_payload,
     resolve_strike,
     sync_body_state_to_tracker,
 )
+from engine.kernel.actor_records import create_player_actor
 from engine.world.body_parts import BodyPartTracker
 from engine.world.entity import Entity, EntityType
 from engine.world.npc_needs import NPCNeeds
-from engine.core.character import Character
 
 
 def _defender(*, armored: bool = False) -> Entity:
+    """Build a defender Entity for strike tests."""
     inventory = []
     if armored:
         inventory.append(
@@ -44,15 +46,15 @@ def _defender(*, armored: bool = False) -> Entity:
     )
 
 
-def _attacker() -> tuple[Character, dict]:
-    character = Character(
+def _attacker_record_and_weapon():
+    """Build an attacker ActorRecord and weapon payload using kernel factory."""
+    actor = create_player_actor(
         name="Attacker",
-        hp=20,
-        max_hp=20,
+        class_name="warrior",
         stats={"MIG": 16, "AGI": 12, "END": 12, "MND": 10, "INS": 10, "PRE": 10},
         skills={"melee": 4, "sword": 4},
     )
-    weapon = {
+    weapon_payload = {
         "id": "iron_longsword",
         "name": "Iron Longsword",
         "slot": "weapon",
@@ -62,16 +64,11 @@ def _attacker() -> tuple[Character, dict]:
         "damage_type": "slashing",
         "sharpness": 100,
     }
-    return character, weapon
+    return actor, weapon_payload
 
 
 def test_resolve_strike_is_deterministic_for_same_seed():
-    attacker_character, weapon_payload = _attacker()
-    attacker = actor_record_from_character(
-        attacker_character,
-        actor_id="player",
-        equipment_payloads={"weapon": weapon_payload},
-    )
+    attacker, weapon_payload = _attacker_record_and_weapon()
     defender_a = actor_record_from_entity(_defender())
     defender_b = actor_record_from_entity(_defender())
     weapon = item_stack_from_legacy_payload(weapon_payload)
@@ -83,12 +80,7 @@ def test_resolve_strike_is_deterministic_for_same_seed():
 
 
 def test_resolve_strike_applies_armor_and_wear_updates():
-    attacker_character, weapon_payload = _attacker()
-    attacker = actor_record_from_character(
-        attacker_character,
-        actor_id="player",
-        equipment_payloads={"weapon": weapon_payload},
-    )
+    attacker, weapon_payload = _attacker_record_and_weapon()
     defender = actor_record_from_entity(_defender(armored=True))
     weapon = item_stack_from_legacy_payload(weapon_payload)
 
@@ -110,12 +102,7 @@ def test_resolve_strike_applies_armor_and_wear_updates():
 
 
 def test_resolve_strike_marks_vital_wound_and_syncs_back_to_tracker():
-    attacker_character, weapon_payload = _attacker()
-    attacker = actor_record_from_character(
-        attacker_character,
-        actor_id="player",
-        equipment_payloads={"weapon": weapon_payload},
-    )
+    attacker, weapon_payload = _attacker_record_and_weapon()
     live_defender = _defender()
     defender = actor_record_from_entity(live_defender)
     weapon = item_stack_from_legacy_payload(weapon_payload)

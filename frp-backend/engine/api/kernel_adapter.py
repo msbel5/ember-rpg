@@ -1,8 +1,8 @@
 """Kernel adapter -- clean import boundary for API handlers.
 
-API handlers should import from this module instead of engine.core.
+API handlers should import from this module instead of the legacy core.
 This module exposes kernel combat, actor creation, and effect operations
-with ZERO imports from engine.core.
+with ZERO legacy-core imports.
 
 Usage in handlers:
     from engine.api.kernel_adapter import (

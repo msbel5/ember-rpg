@@ -17,7 +17,7 @@ from engine.api.campaign_models import (
     CampaignSnapshotResponse,
     CreateCampaignRequest,
 )
-from engine.core.creation_catalog import get_creation_catalog
+from engine.kernel.creation import get_creation_catalog
 from engine.api.campaign_runtime import CampaignRuntime
 from engine.save.save_models import CURRENT_SCHEMA_VERSION
 

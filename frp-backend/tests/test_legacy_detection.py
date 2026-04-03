@@ -9,15 +9,8 @@ import re
 
 BACKEND_DIR = pathlib.Path(__file__).resolve().parent.parent
 
-# Files confirmed dead and deleted in Phase 7.
-# enemy_ai.py kept because combat.py still imports it in the session chain.
-DELETED_DEAD_FILES = {
-    "engine/core/campaign.py",
-    "engine/core/loot.py",
-    "engine/core/monster.py",
-    "engine/core/npc.py",
-    "engine/core/rules.py",
-}
+# The entire engine/core/ directory has been deleted.
+DELETED_CORE_DIR = "engine/core"
 
 
 def _count_legacy_imports(directory: str = "engine") -> dict[str, int]:
@@ -40,11 +33,10 @@ def _count_legacy_imports(directory: str = "engine") -> dict[str, int]:
     return results
 
 
-def test_dead_files_are_deleted():
-    """Confirmed dead engine/core files must not exist."""
-    for rel_path in DELETED_DEAD_FILES:
-        full = BACKEND_DIR / rel_path
-        assert not full.exists(), f"Dead file still exists: {rel_path}"
+def test_core_directory_is_deleted():
+    """The entire engine/core/ directory must not exist."""
+    core_dir = BACKEND_DIR / DELETED_CORE_DIR
+    assert not core_dir.exists(), f"Legacy directory still exists: {DELETED_CORE_DIR}"
 
 
 def test_legacy_import_count_does_not_increase():
@@ -57,7 +49,7 @@ def test_legacy_import_count_does_not_increase():
     total = sum(imports.values())
     # Set ceiling at current level + small margin.
     # As handlers are rewritten, this number should decrease.
-    MAX_ALLOWED = 60
+    MAX_ALLOWED = 0  # engine/core/ is deleted -- no legacy imports allowed
     assert total <= MAX_ALLOWED, (
         f"Legacy import count ({total}) exceeds ceiling ({MAX_ALLOWED}).\n"
         f"Files with imports:\n"

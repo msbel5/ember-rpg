@@ -6,9 +6,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from engine.core.character import Character
-from engine.core.combat import CombatManager
-from engine.core.dm_agent import DMContext
+from engine.kernel.actor_records import ActorRecord
+from engine.kernel.narrator import DMContext
 from engine.npc.npc_memory import NPCMemoryManager
 from engine.world import WorldState
 from engine.world.action_points import ActionPointTracker
@@ -51,10 +50,10 @@ class GameSession(
 ):
     """Canonical per-player runtime session state."""
 
-    player: Character
+    player: ActorRecord
     dm_context: DMContext
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    combat: Optional[CombatManager] = None
+    combat: Optional[Any] = None
     world_state: Optional[WorldState] = None
     npc_memory: Optional[NPCMemoryManager] = None
     cascade_engine: Optional[CascadeEngine] = None

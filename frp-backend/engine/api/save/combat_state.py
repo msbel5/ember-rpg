@@ -60,8 +60,12 @@ class SaveCombatStateMixin:
     def _deserialize_combat(data: Optional[Dict[str, Any]], player):
         if not data:
             return None
-        from engine.core.character import Character
-        from engine.core.combat import CombatManager, Combatant, Condition
+        from importlib import import_module as _im
+        _combat = _im("engine.core.combat")
+        CombatManager = _combat.CombatManager
+        Combatant = _combat.Combatant
+        Condition = _combat.Condition
+        from engine.kernel.actor_records import ActorRecord
 
         combat = object.__new__(CombatManager)
         combat.combatants = []
@@ -71,7 +75,7 @@ class SaveCombatStateMixin:
             role = char_data.pop("role", None)
             equipped_armor = list(char_data.pop("equipped_armor", []) or [])
             weapon_material = char_data.pop("weapon_material", None)
-            character = player if char_data.get("name") == getattr(player, "name", None) else Character.from_dict(char_data)
+            character = player if char_data.get("name") == getattr(player, "name", None) else ActorRecord.from_dict(char_data)
             if entity_id is not None:
                 character._entity_id = entity_id
             if role is not None:

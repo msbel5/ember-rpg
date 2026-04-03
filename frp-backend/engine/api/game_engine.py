@@ -34,12 +34,52 @@ from engine.api.runtime_constants import (
     XP_REWARDS,
 )
 from engine.api.save_system import SaveSystem
-from engine.core.dm_agent import DMAIAgent, SceneType
-from engine.core.progression import ProgressionSystem
+from engine.kernel.narrator import DMAIAgent, SceneType
+from engine.data_loader import get_xp_thresholds
 from engine.world.body_parts import roll_hit_location
 from engine.world.need_satisfaction import NeedSatisfactionEngine
 from engine.world.skill_checks import SkillCheckResult, ability_modifier, contested_check, passive_score, roll_check, saving_throw
 from engine.world.tick_scheduler import WorldTickScheduler
+
+
+_XP_THRESHOLDS = get_xp_thresholds()
+
+
+class _ProgressionHelper:
+    """Minimal inline XP helper -- no engine.core dependency."""
+
+    @staticmethod
+    def _level_for_xp(xp: int) -> int:
+        level = 1
+        for i, threshold in enumerate(_XP_THRESHOLDS):
+            if xp >= threshold:
+                level = i + 1
+            else:
+                break
+        return min(level, 20)
+
+    def add_xp(self, player, amount: int):
+        """Add XP to a player object. Returns a simple object with .new_level on level-up, else None."""
+        old_level = getattr(player, "level", None)
+        if old_level is None:
+            old_level = int((getattr(player, "raw_payload", None) or {}).get("level", 1))
+        current_xp = getattr(player, "xp", None)
+        if current_xp is None:
+            current_xp = int((getattr(player, "raw_payload", None) or {}).get("xp", 0))
+        new_xp = current_xp + amount
+        # Write back XP
+        if hasattr(player, "xp"):
+            player.xp = new_xp
+        if hasattr(player, "raw_payload"):
+            player.raw_payload["xp"] = new_xp
+        new_level = self._level_for_xp(new_xp)
+        if new_level > old_level:
+            if hasattr(player, "level") and not isinstance(type(player).__dict__.get("level"), property):
+                player.level = new_level
+            if hasattr(player, "raw_payload"):
+                player.raw_payload["level"] = new_level
+            return type("LevelUpResult", (), {"new_level": new_level, "old_level": old_level})()
+        return None
 
 
 @dataclass
@@ -70,7 +110,7 @@ class GameEngine(
     def __init__(self, llm: Optional[Callable[[str], str]] = None):
         self.parser = ActionParser()
         self.dm = DMAIAgent()
-        self.progression = ProgressionSystem()
+        self.progression = _ProgressionHelper()
         self.llm = llm
         self.save_system = SaveSystem()
         self.tick_scheduler = WorldTickScheduler()

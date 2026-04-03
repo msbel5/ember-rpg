@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional
 from engine.api.campaign.debug_trace import snapshot_hash, trace_event
 from engine.api.game_engine import GameEngine
 from engine.api.save_system import SaveSystem
-from engine.core.character_creation import ABILITY_ORDER, CreationState, assign_stats_to_class
+from engine.kernel.creation import ABILITY_ORDER, CreationState, assign_stats_to_class
 from engine.kernel import GameState
 from engine.worldgen import WorldSeed, initialize_simulation, load_world_snapshot, realize_region, tick_global
 
