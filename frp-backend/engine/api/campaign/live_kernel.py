@@ -187,6 +187,14 @@ def _check_level_up(player: ActorRecord) -> list[dict[str, Any]]:
     is incremented, max_hp is raised (class-based), and a ``level_up``
     event is emitted.  Repeats until no further level-ups are possible
     so that large XP grants can jump multiple levels.
+
+    TODO(kernel-progression): This should use kernel/progression.py
+    ``execute_level_up(ProgressionState, ClassDef, ...)`` instead of
+    direct raw_payload writes.  Blocked because execute_level_up requires
+    a full ClassDef with xp_table (per-class) whereas we use the shared
+    progression.json thresholds, and it requires a hit-die RNG roll
+    whereas we use deterministic hp_per_level averages.  Refactor when
+    ProgressionState is stored on ActorRecord.raw_payload["progression"].
     """
     from engine.data.runtime import get_hp_per_level, get_xp_thresholds
 
@@ -278,9 +286,7 @@ def _sync_runtime_to_session(context: "CampaignContext", runtime: dict[str, Any]
     if player is not None:
         context.session.player.hp = int(player.stats.get("hp", context.session.player.hp))
         context.session.player.max_hp = int(player.stats.get("max_hp", context.session.player.max_hp))
-        context.session.player.conditions = [
-            c.name if hasattr(c, "name") else str(c) for c in player.conditions
-        ]
+        context.session.player.conditions = player.condition_names
         # Sync XP and level from kernel ActorRecord to session player.
         # ActorRecord.level is a read-only property backed by raw_payload,
         # so we write to raw_payload directly.  xp has a proper setter.

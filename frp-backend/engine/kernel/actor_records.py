@@ -288,7 +288,16 @@ class ActorRecord:
     # ── Condition helpers ──────────────────────────────────────
     @property
     def condition_names(self) -> list[str]:
-        """Flat list of active condition names for serialization."""
+        """Flat list of active condition names for serialization.
+
+        Handles both ConditionRecord objects and raw strings that may
+        appear after session↔kernel sync cycles.  Any raw string found
+        is promoted to a ConditionRecord in-place so downstream code
+        always sees a consistent type.
+        """
+        for i, c in enumerate(self.conditions):
+            if isinstance(c, str):
+                self.conditions[i] = ConditionRecord(condition_id=c, name=c)
         return [c.name for c in self.conditions]
 
     def set_conditions_from_names(self, names: list[str]) -> None:
@@ -297,7 +306,11 @@ class ActorRecord:
         Preserves existing ConditionRecords whose name matches;
         creates minimal records for new names.
         """
-        existing = {c.name: c for c in self.conditions}
+        existing = {}
+        for c in self.conditions:
+            key = c.name if hasattr(c, "name") else str(c)
+            if not isinstance(c, str):
+                existing[key] = c
         result: list[ConditionRecord] = []
         for n in names:
             if n in existing:

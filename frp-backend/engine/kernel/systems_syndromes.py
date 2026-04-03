@@ -74,20 +74,27 @@ def syndrome_registry_from_actors(actors: list[ActorRecord]) -> list[SyndromeDef
                 )
             )
         for condition in actor.conditions:
-            syndrome_id = f"condition::{condition.condition_id}"
+            if isinstance(condition, str):
+                cond_id = condition
+                cond_name = condition
+            else:
+                cond_id = condition.condition_id
+                cond_name = condition.name
+            syndrome_id = f"condition::{cond_id}"
             if syndrome_id in seen:
                 continue
             seen.add(syndrome_id)
+            cond_severity = int(getattr(condition, "severity", 1)) if not isinstance(condition, str) else 1
             registry.append(
                 SyndromeDef(
                     syndrome_id=syndrome_id,
-                    name=condition.name,
+                    name=cond_name,
                     delivery="contact",
                     effects=[
                         SyndromeEffect(
-                            effect_id=f"{condition.condition_id}::severity",
-                            effect_type=condition.name,
-                            severity=int(condition.severity),
+                            effect_id=f"{cond_id}::severity",
+                            effect_type=cond_name,
+                            severity=cond_severity,
                             target="actor",
                         )
                     ],
@@ -96,20 +103,26 @@ def syndrome_registry_from_actors(actors: list[ActorRecord]) -> list[SyndromeDef
         if actor.body_state is None:
             continue
         for condition in actor.body_state.conditions:
-            syndrome_id = f"body_condition::{condition.condition_id}"
+            if isinstance(condition, str):
+                bc_id, bc_name, bc_sev = condition, condition, 1
+            else:
+                bc_id = condition.condition_id
+                bc_name = condition.name
+                bc_sev = int(condition.severity)
+            syndrome_id = f"body_condition::{bc_id}"
             if syndrome_id in seen:
                 continue
             seen.add(syndrome_id)
             registry.append(
                 SyndromeDef(
                     syndrome_id=syndrome_id,
-                    name=condition.name,
+                    name=bc_name,
                     delivery="body_state",
                     effects=[
                         SyndromeEffect(
-                            effect_id=f"{condition.condition_id}::severity",
-                            effect_type=condition.name,
-                            severity=int(condition.severity),
+                            effect_id=f"{bc_id}::severity",
+                            effect_type=bc_name,
+                            severity=bc_sev,
                             target="body",
                         )
                     ],

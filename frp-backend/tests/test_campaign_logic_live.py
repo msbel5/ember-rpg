@@ -203,3 +203,45 @@ def test_campaign_runtime_ticks_systems_and_applies_environmental_consequences()
     assert "fire" in damage_types or "blunt" in damage_types
     assert response["campaign"]["systems"]["temperature_state"]["ambient_band"] == "hot"
     assert response["campaign"]["systems"]["traps"][0]["armed"] is False
+
+
+def test_condition_normalization_survives_string_injection():
+    """Regression: conditions list may contain raw strings after session sync.
+
+    ActorRecord.condition_names must handle both ConditionRecord objects
+    and raw strings without crashing (was AttributeError: 'str' has no .name).
+    """
+    runtime = _runtime()
+    context = runtime.create_campaign("CondTest", seed=99)
+    player = _player_actor(context)
+    # Inject a raw string into conditions (simulates session sync artifact).
+    player.conditions.append("poisoned")
+    # This must not crash.
+    names = player.condition_names
+    assert "poisoned" in names
+    # The string should now be promoted to a ConditionRecord.
+    assert all(hasattr(c, "name") for c in player.conditions)
+    # Run a full command cycle to verify no crash during sync.
+    response = runtime.run_command(context.campaign_id, "look around")
+    assert "narrative" in response
+
+
+def test_mixed_conditions_survive_full_tick_cycle():
+    """Verify that mixed condition types survive advance_kernel_runtime."""
+    from engine.kernel.actor_body import ConditionRecord
+    runtime = _runtime()
+    context = runtime.create_campaign("MixedCond", seed=100)
+    player = _player_actor(context)
+    player.conditions = [
+        ConditionRecord(condition_id="blessed", name="blessed", severity=1),
+        "fatigued",  # Raw string — must not crash.
+    ]
+    response = runtime.run_command(context.campaign_id, "rest")
+    assert "narrative" in response
+    # After sync, all conditions on the kernel ActorRecord must be
+    # proper ConditionRecord objects (promoted from strings during tick).
+    assert all(hasattr(c, "name") for c in player.conditions)
+    # condition_names must return clean string list.
+    names = player.condition_names
+    assert isinstance(names, list)
+    assert all(isinstance(n, str) for n in names)
