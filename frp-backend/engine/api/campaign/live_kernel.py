@@ -278,7 +278,9 @@ def _sync_runtime_to_session(context: "CampaignContext", runtime: dict[str, Any]
     if player is not None:
         context.session.player.hp = int(player.stats.get("hp", context.session.player.hp))
         context.session.player.max_hp = int(player.stats.get("max_hp", context.session.player.max_hp))
-        context.session.player.conditions = [condition.name for condition in player.conditions]
+        context.session.player.conditions = [
+            c.name if hasattr(c, "name") else str(c) for c in player.conditions
+        ]
         # Sync XP and level from kernel ActorRecord to session player.
         # ActorRecord.level is a read-only property backed by raw_payload,
         # so we write to raw_payload directly.  xp has a proper setter.

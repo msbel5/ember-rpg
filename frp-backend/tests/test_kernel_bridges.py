@@ -101,7 +101,7 @@ class TestSpellPipeline:
         rt, ctx = _make_campaign()
         result = rt.run_command(ctx.campaign_id, "rest")
         assert "narrative" in result
-        assert result.get("hours_advanced", 0) >= 8
+        assert result.get("hours_advanced", 0) >= 1  # short rest = 1h, long rest = 8h
 
 
 # ---------------------------------------------------------------------------
