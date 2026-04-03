@@ -8,6 +8,7 @@ import copy
 import logging
 from typing import Any, Optional
 
+from engine.api.action_parser import ActionIntent
 from engine.api.campaign.debug_trace import snapshot_hash, trace_event
 from engine.api.campaign.dialog import build_dialog_payload
 from engine.api.campaign.live_kernel import advance_kernel_runtime
@@ -32,6 +33,34 @@ from .context import CampaignContext
 
 logger = logging.getLogger(__name__)
 
+_SCENE_BRIDGE_INTENTS = {
+    ActionIntent.ATTACK,
+    ActionIntent.DISENGAGE,
+    ActionIntent.EXAMINE,
+    ActionIntent.FILL,
+    ActionIntent.FISH,
+    ActionIntent.FLEE,
+    ActionIntent.GO_TO,
+    ActionIntent.INTERACT,
+    ActionIntent.LOOK,
+    ActionIntent.LOCKPICK,
+    ActionIntent.MINE,
+    ActionIntent.MOVE,
+    ActionIntent.OPEN,
+    ActionIntent.POUR,
+    ActionIntent.EMPTY,
+    ActionIntent.PRAY,
+    ActionIntent.PUSH,
+    ActionIntent.READ_ITEM,
+    ActionIntent.SEARCH,
+    ActionIntent.SNEAK,
+    ActionIntent.STASH,
+    ActionIntent.ROTATE_ITEM,
+    ActionIntent.STEAL,
+    ActionIntent.CHOP,
+    ActionIntent.CLIMB,
+}
+
 
 def run_command(
     engine: Any,
@@ -53,7 +82,7 @@ def run_command(
     )
     narrative, command_type, hours_advanced = _dispatch(engine, context, issued, command_args)
     _advance_world(context, command_type, hours_advanced, issued)
-    dialog_payload = build_dialog_payload(context, narrative) if command_type in ("avatar", "dialog") else {}
+    dialog_payload = build_dialog_payload(context, narrative) if command_type == "dialog" else {}
     final_payload = campaign_payload(context)
     trace_event(
         "campaign_command_output",
@@ -107,6 +136,9 @@ def _dispatch(
     medical = maybe_handle_medical_command(context, issued)
     if medical is not None:
         return medical
+    scene_command = _dispatch_scene_command(engine, context, issued)
+    if scene_command is not None:
+        return scene_command
     # Combat handler.
     from engine.api.combat_bridge import maybe_handle_combat_command  # noqa: E402
     combat = maybe_handle_combat_command(context, issued)
@@ -135,9 +167,46 @@ def _dispatch(
     spell = maybe_handle_spell_command(context, issued)
     if spell is not None:
         return spell
+    # No handler matched — return explicit unknown command response.
+    # Legacy fallback through engine.process_action() has been removed;
+    # all valid commands must be routed through campaign dispatch above.
+    logger.warning("Unknown command rejected: %s", issued[:80])
+    return (
+        f"Unknown command: '{issued}'. Try: attack, cast, equip, craft, rest, "
+        f"travel, buy, sell, diagnose, dialog, or world interaction controls. "
+        f"Direct NPC speech commands are disabled; use dialog options instead.",
+        "unknown",
+        0,
+    )
+
+
+def _dispatch_scene_command(
+    engine: Any,
+    context: CampaignContext,
+    issued: str,
+) -> tuple[str, str, int] | None:
+    """Explicitly route supported scene commands through GameEngine.
+
+    This is a quarantine bridge, not a catch-all fallback: only a fixed
+    allowlist of exploration/combat verbs can reach GameEngine. Unknown
+    or removed commands never drop into process_action implicitly.
+    """
+    parsed = engine.parser.parse(issued)
+    if parsed.intent not in _SCENE_BRIDGE_INTENTS:
+        return None
     result = engine.process_action(context.session, issued)
-    narrative = merge_avatar_narrative(context, result.narrative)
-    return narrative, "avatar", hours_for_avatar_command(lower)
+    command_type = _scene_command_type(parsed.intent, result)
+    hours = 0 if command_type == "combat" else hours_for_avatar_command(issued)
+    return merge_avatar_narrative(context, result.narrative), command_type, hours
+
+
+def _scene_command_type(intent: ActionIntent, result: Any) -> str:
+    scene_value = str(getattr(getattr(result, "scene_type", None), "value", "")).lower()
+    if scene_value == "combat" or getattr(result, "combat_state", None) is not None:
+        return "combat"
+    if intent in {ActionIntent.LOOK, ActionIntent.EXAMINE, ActionIntent.MOVE, ActionIntent.GO_TO}:
+        return "avatar"
+    return "avatar"
 
 
 def _advance_world(

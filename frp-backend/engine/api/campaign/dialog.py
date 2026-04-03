@@ -42,7 +42,8 @@ def build_dialog_payload(context: "CampaignContext", narrative: str) -> dict[str
     player_actor = _get_player_actor(context)
     npc_actor = _get_npc_actor(context, npc_id, npc_name)
     if player_actor is None or npc_actor is None:
-        return _fallback_payload(npc_name, narrative)
+        logger.debug("Dialog skipped: kernel actors unavailable for %s", npc_id)
+        return {}
 
     dialog_def = _resolve_dialog_def(context, npc_id, npc_name)
     global_vars = _global_variables(context)
@@ -52,8 +53,8 @@ def build_dialog_payload(context: "CampaignContext", narrative: str) -> dict[str
             dialog_def, npc_actor, player_actor, global_vars,
         )
     except (ValueError, KeyError) as exc:
-        logger.debug("Dialog start failed for %s: %s", npc_id, exc)
-        return _fallback_payload(npc_name, narrative)
+        logger.debug("Dialog start failed for %s: %s — no fallback", npc_id, exc)
+        return {}
 
     store_dialog_state(context, dialog_state, dialog_def, npc_actor)
     options = _transitions_to_options(transitions, player_actor, npc_actor, global_vars)
@@ -97,15 +98,21 @@ def _resolve_dialog_def(context: "CampaignContext", npc_id: str, npc_name: str) 
     registry = dialog_defs_registry()
     # Exact NPC ID match.
     if npc_id and npc_id in registry:
-        return DialogDef.from_dict(registry[npc_id])
+        return _dialog_def_from_data(registry[npc_id])
     # Role-based match: extract NPC role from kernel runtime.
     role = _extract_npc_role(context, npc_id)
     if role:
         for def_data in registry.values():
             if str(def_data.get("role", "")).lower() == role.lower():
                 logger.debug("Dialog: role-based match '%s' for NPC '%s'", role, npc_id)
-                return DialogDef.from_dict(def_data)
+                return _dialog_def_from_data(def_data)
     return _default_dialog_def(npc_id or npc_name, npc_name, context)
+
+
+def _dialog_def_from_data(raw: dict) -> DialogDef:
+    """Build DialogDef from registry data, stripping non-schema fields like 'role'."""
+    clean = {k: v for k, v in raw.items() if k in DialogDef.__dataclass_fields__}
+    return DialogDef.from_dict(clean)
 
 
 def _extract_npc_role(context: "CampaignContext", npc_id: str) -> str:
@@ -202,19 +209,6 @@ def _global_variables(context: "CampaignContext") -> dict[str, Any]:
     if game_state is not None:
         return dict(getattr(game_state, "global_variables", {}))
     return {}
-
-
-def _fallback_payload(npc_name: str, narrative: str) -> dict[str, Any]:
-    return {
-        "dialog_npc": npc_name,
-        "dialog_text": narrative.strip() or f"{npc_name} studies you in silence.",
-        "dialog_options": [
-            {"text": "Ask about the local situation", "command": "ask about work",
-             "available": True, "enabled": True, "disabled_reason": "", "skill_check": {}},
-            {"text": "Leave", "command": "leave", "available": True, "enabled": True,
-             "disabled_reason": "", "skill_check": {}},
-        ],
-    }
 
 
 def store_dialog_state(

@@ -21,6 +21,20 @@ def _make_campaign():
     return rt, ctx
 
 
+def _inject_npc(ctx, actor_id: str, display_name: str):
+    """Inject a minimal NPC ActorRecord into kernel runtime for dialog tests."""
+    player = ctx.kernel_runtime["actors"]["player"]
+    from engine.kernel.actor_records import ActorRecord
+    from engine.kernel.actor import ActorIdentity, ActorPosition
+    npc = ActorRecord(
+        identity=ActorIdentity(actor_id=actor_id, display_name=display_name, actor_type="npc"),
+        position=ActorPosition(x=0, y=0),
+        action_points=3, max_action_points=3, alive=True,
+        stats=dict(player.stats), skills={}, raw_payload={"role": "guard"},
+    )
+    ctx.kernel_runtime["actors"][actor_id] = npc
+
+
 def _mock_actor(name="TestNPC", stats=None):
     from engine.kernel.actor_records import ActorRecord
     from engine.kernel.actor_foundation import ActorIdentity, ActorPosition
@@ -120,10 +134,11 @@ class TestBuildDialogPayload:
 
     def test_returns_dialog_when_talking_to_npc(self):
         _, ctx = _make_campaign()
-        # Simulate conversation state.
+        # Inject a kernel NPC actor so dialog can resolve.
+        _inject_npc(ctx, "test_guard", "Guard")
         ctx.session.conversation_state = {
             "target_type": "npc",
-            "npc_id": "",
+            "npc_id": "test_guard",
             "npc_name": "Guard",
         }
         result = build_dialog_payload(ctx, "The guard looks at you.")
@@ -133,8 +148,9 @@ class TestBuildDialogPayload:
 
     def test_options_have_required_fields(self):
         _, ctx = _make_campaign()
+        _inject_npc(ctx, "test_merchant", "Merchant")
         ctx.session.conversation_state = {
-            "target_type": "npc", "npc_id": "", "npc_name": "Merchant",
+            "target_type": "npc", "npc_id": "test_merchant", "npc_name": "Merchant",
         }
         result = build_dialog_payload(ctx, "Hello.")
         for opt in result.get("dialog_options", []):
