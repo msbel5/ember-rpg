@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from engine.api.campaign_session import CampaignSession
+from engine.api.campaign.campaign_session import CampaignSession
 from engine.kernel.creation import CreationState
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 

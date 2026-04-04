@@ -35,14 +35,14 @@ from engine.world.viewport import Viewport
 from engine.map import MapData
 from engine.api.session_utils import make_conversation_state
 
-from engine.api.session.bootstrap import SessionBootstrapMixin
-from engine.api.session.conversation import SessionConversationMixin
-from engine.api.session.encumbrance import SessionEncumbranceMixin
-from engine.api.session.entity_state import SessionEntityMixin
-from engine.api.session.inventory_state import SessionInventoryMixin
-from engine.api.session.player_state import SessionPlayerStateMixin
-from engine.api.session.serialization import SessionSerializationMixin
-from engine.api.session.timed_conditions import SessionTimedConditionMixin
+from engine.api.campaign.session_mixins.bootstrap import SessionBootstrapMixin
+from engine.api.campaign.session_mixins.conversation import SessionConversationMixin
+from engine.api.campaign.session_mixins.encumbrance import SessionEncumbranceMixin
+from engine.api.campaign.session_mixins.entity_state import SessionEntityMixin
+from engine.api.campaign.session_mixins.inventory_state import SessionInventoryMixin
+from engine.api.campaign.session_mixins.player_state import SessionPlayerStateMixin
+from engine.api.campaign.session_mixins.serialization import SessionSerializationMixin
+from engine.api.campaign.session_mixins.timed_conditions import SessionTimedConditionMixin
 
 
 @dataclass

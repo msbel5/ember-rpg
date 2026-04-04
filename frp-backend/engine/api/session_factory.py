@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from engine.api.campaign_session import CampaignSession
+from engine.api.campaign.campaign_session import CampaignSession
 from engine.api.runtime_constants import CLASS_ALIASES, DEFAULT_PLAYER_CLASS, LOCATION_STOCK_BASELINE, OPENING_SCENES, STARTER_KITS
 from engine.kernel.actor_records import create_player_actor
 from engine.kernel.creation import (

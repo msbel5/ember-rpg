@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 from typing import Any
 
-from engine.api.campaign_session import CampaignSession
+from engine.api.campaign.campaign_session import CampaignSession
 from engine.kernel import (
     ActorRecord,
     AreaState,

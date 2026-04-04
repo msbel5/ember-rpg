@@ -9,7 +9,7 @@ import copy
 import logging
 from typing import Any
 
-from engine.api.campaign_session import CampaignSession
+from engine.api.campaign.campaign_session import CampaignSession
 from engine.data.classes import get_creation_ability_order
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
