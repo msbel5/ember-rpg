@@ -54,6 +54,35 @@ static func normalize_combat(data: Dictionary) -> Dictionary:
 	return normalized
 
 
+static func normalize_dialog(data: Dictionary) -> Dictionary:
+	var dialog_source: Dictionary = {}
+	if data.has("dialog") and data["dialog"] is Dictionary:
+		dialog_source = data["dialog"]
+	else:
+		dialog_source = data
+	var npc_name := str(dialog_source.get("dialog_npc", dialog_source.get("speaker", ""))).strip_edges()
+	var dialog_text := str(dialog_source.get("dialog_text", dialog_source.get("narrative", ""))).strip_edges()
+	var raw_options = dialog_source.get("dialog_options", [])
+	var normalized_options: Array = []
+	if raw_options is Array:
+		for option in raw_options:
+			if not (option is Dictionary):
+				continue
+			var normalized_option: Dictionary = option.duplicate(true)
+			if not normalized_option.has("enabled"):
+				normalized_option["enabled"] = bool(normalized_option.get("available", true))
+			if not normalized_option.has("disabled_reason"):
+				normalized_option["disabled_reason"] = str(normalized_option.get("reason", ""))
+			normalized_options.append(normalized_option)
+	if npc_name.is_empty() and dialog_text.is_empty() and normalized_options.is_empty():
+		return {}
+	return {
+		"dialog_npc": npc_name,
+		"dialog_text": dialog_text,
+		"dialog_options": normalized_options,
+	}
+
+
 static func flatten_campaign_response(data: Dictionary, current_map: Dictionary = {}) -> Dictionary:
 	var flattened: Dictionary = {}
 	if not (data.has("campaign") and data["campaign"] is Dictionary):
@@ -85,6 +114,11 @@ static func flatten_campaign_response(data: Dictionary, current_map: Dictionary 
 	flattened["location"] = campaign_location
 	flattened["combat"] = campaign.get("combat", {})
 	flattened["conversation_state"] = campaign.get("conversation_state", {})
+	var normalized_dialog := normalize_dialog(campaign)
+	if normalized_dialog.is_empty():
+		normalized_dialog = normalize_dialog(data)
+	if not normalized_dialog.is_empty():
+		flattened.merge(normalized_dialog, true)
 	flattened["world"] = campaign.get("world", {})
 	flattened["world_state"] = campaign.get("world_state", campaign.get("world", {}))
 	flattened["game_state_root"] = campaign.get("game_state", {})

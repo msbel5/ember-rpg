@@ -28,8 +28,7 @@ const EDGE_SCROLL_MARGIN := 20.0
 const EDGE_SCROLL_SPEED := 200.0
 
 var _context_menu: PopupMenu
-var _context_target_entity: Dictionary = {}
-var _context_target_tile: Vector2i = Vector2i.ZERO
+var _context_menu_commands: Dictionary = {}
 
 var _walker := WorldWalk.new()
 func _ready() -> void:
@@ -195,22 +194,32 @@ func _show_context_menu(screen_pos: Vector2, tile: Vector2i, entity: Dictionary)
 	_context_menu = PopupMenu.new()
 	_context_menu.name = "ContextMenu"
 	add_child(_context_menu)
-	_context_target_entity = entity
-	_context_target_tile = tile
+	_context_menu_commands.clear()
 	var items: Array[Dictionary]
 	if not entity.is_empty():
 		items = WorldInteraction.build_entity_menu_items(entity)
 	else:
-		items = WorldInteraction.build_ground_menu_items(_tile_name_at(tile))
+		items = WorldInteraction.build_ground_menu_items(_tile_name_at(tile), tile)
+	var item_id := 0
 	for item in items:
-		_context_menu.add_item(str(item.get("label", "")), int(item.get("id", 0)))
+		var label := str(item.get("label", "")).strip_edges()
+		var command := str(item.get("command", "")).strip_edges()
+		if label.is_empty() or command.is_empty():
+			continue
+		_context_menu.add_item(label, item_id)
+		_context_menu_commands[item_id] = command
+		item_id += 1
+	if item_id == 0:
+		_context_menu.queue_free()
+		_context_menu = null
+		return
 	_context_menu.id_pressed.connect(_on_context_menu_selected)
 	_context_menu.position = Vector2i(int(screen_pos.x + global_position.x), int(screen_pos.y + global_position.y))
 	_context_menu.popup()
 
 
 func _on_context_menu_selected(id: int) -> void:
-	var cmd := WorldInteraction.resolve_context_command(id, _context_target_entity, _context_target_tile, _tile_name_at(_context_target_tile))
+	var cmd := str(_context_menu_commands.get(id, "")).strip_edges()
 	if not cmd.is_empty():
 		command_requested.emit(cmd)
 

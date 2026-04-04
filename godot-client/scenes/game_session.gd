@@ -61,6 +61,7 @@ func _ready() -> void:
 	GameState.state_updated.connect(_on_state_updated)
 	GameState.combat_started.connect(_on_combat_started)
 	GameState.combat_ended.connect(_on_combat_ended)
+	GameState.dialog_state_changed.connect(_on_dialog_state_changed)
 	GameState.level_up_occurred.connect(_on_level_up)
 	Backend.request_error.connect(_on_backend_error)
 
@@ -68,7 +69,9 @@ func _ready() -> void:
 	_world_sync.initialize_runtime()
 	command_bar.set_focus_summary(world_view.get_focus_summary())
 	command_bar.set_focus_actions(world_view.get_focus_actions())
-	command_bar.focus_input()
+	_sync_dialog_overlay()
+	if not GameState.has_active_dialog():
+		command_bar.focus_input()
 
 
 func _install_status_bar() -> void:
@@ -86,6 +89,7 @@ func _install_dialog_overlay() -> void:
 	if world_pane != null:
 		world_pane.add_child(_dialog_overlay)
 		_dialog_overlay.command_requested.connect(_submit_action)
+		_dialog_overlay.dialog_closed.connect(_on_dialog_overlay_closed)
 
 
 func _install_combat_overlay() -> void:
@@ -163,17 +167,9 @@ func _submit_action(text: String) -> void:
 
 func _on_campaign_action_response(data, _issued_text: String) -> void:
 	if data == null:
-		if _dialog_overlay != null and _dialog_overlay.is_dialog_active():
-			_dialog_overlay.hide_dialog()
 		_finish_turn_sync()
 		return
 	GameState.update_from_response(data)
-	if _dialog_overlay != null and data.has("dialog_options") and data["dialog_options"] is Array and not data["dialog_options"].is_empty():
-		var npc_name := str(data.get("dialog_npc", data.get("speaker", "NPC")))
-		var npc_text := str(data.get("dialog_text", data.get("narrative", "")))
-		_dialog_overlay.show_dialog(npc_name, npc_text, data["dialog_options"])
-	elif _dialog_overlay != null and _dialog_overlay.is_dialog_active():
-		_dialog_overlay.hide_dialog()
 	_finish_turn_sync()
 
 
@@ -195,13 +191,37 @@ func _finish_turn_sync() -> void:
 	if not _queued_world_commands.is_empty():
 		_submit_next_queued_world_command()
 		return
-	if not save_load_panel.visible:
+	if not save_load_panel.visible and not GameState.has_active_dialog():
 		command_bar.focus_input()
 
 
 func _on_state_updated() -> void:
 	_save_sync.remember_player_id()
 	_ensure_campaign_socket()
+
+
+func _on_dialog_state_changed(_payload: Dictionary) -> void:
+	_sync_dialog_overlay()
+
+
+func _sync_dialog_overlay() -> void:
+	if _dialog_overlay == null:
+		return
+	var dialog_payload := GameState.current_dialog_payload()
+	if dialog_payload.is_empty():
+		if _dialog_overlay.is_dialog_active():
+			_dialog_overlay.hide_dialog()
+		return
+	_dialog_overlay.show_dialog(
+		str(dialog_payload.get("dialog_npc", "NPC")),
+		str(dialog_payload.get("dialog_text", "")),
+		dialog_payload.get("dialog_options", []),
+	)
+
+
+func _on_dialog_overlay_closed() -> void:
+	if not save_load_panel.visible:
+		command_bar.focus_input()
 
 
 func _on_combat_started() -> void:
@@ -236,6 +256,8 @@ func _input(event: InputEvent) -> void:
 			save_load_panel.close_panel()
 			get_viewport().set_input_as_handled()
 		return
+	if _dialog_overlay != null and _dialog_overlay.is_dialog_active():
+		return
 	if event.keycode == KEY_HOME or (event.keycode == KEY_I and not command_bar.has_input_focus()):
 		_submit_action("inventory")
 		get_viewport().set_input_as_handled()
@@ -262,7 +284,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _should_focus_command_bar_on_enter() -> bool:
-	return not save_load_panel.visible and not command_bar.has_input_focus()
+	return not save_load_panel.visible and not GameState.has_active_dialog() and not command_bar.has_input_focus()
 
 
 func _on_backend_error(message: String) -> void:

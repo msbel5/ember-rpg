@@ -20,6 +20,10 @@ var player: Dictionary = {}
 var scene: String = "exploration"  # exploration | combat | dialogue | rest
 var location: String = ""
 var combat_state: Dictionary = {}
+var conversation_state: Dictionary = {}
+var dialog_npc: String = ""
+var dialog_text: String = ""
+var dialog_options: Array = []
 var narrative_history: Array[String] = []
 var level_up_pending: Dictionary = {}
 var map_data: Dictionary = {}
@@ -69,6 +73,7 @@ signal inventory_updated(items: Array)
 signal settlement_updated(settlement: Dictionary)
 signal creation_updated(state: Dictionary)
 signal character_sheet_updated(sheet: Dictionary)
+signal dialog_state_changed(dialog_payload: Dictionary)
 
 func update_from_response(data: Dictionary) -> void:
 	if data.has("creation_id"):
@@ -117,6 +122,8 @@ func update_from_response(data: Dictionary) -> void:
 		ws_path = str(data["ws_path"])
 	if data.has("world") and data["world"] is Dictionary:
 		world = data["world"]
+	if data.has("conversation_state") and data["conversation_state"] is Dictionary:
+		conversation_state = data["conversation_state"]
 	if data.has("world_state") and data["world_state"] is Dictionary:
 		world_state = data["world_state"]
 	if data.has("game_state_root") and data["game_state_root"] is Dictionary:
@@ -196,6 +203,14 @@ func update_from_response(data: Dictionary) -> void:
 	elif data.has("combat_state") or data.has("combat"):
 		combat_state = {}
 
+	var normalized_dialog = _normalize_dialog_payload(data)
+	if not normalized_dialog.is_empty():
+		_apply_dialog_payload(normalized_dialog)
+	elif _has_dialog_keys(data):
+		_apply_dialog_payload({})
+	elif has_active_dialog() and (data.has("narrative") or data.has("scene") or data.has("combat") or data.has("combat_state") or data.has("conversation_state")):
+		_apply_dialog_payload({})
+
 	# Level up
 	if data.has("level_up") and data["level_up"] != null:
 		level_up_pending = data["level_up"]
@@ -258,6 +273,8 @@ func reset() -> void:
 	scene = "exploration"
 	location = ""
 	combat_state = {}
+	conversation_state = {}
+	_apply_dialog_payload({})
 	narrative_history.clear()
 	level_up_pending = {}
 	map_data = {}
@@ -298,6 +315,27 @@ func is_in_combat() -> bool:
 
 func has_active_campaign() -> bool:
 	return active_runtime == "campaign" and not campaign_id.is_empty()
+
+
+func current_shell_mode() -> String:
+	if has_active_dialog():
+		return "dialog"
+	if is_in_combat():
+		return "combat"
+	return "exploration"
+
+
+func has_active_dialog() -> bool:
+	return not dialog_npc.is_empty() or not dialog_text.is_empty() or not dialog_options.is_empty()
+
+func current_dialog_payload() -> Dictionary:
+	if not has_active_dialog():
+		return {}
+	return {
+		"dialog_npc": dialog_npc,
+		"dialog_text": dialog_text,
+		"dialog_options": dialog_options.duplicate(true),
+	}
 
 func get_player_hp_ratio() -> float:
 	var hp = player.get("hp", 0)
@@ -390,6 +428,9 @@ func _clean_narrative(text: String) -> String:
 func _normalize_combat_payload(data: Dictionary) -> Dictionary:
 	return ResponseNormalizer.normalize_combat(data)
 
+func _normalize_dialog_payload(data: Dictionary) -> Dictionary:
+	return ResponseNormalizer.normalize_dialog(data)
+
 func _normalize_map_payload(data: Dictionary) -> Dictionary:
 	return ResponseNormalizer.normalize_map(data, map_data)
 
@@ -410,3 +451,37 @@ func _context_actions_for(entry: Dictionary) -> Array:
 
 func _facing_to_int(facing: String) -> int:
 	return ResponseNormalizer.facing_to_int(facing, player_facing)
+
+
+func _apply_dialog_payload(payload: Dictionary) -> void:
+	var normalized_payload := payload.duplicate(true) if payload is Dictionary else {}
+	var next_npc := str(normalized_payload.get("dialog_npc", "")).strip_edges()
+	var next_text := str(normalized_payload.get("dialog_text", "")).strip_edges()
+	var next_options = normalized_payload.get("dialog_options", [])
+	if not (next_options is Array):
+		next_options = []
+	var changed := next_npc != dialog_npc or next_text != dialog_text or not _dialog_options_equal(next_options, dialog_options)
+	dialog_npc = next_npc
+	dialog_text = next_text
+	dialog_options = next_options.duplicate(true)
+	if changed:
+		dialog_state_changed.emit(current_dialog_payload())
+
+
+func _dialog_options_equal(left_options: Array, right_options: Array) -> bool:
+	if left_options.size() != right_options.size():
+		return false
+	for index in range(left_options.size()):
+		var left_entry = left_options[index]
+		var right_entry = right_options[index]
+		if not (left_entry is Dictionary and right_entry is Dictionary):
+			if left_entry != right_entry:
+				return false
+			continue
+		if JSON.stringify(left_entry) != JSON.stringify(right_entry):
+			return false
+	return true
+
+
+func _has_dialog_keys(data: Dictionary) -> bool:
+	return data.has("dialog_npc") or data.has("dialog_text") or data.has("dialog_options") or (data.has("dialog") and data["dialog"] is Dictionary)

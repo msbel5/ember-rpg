@@ -48,14 +48,12 @@ static func default_actions(entities: Dictionary) -> Array:
 		})
 	var loot := _first_entity(entities, "items")
 	if not loot.is_empty():
-		actions.append({
-			"verb": "use",
-			"label": "Use %s" % _short_label(WorldInteraction.display_entity_name(loot)),
-			"command": WorldInteraction.command_for_entity(loot),
-		})
+		actions.append(_named_action_for_entity(loot))
+	elif not _first_entity(entities, "furniture").is_empty():
+		actions.append(_named_action_for_entity(_first_entity(entities, "furniture")))
 	actions.append({"verb": "examine", "label": "Examine the area", "command": "look around"})
 	actions.append({"verb": "rest", "label": "Rest and recover", "command": "rest"})
-	return actions
+	return _dedupe_actions(actions)
 
 
 static func actions_for_tile(tile_position: Vector2i, tile_name: String, entity: Dictionary) -> Array:
@@ -68,17 +66,24 @@ static func actions_for_tile(tile_position: Vector2i, tile_name: String, entity:
 				var norm := str(action).strip_edges().to_lower()
 				if norm.is_empty():
 					continue
+				var command := WorldInteraction.command_for_context_action(norm, entity_name, str(entity.get("bucket", "npc")))
+				if command.is_empty():
+					continue
 				result.append({
 					"verb": _verb_for_action(norm, str(entity.get("bucket", "npc"))),
 					"label": _label_for_action(norm, entity_name),
-					"command": WorldInteraction.command_for_context_action(norm, entity_name, str(entity.get("bucket", "npc"))),
+					"command": command,
 				})
 				if result.size() >= 4:
-					return result
+					return _dedupe_actions(result)
 		result.append(_named_action_for_entity(entity))
-		result.append({"verb": "examine", "label": "Examine %s" % _short_label(WorldInteraction.display_entity_name(entity)), "command": "examine %s" % entity_name})
+		result.append({
+			"verb": "examine",
+			"label": "Examine %s" % _short_label(WorldInteraction.display_entity_name(entity)),
+			"command": "examine %s" % entity_name,
+		})
 		result.append({"verb": "rest", "label": "Rest", "command": "rest"})
-		return result
+		return _dedupe_actions(result)
 	if tile_name.is_empty():
 		return [
 			{"verb": "examine", "label": "Examine the area", "command": "look around"},
@@ -87,10 +92,14 @@ static func actions_for_tile(tile_position: Vector2i, tile_name: String, entity:
 	var primary_command := WorldInteraction.command_for_tile(tile_position, tile_name)
 	var actions: Array = []
 	if not str(primary_command).begins_with("move to"):
-		actions.append({"verb": "use", "label": _label_for_tile_command(primary_command, tile_name), "command": primary_command})
+		actions.append({
+			"verb": _verb_for_tile_command(primary_command),
+			"label": _label_for_tile_command(primary_command, tile_name),
+			"command": primary_command,
+		})
 	actions.append({"verb": "examine", "label": "Examine %s" % WorldInteraction.display_tile_name(tile_name), "command": "examine %s" % tile_name})
 	actions.append({"verb": "rest", "label": "Rest", "command": "rest"})
-	return actions
+	return _dedupe_actions(actions)
 
 
 # --- helpers ---------------------------------------------------------------
@@ -124,15 +133,16 @@ static func _short_label(label: String) -> String:
 static func _named_action_for_entity(entity: Dictionary) -> Dictionary:
 	var bucket := str(entity.get("bucket", "npc")).strip_edges().to_lower()
 	var name := _short_label(WorldInteraction.display_entity_name(entity))
+	var command := WorldInteraction.command_for_entity(entity)
 	match bucket:
 		"enemy":
-			return {"verb": "attack", "label": "Attack %s" % name, "command": "attack %s" % str(entity.get("name", "threat")).strip_edges().to_lower()}
+			return {"verb": "attack", "label": "Attack %s" % name, "command": command}
 		"item":
-			return {"verb": "use", "label": "Use %s" % name, "command": WorldInteraction.command_for_entity(entity)}
+			return {"verb": "use", "label": "Take %s" % name, "command": command}
 		"furniture":
-			return {"verb": "use", "label": "Use %s" % name, "command": WorldInteraction.command_for_entity(entity)}
+			return {"verb": _verb_for_command(command, bucket), "label": "Examine %s" % name, "command": command}
 		_:
-			return {"verb": "talk", "label": "Talk to %s" % name, "command": WorldInteraction.command_for_entity(entity)}
+			return {"verb": "talk", "label": "Talk to %s" % name, "command": command}
 
 
 static func _label_for_action(action: String, entity_name: String) -> String:
@@ -142,10 +152,14 @@ static func _label_for_action(action: String, entity_name: String) -> String:
 			return "Talk to %s" % display_name
 		"attack":
 			return "Attack %s" % display_name
-		"trade", "pick up":
-			return "Use %s" % display_name
+		"trade":
+			return "Trade with %s" % display_name
+		"pick up", "take", "loot":
+			return "Take %s" % display_name
 		"examine":
 			return "Examine %s" % display_name
+		"open":
+			return "Open %s" % display_name
 		"rest":
 			return "Rest"
 	return "Use %s" % display_name
@@ -153,7 +167,7 @@ static func _label_for_action(action: String, entity_name: String) -> String:
 
 static func _label_for_tile_command(command: String, tile_name: String) -> String:
 	if command.begins_with("open "):
-		return "Use %s" % WorldInteraction.display_tile_name(tile_name)
+		return "Open %s" % WorldInteraction.display_tile_name(tile_name)
 	if command.begins_with("examine "):
 		return "Examine %s" % WorldInteraction.display_tile_name(tile_name)
 	return "Use %s" % WorldInteraction.display_tile_name(tile_name)
@@ -165,7 +179,7 @@ static func _verb_for_action(action: String, bucket: String) -> String:
 			return "talk"
 		"attack":
 			return "attack"
-		"trade", "pick up":
+		"trade", "pick up", "take", "loot", "open", "use":
 			return "use"
 		"examine":
 			return "examine"
@@ -173,6 +187,46 @@ static func _verb_for_action(action: String, bucket: String) -> String:
 			return "rest"
 	if bucket == "enemy":
 		return "attack"
-	if bucket == "item" or bucket == "furniture":
+	if bucket == "furniture":
+		return "examine"
+	if bucket == "item":
 		return "use"
 	return "talk"
+
+
+static func _verb_for_tile_command(command: String) -> String:
+	return _verb_for_command(command, "")
+
+
+static func _verb_for_command(command: String, bucket: String) -> String:
+	if command.begins_with("talk "):
+		return "talk"
+	if command.begins_with("attack "):
+		return "attack"
+	if command == "rest":
+		return "rest"
+	if command.begins_with("examine ") or command == "look around":
+		return "examine"
+	if command.begins_with("pick up ") or command.begins_with("trade ") or command.begins_with("open ") or command.begins_with("use "):
+		return "use"
+	if bucket == "furniture":
+		return "examine"
+	if bucket == "item":
+		return "use"
+	if bucket == "enemy":
+		return "attack"
+	return "talk"
+
+
+static func _dedupe_actions(actions: Array) -> Array:
+	var result: Array = []
+	var seen_commands: Dictionary = {}
+	for action in actions:
+		if not (action is Dictionary):
+			continue
+		var command := str(action.get("command", "")).strip_edges()
+		if command.is_empty() or seen_commands.has(command):
+			continue
+		seen_commands[command] = true
+		result.append(action)
+	return result

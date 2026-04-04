@@ -162,10 +162,10 @@ class Win32DesktopExecutor(AutomationExecutor):
             env={
                 **os.environ,
                 BACKEND_ENV: self.backend_url,
-                AUTOMATION_COMMAND_ENV: str(self._command_path),
-                AUTOMATION_RESULT_ENV: str(self._result_path),
-                AUTOMATION_STATUS_ENV: str(self._status_path),
-                AUTOMATION_ARTIFACT_ENV: str(self.artifacts.run_dir),
+                AUTOMATION_COMMAND_ENV: self._windows_env_path(self._command_path),
+                AUTOMATION_RESULT_ENV: self._windows_env_path(self._result_path),
+                AUTOMATION_STATUS_ENV: self._windows_env_path(self._status_path),
+                AUTOMATION_ARTIFACT_ENV: self._windows_env_path(self.artifacts.run_dir),
             },
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -179,6 +179,10 @@ class Win32DesktopExecutor(AutomationExecutor):
         status = wait_for_json(self._status_path, lambda payload: payload.get("ready") is True, timeout=20.0)
         if str(status.get("status", "")) == "error":
             raise RuntimeError(str(status.get("message", "Runtime automation bridge failed to launch.")))
+
+    @staticmethod
+    def _windows_env_path(path: Path) -> str:
+        return str(path).replace("/", "\\")
 
     def close_client(self) -> None:
         terminate_process(self._client_process)
