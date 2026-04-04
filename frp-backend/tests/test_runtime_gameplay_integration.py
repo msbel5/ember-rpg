@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import engine.api.gameplay_bridge as gameplay_bridge
+
 from engine.api.campaign.runtime import CampaignRuntime
 from engine.api.campaign.party_bridge import maybe_handle_party_command
 from engine.kernel.gameplay import spawn_ground_item_entity
+from engine.world.entity import Entity, EntityType
 
 
 def _make_campaign() -> tuple[CampaignRuntime, object]:
@@ -37,6 +40,34 @@ def _inject_companion(
     companion.raw_payload["hostile"] = hostile
     context.kernel_runtime["actors"][companion.identity.actor_id] = companion
     return companion
+
+
+def _add_workstation(context, *, workstation_id: str, name: str, offset: tuple[int, int] = (1, 0)) -> None:
+    x = int(context.position[0]) + int(offset[0])
+    y = int(context.position[1]) + int(offset[1])
+    entity = Entity(
+        id=workstation_id,
+        entity_type=EntityType.FURNITURE,
+        name=name,
+        position=(x, y),
+        glyph="#",
+        color="orange",
+        blocking=False,
+        hp=1,
+        max_hp=1,
+        disposition="neutral",
+        job=name.lower().replace(" ", "_"),
+    )
+    context.spatial_index.add(entity)
+    context.entities[workstation_id] = {
+        "name": name,
+        "type": "furniture",
+        "position": [x, y],
+        "role": name.lower().replace(" ", "_"),
+        "template": name.lower().replace(" ", "_"),
+        "context_actions": ["examine", "use"],
+        "entity_ref": entity,
+    }
 
 
 def test_run_command_pickup_uses_ground_item_authority() -> None:
@@ -121,9 +152,11 @@ def test_run_command_repeated_drop_then_missing() -> None:
 def test_run_command_craft_repeated_missing_ingredients_stays_non_mutating() -> None:
     runtime, context = _make_campaign()
     context.kernel_runtime["actors"]["player"].skills["smithing"] = 15
+    _add_workstation(context, workstation_id="test_forge_missing_ingredients", name="Practice Forge")
     baseline_inventory = list(context.player.inventory)
 
     first = runtime.run_command(context.campaign_id, "craft iron bar")
+    _add_workstation(context, workstation_id="test_forge_missing_ingredients_retry", name="Practice Forge")
     second = runtime.run_command(context.campaign_id, "craft iron bar")
 
     assert first["command_type"] == "craft"
@@ -131,6 +164,101 @@ def test_run_command_craft_repeated_missing_ingredients_stays_non_mutating() -> 
     assert "missing ingredient" in first["narrative"].lower()
     assert "missing ingredient" in second["narrative"].lower()
     assert context.player.inventory == baseline_inventory
+
+
+def test_run_command_craft_requires_nearby_workstation_without_mutation() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.skills["smithing"] = 15
+    player.xp = 0
+    context.position = [0, 0]
+    context.player_entity.position = (0, 0)
+    context.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 2}, merge=True)
+    context.add_item({"id": "coal", "name": "Coal", "qty": 1}, merge=True)
+    baseline_inventory = [(item.item_def_id, int(getattr(item, "quantity", 1))) for item in context.player.inventory]
+
+    result = runtime.run_command(context.campaign_id, "craft iron bar")
+
+    assert result["command_type"] == "craft"
+    assert result["hours_advanced"] == 0
+    assert "nearby forge" in result["narrative"].lower()
+    assert [(item.item_def_id, int(getattr(item, "quantity", 1))) for item in context.player.inventory] == baseline_inventory
+    assert player.xp == 0
+    assert isinstance(result["campaign"]["player"], dict)
+
+
+def test_run_command_craft_with_nearby_workstation_succeeds() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.skills["smithing"] = 15
+    player.xp = 0
+    context.position = [0, 0]
+    context.player_entity.position = (0, 0)
+    _add_workstation(context, workstation_id="test_forge", name="Travel Forge")
+    context.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 2}, merge=True)
+    context.add_item({"id": "coal", "name": "Coal", "qty": 1}, merge=True)
+
+    result = runtime.run_command(context.campaign_id, "craft iron bar")
+
+    assert result["command_type"] == "craft"
+    assert result["hours_advanced"] == 2
+    assert "crafted" in result["narrative"].lower()
+    assert context.find_inventory_item("iron_bar") is not None
+    assert player.xp > 0
+    assert isinstance(result["campaign"]["player"], dict)
+
+
+def test_run_command_craft_any_recipe_works_without_workstation(monkeypatch) -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.xp = 0
+    context.position = [0, 0]
+    context.player_entity.position = (0, 0)
+    context.add_item({"id": "coal", "name": "Coal", "qty": 1}, merge=True)
+    recipe_bank = dict(gameplay_bridge.recipes_registry())
+    recipe_bank["trail_token"] = {
+        "id": "trail_token",
+        "name": "Trail Token",
+        "workstation": "any",
+        "skill": "",
+        "skill_dc": 0,
+        "ingredients": [{"item_id": "coal", "quantity": 1}],
+        "products": [{"item_id": "iron_ore", "quantity": 1}],
+        "xp_reward": 3,
+    }
+    monkeypatch.setattr(gameplay_bridge, "recipes_registry", lambda: recipe_bank)
+
+    result = runtime.run_command(context.campaign_id, "craft trail token")
+
+    assert result["command_type"] == "craft"
+    assert result["hours_advanced"] == 2
+    assert "crafted" in result["narrative"].lower()
+    assert context.find_inventory_item("iron_ore") is not None
+    assert player.xp == 3
+
+
+def test_run_command_craft_repeated_missing_workstation_stays_non_mutating() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.skills["smithing"] = 15
+    player.xp = 0
+    context.position = [0, 0]
+    context.player_entity.position = (0, 0)
+    context.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 2}, merge=True)
+    context.add_item({"id": "coal", "name": "Coal", "qty": 1}, merge=True)
+    baseline_inventory = [(item.item_def_id, int(getattr(item, "quantity", 1))) for item in context.player.inventory]
+
+    first = runtime.run_command(context.campaign_id, "craft iron bar")
+    second = runtime.run_command(context.campaign_id, "craft iron bar")
+
+    assert first["command_type"] == "craft"
+    assert second["command_type"] == "craft"
+    assert first["hours_advanced"] == 0
+    assert second["hours_advanced"] == 0
+    assert "nearby forge" in first["narrative"].lower()
+    assert "nearby forge" in second["narrative"].lower()
+    assert [(item.item_def_id, int(getattr(item, "quantity", 1))) for item in context.player.inventory] == baseline_inventory
+    assert player.xp == 0
 
 
 def test_run_command_long_rest_repeatedly_hits_cooldown() -> None:

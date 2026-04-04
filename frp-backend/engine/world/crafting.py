@@ -208,7 +208,7 @@ class CraftingSystem:
         player_pos: Tuple[int, int],
         workstation_type: str,
     ) -> Any:
-        """Search *spatial_index* for a workstation within 2 tiles.
+        """Search *spatial_index* for a matching workstation in local vicinity.
 
         ``spatial_index`` must support ``.in_radius(x, y, radius)``
         returning an iterable of objects with ``.entity_type`` and ``.name``
@@ -218,8 +218,10 @@ class CraftingSystem:
         """
         if workstation_type == "any":
             return True  # sentinel: no workstation needed
+        if spatial_index is None:
+            return None
         px, py = player_pos
-        for entity in spatial_index.in_radius(px, py, 2):
+        for entity in spatial_index.in_radius(px, py, 9):
             etype = getattr(entity, "entity_type", None)
             ename = getattr(entity, "name", getattr(entity, "id", ""))
             etype_value = getattr(etype, "value", str(etype)).lower()

@@ -20,6 +20,7 @@ from engine.kernel.gameplay import (
     resolve_rest,
     unequip_actor_slot,
 )
+from engine.world.crafting import CraftingSystem
 
 if TYPE_CHECKING:
     from engine.api.campaign.context import CampaignContext
@@ -241,6 +242,20 @@ def maybe_handle_craft_command(
     if found is None:
         return (f"No recipe found for '{recipe_name}'.", "craft", 0)
     recipe_id, recipe = found
+
+    workstation_type = str(recipe.get("workstation", "any"))
+    workstation = CraftingSystem.find_nearby_workstation(
+        getattr(context, "spatial_index", None),
+        (int(context.position[0]), int(context.position[1])),
+        workstation_type,
+    )
+    if not workstation:
+        workstation_name = workstation_type.replace("_", " ")
+        return (
+            f"You need a nearby {workstation_name} to craft {recipe.get('name', recipe_id)}.",
+            "craft",
+            0,
+        )
 
     crafted_result = craft_recipe(player, recipe=recipe, item_catalog=items_registry(), instance_prefix="craft")
     if not crafted_result.get("success", False):

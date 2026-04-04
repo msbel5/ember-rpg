@@ -379,6 +379,10 @@ class TestFindNearbyWorkstation:
         result = CraftingSystem.find_nearby_workstation(None, (0, 0), "any")
         assert result is True
 
+    def test_no_spatial_index_without_any_returns_none(self):
+        result = CraftingSystem.find_nearby_workstation(None, (0, 0), "forge")
+        assert result is None
+
     def test_finds_matching_workstation(self):
         class FakeEntity:
             def __init__(self, name, etype):
