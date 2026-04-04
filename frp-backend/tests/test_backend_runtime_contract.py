@@ -17,7 +17,7 @@ from engine.api.campaign import runtime_commands
 
 
 def _make_campaign() -> tuple[CampaignRuntime, object]:
-    runtime = CampaignRuntime(llm=None)
+    runtime = CampaignRuntime()
     context = runtime.create_campaign(player_name="ContractTester", seed=42)
     return runtime, context
 

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from engine.api.campaign.runtime import CampaignRuntime
+from engine.api.campaign.party_bridge import maybe_handle_party_command
 from engine.kernel.gameplay import spawn_ground_item_entity
 
 
 def _make_campaign() -> tuple[CampaignRuntime, object]:
-    runtime = CampaignRuntime(llm=lambda _prompt: "stub")
+    runtime = CampaignRuntime()
     context = runtime.create_campaign(player_name="RuntimeTester", seed=77)
     return runtime, context
 
@@ -136,3 +137,95 @@ def test_run_command_cast_repeatedly_until_insufficient_points() -> None:
     assert second["command_type"] == "spell"
     assert "not enough spell points" in third["narrative"].lower()
     assert player.spell_points == 0
+
+
+def test_recruit_companion_save_load_preserves_party_membership() -> None:
+    runtime, context = _make_campaign()
+    from engine.kernel.actor_records import create_monster_actor
+
+    companion = create_monster_actor(
+        {
+            "id": "companion_scout",
+            "name": "Scout Mira",
+            "type": "monster",
+            "hp": 12,
+            "armor_class": 10,
+            "stats": {"MIG": 10, "AGI": 12, "END": 10, "MND": 10, "INS": 10, "PRE": 10},
+        },
+        faction_id="allies",
+    )
+    companion.identity.actor_type = "npc"
+    companion.raw_payload["role"] = "scout"
+    context.kernel_runtime["actors"][companion.identity.actor_id] = companion
+
+    recruit = maybe_handle_party_command(context, "recruit Scout Mira")
+    assert recruit is not None
+    assert recruit[1] == "party"
+
+    runtime.save_campaign(context.campaign_id, "party_recruit_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("party_recruit_slot")
+
+    assert "player" in loaded.campaign_state["party"]
+    assert companion.identity.actor_id in loaded.campaign_state["party"]
+    payload = runtime.snapshot(loaded.campaign_id, narrative="loaded")
+    assert companion.identity.actor_id in payload["campaign"]["party"]
+
+
+def test_dismiss_companion_save_load_removes_party_membership() -> None:
+    runtime, context = _make_campaign()
+    from engine.kernel.actor_records import create_monster_actor
+
+    companion = create_monster_actor(
+        {
+            "id": "companion_warden",
+            "name": "Warden Holt",
+            "type": "monster",
+            "hp": 14,
+            "armor_class": 10,
+            "stats": {"MIG": 11, "AGI": 10, "END": 11, "MND": 10, "INS": 10, "PRE": 10},
+        },
+        faction_id="allies",
+    )
+    companion.identity.actor_type = "npc"
+    companion.raw_payload["role"] = "guard"
+    context.kernel_runtime["actors"][companion.identity.actor_id] = companion
+
+    assert maybe_handle_party_command(context, "recruit Warden Holt") is not None
+    dismiss = maybe_handle_party_command(context, "dismiss Warden Holt")
+
+    assert dismiss is not None
+    assert dismiss[1] == "party"
+    runtime.save_campaign(context.campaign_id, "party_dismiss_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("party_dismiss_slot")
+
+    assert companion.identity.actor_id not in loaded.campaign_state["party"]
+    payload = runtime.snapshot(loaded.campaign_id, narrative="loaded")
+    assert companion.identity.actor_id not in payload["campaign"]["party"]
+
+
+def test_party_members_do_not_break_campaign_payload_shape() -> None:
+    runtime, context = _make_campaign()
+    from engine.kernel.actor_records import create_monster_actor
+
+    companion = create_monster_actor(
+        {
+            "id": "companion_mage",
+            "name": "Mage Elira",
+            "type": "monster",
+            "hp": 9,
+            "armor_class": 9,
+            "stats": {"MIG": 8, "AGI": 10, "END": 9, "MND": 14, "INS": 11, "PRE": 12},
+        },
+        faction_id="allies",
+    )
+    companion.identity.actor_type = "npc"
+    companion.raw_payload["role"] = "mage"
+    context.kernel_runtime["actors"][companion.identity.actor_id] = companion
+    assert maybe_handle_party_command(context, "recruit Mage Elira") is not None
+
+    payload = runtime.snapshot(context.campaign_id, narrative="party")
+
+    assert payload["campaign"]["party"][0] == "player"
+    assert companion.identity.actor_id in payload["campaign"]["party"]
+    assert isinstance(payload["campaign"]["world_entities"], list)
+    assert isinstance(payload["campaign"]["player"], dict)

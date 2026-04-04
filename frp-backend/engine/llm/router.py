@@ -4,7 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Callable, Optional
 
-import openai
+from typing import Any
+
+try:
+    import openai
+except Exception:  # pragma: no cover - optional dependency
+    openai = None
 
 from .auth import CopilotAuthError, resolve_copilot_token
 from .cli_provider import complete_with_copilot_cli
@@ -21,13 +26,19 @@ class LiveNarrationRequiredError(RuntimeError):
     """Raised when a caller explicitly requires live narration and it is unavailable."""
 
 
+def _default_client_factory(**kwargs):
+    if openai is None:
+        raise RuntimeError("openai package is not installed")
+    return openai.OpenAI(**kwargs)
+
+
 class LLMRouter:
     def __init__(
         self,
-        client_factory: Callable[..., openai.OpenAI] = openai.OpenAI,
+        client_factory: Callable[..., Any] = _default_client_factory,
         token_resolver: Callable[[str], object] = resolve_copilot_token,
     ):
-        self._client: Optional[openai.OpenAI] = None
+        self._client: Optional[Any] = None
         self._available: Optional[bool] = None
         self._client_factory = client_factory
         self._token_resolver = token_resolver
@@ -42,7 +53,7 @@ class LLMRouter:
         normalized = str(narration_mode or get_runtime_settings().narration_mode).strip().lower()
         return normalized if normalized in NARRATION_MODES else DEFAULT_NARRATION_MODE
 
-    def _get_client(self, force_refresh: bool = False) -> openai.OpenAI:
+    def _get_client(self, force_refresh: bool = False) -> Any:
         import os
         settings = get_runtime_settings()
 

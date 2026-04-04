@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from engine.api.campaign_runtime import CampaignRuntime
+from engine.api.campaign.runtime import CampaignRuntime
 from engine.api import campaign_routes
 from main import app
 
@@ -196,8 +196,41 @@ def test_campaign_save_and_load_round_trip():
     assert loaded_payload["campaign"]["settlement"]["name"]
 
 
+def test_report_quest_marks_completion_and_applies_rewards_once():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("Reporter", "warrior", "fantasy_ember", "standard", 42)
+    context.quest_offers = [{
+        "id": "supply_run",
+        "quest_id": "supply_run",
+        "title": "Supply Run",
+        "reward_gold": 25,
+        "reward_xp": 50,
+        "objectives": [{"type": "visit", "region_id": context.region_snapshot.region_id, "required": 1}],
+    }]
+    context.campaign_state["quest_offers"] = list(context.quest_offers)
+
+    from engine.api.campaign.quest_bridge import start_quest, sync_runtime_objectives
+
+    start_quest(context, "supply_run")
+    sync_runtime_objectives(context)
+    player = context.kernel_runtime["actors"]["player"]
+    before_gold = int(player.raw_payload.get("gold", 0))
+    before_xp = int(player.raw_payload.get("xp", 0))
+
+    first = runtime.run_command(context.campaign_id, "report supply_run")
+    second = runtime.run_command(context.campaign_id, "report supply_run")
+
+    assert first["command_type"] == "quest"
+    assert "Completed quest: Supply Run." in first["narrative"]
+    assert second["narrative"] == "Quest 'supply_run' has already been reported."
+    assert "supply_run" in context.campaign_state["completed_quest_ids"]
+    assert "supply_run" not in {entry.get("quest_id") for entry in context.campaign_state.get("active_quests", [])}
+    assert int(player.raw_payload.get("gold", 0)) == before_gold + 25
+    assert int(player.raw_payload.get("xp", 0)) == before_xp + 50
+
+
 def test_campaign_save_listing_filters_legacy_and_other_campaign_slots(tmp_path: Path):
-    runtime = CampaignRuntime(llm=None)
+    runtime = CampaignRuntime()
     runtime.save_system.save_dir = tmp_path / "campaign_api_saves"
     runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
     old_runtime = campaign_routes.campaign_runtime

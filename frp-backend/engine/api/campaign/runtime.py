@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import copy
 import uuid
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from engine.api.campaign.debug_trace import snapshot_hash, trace_event
 from engine.api.context_factory import create_player_state
@@ -15,7 +15,9 @@ from engine.worldgen import WorldSeed, initialize_simulation, load_world_snapsho
 from .context import CampaignContext, CampaignCreationContext
 from .live_kernel import ensure_kernel_runtime
 from .persistence import campaign_payload, persist_campaign_state
+from .quest_bridge import sync_quest_state
 from .runtime_commands import run_command as _run_command
+from .state_sync import sync_context_clock
 from .controls import merge_settlement_controls
 from .region_projection import apply_region_to_context
 from .settlement import build_character_sheet, build_settlement_state
@@ -30,7 +32,7 @@ from .world import (
 class CampaignRuntime:
     """Owns campaign-first lifecycle, command dispatch, and save/load."""
 
-    def __init__(self, llm: Optional[Callable[[str], str]] = None):
+    def __init__(self):
         self.save_system = SaveSystem()
         self._campaigns: dict[str, CampaignContext] = {}
         self._creation_flows: dict[str, CampaignCreationContext] = {}
@@ -113,7 +115,9 @@ class CampaignRuntime:
             profile_id=profile_id,
             seed=chosen_seed,
         )
+        sync_context_clock(context)
         ensure_kernel_runtime(context)
+        sync_quest_state(context)
         self._campaigns[campaign_id] = context
         persist_campaign_state(context)
         _try_start_tick_loop(self, campaign_id)
@@ -347,7 +351,9 @@ class CampaignRuntime:
             profile_id=context.profile_id,
             seed=context.seed,
         )
+        sync_context_clock(context)
         ensure_kernel_runtime(context, rebuild_projection=True)
+        sync_quest_state(context)
         _try_start_tick_loop(self, context.campaign_id)
         trace_event(
             "campaign_load_completed",

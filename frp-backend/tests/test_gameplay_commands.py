@@ -14,7 +14,7 @@ from engine.kernel.gameplay import spawn_ground_item_entity
 
 
 def _make_campaign():
-    rt = CampaignRuntime(llm=lambda _prompt: "stub")
+    rt = CampaignRuntime()
     ctx = rt.create_campaign(player_name="TestPlayer", seed=42)
     return rt, ctx
 

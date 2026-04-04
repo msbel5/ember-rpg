@@ -12,6 +12,7 @@ import re
 from typing import TYPE_CHECKING, Optional
 
 from engine.kernel.combat_math import ability_modifier
+from engine.api.campaign.state_sync import sync_player_position
 
 if TYPE_CHECKING:
     from engine.api.campaign.context import CampaignContext
@@ -50,8 +51,14 @@ def _actors(ctx: "CampaignContext") -> dict[str, "ActorRecord"]:
     return (ctx.kernel_runtime or {}).get("actors", {})
 
 def _npc_list(ctx: "CampaignContext") -> list["ActorRecord"]:
-    return [a for aid, a in _actors(ctx).items()
-            if aid != "player" and getattr(a, "alive", True)]
+    visible_types = {"npc", "creature", "monster", "animal"}
+    return [
+        actor
+        for actor_id, actor in _actors(ctx).items()
+        if actor_id != "player"
+        and getattr(actor, "alive", True)
+        and str(getattr(getattr(actor, "identity", None), "actor_type", "")).lower() in visible_types
+    ]
 
 def _time_desc(ctx: "CampaignContext") -> str:
     ss = ctx.settlement_state
@@ -66,6 +73,19 @@ def _building_summary(ctx: "CampaignContext") -> str:
     labels = [r.get("label", r.get("kind", "building")) for r in rooms[:6]]
     extra = f" and {len(rooms) - 6} more" if len(rooms) > 6 else ""
     return "Nearby buildings: " + ", ".join(labels) + extra + "."
+
+def _furniture_summary(ctx: "CampaignContext") -> str:
+    furniture = [entity for entity in ctx.world_entities if entity.get("entity_type") == "furniture"] if hasattr(ctx, "world_entities") else []
+    if not furniture:
+        furniture = [
+            value for value in ctx.entities.values()
+            if isinstance(value, dict) and str(value.get("type", "")).lower() == "furniture"
+        ]
+    if not furniture:
+        return ""
+    labels = [str(item.get("name", "Fixture")) for item in furniture[:5]]
+    extra = f" and {len(furniture) - 5} more" if len(furniture) > 5 else ""
+    return "Nearby fixtures: " + ", ".join(labels) + extra + "."
 
 def _npc_summary(ctx: "CampaignContext") -> str:
     npcs = _npc_list(ctx)
@@ -112,6 +132,9 @@ def maybe_handle_look_command(
     bld = _building_summary(context)
     if bld:
         lines.append(bld)
+    fixtures = _furniture_summary(context)
+    if fixtures:
+        lines.append(fixtures)
     return ("\n".join(lines), "exploration", 0)
 
 
@@ -163,8 +186,9 @@ def maybe_handle_move_command(
         if player is None:
             return no_player
         old_x, old_y = player.position.x, player.position.y
-        player.position.x, player.position.y = int(m.group(1)), int(m.group(2))
-        return (f"You move from ({old_x},{old_y}) to ({player.position.x},{player.position.y}).",
+        new_x, new_y = int(m.group(1)), int(m.group(2))
+        sync_player_position(context, new_x, new_y)
+        return (f"You move from ({old_x},{old_y}) to ({new_x},{new_y}).",
                 "exploration", 0)
     # "move <direction>"
     m = _MOVE_DIR_RE.match(text)
@@ -174,9 +198,10 @@ def maybe_handle_move_command(
             return no_player
         d = m.group(1).lower()
         dx, dy = _DIR_DELTAS.get(d, (0, 0))
-        player.position.x += dx
-        player.position.y += dy
-        return (f"You move {d} to ({player.position.x},{player.position.y}).", "exploration", 0)
+        new_x = int(player.position.x) + dx
+        new_y = int(player.position.y) + dy
+        sync_player_position(context, new_x, new_y)
+        return (f"You move {d} to ({new_x},{new_y}).", "exploration", 0)
     # "go to <location>"
     m = _MOVE_TO_PLACE_RE.match(text)
     if m:

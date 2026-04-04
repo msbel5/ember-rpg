@@ -324,6 +324,12 @@ class SaveCampaignStateMixin:
         if context.spatial_index.get_position("player") is None:
             context.spatial_index.add(context.player_entity)
 
+        def _spatial_entity_by_id(entity_id: str) -> Optional[Entity]:
+            for live_entity in context.spatial_index.all_entities():
+                if live_entity.id == entity_id:
+                    return live_entity
+            return None
+
         if not spatial_entities_present and context.entities:
             for entity_id, record in context.entities.items():
                 entity_type_name = str(record.get("type", "npc")).upper()
@@ -350,6 +356,12 @@ class SaveCampaignStateMixin:
                 )
                 if context.spatial_index.get_position(entity_id) is None:
                     context.spatial_index.add(live_entity)
+                record["entity_ref"] = live_entity
+        elif context.entities and context.spatial_index is not None:
+            for entity_id, record in context.entities.items():
+                live_entity = _spatial_entity_by_id(entity_id)
+                if live_entity is not None:
+                    record["entity_ref"] = live_entity
 
         if context.viewport is None:
             context.viewport = Viewport(width=40, height=20)

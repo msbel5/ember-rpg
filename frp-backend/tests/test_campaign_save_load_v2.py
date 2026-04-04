@@ -3,13 +3,13 @@ from pathlib import Path
 import json
 import pytest
 
-from engine.api.campaign_runtime import CampaignRuntime
+from engine.api.campaign.runtime import CampaignRuntime
 from engine.kernel import GameState
 from tools.campaign_client import CampaignClient
 
 
 def test_campaign_client_save_load_round_trip(tmp_path: Path):
-    runtime = CampaignRuntime(llm=None)
+    runtime = CampaignRuntime()
     runtime.save_system.save_dir = tmp_path / "campaign_saves"
     runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
     client = CampaignClient(runtime=runtime)
@@ -34,7 +34,7 @@ def test_campaign_client_save_load_round_trip(tmp_path: Path):
 
 
 def test_campaign_runtime_lists_only_matching_campaign_saves(tmp_path: Path):
-    runtime = CampaignRuntime(llm=None)
+    runtime = CampaignRuntime()
     runtime.save_system.save_dir = tmp_path / "campaign_saves"
     runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
 
@@ -50,7 +50,7 @@ def test_campaign_runtime_lists_only_matching_campaign_saves(tmp_path: Path):
 
 
 def test_campaign_runtime_persists_kernel_game_state_in_campaign_meta():
-    runtime = CampaignRuntime(llm=None)
+    runtime = CampaignRuntime()
 
     context = runtime.create_campaign("Saver", "warrior", "fantasy_ember", "standard", 42)
     meta = context.campaign_state["campaign"]
@@ -63,7 +63,7 @@ def test_campaign_runtime_persists_kernel_game_state_in_campaign_meta():
 
 
 def test_campaign_save_persists_kernel_roots_in_campaign_context(tmp_path: Path):
-    runtime = CampaignRuntime(llm=None)
+    runtime = CampaignRuntime()
     runtime.save_system.save_dir = tmp_path / "campaign_saves"
     runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
 
@@ -80,7 +80,7 @@ def test_campaign_save_persists_kernel_roots_in_campaign_context(tmp_path: Path)
 
 
 def test_campaign_load_rejects_invalid_kernel_game_state(tmp_path: Path):
-    runtime = CampaignRuntime(llm=None)
+    runtime = CampaignRuntime()
     runtime.save_system.save_dir = tmp_path / "campaign_saves"
     runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
 
@@ -97,7 +97,7 @@ def test_campaign_load_rejects_invalid_kernel_game_state(tmp_path: Path):
 
 
 def test_campaign_load_rejects_invalid_kernel_world_state(tmp_path: Path):
-    runtime = CampaignRuntime(llm=None)
+    runtime = CampaignRuntime()
     runtime.save_system.save_dir = tmp_path / "campaign_saves"
     runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
 

@@ -862,6 +862,632 @@
           ]
         }
       ]
+    },
+    {
+      "dialog_id": "mayor_townhall",
+      "npc_id": "mayor",
+      "role": "mayor",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "The mayor sits behind a heavy oak desk, poring over documents. \"Ah, the newcomer. I've heard of your arrival.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_town_state",
+              "text": "How fares the settlement?",
+              "next_state_id": "town_state"
+            },
+            {
+              "transition_id": "ask_mayor_quest",
+              "text": "Is there something I can do for the town?",
+              "next_state_id": "mayor_quest_offer"
+            },
+            {
+              "transition_id": "ask_politics",
+              "text": "Tell me about the local factions",
+              "next_state_id": "faction_info"
+            },
+            {
+              "transition_id": "leave_mayor",
+              "text": "I won't take more of your time.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "town_state",
+          "text": "\"Supplies run thin and morale is slipping. The north road is barely passable, and our last courier never returned.\"",
+          "transitions": [
+            {
+              "transition_id": "town_state_back",
+              "text": "I see. What else?",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "town_state_done",
+              "text": "Understood.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "mayor_quest_offer",
+          "text": "\"Our supply caravan is three days overdue. I fear the worst. Find the caravan and bring back whatever you can salvage.\"",
+          "transitions": [
+            {
+              "transition_id": "accept_caravan_quest",
+              "text": "I'll find your caravan.",
+              "next_state_id": "caravan_quest_accepted",
+              "actions": [
+                {
+                  "action_type": "start_quest",
+                  "params": { "quest_id": "missing_caravan", "stage": "accepted" }
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": { "text": "The mayor asked me to find the missing supply caravan on the north road." }
+                }
+              ],
+              "journal_entry": "Accepted the mayor's request to locate the missing supply caravan.",
+              "journal_quest_id": "missing_caravan"
+            },
+            {
+              "transition_id": "decline_caravan_quest",
+              "text": "That sounds dangerous. Not now.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "caravan_quest_accepted",
+          "text": "\"You have the town's gratitude. Speak to the guard captain for details on the route.\"",
+          "transitions": [
+            {
+              "transition_id": "caravan_accepted_done",
+              "text": "I'll head out.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "faction_info",
+          "text": "\"The merchant guild holds the coin, the temple holds the faith, and the guard holds the peace. Balance is fragile.\"",
+          "transitions": [
+            {
+              "transition_id": "faction_info_back",
+              "text": "Tell me more.",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "faction_info_done",
+              "text": "I'll keep that in mind.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "priest_chapel",
+      "npc_id": "priest",
+      "role": "priest",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "The priest turns from the altar, hands clasped. \"Welcome, child. Do you seek solace or purpose?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_blessing",
+              "text": "I could use a blessing.",
+              "next_state_id": "blessing_given",
+              "actions": [
+                {
+                  "action_type": "give_xp",
+                  "params": { "amount": 5 }
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_undead_quest",
+              "text": "I heard there are restless dead in the old cemetery.",
+              "next_state_id": "undead_quest_offer"
+            },
+            {
+              "transition_id": "ask_faith",
+              "text": "Tell me about your faith.",
+              "next_state_id": "faith_info"
+            },
+            {
+              "transition_id": "leave_priest",
+              "text": "I must go.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "blessing_given",
+          "text": "\"May the light guide your path through the darkness ahead.\"",
+          "transitions": [
+            {
+              "transition_id": "blessing_done",
+              "text": "Thank you, father.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "undead_quest_offer",
+          "text": "\"It is true. The dead do not rest. Something profane stirs beneath the old stones. Will you cleanse this blight?\"",
+          "transitions": [
+            {
+              "transition_id": "accept_undead_quest",
+              "text": "I will put them to rest.",
+              "next_state_id": "undead_quest_accepted",
+              "actions": [
+                {
+                  "action_type": "start_quest",
+                  "params": { "quest_id": "cleanse_cemetery", "stage": "accepted" }
+                },
+                {
+                  "action_type": "give_item",
+                  "params": { "item_def_id": "holy_water", "quantity": 3 }
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": { "text": "The priest gave me holy water and asked me to cleanse the cemetery of restless dead." }
+                }
+              ],
+              "journal_entry": "Accepted the priest's request to cleanse the old cemetery.",
+              "journal_quest_id": "cleanse_cemetery"
+            },
+            {
+              "transition_id": "decline_undead",
+              "text": "The dead can wait.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "undead_quest_accepted",
+          "text": "\"Take this holy water. It will burn the unclean. Return when the ground is sanctified.\"",
+          "transitions": [
+            {
+              "transition_id": "undead_accepted_done",
+              "text": "I will return.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "faith_info",
+          "text": "\"We serve the Light of Dawn. It demands compassion, vigilance, and the courage to face what festers in shadow.\"",
+          "transitions": [
+            {
+              "transition_id": "faith_info_back",
+              "text": "Interesting. What else can you tell me?",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "faith_info_done",
+              "text": "I understand.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "bard_tavern",
+      "npc_id": "bard",
+      "role": "bard",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A bard strums an idle tune in the corner. \"Another wanderer! Sit down, I've got stories to trade.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_stories",
+              "text": "Tell me a story about this place.",
+              "next_state_id": "local_legend"
+            },
+            {
+              "transition_id": "ask_bard_quest",
+              "text": "Know anything worth investigating?",
+              "next_state_id": "bard_lead"
+            },
+            {
+              "transition_id": "report_caravan_found",
+              "text": "I found the missing caravan.",
+              "condition": {
+                "condition_type": "variable_check",
+                "params": { "name": "missing_caravan_found", "operator": "==", "value": true }
+              },
+              "next_state_id": "caravan_reward",
+              "actions": [
+                {
+                  "action_type": "advance_quest",
+                  "params": { "quest_id": "missing_caravan", "stage": "reported" }
+                },
+                {
+                  "action_type": "give_gold",
+                  "params": { "amount": 50 }
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": { "amount": 40 }
+                },
+                {
+                  "action_type": "set_reputation",
+                  "params": { "faction_id": "town_council", "delta": 10 }
+                }
+              ],
+              "journal_entry": "Reported the caravan's fate. The bard rewarded me on behalf of the town.",
+              "journal_quest_id": "missing_caravan"
+            },
+            {
+              "transition_id": "leave_bard",
+              "text": "Maybe later.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "local_legend",
+          "text": "\"They say the founders buried a sealed vault beneath the town square. No one's found the key in a hundred years.\"",
+          "transitions": [
+            {
+              "transition_id": "legend_back",
+              "text": "What else?",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "legend_done",
+              "text": "Fascinating.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "bard_lead",
+          "text": "\"A hermit in the eastern woods claims to have found something ancient. He trades knowledge for rare herbs.\"",
+          "transitions": [
+            {
+              "transition_id": "bard_lead_back",
+              "text": "Back.",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "bard_lead_done",
+              "text": "I'll look into it.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "caravan_reward",
+          "text": "\"Well done! The town owes you a debt. Here's what the council put together.\"",
+          "transitions": [
+            {
+              "transition_id": "caravan_reward_done",
+              "text": "Glad to help.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "scribe_archive",
+      "npc_id": "scribe",
+      "role": "scribe",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "The scribe peers over spectacles at a stack of ledgers. \"Yes? I have little time for idle talk.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_records",
+              "text": "I need access to the town records.",
+              "next_state_id": "records_info"
+            },
+            {
+              "transition_id": "ask_scribe_quest",
+              "text": "Has anything unusual turned up in the archives?",
+              "next_state_id": "archive_mystery"
+            },
+            {
+              "transition_id": "report_cemetery_cleansed",
+              "text": "The cemetery is cleansed. Here is proof.",
+              "condition": {
+                "condition_type": "variable_check",
+                "params": { "name": "cemetery_cleansed", "operator": "==", "value": true }
+              },
+              "next_state_id": "cemetery_reward",
+              "actions": [
+                {
+                  "action_type": "advance_quest",
+                  "params": { "quest_id": "cleanse_cemetery", "stage": "verified" }
+                },
+                {
+                  "action_type": "give_gold",
+                  "params": { "amount": 35 }
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": { "amount": 30 }
+                },
+                {
+                  "action_type": "give_item",
+                  "params": { "item_def_id": "scroll_of_protection", "quantity": 1 }
+                }
+              ],
+              "journal_entry": "The scribe verified the cemetery cleansing and recorded the deed in the town archives.",
+              "journal_quest_id": "cleanse_cemetery"
+            },
+            {
+              "transition_id": "leave_scribe",
+              "text": "I'll leave you to it.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "records_info",
+          "text": "\"The records are open to citizens. For outsiders, you'll need the mayor's writ. What are you looking for?\"",
+          "transitions": [
+            {
+              "transition_id": "records_back",
+              "text": "Never mind.",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "records_done",
+              "text": "I'll get that writ.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "archive_mystery",
+          "text": "\"A sealed page from a century-old journal surfaced during reorganization. It mentions a ritual site in the hills. Someone should investigate.\"",
+          "transitions": [
+            {
+              "transition_id": "archive_mystery_back",
+              "text": "Interesting.",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "archive_mystery_done",
+              "text": "I may look into that.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "cemetery_reward",
+          "text": "\"Excellent. The deed is recorded. The temple sends its thanks, and here is a scroll for your trouble.\"",
+          "transitions": [
+            {
+              "transition_id": "cemetery_reward_done",
+              "text": "Thank you.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "sage_study",
+      "npc_id": "sage",
+      "role": "sage",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "An elderly sage sits surrounded by open tomes and strange instruments. \"Knowledge is never free. What do you seek?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_lore",
+              "text": "Tell me about the old ruins.",
+              "next_state_id": "ruins_lore"
+            },
+            {
+              "transition_id": "ask_identify_sage",
+              "text": "Can you identify a magical artifact? [MND 12]",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": { "stat": "MND", "operator": ">=", "value": 12 }
+              },
+              "next_state_id": "identify_result",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": { "amount": 20 }
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_sage_quest",
+              "text": "Do you need help with any research?",
+              "next_state_id": "sage_quest_offer"
+            },
+            {
+              "transition_id": "leave_sage",
+              "text": "I should go.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "ruins_lore",
+          "text": "\"The ruins north of here predate the current kingdom by three centuries. Built by a people who mastered wards of binding. Be cautious inside.\"",
+          "transitions": [
+            {
+              "transition_id": "ruins_lore_back",
+              "text": "What else do you know?",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "ruins_lore_done",
+              "text": "I'll remember that.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "identify_result",
+          "text": "\"Fascinating. This bears the mark of the Binding Order. Hold onto it carefully.\"",
+          "transitions": [
+            {
+              "transition_id": "identify_sage_done",
+              "text": "Thank you for the insight.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "sage_quest_offer",
+          "text": "\"I need rare reagents from the marshlands south of the settlement. Swamp moss and cave lichen. Bring them back and I'll share what I've learned about the sealed vault.\"",
+          "transitions": [
+            {
+              "transition_id": "accept_reagent_quest",
+              "text": "I'll gather those for you.",
+              "next_state_id": "reagent_quest_accepted",
+              "actions": [
+                {
+                  "action_type": "start_quest",
+                  "params": { "quest_id": "sage_reagents", "stage": "accepted" }
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": { "text": "The sage needs swamp moss and cave lichen from the southern marshlands." }
+                }
+              ],
+              "journal_entry": "Accepted the sage's request to gather rare reagents.",
+              "journal_quest_id": "sage_reagents"
+            },
+            {
+              "transition_id": "decline_reagent_quest",
+              "text": "Not right now.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "reagent_quest_accepted",
+          "text": "\"Good. Be warned: the marshlands are not safe after dark.\"",
+          "transitions": [
+            {
+              "transition_id": "reagent_accepted_done",
+              "text": "I'll be careful.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "witch_cottage",
+      "npc_id": "witch",
+      "role": "witch",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A weathered woman stirs a bubbling pot in a cluttered cottage. \"Come in, come in. I knew you'd find me.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_potions_witch",
+              "text": "Do you brew potions?",
+              "next_state_id": "potion_trade"
+            },
+            {
+              "transition_id": "ask_curse",
+              "text": "I've heard there's a curse on the old mill.",
+              "next_state_id": "curse_info"
+            },
+            {
+              "transition_id": "return_reagents",
+              "text": "I've brought the reagents the sage asked for.",
+              "condition": {
+                "condition_type": "item_check",
+                "params": { "item_def_id": "swamp_moss" }
+              },
+              "next_state_id": "reagent_turnin",
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": { "item_def_id": "swamp_moss", "quantity": 1 }
+                },
+                {
+                  "action_type": "take_item",
+                  "params": { "item_def_id": "cave_lichen", "quantity": 1 }
+                },
+                {
+                  "action_type": "advance_quest",
+                  "params": { "quest_id": "sage_reagents", "stage": "delivered" }
+                },
+                {
+                  "action_type": "give_gold",
+                  "params": { "amount": 40 }
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": { "amount": 35 }
+                }
+              ],
+              "journal_entry": "Delivered the reagents. The witch paid me for the trouble.",
+              "journal_quest_id": "sage_reagents"
+            },
+            {
+              "transition_id": "leave_witch",
+              "text": "I should be going.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "potion_trade",
+          "text": "\"I deal in remedies most alchemists won't touch. Antidotes, night-vision draughts, and a tonic that sharpens the mind.\"",
+          "transitions": [
+            {
+              "transition_id": "potion_trade_back",
+              "text": "Back.",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "potion_trade_done",
+              "text": "I'll think on it.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "curse_info",
+          "text": "\"The mill curse is real. An old grudge between two families, sealed with blood magic. It can be lifted, but you'll need a silver mirror and a willing heart.\"",
+          "transitions": [
+            {
+              "transition_id": "curse_info_back",
+              "text": "How do I lift it?",
+              "next_state_id": "greeting"
+            },
+            {
+              "transition_id": "curse_info_done",
+              "text": "Interesting.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "reagent_turnin",
+          "text": "\"Perfect. These will do nicely. The sage will be pleased. Here's something for your trouble.\"",
+          "transitions": [
+            {
+              "transition_id": "reagent_turnin_done",
+              "text": "Glad to help.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }

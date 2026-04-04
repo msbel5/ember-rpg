@@ -239,14 +239,14 @@ class TestDeterminism:
 class TestCampaignRuntimeIntegration:
     def test_start_creation_returns_valid_context(self):
         from engine.api.campaign.runtime import CampaignRuntime
-        rt = CampaignRuntime(llm=None)
+        rt = CampaignRuntime()
         ctx = rt.start_creation(player_name="Tester", seed=42)
         assert ctx.state.creation_id
         assert len(ctx.state.question_groups) > 0
 
     def test_answer_creation_updates_weights(self):
         from engine.api.campaign.runtime import CampaignRuntime
-        rt = CampaignRuntime(llm=None)
+        rt = CampaignRuntime()
         ctx = rt.start_creation(player_name="Tester", seed=42)
         q = ctx.state.questions[0]
         ctx = rt.answer_creation(ctx.state.creation_id, q["id"], q["answers"][0]["id"])
@@ -254,7 +254,7 @@ class TestCampaignRuntimeIntegration:
 
     def test_finalize_creation_produces_campaign(self):
         from engine.api.campaign.runtime import CampaignRuntime
-        rt = CampaignRuntime(llm=None)
+        rt = CampaignRuntime()
         ctx = rt.start_creation(player_name="Tester", seed=42)
         for q in ctx.state.questions:
             rt.answer_creation(ctx.state.creation_id, q["id"], q["answers"][0]["id"])

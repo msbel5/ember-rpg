@@ -41,7 +41,7 @@ def _award_combat_xp(player: ActorRecord, target: ActorRecord) -> int:
 # ---------------------------------------------------------------------------
 
 def _make_campaign():
-    rt = CampaignRuntime(llm=None)
+    rt = CampaignRuntime()
     ctx = rt.create_campaign(player_name="XPTest", seed=42)
     return rt, ctx
 

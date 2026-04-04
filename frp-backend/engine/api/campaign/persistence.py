@@ -33,6 +33,8 @@ from engine.api.combat_bridge import build_combat_payload
 from .region_projection import build_world_entities
 from .settlement import build_character_sheet, current_player_turn_resources
 from .live_kernel import ensure_kernel_runtime, serialize_kernel_runtime
+from .party_bridge import party_member_ids
+from .quest_bridge import current_quest_offers
 from .world import (
     build_current_region_summary,
     build_travel_options,
@@ -98,8 +100,11 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "map_data": map_payload_from_region(context.region_snapshot),
         "world_entities": build_world_entities(context.world, context.region_snapshot, context.adapter_id),
         "ground_items": copy.deepcopy(context_data.get("ground_items", [])),
-        "active_quests": copy.deepcopy(runtime_state.get("active_quests", context_data.get("active_quests", []))),
-        "quest_offers": copy.deepcopy(runtime_state.get("quest_offers", context_data.get("quest_offers", []))),
+        "active_quests": copy.deepcopy(context_data.get("active_quests", [])),
+        "completed_quest_ids": list(context.campaign_state.get("completed_quest_ids", [])),
+        "failed_quest_ids": list(context.campaign_state.get("failed_quest_ids", [])),
+        "quest_offers": copy.deepcopy(current_quest_offers(context)),
+        "party": party_member_ids(context),
         "settlement": copy.deepcopy(context.settlement_state),
         "character_sheet": build_character_sheet(context, context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-12:]),

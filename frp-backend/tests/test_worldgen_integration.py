@@ -1,9 +1,9 @@
-from engine.api.campaign_runtime import CampaignRuntime
-from engine.api.campaign_state import campaign_payload
+from engine.api.campaign.runtime import CampaignRuntime
+from engine.api.campaign.persistence import campaign_payload
 
 
 def test_campaign_payload_surfaces_generated_layout_npcs_and_quests():
-    runtime = CampaignRuntime(llm=lambda _prompt: "stub")
+    runtime = CampaignRuntime()
     context = runtime.create_campaign("Settler", adapter_id="fantasy_ember", seed=42)
 
     payload = campaign_payload(context)

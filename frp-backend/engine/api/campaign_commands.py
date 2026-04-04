@@ -6,14 +6,18 @@ commands for commerce (buy/sell), medical (diagnose/treat), and spells.
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING, Any, Optional
 
 from engine.worldgen import realize_region
-
-from .campaign_state import apply_region_to_context, build_settlement_state
+from engine.api.campaign.dialog import build_dialog_payload, clear_dialog_state, store_dialog_state
+from engine.api.campaign.party_bridge import allied_actor_ids
+from engine.api.campaign.quest_bridge import apply_dialog_events
+from engine.api.campaign.region_projection import apply_region_to_context
+from engine.api.campaign.settlement import build_settlement_state
 
 if TYPE_CHECKING:
-    from engine.api.campaign_runtime import CampaignContext
+    from engine.api.campaign.context import CampaignContext
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +213,7 @@ def handle_travel(context: "CampaignContext", command_text: str, args: Optional[
 # Talk command — opens authored dialog with an NPC
 # ---------------------------------------------------------------------------
 
-_TALK_RE = __import__("re").compile(r"^talk\s+(?:to\s+)?(.+)$", __import__("re").IGNORECASE)
+_TALK_RE = re.compile(r"^talk\s+(?:to\s+)?(.+)$", re.IGNORECASE)
 
 
 def maybe_handle_talk_command(
@@ -222,35 +226,38 @@ def maybe_handle_talk_command(
     npc_query = match.group(1).strip()
     runtime = context.kernel_runtime or {}
     actors = runtime.get("actors", {})
-    # Find NPC by display_name match.
+    query_lower = npc_query.lower()
     target_actor = None
     target_id = ""
-    query_lower = npc_query.lower()
+    talk_types = {"npc", "creature", "monster", "animal"}
     for actor_id, actor in actors.items():
-        if actor_id == "player":
+        if actor_id == "player" or not getattr(actor, "alive", True):
             continue
-        name = getattr(actor.identity, "display_name", "")
+        actor_type = str(getattr(getattr(actor, "identity", None), "actor_type", "")).lower()
+        if actor_type not in talk_types:
+            continue
+        name = str(getattr(getattr(actor, "identity", None), "display_name", "")).strip()
+        if not name:
+            continue
         if query_lower in name.lower() or query_lower.replace(" ", "_") == actor_id.lower():
             target_actor = actor
             target_id = actor_id
             break
     if target_actor is None:
         return (f"No one named '{npc_query}' is here.", "dialog", 0)
-    if not getattr(target_actor, "alive", True):
-        return (f"{npc_query} is dead.", "dialog", 0)
-    # Set conversation state for dialog bridge.
-    npc_name = getattr(target_actor.identity, "display_name", npc_query)
+
+    npc_name = str(getattr(target_actor.identity, "display_name", npc_query)).strip() or npc_query
+    if target_id in allied_actor_ids(context):
+        return (f"{npc_name} is already traveling with you.", "party", 0)
     context.conversation_state = {
         "target_type": "npc",
         "npc_id": target_id,
         "npc_name": npc_name,
     }
-    # Build dialog payload from kernel dialog bridge.
-    from engine.api.campaign.dialog import build_dialog_payload
     dialog_payload = build_dialog_payload(context, f"{npc_name} turns to face you.")
     if not dialog_payload:
+        clear_dialog_state(context)
         return (f"{npc_name} has nothing to say.", "dialog", 0)
-    # Store dialog info in context for run_command to merge into response.
     runtime["_pending_dialog_payload"] = dialog_payload
     logger.info("Talk: opened dialog with %s (%s)", npc_name, target_id)
     return (dialog_payload.get("dialog_text", f"{npc_name} regards you."), "dialog", 0)
@@ -265,12 +272,14 @@ def maybe_handle_dialog_command(
 ) -> Optional[tuple[str, str, int]]:
     """Handle dialog transition selection via kernel dialog state machine."""
     from engine.kernel.dialog import DialogDef, DialogState, get_available_transitions, select_transition
+
     lower = command_text.lower().strip()
     if not lower.startswith("dialog "):
         return None
     transition_id = command_text[7:].strip()
     if not transition_id:
         return None
+
     runtime = context.kernel_runtime or {}
     dialog_state = runtime.get("dialog_state")
     if not isinstance(dialog_state, DialogState):
@@ -281,60 +290,60 @@ def maybe_handle_dialog_command(
         return ("Dialog definition not found.", "dialog", 0)
     current_node = next((n for n in dialog_def.states if n.state_id == dialog_state.current_state_id), None)
     if current_node is None:
+        clear_dialog_state(context)
         return ("Dialog state is invalid.", "dialog", 0)
+
     actors = runtime.get("actors", {})
-    player, npc = actors.get("player"), actors.get(runtime.get("dialog_npc_id", ""))
+    npc_id = str(runtime.get("dialog_npc_id", "")).strip()
+    player = actors.get("player")
+    npc = actors.get(npc_id)
     if player is None or npc is None:
-        return ("Dialog actors not available.", "dialog", 0)
-    global_vars = _dialog_global_vars(context)
+        clear_dialog_state(context)
+        return ("Dialog actors are unavailable.", "dialog", 0)
+
+    game_state = runtime.get("game_state")
+    global_vars = getattr(game_state, "global_variables", {}) if game_state is not None else {}
     available = get_available_transitions(current_node, player, npc, dialog_state.variables, global_vars)
-    transition = None
-    for t in available:
-        if t.transition_id == transition_id:
-            transition = t
-            break
+    transition = next((item for item in available if item.transition_id == transition_id), None)
     if transition is None:
         return ("That dialog option is not available.", "dialog", 0)
-    # Execute transition via kernel.
+
     new_state, next_node, events = select_transition(
-        dialog_state, transition, dialog_defs, player, npc, global_vars,
+        dialog_state,
+        transition,
+        dialog_defs,
+        player,
+        npc,
+        global_vars,
     )
-    logger.info("Dialog transition: %s → %s (events=%d)", transition_id,
-                next_node.state_id if next_node else "END", len(events))
-    # Build narrative from events and next node.
-    event_summaries = _summarize_dialog_events(events)
+    if game_state is not None:
+        game_state.global_variables = dict(global_vars)
+
+    event_summaries = apply_dialog_events(context, events)
+    logger.info(
+        "Dialog transition: %s -> %s (events=%d)",
+        transition_id,
+        next_node.state_id if next_node else "END",
+        len(events),
+    )
+
     if not new_state.active or next_node is None:
-        from engine.api.campaign.dialog import clear_dialog_state
         clear_dialog_state(context)
-        narrative = event_summaries + " The conversation ends."
-    else:
-        runtime["dialog_state"] = new_state
-        narrative = event_summaries + (f" {next_node.text}" if next_node.text else "")
-    return (narrative.strip(), "dialog", 0)
+        runtime.pop("_pending_dialog_payload", None)
+        narrative_parts = list(event_summaries)
+        narrative_parts.append("The conversation ends.")
+        return (" ".join(part.strip() for part in narrative_parts if part).strip(), "dialog", 0)
 
-
-def _dialog_global_vars(context: "CampaignContext") -> dict[str, Any]:
-    runtime = context.kernel_runtime or {}
-    game_state = runtime.get("game_state")
-    return dict(getattr(game_state, "global_variables", {})) if game_state else {}
-
-
-_EVENT_TEMPLATES = {
-    "give_item": lambda e: f"Received {e.get('item_def_id', 'an item')}.",
-    "take_item": lambda e: f"Gave {e.get('item_def_id', 'an item')}.",
-    "give_gold": lambda e: f"Received {e.get('amount', 0)} gold.",
-    "take_gold": lambda e: f"Paid {e.get('amount', 0)} gold.",
-    "give_xp": lambda e: f"Gained {e.get('amount', 0)} experience.",
-    "start_quest": lambda e: f"Quest '{e.get('quest_id', '')}' accepted.",
-    "advance_quest": lambda e: f"Quest '{e.get('quest_id', '')}' advanced.",
-    "set_hostile": lambda _: "They turn hostile!",
-}
-
-
-def _summarize_dialog_events(events: list[dict[str, Any]]) -> str:
-    return " ".join(
-        _EVENT_TEMPLATES[e.get("type", "")](e) for e in events if e.get("type", "") in _EVENT_TEMPLATES
-    )
+    next_dialog_def = dialog_defs.get(new_state.dialog_id, dialog_def)
+    store_dialog_state(context, new_state, next_dialog_def, npc)
+    dialog_payload = build_dialog_payload(context, next_node.text or f"{npc.identity.display_name} waits for your response.")
+    if dialog_payload:
+        runtime["_pending_dialog_payload"] = dialog_payload
+    narrative_parts = list(event_summaries)
+    if next_node.text:
+        narrative_parts.append(next_node.text)
+    narrative = " ".join(part.strip() for part in narrative_parts if part).strip()
+    return (narrative or f"{npc.identity.display_name} waits for your response.", "dialog", 0)
 
 
 # ---------------------------------------------------------------------------

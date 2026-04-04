@@ -1,25 +1,17 @@
 """Thin campaign facade for terminal tools and targeted tests."""
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from typing import Any
 
-from engine.api.campaign_runtime import CampaignRuntime
+from engine.api.campaign.runtime import CampaignRuntime
 from engine.kernel.creation import ABILITY_ORDER, assign_stats_to_class
-from engine.llm import build_game_narrator
-
-
-def _default_llm() -> Optional[Callable[[str], str]]:
-    try:
-        return build_game_narrator()
-    except Exception:
-        return None
 
 
 class CampaignClient:
     """Expose API-shaped campaign methods without going through HTTP."""
 
-    def __init__(self, runtime: CampaignRuntime | None = None, llm: Optional[Callable[[str], str]] = None):
-        self.runtime = runtime or CampaignRuntime(llm=llm if llm is not None else _default_llm())
+    def __init__(self, runtime: CampaignRuntime | None = None):
+        self.runtime = runtime or CampaignRuntime()
 
     def create_campaign(
         self,

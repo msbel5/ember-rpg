@@ -338,8 +338,17 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
         merged[actor_id] = existing
     runtime["actors"] = merged
     runtime["game_state"].actors = dict(merged)
-    runtime["game_state"].party = ["player"] if "player" in merged else []
-    runtime["game_state"].inactive_npcs = [actor_id for actor_id in merged if actor_id not in runtime["game_state"].party]
+    existing_party = [str(actor_id) for actor_id in list(getattr(runtime["game_state"], "party", [])) if str(actor_id)]
+    requested_party = [str(actor_id) for actor_id in list(context.campaign_state.get("party", [])) if str(actor_id)]
+    party: list[str] = []
+    for actor_id in existing_party + requested_party:
+        if actor_id in merged and actor_id not in party:
+            party.append(actor_id)
+    if "player" in merged and "player" not in party:
+        party.insert(0, "player")
+    runtime["game_state"].party = party
+    runtime["game_state"].inactive_npcs = [actor_id for actor_id in merged if actor_id not in party]
+    context.campaign_state["party"] = list(party)
     context.player = merged.get("player", context.player)
 
 
@@ -347,6 +356,11 @@ def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
     target.action_points = fresh.action_points
     target.max_action_points = fresh.max_action_points
     target.turn_resources = dict(fresh.turn_resources)
+    # Runtime actors own their live coordinates. Region projection can rebuild
+    # fresh shells each tick, but we must not snap actors back to authored spawn
+    # points here or hazards/traps/combat movement will silently desync.
+    if target.position is None:
+        target.position = fresh.position
     target.alive = target.alive and fresh.alive
     for key, value in fresh.stats.items():
         if key in {"hp", "max_hp"} or key not in target.stats:

@@ -5,7 +5,9 @@ import pytest
 
 from engine.api.campaign.runtime import CampaignRuntime
 from engine.api.campaign.dialog import build_dialog_payload
+from engine.api.campaign_commands import maybe_handle_dialog_command, maybe_handle_talk_command
 from engine.kernel.dialog import (
+    DialogAction,
     DialogDef, DialogStateNode, DialogTransition, DialogCondition,
     start_dialog,
 )
@@ -16,7 +18,7 @@ from engine.kernel.dialog import (
 # ---------------------------------------------------------------------------
 
 def _make_campaign():
-    rt = CampaignRuntime(llm=None)
+    rt = CampaignRuntime()
     ctx = rt.create_campaign(player_name="DialogTest", seed=42)
     return rt, ctx
 
@@ -33,6 +35,16 @@ def _inject_npc(ctx, actor_id: str, display_name: str):
         stats=dict(player.stats), skills={}, raw_payload={"role": "guard"},
     )
     ctx.kernel_runtime["actors"][actor_id] = npc
+    return npc
+
+
+def _inject_dialog(ctx, dialog_def: DialogDef):
+    runtime = ctx.kernel_runtime
+    runtime.setdefault("dialog_defs", {})[dialog_def.dialog_id] = dialog_def
+    from engine.data._shared import dialog_defs_registry
+
+    registry = dialog_defs_registry()
+    registry[dialog_def.dialog_id] = dialog_def.to_dict()
 
 
 def _mock_actor(name="TestNPC", stats=None):
@@ -153,3 +165,107 @@ class TestBuildDialogPayload:
             assert "available" in opt
             assert "enabled" in opt
             assert opt["command"].startswith("dialog ")
+
+
+def test_talk_dialog_transition_starts_quest_and_adds_journal_entry():
+    _, ctx = _make_campaign()
+    _inject_npc(ctx, "quest_guard", "Quest Guard")
+    ctx.quest_offers = [{
+        "id": "guard_patrol",
+        "quest_id": "guard_patrol",
+        "title": "Guard Patrol",
+        "description": "Speak to the captain.",
+        "objectives": [{"type": "talk", "target_id": "quest_guard", "required": 1}],
+    }]
+    ctx.campaign_state["quest_offers"] = list(ctx.quest_offers)
+    dialog_def = DialogDef(
+        dialog_id="quest_guard",
+        npc_id="quest_guard",
+        states=[
+            DialogStateNode(
+                state_id="start",
+                text="Will you help us?",
+                transitions=[
+                    DialogTransition(
+                        transition_id="accept",
+                        text="I will help.",
+                        terminates=True,
+                        actions=[
+                            DialogAction("start_quest", {"quest_id": "guard_patrol"}),
+                            DialogAction("add_journal", {"text": "Captain Rhea asked for help.", "quest_id": "guard_patrol"}),
+                        ],
+                    )
+                ],
+            )
+        ],
+    )
+    _inject_dialog(ctx, dialog_def)
+
+    talk_result = maybe_handle_talk_command(ctx, "talk quest_guard")
+    assert talk_result is not None
+    ctx.kernel_runtime["dialog_state"], _, _ = start_dialog(
+        dialog_def,
+        ctx.kernel_runtime["actors"]["quest_guard"],
+        ctx.kernel_runtime["actors"]["player"],
+        {},
+    )
+    ctx.kernel_runtime["dialog_npc_id"] = "quest_guard"
+    ctx.kernel_runtime.setdefault("dialog_defs", {})[dialog_def.dialog_id] = dialog_def
+
+    result = maybe_handle_dialog_command(ctx, "dialog accept")
+
+    assert result is not None
+    assert "conversation ends" in result[0].lower()
+    quest = ctx.campaign_state["active_quests"][0]
+    assert quest["quest_id"] == "guard_patrol"
+    assert quest["stage"] == "started"
+    assert any(entry.quest_id == "guard_patrol" and "Accepted quest" in entry.text for entry in ctx.kernel_runtime["game_state"].journal)
+    assert any(entry.quest_id == "guard_patrol" and "Captain Rhea asked for help." in entry.text for entry in ctx.kernel_runtime["game_state"].journal)
+
+
+def test_dialog_advance_quest_updates_active_stage_and_objective_state():
+    _, ctx = _make_campaign()
+    _inject_npc(ctx, "captain_rhea", "Captain Rhea")
+    ctx.quest_offers = [{
+        "id": "wolves_at_gate",
+        "quest_id": "wolves_at_gate",
+        "title": "Wolves at the Gate",
+        "objectives": [{"type": "talk", "target_id": "captain_rhea", "required": 1}],
+    }]
+    ctx.campaign_state["quest_offers"] = list(ctx.quest_offers)
+    ctx.campaign_state["active_quests"] = []
+    from engine.api.campaign.quest_bridge import start_quest, sync_runtime_objectives
+
+    start_quest(ctx, "wolves_at_gate")
+    ctx.conversation_state = {"target_type": "npc", "npc_id": "captain_rhea", "npc_name": "Captain Rhea"}
+    sync_runtime_objectives(ctx)
+
+    dialog_def = DialogDef(
+        dialog_id="captain_rhea",
+        npc_id="captain_rhea",
+        states=[
+            DialogStateNode(
+                state_id="start",
+                text="Have you dealt with the wolves?",
+                transitions=[
+                    DialogTransition(
+                        transition_id="advance",
+                        text="The road is clear.",
+                        terminates=True,
+                        actions=[DialogAction("advance_quest", {"quest_id": "wolves_at_gate", "stage": "return_to_captain"})],
+                    )
+                ],
+            )
+        ],
+    )
+    _inject_dialog(ctx, dialog_def)
+    ctx.kernel_runtime["dialog_state"], _, _ = start_dialog(dialog_def, ctx.kernel_runtime["actors"]["captain_rhea"], ctx.kernel_runtime["actors"]["player"], {})
+    ctx.kernel_runtime["dialog_npc_id"] = "captain_rhea"
+
+    result = maybe_handle_dialog_command(ctx, "dialog advance")
+
+    assert result is not None
+    active_quest = ctx.campaign_state["active_quests"][0]
+    assert active_quest["stage"] == "return_to_captain"
+    assert active_quest["objectives"][0]["progress"] == 1
+    assert active_quest["objectives"][0]["completed"] is True

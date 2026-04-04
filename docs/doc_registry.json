@@ -189,7 +189,7 @@
     "PRD_colony_simulation_v2.md": {
       "owner": "kernel_colony",
       "mechanism_ids": ["DF:M03", "DF:M11", "DF:M12", "DF:M16", "DF:M19"],
-      "runtime_surface": ["frp-backend/engine/kernel/colony.py", "frp-backend/engine/api/campaign_state.py"],
+      "runtime_surface": ["frp-backend/engine/kernel/colony.py", "frp-backend/engine/api/campaign/settlement.py"],
       "supersedes": [
         "docs/deprecated/prd/PRD_colony_simulation_v1.md"
       ],
@@ -207,7 +207,7 @@
     "PRD_world_state_kernel_v1.md": {
       "owner": "kernel_world_state",
       "mechanism_ids": ["DF:M11", "DF:M12", "DF:M14", "DF:M20", "GEMRB:M14"],
-      "runtime_surface": ["frp-backend/engine/kernel/world_state.py", "frp-backend/engine/api/campaign_state.py"],
+      "runtime_surface": ["frp-backend/engine/kernel/world_state.py", "frp-backend/engine/api/campaign/world.py"],
       "supersedes": [
         "docs/deprecated/prd/PRD_world_state.md",
         "docs/deprecated/prd/PRD_live_global_simulation_runtime_v1.md"

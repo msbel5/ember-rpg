@@ -8,6 +8,12 @@ import pytest
 
 BACKEND_ROOT = os.path.join(os.path.dirname(__file__), "..")
 LEGACY_PATTERNS = [
+    r"from engine\.api\.campaign_runtime import",
+    r"import engine\.api\.campaign_runtime\b",
+    r"from engine\.api\.campaign_state import",
+    r"import engine\.api\.campaign_state\b",
+    r"from engine\.api\.action_parser import",
+    r"import engine\.api\.action_parser\b",
     r"from engine\.api\.routes import",
     r"from engine\.api\.models import",
     r"from engine\.api\.shop_routes import",
@@ -59,6 +65,9 @@ class TestNoLegacyImports:
 
     def test_legacy_files_deleted(self):
         legacy_files = [
+            "engine/api/campaign_runtime.py",
+            "engine/api/campaign_state.py",
+            "engine/api/action_parser.py",
             "engine/api/routes.py",
             "engine/api/models.py",
             "engine/api/shop_routes.py",

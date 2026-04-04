@@ -15,7 +15,7 @@ from engine.api.campaign_commands import (
 # ---------------------------------------------------------------------------
 
 def _make_campaign():
-    rt = CampaignRuntime(llm=None)
+    rt = CampaignRuntime()
     ctx = rt.create_campaign(player_name="BridgeTest", seed=42)
     return rt, ctx
 

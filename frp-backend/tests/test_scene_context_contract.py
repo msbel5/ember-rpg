@@ -26,7 +26,7 @@ def test_scene_context_scene_type_name_round_trip():
 
 
 def test_campaign_runtime_uses_scene_context():
-    runtime = CampaignRuntime(llm=None)
+    runtime = CampaignRuntime()
     context = runtime.create_campaign(player_name="SceneContract", seed=42)
 
     assert isinstance(context.dm_context, SceneContext)

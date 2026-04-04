@@ -205,6 +205,74 @@
         {"item_id": "gold_coin", "quantity": 500},
         {"item_id": "shattered_amulet", "quantity": 1}
       ]
+    },
+    {
+      "id": "act_4",
+      "name": "The Cursed Marshlands",
+      "description": "Rumors of poisoned water and missing herbalists draw you south to the marshlands. A corrupted druid and a nest of swamp creatures block the path to a hidden grove where the land's blight can be undone.",
+      "encounters": [
+        {
+          "id": "enc_4_1",
+          "name": "Swamp Lurkers",
+          "description": "Venomous creatures guard the entrance to the deeper marshes. Their poison saps strength.",
+          "monsters": ["swamp_lurker", "swamp_lurker", "giant_leech"],
+          "difficulty": "hard",
+          "exploration_note": "Torches keep the leeches at bay. Search the reeds for a herbalist's satchel."
+        },
+        {
+          "id": "enc_4_2",
+          "name": "The Corrupted Druid",
+          "description": "A once-benevolent druid has been twisted by dark magic. She commands the marsh creatures and must be stopped.",
+          "monsters": ["corrupted_druid", "swamp_lurker"],
+          "difficulty": "very_hard",
+          "exploration_note": "The druid's staff is the source of her power. Destroying it weakens her considerably."
+        },
+        {
+          "id": "enc_4_3",
+          "name": "The Cleansing Ritual",
+          "description": "At the heart of the grove, perform the cleansing ritual using the reagents gathered along the way.",
+          "monsters": [],
+          "difficulty": "none",
+          "exploration_note": "Place the swamp moss and cave lichen on the altar and speak the words from the herbalist's journal."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj_4_1",
+          "description": "Clear the marsh entrance of swamp creatures",
+          "type": "kill",
+          "target": "swamp_lurker",
+          "required_count": 2
+        },
+        {
+          "id": "obj_4_2",
+          "description": "Defeat the corrupted druid",
+          "type": "kill",
+          "target": "corrupted_druid",
+          "required_count": 1
+        },
+        {
+          "id": "obj_4_3",
+          "description": "Recover the herbalist's journal from the reeds",
+          "type": "collect",
+          "target": "herbalist_journal",
+          "required_count": 1
+        },
+        {
+          "id": "obj_4_4",
+          "description": "Perform the cleansing ritual at the grove altar",
+          "type": "interact",
+          "target": "grove_altar",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "staff_of_renewal", "quantity": 1},
+        {"item_id": "swamp_moss", "quantity": 5},
+        {"item_id": "cave_lichen", "quantity": 5},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 200}
+      ]
     }
   ]
 }

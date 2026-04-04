@@ -5,7 +5,7 @@ from engine.api.campaign.runtime import CampaignRuntime
 
 
 def _make_campaign():
-    rt = CampaignRuntime(llm=None)
+    rt = CampaignRuntime()
     ctx = rt.create_campaign(player_name="Explorer", seed=42)
     return rt, ctx
 

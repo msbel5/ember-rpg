@@ -1,10 +1,10 @@
 """Targeted tests for campaign commander directives."""
 
-from engine.api.campaign_runtime import CampaignRuntime
+from engine.api.campaign.runtime import CampaignRuntime
 
 
 def _runtime() -> CampaignRuntime:
-    return CampaignRuntime(llm=lambda _prompt: "stub")
+    return CampaignRuntime()
 
 
 def test_assign_build_and_travel_commands_update_campaign_state():

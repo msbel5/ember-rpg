@@ -170,7 +170,7 @@ AC-10 [FR-14]: Given no AI narrator or NPC conversation adapter, core travel/com
 - `engine/kernel/colony.py` — colony pressure updates on shared tick
 - `engine/kernel/combat.py` — combat resolves in active site during travel encounters or local play
 - `engine/kernel/systems.py` — defense posture affects trap arming
-- `engine/api/campaign_runtime.py` — travel commands route through campaign runtime
+- `engine/api/campaign/runtime.py` — travel commands route through campaign runtime
 - `godot-client` — map/session surfaces consume PathAuthorityState and LocalMapState
 
 ## 11. Test Coverage Target

@@ -314,10 +314,14 @@ def execute_dialog_action(
         return {"type": "set_reputation", "delta": delta}
     if action.action_type == "start_quest":
         quest_id = str(params.get("quest_id", ""))
+        if not quest_id:
+            raise ValueError("start_quest requires quest_id")
         player.raw_payload.setdefault("quests", {})[quest_id] = "started"
         return {"type": "start_quest", "quest_id": quest_id}
     if action.action_type == "advance_quest":
         quest_id = str(params.get("quest_id", ""))
+        if not quest_id:
+            raise ValueError("advance_quest requires quest_id")
         stage = params.get("stage")
         player.raw_payload.setdefault("quests", {})[quest_id] = stage
         return {"type": "advance_quest", "quest_id": quest_id, "stage": stage}

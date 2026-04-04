@@ -18,7 +18,7 @@ from engine.kernel.actor_records import create_monster_actor, create_player_acto
 
 def _make_campaign():
     """Create a minimal campaign for testing."""
-    rt = CampaignRuntime(llm=None)
+    rt = CampaignRuntime()
     ctx = rt.create_campaign(player_name="TestPlayer", seed=42)
     return rt, ctx
 
@@ -140,9 +140,11 @@ class TestAttackCommand:
 class TestDefendCommand:
     def test_defend_sets_defensive_stance(self):
         _rt, ctx = _make_campaign()
-        _inject_enemy(ctx)
+        enemy = _inject_enemy(ctx)
         player = ctx.kernel_runtime["actors"]["player"]
         assert not player.raw_payload.get("defensive_stance", False)
+        attack_result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert attack_result is not None
 
         result = maybe_handle_combat_command(ctx, "defend")
 
@@ -162,7 +164,10 @@ class TestFleeCommand:
     def test_flee_sets_flag_on_success(self):
         """On a successful flee, the player should get the fled_combat flag."""
         _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx)
         player = ctx.kernel_runtime["actors"]["player"]
+        attack_result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert attack_result is not None
 
         # Try multiple seeds to find one that succeeds.
         escaped = False
@@ -181,11 +186,13 @@ class TestFleeCommand:
 
     def test_flee_failure_does_not_set_flag(self):
         """On a failed flee, the fled_combat flag should not be set."""
-        _rt, ctx = _make_campaign()
-        player = ctx.kernel_runtime["actors"]["player"]
-
         failed = False
         for seed_offset in range(30):
+            _rt, ctx = _make_campaign()
+            enemy = _inject_enemy(ctx)
+            player = ctx.kernel_runtime["actors"]["player"]
+            attack_result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+            assert attack_result is not None
             player.raw_payload.pop("fled_combat", None)
             ctx.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
             result = maybe_handle_combat_command(ctx, "flee")
@@ -200,6 +207,9 @@ class TestFleeCommand:
 
     def test_flee_narrative_contains_roll_info(self):
         _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx)
+        attack_result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert attack_result is not None
         result = maybe_handle_combat_command(ctx, "flee")
         assert result is not None
         narrative = result[0]

@@ -158,7 +158,7 @@ AC-05 [FR-07]: Given a region with economy data, the adapted `RegionRecord.econo
 
 - `frp-backend/engine/worldgen/models.py` — WorldBlueprint source
 - `frp-backend/engine/worldgen/pipeline.py` — generates blueprint
-- `frp-backend/engine/api/campaign_state.py` — world state in campaign payloads
+- `frp-backend/engine/api/campaign/world.py` — world state in campaign payloads
 - `frp-backend/engine/kernel/colony.py` — colony pressure reads region economy
 - `frp-backend/engine/kernel/hybrid.py` — travel uses TravelEdge graph
 - Save/load surfaces — world state persisted with campaign

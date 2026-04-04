@@ -1,4 +1,4 @@
-from engine.api.campaign_runtime import CampaignRuntime
+from engine.api.campaign.runtime import CampaignRuntime
 from engine.worldgen import generate_world, load_world_snapshot, seed_civilizations, seed_species, simulate_history, snapshot_world
 
 
@@ -28,7 +28,7 @@ def test_world_graph_is_deterministic_and_connected():
 
 
 def test_campaign_travel_uses_region_ids_and_swaps_active_region():
-    runtime = CampaignRuntime(llm=lambda _prompt: "stub")
+    runtime = CampaignRuntime()
     context = runtime.create_campaign("GraphTester", adapter_id="fantasy_ember", seed=42)
     snapshot = runtime.snapshot(context.campaign_id)
     travel_options = snapshot["campaign"]["travel_options"]

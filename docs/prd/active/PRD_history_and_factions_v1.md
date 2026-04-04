@@ -132,7 +132,7 @@ AC-07 [FR-07]: Site founding event adds new region to owning faction's presence.
 - `engine/worldgen/world_tick.py` — ongoing history events during play
 - `engine/kernel/colony.py` — faction disposition affects trade/migration pressure
 - `engine/kernel/hybrid.py` — travel encounters with hostile factions
-- `engine/api/campaign_state.py` — history exposed in campaign payloads
+- `engine/api/campaign/world.py` — history exposed in campaign payloads
 
 ## 11. Test Coverage Target
 

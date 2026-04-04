@@ -13,7 +13,7 @@ from engine.api.campaign.tick_loop import CampaignTickLoop, start_tick_loop, sto
 # ---------------------------------------------------------------------------
 
 def _create_campaign() -> tuple[CampaignRuntime, str]:
-    rt = CampaignRuntime(llm=None)
+    rt = CampaignRuntime()
     ctx = rt.create_campaign(player_name="TickTest", seed=42)
     return rt, ctx.campaign_id
 

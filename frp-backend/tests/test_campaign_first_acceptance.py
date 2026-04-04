@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 
 from engine.api.campaign.runtime import CampaignRuntime
@@ -33,7 +34,7 @@ def _repo_root() -> Path:
 
 
 def _runtime() -> CampaignRuntime:
-    return CampaignRuntime(llm=None)
+    return CampaignRuntime()
 
 
 def test_active_campaign_runtime_has_no_legacy_runtime_tokens():
@@ -89,3 +90,14 @@ def test_campaign_payload_has_no_top_level_avatar_vocabulary():
     assert result["command_type"] == "rest"
     assert result["campaign"]["scene"] in {"exploration", "combat", "dialogue", "rest", "transition"}
 
+
+def test_campaign_runtime_ctor_has_no_llm_parameter():
+    signature = inspect.signature(CampaignRuntime)
+    assert "llm" not in signature.parameters
+
+
+def test_campaign_first_surface_has_no_compatibility_facades():
+    root = _repo_root()
+    assert not (root / "engine/api/campaign_runtime.py").exists()
+    assert not (root / "engine/api/campaign_state.py").exists()
+    assert not (root / "engine/api/action_parser.py").exists()

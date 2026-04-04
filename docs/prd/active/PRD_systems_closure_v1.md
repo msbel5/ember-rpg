@@ -301,7 +301,7 @@ AC-18 [FR-27]: Given mood failure (timeout), actor condition set to "insane" or 
 - `engine/kernel/colony.py` — strange mood affects colony morale; power network enables workshops
 - `engine/kernel/effects.py` (new) — syndrome effects route through unified effect system
 - `engine/worldgen/world_tick.py` — all systems tick during world update
-- `engine/api/campaign_state.py` — systems state exposed in campaign payloads
+- `engine/api/campaign/persistence.py` — systems state exposed in campaign payloads
 
 ## 10. Test Coverage Target
 

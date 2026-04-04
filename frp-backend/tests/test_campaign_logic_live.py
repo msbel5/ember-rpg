@@ -1,6 +1,6 @@
 import pytest
 
-from engine.api.campaign_runtime import CampaignRuntime
+from engine.api.campaign.runtime import CampaignRuntime
 from engine.kernel import (
     EffectDef,
     FluidCell,
@@ -17,7 +17,7 @@ from engine.kernel import (
 
 
 def _runtime() -> CampaignRuntime:
-    return CampaignRuntime(llm=lambda _prompt: "stub")
+    return CampaignRuntime()
 
 
 def _player_actor(context):

@@ -7,6 +7,7 @@ serializes both from this one place.
 """
 from __future__ import annotations
 
+import copy
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -246,7 +247,11 @@ class CampaignContext:
             "campaign_state": dict(self.campaign_state),
             "conversation_state": dict(self.conversation_state),
             "timed_conditions": dict(self.timed_conditions),
+            "active_quests": copy.deepcopy(self.campaign_state.get("active_quests", [])),
+            "completed_quest_ids": list(self.campaign_state.get("completed_quest_ids", [])),
+            "failed_quest_ids": list(self.campaign_state.get("failed_quest_ids", [])),
             "quest_offers": list(self.quest_offers),
+            "party": list(self.campaign_state.get("party", [])),
             "narration_context": dict(self.narration_context),
             "combat": self.kernel_combat_state(),
             "scene": getattr(self.dm_context, "scene_type_name", "exploration") if self.dm_context else "exploration",

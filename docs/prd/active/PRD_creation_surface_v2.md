@@ -135,7 +135,7 @@ AC-13 [FR-13]: The layout is optimized for `1600x900` and remains usable at `128
 - `godot-client/tests/automation/`
 - `frp-backend/engine/core/character_creation.py`
 - `frp-backend/engine/api/campaign_models.py`
-- `frp-backend/engine/api/campaign_runtime.py`
+- `frp-backend/engine/api/campaign/runtime.py`
 
 ## 10. Test Coverage Target
 - Changed backend creation behavior: targeted AC coverage.

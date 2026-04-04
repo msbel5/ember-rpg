@@ -75,6 +75,54 @@ _ROLE_COLORS: dict[str, str] = {
 }
 
 
+def _preserved_party_entities(context: CampaignContext) -> dict[str, dict[str, Any]]:
+    party_ids = {
+        str(actor_id)
+        for actor_id in list(context.campaign_state.get("party", []))
+        if str(actor_id) and str(actor_id) != "player"
+    }
+    preserved: dict[str, dict[str, Any]] = {}
+    for actor_id in party_ids:
+        record = context.entities.get(actor_id)
+        if isinstance(record, dict):
+            preserved[actor_id] = copy.deepcopy(record)
+    return preserved
+
+
+def _restore_party_entities(context: CampaignContext, preserved: dict[str, dict[str, Any]]) -> None:
+    for actor_id, record in preserved.items():
+        live_entity = record.get("entity_ref")
+        if live_entity is None:
+            entity_type_name = str(record.get("type", "npc")).upper()
+            try:
+                entity_type = EntityType[entity_type_name]
+            except KeyError:
+                entity_type = EntityType.NPC
+            live_entity = Entity(
+                id=actor_id,
+                entity_type=entity_type,
+                name=record.get("name", actor_id),
+                position=tuple(record.get("position", list(context.position))),
+                glyph=str(record.get("glyph", "A")),
+                color=str(record.get("color", "light_blue")),
+                blocking=bool(record.get("blocking", entity_type == EntityType.NPC)),
+                hp=int(record.get("hp", 8)),
+                max_hp=int(record.get("max_hp", record.get("hp", 8) or 8)),
+                faction=record.get("faction"),
+                job=record.get("role"),
+                disposition=str(record.get("disposition", "ally")),
+                attitude=str(record.get("attitude", "ally")),
+                needs=record.get("needs"),
+                body=record.get("body"),
+                schedule=record.get("schedule"),
+            )
+        if context.spatial_index.get_position(actor_id) is None:
+            context.spatial_index.add(live_entity)
+        restored_record = dict(record)
+        restored_record["entity_ref"] = live_entity
+        context.entities[actor_id] = restored_record
+
+
 def apply_region_to_context(
     *,
     context: CampaignContext,
@@ -87,6 +135,7 @@ def apply_region_to_context(
     seed: int,
     preserve_position: bool = False,
 ) -> None:
+    preserved_party_entities = _preserved_party_entities(context)
     active_settlement = next(
         (item for item in world.settlements if item.region_id == region_snapshot.region_id),
         world.settlements[0],
@@ -119,6 +168,8 @@ def apply_region_to_context(
     context.spatial_index.add(context.player_entity)
     context.viewport = None
     seed_region_entities(context, world, region_snapshot, adapter_id)
+    if preserved_party_entities:
+        _restore_party_entities(context, preserved_party_entities)
     context.campaign_state.setdefault("active_quests", [])
     context.campaign_state.setdefault("completed_quests", [])
     context.campaign_state.setdefault("failed_quests", [])

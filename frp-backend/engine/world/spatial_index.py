@@ -114,6 +114,16 @@ class SpatialIndex:
         """Get the tracked position for an entity by ID."""
         return self._positions.get(entity_id)
 
+    def get_entity(self, entity_id: str) -> Optional[Entity]:
+        """Return the live entity record for an ID if it is indexed."""
+        pos = self._positions.get(entity_id)
+        if pos is None:
+            return None
+        for entity in self._grid.get(pos, []):
+            if entity.id == entity_id:
+                return entity
+        return None
+
     def clear(self) -> None:
         """Remove all entities."""
         self._grid.clear()

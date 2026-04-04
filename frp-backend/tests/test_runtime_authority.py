@@ -14,7 +14,7 @@ from engine.api.campaign.live_kernel import _check_level_up
 
 
 def _runtime() -> CampaignRuntime:
-    return CampaignRuntime(llm=None)
+    return CampaignRuntime()
 
 
 def _make_campaign(name: str = "AuthTest", seed: int = 42):

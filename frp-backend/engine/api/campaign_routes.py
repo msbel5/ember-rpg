@@ -18,18 +18,12 @@ from engine.api.campaign_models import (
     CreateCampaignRequest,
 )
 from engine.kernel.creation import get_creation_catalog
-from engine.api.campaign_runtime import CampaignRuntime
+from engine.api.campaign.runtime import CampaignRuntime
 from engine.save.save_models import CURRENT_SCHEMA_VERSION
 
 
 router = APIRouter()
-def _make_llm_callable():
-    from engine.llm import build_game_narrator
-
-    return build_game_narrator()
-
-
-campaign_runtime = CampaignRuntime(llm=_make_llm_callable())
+campaign_runtime = CampaignRuntime()
 
 
 @router.get("/health/campaign-client")
