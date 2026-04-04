@@ -14,6 +14,33 @@ from main import app
 client = TestClient(app)
 
 
+def _inject_runtime_actor(context, actor_id: str, display_name: str, *, role: str, alive: bool = True):
+    from engine.kernel.actor import ActorIdentity, ActorPosition
+    from engine.kernel.actor_records import ActorRecord
+
+    player = context.kernel_runtime["actors"]["player"]
+    actor = ActorRecord(
+        identity=ActorIdentity(actor_id=actor_id, display_name=display_name, actor_type="npc"),
+        position=ActorPosition(x=0, y=0),
+        action_points=3,
+        max_action_points=3,
+        alive=alive,
+        stats=dict(player.stats),
+        skills={},
+        raw_payload={"role": role, "template": role},
+    )
+    context.kernel_runtime["actors"][actor_id] = actor
+    return actor
+
+
+def _inventory_quantity(context, item_def_id: str) -> int:
+    total = 0
+    for item in context.kernel_runtime["actors"]["player"].inventory:
+        if getattr(item, "item_def_id", "") == item_def_id:
+            total += max(1, int(getattr(item, "quantity", 1)))
+    return total
+
+
 def _create_campaign(adapter_id: str = "fantasy_ember") -> dict:
     response = client.post(
         "/game/campaigns",
@@ -228,6 +255,113 @@ def test_report_quest_marks_completion_and_applies_rewards_once():
     assert "supply_run" not in {entry.get("quest_id") for entry in context.campaign_state.get("active_quests", [])}
     assert int(player.raw_payload.get("gold", 0)) == before_gold + 25
     assert int(player.raw_payload.get("xp", 0)) == before_xp + 50
+
+
+def test_new_campaign_seeds_only_level_gated_authored_act_one_offers():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("Author", "warrior", "fantasy_ember", "standard", 42)
+
+    from engine.api.campaign.quest_bridge import current_quest_offers
+
+    offers = {offer["quest_id"] for offer in current_quest_offers(context)}
+
+    assert "tutorial_troubled_village" in offers
+    assert "side_road_to_peaks" not in offers
+    assert "main_shadows_over_aldenmoor" not in offers
+
+
+def test_accepting_authored_offer_normalizes_required_count_objectives():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("Normalizer", "warrior", "fantasy_ember", "standard", 42)
+
+    result = runtime.run_command(context.campaign_id, "accept tutorial_troubled_village")
+
+    assert result["command_type"] == "quest"
+    quest = next(entry for entry in context.campaign_state["active_quests"] if entry["quest_id"] == "tutorial_troubled_village")
+    required_by_id = {objective["id"]: objective["required"] for objective in quest["objectives"]}
+    assert required_by_id["tutorial_act_1_speak_with_elder"] == 1
+    assert required_by_id["tutorial_act_1_reach_farmstead"] == 1
+    assert required_by_id["tutorial_act_1_defeat_wolves"] == 3
+    assert required_by_id["tutorial_act_1_drive_off_scouts"] == 2
+    assert quest["source"] == "authored_campaign"
+    assert quest["campaign_id"] == "tutorial_campaign"
+    assert quest["act_id"] == "act_1"
+
+
+def test_authored_campaign_progress_report_unlocks_next_act_and_survives_save_load():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("Questline", "warrior", "fantasy_ember", "standard", 42)
+
+    from engine.api.campaign.quest_bridge import current_quest_offers, start_quest, sync_runtime_objectives
+
+    quest = start_quest(context, "main_shadows_over_aldenmoor")
+    assert quest is not None
+
+    spawn_ground_item_entity(context, item={"id": "wanted_poster", "name": "Wanted Poster", "qty": 1})
+    pickup = runtime.run_command(context.campaign_id, "pickup wanted poster")
+    assert pickup["command_type"] == "inventory"
+
+    context.dm_context.location = "Kings Road Checkpoint"
+    context.conversation_state = {
+        "target_type": "npc",
+        "npc_id": "aldenmoor_gate_captain",
+        "npc_name": "Aldenmoor Gate Captain",
+    }
+    for index in range(3):
+        _inject_runtime_actor(context, f"bandit_{index}", f"Bandit {index}", role="bandit", alive=False)
+    _inject_runtime_actor(context, "captain_malgrave", "Captain Malgrave", role="bandit_captain", alive=False)
+
+    before_longsword = _inventory_quantity(context, "longsword")
+    before_chain = _inventory_quantity(context, "chain_shirt")
+    before_potions = _inventory_quantity(context, "potion_of_healing")
+    before_captain_scimitar = _inventory_quantity(context, "captain_scimitar")
+    before_gold_coins = _inventory_quantity(context, "gold_coin")
+
+    sync_runtime_objectives(context)
+    active_quest = next(entry for entry in context.campaign_state["active_quests"] if entry["quest_id"] == "main_shadows_over_aldenmoor")
+    objective_progress = {objective["id"]: objective for objective in active_quest["objectives"]}
+    assert objective_progress["main_act_1_reach_kings_road"]["progress"] == 1
+    assert objective_progress["main_act_1_clear_bandit_toll"]["progress"] == 3
+    assert objective_progress["main_act_1_defeat_captain_malgrave"]["progress"] == 1
+    assert objective_progress["main_act_1_recover_wanted_poster"]["progress"] == 1
+    assert objective_progress["main_act_1_report_to_gate_captain"]["progress"] == 1
+    assert active_quest["report_ready"] is True
+
+    first = runtime.run_command(context.campaign_id, "report main_shadows_over_aldenmoor")
+    second = runtime.run_command(context.campaign_id, "report main_shadows_over_aldenmoor")
+
+    assert first["command_type"] == "quest"
+    assert second["narrative"] == "Quest 'main_shadows_over_aldenmoor' has already been reported."
+    assert _inventory_quantity(context, "longsword") == before_longsword + 1
+    assert _inventory_quantity(context, "chain_shirt") == before_chain + 1
+    assert _inventory_quantity(context, "potion_of_healing") == before_potions + 3
+    assert _inventory_quantity(context, "captain_scimitar") == before_captain_scimitar + 1
+    assert _inventory_quantity(context, "gold_coin") == before_gold_coins + 75
+    unlocked = {offer["quest_id"] for offer in current_quest_offers(context)}
+    assert "main_archmages_tower" in unlocked
+
+    runtime.save_campaign(context.campaign_id, "authored_campaign_slot", "Questline")
+    loaded = runtime.load_campaign("authored_campaign_slot")
+    loaded_offers = {offer["quest_id"] for offer in current_quest_offers(loaded)}
+    assert "main_archmages_tower" in loaded_offers
+    assert "main_shadows_over_aldenmoor" in loaded.campaign_state["completed_quest_ids"]
+
+
+def test_travel_does_not_erase_authored_offers():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("Traveler", "warrior", "fantasy_ember", "standard", 42)
+
+    from engine.api.campaign.quest_bridge import current_quest_offers
+
+    before = {offer["quest_id"] for offer in current_quest_offers(context)}
+    destination = next(option for option in runtime.snapshot(context.campaign_id)["campaign"]["travel_options"] if not option["is_current"])
+
+    travel = runtime.run_command(context.campaign_id, f"travel {destination['destination_region_id']}")
+    after = {offer["quest_id"] for offer in current_quest_offers(context)}
+
+    assert travel["command_type"] == "travel"
+    assert "tutorial_troubled_village" in before
+    assert "tutorial_troubled_village" in after
 
 
 def test_collect_objective_survives_inventory_command_and_keeps_progress_details():

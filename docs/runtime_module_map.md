@@ -6,6 +6,8 @@ Oversized runtime files are only permitted when explicitly documented below.
 
 ## Oversize Exceptions
 
+- `frp-backend/engine/api/campaign/quest_bridge.py`: Quest bridge still centralizes accept/report flow, dialog quest hooks, and runtime sync until quest runtime splits further.
+- `frp-backend/engine/api/campaign/region_projection.py`: Campaign region projection still centralizes realization, entity seeding, and party slot projection until it is split.
 - `frp-backend/engine/api/campaign_commands.py`: Campaign command dispatch centralizes all command handlers and dialog/commerce routing.
 - `frp-backend/engine/core/combat.py`: Combat core remains monolithic until rules/narration are peeled apart.
 - `frp-backend/engine/core/dm_agent.py`: DM agent still mixes prompting, fallback, and formatting.
@@ -26,17 +28,18 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/__init__.py` | 17 | - | __getattr__ |
 | `frp-backend/engine/api/__init__.py` | 0 | - | - |
 | `frp-backend/engine/api/campaign/__init__.py` | 3 | - | - |
+| `frp-backend/engine/api/campaign/authored_campaigns.py` | 270 | - | load_authored_campaign_registry, ensure_authored_campaign_state, refresh_authored_campaign_offers, resolve_authored_offer |
 | `frp-backend/engine/api/campaign/context.py` | 280 | CampaignContext (11), CampaignCreationContext (0) | - |
 | `frp-backend/engine/api/campaign/controls.py` | 72 | - | merge_settlement_controls |
 | `frp-backend/engine/api/campaign/debug_trace.py` | 23 | - | snapshot_hash, trace_event |
 | `frp-backend/engine/api/campaign/dialog.py` | 330 | - | build_dialog_payload, _get_player_actor, _get_npc_actor, _resolve_dialog_def |
 | `frp-backend/engine/api/campaign/live_kernel.py` | 426 | - | ensure_kernel_runtime, serialize_kernel_runtime, advance_kernel_runtime, _check_level_up |
-| `frp-backend/engine/api/campaign/party_bridge.py` | 199 | - | maybe_handle_party_command, party_member_ids, party_summary, allied_actor_ids |
+| `frp-backend/engine/api/campaign/party_bridge.py` | 263 | - | maybe_handle_party_command, party_member_ids, party_summary, allied_actor_ids |
 | `frp-backend/engine/api/campaign/persistence.py` | 201 | - | campaign_payload, persist_campaign_state, build_kernel_payload, _active_site_id |
-| `frp-backend/engine/api/campaign/quest_bridge.py` | 441 | - | maybe_handle_quest_command, apply_dialog_events, sync_runtime_objectives, start_quest |
-| `frp-backend/engine/api/campaign/quest_objectives.py` | 232 | - | sync_runtime_objectives, normalize_objectives, refresh_quest_progress, quest_ready_to_report |
-| `frp-backend/engine/api/campaign/quest_state.py` | 42 | - | snapshot_quest_state, restore_quest_state |
-| `frp-backend/engine/api/campaign/region_projection.py` | 416 | - | _preserved_party_entities, _restore_party_entities, apply_region_to_context, build_map_data |
+| `frp-backend/engine/api/campaign/quest_bridge.py` | 508 | - | maybe_handle_quest_command, apply_dialog_events, sync_runtime_objectives, start_quest |
+| `frp-backend/engine/api/campaign/quest_objectives.py` | 244 | - | sync_runtime_objectives, normalize_objectives, refresh_quest_progress, quest_ready_to_report |
+| `frp-backend/engine/api/campaign/quest_state.py` | 46 | - | snapshot_quest_state, restore_quest_state |
+| `frp-backend/engine/api/campaign/region_projection.py` | 523 | - | _preserved_party_entities, _restore_party_entities, _clamp_party_position, _ensure_projected_party_entity |
 | `frp-backend/engine/api/campaign/runtime.py` | 434 | CampaignRuntime (22) | _try_start_tick_loop, _try_stop_tick_loop |
 | `frp-backend/engine/api/campaign/runtime_commands.py` | 254 | - | run_command, advance_world_tick, _dispatch, _advance_world |
 | `frp-backend/engine/api/campaign/runtime_common.py` | 36 | - | saved_or, saved_list_or, stable_seed, active_site_id |
@@ -55,7 +58,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/combat_bridge.py` | 405 | - | maybe_handle_combat_command, _handle_attack, _handle_defend, _handle_flee |
 | `frp-backend/engine/api/context_factory.py` | 183 | PlayerInitState (0) | create_player_state |
 | `frp-backend/engine/api/exploration_bridge.py` | 270 | - | _player, _actors, _npc_list, _time_desc |
-| `frp-backend/engine/api/gameplay_bridge.py` | 432 | - | _player, _fuzzy_match, _fuzzy_match_list, _find_inventory_item_by_name |
+| `frp-backend/engine/api/gameplay_bridge.py` | 447 | - | _player, _fuzzy_match, _fuzzy_match_list, _find_inventory_item_by_name |
 | `frp-backend/engine/api/kernel_adapter.py` | 151 | - | create_player, create_monster, start_fight, run_attack |
 | `frp-backend/engine/api/medical_bridge.py` | 221 | - | maybe_handle_medical_command, _handle_diagnose, _handle_treat, _handle_surgery |
 | `frp-backend/engine/api/runtime_constants.py` | 53 | - | _build_starter_kits |
@@ -97,7 +100,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/kernel/data_loader.py` | 97 | - | _load_json, load_materials, load_quality_tiers, clear_cache |
 | `frp-backend/engine/kernel/dialog.py` | 385 | DialogCondition (2), DialogAction (2), DialogTransition (2), DialogStateNode (2) | start_dialog, evaluate_condition, get_available_transitions, select_transition |
 | `frp-backend/engine/kernel/effects.py` | 448 | EffectDef (2), EffectInstance (6), EffectQueue (12) | apply_effect, tick_effects, compute_effective_stat, dispel_effects |
-| `frp-backend/engine/kernel/game_state.py` | 329 | JournalEntry (2), WorldTime (3), DifficultySettings (3), GameState (3) | _normalized_party_ids, _normalized_inactive_npc_ids, normalize_party_state, create_game_state |
+| `frp-backend/engine/kernel/game_state.py` | 348 | JournalEntry (2), WorldTime (3), DifficultySettings (3), GameState (3) | _normalized_formation_name, _normalized_party_ids, _normalized_inactive_npc_ids, normalize_party_state |
 | `frp-backend/engine/kernel/gameplay.py` | 587 | - | add_inventory_item, restore_ground_item_entities, persist_ground_item_entities, spawn_ground_item_entity |
 | `frp-backend/engine/kernel/hybrid.py` | 48 | - | - |
 | `frp-backend/engine/kernel/hybrid_runtime.py` | 345 | - | macro_state_from_world, travel_options_for_region, initiate_travel, tick_travel |
@@ -141,7 +144,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/world/body_parts.py` | 171 | BodyPartTracker (7), ArmorPiece (0) | roll_hit_location, calculate_armor_reduction |
 | `frp-backend/engine/world/caravans.py` | 187 | CaravanRoute (0), ActiveCaravan (0), CaravanManager (6) | _load_caravans |
 | `frp-backend/engine/world/consequence.py` | 148 | Effect (1), ConsequenceRule (1), PendingEffect (0), CascadeEngine (7) | - |
-| `frp-backend/engine/world/crafting.py` | 329 | QualityTier (0), Ingredient (0), Product (0), CraftingRecipe (0) | determine_quality, _ingredient_from_dict, _product_from_dict, _recipe_from_dict |
+| `frp-backend/engine/world/crafting.py` | 331 | QualityTier (0), Ingredient (0), Product (0), CraftingRecipe (0) | determine_quality, _ingredient_from_dict, _product_from_dict, _recipe_from_dict |
 | `frp-backend/engine/world/economy.py` | 243 | Recipe (0), LocationStock (9) | - |
 | `frp-backend/engine/world/entity.py` | 226 | EntityType (0), Entity (15) | - |
 | `frp-backend/engine/world/ethics.py` | 151 | ActionEvaluation (0) | _load_factions, evaluate_action, evaluate_action_full, get_faction_context |
@@ -193,7 +196,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/tools/content_validator.py` | 335 | - | _infer_signature, _validate_signature, _validate_standard_list_family, _validate_campaigns |
 | `frp-backend/tools/doc_inventory.py` | 185 | - | _relative, _load_registry, _scan_active_prds, _scan_deprecated_prds |
 | `frp-backend/tools/generate_content.py` | 213 | - | header, step, ok, fail |
-| `frp-backend/tools/runtime_audit.py` | 195 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
+| `frp-backend/tools/runtime_audit.py` | 197 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
 | `godot-client/autoloads/backend.gd` | 262 | - | _ready, set_base_url, get_base_url, create_campaign |
 | `godot-client/autoloads/backend_runtime.gd` | 157 | - | ensure_bootstrap, reset_state, _run_bootstrap, _commit_backend |
 | `godot-client/autoloads/game_state.gd` | 487 | - | update_from_response, reset, is_in_combat, has_active_campaign |

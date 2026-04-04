@@ -46,7 +46,19 @@ def normalize_objectives(raw_objectives: Any) -> list[dict[str, Any]]:
             or objective.get("kind")
             or ""
         ).strip().lower()
-        required = max(1, int(objective.get("required", objective.get("target_count", objective.get("count", 1))) or 1))
+        required = max(
+            1,
+            int(
+                objective.get(
+                    "required",
+                    objective.get(
+                        "required_count",
+                        objective.get("target_count", objective.get("count", 1)),
+                    ),
+                )
+                or 1
+            ),
+        )
         progress = max(0, int(objective.get("progress", 0)))
         matched_ids = [str(item) for item in list(objective.get("matched_ids", objective.get("seen_ids", [])) or []) if str(item)]
         objective["type"] = objective_type

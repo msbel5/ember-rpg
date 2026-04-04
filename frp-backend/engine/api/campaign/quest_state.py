@@ -15,6 +15,8 @@ def snapshot_quest_state(context: "CampaignContext") -> dict[str, Any]:
         "failed_quest_ids": list(context.campaign_state.get("failed_quest_ids", [])),
         "quest_offers": copy.deepcopy(context.campaign_state.get("quest_offers", [])),
         "context_quest_offers": copy.deepcopy(getattr(context, "quest_offers", [])),
+        "authored_campaigns": copy.deepcopy(context.campaign_state.get("authored_campaigns", {})),
+        "authored_quest_offers": copy.deepcopy(context.campaign_state.get("authored_quest_offers", [])),
     }
 
 
@@ -33,6 +35,8 @@ def restore_quest_state(
     context.campaign_state["failed_quest_ids"] = sorted(
         {str(item) for item in snapshot.get("failed_quest_ids", []) if str(item)}
     )
+    context.campaign_state["authored_campaigns"] = copy.deepcopy(snapshot.get("authored_campaigns", {}))
+    context.campaign_state["authored_quest_offers"] = copy.deepcopy(snapshot.get("authored_quest_offers", []))
     if preserve_offers:
         offers = copy.deepcopy(snapshot.get("context_quest_offers") or snapshot.get("quest_offers", []))
         context.quest_offers = offers

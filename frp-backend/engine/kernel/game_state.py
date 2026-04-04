@@ -91,6 +91,11 @@ FORMATIONS = {
 }
 
 
+def _normalized_formation_name(formation: str) -> str:
+    normalized = str(formation or "wedge").lower().strip()
+    return normalized if normalized in FORMATIONS else "wedge"
+
+
 def _normalized_party_ids(party_ids: list[str]) -> list[str]:
     seen: set[str] = set()
     normalized: list[str] = []
@@ -120,6 +125,7 @@ def _normalized_inactive_npc_ids(inactive_ids: list[str], party_ids: list[str]) 
 def normalize_party_state(state: "GameState") -> "GameState":
     state.party = _normalized_party_ids(state.party)
     state.inactive_npcs = _normalized_inactive_npc_ids(state.inactive_npcs, state.party)
+    state.formation = _normalized_formation_name(getattr(state, "formation", "wedge"))
     return state
 
 
@@ -236,6 +242,10 @@ def remove_from_party(state: GameState, actor_id: str) -> None:
 
 def swap_party_member(state: GameState, active_id: str, inactive_id: str) -> tuple[bool, str]:
     normalize_party_state(state)
+    active_id = str(active_id)
+    inactive_id = str(inactive_id)
+    if active_id == "player" or inactive_id == "player" or active_id == inactive_id:
+        return False, "invalid swap"
     if active_id not in state.party or inactive_id not in state.inactive_npcs:
         return False, "invalid swap"
     index = state.party.index(active_id)
@@ -245,6 +255,15 @@ def swap_party_member(state: GameState, active_id: str, inactive_id: str) -> tup
         state.inactive_npcs.append(active_id)
     normalize_party_state(state)
     return True, "swapped"
+
+
+def set_party_formation(state: GameState, formation: str) -> tuple[bool, str]:
+    normalized = _normalized_formation_name(formation)
+    if normalized != str(formation or "").lower().strip() and str(formation or "").lower().strip() not in FORMATIONS:
+        return False, "invalid formation"
+    state.formation = normalized
+    normalize_party_state(state)
+    return True, normalized
 
 
 def transition_to_area(state: GameState, area_id: str, position: tuple[int, int] | None = None) -> dict:

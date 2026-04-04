@@ -13,6 +13,13 @@ from engine.api.campaign.quest_objectives import (
     refresh_quest_progress,
     sync_runtime_objectives as sync_objectives,
 )
+from engine.api.campaign.authored_campaigns import (
+    is_authored_quest,
+    mark_authored_act_completed,
+    refresh_authored_campaign_offers,
+    remove_authored_offer,
+    resolve_authored_offer,
+)
 from engine.kernel.game_state import add_journal_entry, modify_reputation
 
 if TYPE_CHECKING:
@@ -121,7 +128,7 @@ def start_quest(context: "CampaignContext", quest_id: str) -> Optional[dict[str,
         sync_quest_state(context)
         return _active_quest_payload(context, existing.quest_id, existing.title, "active", existing.deadline_hour, "started")
 
-    offer = _find_offer(context, quest_id) or {
+    offer = _find_offer(context, quest_id) or resolve_authored_offer(quest_id) or {
         "id": quest_id,
         "quest_id": quest_id,
         "title": quest_id.replace("_", " ").title(),
@@ -148,6 +155,8 @@ def start_quest(context: "CampaignContext", quest_id: str) -> Optional[dict[str,
     )
     refresh_quest_progress(active_entry)
     _remove_offer(context, quest_id)
+    if is_authored_quest(active_entry):
+        remove_authored_offer(context, quest_id)
     context.campaign_state.setdefault("active_quests", []).append(active_entry)
 
     runtime = context.kernel_runtime or {}
@@ -183,23 +192,32 @@ def sync_quest_state(context: "CampaignContext") -> None:
 
     for entry in tracker.get_active_quests():
         stored = next((item for item in stored_active if str(item.get("quest_id", item.get("id", ""))) == entry.quest_id), None)
-        payload = _active_quest_payload(
-            context,
-            entry.quest_id,
-            str(stored.get("title") if stored else entry.title),
-            "active",
-            (stored or {}).get("deadline", entry.deadline_hour),
-            str((stored or {}).get("stage", "started")),
-        )
         if stored:
+            payload = copy.deepcopy(stored)
             payload.update(
                 {
-                    "description": str(stored.get("description", payload.get("description", ""))),
-                    "giver_name": str(stored.get("giver_name", "")),
-                    "reward_gold": int(stored.get("reward_gold", 0)),
-                    "reward_xp": int(stored.get("reward_xp", 0)),
-                    "objectives": normalize_objectives(stored.get("objectives", [])),
+                    "id": entry.quest_id,
+                    "quest_id": entry.quest_id,
+                    "title": str(stored.get("title") or entry.title),
+                    "status": "active",
+                    "stage": str(stored.get("stage", "started")),
+                    "deadline": _optional_float(stored.get("deadline", entry.deadline_hour)),
                 }
+            )
+            payload["hours_remaining"] = (
+                None
+                if payload["deadline"] is None
+                else max(0, int(float(payload["deadline"]) - _current_hour(context)))
+            )
+            payload["objectives"] = normalize_objectives(stored.get("objectives", []))
+        else:
+            payload = _active_quest_payload(
+                context,
+                entry.quest_id,
+                entry.title,
+                "active",
+                entry.deadline_hour,
+                "started",
             )
         refresh_quest_progress(payload)
         active_entries.append(payload)
@@ -215,12 +233,21 @@ def current_quest_offers(context: "CampaignContext") -> list[dict[str, Any]]:
     region_offers = list((context.campaign_state or {}).get("quest_offers", []) or [])
     if not region_offers:
         region_offers = list(getattr(context, "quest_offers", []) or [])
+    authored_offers = refresh_authored_campaign_offers(context)
     claimed_ids = {
         *{str(item.get("quest_id", item.get("id", ""))) for item in context.campaign_state.get("active_quests", [])},
         *{str(item) for item in context.campaign_state.get("completed_quest_ids", [])},
         *{str(item) for item in context.campaign_state.get("failed_quest_ids", [])},
     }
-    return [copy.deepcopy(offer) for offer in region_offers if str(offer.get("quest_id", offer.get("id", ""))) not in claimed_ids]
+    visible_offers: dict[str, dict[str, Any]] = {}
+    for offer in [*region_offers, *authored_offers]:
+        if not isinstance(offer, dict):
+            continue
+        quest_id = str(offer.get("quest_id", offer.get("id", "")))
+        if not quest_id or quest_id in claimed_ids:
+            continue
+        visible_offers[quest_id] = copy.deepcopy(offer)
+    return list(visible_offers.values())
 
 
 def tick_quest_tracker(context: "CampaignContext") -> list[dict[str, Any]]:
@@ -298,15 +325,19 @@ def _report_quest(context: "CampaignContext", query: str) -> tuple[str, str, int
     game_state = runtime.get("game_state")
     reward_gold = int(quest.get("reward_gold", 0))
     reward_xp = int(quest.get("reward_xp", 0))
+    granted_items = _grant_reward_items(context, quest.get("rewards", []))
     if player is not None:
         player.raw_payload["gold"] = int(player.raw_payload.get("gold", 0)) + reward_gold
         player.raw_payload["xp"] = int(player.raw_payload.get("xp", 0)) + reward_xp
         player.raw_payload.setdefault("quests", {})[quest_id] = "completed"
     if game_state is not None:
         add_journal_entry(game_state, f"Completed quest: {quest.get('title', quest_id)}", quest_id=quest_id, quest_stage=999)
+    if is_authored_quest(quest):
+        mark_authored_act_completed(context, quest)
 
     sync_quest_state(context)
-    return (f"Completed quest: {quest.get('title', quest_id)}. Reward: {reward_gold} gold, {reward_xp} XP.", "quest", 0)
+    reward_summary = _reward_summary_text(reward_gold, reward_xp, granted_items)
+    return (f"Completed quest: {quest.get('title', quest_id)}. Reward: {reward_summary}.", "quest", 0)
 
 
 def _journal_summary(context: "CampaignContext") -> str:
@@ -386,6 +417,7 @@ def _remove_offer(context: "CampaignContext", quest_id: str) -> None:
     quest_id = str(quest_id)
     context.quest_offers = [offer for offer in context.quest_offers if str(offer.get("quest_id", offer.get("id", ""))) != quest_id]
     context.campaign_state["quest_offers"] = copy.deepcopy(context.quest_offers)
+    remove_authored_offer(context, quest_id)
 
 
 def _ensure_tracker(context: "CampaignContext"):
@@ -428,6 +460,41 @@ def _current_hour(context: "CampaignContext") -> float:
 
 def _optional_float(value: Any) -> float | None:
     return None if value in (None, "", False) else float(value)
+
+
+def _grant_reward_items(context: "CampaignContext", rewards: Any) -> list[dict[str, Any]]:
+    granted: list[dict[str, Any]] = []
+    if not isinstance(rewards, list):
+        return granted
+    runtime = context.kernel_runtime or {}
+    player = (runtime.get("actors") or {}).get("player")
+    if player is None:
+        return granted
+    for entry in rewards:
+        if not isinstance(entry, dict):
+            continue
+        item_id = str(entry.get("item_id", "")).strip()
+        if not item_id:
+            continue
+        quantity = max(1, int(entry.get("quantity", 1) or 1))
+        payload = {
+            "id": item_id,
+            "item_def_id": item_id,
+            "quantity": quantity,
+            "qty": quantity,
+            "name": str(entry.get("name", item_id.replace("_", " ").title())),
+        }
+        added = context.add_item(payload, merge=True)
+        if added is not None:
+            granted.append({"item_id": item_id, "quantity": quantity})
+    return granted
+
+
+def _reward_summary_text(reward_gold: int, reward_xp: int, granted_items: list[dict[str, Any]]) -> str:
+    parts = [f"{reward_gold} gold", f"{reward_xp} XP"]
+    for item in granted_items:
+        parts.append(f"{int(item.get('quantity', 1))}x {str(item.get('item_id', 'item')).replace('_', ' ')}")
+    return ", ".join(parts)
 
 
 __all__ = [

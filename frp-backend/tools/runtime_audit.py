@@ -19,6 +19,8 @@ ALLOWED_OVERSIZE: Dict[str, str] = {
     "frp-backend/engine/kernel/actor_records.py": "Actor record bridging still centralizes legacy-to-kernel conversion and sync helpers.",
     "frp-backend/engine/kernel/gameplay.py": "Gameplay kernel bundles equipment, crafting, rest, and ground-item helpers.",
     "frp-backend/engine/map/__init__.py": "Map generation package still centralizes multiple generators.",
+    "frp-backend/engine/api/campaign/quest_bridge.py": "Quest bridge still centralizes accept/report flow, dialog quest hooks, and runtime sync until quest runtime splits further.",
+    "frp-backend/engine/api/campaign/region_projection.py": "Campaign region projection still centralizes realization, entity seeding, and party slot projection until it is split.",
     "frp-backend/engine/api/campaign_commands.py": "Campaign command dispatch centralizes all command handlers and dialog/commerce routing.",
     "frp-backend/tools/content_orchestrator.py": "Content orchestrator bundles world-building generation pipeline.",
     "godot-client/tests/automation/godot/automation_bridge.gd": "Semantic automation bridge remains centralized as a test-only control surface.",

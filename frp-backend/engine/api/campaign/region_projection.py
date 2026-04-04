@@ -5,6 +5,7 @@ import copy
 from typing import Any
 
 from engine.api.campaign.context import CampaignContext
+from engine.kernel.game_state import FORMATIONS, normalize_party_state
 from engine.kernel.scene_types import SceneType
 from engine.map import MapData, Room, TileType
 from engine.world.entity import Entity, EntityType
@@ -126,6 +127,110 @@ def _restore_party_entities(context: CampaignContext, preserved: dict[str, dict[
         context.entities[actor_id] = restored_record
 
 
+def _clamp_party_position(context: CampaignContext, x: int, y: int) -> tuple[int, int]:
+    map_data = getattr(context, "map_data", None)
+    if map_data is None:
+        return (x, y)
+    width = max(1, int(getattr(map_data, "width", 1)))
+    height = max(1, int(getattr(map_data, "height", 1)))
+    return (max(0, min(width - 1, int(x))), max(0, min(height - 1, int(y))))
+
+
+def _ensure_projected_party_entity(context: CampaignContext, actor_id: str) -> dict[str, Any] | None:
+    record = context.entities.get(actor_id)
+    if isinstance(record, dict):
+        return record
+    runtime = context.kernel_runtime or {}
+    actor = (runtime.get("actors") or {}).get(actor_id)
+    if actor is None:
+        return None
+    entity = Entity(
+        id=actor_id,
+        entity_type=EntityType.NPC,
+        name=actor.identity.display_name,
+        position=tuple(_clamp_party_position(context, int(context.position[0]), int(context.position[1]))),
+        glyph="A",
+        color="light_blue",
+        blocking=True,
+        hp=int(actor.stats.get("hp", 0)),
+        max_hp=int(actor.stats.get("max_hp", 1)),
+        disposition="ally",
+        attitude="ally",
+        faction=getattr(actor.identity, "faction_id", None),
+        job=str(actor.raw_payload.get("role", "companion")),
+    )
+    if context.spatial_index.get_position(actor_id) is None:
+        context.spatial_index.add(entity)
+    record = {
+        "name": actor.identity.display_name,
+        "type": "npc",
+        "position": [entity.position[0], entity.position[1]],
+        "faction": getattr(actor.identity, "faction_id", None),
+        "role": str(actor.raw_payload.get("role", "companion")),
+        "attitude": "ally",
+        "disposition": "ally",
+        "template": str(actor.raw_payload.get("template", actor.raw_payload.get("role", "companion"))),
+        "context_actions": ["examine"],
+        "entity_ref": entity,
+    }
+    context.entities[actor_id] = record
+    return record
+
+
+def sync_party_projection(context: CampaignContext) -> None:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if game_state is None or getattr(context, "spatial_index", None) is None:
+        return
+    normalize_party_state(game_state)
+    formation_offsets = list(FORMATIONS.get(str(getattr(game_state, "formation", "wedge")), FORMATIONS["wedge"]))
+    active_ids = [actor_id for actor_id in list(getattr(game_state, "party", [])) if actor_id and actor_id != "player"]
+    reserve_ids = [actor_id for actor_id in list(getattr(game_state, "inactive_npcs", [])) if actor_id]
+    player_x, player_y = int(context.position[0]), int(context.position[1])
+    actors = runtime.get("actors") or {}
+
+    for index, actor_id in enumerate(active_ids, start=1):
+        record = _ensure_projected_party_entity(context, actor_id)
+        if record is None:
+            continue
+        dx, dy = formation_offsets[index] if index < len(formation_offsets) else formation_offsets[-1]
+        slot_position = _clamp_party_position(context, player_x + int(dx), player_y + int(dy))
+        entity_ref = record.get("entity_ref")
+        if entity_ref is not None:
+            if context.spatial_index.get_position(actor_id) is not None:
+                context.spatial_index.move(entity_ref, slot_position[0], slot_position[1])
+            else:
+                entity_ref.position = slot_position
+                context.spatial_index.add(entity_ref)
+            entity_ref.attitude = "ally"
+            entity_ref.disposition = "ally"
+            entity_ref.faction = getattr(getattr(actors.get(actor_id), "identity", None), "faction_id", record.get("faction"))
+        record["position"] = [slot_position[0], slot_position[1]]
+        record["attitude"] = "ally"
+        record["disposition"] = "ally"
+
+    for actor_id in reserve_ids:
+        record = context.entities.get(actor_id)
+        if not isinstance(record, dict):
+            continue
+        actor = actors.get(actor_id)
+        reserve_position = tuple(record.get("position", list(context.position)))
+        if actor is not None:
+            reserve_position = _clamp_party_position(context, int(actor.position.x), int(actor.position.y))
+        entity_ref = record.get("entity_ref")
+        if entity_ref is not None:
+            if context.spatial_index.get_position(actor_id) is not None:
+                context.spatial_index.move(entity_ref, reserve_position[0], reserve_position[1])
+            else:
+                entity_ref.position = reserve_position
+                context.spatial_index.add(entity_ref)
+            entity_ref.attitude = "friendly"
+            entity_ref.disposition = "friendly"
+        record["position"] = [int(reserve_position[0]), int(reserve_position[1])]
+        record["attitude"] = "friendly"
+        record["disposition"] = "friendly"
+
+
 def apply_region_to_context(
     *,
     context: CampaignContext,
@@ -173,6 +278,7 @@ def apply_region_to_context(
     seed_region_entities(context, world, region_snapshot, adapter_id)
     if preserved_party_entities:
         _restore_party_entities(context, preserved_party_entities)
+    sync_party_projection(context)
     context.campaign_state.setdefault("active_quests", [])
     context.campaign_state.setdefault("completed_quests", [])
     context.campaign_state.setdefault("failed_quests", [])
@@ -413,4 +519,5 @@ __all__ = [
     "furniture_actions",
     "furniture_template",
     "seed_region_entities",
+    "sync_party_projection",
 ]

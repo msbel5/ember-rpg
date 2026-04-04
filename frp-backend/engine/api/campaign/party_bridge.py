@@ -5,8 +5,10 @@ import logging
 import re
 from typing import TYPE_CHECKING, Optional
 
-from engine.kernel.game_state import add_to_party, normalize_party_state, remove_from_party
+from engine.kernel.game_state import FORMATIONS, add_to_party, normalize_party_state, remove_from_party, set_party_formation, swap_party_member
 from engine.world.entity import Entity, EntityType
+
+from .region_projection import sync_party_projection
 
 if TYPE_CHECKING:
     from engine.api.campaign.context import CampaignContext
@@ -17,6 +19,8 @@ logger = logging.getLogger(__name__)
 _PARTY_RE = re.compile(r"^party$", re.IGNORECASE)
 _RECRUIT_RE = re.compile(r"^(?:recruit|invite)\s+(.+)$", re.IGNORECASE)
 _DISMISS_RE = re.compile(r"^(?:dismiss|remove\s+from\s+party)\s+(.+)$", re.IGNORECASE)
+_SWAP_RE = re.compile(r"^swap\s+(.+?)\s+(?:with|for)\s+(.+)$", re.IGNORECASE)
+_FORMATION_RE = re.compile(r"^(?:formation|party\s+formation)\s+(.+)$", re.IGNORECASE)
 
 
 def maybe_handle_party_command(
@@ -35,6 +39,14 @@ def maybe_handle_party_command(
     match = _DISMISS_RE.match(text)
     if match:
         return _dismiss(context, match.group(1).strip())
+
+    match = _SWAP_RE.match(text)
+    if match:
+        return _swap_active_member(context, match.group(1).strip(), match.group(2).strip())
+
+    match = _FORMATION_RE.match(text)
+    if match:
+        return _set_formation(context, match.group(1).strip())
 
     return None
 
@@ -61,6 +73,7 @@ def party_member_ids(context: "CampaignContext") -> list[str]:
 
 def party_summary(context: "CampaignContext") -> str:
     runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
     actors = runtime.get("actors", {})
     members = []
     for actor_id in party_member_ids(context):
@@ -71,7 +84,16 @@ def party_summary(context: "CampaignContext") -> str:
         members.append(f"- {actor.identity.display_name} ({status}) HP {int(actor.stats.get('hp', 0))}/{int(actor.stats.get('max_hp', 1))}")
     if not members:
         return "Party is empty."
-    return "Party members:\n" + "\n".join(members)
+    formation = str(getattr(game_state, "formation", "wedge")) if game_state is not None else "wedge"
+    reserves = [actor_id for actor_id in list(getattr(game_state, "inactive_npcs", [])) if actor_id] if game_state is not None else []
+    summary = [f"Formation: {formation}", "Party members:", *members]
+    if reserves:
+        reserve_names = []
+        for actor_id in reserves:
+            actor = actors.get(actor_id)
+            reserve_names.append(actor.identity.display_name if actor is not None else actor_id)
+        summary.append("Reserves: " + ", ".join(reserve_names))
+    return "\n".join(summary)
 
 
 def allied_actor_ids(context: "CampaignContext") -> set[str]:
@@ -99,7 +121,7 @@ def _recruit(context: "CampaignContext", query: str) -> tuple[str, str, int]:
     if not success:
         return (f"Could not recruit {actor.identity.display_name}: {message}.", "party", 0)
     _mark_party_membership(context, actor, is_party_member=True)
-    context.campaign_state["party"] = party_member_ids(context)
+    _sync_party_runtime(context)
     logger.info("Recruited %s into party", actor.identity.actor_id)
     return (f"{actor.identity.display_name} joins the party.", "party", 0)
 
@@ -166,9 +188,51 @@ def _dismiss(context: "CampaignContext", query: str) -> tuple[str, str, int]:
     remove_from_party(game_state, actor_id)
     if actors.get(actor_id) is not None:
         _mark_party_membership(context, actors[actor_id], is_party_member=False)
-    context.campaign_state["party"] = party_member_ids(context)
+    _sync_party_runtime(context)
     logger.info("Dismissed %s from party", actor_id)
     return (f"{actor.identity.display_name} leaves the party.", "party", 0)
+
+
+def _swap_active_member(context: "CampaignContext", active_query: str, inactive_query: str) -> tuple[str, str, int]:
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    game_state = runtime.get("game_state")
+    if game_state is None:
+        return ("Party state is unavailable.", "party", 0)
+    active_actor = _find_actor_by_query(context, active_query)
+    inactive_actor = _find_actor_by_query(context, inactive_query)
+    if active_actor is None or inactive_actor is None:
+        return ("Swap requires one active companion and one inactive companion.", "party", 0)
+    success, message = swap_party_member(game_state, active_actor.identity.actor_id, inactive_actor.identity.actor_id)
+    if not success:
+        if message == "invalid swap":
+            return ("Swap requires one active companion and one inactive companion.", "party", 0)
+        return (f"Could not swap companions: {message}.", "party", 0)
+    if actors.get(active_actor.identity.actor_id) is not None:
+        _mark_party_membership(context, actors[active_actor.identity.actor_id], is_party_member=False)
+    if actors.get(inactive_actor.identity.actor_id) is not None:
+        _mark_party_membership(context, actors[inactive_actor.identity.actor_id], is_party_member=True)
+    _sync_party_runtime(context)
+    logger.info("Swapped active %s for reserve %s", active_actor.identity.actor_id, inactive_actor.identity.actor_id)
+    return (f"{inactive_actor.identity.display_name} swaps in for {active_actor.identity.display_name}.", "party", 0)
+
+
+def _set_formation(context: "CampaignContext", formation_name: str) -> tuple[str, str, int]:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if game_state is None:
+        return ("Party state is unavailable.", "party", 0)
+    success, message = set_party_formation(game_state, formation_name)
+    if not success:
+        supported = ", ".join(sorted(FORMATIONS))
+        return (f"Unknown formation '{formation_name}'. Supported formations: {supported}.", "party", 0)
+    _sync_party_runtime(context)
+    return (f"Party formation set to {message}.", "party", 0)
+
+
+def _sync_party_runtime(context: "CampaignContext") -> None:
+    context.campaign_state["party"] = party_member_ids(context)
+    sync_party_projection(context)
 
 
 def _find_actor_by_query(context: "CampaignContext", query: str) -> "ActorRecord | None":

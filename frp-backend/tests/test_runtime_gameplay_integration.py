@@ -5,6 +5,7 @@ import engine.api.gameplay_bridge as gameplay_bridge
 from engine.api.campaign.runtime import CampaignRuntime
 from engine.api.campaign.party_bridge import maybe_handle_party_command
 from engine.kernel.gameplay import spawn_ground_item_entity
+from engine.kernel.game_state import FORMATIONS
 from engine.world.entity import Entity, EntityType
 
 
@@ -411,3 +412,97 @@ def test_party_payload_remains_deduplicated_and_stable() -> None:
     assert payload["campaign"]["party"] == ["player", companion.identity.actor_id]
     assert context.kernel_runtime["game_state"].party == ["player", companion.identity.actor_id]
     assert companion.identity.actor_id not in context.kernel_runtime["game_state"].inactive_npcs
+
+
+def test_party_swap_requires_valid_active_and_inactive_companions() -> None:
+    runtime, context = _make_campaign()
+    active = _inject_companion(context, base_id="companion_active", name="Active Rill", role="guard")
+    reserve = _inject_companion(context, base_id="companion_reserve", name="Reserve Vale", role="scout")
+
+    assert runtime.run_command(context.campaign_id, "recruit Active Rill")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "recruit Reserve Vale")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "dismiss Reserve Vale")["command_type"] == "party"
+
+    invalid = runtime.run_command(context.campaign_id, "swap RuntimeTester with Reserve Vale")
+    swapped = runtime.run_command(context.campaign_id, "swap Active Rill with Reserve Vale")
+
+    assert invalid["command_type"] == "party"
+    assert "requires one active companion and one inactive companion" in invalid["narrative"].lower()
+    assert swapped["command_type"] == "party"
+    assert "swaps in" in swapped["narrative"].lower()
+    assert context.kernel_runtime["game_state"].party == ["player", reserve.identity.actor_id]
+    assert active.identity.actor_id in context.kernel_runtime["game_state"].inactive_npcs
+    assert reserve.identity.actor_id not in context.kernel_runtime["game_state"].inactive_npcs
+
+
+def test_region_projection_uses_active_formation_slots_only() -> None:
+    runtime, context = _make_campaign()
+    alpha = _inject_companion(context, base_id="companion_alpha", name="Alpha Venn", role="guard")
+    beta = _inject_companion(context, base_id="companion_beta", name="Beta Iri", role="scout")
+    reserve = _inject_companion(context, base_id="companion_gamma", name="Gamma Sol", role="mage")
+
+    assert runtime.run_command(context.campaign_id, "recruit Alpha Venn")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "recruit Beta Iri")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "recruit Gamma Sol")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "dismiss Gamma Sol")["command_type"] == "party"
+    formation_result = runtime.run_command(context.campaign_id, "formation line")
+    refreshed = runtime.run_command(context.campaign_id, "look around")
+
+    assert formation_result["command_type"] == "party"
+    offsets = FORMATIONS["line"]
+    player_x, player_y = int(context.position[0]), int(context.position[1])
+    alpha_record = context.entities.get(alpha.identity.actor_id)
+    beta_record = context.entities.get(beta.identity.actor_id)
+    reserve_record = context.entities.get(reserve.identity.actor_id)
+    assert alpha_record is not None
+    assert beta_record is not None
+    assert alpha_record.get("position") == [player_x + offsets[1][0], player_y + offsets[1][1]]
+    assert beta_record.get("position") == [player_x + offsets[2][0], player_y + offsets[2][1]]
+    assert alpha_record.get("attitude") == "ally"
+    assert beta_record.get("disposition") == "ally"
+    assert reserve_record is None or reserve_record.get("attitude") != "ally"
+    assert refreshed["command_type"] == "exploration"
+
+
+def test_formation_changes_remain_stable_through_save_load() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="companion_save", name="Save Piper", role="scout")
+
+    assert runtime.run_command(context.campaign_id, "recruit Save Piper")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "formation scatter")["command_type"] == "party"
+
+    runtime.save_campaign(context.campaign_id, "party_formation_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("party_formation_slot")
+    refreshed = runtime.run_command(loaded.campaign_id, "look around")
+
+    assert loaded.kernel_runtime["game_state"].formation == "scatter"
+    offsets = FORMATIONS["scatter"]
+    player_x, player_y = int(loaded.position[0]), int(loaded.position[1])
+    record = loaded.entities.get(companion.identity.actor_id)
+    assert record is not None
+    assert record.get("position") == [player_x + offsets[1][0], player_y + offsets[1][1]]
+    assert companion.identity.actor_id in refreshed["campaign"]["party"]
+
+
+def test_swap_and_projection_do_not_create_duplicate_or_overlapping_active_party_state() -> None:
+    runtime, context = _make_campaign()
+    active = _inject_companion(context, base_id="companion_slot_a", name="Slot A", role="guard")
+    reserve = _inject_companion(context, base_id="companion_slot_b", name="Slot B", role="scout")
+
+    assert runtime.run_command(context.campaign_id, "recruit Slot A")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "recruit Slot B")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "dismiss Slot B")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "swap Slot A with Slot B")["command_type"] == "party"
+
+    refreshed = runtime.run_command(context.campaign_id, "look around")
+    party = context.kernel_runtime["game_state"].party
+    active_positions = []
+    for actor_id in party[1:]:
+        record = context.entities.get(actor_id)
+        assert record is not None
+        active_positions.append(tuple(record.get("position", [])))
+
+    assert refreshed["command_type"] == "exploration"
+    assert party == ["player", reserve.identity.actor_id]
+    assert len(active_positions) == len(set(active_positions))
+    assert active.identity.actor_id not in party

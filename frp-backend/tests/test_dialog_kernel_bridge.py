@@ -271,6 +271,46 @@ def test_dialog_advance_quest_updates_active_stage_and_objective_state():
     assert active_quest["objectives"][0]["completed"] is True
 
 
+def test_dialog_start_quest_resolves_authored_campaign_act_metadata():
+    _, ctx = _make_campaign()
+    _inject_npc(ctx, "cellar_elder", "Cellar Elder")
+    dialog_def = DialogDef(
+        dialog_id="cellar_elder",
+        npc_id="cellar_elder",
+        states=[
+            DialogStateNode(
+                state_id="start",
+                text="The cellar must be cleansed.",
+                transitions=[
+                    DialogTransition(
+                        transition_id="accept_cellar",
+                        text="I will clear the cellar.",
+                        terminates=True,
+                        actions=[DialogAction("start_quest", {"quest_id": "tutorial_forbidden_cellar"})],
+                    )
+                ],
+            )
+        ],
+    )
+    _inject_dialog(ctx, dialog_def)
+    ctx.kernel_runtime["dialog_state"], _, _ = start_dialog(
+        dialog_def,
+        ctx.kernel_runtime["actors"]["cellar_elder"],
+        ctx.kernel_runtime["actors"]["player"],
+        {},
+    )
+    ctx.kernel_runtime["dialog_npc_id"] = "cellar_elder"
+
+    result = maybe_handle_dialog_command(ctx, "dialog accept_cellar")
+
+    assert result is not None
+    active_quest = next(entry for entry in ctx.campaign_state["active_quests"] if entry["quest_id"] == "tutorial_forbidden_cellar")
+    assert active_quest["source"] == "authored_campaign"
+    assert active_quest["campaign_id"] == "tutorial_campaign"
+    assert active_quest["act_id"] == "act_2"
+    assert [objective["required"] for objective in active_quest["objectives"]] == [1, 1, 2, 2, 1]
+
+
 def test_sync_runtime_objectives_marks_kill_objective_complete_for_dead_target():
     _, ctx = _make_campaign()
     target = _inject_npc(ctx, "fallen_raider", "Fallen Raider")
