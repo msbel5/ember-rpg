@@ -15,7 +15,11 @@
           "id": "enc_1_1",
           "name": "Wolf Pack at the Farm",
           "description": "Three wolves circle the farmer's barn. Defeat them to learn basic melee combat.",
-          "monsters": ["wolf", "wolf", "wolf"],
+          "monsters": [
+            "wolf",
+            "wolf",
+            "wolf"
+          ],
           "difficulty": "easy",
           "tutorial_hint": "Use your basic attack action. Remember to check your HP after each hit!"
         },
@@ -23,33 +27,63 @@
           "id": "enc_1_2",
           "name": "Goblin Scouts",
           "description": "A small goblin scouting party spotted near the mill. Introduces flanking and positioning.",
-          "monsters": ["goblin", "goblin"],
+          "monsters": [
+            "goblin",
+            "goblin"
+          ],
           "difficulty": "easy",
           "tutorial_hint": "Goblins are cunning. Use the environment to your advantage — positioning matters."
         }
       ],
       "objectives": [
         {
-          "id": "obj_1_1",
+          "id": "tutorial_act_1_speak_with_elder",
+          "description": "Speak with the village elder in Ashvale",
+          "type": "talk",
+          "target": "ashvale_elder",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_1_reach_farmstead",
+          "description": "Reach the threatened farmstead",
+          "type": "visit",
+          "target": "ashvale_farmstead",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_1_defeat_wolves",
           "description": "Defeat the wolves at the farm",
           "type": "kill",
           "target": "wolf",
           "required_count": 3
         },
         {
-          "id": "obj_1_2",
-          "description": "Drive off the goblin scouts",
+          "id": "tutorial_act_1_drive_off_scouts",
+          "description": "Drive off the goblin scouts near the mill",
           "type": "kill",
           "target": "goblin",
           "required_count": 2
         }
       ],
       "rewards": [
-        {"item_id": "iron_shortsword", "quantity": 1},
-        {"item_id": "potion_of_healing", "quantity": 2},
-        {"item_id": "gold_coin", "quantity": 10},
-        {"item_id": "silver_coin", "quantity": 5}
-      ]
+        {
+          "item_id": "iron_shortsword",
+          "quantity": 1
+        },
+        {
+          "item_id": "potion_of_healing",
+          "quantity": 2
+        },
+        {
+          "item_id": "gold_coin",
+          "quantity": 12
+        },
+        {
+          "item_id": "silver_coin",
+          "quantity": 5
+        }
+      ],
+      "quest_id": "tutorial_troubled_village"
     },
     {
       "id": "act_2",
@@ -60,7 +94,10 @@
           "id": "enc_2_1",
           "name": "Skeleton Guardians",
           "description": "Skeletons patrol the cellar entrance. Your first encounter with undead — blunt weapons and holy spells work best.",
-          "monsters": ["skeleton", "skeleton"],
+          "monsters": [
+            "skeleton",
+            "skeleton"
+          ],
           "difficulty": "easy",
           "tutorial_hint": "Try using a scroll or spell! Skeletons are vulnerable to bludgeoning damage."
         },
@@ -68,40 +105,71 @@
           "id": "enc_2_2",
           "name": "The Risen Dead",
           "description": "Deeper in the cellar, zombies shamble toward you. Learn about slow enemies and area-of-effect spells.",
-          "monsters": ["zombie", "zombie", "skeleton_archer"],
+          "monsters": [
+            "zombie",
+            "zombie",
+            "skeleton_archer"
+          ],
           "difficulty": "medium",
           "tutorial_hint": "The skeleton archer attacks from range. Close the distance or use a scroll of fireball!"
         }
       ],
       "objectives": [
         {
-          "id": "obj_2_1",
-          "description": "Clear the cellar of undead",
+          "id": "tutorial_act_2_speak_with_innkeeper",
+          "description": "Speak with the innkeeper before entering the cellar",
+          "type": "talk",
+          "target": "ashvale_innkeeper",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_2_enter_cellar",
+          "description": "Reach the deep cellar below the inn",
+          "type": "visit",
+          "target": "ashvale_cellar_depths",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_2_clear_skeletons",
+          "description": "Clear the cellar entrance of skeletons",
           "type": "kill",
           "target": "skeleton",
           "required_count": 2
         },
         {
-          "id": "obj_2_2",
+          "id": "tutorial_act_2_defeat_zombies",
           "description": "Defeat the undead in the deep cellar",
           "type": "kill",
           "target": "zombie",
           "required_count": 2
         },
         {
-          "id": "obj_2_3",
-          "description": "Recover the stolen village relic from the cellar chest",
+          "id": "tutorial_act_2_recover_village_relic",
+          "description": "Recover the village relic from the cellar chest",
           "type": "collect",
           "target": "ancient_key",
           "required_count": 1
         }
       ],
       "rewards": [
-        {"item_id": "scroll_of_fireball", "quantity": 1},
-        {"item_id": "scroll_of_healing_word", "quantity": 1},
-        {"item_id": "padded_armor", "quantity": 1},
-        {"item_id": "gold_coin", "quantity": 15}
-      ]
+        {
+          "item_id": "scroll_of_fireball",
+          "quantity": 1
+        },
+        {
+          "item_id": "scroll_of_healing_word",
+          "quantity": 1
+        },
+        {
+          "item_id": "padded_armor",
+          "quantity": 1
+        },
+        {
+          "item_id": "gold_coin",
+          "quantity": 18
+        }
+      ],
+      "quest_id": "tutorial_forbidden_cellar"
     },
     {
       "id": "act_3",
@@ -112,7 +180,11 @@
           "id": "enc_3_1",
           "name": "Goblin Ambush on the Road",
           "description": "Goblins strike from the treeline. A chance to practice using potions and consumables during combat.",
-          "monsters": ["goblin", "goblin", "goblin"],
+          "monsters": [
+            "goblin",
+            "goblin",
+            "goblin"
+          ],
           "difficulty": "medium",
           "tutorial_hint": "You can use items during your turn! Try using a potion of healing when below 50% HP."
         },
@@ -120,41 +192,75 @@
           "id": "enc_3_2",
           "name": "Boss: Grixnok the Goblin Boss",
           "description": "Grixnok and two bodyguards make their last stand. Apply everything you've learned.",
-          "monsters": ["goblin_boss", "goblin", "goblin"],
+          "monsters": [
+            "goblin_boss",
+            "goblin",
+            "goblin"
+          ],
           "difficulty": "hard",
           "tutorial_hint": "Target the boss last or first — your choice! But don't ignore the minions entirely."
         }
       ],
       "objectives": [
         {
-          "id": "obj_3_1",
-          "description": "Survive the goblin ambush",
+          "id": "tutorial_act_3_reach_road_ambush",
+          "description": "Reach the goblin ambush site on the road",
+          "type": "visit",
+          "target": "goblin_road_ambush",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_3_break_ambush",
+          "description": "Survive and break the goblin ambush",
           "type": "kill",
           "target": "goblin",
           "required_count": 3
         },
         {
-          "id": "obj_3_2",
-          "description": "Defeat Grixnok the Goblin Boss",
+          "id": "tutorial_act_3_defeat_grixnok",
+          "description": "Defeat Grixnok the goblin boss",
           "type": "kill",
           "target": "goblin_boss",
           "required_count": 1
         },
         {
-          "id": "obj_3_3",
-          "description": "Recover the stolen goods for the village",
+          "id": "tutorial_act_3_recover_stolen_goods",
+          "description": "Recover the stolen village goods from the goblin cache",
           "type": "collect",
           "target": "stolen_goods",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_3_report_victory",
+          "description": "Return to the village elder with news of the victory",
+          "type": "talk",
+          "target": "ashvale_elder",
           "required_count": 1
         }
       ],
       "rewards": [
-        {"item_id": "longsword", "quantity": 1},
-        {"item_id": "leather_helmet", "quantity": 1},
-        {"item_id": "potion_of_healing", "quantity": 3},
-        {"item_id": "goblin_crown", "quantity": 1},
-        {"item_id": "gold_coin", "quantity": 30}
-      ]
+        {
+          "item_id": "longsword",
+          "quantity": 1
+        },
+        {
+          "item_id": "leather_helmet",
+          "quantity": 1
+        },
+        {
+          "item_id": "potion_of_healing",
+          "quantity": 3
+        },
+        {
+          "item_id": "goblin_crown",
+          "quantity": 1
+        },
+        {
+          "item_id": "gold_coin",
+          "quantity": 35
+        }
+      ],
+      "quest_id": "tutorial_goblin_ringleader"
     }
   ]
 }

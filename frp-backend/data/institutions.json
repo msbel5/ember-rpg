@@ -106,6 +106,1509 @@
         "reports_to": null,
         "holder_name": "Vesper Goleli"
       }
+    },
+    "mountain_hold": {
+      "thane": {
+        "role_id": "thane",
+        "title": "Thane of the Mountain Hold",
+        "faction_affiliation": "mountain_dwarves",
+        "authority_level": 10,
+        "responsibilities": [
+          "Rule the hold with the authority of the ancestors",
+          "Settle disputes between clans",
+          "Declare war or forge alliances",
+          "Oversee all mining and forging operations"
+        ],
+        "can_issue": ["martial_law", "exile", "conscription"],
+        "reports_to": null,
+        "holder_name": "Balgrim Ironpeak"
+      },
+      "forge_master": {
+        "role_id": "forge_master",
+        "title": "Master of the Great Forge",
+        "faction_affiliation": "mountain_dwarves",
+        "authority_level": 8,
+        "responsibilities": [
+          "Oversee all smithing operations",
+          "Maintain quality standards for arms and armor",
+          "Train apprentice smiths",
+          "Manage alloy reserves"
+        ],
+        "can_issue": ["price_floor", "rationing"],
+        "reports_to": "thane",
+        "holder_name": "Durin Hammersong"
+      },
+      "mine_overseer": {
+        "role_id": "mine_overseer",
+        "title": "Overseer of the Deep Mines",
+        "faction_affiliation": "mountain_dwarves",
+        "authority_level": 7,
+        "responsibilities": [
+          "Manage all mining operations",
+          "Ensure miner safety in the deep shafts",
+          "Allocate mining crews to veins",
+          "Report ore yields to the Thane"
+        ],
+        "can_issue": ["rationing", "investigation"],
+        "reports_to": "thane",
+        "holder_name": "Korva Deepdelve"
+      },
+      "runekeeper": {
+        "role_id": "runekeeper",
+        "title": "Runekeeper of the Ancestral Halls",
+        "faction_affiliation": "mages_circle",
+        "authority_level": 8,
+        "responsibilities": [
+          "Preserve the ancient rune-lore",
+          "Ward the hold against magical threats",
+          "Inscribe protective runes on arms and walls",
+          "Counsel the Thane on arcane matters"
+        ],
+        "can_issue": ["investigation", "sanctuary"],
+        "reports_to": "thane",
+        "holder_name": "Eira Stoneglyph"
+      },
+      "vault_guardian": {
+        "role_id": "vault_guardian",
+        "title": "Guardian of the Mountain Vault",
+        "faction_affiliation": "mountain_dwarves",
+        "authority_level": 7,
+        "responsibilities": [
+          "Protect the treasury and precious ore reserves",
+          "Manage access to the vault chambers",
+          "Inventory all stored wealth",
+          "Defend against theft and incursion"
+        ],
+        "can_issue": ["arrest", "investigation"],
+        "reports_to": "thane",
+        "holder_name": "Thordak Shieldborn"
+      },
+      "trade_envoy": {
+        "role_id": "trade_envoy",
+        "title": "Trade Envoy to the Surface",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 6,
+        "responsibilities": [
+          "Negotiate trade agreements with surface towns",
+          "Arrange ore and goods exchanges",
+          "Represent dwarven interests abroad",
+          "Manage caravan logistics"
+        ],
+        "can_issue": ["price_floor"],
+        "reports_to": "thane",
+        "holder_name": "Brunhild Goldtongue"
+      },
+      "clan_elder": {
+        "role_id": "clan_elder",
+        "title": "Elder of the Council of Clans",
+        "faction_affiliation": "mountain_dwarves",
+        "authority_level": 9,
+        "responsibilities": [
+          "Advise the Thane on matters of tradition",
+          "Mediate inter-clan disputes",
+          "Preserve oral histories and lineages",
+          "Preside over clan ceremonies"
+        ],
+        "can_issue": ["exile", "sanctuary"],
+        "reports_to": null,
+        "holder_name": "Magni Longbeard"
+      },
+      "war_commander": {
+        "role_id": "war_commander",
+        "title": "Commander of the Hold Guard",
+        "faction_affiliation": "mountain_dwarves",
+        "authority_level": 8,
+        "responsibilities": [
+          "Command the hold's military forces",
+          "Organize defense of the gates and tunnels",
+          "Train warriors for battle",
+          "Lead sorties against invaders"
+        ],
+        "can_issue": ["martial_law", "conscription", "arrest", "curfew"],
+        "reports_to": "thane",
+        "holder_name": "Sigrun Axewielder"
+      },
+      "tunnel_warden": {
+        "role_id": "tunnel_warden",
+        "title": "Warden of the Deep Tunnels",
+        "faction_affiliation": "mountain_dwarves",
+        "authority_level": 5,
+        "responsibilities": [
+          "Patrol the deep tunnels for threats",
+          "Maintain tunnel infrastructure",
+          "Report incursions from below",
+          "Manage ventilation and drainage"
+        ],
+        "can_issue": ["curfew", "investigation"],
+        "reports_to": "war_commander",
+        "holder_name": "Fenrik Darklantern"
+      },
+      "ale_master": {
+        "role_id": "ale_master",
+        "title": "Master Brewer of the Mountain Hold",
+        "faction_affiliation": "mountain_dwarves",
+        "authority_level": 4,
+        "responsibilities": [
+          "Brew and maintain ale stores for the hold",
+          "Manage the great fermentation halls",
+          "Supply rations for festivals and sieges",
+          "Source water from the deep springs"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "trade_envoy",
+        "holder_name": "Olga Barrelstave"
+      },
+      "stone_mason": {
+        "role_id": "stone_mason",
+        "title": "Chief Mason of the Hold",
+        "faction_affiliation": "mountain_dwarves",
+        "authority_level": 5,
+        "responsibilities": [
+          "Maintain structural integrity of the hold",
+          "Oversee construction of new halls and passages",
+          "Repair fortifications after sieges",
+          "Train apprentice masons"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "mine_overseer",
+        "holder_name": "Grundi Wallhewer"
+      }
+    },
+    "forest_haven": {
+      "elder_druid": {
+        "role_id": "elder_druid",
+        "title": "Elder Druid of Forest Haven",
+        "faction_affiliation": "druids_circle",
+        "authority_level": 10,
+        "responsibilities": [
+          "Commune with the ancient trees for guidance",
+          "Preside over the Council of Leaves",
+          "Protect the heart-grove from corruption",
+          "Determine the settlement's path forward"
+        ],
+        "can_issue": ["exile", "sanctuary", "curfew"],
+        "reports_to": null,
+        "holder_name": "Thalindra Mosswhisper"
+      },
+      "ranger_captain": {
+        "role_id": "ranger_captain",
+        "title": "Captain of the Woodland Rangers",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 8,
+        "responsibilities": [
+          "Patrol the forest borders",
+          "Coordinate ranger scouts",
+          "Defend against intruders and poachers",
+          "Report threats to the Elder Druid"
+        ],
+        "can_issue": ["bounty", "arrest", "investigation"],
+        "reports_to": "elder_druid",
+        "holder_name": "Caelen Swiftbow"
+      },
+      "grove_keeper": {
+        "role_id": "grove_keeper",
+        "title": "Keeper of the Sacred Grove",
+        "faction_affiliation": "druids_circle",
+        "authority_level": 7,
+        "responsibilities": [
+          "Tend the sacred grove and its ancient trees",
+          "Perform seasonal rituals of renewal",
+          "Guard against blight and dark magic",
+          "Harvest herbs and bark for remedies"
+        ],
+        "can_issue": ["sanctuary"],
+        "reports_to": "elder_druid",
+        "holder_name": "Faelynn Dawnpetal"
+      },
+      "moonwatcher": {
+        "role_id": "moonwatcher",
+        "title": "Moonwatcher of the Silver Canopy",
+        "faction_affiliation": "mages_circle",
+        "authority_level": 7,
+        "responsibilities": [
+          "Read omens in the stars and moonlight",
+          "Maintain the starlight wards",
+          "Advise the Elder Druid on celestial portents",
+          "Track lunar cycles for ritual planning"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "elder_druid",
+        "holder_name": "Ithrendil Stargazer"
+      },
+      "beast_speaker": {
+        "role_id": "beast_speaker",
+        "title": "Beast Speaker of the Wild Court",
+        "faction_affiliation": "druids_circle",
+        "authority_level": 6,
+        "responsibilities": [
+          "Communicate with the forest creatures",
+          "Negotiate truces with predator packs",
+          "Train animal companions for the rangers",
+          "Monitor migration and herd movements"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "grove_keeper",
+        "holder_name": "Orenn Wolfcaller"
+      },
+      "herb_master": {
+        "role_id": "herb_master",
+        "title": "Master Herbalist of the Green Pharmacy",
+        "faction_affiliation": "druids_circle",
+        "authority_level": 5,
+        "responsibilities": [
+          "Prepare healing poultices and tonics",
+          "Maintain the herb gardens and drying sheds",
+          "Train apprentice herbalists",
+          "Supply medicines for the settlement"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "grove_keeper",
+        "holder_name": "Miravael Leafbinder"
+      },
+      "arrow_smith": {
+        "role_id": "arrow_smith",
+        "title": "Arrow Smith of the Haven Armory",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 4,
+        "responsibilities": [
+          "Craft arrows, bows, and light armaments",
+          "Maintain the settlement's weapon stores",
+          "Supply rangers with quality ammunition",
+          "Develop new designs from rare wood and bone"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "ranger_captain",
+        "holder_name": "Thyrin Fletchwood"
+      },
+      "lore_keeper": {
+        "role_id": "lore_keeper",
+        "title": "Keeper of the Leaf-Bound Lore",
+        "faction_affiliation": "mages_circle",
+        "authority_level": 6,
+        "responsibilities": [
+          "Preserve the ancient scrolls and song-tales",
+          "Teach history and language to the young",
+          "Record events and decisions of the Council",
+          "Research forgotten magics and old treaties"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "elder_druid",
+        "holder_name": "Aravnis Pagebark"
+      },
+      "border_warden": {
+        "role_id": "border_warden",
+        "title": "Warden of the Forest Borders",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 6,
+        "responsibilities": [
+          "Guard the perimeter paths and hidden trails",
+          "Challenge strangers seeking entry",
+          "Maintain the boundary wards and markers",
+          "Coordinate with ranger patrols"
+        ],
+        "can_issue": ["arrest", "curfew"],
+        "reports_to": "ranger_captain",
+        "holder_name": "Sylvaris Thornwatch"
+      },
+      "spirit_caller": {
+        "role_id": "spirit_caller",
+        "title": "Spirit Caller of the Ancestral Glade",
+        "faction_affiliation": "druids_circle",
+        "authority_level": 7,
+        "responsibilities": [
+          "Commune with the spirits of the fallen",
+          "Perform rites of passage and remembrance",
+          "Seek wisdom from ancestral shades",
+          "Calm restless spirits that haunt the wood"
+        ],
+        "can_issue": ["sanctuary", "investigation"],
+        "reports_to": "elder_druid",
+        "holder_name": "Elowynn Ashenveil"
+      },
+      "tree_singer": {
+        "role_id": "tree_singer",
+        "title": "Tree Singer of the Living Walls",
+        "faction_affiliation": "druids_circle",
+        "authority_level": 5,
+        "responsibilities": [
+          "Coax the trees to form living fortifications",
+          "Heal wounded or diseased trees",
+          "Shape wood for dwellings and bridges",
+          "Grow emergency barriers during attacks"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "grove_keeper",
+        "holder_name": "Verdanis Rootsong"
+      }
+    },
+    "desert_outpost": {
+      "sultan": {
+        "role_id": "sultan",
+        "title": "Sultan of the Desert Outpost",
+        "faction_affiliation": "sand_lords",
+        "authority_level": 10,
+        "responsibilities": [
+          "Rule the outpost with absolute authority",
+          "Protect the oasis and trade routes",
+          "Settle disputes among merchant houses",
+          "Forge alliances with nomadic tribes"
+        ],
+        "can_issue": ["martial_law", "exile", "curfew", "conscription"],
+        "reports_to": null,
+        "holder_name": "Rashid al-Dunefire"
+      },
+      "vizier": {
+        "role_id": "vizier",
+        "title": "Grand Vizier of the Outpost",
+        "faction_affiliation": "sand_lords",
+        "authority_level": 9,
+        "responsibilities": [
+          "Advise the Sultan on all matters of state",
+          "Manage the outpost's diplomatic relations",
+          "Oversee the treasury and expenditures",
+          "Act as regent in the Sultan's absence"
+        ],
+        "can_issue": ["exile", "arrest", "investigation"],
+        "reports_to": "sultan",
+        "holder_name": "Nasira al-Whisperwind"
+      },
+      "bazaar_master": {
+        "role_id": "bazaar_master",
+        "title": "Master of the Grand Bazaar",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 7,
+        "responsibilities": [
+          "Regulate trade in the grand bazaar",
+          "Resolve merchant disputes and pricing conflicts",
+          "Collect stall fees and trade taxes",
+          "Ensure fair weights and measures"
+        ],
+        "can_issue": ["price_floor", "investigation"],
+        "reports_to": "vizier",
+        "holder_name": "Hakim Goldscale"
+      },
+      "water_warden": {
+        "role_id": "water_warden",
+        "title": "Warden of the Sacred Waters",
+        "faction_affiliation": "sand_lords",
+        "authority_level": 8,
+        "responsibilities": [
+          "Control and ration water from the oasis",
+          "Maintain the aqueducts and cisterns",
+          "Punish water theft with severity",
+          "Ensure fair distribution during droughts"
+        ],
+        "can_issue": ["rationing", "arrest", "investigation"],
+        "reports_to": "sultan",
+        "holder_name": "Zafira Clearspring"
+      },
+      "caravan_master": {
+        "role_id": "caravan_master",
+        "title": "Master of the Caravan Routes",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 6,
+        "responsibilities": [
+          "Organize and schedule trade caravans",
+          "Negotiate safe passage with desert tribes",
+          "Hire guards and outriders for convoys",
+          "Maintain maps of shifting sand routes"
+        ],
+        "can_issue": ["bounty", "price_floor"],
+        "reports_to": "bazaar_master",
+        "holder_name": "Tarek Sandrider"
+      },
+      "sand_rider_captain": {
+        "role_id": "sand_rider_captain",
+        "title": "Captain of the Sand Riders",
+        "faction_affiliation": "sand_lords",
+        "authority_level": 8,
+        "responsibilities": [
+          "Command the mounted desert patrol",
+          "Defend caravans from raiders and beasts",
+          "Scout for threats in the deep desert",
+          "Train riders in desert combat tactics"
+        ],
+        "can_issue": ["bounty", "arrest", "curfew", "conscription"],
+        "reports_to": "sultan",
+        "holder_name": "Khalid Dustlance"
+      },
+      "scribe": {
+        "role_id": "scribe",
+        "title": "Chief Scribe of the Outpost Archives",
+        "faction_affiliation": "mages_circle",
+        "authority_level": 5,
+        "responsibilities": [
+          "Record all edicts, contracts, and judgments",
+          "Maintain the archive of trade records",
+          "Draft official correspondence for the Sultan",
+          "Translate documents from foreign languages"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "vizier",
+        "holder_name": "Yara Inkfingers"
+      },
+      "oasis_keeper": {
+        "role_id": "oasis_keeper",
+        "title": "Keeper of the Verdant Oasis",
+        "faction_affiliation": "druids_circle",
+        "authority_level": 6,
+        "responsibilities": [
+          "Tend the gardens and date groves of the oasis",
+          "Monitor the health of oasis flora",
+          "Cultivate medicinal plants and food crops",
+          "Prevent contamination of the water source"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "water_warden",
+        "holder_name": "Samira Greenhand"
+      },
+      "spice_merchant": {
+        "role_id": "spice_merchant",
+        "title": "Chief Spice Merchant of the Outpost",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 5,
+        "responsibilities": [
+          "Control the rare spice trade",
+          "Appraise and authenticate exotic goods",
+          "Maintain connections with distant suppliers",
+          "Advise the bazaar master on commodity prices"
+        ],
+        "can_issue": ["price_floor"],
+        "reports_to": "bazaar_master",
+        "holder_name": "Farouk Cinnabar"
+      },
+      "slave_liberator": {
+        "role_id": "slave_liberator",
+        "title": "Liberator of the Unchained",
+        "faction_affiliation": "temple_order",
+        "authority_level": 6,
+        "responsibilities": [
+          "Free enslaved people brought through the outpost",
+          "Provide shelter and rehabilitation for the freed",
+          "Advocate for abolition before the Sultan",
+          "Investigate illegal trafficking operations"
+        ],
+        "can_issue": ["arrest", "investigation", "sanctuary"],
+        "reports_to": null,
+        "holder_name": "Amara Chainbreaker"
+      },
+      "astrologer": {
+        "role_id": "astrologer",
+        "title": "Royal Astrologer of the Dunes",
+        "faction_affiliation": "mages_circle",
+        "authority_level": 6,
+        "responsibilities": [
+          "Read the stars to predict sandstorms and omens",
+          "Advise the Sultan on auspicious timing",
+          "Study celestial phenomena for arcane insight",
+          "Maintain the observatory atop the minaret"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "vizier",
+        "holder_name": "Idris Starmantle"
+      }
+    },
+    "swamp_village": {
+      "elder": {
+        "role_id": "elder",
+        "title": "Elder of the Swamp Village",
+        "faction_affiliation": "marsh_folk",
+        "authority_level": 10,
+        "responsibilities": [
+          "Lead the village through consensus and wisdom",
+          "Settle disputes among the fishing families",
+          "Represent the village to outside authorities",
+          "Preserve the traditions of the marsh folk"
+        ],
+        "can_issue": ["exile", "curfew", "sanctuary"],
+        "reports_to": null,
+        "holder_name": "Granny Willow Bogwise"
+      },
+      "bog_warden": {
+        "role_id": "bog_warden",
+        "title": "Warden of the Black Bog",
+        "faction_affiliation": "marsh_folk",
+        "authority_level": 8,
+        "responsibilities": [
+          "Patrol the treacherous marshlands",
+          "Guard against swamp predators and intruders",
+          "Mark safe paths through the bogs",
+          "Rescue travelers lost in the mire"
+        ],
+        "can_issue": ["bounty", "arrest", "curfew"],
+        "reports_to": "elder",
+        "holder_name": "Corwin Mudstrider"
+      },
+      "herbalist": {
+        "role_id": "herbalist",
+        "title": "Herbalist of the Marsh Apothecary",
+        "faction_affiliation": "druids_circle",
+        "authority_level": 6,
+        "responsibilities": [
+          "Gather rare herbs from the deep swamp",
+          "Prepare medicines and antidotes for illness",
+          "Treat the sick and injured villagers",
+          "Maintain the village's store of remedies"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "witch_doctor",
+        "holder_name": "Nettie Ferngrasp"
+      },
+      "fish_master": {
+        "role_id": "fish_master",
+        "title": "Fish Master of the Stilted Docks",
+        "faction_affiliation": "marsh_folk",
+        "authority_level": 6,
+        "responsibilities": [
+          "Organize the daily fishing expeditions",
+          "Manage fish stocks and breeding ponds",
+          "Distribute the catch among village families",
+          "Maintain the boats and nets"
+        ],
+        "can_issue": ["rationing", "price_floor"],
+        "reports_to": "elder",
+        "holder_name": "Oren Pikehand"
+      },
+      "ferryman": {
+        "role_id": "ferryman",
+        "title": "Chief Ferryman of the Marsh Crossings",
+        "faction_affiliation": "marsh_folk",
+        "authority_level": 4,
+        "responsibilities": [
+          "Operate ferries across the deep channels",
+          "Collect passage tolls from travelers",
+          "Maintain the flatboats and rope bridges",
+          "Guide visitors safely through the waterways"
+        ],
+        "can_issue": ["price_floor"],
+        "reports_to": "fish_master",
+        "holder_name": "Jasper Polewalker"
+      },
+      "swamp_guide": {
+        "role_id": "swamp_guide",
+        "title": "Guide of the Trackless Mire",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 5,
+        "responsibilities": [
+          "Lead outsiders through the swamp safely",
+          "Map new paths as the marshland shifts",
+          "Scout for new resources and dangers",
+          "Report unusual activity in the deep swamp"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "bog_warden",
+        "holder_name": "Mila Reedfinder"
+      },
+      "witch_doctor": {
+        "role_id": "witch_doctor",
+        "title": "Witch Doctor of the Spirit Fires",
+        "faction_affiliation": "druids_circle",
+        "authority_level": 8,
+        "responsibilities": [
+          "Perform rituals to appease swamp spirits",
+          "Cure curses and ward against dark magic",
+          "Interpret omens from the bog lights",
+          "Counsel the Elder on spiritual matters"
+        ],
+        "can_issue": ["sanctuary", "investigation"],
+        "reports_to": null,
+        "holder_name": "Old Cassa Bonecrow"
+      },
+      "net_mender": {
+        "role_id": "net_mender",
+        "title": "Chief Net Mender of the Village",
+        "faction_affiliation": "marsh_folk",
+        "authority_level": 3,
+        "responsibilities": [
+          "Repair and weave fishing nets and traps",
+          "Craft rope and cord from marsh reeds",
+          "Supply the fishing crews with equipment",
+          "Train young villagers in net craft"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "fish_master",
+        "holder_name": "Pip Twineknot"
+      },
+      "spirit_ward": {
+        "role_id": "spirit_ward",
+        "title": "Spirit Ward of the Outer Paths",
+        "faction_affiliation": "druids_circle",
+        "authority_level": 5,
+        "responsibilities": [
+          "Maintain protective charms along the village perimeter",
+          "Banish hostile spirits from the settlement",
+          "Renew the warding totems each full moon",
+          "Alert the village to supernatural threats"
+        ],
+        "can_issue": ["sanctuary"],
+        "reports_to": "witch_doctor",
+        "holder_name": "Fennel Glowthorn"
+      },
+      "marsh_hunter": {
+        "role_id": "marsh_hunter",
+        "title": "Chief Hunter of the Marshlands",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 5,
+        "responsibilities": [
+          "Lead hunts for game in the surrounding marshes",
+          "Track and cull dangerous swamp beasts",
+          "Supply pelts and meat to the village",
+          "Train young hunters in swamp survival"
+        ],
+        "can_issue": ["bounty"],
+        "reports_to": "bog_warden",
+        "holder_name": "Rowan Gatorjaw"
+      },
+      "reed_weaver": {
+        "role_id": "reed_weaver",
+        "title": "Master Reed Weaver",
+        "faction_affiliation": "marsh_folk",
+        "authority_level": 3,
+        "responsibilities": [
+          "Weave reeds into baskets, roofing, and walls",
+          "Maintain the stilted huts and walkways",
+          "Craft lightweight boats from woven reed",
+          "Preserve traditional weaving patterns"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "elder",
+        "holder_name": "Tulla Wickerhand"
+      }
+    },
+    "plains_crossing": {
+      "sheriff": {
+        "role_id": "sheriff",
+        "title": "Sheriff of the Plains Crossing",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 10,
+        "responsibilities": [
+          "Maintain order at the crossroads",
+          "Adjudicate disputes between travelers and locals",
+          "Enforce the laws of the wider realm",
+          "Organize posses to pursue outlaws"
+        ],
+        "can_issue": ["martial_law", "bounty", "arrest", "curfew"],
+        "reports_to": null,
+        "holder_name": "Marshal Roderick Sternfield"
+      },
+      "stable_master": {
+        "role_id": "stable_master",
+        "title": "Master of the Crossroads Stables",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 5,
+        "responsibilities": [
+          "Manage the stables and horse trading",
+          "Provide fresh mounts for couriers and travelers",
+          "Breed and train horses for sale",
+          "Maintain the watering troughs and corrals"
+        ],
+        "can_issue": ["price_floor"],
+        "reports_to": "cattle_baron",
+        "holder_name": "Dalton Bridle"
+      },
+      "caravan_broker": {
+        "role_id": "caravan_broker",
+        "title": "Caravan Broker of the Crossroads",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 7,
+        "responsibilities": [
+          "Negotiate contracts between caravans and guards",
+          "Arrange trade deals for passing merchants",
+          "Maintain a registry of available goods",
+          "Mediate commercial disputes"
+        ],
+        "can_issue": ["price_floor", "investigation"],
+        "reports_to": "sheriff",
+        "holder_name": "Livia Fairbargain"
+      },
+      "innkeeper_chief": {
+        "role_id": "innkeeper_chief",
+        "title": "Chief Innkeeper of the Wayward Rest",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 5,
+        "responsibilities": [
+          "Manage the crossroads' largest inn",
+          "Gather news and rumors from travelers",
+          "Provide lodging and meals for visitors",
+          "Report suspicious activity to the Sheriff"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "sheriff",
+        "holder_name": "Hanna Hearthwell"
+      },
+      "bounty_board_keeper": {
+        "role_id": "bounty_board_keeper",
+        "title": "Keeper of the Bounty Board",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 6,
+        "responsibilities": [
+          "Post and manage bounty notices",
+          "Verify bounty claims and pay rewards",
+          "Track wanted individuals across the region",
+          "Maintain records of completed contracts"
+        ],
+        "can_issue": ["bounty", "investigation"],
+        "reports_to": "sheriff",
+        "holder_name": "Colm Nailpost"
+      },
+      "farrier": {
+        "role_id": "farrier",
+        "title": "Farrier and Ironworker of the Crossing",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 3,
+        "responsibilities": [
+          "Shoe horses and repair wagon wheels",
+          "Forge nails, hinges, and simple tools",
+          "Maintain the crossroads' smithy",
+          "Provide emergency repairs for caravans"
+        ],
+        "can_issue": ["price_floor"],
+        "reports_to": "stable_master",
+        "holder_name": "Gerta Anvilstrike"
+      },
+      "cattle_baron": {
+        "role_id": "cattle_baron",
+        "title": "Cattle Baron of the Wide Plains",
+        "faction_affiliation": "plains_ranchers",
+        "authority_level": 8,
+        "responsibilities": [
+          "Manage the vast herds on the plains",
+          "Negotiate beef and leather prices",
+          "Employ ranch hands and drovers",
+          "Settle grazing territory disputes"
+        ],
+        "can_issue": ["price_floor", "bounty"],
+        "reports_to": "sheriff",
+        "holder_name": "Bowen Longhorn"
+      },
+      "grain_merchant": {
+        "role_id": "grain_merchant",
+        "title": "Chief Grain Merchant of the Crossing",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 6,
+        "responsibilities": [
+          "Buy and sell grain from surrounding farms",
+          "Manage grain storage silos",
+          "Set grain prices for the season",
+          "Supply flour to bakers and caravans"
+        ],
+        "can_issue": ["price_floor", "rationing"],
+        "reports_to": "caravan_broker",
+        "holder_name": "Elda Wheatshear"
+      },
+      "fence_master": {
+        "role_id": "fence_master",
+        "title": "Fence Master of the Stockyards",
+        "faction_affiliation": "thieves_guild",
+        "authority_level": 5,
+        "responsibilities": [
+          "Buy and resell goods of questionable origin",
+          "Maintain contacts in the criminal underworld",
+          "Provide discreet services for a price",
+          "Manage a network of informants"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": null,
+        "holder_name": "Voss Quickhand"
+      },
+      "courier_chief": {
+        "role_id": "courier_chief",
+        "title": "Chief Courier of the Crossroads",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 5,
+        "responsibilities": [
+          "Manage the postal relay between towns",
+          "Dispatch riders with urgent messages",
+          "Maintain the courier waystation",
+          "Ensure confidential mail reaches its destination"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "sheriff",
+        "holder_name": "Swift Darion Hale"
+      },
+      "pilgrim_host": {
+        "role_id": "pilgrim_host",
+        "title": "Host of the Pilgrim Wayshrine",
+        "faction_affiliation": "temple_order",
+        "authority_level": 5,
+        "responsibilities": [
+          "Tend the roadside wayshrine and chapel",
+          "Offer food and rest to traveling pilgrims",
+          "Perform blessings and minor healing",
+          "Collect tithes from the faithful"
+        ],
+        "can_issue": ["sanctuary"],
+        "reports_to": null,
+        "holder_name": "Brother Aldric Wayfarer"
+      }
+    },
+    "coastal_fort": {
+      "commander": {
+        "role_id": "commander",
+        "title": "Commander of the Coastal Fort",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 10,
+        "responsibilities": [
+          "Hold supreme military authority over the fort",
+          "Coordinate defense of the coastline",
+          "Issue orders to all fort personnel",
+          "Report to the crown on coastal threats"
+        ],
+        "can_issue": ["martial_law", "exile", "curfew", "conscription"],
+        "reports_to": null,
+        "holder_name": "General Astrid Seawall"
+      },
+      "quartermaster": {
+        "role_id": "quartermaster",
+        "title": "Quartermaster of the Garrison",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 7,
+        "responsibilities": [
+          "Manage all supplies, food, and materiel",
+          "Requisition goods from nearby settlements",
+          "Maintain accurate inventory records",
+          "Distribute rations and equipment to soldiers"
+        ],
+        "can_issue": ["rationing", "price_floor"],
+        "reports_to": "commander",
+        "holder_name": "Bertram Stockwell"
+      },
+      "siege_engineer": {
+        "role_id": "siege_engineer",
+        "title": "Chief Siege Engineer",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 6,
+        "responsibilities": [
+          "Design and maintain fortifications",
+          "Operate and repair siege engines",
+          "Plan defensive countermeasures",
+          "Supervise construction of walls and towers"
+        ],
+        "can_issue": ["conscription"],
+        "reports_to": "commander",
+        "holder_name": "Ingrid Wallbreaker"
+      },
+      "harbor_watch": {
+        "role_id": "harbor_watch",
+        "title": "Captain of the Harbor Watch",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 7,
+        "responsibilities": [
+          "Monitor all approaching vessels",
+          "Inspect incoming ships for threats",
+          "Coordinate naval patrols",
+          "Enforce the coastal blockade when ordered"
+        ],
+        "can_issue": ["arrest", "investigation", "bounty"],
+        "reports_to": "commander",
+        "holder_name": "Marius Tideguard"
+      },
+      "scout_master": {
+        "role_id": "scout_master",
+        "title": "Scout Master of the Coastal Patrol",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 6,
+        "responsibilities": [
+          "Deploy scouts along the coastline",
+          "Gather intelligence on enemy movements",
+          "Map terrain and identify ambush points",
+          "Train scouts in stealth and survival"
+        ],
+        "can_issue": ["bounty", "investigation"],
+        "reports_to": "commander",
+        "holder_name": "Lena Sharpwind"
+      },
+      "weapons_master": {
+        "role_id": "weapons_master",
+        "title": "Weapons Master of the Armory",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 5,
+        "responsibilities": [
+          "Maintain and repair all weapons and armor",
+          "Train soldiers in melee and ranged combat",
+          "Manage the fort's armory inventory",
+          "Test and approve new weapon designs"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "quartermaster",
+        "holder_name": "Gregor Steelhand"
+      },
+      "chaplain": {
+        "role_id": "chaplain",
+        "title": "Fort Chaplain of the Seaward Temple",
+        "faction_affiliation": "temple_order",
+        "authority_level": 5,
+        "responsibilities": [
+          "Provide spiritual guidance to the garrison",
+          "Perform rites for the fallen",
+          "Offer sanctuary to refugees and wounded",
+          "Counsel the Commander on matters of conscience"
+        ],
+        "can_issue": ["sanctuary"],
+        "reports_to": null,
+        "holder_name": "Father Callum Shorelight"
+      },
+      "medic_chief": {
+        "role_id": "medic_chief",
+        "title": "Chief Medic of the Fort Infirmary",
+        "faction_affiliation": "temple_order",
+        "authority_level": 6,
+        "responsibilities": [
+          "Treat wounded soldiers and civilians",
+          "Manage the infirmary and medical supplies",
+          "Train field medics for deployment",
+          "Advise the Commander on plague and disease"
+        ],
+        "can_issue": ["rationing", "investigation"],
+        "reports_to": "commander",
+        "holder_name": "Surgeon Elise Boneset"
+      },
+      "signal_tower_keeper": {
+        "role_id": "signal_tower_keeper",
+        "title": "Keeper of the Signal Tower",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 4,
+        "responsibilities": [
+          "Maintain the signal fires and flag systems",
+          "Relay messages between forts along the coast",
+          "Watch for enemy signals and coded messages",
+          "Ensure the tower is manned at all hours"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "scout_master",
+        "holder_name": "Wynn Beaconhand"
+      },
+      "prison_warden": {
+        "role_id": "prison_warden",
+        "title": "Warden of the Sea Cells",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 5,
+        "responsibilities": [
+          "Manage prisoners of war and criminals",
+          "Maintain security in the underground cells",
+          "Process prisoner intake and release",
+          "Prevent escape attempts"
+        ],
+        "can_issue": ["arrest"],
+        "reports_to": "commander",
+        "holder_name": "Dour Hemmet Locke"
+      },
+      "supply_officer": {
+        "role_id": "supply_officer",
+        "title": "Supply Officer of the Coastal Fort",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 4,
+        "responsibilities": [
+          "Coordinate supply shipments from allied ports",
+          "Negotiate contracts with provisioners",
+          "Ensure adequate food and water reserves",
+          "Track consumption rates and forecast needs"
+        ],
+        "can_issue": ["rationing", "price_floor"],
+        "reports_to": "quartermaster",
+        "holder_name": "Petra Holdfast"
+      }
+    },
+    "mining_camp": {
+      "camp_boss": {
+        "role_id": "camp_boss",
+        "title": "Boss of the Mining Camp",
+        "faction_affiliation": "prospectors_union",
+        "authority_level": 10,
+        "responsibilities": [
+          "Run the camp with rough frontier justice",
+          "Settle claim disputes and brawls",
+          "Negotiate ore prices with outside buyers",
+          "Keep the peace between rival mining crews"
+        ],
+        "can_issue": ["martial_law", "exile", "bounty", "curfew"],
+        "reports_to": null,
+        "holder_name": "Big Tomas Gravel"
+      },
+      "pit_foreman": {
+        "role_id": "pit_foreman",
+        "title": "Foreman of the Main Pit",
+        "faction_affiliation": "prospectors_union",
+        "authority_level": 7,
+        "responsibilities": [
+          "Supervise daily mining operations",
+          "Assign work crews to active shafts",
+          "Enforce safety protocols underground",
+          "Report ore quality and yield"
+        ],
+        "can_issue": ["rationing", "investigation"],
+        "reports_to": "camp_boss",
+        "holder_name": "Husk Marlowe"
+      },
+      "assayer": {
+        "role_id": "assayer",
+        "title": "Camp Assayer and Mineral Tester",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 6,
+        "responsibilities": [
+          "Test and grade ore samples for purity",
+          "Assess the value of mineral finds",
+          "Maintain accurate records of yields",
+          "Detect fraudulent ore tampering"
+        ],
+        "can_issue": ["investigation", "price_floor"],
+        "reports_to": "camp_boss",
+        "holder_name": "Elwin Trueweight"
+      },
+      "dynamite_keeper": {
+        "role_id": "dynamite_keeper",
+        "title": "Keeper of the Powder Magazine",
+        "faction_affiliation": "prospectors_union",
+        "authority_level": 5,
+        "responsibilities": [
+          "Store and distribute blasting charges",
+          "Manage the powder magazine's safety",
+          "Train miners in safe demolition techniques",
+          "Maintain fuses, detonators, and explosives"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "pit_foreman",
+        "holder_name": "Sparks Nolan"
+      },
+      "mule_driver": {
+        "role_id": "mule_driver",
+        "title": "Head Mule Driver of the Ore Trail",
+        "faction_affiliation": "prospectors_union",
+        "authority_level": 3,
+        "responsibilities": [
+          "Manage the mule teams hauling ore to market",
+          "Maintain the trail between camp and town",
+          "Supply the camp with goods from outside",
+          "Keep the animals healthy and fed"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "pit_foreman",
+        "holder_name": "Dusty Jem Carrow"
+      },
+      "cook": {
+        "role_id": "cook",
+        "title": "Head Cook of the Mining Camp",
+        "faction_affiliation": "prospectors_union",
+        "authority_level": 3,
+        "responsibilities": [
+          "Feed the entire mining camp daily",
+          "Manage food stores and provisions",
+          "Maintain the cookhouse and mess hall",
+          "Source ingredients from traders and hunters"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "camp_boss",
+        "holder_name": "Midge Ironpot"
+      },
+      "claim_registrar": {
+        "role_id": "claim_registrar",
+        "title": "Registrar of Mining Claims",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 6,
+        "responsibilities": [
+          "Record and validate all mining claims",
+          "Resolve overlapping claim disputes",
+          "Maintain the official claim map",
+          "Collect registration fees and taxes"
+        ],
+        "can_issue": ["investigation", "price_floor"],
+        "reports_to": "camp_boss",
+        "holder_name": "Notch Pemberton"
+      },
+      "security_chief": {
+        "role_id": "security_chief",
+        "title": "Chief of Camp Security",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 8,
+        "responsibilities": [
+          "Protect the camp from bandits and claim jumpers",
+          "Patrol the camp perimeter after dark",
+          "Break up fights and arrest troublemakers",
+          "Guard ore shipments en route to market"
+        ],
+        "can_issue": ["bounty", "arrest", "curfew", "investigation"],
+        "reports_to": "camp_boss",
+        "holder_name": "Flint Harker"
+      },
+      "geologist": {
+        "role_id": "geologist",
+        "title": "Camp Geologist and Surveyor",
+        "faction_affiliation": "mages_circle",
+        "authority_level": 5,
+        "responsibilities": [
+          "Survey new areas for mineral deposits",
+          "Assess tunnel stability and rock quality",
+          "Advise on safe digging directions",
+          "Map underground water sources and hazards"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "pit_foreman",
+        "holder_name": "Calista Deeprock"
+      },
+      "shaft_engineer": {
+        "role_id": "shaft_engineer",
+        "title": "Engineer of the Mine Shafts",
+        "faction_affiliation": "prospectors_union",
+        "authority_level": 5,
+        "responsibilities": [
+          "Design and reinforce mine shafts and tunnels",
+          "Install ventilation and drainage systems",
+          "Repair structural damage after cave-ins",
+          "Oversee timber and iron support placement"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "pit_foreman",
+        "holder_name": "Brace Ironbeam"
+      },
+      "lamp_boy_chief": {
+        "role_id": "lamp_boy_chief",
+        "title": "Chief of the Lamp Boys",
+        "faction_affiliation": "prospectors_union",
+        "authority_level": 2,
+        "responsibilities": [
+          "Manage the lamp boy crews who light the mines",
+          "Maintain and refuel all underground lanterns",
+          "Test for gas leaks with canary cages",
+          "Train young workers in mine safety"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "shaft_engineer",
+        "holder_name": "Wick Tallow"
+      }
+    },
+    "temple_sanctuary": {
+      "high_priest": {
+        "role_id": "high_priest",
+        "title": "High Priest of the Temple Sanctuary",
+        "faction_affiliation": "temple_order",
+        "authority_level": 10,
+        "responsibilities": [
+          "Lead all religious services and holy rites",
+          "Govern the sanctuary and its inhabitants",
+          "Interpret divine will and scripture",
+          "Represent the faith to secular authorities"
+        ],
+        "can_issue": ["exile", "sanctuary", "curfew"],
+        "reports_to": null,
+        "holder_name": "His Holiness Varen Solace"
+      },
+      "acolyte_master": {
+        "role_id": "acolyte_master",
+        "title": "Master of Acolytes",
+        "faction_affiliation": "temple_order",
+        "authority_level": 7,
+        "responsibilities": [
+          "Train and mentor all junior acolytes",
+          "Assign duties and schedules for initiates",
+          "Evaluate candidates for advancement",
+          "Maintain discipline among the novices"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "high_priest",
+        "holder_name": "Sister Prudence Ashford"
+      },
+      "reliquary_keeper": {
+        "role_id": "reliquary_keeper",
+        "title": "Keeper of the Holy Reliquary",
+        "faction_affiliation": "temple_order",
+        "authority_level": 7,
+        "responsibilities": [
+          "Guard and maintain the sacred relics",
+          "Authenticate new relics brought to the sanctuary",
+          "Organize relic viewings for pilgrims",
+          "Prevent theft and desecration of holy objects"
+        ],
+        "can_issue": ["arrest", "investigation"],
+        "reports_to": "high_priest",
+        "holder_name": "Brother Oswin Relichand"
+      },
+      "healer_superior": {
+        "role_id": "healer_superior",
+        "title": "Healer Superior of the Sanctuary Hospice",
+        "faction_affiliation": "temple_order",
+        "authority_level": 8,
+        "responsibilities": [
+          "Oversee all healing performed at the sanctuary",
+          "Train healers in both divine and herbal arts",
+          "Manage the hospice wards for the sick",
+          "Allocate rare healing materials wisely"
+        ],
+        "can_issue": ["rationing", "sanctuary"],
+        "reports_to": "high_priest",
+        "holder_name": "Mother Seraphine Mercy"
+      },
+      "inquisitor": {
+        "role_id": "inquisitor",
+        "title": "Inquisitor of the Faithful",
+        "faction_affiliation": "temple_order",
+        "authority_level": 8,
+        "responsibilities": [
+          "Root out heresy and corruption within the order",
+          "Investigate reports of dark magic use",
+          "Conduct trials for crimes against the faith",
+          "Enforce the doctrinal purity of the temple"
+        ],
+        "can_issue": ["arrest", "investigation", "exile"],
+        "reports_to": "high_priest",
+        "holder_name": "Justicar Theron Ashmark"
+      },
+      "scribe_monk": {
+        "role_id": "scribe_monk",
+        "title": "Head Scribe Monk of the Scriptorium",
+        "faction_affiliation": "temple_order",
+        "authority_level": 5,
+        "responsibilities": [
+          "Copy and preserve sacred texts",
+          "Maintain the sanctuary library",
+          "Record the history of the order",
+          "Illuminate manuscripts for ceremonial use"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "acolyte_master",
+        "holder_name": "Brother Quillam Inkwell"
+      },
+      "choir_master": {
+        "role_id": "choir_master",
+        "title": "Choir Master of the Golden Choir",
+        "faction_affiliation": "temple_order",
+        "authority_level": 4,
+        "responsibilities": [
+          "Direct all choral performances and hymns",
+          "Compose new devotional music",
+          "Train singers and musicians for services",
+          "Maintain the great organ and instruments"
+        ],
+        "can_issue": ["sanctuary"],
+        "reports_to": "acolyte_master",
+        "holder_name": "Cantor Elara Brightnote"
+      },
+      "alms_distributor": {
+        "role_id": "alms_distributor",
+        "title": "Distributor of Alms and Charity",
+        "faction_affiliation": "temple_order",
+        "authority_level": 5,
+        "responsibilities": [
+          "Collect and distribute charitable donations",
+          "Feed and clothe the poor and destitute",
+          "Manage the sanctuary's charity fund",
+          "Organize outreach to surrounding communities"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "high_priest",
+        "holder_name": "Deacon Gareth Openhand"
+      },
+      "shrine_guardian": {
+        "role_id": "shrine_guardian",
+        "title": "Guardian of the Inner Shrine",
+        "faction_affiliation": "temple_order",
+        "authority_level": 6,
+        "responsibilities": [
+          "Protect the inner sanctum from unauthorized entry",
+          "Guard the High Priest during ceremonies",
+          "Patrol the sanctuary grounds at night",
+          "Train the temple's armed protectors"
+        ],
+        "can_issue": ["arrest", "curfew"],
+        "reports_to": "inquisitor",
+        "holder_name": "Paladin Mira Shieldvow"
+      },
+      "pilgrimage_guide": {
+        "role_id": "pilgrimage_guide",
+        "title": "Guide of the Sacred Pilgrimage",
+        "faction_affiliation": "temple_order",
+        "authority_level": 4,
+        "responsibilities": [
+          "Lead pilgrims along the sacred route",
+          "Share the history and lore of the holy sites",
+          "Ensure pilgrim safety on the road",
+          "Coordinate lodging and meals for travelers"
+        ],
+        "can_issue": ["sanctuary"],
+        "reports_to": "alms_distributor",
+        "holder_name": "Sister Wren Pathkeeper"
+      },
+      "bell_ringer": {
+        "role_id": "bell_ringer",
+        "title": "Keeper of the Temple Bells",
+        "faction_affiliation": "temple_order",
+        "authority_level": 2,
+        "responsibilities": [
+          "Ring the bells for services and emergencies",
+          "Maintain the bell tower and its mechanisms",
+          "Signal alarms in times of danger",
+          "Mark the hours of prayer throughout the day"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "shrine_guardian",
+        "holder_name": "Young Tollan Bellpull"
+      }
+    },
+    "frontier_post": {
+      "warden": {
+        "role_id": "warden",
+        "title": "Warden of the Frontier Post",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 10,
+        "responsibilities": [
+          "Command the frontier outpost and all personnel",
+          "Monitor threats from the wilderness beyond",
+          "Report to the crown on frontier conditions",
+          "Decide who may pass beyond the border"
+        ],
+        "can_issue": ["martial_law", "exile", "curfew", "conscription"],
+        "reports_to": null,
+        "holder_name": "Warden Kael Farwatch"
+      },
+      "scout_captain": {
+        "role_id": "scout_captain",
+        "title": "Captain of the Frontier Scouts",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 8,
+        "responsibilities": [
+          "Lead long-range scouting expeditions",
+          "Map uncharted territories beyond the post",
+          "Gather intelligence on hostile movements",
+          "Train scouts in wilderness survival"
+        ],
+        "can_issue": ["bounty", "investigation"],
+        "reports_to": "warden",
+        "holder_name": "Rynn Trailblazer"
+      },
+      "trapper_chief": {
+        "role_id": "trapper_chief",
+        "title": "Chief Trapper of the Frontier",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 5,
+        "responsibilities": [
+          "Manage trapping operations in the wilds",
+          "Trade furs and pelts with passing merchants",
+          "Set and maintain animal traps and snares",
+          "Supply the post with fresh game"
+        ],
+        "can_issue": ["price_floor", "rationing"],
+        "reports_to": "scout_captain",
+        "holder_name": "Harsk Pelthand"
+      },
+      "signal_keeper": {
+        "role_id": "signal_keeper",
+        "title": "Keeper of the Frontier Signals",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 4,
+        "responsibilities": [
+          "Maintain the signal fire and mirror relay",
+          "Send and receive coded messages",
+          "Watch for distress signals from patrols",
+          "Keep the signal tower in working order"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "scout_captain",
+        "holder_name": "Brennan Smokemirror"
+      },
+      "supply_master": {
+        "role_id": "supply_master",
+        "title": "Supply Master of the Frontier Post",
+        "faction_affiliation": "merchant_guild",
+        "authority_level": 6,
+        "responsibilities": [
+          "Manage all food, water, and supply stores",
+          "Requisition goods from the nearest settlements",
+          "Track consumption and forecast supply needs",
+          "Negotiate with traders passing through"
+        ],
+        "can_issue": ["rationing", "price_floor"],
+        "reports_to": "warden",
+        "holder_name": "Elga Storebright"
+      },
+      "prisoner_guard": {
+        "role_id": "prisoner_guard",
+        "title": "Guard of the Frontier Stockade",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 4,
+        "responsibilities": [
+          "Guard prisoners held at the frontier post",
+          "Process captured outlaws and trespassers",
+          "Maintain the stockade's security",
+          "Escort prisoners to the nearest town for trial"
+        ],
+        "can_issue": ["arrest"],
+        "reports_to": "warden",
+        "holder_name": "Holt Ironlatch"
+      },
+      "map_maker": {
+        "role_id": "map_maker",
+        "title": "Cartographer of the Frontier",
+        "faction_affiliation": "mages_circle",
+        "authority_level": 5,
+        "responsibilities": [
+          "Chart the wilderness beyond the frontier",
+          "Update maps with new discoveries and dangers",
+          "Record terrain features for military planning",
+          "Sell copies of maps to explorers and traders"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "scout_captain",
+        "holder_name": "Sable Inkworth"
+      },
+      "beast_handler": {
+        "role_id": "beast_handler",
+        "title": "Beast Handler of the Frontier Kennels",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 4,
+        "responsibilities": [
+          "Train and care for tracking hounds and war dogs",
+          "Manage the post's horses and pack animals",
+          "Breed animals suited to the frontier climate",
+          "Deploy animal teams for search and rescue"
+        ],
+        "can_issue": ["investigation"],
+        "reports_to": "scout_captain",
+        "holder_name": "Fenn Beastfriend"
+      },
+      "wall_engineer": {
+        "role_id": "wall_engineer",
+        "title": "Engineer of the Frontier Walls",
+        "faction_affiliation": "harbor_guard",
+        "authority_level": 5,
+        "responsibilities": [
+          "Maintain and repair the post's palisade walls",
+          "Design improvements to frontier defenses",
+          "Oversee construction of watchtowers and gates",
+          "Manage the timber and stone supply for repairs"
+        ],
+        "can_issue": ["conscription", "rationing"],
+        "reports_to": "warden",
+        "holder_name": "Garron Timberwall"
+      },
+      "lookout_chief": {
+        "role_id": "lookout_chief",
+        "title": "Chief Lookout of the Watchtowers",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 5,
+        "responsibilities": [
+          "Coordinate the watchtower rotation schedule",
+          "Train lookouts in threat identification",
+          "Maintain the spyglass and alarm systems",
+          "Report all movement in the frontier zone"
+        ],
+        "can_issue": ["curfew", "investigation"],
+        "reports_to": "scout_captain",
+        "holder_name": "Kira Eagleeye"
+      },
+      "cook_master": {
+        "role_id": "cook_master",
+        "title": "Cook Master of the Frontier Post",
+        "faction_affiliation": "rangers_guild",
+        "authority_level": 3,
+        "responsibilities": [
+          "Prepare meals for the entire garrison",
+          "Preserve meat and provisions for long patrols",
+          "Manage the cookfire and mess area",
+          "Forage for wild ingredients near the post"
+        ],
+        "can_issue": ["rationing"],
+        "reports_to": "supply_master",
+        "holder_name": "Broth Kettleburn"
+      }
     }
   },
   "event_response_rules": {

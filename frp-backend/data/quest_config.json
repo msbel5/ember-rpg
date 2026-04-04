@@ -1,33 +1,179 @@
 {
   "quest_config": {
     "reward_scales": {
-      "fetch": {"gold": 25, "xp": 35},
-      "kill": {"gold": 55, "xp": 70},
-      "escort": {"gold": 45, "xp": 55},
-      "deliver": {"gold": 30, "xp": 40},
-      "investigate": {"gold": 35, "xp": 50},
-      "defend": {"gold": 65, "xp": 80}
+      "fetch": {
+        "gold": 25,
+        "xp": 35
+      },
+      "kill": {
+        "gold": 55,
+        "xp": 70
+      },
+      "escort": {
+        "gold": 45,
+        "xp": 55
+      },
+      "deliver": {
+        "gold": 30,
+        "xp": 40
+      },
+      "investigate": {
+        "gold": 35,
+        "xp": 50
+      },
+      "defend": {
+        "gold": 65,
+        "xp": 80
+      }
     },
     "severity_multiplier": 0.7,
-    "rng_gold_range": [0, 12],
-    "rng_xp_range": [0, 16],
+    "rng_gold_range": [
+      0,
+      12
+    ],
+    "rng_xp_range": [
+      0,
+      16
+    ],
     "generation_weights": {
-      "defend": {"base_weight": 0.5, "boost_tag": "bandit_raid", "boosted_weight": 0.9},
-      "kill": {"base_weight": 0.45, "boost_condition": "fauna_present", "boosted_weight": 0.7},
-      "deliver": {"base_weight": 0.35, "boost_metric": "food", "boost_threshold": 40, "boosted_weight": 0.6},
-      "fetch": {"base_weight": 0.3, "boost_metric": "ore", "boost_threshold": 28, "boosted_weight": 0.55},
-      "investigate": {"base_weight": 0.5},
-      "escort": {"base_weight": 0.45}
+      "defend": {
+        "base_weight": 0.5,
+        "boost_tag": "bandit_raid",
+        "boosted_weight": 0.9
+      },
+      "kill": {
+        "base_weight": 0.45,
+        "boost_condition": "fauna_present",
+        "boosted_weight": 0.7
+      },
+      "deliver": {
+        "base_weight": 0.35,
+        "boost_metric": "food",
+        "boost_threshold": 40,
+        "boosted_weight": 0.6
+      },
+      "fetch": {
+        "base_weight": 0.3,
+        "boost_metric": "ore",
+        "boost_threshold": 28,
+        "boosted_weight": 0.55
+      },
+      "investigate": {
+        "base_weight": 0.5
+      },
+      "escort": {
+        "base_weight": 0.45
+      }
     },
     "emergent_shortages": [
-      {"item_id": "bread", "title": "Bread Shortage", "description": "The taverns need fresh bread before tonight.", "quantity": 2, "reward_gold": 20, "deadline_hours": 35},
-      {"item_id": "ale", "title": "Dry Casks", "description": "Cellars are running low on ale. Bring stock before evening trade.", "quantity": 2, "reward_gold": 18, "deadline_hours": 35},
-      {"item_id": "healing_potion", "title": "Remedy Run", "description": "The local healer is running short on remedies.", "quantity": 1, "reward_gold": 24, "deadline_hours": 50}
+      {
+        "item_id": "elven_bread",
+        "title": "Bread Shortage",
+        "description": "The taverns need fresh bread before tonight.",
+        "quantity": 2,
+        "reward_gold": 20,
+        "deadline_hours": 35
+      },
+      {
+        "item_id": "potion_of_endurance",
+        "title": "Dry Casks",
+        "description": "Cellars are running low on ale. Bring stock before evening trade.",
+        "quantity": 2,
+        "reward_gold": 18,
+        "deadline_hours": 35
+      },
+      {
+        "item_id": "potion_of_healing",
+        "title": "Remedy Run",
+        "description": "The local healer is running short on remedies.",
+        "quantity": 1,
+        "reward_gold": 24,
+        "deadline_hours": 50
+      },
+      {
+        "item_id": "iron_shield",
+        "title": "Iron Famine",
+        "description": "The blacksmith's stockpile is depleted. The guard needs new blades.",
+        "quantity": 3,
+        "reward_gold": 30,
+        "deadline_hours": 48
+      },
+      {
+        "item_id": "scroll_of_shield",
+        "title": "Lights Out",
+        "description": "Night patrols need torches. The guard captain is desperate.",
+        "quantity": 4,
+        "reward_gold": 15,
+        "deadline_hours": 24
+      },
+      {
+        "item_id": "spider_silk",
+        "title": "Rigging Emergency",
+        "description": "A ship lost its rigging in the storm. Rope is needed urgently.",
+        "quantity": 3,
+        "reward_gold": 22,
+        "deadline_hours": 30
+      },
+      {
+        "item_id": "wolf_pelt",
+        "title": "Tanner's Plea",
+        "description": "The leatherworker needs hides to fill a military contract.",
+        "quantity": 3,
+        "reward_gold": 28,
+        "deadline_hours": 40
+      },
+      {
+        "item_id": "torn_cloth",
+        "title": "Bandage Crisis",
+        "description": "The healer needs cloth for bandages after a skirmish.",
+        "quantity": 4,
+        "reward_gold": 16,
+        "deadline_hours": 20
+      },
+      {
+        "item_id": "bear_meat",
+        "title": "Refugee Rations",
+        "description": "Refugees from the north need food. The mayor is calling for donations.",
+        "quantity": 5,
+        "reward_gold": 35,
+        "deadline_hours": 36
+      },
+      {
+        "item_id": "potion_of_strength",
+        "title": "Militia Boost",
+        "description": "The militia needs strength potions before the raid tonight.",
+        "quantity": 2,
+        "reward_gold": 40,
+        "deadline_hours": 18
+      }
     ],
     "think_dc_keywords": {
-      "easy": {"dc": 5, "keywords": ["town", "road", "guard", "merchant", "common", "bread"]},
-      "hard": {"dc": 15, "keywords": []},
-      "very_hard": {"dc": 25, "keywords": ["secret", "cult", "artifact", "true name", "gizli", "sir"]}
+      "easy": {
+        "dc": 5,
+        "keywords": [
+          "town",
+          "road",
+          "guard",
+          "merchant",
+          "common",
+          "bread"
+        ]
+      },
+      "hard": {
+        "dc": 15,
+        "keywords": []
+      },
+      "very_hard": {
+        "dc": 25,
+        "keywords": [
+          "secret",
+          "cult",
+          "artifact",
+          "true name",
+          "gizli",
+          "sir"
+        ]
+      }
     }
   }
 }

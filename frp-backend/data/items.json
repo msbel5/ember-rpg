@@ -1,191 +1,286 @@
 {
   "items": [
     {
-      "name": "Iron Shortsword",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 10,
-      "weight": 2.0,
-      "description": "A simple iron shortsword favored by new adventurers.",
-      "damage_dice": "1d6",
-      "damage_type": "slashing",
-      "requirements": {
-        "level": 1
-      },
-      "id": "iron_shortsword"
+      "id": "aberrant_flesh",
+      "name": "Aberrant Flesh",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 150,
+      "weight": 1.0,
+      "description": "Disgusting flesh from an aberrant creature.",
+      "stackable": true
     },
     {
-      "name": "Longsword",
+      "id": "abyssal_blade",
+      "name": "Abyssal Blade",
       "type": "weapon",
-      "rarity": "COMMON",
-      "value": 15,
-      "weight": 3.0,
-      "description": "A standard longsword with a balanced hilt.",
-      "damage_dice": "1d10",
-      "damage_type": "slashing",
-      "requirements": {
-        "level": 1,
-        "stat": {
-          "MIG": 10
-        }
-      },
-      "id": "longsword"
+      "rarity": "LEGENDARY",
+      "value": 9000,
+      "weight": 4.0,
+      "description": "A sword forged in the Abyss, dripping with hellfire.",
+      "damage_dice": "2d10",
+      "damage_type": "fire",
+      "effects": []
     },
     {
-      "name": "Greatsword",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 50,
-      "weight": 6.0,
-      "description": "A heavy two-handed blade that cleaves through armor.",
-      "damage_dice": "2d6",
-      "damage_type": "slashing",
-      "requirements": {
-        "level": 3,
-        "stat": {
-          "MIG": 13
-        }
-      },
-      "id": "greatsword"
-    },
-    {
-      "name": "Silver Longsword",
-      "type": "weapon",
-      "rarity": "UNCOMMON",
-      "value": 100,
-      "weight": 3.0,
-      "description": "A longsword with a silver blade, effective against undead and lycanthropes.",
-      "damage_dice": "1d10",
-      "damage_type": "slashing",
-      "requirements": {
-        "level": 3
-      },
-      "id": "silver_longsword"
-    },
-    {
-      "name": "Flametounge Blade",
+      "id": "acidbite_spear",
+      "name": "Acidbite Spear",
       "type": "weapon",
       "rarity": "RARE",
-      "value": 800,
-      "weight": 3.5,
-      "description": "A sword that crackles with magical flames along its edge.",
+      "value": 850,
+      "weight": 4.5,
+      "description": "A spear tipped with an alchemically treated head that dissolves armor on contact.",
       "damage_dice": "1d10",
-      "damage_type": "slashing",
+      "damage_type": "piercing",
       "effects": [
         {
           "type": "damage",
           "amount": "1d6",
-          "damage_type": "fire"
+          "damage_type": "acid"
         }
       ],
       "requirements": {
         "level": 6
-      },
-      "id": "flametongue_blade"
+      }
     },
     {
-      "name": "Vorpal Sword",
-      "type": "weapon",
-      "rarity": "LEGENDARY",
-      "value": 8000,
-      "weight": 3.0,
-      "description": "A supernaturally sharp blade said to decapitate on a perfect strike.",
-      "damage_dice": "2d8",
-      "damage_type": "slashing",
-      "effects": [
-        {
-          "type": "special",
-          "id": "vorpal",
-          "description": "On natural 20, instantly slays target."
-        }
-      ],
-      "requirements": {
-        "level": 15
-      },
-      "id": "vorpal_sword"
+      "id": "adamantine_ingot",
+      "name": "Adamantine Ingot",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 260,
+      "weight": 1.5,
+      "description": "A dark adamantine ingot suited to legendary smithing.",
+      "stackable": true
     },
     {
-      "name": "Shortbow",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 25,
-      "weight": 2.0,
-      "description": "A lightweight bow for quick shots at medium range.",
-      "damage_dice": "1d6",
-      "damage_type": "piercing",
-      "requirements": {
-        "level": 1,
-        "stat": {
-          "AGI": 10
-        }
-      },
-      "id": "shortbow"
+      "id": "air_essence",
+      "name": "Air Essence",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 50,
+      "weight": 0.05,
+      "description": "Distilled elemental air energy.",
+      "stackable": true
     },
     {
-      "name": "Longbow",
-      "type": "weapon",
+      "name": "Alchemist's Fire",
+      "type": "consumable",
       "rarity": "COMMON",
       "value": 50,
-      "weight": 2.5,
-      "description": "A powerful bow that deals devastating damage at long range.",
-      "damage_dice": "1d8",
-      "damage_type": "piercing",
-      "requirements": {
-        "level": 2,
-        "stat": {
-          "AGI": 12
+      "weight": 0.5,
+      "description": "A thrown flask that ignites on impact, dealing fire damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d4",
+          "damage_type": "fire"
         }
-      },
-      "id": "longbow"
+      ],
+      "stackable": true,
+      "id": "alchemist_s_fire"
     },
     {
-      "name": "Elven Recurve Bow",
-      "type": "weapon",
+      "id": "amber_piece",
+      "name": "Amber Piece",
+      "type": "treasure",
       "rarity": "UNCOMMON",
-      "value": 300,
-      "weight": 2.0,
-      "description": "A gracefully carved recurve bow of elven make. Swift and silent.",
-      "damage_dice": "1d8",
-      "damage_type": "piercing",
+      "value": 65,
+      "weight": 0.1,
+      "description": "A warm amber fragment trapping ancient pollen and light.",
+      "stackable": true
+    },
+    {
+      "name": "Amulet of Health",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 800,
+      "weight": 0.2,
+      "description": "A carved jade amulet that fortifies the body's resilience.",
+      "armor_bonus": 0,
       "effects": [
         {
           "type": "buff",
-          "stat": "AGI",
-          "bonus": 1,
+          "stat": "END",
+          "bonus": 4,
           "duration": 0
         }
       ],
       "requirements": {
-        "level": 4,
-        "stat": {
-          "AGI": 14
-        }
+        "level": 5
       },
-      "id": "elven_recurve_bow"
+      "id": "amulet_of_health"
     },
     {
-      "name": "Storm Arrow Bow",
-      "type": "weapon",
+      "id": "amulet_of_insight",
+      "name": "Amulet of Insight",
+      "type": "armor",
       "rarity": "RARE",
-      "value": 1200,
-      "weight": 2.5,
-      "description": "Arrows fired from this bow crackle with lightning energy.",
-      "damage_dice": "1d8",
-      "damage_type": "piercing",
+      "value": 800,
+      "weight": 0.2,
+      "description": "A crystal amulet that heightens awareness and sharpens intuition.",
+      "armor_bonus": 0,
+      "armor_type": "light",
       "effects": [
         {
-          "type": "damage",
-          "amount": "1d6",
-          "damage_type": "lightning"
+          "type": "buff",
+          "stat": "INS",
+          "bonus": 2,
+          "duration": 0
         }
       ],
       "requirements": {
-        "level": 8,
-        "stat": {
-          "AGI": 14
+        "level": 5
+      }
+    },
+    {
+      "id": "amulet_of_presence",
+      "name": "Amulet of Presence",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 800,
+      "weight": 0.2,
+      "description": "An ornate amulet that lends the wearer an aura of authority and magnetism.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "PRE",
+          "bonus": 2,
+          "duration": 0
         }
-      },
-      "id": "storm_arrow_bow"
+      ],
+      "requirements": {
+        "level": 5
+      }
+    },
+    {
+      "id": "amulet_of_the_undying",
+      "name": "Amulet of the Undying",
+      "type": "armor",
+      "rarity": "LEGENDARY",
+      "value": 10000,
+      "weight": 0.3,
+      "description": "A legendary amulet said to be blessed by a forgotten god of life, granting a second chance at death's door.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "special",
+          "id": "cheat_death",
+          "description": "Once per day, survive a lethal blow with 1 HP remaining."
+        }
+      ],
+      "requirements": {
+        "level": 12
+      }
+    },
+    {
+      "id": "amulet_of_vitality",
+      "name": "Amulet of Vitality",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 900,
+      "weight": 0.2,
+      "description": "A golden amulet set with an emerald that pulses with restorative energy.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "END",
+          "bonus": 2,
+          "duration": 0
+        },
+        {
+          "type": "heal",
+          "amount": "1d4"
+        }
+      ],
+      "requirements": {
+        "level": 5
+      }
+    },
+    {
+      "id": "ancient_dragon_scale",
+      "name": "Ancient Dragon Scale",
+      "type": "currency",
+      "rarity": "LEGENDARY",
+      "value": 2000,
+      "weight": 1.0,
+      "description": "A colossal scale from an ancient red dragon. Near-indestructible.",
+      "stackable": true
+    },
+    {
+      "id": "ancient_fire_essence",
+      "name": "Ancient Fire Essence",
+      "type": "crafting_material",
+      "rarity": "LEGENDARY",
+      "value": 2000,
+      "weight": 0.3,
+      "description": "Distilled essence of an ancient red dragon's flame."
+    },
+    {
+      "id": "ancient_gold_coin",
+      "name": "Ancient Gold Coin",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 50,
+      "weight": 0.02,
+      "description": "A gold coin from a forgotten age, minted by a vampire noble.",
+      "stackable": true,
+      "quantity": 1
+    },
+    {
+      "name": "Ancient Key",
+      "type": "quest",
+      "rarity": "COMMON",
+      "value": 0,
+      "weight": 0.1,
+      "description": "A tarnished iron key covered in glowing runes. Opens the Vault of Echoes.",
+      "can_drop": false,
+      "can_sell": false,
+      "id": "ancient_key"
+    },
+    {
+      "id": "ancient_map_fragment",
+      "name": "Ancient Map Fragment",
+      "type": "quest",
+      "rarity": "RARE",
+      "value": 200,
+      "weight": 0.2,
+      "description": "A tattered piece of parchment showing part of a forgotten land. Collect all fragments to reveal a hidden location."
+    },
+    {
+      "id": "antimagic_shard",
+      "name": "Antimagic Shard",
+      "type": "currency",
+      "rarity": "EPIC",
+      "value": 600,
+      "weight": 0.2,
+      "description": "A shard infused with antimagic energy from a beholder.",
+      "stackable": true
+    },
+    {
+      "id": "arcane_crystal",
+      "name": "Arcane Crystal",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 85,
+      "weight": 0.3,
+      "description": "A humming crystal saturated with stored arcane force.",
+      "stackable": true
+    },
+    {
+      "id": "arcane_focus_gem",
+      "name": "Arcane Focus Gem",
+      "type": "currency",
+      "rarity": "EPIC",
+      "value": 1500,
+      "weight": 0.1,
+      "description": "A gem that amplifies arcane spellcasting.",
+      "stackable": false
     },
     {
       "name": "Arcane Staff",
@@ -203,102 +298,342 @@
       "id": "arcane_staff"
     },
     {
-      "name": "Staff of Fire",
-      "type": "weapon",
-      "rarity": "UNCOMMON",
-      "value": 400,
-      "weight": 4.0,
-      "description": "A staff tipped with a smouldering ember that never goes out.",
-      "damage_dice": "1d6",
-      "damage_type": "bludgeoning",
-      "effects": [
-        {
-          "type": "damage",
-          "amount": "1d8",
-          "damage_type": "fire"
-        }
-      ],
-      "requirements": {
-        "level": 4,
-        "class": "mage"
-      },
-      "id": "staff_of_fire"
+      "id": "archmage_robes",
+      "name": "Archmage Robes",
+      "type": "armor",
+      "rarity": "EPIC",
+      "value": 2500,
+      "weight": 2.0,
+      "description": "Magnificent robes that greatly enhance magical ability.",
+      "armor_bonus": 2,
+      "armor_type": "light",
+      "effects": []
     },
     {
-      "name": "Staff of the Archmage",
+      "name": "Arrows",
       "type": "weapon",
-      "rarity": "EPIC",
-      "value": 5000,
-      "weight": 4.5,
-      "description": "A legendary staff that amplifies spell power beyond mortal limits.",
-      "damage_dice": "1d8",
-      "damage_type": "force",
+      "rarity": "COMMON",
+      "value": 1,
+      "weight": 0.05,
+      "description": "Standard iron-tipped arrows for use with any bow.",
+      "stackable": true,
+      "quantity": 20,
+      "id": "arrow"
+    },
+    {
+      "id": "arrowheads",
+      "name": "Arrowheads",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 7,
+      "weight": 0.4,
+      "description": "A bundle of forged arrowheads ready for fletching.",
+      "stackable": true
+    },
+    {
+      "id": "basilisk_scale",
+      "name": "Basilisk Scale",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 120,
+      "weight": 0.6,
+      "description": "A glossy, petrification-resistant scale from a basilisk. Sought after by armorers and alchemists."
+    },
+    {
+      "id": "bat_guano",
+      "name": "Bat Guano",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 4,
+      "weight": 0.3,
+      "description": "A pungent cave reagent used in fertilizers and fire powders.",
+      "stackable": true
+    },
+    {
+      "id": "bear_claw",
+      "name": "Bear Claw",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 8,
+      "weight": 0.2,
+      "description": "A sharp bear claw \u2014 prized by alchemists.",
+      "stackable": true
+    },
+    {
+      "id": "bear_meat",
+      "name": "Bear Meat",
+      "type": "consumable",
+      "rarity": "COMMON",
+      "value": 3,
+      "weight": 1.5,
+      "description": "Raw bear meat. Can be cooked for sustenance.",
+      "stackable": true,
+      "effects": []
+    },
+    {
+      "id": "bear_pelt",
+      "name": "Bear Pelt",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 10,
+      "weight": 3.0,
+      "description": "A black bear pelt.",
+      "stackable": true
+    },
+    {
+      "id": "beholder_eye",
+      "name": "Beholder Eye",
+      "type": "currency",
+      "rarity": "LEGENDARY",
+      "value": 7000,
+      "weight": 0.5,
+      "description": "The central eye of a beholder \u2014 can antimagic on command.",
+      "stackable": false
+    },
+    {
+      "id": "belt_of_giant_strength",
+      "name": "Belt of Giant Strength",
+      "type": "armor",
+      "rarity": "LEGENDARY",
+      "value": 15000,
+      "weight": 2.0,
+      "description": "A massive belt forged by fire giants, granting the wearer strength beyond mortal limits.",
+      "armor_bonus": 0,
+      "armor_type": "heavy",
       "effects": [
         {
           "type": "buff",
-          "stat": "MND",
+          "stat": "MIG",
           "bonus": 4,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 15
+      }
+    },
+    {
+      "id": "blazing_crystal",
+      "name": "Blazing Crystal",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 90,
+      "weight": 0.2,
+      "description": "A crystal that perpetually burns with inner fire."
+    },
+    {
+      "id": "blood_crystal",
+      "name": "Blood Crystal",
+      "type": "currency",
+      "rarity": "EPIC",
+      "value": 1200,
+      "weight": 0.2,
+      "description": "A deep red crystal formed from a vampire's crystallized blood.",
+      "stackable": true
+    },
+    {
+      "id": "blood_vial",
+      "name": "Blood Vial",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 50,
+      "weight": 0.1,
+      "description": "A vial of vampiric blood.",
+      "stackable": true
+    },
+    {
+      "id": "bone_fragment",
+      "name": "Bone Fragment",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 1,
+      "weight": 0.1,
+      "description": "A shard of undead bone.",
+      "stackable": true
+    },
+    {
+      "id": "bone_staff_fragment",
+      "name": "Bone Staff Fragment",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 150,
+      "weight": 0.8,
+      "description": "A fragment of a lich's magical staff."
+    },
+    {
+      "name": "Boots of Speed",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 1000,
+      "weight": 1.0,
+      "description": "Enchanted boots that dramatically increase movement speed.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "AGI",
+          "bonus": 3,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 5
+      },
+      "id": "boots_of_speed"
+    },
+    {
+      "id": "boots_of_swiftness",
+      "name": "Boots of Swiftness",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 250,
+      "weight": 1.0,
+      "description": "Lightweight boots enchanted with wind magic that quicken the wearer's step.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "AGI",
+          "bonus": 1,
           "duration": 0
         },
         {
           "type": "special",
-          "id": "spell_amplify",
-          "description": "Spells deal +2 damage per die."
+          "id": "speed_boost",
+          "description": "Increases movement speed by 10 feet."
         }
       ],
       "requirements": {
-        "level": 12,
-        "class": "mage",
+        "level": 3
+      }
+    },
+    {
+      "id": "boss_key",
+      "name": "Boss Key",
+      "type": "key",
+      "rarity": "RARE",
+      "value": 0,
+      "weight": 0.1,
+      "description": "A crude iron key belonging to the Goblin Boss."
+    },
+    {
+      "name": "Breastplate",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 400,
+      "weight": 20.0,
+      "description": "A fitted metal breastplate that protects the vital organs.",
+      "armor_bonus": 4,
+      "armor_type": "medium",
+      "requirements": {
+        "level": 4,
         "stat": {
-          "MND": 16
+          "END": 10
         }
       },
-      "id": "staff_of_the_archmage"
+      "id": "breastplate"
     },
     {
-      "name": "Leather Helmet",
-      "type": "armor",
+      "id": "brimstone_shard",
+      "name": "Brimstone Shard",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 700,
+      "weight": 0.5,
+      "description": "A chunk of brimstone infused with demonic energy."
+    },
+    {
+      "id": "bronze_mace",
+      "name": "Bronze Mace",
+      "type": "weapon",
       "rarity": "COMMON",
-      "value": 8,
-      "weight": 2.0,
-      "description": "A simple leather cap offering minimal head protection.",
-      "armor_bonus": 1,
-      "armor_type": "light",
+      "value": 12,
+      "weight": 3.0,
+      "description": "A sturdy mace with a bronze head, effective against armored foes.",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
       "requirements": {
         "level": 1
-      },
-      "id": "leather_helmet"
+      }
     },
     {
-      "name": "Iron Helmet",
+      "id": "captain_scimitar",
+      "name": "Captain's Scimitar",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 80,
+      "weight": 3.0,
+      "description": "A well-maintained scimitar with a jeweled pommel.",
+      "damage_dice": "1d8",
+      "damage_type": "slashing"
+    },
+    {
+      "id": "captain_signet_ring",
+      "name": "Captain's Signet Ring",
+      "type": "equipment",
+      "rarity": "RARE",
+      "value": 80,
+      "weight": 0.1,
+      "description": "A ring bearing the mark of a bandit captain, granting authority among criminals."
+    },
+    {
+      "id": "central_eye_lens",
+      "name": "Central Eye Lens",
+      "type": "crafting_material",
+      "rarity": "LEGENDARY",
+      "value": 2500,
+      "weight": 0.3,
+      "description": "The lens of a beholder's central eye, radiates antimagic."
+    },
+    {
+      "id": "chain_links",
+      "name": "Chain Links",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 8,
+      "weight": 0.8,
+      "description": "Loose chain links useful for mail repair and rigging.",
+      "stackable": true
+    },
+    {
+      "name": "Chain Shirt",
       "type": "armor",
       "rarity": "COMMON",
-      "value": 30,
-      "weight": 5.0,
-      "description": "A solid iron helmet that protects the head from direct blows.",
+      "value": 50,
+      "weight": 20.0,
+      "description": "Interlocking metal rings providing solid torso protection.",
+      "armor_bonus": 3,
+      "armor_type": "medium",
+      "requirements": {
+        "level": 2
+      },
+      "id": "chain_shirt"
+    },
+    {
+      "name": "Chainmail Leggings",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 40,
+      "weight": 12.0,
+      "description": "Linked chainmail offering reliable leg protection.",
       "armor_bonus": 2,
       "armor_type": "medium",
       "requirements": {
         "level": 2
       },
-      "id": "iron_helmet"
+      "id": "chainmail_leggings"
     },
     {
-      "name": "Greathelm",
-      "type": "armor",
-      "rarity": "UNCOMMON",
-      "value": 150,
-      "weight": 8.0,
-      "description": "A full-face heavy helm that encases the entire head.",
-      "armor_bonus": 3,
-      "armor_type": "heavy",
-      "requirements": {
-        "level": 4,
-        "stat": {
-          "END": 12
-        }
-      },
-      "id": "greathelm"
+      "id": "charcoal_powder",
+      "name": "Charcoal Powder",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 0.2,
+      "description": "Pulverized charcoal used in inks, salves, and black powder.",
+      "stackable": true
     },
     {
       "name": "Circlet of Clarity",
@@ -322,6 +657,85 @@
         "class": "mage"
       },
       "id": "circlet_of_clarity"
+    },
+    {
+      "id": "cloak_of_invisibility",
+      "name": "Cloak of Invisibility",
+      "type": "armor",
+      "rarity": "LEGENDARY",
+      "value": 12000,
+      "weight": 1.0,
+      "description": "A shimmering cloak that renders the wearer completely invisible when the hood is drawn.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "special",
+          "id": "greater_invisibility",
+          "description": "Grants invisibility until the wearer attacks or casts a spell."
+        },
+        {
+          "type": "buff",
+          "stat": "AGI",
+          "bonus": 3,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 12
+      }
+    },
+    {
+      "id": "cloud_giant_morningstar",
+      "name": "Cloud Giant Morningstar",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 800,
+      "weight": 25.0,
+      "description": "A massive spiked morningstar sized for a cloud giant.",
+      "damage_dice": "3d8",
+      "damage_type": "bludgeoning"
+    },
+    {
+      "id": "copper_coin",
+      "name": "Copper Coin",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 0,
+      "weight": 0.01,
+      "description": "A copper coin worth 1/100 of a gold piece.",
+      "stackable": true,
+      "quantity": 1
+    },
+    {
+      "id": "copper_ore",
+      "name": "Copper Ore",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 6,
+      "weight": 1.1,
+      "description": "A green-flecked copper ore freshly taken from the earth.",
+      "stackable": true
+    },
+    {
+      "id": "crimson_cape",
+      "name": "Crimson Cape",
+      "type": "equipment",
+      "rarity": "RARE",
+      "value": 350,
+      "weight": 0.5,
+      "description": "A deep crimson cape worn by a vampire lord."
+    },
+    {
+      "name": "Crimson Seal",
+      "type": "quest",
+      "rarity": "RARE",
+      "value": 0,
+      "weight": 0.05,
+      "description": "A wax seal bearing the emblem of the Red Council. Proof of your mission.",
+      "can_drop": false,
+      "can_sell": false,
+      "id": "crimson_seal"
     },
     {
       "name": "Crown of the Conqueror",
@@ -352,67 +766,177 @@
       "id": "crown_of_the_conqueror"
     },
     {
-      "name": "Padded Armor",
-      "type": "armor",
+      "id": "crude_armor_shard",
+      "name": "Crude Armor Shard",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 8,
+      "weight": 1.0,
+      "description": "A shard from orcish armor, useful for salvaging."
+    },
+    {
+      "id": "crude_dagger",
+      "name": "Crude Dagger",
+      "type": "weapon",
       "rarity": "COMMON",
-      "value": 5,
-      "weight": 8.0,
-      "description": "Quilted cloth layered to absorb impacts.",
-      "armor_bonus": 1,
-      "armor_type": "light",
+      "value": 1,
+      "weight": 0.8,
+      "description": "A crudely fashioned goblin blade.",
+      "damage_dice": "1d4",
+      "damage_type": "piercing"
+    },
+    {
+      "name": "Dagger",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 2,
+      "weight": 1.0,
+      "description": "A short blade useful for close-quarters and throwing.",
+      "damage_dice": "1d4",
+      "damage_type": "piercing",
       "requirements": {
         "level": 1
       },
-      "id": "padded_armor"
+      "id": "dagger"
     },
     {
-      "name": "Chain Shirt",
-      "type": "armor",
-      "rarity": "COMMON",
-      "value": 50,
-      "weight": 20.0,
-      "description": "Interlocking metal rings providing solid torso protection.",
-      "armor_bonus": 3,
-      "armor_type": "medium",
-      "requirements": {
-        "level": 2
-      },
-      "id": "chain_shirt"
-    },
-    {
-      "name": "Breastplate",
-      "type": "armor",
+      "id": "dark_cloak",
+      "name": "Dark Cloak",
+      "type": "equipment",
       "rarity": "UNCOMMON",
+      "value": 25,
+      "weight": 0.5,
+      "description": "A shadowy cloak that helps conceal the wearer."
+    },
+    {
+      "id": "dark_iron_coin",
+      "name": "Dark Iron Coin",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 5,
+      "weight": 0.02,
+      "description": "A coin minted in the realm of the dead.",
+      "stackable": true,
+      "quantity": 1
+    },
+    {
+      "id": "deep_current_gem",
+      "name": "Deep Current Gem",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 85,
+      "weight": 0.2,
+      "description": "A gem containing the pull of deep ocean currents."
+    },
+    {
+      "id": "demon_heart",
+      "name": "Demon Heart",
+      "type": "currency",
+      "rarity": "LEGENDARY",
+      "value": 6000,
+      "weight": 2.0,
+      "description": "The still-burning heart of a Demon Lord.",
+      "stackable": false
+    },
+    {
+      "id": "demon_lord_horn",
+      "name": "Demon Lord Horn",
+      "type": "currency",
+      "rarity": "LEGENDARY",
+      "value": 5000,
+      "weight": 3.0,
+      "description": "A horn from a slain Demon Lord. Radiates raw infernal power.",
+      "stackable": false
+    },
+    {
+      "id": "diamond",
+      "name": "Diamond",
+      "type": "treasure",
+      "rarity": "EPIC",
       "value": 400,
-      "weight": 20.0,
-      "description": "A fitted metal breastplate that protects the vital organs.",
-      "armor_bonus": 4,
-      "armor_type": "medium",
-      "requirements": {
-        "level": 4,
-        "stat": {
-          "END": 10
-        }
-      },
-      "id": "breastplate"
+      "weight": 0.1,
+      "description": "A flawless diamond cut for nobles, enchanters, and kings.",
+      "stackable": true
     },
     {
-      "name": "Plate Armor",
-      "type": "armor",
+      "id": "dire_wolf_heart",
+      "name": "Dire Wolf Heart",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 50,
+      "weight": 0.5,
+      "description": "Pulsing heart of a dire wolf, radiates primal energy."
+    },
+    {
+      "id": "dire_wolf_pelt",
+      "name": "Dire Wolf Pelt",
+      "type": "currency",
       "rarity": "UNCOMMON",
-      "value": 1500,
-      "weight": 45.0,
-      "description": "Full plate armor — the pinnacle of mundane protection.",
-      "armor_bonus": 6,
-      "armor_type": "heavy",
-      "requirements": {
-        "level": 6,
-        "stat": {
-          "END": 14,
-          "MIG": 12
-        }
-      },
-      "id": "plate_armor"
+      "value": 20,
+      "weight": 2.0,
+      "description": "A thick dire wolf pelt of exceptional quality.",
+      "stackable": true
+    },
+    {
+      "id": "dragon_blood",
+      "name": "Dragon Blood",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 220,
+      "weight": 0.4,
+      "description": "A potent alchemical reagent drawn from draconic veins.",
+      "stackable": true
+    },
+    {
+      "name": "Dragon Egg",
+      "type": "quest",
+      "rarity": "EPIC",
+      "value": 0,
+      "weight": 5.0,
+      "description": "A warm, faintly glowing egg. The scholars want this returned immediately.",
+      "can_drop": false,
+      "can_sell": false,
+      "id": "dragon_egg"
+    },
+    {
+      "id": "dragon_eye_gem",
+      "name": "Dragon Eye Gem",
+      "type": "currency",
+      "rarity": "LEGENDARY",
+      "value": 3000,
+      "weight": 0.5,
+      "description": "A gemstone cut from a dragon's eye socket.",
+      "stackable": false
+    },
+    {
+      "id": "dragon_heart",
+      "name": "Dragon Heart",
+      "type": "currency",
+      "rarity": "LEGENDARY",
+      "value": 5000,
+      "weight": 5.0,
+      "description": "The heart of an ancient dragon \u2014 ultimate alchemical reagent.",
+      "stackable": false
+    },
+    {
+      "id": "dragon_scale",
+      "name": "Dragon Scale",
+      "type": "currency",
+      "rarity": "EPIC",
+      "value": 500,
+      "weight": 0.5,
+      "description": "A brilliant red scale from a young dragon. Fire resistant.",
+      "stackable": true
+    },
+    {
+      "id": "dragon_tooth",
+      "name": "Dragon Tooth",
+      "type": "currency",
+      "rarity": "EPIC",
+      "value": 400,
+      "weight": 1.0,
+      "description": "A razor-sharp dragon tooth of immense value.",
+      "stackable": true
     },
     {
       "name": "Dragonscale Armor",
@@ -436,32 +960,726 @@
       "id": "dragonscale_armor"
     },
     {
-      "name": "Leather Leggings",
-      "type": "armor",
-      "rarity": "COMMON",
-      "value": 8,
-      "weight": 4.0,
-      "description": "Tanned leather leggings offering basic leg protection.",
-      "armor_bonus": 1,
-      "armor_type": "light",
-      "requirements": {
-        "level": 1
-      },
-      "id": "leather_leggings"
+      "id": "earth_essence",
+      "name": "Earth Essence",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 50,
+      "weight": 0.1,
+      "description": "Distilled elemental earth energy.",
+      "stackable": true
     },
     {
-      "name": "Chainmail Leggings",
-      "type": "armor",
+      "id": "ectoplasm",
+      "name": "Ectoplasm",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 0.2,
+      "description": "A cold spectral residue prized by occult scholars.",
+      "stackable": true
+    },
+    {
+      "id": "elder_brain_fragment",
+      "name": "Elder Brain Fragment",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 600,
+      "weight": 0.4,
+      "description": "A fragment of elder brain tissue, pulsing with psychic energy."
+    },
+    {
+      "id": "elemental_dust",
+      "name": "Elemental Dust",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 28,
+      "weight": 0.1,
+      "description": "A volatile dust left behind by unraveled elementals.",
+      "stackable": true
+    },
+    {
+      "name": "Elixir of the Warrior",
+      "type": "consumable",
+      "rarity": "RARE",
+      "value": 750,
+      "weight": 0.5,
+      "description": "A golden elixir that temporarily grants the power of a seasoned warrior.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "MIG",
+          "bonus": 6,
+          "duration": 5
+        },
+        {
+          "type": "heal",
+          "amount": "2d6"
+        }
+      ],
+      "stackable": true,
+      "id": "elixir_of_the_warrior"
+    },
+    {
+      "id": "elven_bread",
+      "name": "Elven Bread",
+      "type": "consumable",
       "rarity": "COMMON",
+      "value": 15,
+      "weight": 0.3,
+      "description": "A small loaf that restores energy and staves off hunger.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "1d6"
+        }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Elven Recurve Bow",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 300,
+      "weight": 2.0,
+      "description": "A gracefully carved recurve bow of elven make. Swift and silent.",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "AGI",
+          "bonus": 1,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 4,
+        "stat": {
+          "AGI": 14
+        }
+      },
+      "id": "elven_recurve_bow"
+    },
+    {
+      "id": "ember_shard",
+      "name": "Ember Shard",
+      "type": "currency",
+      "rarity": "UNCOMMON",
       "value": 40,
-      "weight": 12.0,
-      "description": "Linked chainmail offering reliable leg protection.",
-      "armor_bonus": 2,
+      "weight": 0.2,
+      "description": "A perpetually hot shard of crystallized flame.",
+      "stackable": true
+    },
+    {
+      "id": "emerald",
+      "name": "Emerald",
+      "type": "treasure",
+      "rarity": "RARE",
+      "value": 175,
+      "weight": 0.1,
+      "description": "A richly colored emerald favored by nobles and druids alike.",
+      "stackable": true
+    },
+    {
+      "id": "enchanted_chain_shirt",
+      "name": "Chain Shirt +1",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 250,
+      "weight": 20.0,
+      "description": "A chain shirt reinforced with magical wards that deflect blows more effectively.",
+      "armor_bonus": 4,
       "armor_type": "medium",
+      "effects": [
+        {
+          "type": "special",
+          "id": "magic_armor_1",
+          "description": "Counts as magical armor for overcoming special attacks."
+        }
+      ],
+      "requirements": {
+        "level": 4
+      }
+    },
+    {
+      "id": "enchanted_dagger_1",
+      "name": "Dagger +1",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 150,
+      "weight": 1.0,
+      "description": "A dagger with a faint magical gleam along its edge, sharper than any mundane blade.",
+      "damage_dice": "1d4+1",
+      "damage_type": "piercing",
+      "effects": [
+        {
+          "type": "special",
+          "id": "magic_weapon_1",
+          "description": "Counts as a magical weapon for overcoming resistances."
+        }
+      ],
       "requirements": {
         "level": 2
+      }
+    },
+    {
+      "id": "enchanted_longsword_1",
+      "name": "Longsword +1",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 200,
+      "weight": 3.0,
+      "description": "A longsword imbued with a minor enchantment, granting superior sharpness.",
+      "damage_dice": "1d10+1",
+      "damage_type": "slashing",
+      "effects": [
+        {
+          "type": "special",
+          "id": "magic_weapon_1",
+          "description": "Counts as a magical weapon for overcoming resistances."
+        }
+      ],
+      "requirements": {
+        "level": 3
+      }
+    },
+    {
+      "id": "enchanted_longsword_2",
+      "name": "Longsword +2",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 600,
+      "weight": 3.0,
+      "description": "A longsword enhanced with a potent enchantment that hums with arcane energy.",
+      "damage_dice": "1d10+2",
+      "damage_type": "slashing",
+      "effects": [
+        {
+          "type": "special",
+          "id": "magic_weapon_2",
+          "description": "Counts as a magical weapon for overcoming resistances."
+        }
+      ],
+      "requirements": {
+        "level": 6
+      }
+    },
+    {
+      "id": "enchanted_longsword_3",
+      "name": "Longsword +3",
+      "type": "weapon",
+      "rarity": "EPIC",
+      "value": 2000,
+      "weight": 3.0,
+      "description": "A masterwork longsword radiating powerful enchantment, its edge never dulls.",
+      "damage_dice": "1d10+3",
+      "damage_type": "slashing",
+      "effects": [
+        {
+          "type": "special",
+          "id": "magic_weapon_3",
+          "description": "Counts as a magical weapon for overcoming resistances."
+        }
+      ],
+      "requirements": {
+        "level": 10
+      }
+    },
+    {
+      "id": "enchanted_plate_armor",
+      "name": "Plate Armor +1",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 2500,
+      "weight": 45.0,
+      "description": "Full plate armor inscribed with protective runes that glow faintly in combat.",
+      "armor_bonus": 7,
+      "armor_type": "heavy",
+      "effects": [
+        {
+          "type": "special",
+          "id": "magic_armor_1",
+          "description": "Counts as magical armor for overcoming special attacks."
+        }
+      ],
+      "requirements": {
+        "level": 8,
+        "stat": {
+          "END": 14,
+          "MIG": 12
+        }
+      }
+    },
+    {
+      "id": "enchanted_shortbow_1",
+      "name": "Shortbow +1",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 180,
+      "weight": 2.0,
+      "description": "A shortbow with an enchantment that guides arrows toward their mark.",
+      "damage_dice": "1d6+1",
+      "damage_type": "piercing",
+      "effects": [
+        {
+          "type": "special",
+          "id": "magic_weapon_1",
+          "description": "Counts as a magical weapon for overcoming resistances."
+        }
+      ],
+      "requirements": {
+        "level": 3,
+        "stat": {
+          "AGI": 10
+        }
+      }
+    },
+    {
+      "id": "enchanted_shortbow_2",
+      "name": "Shortbow +2",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 550,
+      "weight": 2.0,
+      "description": "A shortbow wreathed in faint runes that empower each shot with arcane force.",
+      "damage_dice": "1d6+2",
+      "damage_type": "piercing",
+      "effects": [
+        {
+          "type": "special",
+          "id": "magic_weapon_2",
+          "description": "Counts as a magical weapon for overcoming resistances."
+        }
+      ],
+      "requirements": {
+        "level": 6,
+        "stat": {
+          "AGI": 12
+        }
+      }
+    },
+    {
+      "id": "enchanted_thread",
+      "name": "Enchanted Thread",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 45,
+      "weight": 0.02,
+      "description": "A spool of thread that shimmers with magical energy. Used in tailoring enchanted garments."
+    },
+    {
+      "id": "ethereal_cloak",
+      "name": "Ethereal Cloak",
+      "type": "equipment",
+      "rarity": "EPIC",
+      "value": 400,
+      "weight": 0.3,
+      "description": "A cloak woven from wraith-substance, grants partial incorporeality."
+    },
+    {
+      "id": "ethereal_essence",
+      "name": "Ethereal Essence",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 100,
+      "weight": 0.1,
+      "description": "Distilled essence of the Ethereal Plane.",
+      "stackable": true
+    },
+    {
+      "id": "eye_stalk_fragment",
+      "name": "Eye Stalk Fragment",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 200,
+      "weight": 0.2,
+      "description": "A fragment of a beholder's eye stalk, still twitching."
+    },
+    {
+      "id": "fang",
+      "name": "Fang",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 3,
+      "weight": 0.1,
+      "description": "A beast fang. Used in crafting and alchemy.",
+      "stackable": true
+    },
+    {
+      "id": "fire_dragon_blood",
+      "name": "Fire Dragon Blood",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 500,
+      "weight": 0.5,
+      "description": "Blood of a red dragon, used to forge fire-resistant gear."
+    },
+    {
+      "id": "fire_essence",
+      "name": "Fire Essence",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 50,
+      "weight": 0.1,
+      "description": "Distilled elemental fire energy.",
+      "stackable": true
+    },
+    {
+      "id": "fire_ward_shield",
+      "name": "Fire Ward Shield",
+      "type": "shield",
+      "rarity": "RARE",
+      "value": 1200,
+      "weight": 8.0,
+      "description": "A shield etched with flame-binding sigils that absorb fire damage.",
+      "armor_bonus": 2,
+      "effects": [
+        {
+          "type": "resistance",
+          "damage_type": "fire"
+        }
+      ],
+      "requirements": {
+        "level": 6
+      }
+    },
+    {
+      "name": "Flametounge Blade",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 800,
+      "weight": 3.5,
+      "description": "A sword that crackles with magical flames along its edge.",
+      "damage_dice": "1d10",
+      "damage_type": "slashing",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "fire"
+        }
+      ],
+      "requirements": {
+        "level": 6
       },
-      "id": "chainmail_leggings"
+      "id": "flametongue_blade"
+    },
+    {
+      "id": "frost_giant_axe",
+      "name": "Frost Giant Axe",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 600,
+      "weight": 20.0,
+      "description": "A huge frost-rimed greataxe sized for a frost giant.",
+      "damage_dice": "3d12",
+      "damage_type": "slashing",
+      "effects": []
+    },
+    {
+      "id": "frost_ward_armor",
+      "name": "Frost Ward Armor",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 1400,
+      "weight": 22.0,
+      "description": "Heavy armor infused with cold-resistance enchantments, warm to the touch despite its icy runes.",
+      "armor_bonus": 5,
+      "armor_type": "heavy",
+      "effects": [
+        {
+          "type": "resistance",
+          "damage_type": "ice"
+        }
+      ],
+      "requirements": {
+        "level": 7
+      }
+    },
+    {
+      "id": "frostbrand_sword",
+      "name": "Frostbrand Sword",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 900,
+      "weight": 3.5,
+      "description": "A blade coated in perpetual frost that freezes wounds on contact.",
+      "damage_dice": "1d10",
+      "damage_type": "slashing",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "ice"
+        }
+      ],
+      "requirements": {
+        "level": 6
+      }
+    },
+    {
+      "id": "frozen_trophy",
+      "name": "Frozen Trophy",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 75,
+      "weight": 1.5,
+      "description": "A frost giant's battle trophy, encased in ice.",
+      "stackable": false
+    },
+    {
+      "id": "gale_feather",
+      "name": "Gale Feather",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 18,
+      "weight": 0.05,
+      "description": "A feather light enough to hold a whisper of wind magic.",
+      "stackable": true
+    },
+    {
+      "id": "gauntlets_of_might",
+      "name": "Gauntlets of Might",
+      "type": "armor",
+      "rarity": "EPIC",
+      "value": 3000,
+      "weight": 3.0,
+      "description": "Heavy gauntlets forged from enchanted steel that grant tremendous physical power.",
+      "armor_bonus": 2,
+      "armor_type": "heavy",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "MIG",
+          "bonus": 3,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 8
+      }
+    },
+    {
+      "id": "gemstone",
+      "name": "Gemstone",
+      "type": "treasure",
+      "rarity": "UNCOMMON",
+      "value": 70,
+      "weight": 0.1,
+      "description": "A polished gemstone of modest but reliable value.",
+      "stackable": true
+    },
+    {
+      "id": "geode_crystal",
+      "name": "Geode Crystal",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 80,
+      "weight": 0.5,
+      "description": "A beautiful crystal geode formed within an earth elemental."
+    },
+    {
+      "id": "ghostcap_mushroom",
+      "name": "Ghostcap Mushroom",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 19,
+      "weight": 0.1,
+      "description": "A pale cave mushroom used in shadow tonics and inks.",
+      "stackable": true
+    },
+    {
+      "id": "giant_coin_pouch",
+      "name": "Giant Coin Pouch",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 200,
+      "weight": 2.0,
+      "description": "A pouch of mixed coins from a giant's hoard.",
+      "stackable": false
+    },
+    {
+      "id": "giant_frost_rune",
+      "name": "Giant Frost Rune",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 220,
+      "weight": 1.0,
+      "description": "A rune stone imbued with frost giant magic."
+    },
+    {
+      "id": "giant_gold_ring",
+      "name": "Giant Gold Ring",
+      "type": "treasure",
+      "rarity": "UNCOMMON",
+      "value": 150,
+      "weight": 2.0,
+      "description": "An enormous gold ring sized for a cloud giant."
+    },
+    {
+      "id": "giant_rune_stone",
+      "name": "Giant Rune Stone",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 180,
+      "weight": 3.0,
+      "description": "A stone carved with ancient giant runes."
+    },
+    {
+      "id": "glacial_shard",
+      "name": "Glacial Shard",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 150,
+      "weight": 0.3,
+      "description": "A shard of magical ice that never melts.",
+      "stackable": true
+    },
+    {
+      "id": "goblin_crown",
+      "name": "Goblin Crown",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 0.5,
+      "description": "A crude crown fashioned by the goblin boss.",
+      "stackable": false
+    },
+    {
+      "id": "goblin_ear",
+      "name": "Goblin Ear",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 2,
+      "weight": 0.1,
+      "description": "Proof of a goblin slain.",
+      "stackable": true
+    },
+    {
+      "id": "goblin_trade_token",
+      "name": "Goblin Trade Token",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 10,
+      "weight": 0.05,
+      "description": "A crude metal token used as currency in goblin markets.",
+      "stackable": true
+    },
+    {
+      "name": "Gold Coins",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 1,
+      "weight": 0.02,
+      "description": "Standard gold coins, the currency of the realm.",
+      "stackable": true,
+      "quantity": 1,
+      "id": "gold_coin"
+    },
+    {
+      "id": "gold_hoard",
+      "name": "Gold Hoard",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 1000,
+      "weight": 50.0,
+      "description": "A small portion of a dragon's hoard.",
+      "stackable": false
+    },
+    {
+      "id": "gold_ore",
+      "name": "Gold Ore",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 26,
+      "weight": 1.0,
+      "description": "A heavy ore chunk sparkling with traces of raw gold.",
+      "stackable": true
+    },
+    {
+      "id": "gorgon_eye",
+      "name": "Gorgon Eye",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 700,
+      "weight": 0.2,
+      "description": "A medusa's eye; still holds petrification power."
+    },
+    {
+      "id": "granite_core",
+      "name": "Granite Core",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 2.0,
+      "description": "A dense core of granite from inside an earth elemental."
+    },
+    {
+      "id": "granite_rune",
+      "name": "Granite Rune",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 180,
+      "weight": 0.5,
+      "description": "A rune-carved granite tablet from a stone giant's home.",
+      "stackable": true
+    },
+    {
+      "id": "greataxe",
+      "name": "Greataxe",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 30,
+      "weight": 7.0,
+      "description": "A massive two-handed axe.",
+      "damage_dice": "1d12",
+      "damage_type": "slashing"
+    },
+    {
+      "id": "greatclub",
+      "name": "Greatclub",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 20,
+      "weight": 10.0,
+      "description": "A massive wooden club used by ogres.",
+      "damage_dice": "2d8",
+      "damage_type": "bludgeoning"
+    },
+    {
+      "name": "Greathelm",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 150,
+      "weight": 8.0,
+      "description": "A full-face heavy helm that encases the entire head.",
+      "armor_bonus": 3,
+      "armor_type": "heavy",
+      "requirements": {
+        "level": 4,
+        "stat": {
+          "END": 12
+        }
+      },
+      "id": "greathelm"
+    },
+    {
+      "name": "Greatsword",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 50,
+      "weight": 6.0,
+      "description": "A heavy two-handed blade that cleaves through armor.",
+      "damage_dice": "2d6",
+      "damage_type": "slashing",
+      "requirements": {
+        "level": 3,
+        "stat": {
+          "MIG": 13
+        }
+      },
+      "id": "greatsword"
     },
     {
       "name": "Greaves of the Vanguard",
@@ -486,17 +1704,171 @@
       "id": "greaves_of_the_vanguard"
     },
     {
-      "name": "Wooden Shield",
-      "type": "shield",
+      "id": "grizzly_fang",
+      "name": "Grizzly Fang",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 20,
+      "weight": 0.3,
+      "description": "A massive curved fang from a grizzly bear."
+    },
+    {
+      "id": "grizzly_pelt",
+      "name": "Grizzly Pelt",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 4.0,
+      "description": "A massive grizzly bear pelt.",
+      "stackable": true
+    },
+    {
+      "id": "guardian_plate",
+      "name": "Guardian Plate",
+      "type": "armor",
+      "rarity": "EPIC",
+      "value": 4000,
+      "weight": 48.0,
+      "description": "Massive enchanted plate armor forged for elite royal guardians, bolstering raw strength.",
+      "armor_bonus": 7,
+      "armor_type": "heavy",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "MIG",
+          "bonus": 2,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 10,
+        "stat": {
+          "END": 16,
+          "MIG": 14
+        }
+      }
+    },
+    {
+      "name": "Handaxe",
+      "type": "weapon",
       "rarity": "COMMON",
       "value": 5,
-      "weight": 5.0,
-      "description": "A round wooden shield, light but not very durable.",
-      "armor_bonus": 1,
+      "weight": 2.0,
+      "description": "A one-handed axe that can also be thrown.",
+      "damage_dice": "1d6",
+      "damage_type": "slashing",
       "requirements": {
         "level": 1
       },
-      "id": "wooden_shield"
+      "id": "handaxe"
+    },
+    {
+      "id": "healing_herb",
+      "name": "Healing Herb",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 12,
+      "weight": 0.1,
+      "description": "A bright green herb used in poultices and restorative teas.",
+      "stackable": true
+    },
+    {
+      "id": "hellfire_essence",
+      "name": "Hellfire Essence",
+      "type": "currency",
+      "rarity": "EPIC",
+      "value": 800,
+      "weight": 0.1,
+      "description": "Distilled essence of hellfire \u2014 impossibly hot.",
+      "stackable": true
+    },
+    {
+      "id": "hunter_s_trap",
+      "name": "Hunter's Trap",
+      "type": "equipment",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 2.5,
+      "description": "A spring-loaded trap used for hunting or defense."
+    },
+    {
+      "id": "illithid_robes",
+      "name": "Illithid Robes",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 400,
+      "weight": 2.0,
+      "description": "Strange dark robes worn by a mind flayer.",
+      "armor_bonus": 2,
+      "armor_type": "light",
+      "effects": []
+    },
+    {
+      "id": "infected_blood",
+      "name": "Infected Blood",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 40,
+      "weight": 0.1,
+      "description": "Dark ichor from a plague zombie, used in cursed potions."
+    },
+    {
+      "id": "iron_greatspear",
+      "name": "Iron Greatspear",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 38,
+      "weight": 6.0,
+      "description": "A long, heavy spear designed for reach and power.",
+      "damage_dice": "1d10",
+      "damage_type": "piercing",
+      "requirements": {
+        "level": 3
+      }
+    },
+    {
+      "name": "Iron Helmet",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 30,
+      "weight": 5.0,
+      "description": "A solid iron helmet that protects the head from direct blows.",
+      "armor_bonus": 2,
+      "armor_type": "medium",
+      "requirements": {
+        "level": 2
+      },
+      "id": "iron_helmet"
+    },
+    {
+      "id": "iron_ingot",
+      "name": "Iron Ingot",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 18,
+      "weight": 1.5,
+      "description": "A smelted iron ingot ready for the forge.",
+      "stackable": true
+    },
+    {
+      "id": "iron_ore",
+      "name": "Iron Ore",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 8,
+      "weight": 1.2,
+      "description": "Raw iron ore chipped from a mine face.",
+      "stackable": true
+    },
+    {
+      "id": "iron_plate",
+      "name": "Iron Plate",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 28,
+      "weight": 2.0,
+      "description": "A hammered iron plate suitable for shields or brigandine.",
+      "stackable": true
     },
     {
       "name": "Iron Shield",
@@ -512,113 +1884,559 @@
       "id": "iron_shield"
     },
     {
-      "name": "Tower Shield",
-      "type": "shield",
-      "rarity": "UNCOMMON",
-      "value": 150,
-      "weight": 15.0,
-      "description": "A massive tower shield that can shelter your whole body.",
-      "armor_bonus": 4,
+      "name": "Iron Shortsword",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 10,
+      "weight": 2.0,
+      "description": "A simple iron shortsword favored by new adventurers.",
+      "damage_dice": "1d6",
+      "damage_type": "slashing",
       "requirements": {
-        "level": 4,
-        "stat": {
-          "MIG": 12,
-          "END": 10
-        }
+        "level": 1
       },
-      "id": "tower_shield"
+      "id": "iron_shortsword"
     },
     {
-      "name": "Shield of the Ancients",
+      "id": "iron_spiked_shield",
+      "name": "Iron Spiked Shield",
       "type": "shield",
+      "rarity": "UNCOMMON",
+      "value": 55,
+      "weight": 6.0,
+      "description": "A heavy iron shield with a spiked boss for bashing.",
+      "armor_bonus": 2,
+      "requirements": {
+        "level": 3
+      }
+    },
+    {
+      "id": "ironwood_bark",
+      "name": "Ironwood Bark",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 17,
+      "weight": 0.7,
+      "description": "Dense bark from ironwood trees, prized by bowyers.",
+      "stackable": true
+    },
+    {
+      "id": "jade_stone",
+      "name": "Jade Stone",
+      "type": "treasure",
+      "rarity": "UNCOMMON",
+      "value": 90,
+      "weight": 0.2,
+      "description": "A smooth green stone often carved into charms and seals.",
+      "stackable": true
+    },
+    {
+      "id": "large_fang",
+      "name": "Large Fang",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 15,
+      "weight": 0.3,
+      "description": "An oversized fang from a dire creature.",
+      "stackable": true
+    },
+    {
+      "name": "Leather Helmet",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 8,
+      "weight": 2.0,
+      "description": "A simple leather cap offering minimal head protection.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "requirements": {
+        "level": 1
+      },
+      "id": "leather_helmet"
+    },
+    {
+      "id": "leather_hide",
+      "name": "Leather Hide",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 6,
+      "weight": 0.8,
+      "description": "A cured hide ready for tanning, patching, or sale.",
+      "stackable": true
+    },
+    {
+      "name": "Leather Leggings",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 8,
+      "weight": 4.0,
+      "description": "Tanned leather leggings offering basic leg protection.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "requirements": {
+        "level": 1
+      },
+      "id": "leather_leggings"
+    },
+    {
+      "id": "legendary_hoard",
+      "name": "Legendary Hoard",
+      "type": "currency",
+      "rarity": "LEGENDARY",
+      "value": 10000,
+      "weight": 200.0,
+      "description": "The legendary hoard of an ancient dragon.",
+      "stackable": false
+    },
+    {
+      "id": "lich_crown",
+      "name": "Lich Crown",
+      "type": "armor",
+      "rarity": "LEGENDARY",
+      "value": 8000,
+      "weight": 1.0,
+      "description": "The crown of a defeated lich. Amplifies necrotic magic.",
+      "armor_bonus": 3,
+      "armor_type": "light",
+      "effects": []
+    },
+    {
+      "id": "life_drain_crystal",
+      "name": "Life Drain Crystal",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 100,
+      "weight": 0.2,
+      "description": "A dark crystal that drains life from the living."
+    },
+    {
+      "id": "lockpick_set",
+      "name": "Lockpick Set",
+      "type": "equipment",
+      "rarity": "UNCOMMON",
+      "value": 35,
+      "weight": 0.3,
+      "description": "A compact set of picks, tension bars, and fine hooks.",
+      "stackable": true
+    },
+    {
+      "name": "Longbow",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 50,
+      "weight": 2.5,
+      "description": "A powerful bow that deals devastating damage at long range.",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "requirements": {
+        "level": 2,
+        "stat": {
+          "AGI": 12
+        }
+      },
+      "id": "longbow"
+    },
+    {
+      "name": "Longsword",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 15,
+      "weight": 3.0,
+      "description": "A standard longsword with a balanced hilt.",
+      "damage_dice": "1d10",
+      "damage_type": "slashing",
+      "requirements": {
+        "level": 1,
+        "stat": {
+          "MIG": 10
+        }
+      },
+      "id": "longsword"
+    },
+    {
+      "id": "lords_fang",
+      "name": "Lord's Fang",
+      "type": "weapon",
+      "rarity": "LEGENDARY",
+      "value": 2500,
+      "weight": 0.5,
+      "description": "The ceremonial fang of a vampire lord, deals necrotic damage.",
+      "damage_dice": "1d8+3",
+      "damage_type": "necrotic",
+      "requirements": {
+        "level": 12
+      }
+    },
+    {
+      "id": "lords_sigil",
+      "name": "Lord's Sigil",
+      "type": "crafting_material",
+      "rarity": "LEGENDARY",
+      "value": 3000,
+      "weight": 0.1,
+      "description": "The personal sigil of a demon lord, contains immense power."
+    },
+    {
+      "id": "mages_signet",
+      "name": "Mage's Signet",
+      "type": "equipment",
       "rarity": "EPIC",
-      "value": 4500,
-      "weight": 10.0,
-      "description": "A rune-engraved shield said to have protected a legendary king.",
-      "armor_bonus": 5,
+      "value": 600,
+      "weight": 0.1,
+      "description": "The personal signet ring of an archmage, grants spell knowledge."
+    },
+    {
+      "id": "mandrake_root",
+      "name": "Mandrake Root",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 22,
+      "weight": 0.2,
+      "description": "A twisted root with potent alchemical properties.",
+      "stackable": true
+    },
+    {
+      "id": "medusa_scale",
+      "name": "Medusa Scale",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 120,
+      "weight": 0.2,
+      "description": "A scale from a medusa, faintly glowing green.",
+      "stackable": true
+    },
+    {
+      "id": "mind_flayer_brain",
+      "name": "Mind Flayer Brain",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 250,
+      "weight": 0.5,
+      "description": "The psionic brain of a mind flayer \u2014 still twitching.",
+      "stackable": false
+    },
+    {
+      "id": "mithral_ingot",
+      "name": "Mithral Ingot",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 140,
+      "weight": 1.0,
+      "description": "A refined mithral ingot light enough for masterwork gear.",
+      "stackable": true
+    },
+    {
+      "name": "Mithral Longsword",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 1500,
+      "weight": 2.0,
+      "description": "An impossibly light longsword forged from rare mithral.",
+      "damage_dice": "1d10",
+      "damage_type": "slashing",
       "effects": [
         {
           "type": "buff",
-          "stat": "END",
-          "bonus": 3,
+          "stat": "AGI",
+          "bonus": 1,
           "duration": 0
-        },
+        }
+      ],
+      "requirements": {
+        "level": 6
+      },
+      "id": "mithral_longsword"
+    },
+    {
+      "id": "mithral_ore",
+      "name": "Mithral Ore",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 85,
+      "weight": 1.1,
+      "description": "Raw mithral ore shot through with silver-blue veins.",
+      "stackable": true
+    },
+    {
+      "id": "moonlight_dust",
+      "name": "Moonlight Dust",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 60,
+      "weight": 0.1,
+      "description": "A faintly glowing powder collected from rare nocturnal flowers. Used in alchemy and enchanting."
+    },
+    {
+      "id": "moonpetal",
+      "name": "Moonpetal",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 20,
+      "weight": 0.05,
+      "description": "A pale flower petal gathered before sunrise for rituals.",
+      "stackable": true
+    },
+    {
+      "id": "moonstone_dust",
+      "name": "Moonstone Dust",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 24,
+      "weight": 0.1,
+      "description": "Fine silver dust harvested from fractured moonstones.",
+      "stackable": true
+    },
+    {
+      "id": "mysterious_egg",
+      "name": "Mysterious Egg",
+      "type": "treasure",
+      "rarity": "RARE",
+      "value": 300,
+      "weight": 1.2,
+      "description": "An egg with shifting colors and unknown origin. Collectors and scholars pay handsomely for it.",
+      "stackable": false
+    },
+    {
+      "id": "mystic_ink",
+      "name": "Mystic Ink",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 35,
+      "weight": 0.05,
+      "description": "A vial of shimmering ink, essential for scribing magical scrolls and runes."
+    },
+    {
+      "id": "necrotic_crystal",
+      "name": "Necrotic Crystal",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 200,
+      "weight": 0.2,
+      "description": "A black crystal radiating necrotic energy.",
+      "stackable": true
+    },
+    {
+      "id": "necrotic_essence",
+      "name": "Necrotic Essence",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 55,
+      "weight": 0.1,
+      "description": "Concentrated necrotic energy in crystal form.",
+      "stackable": true
+    },
+    {
+      "id": "necrotic_scythe",
+      "name": "Necrotic Scythe",
+      "type": "weapon",
+      "rarity": "EPIC",
+      "value": 2500,
+      "weight": 5.0,
+      "description": "A dark scythe that drains the life force of those it cuts, leaving withered flesh behind.",
+      "damage_dice": "1d12",
+      "damage_type": "slashing",
+      "effects": [
         {
-          "type": "special",
-          "id": "block_magic",
-          "description": "Once per day, negate one incoming spell."
+          "type": "damage",
+          "amount": "1d8",
+          "damage_type": "necrotic"
         }
       ],
       "requirements": {
         "level": 10
-      },
-      "id": "shield_of_the_ancients"
+      }
     },
     {
-      "name": "Potion of Healing",
-      "type": "consumable",
-      "rarity": "COMMON",
-      "value": 50,
-      "weight": 0.5,
-      "description": "A ruby-red liquid that mends wounds when consumed.",
-      "effects": [
-        {
-          "type": "heal",
-          "amount": "2d6+2"
-        }
-      ],
-      "stackable": true,
-      "id": "potion_of_healing"
-    },
-    {
-      "name": "Potion of Greater Healing",
-      "type": "consumable",
+      "id": "nightshade",
+      "name": "Nightshade",
+      "type": "crafting_material",
       "rarity": "UNCOMMON",
-      "value": 150,
-      "weight": 0.5,
-      "description": "A potent healing brew that closes even serious wounds.",
-      "effects": [
-        {
-          "type": "heal",
-          "amount": "4d6+4"
-        }
-      ],
-      "stackable": true,
-      "id": "potion_of_greater_healing"
+      "value": 16,
+      "weight": 0.1,
+      "description": "A poisonous herb gathered under moonless skies.",
+      "stackable": true
     },
     {
-      "name": "Potion of Superior Healing",
-      "type": "consumable",
+      "id": "noble_signet",
+      "name": "Noble Signet",
+      "type": "currency",
       "rarity": "RARE",
-      "value": 500,
-      "weight": 0.5,
-      "description": "A legendary tonic that restores life from near death.",
-      "effects": [
-        {
-          "type": "heal",
-          "amount": "8d6+8"
-        }
-      ],
-      "stackable": true,
-      "id": "potion_of_superior_healing"
+      "value": 300,
+      "weight": 0.1,
+      "description": "A noble's signet ring \u2014 proof of a vampire lord's lineage.",
+      "stackable": false
     },
     {
-      "name": "Potion of Strength",
-      "type": "consumable",
+      "id": "obsidian_dagger",
+      "name": "Obsidian Dagger",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 120,
+      "weight": 1.0,
+      "description": "A razor-sharp dagger crafted from volcanic glass.",
+      "damage_dice": "1d4",
+      "damage_type": "piercing",
+      "requirements": {
+        "level": 4
+      }
+    },
+    {
+      "id": "ogre_skin_belt",
+      "name": "Ogre Skin Belt",
+      "type": "equipment",
       "rarity": "UNCOMMON",
+      "value": 25,
+      "weight": 1.5,
+      "description": "A thick belt made from ogre hide."
+    },
+    {
+      "id": "ogre_tooth",
+      "name": "Ogre Tooth",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 8,
+      "weight": 0.3,
+      "description": "A blunt ogre tooth \u2014 used in primitive charms.",
+      "stackable": true
+    },
+    {
+      "id": "orc_tusk",
+      "name": "Orc Tusk",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 0.3,
+      "description": "A broken orc tusk.",
+      "stackable": true
+    },
+    {
+      "id": "orc_warbanner",
+      "name": "Orc Warbanner",
+      "type": "treasure",
+      "rarity": "RARE",
+      "value": 60,
+      "weight": 2.0,
+      "description": "The tribal banner of an orc warband."
+    },
+    {
+      "name": "Padded Armor",
+      "type": "armor",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 8.0,
+      "description": "Quilted cloth layered to absorb impacts.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "requirements": {
+        "level": 1
+      },
+      "id": "padded_armor"
+    },
+    {
+      "id": "parchment",
+      "name": "Parchment",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 6,
+      "weight": 0.2,
+      "description": "A rolled sheet of parchment for ledgers, maps, or sigils.",
+      "stackable": true
+    },
+    {
+      "id": "pearl",
+      "name": "Pearl",
+      "type": "treasure",
+      "rarity": "UNCOMMON",
+      "value": 110,
+      "weight": 0.05,
+      "description": "A luminous pearl prized by merchants and temple treasuries.",
+      "stackable": true
+    },
+    {
+      "id": "permafrost_core",
+      "name": "Permafrost Core",
+      "type": "crafting_material",
+      "rarity": "RARE",
       "value": 200,
-      "weight": 0.5,
-      "description": "Temporarily increases might for brutal physical feats.",
-      "effects": [
-        {
-          "type": "buff",
-          "stat": "MIG",
-          "bonus": 4,
-          "duration": 10
+      "weight": 1.5,
+      "description": "A block of permafrost from a frost giant's homeland."
+    },
+    {
+      "id": "petrification_essence",
+      "name": "Petrification Essence",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 200,
+      "weight": 0.1,
+      "description": "Distilled essence of the medusa's petrifying gaze.",
+      "stackable": true
+    },
+    {
+      "id": "phase_crystal",
+      "name": "Phase Crystal",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 120,
+      "weight": 0.2,
+      "description": "A shimmering crystal that exists partially in another plane."
+    },
+    {
+      "id": "phase_spider_silk",
+      "name": "Phase Spider Silk",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 80,
+      "weight": 0.2,
+      "description": "Ethereal silk from a phase spider, shimmering between planes.",
+      "stackable": true
+    },
+    {
+      "id": "phoenix_ash",
+      "name": "Phoenix Ash",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 260,
+      "weight": 0.1,
+      "description": "Warm ash said to kindle life from the brink of ruin.",
+      "stackable": true
+    },
+    {
+      "id": "phylactery_shard",
+      "name": "Phylactery Shard",
+      "type": "currency",
+      "rarity": "LEGENDARY",
+      "value": 4000,
+      "weight": 0.2,
+      "description": "A fragment of a lich's phylactery. Still radiates necrotic energy.",
+      "stackable": false
+    },
+    {
+      "id": "plague_essence",
+      "name": "Plague Essence",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 40,
+      "weight": 0.1,
+      "description": "A vial of distilled plague \u2014 handle carefully.",
+      "stackable": true
+    },
+    {
+      "name": "Plate Armor",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 1500,
+      "weight": 45.0,
+      "description": "Full plate armor \u2014 the pinnacle of mundane protection.",
+      "armor_bonus": 6,
+      "armor_type": "heavy",
+      "requirements": {
+        "level": 6,
+        "stat": {
+          "END": 14,
+          "MIG": 12
         }
-      ],
-      "stackable": true,
-      "id": "potion_of_strength"
+      },
+      "id": "plate_armor"
     },
     {
       "name": "Potion of Agility",
@@ -657,60 +2475,364 @@
       "id": "potion_of_endurance"
     },
     {
-      "name": "Vial of Poison",
+      "name": "Potion of Greater Healing",
       "type": "consumable",
-      "rarity": "COMMON",
-      "value": 30,
-      "weight": 0.2,
-      "description": "A vial of contact poison — coat a blade or throw at enemies.",
+      "rarity": "UNCOMMON",
+      "value": 150,
+      "weight": 0.5,
+      "description": "A potent healing brew that closes even serious wounds.",
       "effects": [
         {
-          "type": "damage",
-          "amount": "1d6",
-          "damage_type": "poison"
+          "type": "heal",
+          "amount": "4d6+4"
         }
       ],
       "stackable": true,
-      "id": "vial_of_poison"
+      "id": "potion_of_greater_healing"
     },
     {
-      "name": "Alchemist's Fire",
+      "name": "Potion of Healing",
       "type": "consumable",
       "rarity": "COMMON",
       "value": 50,
       "weight": 0.5,
-      "description": "A thrown flask that ignites on impact, dealing fire damage.",
+      "description": "A ruby-red liquid that mends wounds when consumed.",
       "effects": [
         {
-          "type": "damage",
-          "amount": "1d4",
-          "damage_type": "fire"
+          "type": "heal",
+          "amount": "2d6+2"
         }
       ],
       "stackable": true,
-      "id": "alchemist_s_fire"
+      "id": "potion_of_healing"
     },
     {
-      "name": "Elixir of the Warrior",
+      "id": "potion_of_night_vision",
+      "name": "Potion of Night Vision",
       "type": "consumable",
-      "rarity": "RARE",
-      "value": 750,
+      "rarity": "UNCOMMON",
+      "value": 80,
       "weight": 0.5,
-      "description": "A golden elixir that temporarily grants the power of a seasoned warrior.",
+      "description": "A dark blue potion that grants the ability to see in darkness for a short time.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "PER",
+          "bonus": 3,
+          "duration": 10
+        }
+      ],
+      "stackable": true
+    },
+    {
+      "name": "Potion of Strength",
+      "type": "consumable",
+      "rarity": "UNCOMMON",
+      "value": 200,
+      "weight": 0.5,
+      "description": "Temporarily increases might for brutal physical feats.",
       "effects": [
         {
           "type": "buff",
           "stat": "MIG",
-          "bonus": 6,
-          "duration": 5
-        },
-        {
-          "type": "heal",
-          "amount": "2d6"
+          "bonus": 4,
+          "duration": 10
         }
       ],
       "stackable": true,
-      "id": "elixir_of_the_warrior"
+      "id": "potion_of_strength"
+    },
+    {
+      "name": "Potion of Superior Healing",
+      "type": "consumable",
+      "rarity": "RARE",
+      "value": 500,
+      "weight": 0.5,
+      "description": "A legendary tonic that restores life from near death.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "8d6+8"
+        }
+      ],
+      "stackable": true,
+      "id": "potion_of_superior_healing"
+    },
+    {
+      "id": "power_word_scroll",
+      "name": "Power Word Scroll",
+      "type": "scroll",
+      "rarity": "RARE",
+      "value": 400,
+      "weight": 0.1,
+      "description": "A scroll containing a powerful word of magic."
+    },
+    {
+      "id": "psionic_crystal",
+      "name": "Psionic Crystal",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 300,
+      "weight": 0.2,
+      "description": "A crystal resonant with psionic energy.",
+      "stackable": true
+    },
+    {
+      "id": "quiver",
+      "name": "Quiver",
+      "type": "equipment",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 0.5,
+      "description": "A standard leather quiver for carrying arrows."
+    },
+    {
+      "id": "radiant_mace",
+      "name": "Radiant Mace",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 1100,
+      "weight": 4.0,
+      "description": "A mace blessed with holy light that sears undead and fiends on contact.",
+      "damage_dice": "1d8",
+      "damage_type": "bludgeoning",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d8",
+          "damage_type": "radiant"
+        }
+      ],
+      "requirements": {
+        "level": 8
+      }
+    },
+    {
+      "id": "regeneration_gland",
+      "name": "Regeneration Gland",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 120,
+      "weight": 0.5,
+      "description": "A troll's regeneration gland; alchemists prize it highly."
+    },
+    {
+      "id": "reinforced_leather_armor",
+      "name": "Reinforced Leather Armor",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 45,
+      "weight": 9.0,
+      "description": "Leather armor reinforced with metal studs for extra protection.",
+      "armor_bonus": 2,
+      "armor_type": "light",
+      "requirements": {
+        "level": 2
+      }
+    },
+    {
+      "id": "ring_of_agility",
+      "name": "Ring of Agility",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 800,
+      "weight": 0.1,
+      "description": "A slender silver ring that quickens the wearer's reflexes.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "AGI",
+          "bonus": 2,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 5
+      }
+    },
+    {
+      "id": "ring_of_endurance",
+      "name": "Ring of Endurance",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 800,
+      "weight": 0.1,
+      "description": "A jade ring that fortifies the constitution of whoever wears it.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "END",
+          "bonus": 2,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 5
+      }
+    },
+    {
+      "name": "Ring of Protection",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 350,
+      "weight": 0.1,
+      "description": "A simple ring enchanted with a ward against harm.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "requirements": {
+        "level": 3
+      },
+      "id": "ring_of_protection"
+    },
+    {
+      "id": "ring_of_strength",
+      "name": "Ring of Strength",
+      "type": "armor",
+      "rarity": "RARE",
+      "value": 800,
+      "weight": 0.1,
+      "description": "A thick iron ring that surges with physical power when worn.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "MIG",
+          "bonus": 2,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 5
+      }
+    },
+    {
+      "id": "ring_of_the_arcane",
+      "name": "Ring of the Arcane",
+      "type": "armor",
+      "rarity": "EPIC",
+      "value": 2000,
+      "weight": 0.1,
+      "description": "A ring set with a pulsing arcane gem that vastly amplifies mental acuity.",
+      "armor_bonus": 0,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "MND",
+          "bonus": 3,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 8
+      }
+    },
+    {
+      "id": "ring_of_warding",
+      "name": "Ring of Warding",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 400,
+      "weight": 0.1,
+      "description": "A ring inscribed with ancient protective glyphs that deflect incoming strikes.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "special",
+          "id": "magical_ward",
+          "description": "Grants +1 AC from a magical barrier."
+        }
+      ],
+      "requirements": {
+        "level": 3
+      }
+    },
+    {
+      "id": "rivets",
+      "name": "Rivets",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 0.3,
+      "description": "A pouch of iron rivets for armor, hinges, and wagonwork.",
+      "stackable": true
+    },
+    {
+      "id": "rotting_flesh",
+      "name": "Rotting Flesh",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 1,
+      "weight": 0.5,
+      "description": "A chunk of putrid zombie flesh.",
+      "stackable": true
+    },
+    {
+      "id": "ruby",
+      "name": "Ruby",
+      "type": "treasure",
+      "rarity": "RARE",
+      "value": 160,
+      "weight": 0.1,
+      "description": "A blood-red gemstone coveted by jewelers and sorcerers.",
+      "stackable": true
+    },
+    {
+      "id": "ruby_gem",
+      "name": "Ruby Gem",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 300,
+      "weight": 0.1,
+      "description": "A flawless ruby from a dragon's treasure.",
+      "stackable": true
+    },
+    {
+      "id": "rusty_sword",
+      "name": "Rusty Sword",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 1,
+      "weight": 3.0,
+      "description": "A badly corroded sword. Barely functional.",
+      "damage_dice": "1d6",
+      "damage_type": "slashing"
+    },
+    {
+      "id": "sapphire",
+      "name": "Sapphire",
+      "type": "treasure",
+      "rarity": "RARE",
+      "value": 150,
+      "weight": 0.1,
+      "description": "A deep blue sapphire with a steady inner gleam.",
+      "stackable": true
+    },
+    {
+      "id": "scimitar",
+      "name": "Scimitar",
+      "type": "weapon",
+      "rarity": "COMMON",
+      "value": 15,
+      "weight": 3.0,
+      "description": "A curved blade with a single sharp edge.",
+      "damage_dice": "1d8",
+      "damage_type": "slashing"
+    },
+    {
+      "id": "scorched_core",
+      "name": "Scorched Core",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 35,
+      "weight": 0.3,
+      "description": "The central core of a fire elemental."
     },
     {
       "name": "Scroll of Fireball",
@@ -728,39 +2850,6 @@
       ],
       "stackable": true,
       "id": "scroll_of_fireball"
-    },
-    {
-      "name": "Scroll of Lightning Bolt",
-      "type": "consumable",
-      "rarity": "UNCOMMON",
-      "value": 300,
-      "weight": 0.1,
-      "description": "A scroll containing crackling lightning runes.",
-      "effects": [
-        {
-          "type": "damage",
-          "amount": "8d6",
-          "damage_type": "lightning"
-        }
-      ],
-      "stackable": true,
-      "id": "scroll_of_lightning_bolt"
-    },
-    {
-      "name": "Scroll of Healing Word",
-      "type": "consumable",
-      "rarity": "COMMON",
-      "value": 80,
-      "weight": 0.1,
-      "description": "A scroll with a divine phrase that seals minor wounds.",
-      "effects": [
-        {
-          "type": "heal",
-          "amount": "1d8+3"
-        }
-      ],
-      "stackable": true,
-      "id": "scroll_of_healing_word"
     },
     {
       "name": "Scroll of Haste",
@@ -781,6 +2870,50 @@
       "id": "scroll_of_haste"
     },
     {
+      "name": "Scroll of Healing Word",
+      "type": "consumable",
+      "rarity": "COMMON",
+      "value": 80,
+      "weight": 0.1,
+      "description": "A scroll with a divine phrase that seals minor wounds.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "1d8+3"
+        }
+      ],
+      "stackable": true,
+      "id": "scroll_of_healing_word"
+    },
+    {
+      "name": "Scroll of Lightning Bolt",
+      "type": "consumable",
+      "rarity": "UNCOMMON",
+      "value": 300,
+      "weight": 0.1,
+      "description": "A scroll containing crackling lightning runes.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "8d6",
+          "damage_type": "lightning"
+        }
+      ],
+      "stackable": true,
+      "id": "scroll_of_lightning_bolt"
+    },
+    {
+      "id": "scroll_of_mastery",
+      "name": "Scroll of Mastery",
+      "type": "consumable",
+      "rarity": "EPIC",
+      "value": 3000,
+      "weight": 0.1,
+      "description": "A rare scroll containing a powerful forbidden spell.",
+      "stackable": false,
+      "effects": []
+    },
+    {
       "name": "Scroll of Shield",
       "type": "consumable",
       "rarity": "COMMON",
@@ -799,48 +2932,53 @@
       "id": "scroll_of_shield"
     },
     {
-      "name": "Ancient Key",
-      "type": "quest",
-      "rarity": "COMMON",
-      "value": 0,
-      "weight": 0.1,
-      "description": "A tarnished iron key covered in glowing runes. Opens the Vault of Echoes.",
-      "can_drop": false,
-      "can_sell": false,
-      "id": "ancient_key"
-    },
-    {
-      "name": "Crimson Seal",
-      "type": "quest",
-      "rarity": "RARE",
-      "value": 0,
-      "weight": 0.05,
-      "description": "A wax seal bearing the emblem of the Red Council. Proof of your mission.",
-      "can_drop": false,
-      "can_sell": false,
-      "id": "crimson_seal"
-    },
-    {
-      "name": "Dragon Egg",
-      "type": "quest",
-      "rarity": "EPIC",
-      "value": 0,
-      "weight": 5.0,
-      "description": "A warm, faintly glowing egg. The scholars want this returned immediately.",
-      "can_drop": false,
-      "can_sell": false,
-      "id": "dragon_egg"
-    },
-    {
-      "name": "The Lost Chronicle",
-      "type": "quest",
+      "id": "sea_foam_vial",
+      "name": "Sea Foam Vial",
+      "type": "potion",
       "rarity": "UNCOMMON",
-      "value": 0,
-      "weight": 2.0,
-      "description": "A crumbling tome containing the final records of the Ashen Order.",
-      "can_drop": false,
-      "can_sell": false,
-      "id": "the_lost_chronicle"
+      "value": 30,
+      "weight": 0.2,
+      "description": "A vial of compressed sea foam from a water elemental."
+    },
+    {
+      "id": "serpent_crown",
+      "name": "Serpent Crown",
+      "type": "equipment",
+      "rarity": "EPIC",
+      "value": 800,
+      "weight": 0.5,
+      "description": "The iconic crown of a medusa, grants minor charm resistance."
+    },
+    {
+      "id": "shadow_essence",
+      "name": "Shadow Essence",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 110,
+      "weight": 0.0,
+      "description": "Pure shadow condensed into liquid form."
+    },
+    {
+      "id": "shadow_leather",
+      "name": "Shadow Leather",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 300,
+      "weight": 6.0,
+      "description": "Leather armor dyed with shadow-extract that bends light around the wearer.",
+      "armor_bonus": 2,
+      "armor_type": "light",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "AGI",
+          "bonus": 2,
+          "duration": 0
+        }
+      ],
+      "requirements": {
+        "level": 4
+      }
     },
     {
       "name": "Shattered Amulet",
@@ -854,15 +2992,57 @@
       "id": "shattered_amulet"
     },
     {
-      "name": "Gold Coins",
-      "type": "currency",
+      "name": "Shield of the Ancients",
+      "type": "shield",
+      "rarity": "EPIC",
+      "value": 4500,
+      "weight": 10.0,
+      "description": "A rune-engraved shield said to have protected a legendary king.",
+      "armor_bonus": 5,
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "END",
+          "bonus": 3,
+          "duration": 0
+        },
+        {
+          "type": "special",
+          "id": "block_magic",
+          "description": "Once per day, negate one incoming spell."
+        }
+      ],
+      "requirements": {
+        "level": 10
+      },
+      "id": "shield_of_the_ancients"
+    },
+    {
+      "name": "Shortbow",
+      "type": "weapon",
       "rarity": "COMMON",
-      "value": 1,
-      "weight": 0.02,
-      "description": "Standard gold coins, the currency of the realm.",
-      "stackable": true,
-      "quantity": 1,
-      "id": "gold_coin"
+      "value": 25,
+      "weight": 2.0,
+      "description": "A lightweight bow for quick shots at medium range.",
+      "damage_dice": "1d6",
+      "damage_type": "piercing",
+      "requirements": {
+        "level": 1,
+        "stat": {
+          "AGI": 10
+        }
+      },
+      "id": "shortbow"
+    },
+    {
+      "id": "silver_cloud_gem",
+      "name": "Silver Cloud Gem",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 400,
+      "weight": 0.2,
+      "description": "A gem that always seems surrounded by tiny clouds.",
+      "stackable": true
     },
     {
       "name": "Silver Coins",
@@ -876,713 +3056,37 @@
       "id": "silver_coin"
     },
     {
-      "name": "Arrows",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 1,
-      "weight": 0.05,
-      "description": "Standard iron-tipped arrows for use with any bow.",
-      "stackable": true,
-      "quantity": 20,
-      "id": "arrow"
-    },
-    {
-      "name": "Dagger",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 2,
-      "weight": 1.0,
-      "description": "A short blade useful for close-quarters and throwing.",
-      "damage_dice": "1d4",
-      "damage_type": "piercing",
-      "requirements": {
-        "level": 1
-      },
-      "id": "dagger"
-    },
-    {
-      "name": "Handaxe",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 5,
-      "weight": 2.0,
-      "description": "A one-handed axe that can also be thrown.",
-      "damage_dice": "1d6",
-      "damage_type": "slashing",
-      "requirements": {
-        "level": 1
-      },
-      "id": "handaxe"
-    },
-    {
-      "name": "War Hammer",
+      "name": "Silver Longsword",
       "type": "weapon",
       "rarity": "UNCOMMON",
-      "value": 80,
-      "weight": 4.0,
-      "description": "A heavy hammer that bludgeons foes with devastating force.",
-      "damage_dice": "1d8",
-      "damage_type": "bludgeoning",
-      "requirements": {
-        "level": 3,
-        "stat": {
-          "MIG": 12
-        }
-      },
-      "id": "war_hammer"
-    },
-    {
-      "name": "Mithral Longsword",
-      "type": "weapon",
-      "rarity": "RARE",
-      "value": 1500,
-      "weight": 2.0,
-      "description": "An impossibly light longsword forged from rare mithral.",
+      "value": 100,
+      "weight": 3.0,
+      "description": "A longsword with a silver blade, effective against undead and lycanthropes.",
       "damage_dice": "1d10",
       "damage_type": "slashing",
-      "effects": [
-        {
-          "type": "buff",
-          "stat": "AGI",
-          "bonus": 1,
-          "duration": 0
-        }
-      ],
-      "requirements": {
-        "level": 6
-      },
-      "id": "mithral_longsword"
-    },
-    {
-      "name": "Ring of Protection",
-      "type": "armor",
-      "rarity": "UNCOMMON",
-      "value": 350,
-      "weight": 0.1,
-      "description": "A simple ring enchanted with a ward against harm.",
-      "armor_bonus": 1,
-      "armor_type": "light",
       "requirements": {
         "level": 3
       },
-      "id": "ring_of_protection"
+      "id": "silver_longsword"
     },
     {
-      "name": "Amulet of Health",
-      "type": "armor",
-      "rarity": "RARE",
-      "value": 800,
-      "weight": 0.2,
-      "description": "A carved jade amulet that fortifies the body's resilience.",
-      "armor_bonus": 0,
-      "effects": [
-        {
-          "type": "buff",
-          "stat": "END",
-          "bonus": 4,
-          "duration": 0
-        }
-      ],
-      "requirements": {
-        "level": 5
-      },
-      "id": "amulet_of_health"
-    },
-    {
-      "name": "Boots of Speed",
-      "type": "armor",
-      "rarity": "RARE",
-      "value": 1000,
+      "id": "silver_ore",
+      "name": "Silver Ore",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 18,
       "weight": 1.0,
-      "description": "Enchanted boots that dramatically increase movement speed.",
-      "armor_bonus": 0,
-      "armor_type": "light",
-      "effects": [
-        {
-          "type": "buff",
-          "stat": "AGI",
-          "bonus": 3,
-          "duration": 0
-        }
-      ],
-      "requirements": {
-        "level": 5
-      },
-      "id": "boots_of_speed"
-    },
-    {
-      "id": "wolf_pelt",
-      "name": "Wolf Pelt",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 5,
-      "weight": 1.0,
-      "description": "A rough wolf pelt. Useful for crafting.",
+      "description": "Raw silver ore still streaked with stone and glittering veins.",
       "stackable": true
     },
     {
-      "id": "dire_wolf_pelt",
-      "name": "Dire Wolf Pelt",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 20,
+      "id": "sky_forge_fragment",
+      "name": "Sky Forge Fragment",
+      "type": "crafting_material",
+      "rarity": "RARE",
+      "value": 250,
       "weight": 2.0,
-      "description": "A thick dire wolf pelt of exceptional quality.",
-      "stackable": true
-    },
-    {
-      "id": "bear_pelt",
-      "name": "Bear Pelt",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 10,
-      "weight": 3.0,
-      "description": "A black bear pelt.",
-      "stackable": true
-    },
-    {
-      "id": "grizzly_pelt",
-      "name": "Grizzly Pelt",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 30,
-      "weight": 4.0,
-      "description": "A massive grizzly bear pelt.",
-      "stackable": true
-    },
-    {
-      "id": "bear_claw",
-      "name": "Bear Claw",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 8,
-      "weight": 0.2,
-      "description": "A sharp bear claw — prized by alchemists.",
-      "stackable": true
-    },
-    {
-      "id": "bear_meat",
-      "name": "Bear Meat",
-      "type": "consumable",
-      "rarity": "COMMON",
-      "value": 3,
-      "weight": 1.5,
-      "description": "Raw bear meat. Can be cooked for sustenance.",
-      "stackable": true,
-      "effects": []
-    },
-    {
-      "id": "fang",
-      "name": "Fang",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 3,
-      "weight": 0.1,
-      "description": "A beast fang. Used in crafting and alchemy.",
-      "stackable": true
-    },
-    {
-      "id": "large_fang",
-      "name": "Large Fang",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 15,
-      "weight": 0.3,
-      "description": "An oversized fang from a dire creature.",
-      "stackable": true
-    },
-    {
-      "id": "spider_silk",
-      "name": "Spider Silk",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 25,
-      "weight": 0.2,
-      "description": "Strong silk harvested from a giant spider.",
-      "stackable": true
-    },
-    {
-      "id": "venom_sac",
-      "name": "Venom Sac",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 30,
-      "weight": 0.3,
-      "description": "An intact venom sac — potent alchemical ingredient.",
-      "stackable": true
-    },
-    {
-      "id": "phase_spider_silk",
-      "name": "Phase Spider Silk",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 80,
-      "weight": 0.2,
-      "description": "Ethereal silk from a phase spider, shimmering between planes.",
-      "stackable": true
-    },
-    {
-      "id": "ethereal_essence",
-      "name": "Ethereal Essence",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 100,
-      "weight": 0.1,
-      "description": "Distilled essence of the Ethereal Plane.",
-      "stackable": true
-    },
-    {
-      "id": "bone_fragment",
-      "name": "Bone Fragment",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 1,
-      "weight": 0.1,
-      "description": "A shard of undead bone.",
-      "stackable": true
-    },
-    {
-      "id": "rusty_sword",
-      "name": "Rusty Sword",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 1,
-      "weight": 3.0,
-      "description": "A badly corroded sword. Barely functional.",
-      "damage_dice": "1d6",
-      "damage_type": "slashing"
-    },
-    {
-      "id": "rotting_flesh",
-      "name": "Rotting Flesh",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 1,
-      "weight": 0.5,
-      "description": "A chunk of putrid zombie flesh.",
-      "stackable": true
-    },
-    {
-      "id": "plague_essence",
-      "name": "Plague Essence",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 40,
-      "weight": 0.1,
-      "description": "A vial of distilled plague — handle carefully.",
-      "stackable": true
-    },
-    {
-      "id": "blood_vial",
-      "name": "Blood Vial",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 50,
-      "weight": 0.1,
-      "description": "A vial of vampiric blood.",
-      "stackable": true
-    },
-    {
-      "id": "vampire_fang",
-      "name": "Vampire Fang",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 60,
-      "weight": 0.1,
-      "description": "A hollow vampire fang, still dripping.",
-      "stackable": true
-    },
-    {
-      "id": "wight_essence",
-      "name": "Wight Essence",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 45,
-      "weight": 0.1,
-      "description": "Distilled essence of a wight — cold to the touch.",
-      "stackable": true
-    },
-    {
-      "id": "wraithstone",
-      "name": "Wraithstone",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 120,
-      "weight": 0.1,
-      "description": "A dark gem infused with wraith energy.",
-      "stackable": true
-    },
-    {
-      "id": "necrotic_essence",
-      "name": "Necrotic Essence",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 55,
-      "weight": 0.1,
-      "description": "Concentrated necrotic energy in crystal form.",
-      "stackable": true
-    },
-    {
-      "id": "copper_coin",
-      "name": "Copper Coin",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 0,
-      "weight": 0.01,
-      "description": "A copper coin worth 1/100 of a gold piece.",
-      "stackable": true,
-      "quantity": 1
-    },
-    {
-      "id": "goblin_ear",
-      "name": "Goblin Ear",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 2,
-      "weight": 0.1,
-      "description": "Proof of a goblin slain.",
-      "stackable": true
-    },
-    {
-      "id": "goblin_crown",
-      "name": "Goblin Crown",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 30,
-      "weight": 0.5,
-      "description": "A crude crown fashioned by the goblin boss.",
-      "stackable": false
-    },
-    {
-      "id": "crude_dagger",
-      "name": "Crude Dagger",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 1,
-      "weight": 0.8,
-      "description": "A crudely fashioned goblin blade.",
-      "damage_dice": "1d4",
-      "damage_type": "piercing"
-    },
-    {
-      "id": "scimitar",
-      "name": "Scimitar",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 15,
-      "weight": 3.0,
-      "description": "A curved blade with a single sharp edge.",
-      "damage_dice": "1d8",
-      "damage_type": "slashing"
-    },
-    {
-      "id": "orc_tusk",
-      "name": "Orc Tusk",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 5,
-      "weight": 0.3,
-      "description": "A broken orc tusk.",
-      "stackable": true
-    },
-    {
-      "id": "greataxe",
-      "name": "Greataxe",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 30,
-      "weight": 7.0,
-      "description": "A massive two-handed axe.",
-      "damage_dice": "1d12",
-      "damage_type": "slashing"
-    },
-    {
-      "id": "war_greataxe",
-      "name": "War Greataxe",
-      "type": "weapon",
-      "rarity": "UNCOMMON",
-      "value": 150,
-      "weight": 7.5,
-      "description": "A masterwork greataxe wielded by the warchief.",
-      "damage_dice": "2d6",
-      "damage_type": "slashing"
-    },
-    {
-      "id": "warchief_helmet",
-      "name": "Warchief Helmet",
-      "type": "armor",
-      "rarity": "UNCOMMON",
-      "value": 100,
-      "weight": 6.0,
-      "description": "The fearsome horned helmet of an orc warchief.",
-      "armor_bonus": 2,
-      "armor_type": "heavy"
-    },
-    {
-      "id": "captain_scimitar",
-      "name": "Captain's Scimitar",
-      "type": "weapon",
-      "rarity": "UNCOMMON",
-      "value": 80,
-      "weight": 3.0,
-      "description": "A well-maintained scimitar with a jeweled pommel.",
-      "damage_dice": "1d8",
-      "damage_type": "slashing"
-    },
-    {
-      "id": "stolen_goods",
-      "name": "Stolen Goods",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 10,
-      "weight": 1.0,
-      "description": "Miscellaneous stolen valuables.",
-      "stackable": true
-    },
-    {
-      "id": "wanted_poster",
-      "name": "Wanted Poster",
-      "type": "quest",
-      "rarity": "COMMON",
-      "value": 0,
-      "weight": 0.1,
-      "description": "A wanted poster bearing the bandit captain's likeness.",
-      "can_drop": false,
-      "can_sell": false
-    },
-    {
-      "id": "fire_essence",
-      "name": "Fire Essence",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 50,
-      "weight": 0.1,
-      "description": "Distilled elemental fire energy.",
-      "stackable": true
-    },
-    {
-      "id": "ember_shard",
-      "name": "Ember Shard",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 40,
-      "weight": 0.2,
-      "description": "A perpetually hot shard of crystallized flame.",
-      "stackable": true
-    },
-    {
-      "id": "water_essence",
-      "name": "Water Essence",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 50,
-      "weight": 0.1,
-      "description": "Distilled elemental water energy.",
-      "stackable": true
-    },
-    {
-      "id": "tidal_crystal",
-      "name": "Tidal Crystal",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 45,
-      "weight": 0.2,
-      "description": "A blue crystal pulsing with ocean currents.",
-      "stackable": true
-    },
-    {
-      "id": "earth_essence",
-      "name": "Earth Essence",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 50,
-      "weight": 0.1,
-      "description": "Distilled elemental earth energy.",
-      "stackable": true
-    },
-    {
-      "id": "stone_shard",
-      "name": "Stone Shard",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 10,
-      "weight": 0.5,
-      "description": "A fragment of living stone from an earth elemental.",
-      "stackable": true
-    },
-    {
-      "id": "air_essence",
-      "name": "Air Essence",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 50,
-      "weight": 0.05,
-      "description": "Distilled elemental air energy.",
-      "stackable": true
-    },
-    {
-      "id": "storm_crystal",
-      "name": "Storm Crystal",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 55,
-      "weight": 0.1,
-      "description": "A crackling crystal charged with lightning.",
-      "stackable": true
-    },
-    {
-      "id": "troll_hide",
-      "name": "Troll Hide",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 35,
-      "weight": 3.0,
-      "description": "Tough regenerating hide of a troll.",
-      "stackable": true
-    },
-    {
-      "id": "troll_heart",
-      "name": "Troll Heart",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 90,
-      "weight": 0.8,
-      "description": "A troll's heart — still beating. Powerful reagent.",
-      "stackable": true
-    },
-    {
-      "id": "greatclub",
-      "name": "Greatclub",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 20,
-      "weight": 10.0,
-      "description": "A massive wooden club used by ogres.",
-      "damage_dice": "2d8",
-      "damage_type": "bludgeoning"
-    },
-    {
-      "id": "ogre_tooth",
-      "name": "Ogre Tooth",
-      "type": "currency",
-      "rarity": "COMMON",
-      "value": 8,
-      "weight": 0.3,
-      "description": "A blunt ogre tooth — used in primitive charms.",
-      "stackable": true
-    },
-    {
-      "id": "dragon_scale",
-      "name": "Dragon Scale",
-      "type": "currency",
-      "rarity": "EPIC",
-      "value": 500,
-      "weight": 0.5,
-      "description": "A brilliant red scale from a young dragon. Fire resistant.",
-      "stackable": true
-    },
-    {
-      "id": "dragon_tooth",
-      "name": "Dragon Tooth",
-      "type": "currency",
-      "rarity": "EPIC",
-      "value": 400,
-      "weight": 1.0,
-      "description": "A razor-sharp dragon tooth of immense value.",
-      "stackable": true
-    },
-    {
-      "id": "gold_hoard",
-      "name": "Gold Hoard",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 1000,
-      "weight": 50.0,
-      "description": "A small portion of a dragon's hoard.",
-      "stackable": false
-    },
-    {
-      "id": "ruby_gem",
-      "name": "Ruby Gem",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 300,
-      "weight": 0.1,
-      "description": "A flawless ruby from a dragon's treasure.",
-      "stackable": true
-    },
-    {
-      "id": "ancient_dragon_scale",
-      "name": "Ancient Dragon Scale",
-      "type": "currency",
-      "rarity": "LEGENDARY",
-      "value": 2000,
-      "weight": 1.0,
-      "description": "A colossal scale from an ancient red dragon. Near-indestructible.",
-      "stackable": true
-    },
-    {
-      "id": "dragon_heart",
-      "name": "Dragon Heart",
-      "type": "currency",
-      "rarity": "LEGENDARY",
-      "value": 5000,
-      "weight": 5.0,
-      "description": "The heart of an ancient dragon — ultimate alchemical reagent.",
-      "stackable": false
-    },
-    {
-      "id": "legendary_hoard",
-      "name": "Legendary Hoard",
-      "type": "currency",
-      "rarity": "LEGENDARY",
-      "value": 10000,
-      "weight": 200.0,
-      "description": "The legendary hoard of an ancient dragon.",
-      "stackable": false
-    },
-    {
-      "id": "dragon_eye_gem",
-      "name": "Dragon Eye Gem",
-      "type": "currency",
-      "rarity": "LEGENDARY",
-      "value": 3000,
-      "weight": 0.5,
-      "description": "A gemstone cut from a dragon's eye socket.",
-      "stackable": false
-    },
-    {
-      "id": "dark_iron_coin",
-      "name": "Dark Iron Coin",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 5,
-      "weight": 0.02,
-      "description": "A coin minted in the realm of the dead.",
-      "stackable": true,
-      "quantity": 1
-    },
-    {
-      "id": "phylactery_shard",
-      "name": "Phylactery Shard",
-      "type": "currency",
-      "rarity": "LEGENDARY",
-      "value": 4000,
-      "weight": 0.2,
-      "description": "A fragment of a lich's phylactery. Still radiates necrotic energy.",
-      "stackable": false
-    },
-    {
-      "id": "lich_crown",
-      "name": "Lich Crown",
-      "type": "armor",
-      "rarity": "LEGENDARY",
-      "value": 8000,
-      "weight": 1.0,
-      "description": "The crown of a defeated lich. Amplifies necrotic magic.",
-      "armor_bonus": 3,
-      "armor_type": "light",
-      "effects": []
+      "description": "A fragment from a cloud giant's skyforge."
     },
     {
       "id": "spellbook_ancient",
@@ -1596,148 +3100,191 @@
       "can_sell": false
     },
     {
-      "id": "necrotic_crystal",
-      "name": "Necrotic Crystal",
+      "id": "spellbook_archmage",
+      "name": "Archmage Spellbook",
       "type": "currency",
-      "rarity": "RARE",
-      "value": 200,
-      "weight": 0.2,
-      "description": "A black crystal radiating necrotic energy.",
-      "stackable": true
-    },
-    {
-      "id": "demon_heart",
-      "name": "Demon Heart",
-      "type": "currency",
-      "rarity": "LEGENDARY",
-      "value": 6000,
-      "weight": 2.0,
-      "description": "The still-burning heart of a Demon Lord.",
-      "stackable": false
-    },
-    {
-      "id": "abyssal_blade",
-      "name": "Abyssal Blade",
-      "type": "weapon",
-      "rarity": "LEGENDARY",
-      "value": 9000,
-      "weight": 4.0,
-      "description": "A sword forged in the Abyss, dripping with hellfire.",
-      "damage_dice": "2d10",
-      "damage_type": "fire",
-      "effects": []
-    },
-    {
-      "id": "demon_lord_horn",
-      "name": "Demon Lord Horn",
-      "type": "currency",
-      "rarity": "LEGENDARY",
-      "value": 5000,
+      "rarity": "EPIC",
+      "value": 2000,
       "weight": 3.0,
-      "description": "A horn from a slain Demon Lord. Radiates raw infernal power.",
+      "description": "An archmage's spellbook filled with powerful arcane formulae.",
       "stackable": false
     },
     {
-      "id": "hellfire_essence",
-      "name": "Hellfire Essence",
-      "type": "currency",
-      "rarity": "EPIC",
-      "value": 800,
+      "id": "spider_eye",
+      "name": "Spider Eye",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 5,
       "weight": 0.1,
-      "description": "Distilled essence of hellfire — impossibly hot.",
-      "stackable": true
+      "description": "A multifaceted spider eye used in scrying potions."
     },
     {
-      "id": "beholder_eye",
-      "name": "Beholder Eye",
-      "type": "currency",
-      "rarity": "LEGENDARY",
-      "value": 7000,
-      "weight": 0.5,
-      "description": "The central eye of a beholder — can antimagic on command.",
-      "stackable": false
-    },
-    {
-      "id": "antimagic_shard",
-      "name": "Antimagic Shard",
-      "type": "currency",
-      "rarity": "EPIC",
-      "value": 600,
-      "weight": 0.2,
-      "description": "A shard infused with antimagic energy from a beholder.",
-      "stackable": true
-    },
-    {
-      "id": "aberrant_flesh",
-      "name": "Aberrant Flesh",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 150,
-      "weight": 1.0,
-      "description": "Disgusting flesh from an aberrant creature.",
-      "stackable": true
-    },
-    {
-      "id": "mind_flayer_brain",
-      "name": "Mind Flayer Brain",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 250,
-      "weight": 0.5,
-      "description": "The psionic brain of a mind flayer — still twitching.",
-      "stackable": false
-    },
-    {
-      "id": "psionic_crystal",
-      "name": "Psionic Crystal",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 300,
-      "weight": 0.2,
-      "description": "A crystal resonant with psionic energy.",
-      "stackable": true
-    },
-    {
-      "id": "illithid_robes",
-      "name": "Illithid Robes",
-      "type": "armor",
-      "rarity": "RARE",
-      "value": 400,
-      "weight": 2.0,
-      "description": "Strange dark robes worn by a mind flayer.",
-      "armor_bonus": 2,
-      "armor_type": "light",
-      "effects": []
-    },
-    {
-      "id": "medusa_scale",
-      "name": "Medusa Scale",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 120,
-      "weight": 0.2,
-      "description": "A scale from a medusa, faintly glowing green.",
-      "stackable": true
-    },
-    {
-      "id": "petrification_essence",
-      "name": "Petrification Essence",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 200,
-      "weight": 0.1,
-      "description": "Distilled essence of the medusa's petrifying gaze.",
-      "stackable": true
-    },
-    {
-      "id": "venom_extract",
-      "name": "Venom Extract",
+      "id": "spider_silk",
+      "name": "Spider Silk",
       "type": "currency",
       "rarity": "UNCOMMON",
-      "value": 60,
-      "weight": 0.1,
-      "description": "Potent venom extracted from a medusa's hair.",
+      "value": 25,
+      "weight": 0.2,
+      "description": "Strong silk harvested from a giant spider.",
       "stackable": true
+    },
+    {
+      "id": "spiked_gauntlets",
+      "name": "Spiked Gauntlets",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 60,
+      "weight": 2.0,
+      "description": "Metal gauntlets fitted with spikes, offering both protection and offense.",
+      "armor_bonus": 1,
+      "armor_type": "light",
+      "requirements": {
+        "level": 3
+      }
+    },
+    {
+      "name": "Staff of Fire",
+      "type": "weapon",
+      "rarity": "UNCOMMON",
+      "value": 400,
+      "weight": 4.0,
+      "description": "A staff tipped with a smouldering ember that never goes out.",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d8",
+          "damage_type": "fire"
+        }
+      ],
+      "requirements": {
+        "level": 4,
+        "class": "mage"
+      },
+      "id": "staff_of_fire"
+    },
+    {
+      "id": "staff_of_frost",
+      "name": "Staff of Frost",
+      "type": "weapon",
+      "rarity": "EPIC",
+      "value": 3000,
+      "weight": 4.0,
+      "description": "A staff carved from glacial ice that never melts, wreathed in freezing mist.",
+      "damage_dice": "1d8",
+      "damage_type": "bludgeoning",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d8",
+          "damage_type": "ice"
+        },
+        {
+          "type": "special",
+          "id": "frost_slow",
+          "description": "Strikes have a chance to slow the target."
+        }
+      ],
+      "requirements": {
+        "level": 8,
+        "class": "mage"
+      }
+    },
+    {
+      "id": "staff_of_lightning",
+      "name": "Staff of Lightning",
+      "type": "weapon",
+      "rarity": "EPIC",
+      "value": 3500,
+      "weight": 4.0,
+      "description": "A staff crowned with a crackling orb of captured storm energy.",
+      "damage_dice": "1d8",
+      "damage_type": "bludgeoning",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d6",
+          "damage_type": "lightning"
+        }
+      ],
+      "requirements": {
+        "level": 9,
+        "class": "mage"
+      }
+    },
+    {
+      "name": "Staff of the Archmage",
+      "type": "weapon",
+      "rarity": "EPIC",
+      "value": 5000,
+      "weight": 4.5,
+      "description": "A legendary staff that amplifies spell power beyond mortal limits.",
+      "damage_dice": "1d8",
+      "damage_type": "force",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "MND",
+          "bonus": 4,
+          "duration": 0
+        },
+        {
+          "type": "special",
+          "id": "spell_amplify",
+          "description": "Spells deal +2 damage per die."
+        }
+      ],
+      "requirements": {
+        "level": 12,
+        "class": "mage",
+        "stat": {
+          "MND": 16
+        }
+      },
+      "id": "staff_of_the_archmage"
+    },
+    {
+      "id": "steel_buckler",
+      "name": "Steel Buckler",
+      "type": "shield",
+      "rarity": "COMMON",
+      "value": 18,
+      "weight": 4.0,
+      "description": "A small steel shield, easy to maneuver.",
+      "armor_bonus": 1,
+      "requirements": {
+        "level": 1
+      }
+    },
+    {
+      "id": "steel_ingot",
+      "name": "Steel Ingot",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 38,
+      "weight": 1.6,
+      "description": "A hardened steel ingot suited for durable arms and armor.",
+      "stackable": true
+    },
+    {
+      "id": "stolen_goods",
+      "name": "Stolen Goods",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 10,
+      "weight": 1.0,
+      "description": "Miscellaneous stolen valuables.",
+      "stackable": true
+    },
+    {
+      "id": "stolen_trinket",
+      "name": "Stolen Trinket",
+      "type": "treasure",
+      "rarity": "UNCOMMON",
+      "value": 10,
+      "weight": 0.1,
+      "description": "A small trinket a goblin stole from an unfortunate traveler."
     },
     {
       "id": "stone_giant_club",
@@ -1751,44 +3298,47 @@
       "damage_type": "bludgeoning"
     },
     {
-      "id": "granite_rune",
-      "name": "Granite Rune",
+      "id": "stone_shard",
+      "name": "Stone Shard",
       "type": "currency",
-      "rarity": "RARE",
-      "value": 180,
+      "rarity": "COMMON",
+      "value": 10,
       "weight": 0.5,
-      "description": "A rune-carved granite tablet from a stone giant's home.",
+      "description": "A fragment of living stone from an earth elemental.",
       "stackable": true
     },
     {
-      "id": "giant_coin_pouch",
-      "name": "Giant Coin Pouch",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 200,
-      "weight": 2.0,
-      "description": "A pouch of mixed coins from a giant's hoard.",
-      "stackable": false
-    },
-    {
-      "id": "cloud_giant_morningstar",
-      "name": "Cloud Giant Morningstar",
+      "name": "Storm Arrow Bow",
       "type": "weapon",
       "rarity": "RARE",
-      "value": 800,
-      "weight": 25.0,
-      "description": "A massive spiked morningstar sized for a cloud giant.",
-      "damage_dice": "3d8",
-      "damage_type": "bludgeoning"
+      "value": 1200,
+      "weight": 2.5,
+      "description": "Arrows fired from this bow crackle with lightning energy.",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "lightning"
+        }
+      ],
+      "requirements": {
+        "level": 8,
+        "stat": {
+          "AGI": 14
+        }
+      },
+      "id": "storm_arrow_bow"
     },
     {
-      "id": "silver_cloud_gem",
-      "name": "Silver Cloud Gem",
+      "id": "storm_crystal",
+      "name": "Storm Crystal",
       "type": "currency",
-      "rarity": "RARE",
-      "value": 400,
-      "weight": 0.2,
-      "description": "A gem that always seems surrounded by tiny clouds.",
+      "rarity": "UNCOMMON",
+      "value": 55,
+      "weight": 0.1,
+      "description": "A crackling crystal charged with lightning.",
       "stackable": true
     },
     {
@@ -1802,323 +3352,33 @@
       "stackable": true
     },
     {
-      "id": "frost_giant_axe",
-      "name": "Frost Giant Axe",
-      "type": "weapon",
-      "rarity": "RARE",
-      "value": 600,
-      "weight": 20.0,
-      "description": "A huge frost-rimed greataxe sized for a frost giant.",
-      "damage_dice": "3d12",
-      "damage_type": "slashing",
-      "effects": []
-    },
-    {
-      "id": "glacial_shard",
-      "name": "Glacial Shard",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 150,
-      "weight": 0.3,
-      "description": "A shard of magical ice that never melts.",
-      "stackable": true
-    },
-    {
-      "id": "frozen_trophy",
-      "name": "Frozen Trophy",
-      "type": "currency",
-      "rarity": "UNCOMMON",
-      "value": 75,
-      "weight": 1.5,
-      "description": "A frost giant's battle trophy, encased in ice.",
-      "stackable": false
-    },
-    {
-      "id": "spellbook_archmage",
-      "name": "Archmage Spellbook",
-      "type": "currency",
-      "rarity": "EPIC",
-      "value": 2000,
-      "weight": 3.0,
-      "description": "An archmage's spellbook filled with powerful arcane formulae.",
-      "stackable": false
-    },
-    {
-      "id": "arcane_focus_gem",
-      "name": "Arcane Focus Gem",
-      "type": "currency",
-      "rarity": "EPIC",
-      "value": 1500,
-      "weight": 0.1,
-      "description": "A gem that amplifies arcane spellcasting.",
-      "stackable": false
-    },
-    {
-      "id": "scroll_of_mastery",
-      "name": "Scroll of Mastery",
-      "type": "consumable",
-      "rarity": "EPIC",
-      "value": 3000,
-      "weight": 0.1,
-      "description": "A rare scroll containing a powerful forbidden spell.",
-      "stackable": false,
-      "effects": []
-    },
-    {
-      "id": "archmage_robes",
-      "name": "Archmage Robes",
-      "type": "armor",
-      "rarity": "EPIC",
-      "value": 2500,
-      "weight": 2.0,
-      "description": "Magnificent robes that greatly enhance magical ability.",
-      "armor_bonus": 2,
-      "armor_type": "light",
-      "effects": []
-    },
-    {
-      "id": "vampire_cloak",
-      "name": "Vampire Cloak",
-      "type": "armor",
-      "rarity": "EPIC",
-      "value": 3000,
-      "weight": 1.0,
-      "description": "A midnight-black cloak that seems to absorb light.",
-      "armor_bonus": 2,
-      "armor_type": "light",
-      "effects": []
-    },
-    {
-      "id": "blood_crystal",
-      "name": "Blood Crystal",
-      "type": "currency",
-      "rarity": "EPIC",
-      "value": 1200,
-      "weight": 0.2,
-      "description": "A deep red crystal formed from a vampire's crystallized blood.",
-      "stackable": true
-    },
-    {
-      "id": "vampire_ring",
-      "name": "Vampire Ring",
-      "type": "armor",
-      "rarity": "EPIC",
-      "value": 2000,
-      "weight": 0.1,
-      "description": "An ancient ring bearing a vampire lord's sigil.",
-      "armor_bonus": 1,
-      "armor_type": "light",
-      "effects": []
-    },
-    {
-      "id": "ancient_gold_coin",
-      "name": "Ancient Gold Coin",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 50,
-      "weight": 0.02,
-      "description": "A gold coin from a forgotten age, minted by a vampire noble.",
-      "stackable": true,
-      "quantity": 1
-    },
-    {
-      "id": "noble_signet",
-      "name": "Noble Signet",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 300,
-      "weight": 0.1,
-      "description": "A noble's signet ring — proof of a vampire lord's lineage.",
-      "stackable": false
-    },
-    {
-      "id": "wolf_heart",
-      "name": "Wolf Heart",
-      "type": "crafting_material",
-      "rarity": "UNCOMMON",
-      "value": 15,
-      "weight": 0.2,
-      "description": "Still-warm heart of a wolf, valued by alchemists."
-    },
-    {
-      "id": "dire_wolf_heart",
-      "name": "Dire Wolf Heart",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 50,
-      "weight": 0.5,
-      "description": "Pulsing heart of a dire wolf, radiates primal energy."
-    },
-    {
-      "id": "grizzly_fang",
-      "name": "Grizzly Fang",
-      "type": "crafting_material",
-      "rarity": "UNCOMMON",
-      "value": 20,
-      "weight": 0.3,
-      "description": "A massive curved fang from a grizzly bear."
-    },
-    {
-      "id": "spider_eye",
-      "name": "Spider Eye",
-      "type": "crafting_material",
-      "rarity": "COMMON",
-      "value": 5,
-      "weight": 0.1,
-      "description": "A multifaceted spider eye used in scrying potions."
-    },
-    {
-      "id": "phase_crystal",
-      "name": "Phase Crystal",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 120,
-      "weight": 0.2,
-      "description": "A shimmering crystal that exists partially in another plane."
-    },
-    {
-      "id": "quiver",
-      "name": "Quiver",
+      "id": "sturdy_toolbelt",
+      "name": "Sturdy Toolbelt",
       "type": "equipment",
       "rarity": "COMMON",
-      "value": 5,
-      "weight": 0.5,
-      "description": "A standard leather quiver for carrying arrows."
-    },
-    {
-      "id": "torn_cloth",
-      "name": "Torn Cloth",
-      "type": "crafting_material",
-      "rarity": "COMMON",
-      "value": 1,
-      "weight": 0.1,
-      "description": "Dirty, torn cloth scraps."
-    },
-    {
-      "id": "infected_blood",
-      "name": "Infected Blood",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 40,
-      "weight": 0.1,
-      "description": "Dark ichor from a plague zombie, used in cursed potions."
-    },
-    {
-      "id": "dark_cloak",
-      "name": "Dark Cloak",
-      "type": "equipment",
-      "rarity": "UNCOMMON",
-      "value": 25,
-      "weight": 0.5,
-      "description": "A shadowy cloak that helps conceal the wearer."
-    },
-    {
-      "id": "stolen_trinket",
-      "name": "Stolen Trinket",
-      "type": "treasure",
-      "rarity": "UNCOMMON",
-      "value": 10,
-      "weight": 0.1,
-      "description": "A small trinket a goblin stole from an unfortunate traveler."
-    },
-    {
-      "id": "boss_key",
-      "name": "Boss Key",
-      "type": "key",
-      "rarity": "RARE",
-      "value": 0,
-      "weight": 0.1,
-      "description": "A crude iron key belonging to the Goblin Boss."
-    },
-    {
-      "id": "crude_armor_shard",
-      "name": "Crude Armor Shard",
-      "type": "crafting_material",
-      "rarity": "UNCOMMON",
       "value": 8,
       "weight": 1.0,
-      "description": "A shard from orcish armor, useful for salvaging."
+      "description": "A leather belt with pouches for carrying tools and small items."
     },
     {
-      "id": "orc_warbanner",
-      "name": "Orc Warbanner",
-      "type": "treasure",
-      "rarity": "RARE",
-      "value": 60,
-      "weight": 2.0,
-      "description": "The tribal banner of an orc warband."
-    },
-    {
-      "id": "captain_signet_ring",
-      "name": "Captain's Signet Ring",
-      "type": "equipment",
-      "rarity": "RARE",
-      "value": 80,
-      "weight": 0.1,
-      "description": "A ring bearing the mark of a bandit captain, granting authority among criminals."
-    },
-    {
-      "id": "scorched_core",
-      "name": "Scorched Core",
+      "id": "sulfur",
+      "name": "Sulfur",
       "type": "crafting_material",
-      "rarity": "UNCOMMON",
-      "value": 35,
-      "weight": 0.3,
-      "description": "The central core of a fire elemental."
-    },
-    {
-      "id": "blazing_crystal",
-      "name": "Blazing Crystal",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 90,
-      "weight": 0.2,
-      "description": "A crystal that perpetually burns with inner fire."
-    },
-    {
-      "id": "sea_foam_vial",
-      "name": "Sea Foam Vial",
-      "type": "potion",
-      "rarity": "UNCOMMON",
-      "value": 30,
-      "weight": 0.2,
-      "description": "A vial of compressed sea foam from a water elemental."
-    },
-    {
-      "id": "deep_current_gem",
-      "name": "Deep Current Gem",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 85,
-      "weight": 0.2,
-      "description": "A gem containing the pull of deep ocean currents."
-    },
-    {
-      "id": "granite_core",
-      "name": "Granite Core",
-      "type": "crafting_material",
-      "rarity": "UNCOMMON",
-      "value": 30,
-      "weight": 2.0,
-      "description": "A dense core of granite from inside an earth elemental."
-    },
-    {
-      "id": "geode_crystal",
-      "name": "Geode Crystal",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 80,
+      "rarity": "COMMON",
+      "value": 9,
       "weight": 0.5,
-      "description": "A beautiful crystal geode formed within an earth elemental."
+      "description": "Sharp-smelling sulfur used in powders and volatile brews.",
+      "stackable": true
     },
     {
-      "id": "wind_wisp_essence",
-      "name": "Wind Wisp Essence",
-      "type": "crafting_material",
-      "rarity": "UNCOMMON",
-      "value": 30,
-      "weight": 0.0,
-      "description": "Bottled essence of a wind wisp."
+      "id": "sunstone",
+      "name": "Sunstone",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 250,
+      "weight": 0.4,
+      "description": "A radiant gem that glows with the warmth of sunlight. Highly prized by merchants.",
+      "stackable": true
     },
     {
       "id": "tempest_shard",
@@ -2130,76 +3390,125 @@
       "description": "A crystallized fragment of a storm elemental."
     },
     {
-      "id": "regeneration_gland",
-      "name": "Regeneration Gland",
-      "type": "crafting_material",
+      "id": "tentacle_whip",
+      "name": "Tentacle Whip",
+      "type": "weapon",
       "rarity": "RARE",
-      "value": 120,
-      "weight": 0.5,
-      "description": "A troll's regeneration gland; alchemists prize it highly."
-    },
-    {
-      "id": "ogre_skin_belt",
-      "name": "Ogre Skin Belt",
-      "type": "equipment",
-      "rarity": "UNCOMMON",
-      "value": 25,
+      "value": 300,
       "weight": 1.5,
-      "description": "A thick belt made from ogre hide."
+      "description": "A whip fashioned from a mind flayer's tentacle.",
+      "damage_dice": "1d6+2",
+      "damage_type": "psychic",
+      "requirements": {
+        "level": 8
+      }
     },
     {
-      "id": "life_drain_crystal",
-      "name": "Life Drain Crystal",
-      "type": "crafting_material",
+      "name": "The Lost Chronicle",
+      "type": "quest",
+      "rarity": "UNCOMMON",
+      "value": 0,
+      "weight": 2.0,
+      "description": "A crumbling tome containing the final records of the Ashen Order.",
+      "can_drop": false,
+      "can_sell": false,
+      "id": "the_lost_chronicle"
+    },
+    {
+      "id": "thunderstrike_mace",
+      "name": "Thunderstrike Mace",
+      "type": "weapon",
       "rarity": "RARE",
-      "value": 100,
+      "value": 950,
+      "weight": 4.0,
+      "description": "A heavy mace crackling with bound lightning that discharges on impact.",
+      "damage_dice": "1d8",
+      "damage_type": "bludgeoning",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "lightning"
+        }
+      ],
+      "requirements": {
+        "level": 7
+      }
+    },
+    {
+      "id": "tidal_crystal",
+      "name": "Tidal Crystal",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 45,
       "weight": 0.2,
-      "description": "A dark crystal that drains life from the living."
+      "description": "A blue crystal pulsing with ocean currents.",
+      "stackable": true
     },
     {
-      "id": "shadow_essence",
-      "name": "Shadow Essence",
+      "id": "tidal_essence",
+      "name": "Tidal Essence",
       "type": "crafting_material",
       "rarity": "RARE",
-      "value": 110,
-      "weight": 0.0,
-      "description": "Pure shadow condensed into liquid form."
+      "value": 95,
+      "weight": 0.2,
+      "description": "A swirling vial of salt-rich water magic.",
+      "stackable": true
     },
     {
-      "id": "ethereal_cloak",
-      "name": "Ethereal Cloak",
+      "id": "torn_cloth",
+      "name": "Torn Cloth",
+      "type": "crafting_material",
+      "rarity": "COMMON",
+      "value": 1,
+      "weight": 0.1,
+      "description": "Dirty, torn cloth scraps."
+    },
+    {
+      "name": "Tower Shield",
+      "type": "shield",
+      "rarity": "UNCOMMON",
+      "value": 150,
+      "weight": 15.0,
+      "description": "A massive tower shield that can shelter your whole body.",
+      "armor_bonus": 4,
+      "requirements": {
+        "level": 4,
+        "stat": {
+          "MIG": 12,
+          "END": 10
+        }
+      },
+      "id": "tower_shield"
+    },
+    {
+      "id": "traveler_s_cloak",
+      "name": "Traveler's Cloak",
       "type": "equipment",
-      "rarity": "EPIC",
-      "value": 400,
-      "weight": 0.3,
-      "description": "A cloak woven from wraith-substance, grants partial incorporeality."
+      "rarity": "COMMON",
+      "value": 6,
+      "weight": 0.7,
+      "description": "A weather-resistant cloak favored by those on long journeys."
     },
     {
-      "id": "fire_dragon_blood",
-      "name": "Fire Dragon Blood",
-      "type": "crafting_material",
-      "rarity": "EPIC",
-      "value": 500,
-      "weight": 0.5,
-      "description": "Blood of a red dragon, used to forge fire-resistant gear."
+      "id": "troll_heart",
+      "name": "Troll Heart",
+      "type": "currency",
+      "rarity": "RARE",
+      "value": 90,
+      "weight": 0.8,
+      "description": "A troll's heart \u2014 still beating. Powerful reagent.",
+      "stackable": true
     },
     {
-      "id": "young_dragon_heart",
-      "name": "Young Dragon Heart",
-      "type": "crafting_material",
-      "rarity": "EPIC",
-      "value": 600,
-      "weight": 1.0,
-      "description": "The still-smoldering heart of a young red dragon."
-    },
-    {
-      "id": "ancient_fire_essence",
-      "name": "Ancient Fire Essence",
-      "type": "crafting_material",
-      "rarity": "LEGENDARY",
-      "value": 2000,
-      "weight": 0.3,
-      "description": "Distilled essence of an ancient red dragon's flame."
+      "id": "troll_hide",
+      "name": "Troll Hide",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 35,
+      "weight": 3.0,
+      "description": "Tough regenerating hide of a troll.",
+      "stackable": true
     },
     {
       "id": "tyrants_fang_sword",
@@ -2225,408 +3534,304 @@
       "description": "The essence of undying will, distilled from a lich's magic."
     },
     {
-      "id": "bone_staff_fragment",
-      "name": "Bone Staff Fragment",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 150,
-      "weight": 0.8,
-      "description": "A fragment of a lich's magical staff."
-    },
-    {
-      "id": "brimstone_shard",
-      "name": "Brimstone Shard",
-      "type": "crafting_material",
-      "rarity": "EPIC",
-      "value": 700,
-      "weight": 0.5,
-      "description": "A chunk of brimstone infused with demonic energy."
-    },
-    {
-      "id": "lords_sigil",
-      "name": "Lord's Sigil",
-      "type": "crafting_material",
-      "rarity": "LEGENDARY",
-      "value": 3000,
-      "weight": 0.1,
-      "description": "The personal sigil of a demon lord, contains immense power."
-    },
-    {
-      "id": "central_eye_lens",
-      "name": "Central Eye Lens",
-      "type": "crafting_material",
-      "rarity": "LEGENDARY",
-      "value": 2500,
-      "weight": 0.3,
-      "description": "The lens of a beholder's central eye, radiates antimagic."
-    },
-    {
-      "id": "eye_stalk_fragment",
-      "name": "Eye Stalk Fragment",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 200,
-      "weight": 0.2,
-      "description": "A fragment of a beholder's eye stalk, still twitching."
-    },
-    {
-      "id": "elder_brain_fragment",
-      "name": "Elder Brain Fragment",
-      "type": "crafting_material",
-      "rarity": "EPIC",
-      "value": 600,
-      "weight": 0.4,
-      "description": "A fragment of elder brain tissue, pulsing with psychic energy."
-    },
-    {
-      "id": "tentacle_whip",
-      "name": "Tentacle Whip",
-      "type": "weapon",
-      "rarity": "RARE",
-      "value": 300,
-      "weight": 1.5,
-      "description": "A whip fashioned from a mind flayer's tentacle.",
-      "damage_dice": "1d6+2",
-      "damage_type": "psychic",
-      "requirements": {
-        "level": 8
-      }
-    },
-    {
-      "id": "serpent_crown",
-      "name": "Serpent Crown",
-      "type": "equipment",
-      "rarity": "EPIC",
-      "value": 800,
-      "weight": 0.5,
-      "description": "The iconic crown of a medusa, grants minor charm resistance."
-    },
-    {
-      "id": "gorgon_eye",
-      "name": "Gorgon Eye",
-      "type": "crafting_material",
-      "rarity": "EPIC",
-      "value": 700,
-      "weight": 0.2,
-      "description": "A medusa's eye; still holds petrification power."
-    },
-    {
-      "id": "giant_rune_stone",
-      "name": "Giant Rune Stone",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 180,
-      "weight": 3.0,
-      "description": "A stone carved with ancient giant runes."
-    },
-    {
-      "id": "sky_forge_fragment",
-      "name": "Sky Forge Fragment",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 250,
-      "weight": 2.0,
-      "description": "A fragment from a cloud giant's skyforge."
-    },
-    {
-      "id": "giant_gold_ring",
-      "name": "Giant Gold Ring",
-      "type": "treasure",
-      "rarity": "UNCOMMON",
-      "value": 150,
-      "weight": 2.0,
-      "description": "An enormous gold ring sized for a cloud giant."
-    },
-    {
-      "id": "permafrost_core",
-      "name": "Permafrost Core",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 200,
-      "weight": 1.5,
-      "description": "A block of permafrost from a frost giant's homeland."
-    },
-    {
-      "id": "giant_frost_rune",
-      "name": "Giant Frost Rune",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 220,
-      "weight": 1.0,
-      "description": "A rune stone imbued with frost giant magic."
-    },
-    {
-      "id": "mages_signet",
-      "name": "Mage's Signet",
-      "type": "equipment",
-      "rarity": "EPIC",
-      "value": 600,
-      "weight": 0.1,
-      "description": "The personal signet ring of an archmage, grants spell knowledge."
-    },
-    {
-      "id": "power_word_scroll",
-      "name": "Power Word Scroll",
-      "type": "scroll",
-      "rarity": "RARE",
-      "value": 400,
-      "weight": 0.1,
-      "description": "A scroll containing a powerful word of magic."
-    },
-    {
-      "id": "lords_fang",
-      "name": "Lord's Fang",
-      "type": "weapon",
-      "rarity": "LEGENDARY",
-      "value": 2500,
-      "weight": 0.5,
-      "description": "The ceremonial fang of a vampire lord, deals necrotic damage.",
-      "damage_dice": "1d8+3",
-      "damage_type": "necrotic",
-      "requirements": {
-        "level": 12
-      }
-    },
-    {
-      "id": "crimson_cape",
-      "name": "Crimson Cape",
-      "type": "equipment",
-      "rarity": "RARE",
-      "value": 350,
-      "weight": 0.5,
-      "description": "A deep crimson cape worn by a vampire lord."
-    },
-    {
-      "id": "bronze_mace",
-      "name": "Bronze Mace",
-      "type": "weapon",
-      "rarity": "COMMON",
-      "value": 12,
-      "weight": 3.0,
-      "description": "A sturdy mace with a bronze head, effective against armored foes.",
-      "damage_dice": "1d6",
-      "damage_type": "bludgeoning",
-      "requirements": {
-        "level": 1
-      }
-    },
-    {
-      "id": "reinforced_leather_armor",
-      "name": "Reinforced Leather Armor",
+      "id": "vampire_cloak",
+      "name": "Vampire Cloak",
       "type": "armor",
-      "rarity": "UNCOMMON",
-      "value": 45,
-      "weight": 9.0,
-      "description": "Leather armor reinforced with metal studs for extra protection.",
+      "rarity": "EPIC",
+      "value": 3000,
+      "weight": 1.0,
+      "description": "A midnight-black cloak that seems to absorb light.",
       "armor_bonus": 2,
       "armor_type": "light",
-      "requirements": {
-        "level": 2
-      }
+      "effects": []
     },
     {
-      "id": "steel_buckler",
-      "name": "Steel Buckler",
-      "type": "shield",
-      "rarity": "COMMON",
-      "value": 18,
-      "weight": 4.0,
-      "description": "A small steel shield, easy to maneuver.",
-      "armor_bonus": 1,
-      "requirements": {
-        "level": 1
-      }
-    },
-    {
-      "id": "hunter_s_trap",
-      "name": "Hunter's Trap",
-      "type": "equipment",
-      "rarity": "UNCOMMON",
-      "value": 30,
-      "weight": 2.5,
-      "description": "A spring-loaded trap used for hunting or defense."
-    },
-    {
-      "id": "iron_greatspear",
-      "name": "Iron Greatspear",
-      "type": "weapon",
-      "rarity": "UNCOMMON",
-      "value": 38,
-      "weight": 6.0,
-      "description": "A long, heavy spear designed for reach and power.",
-      "damage_dice": "1d10",
-      "damage_type": "piercing",
-      "requirements": {
-        "level": 3
-      }
-    },
-    {
-      "id": "sturdy_toolbelt",
-      "name": "Sturdy Toolbelt",
-      "type": "equipment",
-      "rarity": "COMMON",
-      "value": 8,
-      "weight": 1.0,
-      "description": "A leather belt with pouches for carrying tools and small items."
-    },
-    {
-      "id": "spiked_gauntlets",
-      "name": "Spiked Gauntlets",
-      "type": "armor",
+      "id": "vampire_fang",
+      "name": "Vampire Fang",
+      "type": "currency",
       "rarity": "UNCOMMON",
       "value": 60,
-      "weight": 2.0,
-      "description": "Metal gauntlets fitted with spikes, offering both protection and offense.",
+      "weight": 0.1,
+      "description": "A hollow vampire fang, still dripping.",
+      "stackable": true
+    },
+    {
+      "id": "vampire_ring",
+      "name": "Vampire Ring",
+      "type": "armor",
+      "rarity": "EPIC",
+      "value": 2000,
+      "weight": 0.1,
+      "description": "An ancient ring bearing a vampire lord's sigil.",
       "armor_bonus": 1,
       "armor_type": "light",
+      "effects": []
+    },
+    {
+      "id": "venom_extract",
+      "name": "Venom Extract",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 60,
+      "weight": 0.1,
+      "description": "Potent venom extracted from a medusa's hair.",
+      "stackable": true
+    },
+    {
+      "id": "venom_sac",
+      "name": "Venom Sac",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 0.3,
+      "description": "An intact venom sac \u2014 potent alchemical ingredient.",
+      "stackable": true
+    },
+    {
+      "id": "venomblade_dagger",
+      "name": "Venomblade Dagger",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 700,
+      "weight": 1.0,
+      "description": "A wicked dagger that constantly weeps virulent poison from its serrated edge.",
+      "damage_dice": "1d4",
+      "damage_type": "piercing",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "poison"
+        }
+      ],
       "requirements": {
-        "level": 3
+        "level": 5
       }
     },
     {
-      "id": "obsidian_dagger",
-      "name": "Obsidian Dagger",
+      "name": "Vial of Poison",
+      "type": "consumable",
+      "rarity": "COMMON",
+      "value": 30,
+      "weight": 0.2,
+      "description": "A vial of contact poison \u2014 coat a blade or throw at enemies.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "poison"
+        }
+      ],
+      "stackable": true,
+      "id": "vial_of_poison"
+    },
+    {
+      "name": "Vorpal Sword",
+      "type": "weapon",
+      "rarity": "LEGENDARY",
+      "value": 8000,
+      "weight": 3.0,
+      "description": "A supernaturally sharp blade said to decapitate on a perfect strike.",
+      "damage_dice": "2d8",
+      "damage_type": "slashing",
+      "effects": [
+        {
+          "type": "special",
+          "id": "vorpal",
+          "description": "On natural 20, instantly slays target."
+        }
+      ],
+      "requirements": {
+        "level": 15
+      },
+      "id": "vorpal_sword"
+    },
+    {
+      "id": "wand_of_firebolt",
+      "name": "Wand of Firebolt",
       "type": "weapon",
       "rarity": "RARE",
-      "value": 120,
-      "weight": 1.0,
-      "description": "A razor-sharp dagger crafted from volcanic glass.",
+      "value": 750,
+      "weight": 0.5,
+      "description": "A slender wand tipped with a smoldering ruby that hurls bolts of fire.",
+      "damage_dice": "2d6",
+      "damage_type": "fire",
+      "effects": [
+        {
+          "type": "special",
+          "id": "ranged_spell",
+          "description": "Ranged magical attack, does not require ammunition."
+        }
+      ],
+      "requirements": {
+        "level": 5,
+        "class": "mage"
+      }
+    },
+    {
+      "id": "wand_of_healing",
+      "name": "Wand of Healing",
+      "type": "weapon",
+      "rarity": "RARE",
+      "value": 700,
+      "weight": 0.5,
+      "description": "A white birch wand infused with restorative magic, glowing softly with golden light.",
       "damage_dice": "1d4",
-      "damage_type": "piercing",
+      "damage_type": "bludgeoning",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "2d6"
+        },
+        {
+          "type": "special",
+          "id": "healing_focus",
+          "description": "Can channel healing spells with enhanced potency."
+        }
+      ],
       "requirements": {
         "level": 4
       }
     },
     {
-      "id": "traveler_s_cloak",
-      "name": "Traveler's Cloak",
-      "type": "equipment",
-      "rarity": "COMMON",
-      "value": 6,
-      "weight": 0.7,
-      "description": "A weather-resistant cloak favored by those on long journeys."
-    },
-    {
-      "id": "iron_spiked_shield",
-      "name": "Iron Spiked Shield",
-      "type": "shield",
-      "rarity": "UNCOMMON",
-      "value": 55,
-      "weight": 6.0,
-      "description": "A heavy iron shield with a spiked boss for bashing.",
-      "armor_bonus": 2,
-      "requirements": {
-        "level": 3
-      }
-    },
-    {
-      "id": "moonlight_dust",
-      "name": "Moonlight Dust",
-      "type": "crafting_material",
-      "rarity": "UNCOMMON",
-      "value": 60,
-      "weight": 0.1,
-      "description": "A faintly glowing powder collected from rare nocturnal flowers. Used in alchemy and enchanting."
-    },
-    {
-      "id": "ancient_map_fragment",
-      "name": "Ancient Map Fragment",
+      "id": "wanted_poster",
+      "name": "Wanted Poster",
       "type": "quest",
-      "rarity": "RARE",
-      "value": 200,
-      "weight": 0.2,
-      "description": "A tattered piece of parchment showing part of a forgotten land. Collect all fragments to reveal a hidden location."
-    },
-    {
-      "id": "mystic_ink",
-      "name": "Mystic Ink",
-      "type": "crafting_material",
-      "rarity": "UNCOMMON",
-      "value": 35,
-      "weight": 0.05,
-      "description": "A vial of shimmering ink, essential for scribing magical scrolls and runes."
-    },
-    {
-      "id": "elven_bread",
-      "name": "Elven Bread",
-      "type": "consumable",
       "rarity": "COMMON",
-      "value": 15,
-      "weight": 0.3,
-      "description": "A small loaf that restores energy and staves off hunger.",
-      "effects": [
-        {
-          "type": "heal",
-          "amount": "1d6"
-        }
-      ],
-      "stackable": true
+      "value": 0,
+      "weight": 0.1,
+      "description": "A wanted poster bearing the bandit captain's likeness.",
+      "can_drop": false,
+      "can_sell": false
     },
     {
-      "id": "sunstone",
-      "name": "Sunstone",
-      "type": "currency",
-      "rarity": "RARE",
-      "value": 250,
-      "weight": 0.4,
-      "description": "A radiant gem that glows with the warmth of sunlight. Highly prized by merchants.",
-      "stackable": true
-    },
-    {
-      "id": "goblin_trade_token",
-      "name": "Goblin Trade Token",
-      "type": "currency",
+      "id": "war_greataxe",
+      "name": "War Greataxe",
+      "type": "weapon",
       "rarity": "UNCOMMON",
-      "value": 10,
-      "weight": 0.05,
-      "description": "A crude metal token used as currency in goblin markets.",
-      "stackable": true
+      "value": 150,
+      "weight": 7.5,
+      "description": "A masterwork greataxe wielded by the warchief.",
+      "damage_dice": "2d6",
+      "damage_type": "slashing"
     },
     {
-      "id": "basilisk_scale",
-      "name": "Basilisk Scale",
-      "type": "crafting_material",
-      "rarity": "RARE",
-      "value": 120,
-      "weight": 0.6,
-      "description": "A glossy, petrification-resistant scale from a basilisk. Sought after by armorers and alchemists."
-    },
-    {
-      "id": "potion_of_night_vision",
-      "name": "Potion of Night Vision",
-      "type": "consumable",
+      "name": "War Hammer",
+      "type": "weapon",
       "rarity": "UNCOMMON",
       "value": 80,
-      "weight": 0.5,
-      "description": "A dark blue potion that grants the ability to see in darkness for a short time.",
-      "effects": [
-        {
-          "type": "buff",
-          "stat": "PER",
-          "bonus": 3,
-          "duration": 10
+      "weight": 4.0,
+      "description": "A heavy hammer that bludgeons foes with devastating force.",
+      "damage_dice": "1d8",
+      "damage_type": "bludgeoning",
+      "requirements": {
+        "level": 3,
+        "stat": {
+          "MIG": 12
         }
-      ],
+      },
+      "id": "war_hammer"
+    },
+    {
+      "id": "warchief_helmet",
+      "name": "Warchief Helmet",
+      "type": "armor",
+      "rarity": "UNCOMMON",
+      "value": 100,
+      "weight": 6.0,
+      "description": "The fearsome horned helmet of an orc warchief.",
+      "armor_bonus": 2,
+      "armor_type": "heavy"
+    },
+    {
+      "id": "water_essence",
+      "name": "Water Essence",
+      "type": "currency",
+      "rarity": "UNCOMMON",
+      "value": 50,
+      "weight": 0.1,
+      "description": "Distilled elemental water energy.",
       "stackable": true
     },
     {
-      "id": "enchanted_thread",
-      "name": "Enchanted Thread",
-      "type": "crafting_material",
+      "id": "wight_essence",
+      "name": "Wight Essence",
+      "type": "currency",
       "rarity": "UNCOMMON",
       "value": 45,
-      "weight": 0.02,
-      "description": "A spool of thread that shimmers with magical energy. Used in tailoring enchanted garments."
+      "weight": 0.1,
+      "description": "Distilled essence of a wight \u2014 cold to the touch.",
+      "stackable": true
     },
     {
-      "id": "mysterious_egg",
-      "name": "Mysterious Egg",
-      "type": "treasure",
+      "id": "wind_wisp_essence",
+      "name": "Wind Wisp Essence",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 30,
+      "weight": 0.0,
+      "description": "Bottled essence of a wind wisp."
+    },
+    {
+      "id": "wolf_heart",
+      "name": "Wolf Heart",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 15,
+      "weight": 0.2,
+      "description": "Still-warm heart of a wolf, valued by alchemists."
+    },
+    {
+      "id": "wolf_pelt",
+      "name": "Wolf Pelt",
+      "type": "currency",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 1.0,
+      "description": "A rough wolf pelt. Useful for crafting.",
+      "stackable": true
+    },
+    {
+      "id": "wolfsbane",
+      "name": "Wolfsbane",
+      "type": "crafting_material",
+      "rarity": "UNCOMMON",
+      "value": 18,
+      "weight": 0.1,
+      "description": "A bitter herb used against lycanthropes and curses.",
+      "stackable": true
+    },
+    {
+      "name": "Wooden Shield",
+      "type": "shield",
+      "rarity": "COMMON",
+      "value": 5,
+      "weight": 5.0,
+      "description": "A round wooden shield, light but not very durable.",
+      "armor_bonus": 1,
+      "requirements": {
+        "level": 1
+      },
+      "id": "wooden_shield"
+    },
+    {
+      "id": "wraithstone",
+      "name": "Wraithstone",
+      "type": "currency",
       "rarity": "RARE",
-      "value": 300,
-      "weight": 1.2,
-      "description": "An egg with shifting colors and unknown origin. Collectors and scholars pay handsomely for it.",
-      "stackable": false
+      "value": 120,
+      "weight": 0.1,
+      "description": "A dark gem infused with wraith energy.",
+      "stackable": true
+    },
+    {
+      "id": "young_dragon_heart",
+      "name": "Young Dragon Heart",
+      "type": "crafting_material",
+      "rarity": "EPIC",
+      "value": 600,
+      "weight": 1.0,
+      "description": "The still-smoldering heart of a young red dragon."
     }
   ]
 }

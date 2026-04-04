@@ -190,7 +190,7 @@
         "magenta"
       ],
       "bard": [
-        "♪",
+        "\u266a",
         "yellow"
       ]
     },
@@ -286,6 +286,1008 @@
         "max_hp": 8,
         "disposition": "neutral"
       }
-    }
+    },
+    "location_list": [
+      {
+        "location_id": "harbor_town",
+        "name": "Harbor Town",
+        "type": "town",
+        "description": "A bustling port town where trade ships dock and merchants hawk their wares along crowded piers.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["forest_road", "coastal_cliffs", "river_port", "coastal_fort"],
+        "danger_level": 0,
+        "notable_features": ["market_square", "harbor_docks", "town_hall", "temple"]
+      },
+      {
+        "location_id": "mountain_hold",
+        "name": "Mountain Hold",
+        "type": "town",
+        "description": "A dwarven stronghold carved into the mountainside, its great stone gates open to trade and travelers.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["mountain_pass", "iron_mine", "dwarven_ruin", "mountain_fort"],
+        "danger_level": 0,
+        "notable_features": ["great_hall", "forge_district", "deep_mines", "stone_gate"]
+      },
+      {
+        "location_id": "forest_haven",
+        "name": "Forest Haven",
+        "type": "town",
+        "description": "An elven settlement hidden among ancient trees, with walkways strung between massive trunks.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["dark_forest", "forest_road", "sacred_grove", "elven_ruin"],
+        "danger_level": 0,
+        "notable_features": ["tree_platforms", "moonwell", "elder_tree", "archery_range"]
+      },
+      {
+        "location_id": "desert_outpost",
+        "name": "Desert Outpost",
+        "type": "town",
+        "description": "A sun-scorched trading post at the edge of the great desert, shielded by sandstone walls.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["desert_crossing", "oasis_town", "ancient_tomb", "nomad_camp"],
+        "danger_level": 0,
+        "notable_features": ["water_cistern", "camel_stables", "sand_wall", "bazaar"]
+      },
+      {
+        "location_id": "swamp_village",
+        "name": "Swamp Village",
+        "type": "town",
+        "description": "A cluster of stilt houses rising from murky waters, connected by rickety wooden walkways.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["swamp_trail", "mushroom_grotto", "corrupted_grove", "witch_camp"],
+        "danger_level": 0,
+        "notable_features": ["stilted_houses", "herb_market", "fishing_pier", "witch_hut"]
+      },
+      {
+        "location_id": "plains_crossing",
+        "name": "Plains Crossing",
+        "type": "town",
+        "description": "A crossroads town on the open plains where caravans converge and drovers rest their herds.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["savanna", "merchant_camp", "river_crossing", "hill_town"],
+        "danger_level": 0,
+        "notable_features": ["crossroads_inn", "cattle_yards", "windmill", "watchtower"]
+      },
+      {
+        "location_id": "coastal_fort",
+        "name": "Coastal Fort",
+        "type": "town",
+        "description": "A fortified coastal settlement guarding the sea approach, its walls battered by salt winds.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["harbor_town", "coastal_cliffs", "coastal_watchtower", "sea_shrine"],
+        "danger_level": 0,
+        "notable_features": ["sea_wall", "lighthouse", "garrison", "fish_market"]
+      },
+      {
+        "location_id": "mining_camp",
+        "name": "Mining Camp",
+        "type": "town",
+        "description": "A rough settlement built around a productive mine, where prospectors and laborers seek fortune.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["iron_mine", "gold_mine", "mountain_pass", "merchant_camp"],
+        "danger_level": 0,
+        "notable_features": ["mine_entrance", "assay_office", "supply_store", "bunkhouses"]
+      },
+      {
+        "location_id": "temple_sanctuary",
+        "name": "Temple Sanctuary",
+        "type": "town",
+        "description": "A holy settlement built around an ancient temple, attracting pilgrims and scholars.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["healing_shrine", "sun_shrine", "forest_road", "fallen_temple"],
+        "danger_level": 0,
+        "notable_features": ["grand_temple", "healing_springs", "library", "pilgrim_quarters"]
+      },
+      {
+        "location_id": "frontier_post",
+        "name": "Frontier Post",
+        "type": "town",
+        "description": "The last outpost of civilization before the untamed wilds, garrisoned by hardened soldiers.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["border_fort", "dark_forest", "frozen_tundra", "hunter_camp"],
+        "danger_level": 0,
+        "notable_features": ["palisade_wall", "barracks", "trading_post", "scout_tower"]
+      },
+      {
+        "location_id": "river_port",
+        "name": "River Port",
+        "type": "town",
+        "description": "A thriving river town where barges unload goods and fishermen mend their nets on muddy banks.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["harbor_town", "river_crossing", "river_fort", "lake_settlement"],
+        "danger_level": 0,
+        "notable_features": ["river_docks", "warehouse_district", "ferry_landing", "market_hall"]
+      },
+      {
+        "location_id": "hill_town",
+        "name": "Hill Town",
+        "type": "town",
+        "description": "A terraced settlement climbing a steep hillside, its narrow streets winding between stone houses.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["plains_crossing", "alpine_meadow", "vineyard", "guard_tower"],
+        "danger_level": 0,
+        "notable_features": ["terraced_gardens", "hilltop_keep", "bell_tower", "cobbled_streets"]
+      },
+      {
+        "location_id": "lake_settlement",
+        "name": "Lake Settlement",
+        "type": "town",
+        "description": "A peaceful lakeside town known for its clear waters and the ancient ruins visible beneath the surface.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["river_port", "river_crossing", "sunken_city", "herb_garden"],
+        "danger_level": 0,
+        "notable_features": ["lakefront", "boathouse", "fishery", "underwater_ruins"]
+      },
+      {
+        "location_id": "oasis_town",
+        "name": "Oasis Town",
+        "type": "town",
+        "description": "A verdant haven in the desert, its palm-shaded streets busy with travelers grateful for water and shade.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["desert_outpost", "desert_crossing", "nomad_camp", "ancient_tomb"],
+        "danger_level": 0,
+        "notable_features": ["oasis_pool", "palm_gardens", "caravansary", "sand_market"]
+      },
+      {
+        "location_id": "cliff_city",
+        "name": "Cliff City",
+        "type": "town",
+        "description": "A dramatic city built into sheer cliff faces, connected by bridges and carved staircases.",
+        "scene_role_sets": ["tavern_inn", "settlement"],
+        "connected_locations": ["coastal_cliffs", "mountain_pass", "broken_tower", "gem_mine"],
+        "danger_level": 0,
+        "notable_features": ["cliff_dwellings", "hanging_bridges", "carved_stairways", "eagle_roost"]
+      },
+      {
+        "location_id": "goblin_warren",
+        "name": "Goblin Warren",
+        "type": "dungeon",
+        "description": "A sprawling network of narrow tunnels and crude chambers infested with goblins and their traps.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["forest_road", "dark_forest", "spider_nest"],
+        "danger_level": 4,
+        "notable_features": ["trap_corridors", "goblin_throne_room", "rat_pits", "stolen_goods_hoard"]
+      },
+      {
+        "location_id": "undead_crypt",
+        "name": "Undead Crypt",
+        "type": "dungeon",
+        "description": "Ancient burial chambers where the dead refuse to rest, their bones clattering in the darkness.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["fallen_temple", "death_shrine", "ancient_tomb"],
+        "danger_level": 5,
+        "notable_features": ["sarcophagus_hall", "bone_piles", "cursed_altar", "sealed_vault"]
+      },
+      {
+        "location_id": "dragon_lair",
+        "name": "Dragon Lair",
+        "type": "dungeon",
+        "description": "A vast cavern heaped with treasure, the air thick with the stench of sulfur and ancient power.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["volcanic_wastes", "mountain_pass", "fire_pit"],
+        "danger_level": 9,
+        "notable_features": ["treasure_hoard", "dragon_nest", "scorched_bones", "lava_vents"]
+      },
+      {
+        "location_id": "lich_tower",
+        "name": "Lich Tower",
+        "type": "dungeon",
+        "description": "A towering spire of dark stone crackling with necromantic energy, home to an undying sorcerer.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["haunted_wood", "undead_crypt", "death_shrine"],
+        "danger_level": 8,
+        "notable_features": ["phylactery_chamber", "undead_laboratory", "dark_library", "soul_forge"]
+      },
+      {
+        "location_id": "bandit_hideout",
+        "name": "Bandit Hideout",
+        "type": "dungeon",
+        "description": "A concealed cave system used by outlaws to stash loot and plan raids on passing caravans.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["forest_road", "bandit_camp", "troll_cave"],
+        "danger_level": 4,
+        "notable_features": ["hidden_entrance", "loot_cache", "prison_cells", "escape_tunnel"]
+      },
+      {
+        "location_id": "shadow_temple",
+        "name": "Shadow Temple",
+        "type": "dungeon",
+        "description": "A temple consumed by darkness where cultists worship forbidden gods in blood-stained chambers.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["fallen_temple", "death_shrine", "demon_gate"],
+        "danger_level": 6,
+        "notable_features": ["shadow_altar", "blood_pool", "ritual_chamber", "void_portal"]
+      },
+      {
+        "location_id": "frost_cavern",
+        "name": "Frost Cavern",
+        "type": "dungeon",
+        "description": "An ice-locked cavern deep in the frozen north, where frost giants and ice elementals dwell.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["frozen_tundra", "ice_cave", "mountain_pass"],
+        "danger_level": 6,
+        "notable_features": ["ice_throne", "frozen_waterfall", "crystal_formations", "frost_giant_hall"]
+      },
+      {
+        "location_id": "fire_pit",
+        "name": "Fire Pit",
+        "type": "dungeon",
+        "description": "A volcanic rift descending into the earth, its chambers glowing red with rivers of molten rock.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["volcanic_wastes", "dragon_lair", "coal_mine"],
+        "danger_level": 7,
+        "notable_features": ["lava_river", "obsidian_bridge", "fire_elemental_core", "magma_chamber"]
+      },
+      {
+        "location_id": "mind_flayer_lair",
+        "name": "Mind Flayer Lair",
+        "type": "dungeon",
+        "description": "A pulsating alien cavern deep underground, its walls slick with mucus and psychic dread.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["deep_cave", "undead_crypt", "cursed_mine"],
+        "danger_level": 8,
+        "notable_features": ["elder_brain_pool", "thrall_pens", "psychic_amplifier", "flesh_laboratory"]
+      },
+      {
+        "location_id": "demon_gate",
+        "name": "Demon Gate",
+        "type": "dungeon",
+        "description": "A rift between planes where demonic energy seeps into the world through a shattered portal.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["shadow_temple", "volcanic_wastes", "corrupted_grove"],
+        "danger_level": 10,
+        "notable_features": ["planar_rift", "demon_summoning_circle", "corrupted_ground", "hellfire_vents"]
+      },
+      {
+        "location_id": "ancient_tomb",
+        "name": "Ancient Tomb",
+        "type": "dungeon",
+        "description": "A sealed tomb of a forgotten king, its corridors lined with deadly traps and priceless relics.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["desert_crossing", "oasis_town", "undead_crypt"],
+        "danger_level": 5,
+        "notable_features": ["burial_chamber", "trapped_corridor", "treasure_vault", "hieroglyph_walls"]
+      },
+      {
+        "location_id": "cursed_mine",
+        "name": "Cursed Mine",
+        "type": "dungeon",
+        "description": "An abandoned mine where miners dug too deep, unleashing something terrible from below.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["abandoned_mine", "mind_flayer_lair", "deep_cave"],
+        "danger_level": 6,
+        "notable_features": ["collapsed_shafts", "cursed_veins", "miner_ghosts", "abyssal_breach"]
+      },
+      {
+        "location_id": "crystal_cave",
+        "name": "Crystal Cave",
+        "type": "cave",
+        "description": "A glittering cavern filled with massive crystal formations that hum with arcane energy.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["gem_mine", "mountain_pass", "deep_cave"],
+        "danger_level": 3,
+        "notable_features": ["crystal_clusters", "resonance_chamber", "prismatic_pool", "geode_gallery"]
+      },
+      {
+        "location_id": "bat_cave",
+        "name": "Bat Cave",
+        "type": "cave",
+        "description": "A dark cave filled with the flutter of a thousand leathery wings and the stench of guano.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["forest_road", "bear_den", "goblin_warren"],
+        "danger_level": 2,
+        "notable_features": ["bat_roost", "guano_deposits", "narrow_squeeze", "underground_stream"]
+      },
+      {
+        "location_id": "spider_nest",
+        "name": "Spider Nest",
+        "type": "cave",
+        "description": "Thick webs choke every passage in this cave, and countless eyes glitter in the darkness.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["dark_forest", "goblin_warren", "troll_cave"],
+        "danger_level": 4,
+        "notable_features": ["web_tunnels", "egg_chamber", "cocooned_victims", "queen_chamber"]
+      },
+      {
+        "location_id": "bear_den",
+        "name": "Bear Den",
+        "type": "cave",
+        "description": "A shallow cave marked with deep claw gouges, littered with bones and berry-stained rocks.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["forest_road", "alpine_meadow", "bat_cave"],
+        "danger_level": 2,
+        "notable_features": ["claw_marks", "bone_pile", "sleeping_hollow", "cave_mouth"]
+      },
+      {
+        "location_id": "troll_cave",
+        "name": "Troll Cave",
+        "type": "cave",
+        "description": "A foul-smelling cavern beneath a bridge where a troll hoards stolen goods and gnawed bones.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["river_crossing", "spider_nest", "bandit_hideout"],
+        "danger_level": 4,
+        "notable_features": ["bridge_underside", "bone_heap", "treasure_pile", "crude_nest"]
+      },
+      {
+        "location_id": "ice_cave",
+        "name": "Ice Cave",
+        "type": "cave",
+        "description": "A frozen cavern where icicles hang like daggers and ancient creatures lie preserved in glacial ice.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["frozen_tundra", "frost_cavern", "mountain_pass"],
+        "danger_level": 3,
+        "notable_features": ["frozen_waterfall", "ice_bridge", "preserved_specimens", "frost_crystals"]
+      },
+      {
+        "location_id": "mushroom_grotto",
+        "name": "Mushroom Grotto",
+        "type": "cave",
+        "description": "A warm, humid cave carpeted with bioluminescent fungi that cast an eerie blue-green glow.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["swamp_trail", "swamp_village", "deep_cave"],
+        "danger_level": 2,
+        "notable_features": ["giant_mushrooms", "spore_clouds", "glowing_pools", "fungal_garden"]
+      },
+      {
+        "location_id": "echo_chamber",
+        "name": "Echo Chamber",
+        "type": "cave",
+        "description": "A vast underground chamber where every sound reverberates endlessly, disorienting all who enter.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["deep_cave", "limestone_cavern", "crystal_cave"],
+        "danger_level": 3,
+        "notable_features": ["acoustic_dome", "whispering_gallery", "sound_crystals", "echo_well"]
+      },
+      {
+        "location_id": "deep_cave",
+        "name": "Deep Cave",
+        "type": "cave",
+        "description": "A seemingly bottomless network of passages descending into the earth's darkest depths.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["crystal_cave", "mind_flayer_lair", "cursed_mine", "echo_chamber"],
+        "danger_level": 5,
+        "notable_features": ["bottomless_pit", "underground_river", "blind_fish_pool", "ancient_carvings"]
+      },
+      {
+        "location_id": "limestone_cavern",
+        "name": "Limestone Cavern",
+        "type": "cave",
+        "description": "A sprawling cavern of pale stone pillars and dripping formations, carved by millennia of water.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["echo_chamber", "bat_cave", "flooded_mine"],
+        "danger_level": 2,
+        "notable_features": ["stalactites", "stalagmites", "underground_lake", "flowstone_formations"]
+      },
+      {
+        "location_id": "elven_ruin",
+        "name": "Elven Ruin",
+        "type": "ruin",
+        "description": "Graceful arches and shattered spires of an ancient elven city, slowly being reclaimed by the forest.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["forest_haven", "dark_forest", "ancient_library"],
+        "danger_level": 3,
+        "notable_features": ["moonlit_courtyard", "broken_fountain", "vine_covered_towers", "faded_murals"]
+      },
+      {
+        "location_id": "dwarven_ruin",
+        "name": "Dwarven Ruin",
+        "type": "ruin",
+        "description": "Collapsed halls of a once-mighty dwarven kingdom, its forges cold and its vaults breached.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["mountain_hold", "iron_mine", "abandoned_mine"],
+        "danger_level": 4,
+        "notable_features": ["collapsed_hall", "rusted_forge", "broken_vault", "mine_cart_tracks"]
+      },
+      {
+        "location_id": "ancient_library",
+        "name": "Ancient Library",
+        "type": "ruin",
+        "description": "A crumbling repository of forbidden knowledge, its shelves still holding texts of immense power.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["elven_ruin", "mage_shrine", "broken_tower"],
+        "danger_level": 4,
+        "notable_features": ["endless_shelves", "reading_chambers", "scroll_vault", "enchanted_tomes"]
+      },
+      {
+        "location_id": "fallen_temple",
+        "name": "Fallen Temple",
+        "type": "ruin",
+        "description": "A once-holy temple toppled by war or catastrophe, its sanctum now defiled by dark forces.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["shadow_temple", "undead_crypt", "forgotten_shrine"],
+        "danger_level": 5,
+        "notable_features": ["shattered_altar", "collapsed_nave", "defiled_sanctum", "broken_statues"]
+      },
+      {
+        "location_id": "ruined_castle",
+        "name": "Ruined Castle",
+        "type": "ruin",
+        "description": "The crumbling remains of a once-proud fortress, its battlements broken and its halls open to the sky.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["abandoned_fort", "haunted_wood", "bandit_camp"],
+        "danger_level": 4,
+        "notable_features": ["broken_battlements", "throne_room", "dungeon_cells", "collapsed_tower"]
+      },
+      {
+        "location_id": "crumbled_bridge",
+        "name": "Crumbled Bridge",
+        "type": "ruin",
+        "description": "The remains of a massive stone bridge spanning a gorge, its center collapsed into the river below.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["river_crossing", "mountain_pass", "troll_cave"],
+        "danger_level": 2,
+        "notable_features": ["broken_span", "river_rapids", "stone_pillars", "rope_crossing"]
+      },
+      {
+        "location_id": "sunken_city",
+        "name": "Sunken City",
+        "type": "ruin",
+        "description": "A drowned city visible beneath shallow waters, its towers rising like fingers from the lake bed.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["lake_settlement", "sea_shrine", "flooded_mine"],
+        "danger_level": 5,
+        "notable_features": ["submerged_towers", "underwater_plaza", "air_pockets", "coral_encrusted_walls"]
+      },
+      {
+        "location_id": "broken_tower",
+        "name": "Broken Tower",
+        "type": "ruin",
+        "description": "A wizard's tower split asunder by a magical catastrophe, its upper floors floating in defiance of gravity.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["ancient_library", "cliff_city", "mage_shrine"],
+        "danger_level": 5,
+        "notable_features": ["floating_debris", "arcane_scorch_marks", "unstable_portal", "magic_residue"]
+      },
+      {
+        "location_id": "abandoned_fort",
+        "name": "Abandoned Fort",
+        "type": "ruin",
+        "description": "A military outpost left to decay after the last war, now shelter for squatters and wild animals.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["ruined_castle", "ruined_outpost", "bandit_camp"],
+        "danger_level": 3,
+        "notable_features": ["rotting_palisade", "overgrown_courtyard", "collapsed_barracks", "empty_armory"]
+      },
+      {
+        "location_id": "forgotten_shrine",
+        "name": "Forgotten Shrine",
+        "type": "ruin",
+        "description": "A small roadside shrine to a god no one remembers, its offerings petrified and its prayers unanswered.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["fallen_temple", "nature_shrine", "moorland"],
+        "danger_level": 2,
+        "notable_features": ["weathered_idol", "petrified_offerings", "cracked_basin", "faded_inscriptions"]
+      },
+      {
+        "location_id": "forest_road",
+        "name": "Forest Road",
+        "type": "wilderness",
+        "description": "A winding dirt path through dense woodland, dappled with sunlight and echoing with birdsong.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["harbor_town", "forest_haven", "goblin_warren", "bandit_hideout", "bear_den"],
+        "danger_level": 2,
+        "notable_features": ["old_oaks", "stream_crossing", "mile_markers", "roadside_camp"]
+      },
+      {
+        "location_id": "mountain_pass",
+        "name": "Mountain Pass",
+        "type": "wilderness",
+        "description": "A treacherous high-altitude trail through jagged peaks, buffeted by fierce winds and sudden storms.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["mountain_hold", "mountain_fort", "frost_cavern", "ice_cave", "crystal_cave"],
+        "danger_level": 3,
+        "notable_features": ["narrow_ledge", "avalanche_zone", "mountain_spring", "cairn_markers"]
+      },
+      {
+        "location_id": "desert_crossing",
+        "name": "Desert Crossing",
+        "type": "wilderness",
+        "description": "An endless expanse of shifting sand dunes under a merciless sun, where mirages taunt the weary.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["desert_outpost", "oasis_town", "ancient_tomb", "nomad_camp"],
+        "danger_level": 3,
+        "notable_features": ["sand_dunes", "dry_riverbed", "bleached_bones", "sandstorm_zone"]
+      },
+      {
+        "location_id": "swamp_trail",
+        "name": "Swamp Trail",
+        "type": "wilderness",
+        "description": "A half-submerged path through fetid marshland, where every step risks sinking into the mire.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["swamp_village", "mushroom_grotto", "witch_camp", "corrupted_grove"],
+        "danger_level": 3,
+        "notable_features": ["quicksand", "bog_lights", "dead_trees", "frog_chorus"]
+      },
+      {
+        "location_id": "river_crossing",
+        "name": "River Crossing",
+        "type": "wilderness",
+        "description": "A broad shallow stretch of river where travelers ford the waters, watched by creatures on both banks.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["river_port", "plains_crossing", "troll_cave", "crumbled_bridge"],
+        "danger_level": 2,
+        "notable_features": ["ford_stones", "riverside_camp", "fishing_spot", "watchtower_ruin"]
+      },
+      {
+        "location_id": "coastal_cliffs",
+        "name": "Coastal Cliffs",
+        "type": "wilderness",
+        "description": "Dramatic sea cliffs pounded by waves, with narrow paths winding along the precipitous edge.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["harbor_town", "coastal_fort", "cliff_city", "sea_shrine"],
+        "danger_level": 2,
+        "notable_features": ["cliff_edge", "sea_caves", "nesting_gulls", "smuggler_path"]
+      },
+      {
+        "location_id": "alpine_meadow",
+        "name": "Alpine Meadow",
+        "type": "wilderness",
+        "description": "A high mountain meadow carpeted with wildflowers, offering breathtaking views of the peaks.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["mountain_pass", "hill_town", "bear_den", "druid_grove"],
+        "danger_level": 1,
+        "notable_features": ["wildflowers", "mountain_spring", "shepherd_hut", "eagle_nest"]
+      },
+      {
+        "location_id": "dark_forest",
+        "name": "Dark Forest",
+        "type": "wilderness",
+        "description": "An ancient forest so dense that sunlight never reaches the floor, filled with unseen dangers.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["forest_haven", "goblin_warren", "spider_nest", "fey_grove", "elven_ruin"],
+        "danger_level": 3,
+        "notable_features": ["ancient_trees", "thick_undergrowth", "predator_tracks", "fairy_rings"]
+      },
+      {
+        "location_id": "haunted_wood",
+        "name": "Haunted Wood",
+        "type": "wilderness",
+        "description": "A cursed woodland where the trees themselves seem alive with malice and ghostly lights flicker between trunks.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["lich_tower", "ruined_castle", "death_shrine", "corrupted_grove"],
+        "danger_level": 4,
+        "notable_features": ["ghost_lights", "twisted_trees", "spectral_clearing", "grave_mounds"]
+      },
+      {
+        "location_id": "volcanic_wastes",
+        "name": "Volcanic Wastes",
+        "type": "wilderness",
+        "description": "A blasted landscape of hardened lava flows and steaming fissures, the air thick with ash.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["dragon_lair", "fire_pit", "demon_gate", "coal_mine"],
+        "danger_level": 5,
+        "notable_features": ["lava_flows", "steam_vents", "obsidian_fields", "ash_drifts"]
+      },
+      {
+        "location_id": "frozen_tundra",
+        "name": "Frozen Tundra",
+        "type": "wilderness",
+        "description": "An endless frozen plain swept by howling blizzards, where survival is the only victory.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["frontier_post", "frost_cavern", "ice_cave", "moon_shrine"],
+        "danger_level": 3,
+        "notable_features": ["permafrost", "ice_sheet", "aurora_sky", "frozen_lake"]
+      },
+      {
+        "location_id": "bamboo_grove",
+        "name": "Bamboo Grove",
+        "type": "wilderness",
+        "description": "Tall bamboo stalks sway and creak in the wind, creating a maze of green corridors.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["jungle_trail", "nature_shrine", "herb_garden"],
+        "danger_level": 1,
+        "notable_features": ["bamboo_thickets", "hidden_clearing", "stone_lanterns", "meditation_rock"]
+      },
+      {
+        "location_id": "savanna",
+        "name": "Savanna",
+        "type": "wilderness",
+        "description": "Wide golden grasslands stretching to the horizon, dotted with acacia trees and roaming herds.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["plains_crossing", "nomad_camp", "hunter_camp", "warrior_shrine"],
+        "danger_level": 2,
+        "notable_features": ["tall_grass", "watering_hole", "termite_mounds", "acacia_trees"]
+      },
+      {
+        "location_id": "jungle_trail",
+        "name": "Jungle Trail",
+        "type": "wilderness",
+        "description": "A narrow trail hacked through dense tropical jungle, alive with the calls of exotic creatures.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["bamboo_grove", "ancient_grove", "fey_grove", "forgotten_shrine"],
+        "danger_level": 3,
+        "notable_features": ["canopy_cover", "hanging_vines", "tropical_birds", "hidden_ruins"]
+      },
+      {
+        "location_id": "moorland",
+        "name": "Moorland",
+        "type": "wilderness",
+        "description": "Bleak, windswept heath stretching under grey skies, dotted with standing stones and peat bogs.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["forgotten_shrine", "witch_camp", "druid_grove", "hill_town"],
+        "danger_level": 2,
+        "notable_features": ["standing_stones", "peat_bogs", "heather_fields", "barrow_mounds"]
+      },
+      {
+        "location_id": "healing_shrine",
+        "name": "Healing Shrine",
+        "type": "shrine",
+        "description": "A serene shrine built around a natural spring said to cure any ailment, tended by gentle acolytes.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["temple_sanctuary", "nature_shrine", "herb_garden"],
+        "danger_level": 0,
+        "notable_features": ["healing_spring", "prayer_stones", "herb_beds", "acolyte_quarters"]
+      },
+      {
+        "location_id": "warrior_shrine",
+        "name": "Warrior Shrine",
+        "type": "shrine",
+        "description": "A battle-scarred shrine honoring fallen heroes, surrounded by weapon racks and training grounds.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["military_camp", "border_fort", "savanna"],
+        "danger_level": 0,
+        "notable_features": ["hero_statues", "weapon_offerings", "training_ring", "memorial_wall"]
+      },
+      {
+        "location_id": "mage_shrine",
+        "name": "Mage Shrine",
+        "type": "shrine",
+        "description": "A tower of crystalline stone where mages commune with arcane forces and study the weave of magic.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["ancient_library", "broken_tower", "crystal_cave"],
+        "danger_level": 0,
+        "notable_features": ["arcane_focus", "ley_line_nexus", "enchanted_pool", "crystal_spire"]
+      },
+      {
+        "location_id": "nature_shrine",
+        "name": "Nature Shrine",
+        "type": "shrine",
+        "description": "A moss-covered stone circle in a forest clearing where druids gather to honor the old spirits.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["sacred_grove", "healing_shrine", "bamboo_grove", "forgotten_shrine"],
+        "danger_level": 0,
+        "notable_features": ["stone_circle", "ancient_oak", "offering_basin", "spirit_totems"]
+      },
+      {
+        "location_id": "death_shrine",
+        "name": "Death Shrine",
+        "type": "shrine",
+        "description": "A somber shrine where the boundary between life and death thins, and spirits whisper to the living.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["undead_crypt", "lich_tower", "haunted_wood", "fallen_temple"],
+        "danger_level": 3,
+        "notable_features": ["spirit_gate", "bone_altar", "mourning_bells", "veil_threshold"]
+      },
+      {
+        "location_id": "sea_shrine",
+        "name": "Sea Shrine",
+        "type": "shrine",
+        "description": "A salt-encrusted shrine on a rocky promontory where sailors pray for safe passage across the waters.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["coastal_fort", "coastal_cliffs", "sunken_city"],
+        "danger_level": 0,
+        "notable_features": ["tidal_pool", "coral_altar", "ship_figurehead", "sea_bell"]
+      },
+      {
+        "location_id": "sun_shrine",
+        "name": "Sun Shrine",
+        "type": "shrine",
+        "description": "A gleaming golden shrine atop a hill, its polished surfaces blazing with reflected sunlight.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["temple_sanctuary", "hill_town", "moon_shrine"],
+        "danger_level": 0,
+        "notable_features": ["golden_dome", "solar_dial", "eternal_flame", "dawn_terrace"]
+      },
+      {
+        "location_id": "moon_shrine",
+        "name": "Moon Shrine",
+        "type": "shrine",
+        "description": "A silver shrine in a clearing that glows with pale light under the full moon, sacred to night worshippers.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["sun_shrine", "frozen_tundra", "fey_grove"],
+        "danger_level": 0,
+        "notable_features": ["moonstone_altar", "silver_pool", "lunar_dial", "stargazing_platform"]
+      },
+      {
+        "location_id": "bandit_camp",
+        "name": "Bandit Camp",
+        "type": "camp",
+        "description": "A hidden camp of outlaws and cutthroats, concealed in dense brush with sentries watching every approach.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["bandit_hideout", "forest_road", "ruined_castle", "abandoned_fort"],
+        "danger_level": 3,
+        "notable_features": ["hidden_tents", "lookout_post", "loot_wagon", "prisoner_cage"]
+      },
+      {
+        "location_id": "hunter_camp",
+        "name": "Hunter Camp",
+        "type": "camp",
+        "description": "A well-organized camp of skilled hunters and trappers, surrounded by drying racks and animal pelts.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["frontier_post", "savanna", "dark_forest"],
+        "danger_level": 1,
+        "notable_features": ["drying_racks", "skinning_station", "campfire_ring", "trophy_wall"]
+      },
+      {
+        "location_id": "merchant_camp",
+        "name": "Merchant Camp",
+        "type": "camp",
+        "description": "A temporary caravan camp where traveling merchants rest, trade, and repair their wagons.",
+        "scene_role_sets": ["tavern_inn", "default"],
+        "connected_locations": ["plains_crossing", "mining_camp", "desert_crossing"],
+        "danger_level": 1,
+        "notable_features": ["wagon_circle", "trade_tent", "horse_corral", "campfire_kitchen"]
+      },
+      {
+        "location_id": "refugee_camp",
+        "name": "Refugee Camp",
+        "type": "camp",
+        "description": "A sprawling, desperate camp of displaced people driven from their homes by war or disaster.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["border_fort", "plains_crossing", "river_crossing"],
+        "danger_level": 1,
+        "notable_features": ["tent_rows", "soup_kitchen", "healer_tent", "notice_board"]
+      },
+      {
+        "location_id": "military_camp",
+        "name": "Military Camp",
+        "type": "camp",
+        "description": "An orderly encampment of soldiers preparing for battle, with drilling grounds and supply depots.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["border_fort", "warrior_shrine", "siege_camp"],
+        "danger_level": 1,
+        "notable_features": ["command_tent", "drilling_ground", "armory_wagon", "field_hospital"]
+      },
+      {
+        "location_id": "nomad_camp",
+        "name": "Nomad Camp",
+        "type": "camp",
+        "description": "A colorful tent encampment of desert wanderers, their camels resting beside a rare water source.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["desert_outpost", "desert_crossing", "oasis_town", "savanna"],
+        "danger_level": 1,
+        "notable_features": ["silk_tents", "camel_herd", "water_well", "storyteller_fire"]
+      },
+      {
+        "location_id": "druid_grove",
+        "name": "Druid Grove",
+        "type": "camp",
+        "description": "A sacred gathering place of druids, surrounded by ancient trees hung with charms and offerings.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["sacred_grove", "alpine_meadow", "moorland"],
+        "danger_level": 0,
+        "notable_features": ["ritual_clearing", "herb_stores", "spirit_trees", "druid_circle"]
+      },
+      {
+        "location_id": "witch_camp",
+        "name": "Witch Camp",
+        "type": "camp",
+        "description": "A secluded camp of hedge witches and potion brewers, their cauldrons bubbling over smoky fires.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["swamp_village", "swamp_trail", "moorland", "corrupted_grove"],
+        "danger_level": 2,
+        "notable_features": ["bubbling_cauldrons", "ingredient_shelves", "fortune_tent", "familiar_cages"]
+      },
+      {
+        "location_id": "border_fort",
+        "name": "Border Fort",
+        "type": "fort",
+        "description": "A heavily fortified position on the kingdom's edge, constantly vigilant against incursion.",
+        "scene_role_sets": ["settlement"],
+        "connected_locations": ["frontier_post", "military_camp", "warrior_shrine", "refugee_camp"],
+        "danger_level": 1,
+        "notable_features": ["thick_walls", "watchtowers", "portcullis", "arrow_slits"]
+      },
+      {
+        "location_id": "river_fort",
+        "name": "River Fort",
+        "type": "fort",
+        "description": "A stronghold built to control a strategic river crossing, its walls rising from the water's edge.",
+        "scene_role_sets": ["settlement"],
+        "connected_locations": ["river_port", "river_crossing", "guard_tower"],
+        "danger_level": 1,
+        "notable_features": ["river_gate", "drawbridge", "water_moat", "chain_boom"]
+      },
+      {
+        "location_id": "mountain_fort",
+        "name": "Mountain Fort",
+        "type": "fort",
+        "description": "An impregnable fortress perched on a mountain peak, accessible only by a single winding road.",
+        "scene_role_sets": ["settlement"],
+        "connected_locations": ["mountain_hold", "mountain_pass", "guard_tower"],
+        "danger_level": 1,
+        "notable_features": ["eagle_tower", "cliff_wall", "winding_approach", "beacon_fire"]
+      },
+      {
+        "location_id": "coastal_watchtower",
+        "name": "Coastal Watchtower",
+        "type": "fort",
+        "description": "A tall stone tower overlooking the sea, its beacon warning of approaching ships and storms.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["coastal_fort", "coastal_cliffs", "harbor_town"],
+        "danger_level": 1,
+        "notable_features": ["beacon_brazier", "telescope", "signal_flags", "sea_wall"]
+      },
+      {
+        "location_id": "ruined_outpost",
+        "name": "Ruined Outpost",
+        "type": "fort",
+        "description": "The remains of a frontier outpost destroyed in a past conflict, offering meager shelter.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["abandoned_fort", "moorland", "bandit_camp"],
+        "danger_level": 2,
+        "notable_features": ["collapsed_walls", "burned_barracks", "broken_gate", "overgrown_yard"]
+      },
+      {
+        "location_id": "guard_tower",
+        "name": "Guard Tower",
+        "type": "fort",
+        "description": "A lone watchtower manned by a small garrison, keeping watch over the surrounding countryside.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["hill_town", "river_fort", "mountain_fort"],
+        "danger_level": 1,
+        "notable_features": ["observation_deck", "signal_fire", "armory", "stable"]
+      },
+      {
+        "location_id": "siege_camp",
+        "name": "Siege Camp",
+        "type": "fort",
+        "description": "A massive military encampment surrounding a besieged fortification, bristling with war machines.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["military_camp", "ruined_castle", "border_fort"],
+        "danger_level": 3,
+        "notable_features": ["siege_engines", "trench_works", "command_pavilion", "supply_depot"]
+      },
+      {
+        "location_id": "iron_mine",
+        "name": "Iron Mine",
+        "type": "mine",
+        "description": "A productive iron mine with deep shafts and busy ore carts, the sound of picks echoing constantly.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["mountain_hold", "mining_camp", "dwarven_ruin"],
+        "danger_level": 1,
+        "notable_features": ["mine_shafts", "ore_carts", "smelting_area", "miner_quarters"]
+      },
+      {
+        "location_id": "gold_mine",
+        "name": "Gold Mine",
+        "type": "mine",
+        "description": "A heavily guarded gold mine where nuggets gleam in the torchlight and greed drives men deep underground.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["mining_camp", "mountain_pass", "bandit_hideout"],
+        "danger_level": 2,
+        "notable_features": ["gold_veins", "guard_post", "assay_station", "locked_vault"]
+      },
+      {
+        "location_id": "silver_mine",
+        "name": "Silver Mine",
+        "type": "mine",
+        "description": "A silver mine known for its pure ore, its tunnels reinforced with ancient dwarven engineering.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["mountain_hold", "dwarven_ruin", "gem_mine"],
+        "danger_level": 1,
+        "notable_features": ["silver_veins", "reinforced_tunnels", "underground_spring", "ore_refinery"]
+      },
+      {
+        "location_id": "gem_mine",
+        "name": "Gem Mine",
+        "type": "mine",
+        "description": "A deep mine where precious stones are carefully extracted from the rock, each gem worth a fortune.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["cliff_city", "crystal_cave", "silver_mine"],
+        "danger_level": 2,
+        "notable_features": ["gem_deposits", "cutting_room", "sorting_table", "secure_storage"]
+      },
+      {
+        "location_id": "coal_mine",
+        "name": "Coal Mine",
+        "type": "mine",
+        "description": "A grim coal mine where dust-blackened workers toil in narrow seams, feeding the forges above.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["mining_camp", "fire_pit", "volcanic_wastes"],
+        "danger_level": 1,
+        "notable_features": ["coal_seams", "ventilation_shafts", "coal_carts", "wash_station"]
+      },
+      {
+        "location_id": "mithral_mine",
+        "name": "Mithral Mine",
+        "type": "mine",
+        "description": "A legendary mine producing the rarest of metals, its location a closely guarded secret.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["mountain_hold", "mountain_fort", "deep_cave"],
+        "danger_level": 3,
+        "notable_features": ["mithral_veins", "enchanted_tools", "guardian_golems", "secret_entrance"]
+      },
+      {
+        "location_id": "abandoned_mine",
+        "name": "Abandoned Mine",
+        "type": "mine",
+        "description": "A mine sealed years ago after a cave-in, now home to creatures that thrive in the darkness.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["cursed_mine", "dwarven_ruin", "bat_cave"],
+        "danger_level": 3,
+        "notable_features": ["collapsed_entrance", "flooded_shafts", "rusted_equipment", "warning_signs"]
+      },
+      {
+        "location_id": "flooded_mine",
+        "name": "Flooded Mine",
+        "type": "mine",
+        "description": "A mine that breached an underground aquifer, its lower levels now submerged in dark water.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["limestone_cavern", "sunken_city", "lake_settlement"],
+        "danger_level": 3,
+        "notable_features": ["flooded_tunnels", "water_pumps", "diving_platform", "underground_lake"]
+      },
+      {
+        "location_id": "sacred_grove",
+        "name": "Sacred Grove",
+        "type": "grove",
+        "description": "An ancient grove of massive trees considered holy by druids, where the air hums with primal magic.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["nature_shrine", "druid_grove", "ancient_grove"],
+        "danger_level": 0,
+        "notable_features": ["world_tree", "druid_stones", "spirit_pool", "ancient_carvings"]
+      },
+      {
+        "location_id": "fey_grove",
+        "name": "Fey Grove",
+        "type": "grove",
+        "description": "A shimmering grove where the boundary between the mortal world and the fey realm grows thin.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["dark_forest", "moon_shrine", "jungle_trail"],
+        "danger_level": 2,
+        "notable_features": ["fairy_ring", "glowing_flowers", "portal_tree", "pixie_dust"]
+      },
+      {
+        "location_id": "corrupted_grove",
+        "name": "Corrupted Grove",
+        "type": "grove",
+        "description": "A once-beautiful grove poisoned by dark magic, its trees twisted and its waters black with corruption.",
+        "scene_role_sets": ["road_wilds"],
+        "connected_locations": ["swamp_trail", "haunted_wood", "demon_gate", "witch_camp"],
+        "danger_level": 4,
+        "notable_features": ["blackened_trees", "toxic_pool", "corruption_source", "dead_animals"]
+      },
+      {
+        "location_id": "ancient_grove",
+        "name": "Ancient Grove",
+        "type": "grove",
+        "description": "A grove of trees older than recorded history, their gnarled roots forming natural chambers below.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["sacred_grove", "jungle_trail", "elven_ruin"],
+        "danger_level": 1,
+        "notable_features": ["elder_trees", "root_chambers", "tree_hollows", "ancient_markings"]
+      },
+      {
+        "location_id": "herb_garden",
+        "name": "Herb Garden",
+        "type": "grove",
+        "description": "A carefully tended garden of medicinal and magical plants, maintained by healers and alchemists.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["healing_shrine", "lake_settlement", "bamboo_grove"],
+        "danger_level": 0,
+        "notable_features": ["herb_beds", "drying_shed", "greenhouse", "alchemist_hut"]
+      },
+      {
+        "location_id": "orchard",
+        "name": "Orchard",
+        "type": "grove",
+        "description": "Neat rows of fruit trees heavy with seasonal bounty, tended by farmers and visited by birds.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["vineyard", "hill_town", "plains_crossing"],
+        "danger_level": 0,
+        "notable_features": ["fruit_trees", "cider_press", "harvest_baskets", "bee_hives"]
+      },
+      {
+        "location_id": "vineyard",
+        "name": "Vineyard",
+        "type": "grove",
+        "description": "Terraced hillsides covered in grapevines, producing wines renowned throughout the realm.",
+        "scene_role_sets": ["default"],
+        "connected_locations": ["orchard", "hill_town", "lake_settlement"],
+        "danger_level": 0,
+        "notable_features": ["vine_terraces", "wine_cellar", "tasting_room", "stone_cottage"]
+      }
+    ]
   }
 }

@@ -15,7 +15,9 @@
           "id": "enc_1_1",
           "name": "Troll Under the Bridge",
           "description": "A troll has claimed the only bridge across the Gorge River. Negotiate, trick, or fight your way past.",
-          "monsters": ["troll"],
+          "monsters": [
+            "troll"
+          ],
           "difficulty": "hard",
           "exploration_note": "Search the troll's pile of bones — something valuable may be hidden there."
         },
@@ -23,7 +25,9 @@
           "id": "enc_1_2",
           "name": "Grizzly Bear Territory",
           "description": "A grizzly bear and her cubs block the narrow pass. Avoid or pacify — or fight if necessary.",
-          "monsters": ["grizzly_bear"],
+          "monsters": [
+            "grizzly_bear"
+          ],
           "difficulty": "medium",
           "exploration_note": "Bears mark their territory. Finding the markings can let you navigate around them."
         },
@@ -31,41 +35,67 @@
           "id": "enc_1_3",
           "name": "Ogre Camp at the Waystation",
           "description": "An ogre family has occupied the waystation. The merchant's journal is inside — you'll need to deal with them.",
-          "monsters": ["ogre", "ogre"],
+          "monsters": [
+            "ogre",
+            "ogre"
+          ],
           "difficulty": "hard",
           "exploration_note": "The journal is hidden under a loose floorboard — search the northwest room."
         }
       ],
       "objectives": [
         {
-          "id": "obj_1_1",
-          "description": "Cross the Gorge River bridge",
-          "type": "interact",
+          "id": "side_act_1_reach_gorge_bridge",
+          "description": "Reach the Gorge River bridge approach",
+          "type": "visit",
           "target": "gorge_bridge",
           "required_count": 1
         },
         {
-          "id": "obj_1_2",
-          "description": "Clear or bypass the ogre camp and recover the merchant's journal",
+          "id": "side_act_1_recover_lost_chronicle",
+          "description": "Recover the merchant's journal from the waystation",
           "type": "collect",
           "target": "the_lost_chronicle",
           "required_count": 1
         },
         {
-          "id": "obj_1_3",
+          "id": "side_act_1_find_hidden_entrance",
           "description": "Locate the hidden entrance to the Hollow Peaks hold",
-          "type": "explore",
+          "type": "visit",
           "target": "hollow_peaks_entrance",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_1_speak_with_trail_warden",
+          "description": "Speak with the trail warden about the hold's old approach",
+          "type": "talk",
+          "target": "trail_warden",
           "required_count": 1
         }
       ],
       "rewards": [
-        {"item_id": "troll_heart", "quantity": 1},
-        {"item_id": "grizzly_pelt", "quantity": 1},
-        {"item_id": "potion_of_strength", "quantity": 2},
-        {"item_id": "war_hammer", "quantity": 1},
-        {"item_id": "gold_coin", "quantity": 80}
-      ]
+        {
+          "item_id": "troll_heart",
+          "quantity": 1
+        },
+        {
+          "item_id": "grizzly_pelt",
+          "quantity": 1
+        },
+        {
+          "item_id": "potion_of_strength",
+          "quantity": 2
+        },
+        {
+          "item_id": "war_hammer",
+          "quantity": 1
+        },
+        {
+          "item_id": "gold_coin",
+          "quantity": 100
+        }
+      ],
+      "quest_id": "side_road_to_peaks"
     },
     {
       "id": "act_2",
@@ -76,7 +106,9 @@
           "id": "enc_2_1",
           "name": "The Fire Ward Chamber",
           "description": "A fire elemental emerges when the fire rune is disturbed. Use the water rune to nullify it — or overpower it directly.",
-          "monsters": ["fire_elemental"],
+          "monsters": [
+            "fire_elemental"
+          ],
           "difficulty": "hard",
           "puzzle_hint": "The chamber has four water urns. Pour them in order: North, East, South, West. The fire elemental weakens at each step."
         },
@@ -84,7 +116,10 @@
           "id": "enc_2_2",
           "name": "The Earth Ward Corridor",
           "description": "Earth elementals animate from the walls if the correct stone tiles are not pressed in sequence. One wrong step means a fight.",
-          "monsters": ["earth_elemental", "earth_elemental"],
+          "monsters": [
+            "earth_elemental",
+            "earth_elemental"
+          ],
           "difficulty": "hard",
           "puzzle_hint": "The tile pattern matches the constellation carved on the ceiling. Look up before you step."
         },
@@ -92,49 +127,78 @@
           "id": "enc_2_3",
           "name": "The Dual Ward Guardian",
           "description": "An air and water elemental patrol the vault antechamber together. They cannot be separated — both must be defeated.",
-          "monsters": ["air_elemental", "water_elemental"],
+          "monsters": [
+            "air_elemental",
+            "water_elemental"
+          ],
           "difficulty": "very_hard",
           "puzzle_hint": "Each elemental is powered by a crystal. Destroy the crystals first to weaken them before engaging directly."
         }
       ],
       "objectives": [
         {
-          "id": "obj_2_1",
+          "id": "side_act_2_break_fire_ward",
           "description": "Overcome the Fire Ward Chamber",
           "type": "kill",
           "target": "fire_elemental",
           "required_count": 1
         },
         {
-          "id": "obj_2_2",
-          "description": "Navigate the Earth Ward Corridor",
+          "id": "side_act_2_clear_earth_corridor",
+          "description": "Survive the Earth Ward Corridor by defeating its defenders",
           "type": "kill",
           "target": "earth_elemental",
           "required_count": 2
         },
         {
-          "id": "obj_2_3",
-          "description": "Defeat the dual ward guardians",
+          "id": "side_act_2_defeat_air_guardian",
+          "description": "Break the paired ward by defeating the air guardian",
           "type": "kill",
           "target": "air_elemental",
           "required_count": 1
         },
         {
-          "id": "obj_2_4",
-          "description": "Solve the ancient vault door puzzle",
-          "type": "interact",
+          "id": "side_act_2_reach_vault_door",
+          "description": "Reach the ancient vault door beyond the ward halls",
+          "type": "visit",
           "target": "vault_door",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_2_question_ward_spirit",
+          "description": "Speak with the ward spirit bound to the antechamber",
+          "type": "talk",
+          "target": "ward_spirit",
           "required_count": 1
         }
       ],
       "rewards": [
-        {"item_id": "ember_shard", "quantity": 2},
-        {"item_id": "tidal_crystal", "quantity": 1},
-        {"item_id": "storm_crystal", "quantity": 1},
-        {"item_id": "stone_shard", "quantity": 2},
-        {"item_id": "scroll_of_shield", "quantity": 2},
-        {"item_id": "potion_of_agility", "quantity": 2}
-      ]
+        {
+          "item_id": "ember_shard",
+          "quantity": 2
+        },
+        {
+          "item_id": "tidal_crystal",
+          "quantity": 1
+        },
+        {
+          "item_id": "storm_crystal",
+          "quantity": 1
+        },
+        {
+          "item_id": "stone_shard",
+          "quantity": 2
+        },
+        {
+          "item_id": "scroll_of_shield",
+          "quantity": 2
+        },
+        {
+          "item_id": "potion_of_agility",
+          "quantity": 2
+        }
+      ],
+      "quest_id": "side_elemental_wards"
     },
     {
       "id": "act_3",
@@ -145,7 +209,9 @@
           "id": "enc_3_1",
           "name": "The Wraith of King Durnvar",
           "description": "The undead spirit of the last dwarven king, Durnvar, protects the vault entrance. He cannot be reasoned with — only defeated.",
-          "monsters": ["wraith"],
+          "monsters": [
+            "wraith"
+          ],
           "difficulty": "very_hard",
           "exploration_note": "The dwarven runes on the walls describe how Durnvar fell — they may reveal a weakness."
         },
@@ -153,7 +219,9 @@
           "id": "enc_3_2",
           "name": "The Beholder Construct",
           "description": "An ancient dwarven beholder-construct — a mechanical anti-magic sentinel — guards the inner vault. Its eye rays trigger on movement.",
-          "monsters": ["beholder"],
+          "monsters": [
+            "beholder"
+          ],
           "difficulty": "boss",
           "puzzle_hint": "The construct has a control panel behind it. Reach it without triggering the eye rays by crawling through the low maintenance tunnels on the sides."
         },
@@ -168,43 +236,72 @@
       ],
       "objectives": [
         {
-          "id": "obj_3_1",
-          "description": "Defeat the Wraith of King Durnvar",
+          "id": "side_act_3_defeat_king_durnvar",
+          "description": "Defeat the wraith of King Durnvar",
           "type": "kill",
           "target": "wraith",
           "required_count": 1
         },
         {
-          "id": "obj_3_2",
-          "description": "Neutralize the beholder construct",
+          "id": "side_act_3_neutralize_beholder_construct",
+          "description": "Neutralize the beholder construct guarding the inner hall",
           "type": "kill",
           "target": "beholder",
           "required_count": 1
         },
         {
-          "id": "obj_3_3",
-          "description": "Solve the Dwarven Codex",
-          "type": "interact",
-          "target": "dwarven_codex",
+          "id": "side_act_3_enter_codex_chamber",
+          "description": "Reach the codex chamber inside the vault",
+          "type": "visit",
+          "target": "codex_chamber",
           "required_count": 1
         },
         {
-          "id": "obj_3_4",
-          "description": "Claim the treasure of the Hollow Peaks hold",
+          "id": "side_act_3_claim_ancient_key",
+          "description": "Claim the key-relic from the opened vault",
           "type": "collect",
           "target": "ancient_key",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_3_speak_with_ancestor_echo",
+          "description": "Speak with the ancestor echo awakened by the vault",
+          "type": "talk",
+          "target": "ancestor_echo",
           "required_count": 1
         }
       ],
       "rewards": [
-        {"item_id": "shield_of_the_ancients", "quantity": 1},
-        {"item_id": "mithral_longsword", "quantity": 1},
-        {"item_id": "crown_of_the_conqueror", "quantity": 1},
-        {"item_id": "granite_rune", "quantity": 3},
-        {"item_id": "ancient_gold_coin", "quantity": 50},
-        {"item_id": "gold_coin", "quantity": 500},
-        {"item_id": "shattered_amulet", "quantity": 1}
-      ]
+        {
+          "item_id": "shield_of_the_ancients",
+          "quantity": 1
+        },
+        {
+          "item_id": "mithral_longsword",
+          "quantity": 1
+        },
+        {
+          "item_id": "crown_of_the_conqueror",
+          "quantity": 1
+        },
+        {
+          "item_id": "granite_rune",
+          "quantity": 3
+        },
+        {
+          "item_id": "ancient_gold_coin",
+          "quantity": 50
+        },
+        {
+          "item_id": "gold_coin",
+          "quantity": 500
+        },
+        {
+          "item_id": "shattered_amulet",
+          "quantity": 1
+        }
+      ],
+      "quest_id": "side_vault_of_ancestors"
     },
     {
       "id": "act_4",
@@ -215,7 +312,11 @@
           "id": "enc_4_1",
           "name": "Swamp Lurkers",
           "description": "Venomous creatures guard the entrance to the deeper marshes. Their poison saps strength.",
-          "monsters": ["swamp_lurker", "swamp_lurker", "giant_leech"],
+          "monsters": [
+            "swamp_lurker",
+            "swamp_lurker",
+            "giant_leech"
+          ],
           "difficulty": "hard",
           "exploration_note": "Torches keep the leeches at bay. Search the reeds for a herbalist's satchel."
         },
@@ -223,7 +324,10 @@
           "id": "enc_4_2",
           "name": "The Corrupted Druid",
           "description": "A once-benevolent druid has been twisted by dark magic. She commands the marsh creatures and must be stopped.",
-          "monsters": ["corrupted_druid", "swamp_lurker"],
+          "monsters": [
+            "corrupted_druid",
+            "swamp_lurker"
+          ],
           "difficulty": "very_hard",
           "exploration_note": "The druid's staff is the source of her power. Destroying it weakens her considerably."
         },
@@ -238,41 +342,64 @@
       ],
       "objectives": [
         {
-          "id": "obj_4_1",
-          "description": "Clear the marsh entrance of swamp creatures",
+          "id": "side_act_4_clear_marsh_lurkers",
+          "description": "Clear the marsh entrance of swamp lurkers",
           "type": "kill",
           "target": "swamp_lurker",
           "required_count": 2
         },
         {
-          "id": "obj_4_2",
-          "description": "Defeat the corrupted druid",
+          "id": "side_act_4_defeat_corrupted_druid",
+          "description": "Defeat the corrupted druid at the hidden grove",
           "type": "kill",
           "target": "corrupted_druid",
           "required_count": 1
         },
         {
-          "id": "obj_4_3",
+          "id": "side_act_4_recover_herbalist_journal",
           "description": "Recover the herbalist's journal from the reeds",
           "type": "collect",
           "target": "herbalist_journal",
           "required_count": 1
         },
         {
-          "id": "obj_4_4",
-          "description": "Perform the cleansing ritual at the grove altar",
-          "type": "interact",
+          "id": "side_act_4_reach_grove_altar",
+          "description": "Reach the grove altar and prepare the cleansing",
+          "type": "visit",
           "target": "grove_altar",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_4_speak_with_rescued_herbalist",
+          "description": "Speak with the rescued herbalist about the final rite",
+          "type": "talk",
+          "target": "rescued_herbalist",
           "required_count": 1
         }
       ],
       "rewards": [
-        {"item_id": "staff_of_renewal", "quantity": 1},
-        {"item_id": "swamp_moss", "quantity": 5},
-        {"item_id": "cave_lichen", "quantity": 5},
-        {"item_id": "potion_of_healing", "quantity": 3},
-        {"item_id": "gold_coin", "quantity": 200}
-      ]
+        {
+          "item_id": "arcane_staff",
+          "quantity": 1
+        },
+        {
+          "item_id": "venom_sac",
+          "quantity": 5
+        },
+        {
+          "item_id": "plague_essence",
+          "quantity": 5
+        },
+        {
+          "item_id": "potion_of_healing",
+          "quantity": 3
+        },
+        {
+          "item_id": "gold_coin",
+          "quantity": 220
+        }
+      ],
+      "quest_id": "side_cursed_marshlands"
     }
   ]
 }

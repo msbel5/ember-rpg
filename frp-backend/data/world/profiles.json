@@ -9,6 +9,146 @@
       "climate_bands": 3,
       "region_size": 4,
       "history_end_year": 1200
+    },
+    "archipelago": {
+      "id": "archipelago",
+      "title": "Island Archipelago",
+      "world_width": 40,
+      "world_height": 30,
+      "plate_count": 12,
+      "climate_bands": 4,
+      "region_size": 3,
+      "history_end_year": 800
+    },
+    "pangea": {
+      "id": "pangea",
+      "title": "Pangea Supercontinent",
+      "world_width": 48,
+      "world_height": 36,
+      "plate_count": 2,
+      "climate_bands": 5,
+      "region_size": 6,
+      "history_end_year": 2000
+    },
+    "desert_continent": {
+      "id": "desert_continent",
+      "title": "Arid Desert Continent",
+      "world_width": 36,
+      "world_height": 28,
+      "plate_count": 4,
+      "climate_bands": 2,
+      "region_size": 5,
+      "history_end_year": 1500
+    },
+    "frozen_north": {
+      "id": "frozen_north",
+      "title": "Frozen Northern Reaches",
+      "world_width": 38,
+      "world_height": 32,
+      "plate_count": 5,
+      "climate_bands": 2,
+      "region_size": 5,
+      "history_end_year": 900
+    },
+    "volcanic_chain": {
+      "id": "volcanic_chain",
+      "title": "Volcanic Island Chain",
+      "world_width": 44,
+      "world_height": 20,
+      "plate_count": 14,
+      "climate_bands": 3,
+      "region_size": 2,
+      "history_end_year": 600
+    },
+    "river_delta": {
+      "id": "river_delta",
+      "title": "Great River Delta",
+      "world_width": 36,
+      "world_height": 28,
+      "plate_count": 3,
+      "climate_bands": 3,
+      "region_size": 4,
+      "history_end_year": 1800
+    },
+    "mountain_world": {
+      "id": "mountain_world",
+      "title": "Jagged Mountain World",
+      "world_width": 30,
+      "world_height": 30,
+      "plate_count": 10,
+      "climate_bands": 5,
+      "region_size": 3,
+      "history_end_year": 1000
+    },
+    "forest_realm": {
+      "id": "forest_realm",
+      "title": "Endless Forest Realm",
+      "world_width": 34,
+      "world_height": 26,
+      "plate_count": 4,
+      "climate_bands": 3,
+      "region_size": 5,
+      "history_end_year": 1400
+    },
+    "coastal_empire": {
+      "id": "coastal_empire",
+      "title": "Coastal Empire",
+      "world_width": 50,
+      "world_height": 22,
+      "plate_count": 8,
+      "climate_bands": 4,
+      "region_size": 4,
+      "history_end_year": 1100
+    },
+    "underworld": {
+      "id": "underworld",
+      "title": "Subterranean Underworld",
+      "world_width": 20,
+      "world_height": 16,
+      "plate_count": 3,
+      "climate_bands": 1,
+      "region_size": 2,
+      "history_end_year": 2500
+    },
+    "skylands": {
+      "id": "skylands",
+      "title": "Floating Skylands",
+      "world_width": 28,
+      "world_height": 48,
+      "plate_count": 16,
+      "climate_bands": 6,
+      "region_size": 3,
+      "history_end_year": 700
+    },
+    "swamplands": {
+      "id": "swamplands",
+      "title": "Tropical Swamplands",
+      "world_width": 34,
+      "world_height": 26,
+      "plate_count": 5,
+      "climate_bands": 2,
+      "region_size": 4,
+      "history_end_year": 1000
+    },
+    "war_torn": {
+      "id": "war_torn",
+      "title": "War-Torn Wasteland",
+      "world_width": 24,
+      "world_height": 20,
+      "plate_count": 7,
+      "climate_bands": 3,
+      "region_size": 2,
+      "history_end_year": 400
+    },
+    "ancient_empire": {
+      "id": "ancient_empire",
+      "title": "Ancient Empire Ruins",
+      "world_width": 64,
+      "world_height": 48,
+      "plate_count": 8,
+      "climate_bands": 5,
+      "region_size": 8,
+      "history_end_year": 3000
     }
   }
 }

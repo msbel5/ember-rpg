@@ -14,6 +14,5757 @@
       "EPIC",
       "LEGENDARY"
     ],
-    "base_drop_chance": 0.4
+    "base_drop_chance": 0.4,
+    "monster_tables": {
+      "abyssal_lord": {
+        "guaranteed": [
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              4,
+              6
+            ]
+          },
+          {
+            "item_id": "diamond",
+            "quantity_range": [
+              1,
+              2
+            ]
+          },
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              3,
+              5
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "ruby",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.8,
+            "quantity_range": [
+              60,
+              150
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "adamantine_ingot",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "LEGENDARY"
+          }
+        ],
+        "gold_range": [
+          250,
+          500
+        ]
+      },
+      "air_elemental": {
+        "guaranteed": [
+          {
+            "item_id": "gale_feather",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "arcane_crystal",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "ancient_dragon": {
+        "guaranteed": [
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              3,
+              6
+            ]
+          },
+          {
+            "item_id": "dragon_egg",
+            "quantity_range": [
+              1,
+              1
+            ]
+          },
+          {
+            "item_id": "diamond",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "ruby",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.8,
+            "quantity_range": [
+              40,
+              100
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "mithral_ingot",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "EPIC"
+          }
+        ],
+        "gold_range": [
+          200,
+          500
+        ]
+      },
+      "archmage": {
+        "guaranteed": [
+          {
+            "item_id": "arcane_crystal",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              10,
+              30
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          50,
+          150
+        ]
+      },
+      "bandit": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "stolen_trinket",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              2,
+              8
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "lockpick_set",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          15
+        ]
+      },
+      "bandit_captain": {
+        "guaranteed": [
+          {
+            "item_id": "stolen_trinket",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "longsword",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              5,
+              15
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "lockpick_set",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "basilisk": {
+        "guaranteed": [
+          {
+            "item_id": "venom_sac",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "stone_shard",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gemstone",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              3,
+              8
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          8,
+          25
+        ]
+      },
+      "beholder": {
+        "guaranteed": [
+          {
+            "item_id": "spider_eye",
+            "quantity_range": [
+              5,
+              10
+            ]
+          },
+          {
+            "item_id": "arcane_crystal",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "dragon_blood",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.6,
+            "quantity_range": [
+              15,
+              40
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          100,
+          300
+        ]
+      },
+      "black_bear": {
+        "guaranteed": [
+          {
+            "item_id": "bear_pelt",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "bear_claw",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bear_meat",
+            "drop_chance": 0.6,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          10
+        ]
+      },
+      "blight_treant": {
+        "guaranteed": [
+          {
+            "item_id": "ironwood_bark",
+            "quantity_range": [
+              3,
+              5
+            ]
+          },
+          {
+            "item_id": "healing_herb",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "mandrake_root",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "moonpetal",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "emerald",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              5,
+              12
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "blue_dragon": {
+        "guaranteed": [
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "blazing_crystal",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "ruby",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "dragon_egg",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.7,
+            "quantity_range": [
+              30,
+              80
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          }
+        ],
+        "gold_range": [
+          150,
+          500
+        ]
+      },
+      "bone_dragon": {
+        "guaranteed": [
+          {
+            "item_id": "bone_fragment",
+            "quantity_range": [
+              8,
+              15
+            ]
+          },
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.6,
+            "quantity_range": [
+              30,
+              80
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "arcane_crystal",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              2,
+              3
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          150,
+          500
+        ]
+      },
+      "cave_beetle": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          0,
+          3
+        ]
+      },
+      "cave_crawler": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          0,
+          3
+        ]
+      },
+      "celestial_guardian": {
+        "guaranteed": [
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "scorched_core",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "blazing_crystal",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "ruby",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.18,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.7,
+            "quantity_range": [
+              40,
+              100
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "adamantine_ingot",
+            "drop_chance": 0.06,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          }
+        ],
+        "gold_range": [
+          150,
+          500
+        ]
+      },
+      "chimera": {
+        "guaranteed": [
+          {
+            "item_id": "large_fang",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "scorched_core",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "gale_feather",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "leather_hide",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "dragon_blood",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              5,
+              15
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          20,
+          70
+        ]
+      },
+      "cloud_giant": {
+        "guaranteed": [
+          {
+            "item_id": "gale_feather",
+            "quantity_range": [
+              3,
+              6
+            ]
+          },
+          {
+            "item_id": "giant_gold_ring",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.6,
+            "quantity_range": [
+              15,
+              40
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "sapphire",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          50,
+          150
+        ]
+      },
+      "cultist": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "nightshade",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "parchment",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              5
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "dark_acolyte": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "nightshade",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "parchment",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              5
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "death_knight": {
+        "guaranteed": [
+          {
+            "item_id": "longsword",
+            "quantity_range": [
+              1,
+              1
+            ]
+          },
+          {
+            "item_id": "iron_plate",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "ruby",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.6,
+            "quantity_range": [
+              20,
+              60
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "mithral_ingot",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          }
+        ],
+        "gold_range": [
+          100,
+          350
+        ]
+      },
+      "demon_lord": {
+        "guaranteed": [
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              3,
+              5
+            ]
+          },
+          {
+            "item_id": "blazing_crystal",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "ruby",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              2,
+              3
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.8,
+            "quantity_range": [
+              50,
+              120
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "adamantine_ingot",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          }
+        ],
+        "gold_range": [
+          200,
+          500
+        ]
+      },
+      "dire_crocodile": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "infected_blood",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          10
+        ]
+      },
+      "dire_wolf": {
+        "guaranteed": [
+          {
+            "item_id": "dire_wolf_pelt",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "large_fang",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "dire_wolf_heart",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "wolf_heart",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          18
+        ]
+      },
+      "displacer_beast": {
+        "guaranteed": [
+          {
+            "item_id": "leather_hide",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "phase_crystal",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "large_fang",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              3,
+              10
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          8,
+          25
+        ]
+      },
+      "dragon_overlord": {
+        "guaranteed": [
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              5,
+              8
+            ]
+          },
+          {
+            "item_id": "dragon_egg",
+            "quantity_range": [
+              1,
+              2
+            ]
+          },
+          {
+            "item_id": "diamond",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "ancient_key",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "mithral_ingot",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              2,
+              3
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "adamantine_ingot",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.9,
+            "quantity_range": [
+              80,
+              200
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "ruby",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              3
+            ],
+            "rarity": "EPIC"
+          }
+        ],
+        "gold_range": [
+          300,
+          500
+        ]
+      },
+      "drow_assassin": {
+        "guaranteed": [
+          {
+            "item_id": "dagger",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "lockpick_set",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              5,
+              12
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "nightshade",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "earth_elemental": {
+        "guaranteed": [
+          {
+            "item_id": "stone_shard",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "iron_ore",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "gemstone",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "elder_lich": {
+        "guaranteed": [
+          {
+            "item_id": "arcane_crystal",
+            "quantity_range": [
+              4,
+              7
+            ]
+          },
+          {
+            "item_id": "moonstone_dust",
+            "quantity_range": [
+              3,
+              5
+            ]
+          },
+          {
+            "item_id": "diamond",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              2,
+              3
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "dragon_blood",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.8,
+            "quantity_range": [
+              50,
+              120
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "mithral_ingot",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "EPIC"
+          }
+        ],
+        "gold_range": [
+          200,
+          500
+        ]
+      },
+      "ember_wisp": {
+        "guaranteed": [
+          {
+            "item_id": "scorched_core",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "blazing_crystal",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "charcoal_powder",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "enchanted_bear": {
+        "guaranteed": [
+          {
+            "item_id": "grizzly_pelt",
+            "quantity_range": [
+              1,
+              1
+            ]
+          },
+          {
+            "item_id": "arcane_crystal",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "bear_claw",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          10,
+          35
+        ]
+      },
+      "fire_elemental": {
+        "guaranteed": [
+          {
+            "item_id": "scorched_core",
+            "quantity_range": [
+              1,
+              2
+            ]
+          },
+          {
+            "item_id": "blazing_crystal",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "sulfur",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "fire_giant": {
+        "guaranteed": [
+          {
+            "item_id": "tidal_essence",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "giant_gold_ring",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "longsword",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              10,
+              30
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "sapphire",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          30,
+          80
+        ]
+      },
+      "flame_zombie": {
+        "guaranteed": [
+          {
+            "item_id": "scorched_core",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "blazing_crystal",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "charcoal_powder",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "flesh_golem": {
+        "guaranteed": [
+          {
+            "item_id": "infected_blood",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              3,
+              6
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "iron_plate",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "forest_sprite": {
+        "guaranteed": [
+          {
+            "item_id": "scorched_core",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "blazing_crystal",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "charcoal_powder",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "frost_giant": {
+        "guaranteed": [
+          {
+            "item_id": "tidal_essence",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "giant_gold_ring",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "longsword",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              10,
+              30
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "sapphire",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          30,
+          80
+        ]
+      },
+      "frost_wolf": {
+        "guaranteed": [
+          {
+            "item_id": "wolf_pelt",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "fang",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "wolf_heart",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "tidal_essence",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "frost_wyrm": {
+        "guaranteed": [
+          {
+            "item_id": "bone_fragment",
+            "quantity_range": [
+              8,
+              15
+            ]
+          },
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.6,
+            "quantity_range": [
+              30,
+              80
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "arcane_crystal",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              2,
+              3
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          150,
+          500
+        ]
+      },
+      "gargoyle": {
+        "guaranteed": [
+          {
+            "item_id": "stone_shard",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "gale_feather",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              6
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          18
+        ]
+      },
+      "gelatinous_cube": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              3,
+              10
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              6
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              5
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "stolen_trinket",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          20
+        ]
+      },
+      "ghast": {
+        "guaranteed": [
+          {
+            "item_id": "bone_fragment",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "infected_blood",
+            "drop_chance": 0.45,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              6
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          18
+        ]
+      },
+      "ghoul": {
+        "guaranteed": [
+          {
+            "item_id": "bone_fragment",
+            "quantity_range": [
+              1,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "infected_blood",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "giant_bat": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "fang",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bat_guano",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          1,
+          4
+        ]
+      },
+      "giant_centipede": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          1,
+          5
+        ]
+      },
+      "giant_spider": {
+        "guaranteed": [
+          {
+            "item_id": "spider_silk",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "spider_eye",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "giant_toad": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "infected_blood",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          10
+        ]
+      },
+      "gnoll": {
+        "guaranteed": [
+          {
+            "item_id": "crude_armor_shard",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "fang",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              5
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "shortbow",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "gnoll_packleader": {
+        "guaranteed": [
+          {
+            "item_id": "crude_armor_shard",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "fang",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              5
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "shortbow",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "goblin": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "stolen_trinket",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              5
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          8
+        ]
+      },
+      "goblin_boss": {
+        "guaranteed": [
+          {
+            "item_id": "stolen_trinket",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "iron_shortsword",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              3,
+              8
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "boss_key",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          8,
+          25
+        ]
+      },
+      "goblin_shaman": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "stolen_trinket",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              5
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          8
+        ]
+      },
+      "gorgon": {
+        "guaranteed": [
+          {
+            "item_id": "stone_shard",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "iron_plate",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "iron_ore",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              3
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              5,
+              12
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          15,
+          60
+        ]
+      },
+      "green_hag": {
+        "guaranteed": [
+          {
+            "item_id": "wolfsbane",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "healing_herb",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "mandrake_root",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              3,
+              10
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          8,
+          30
+        ]
+      },
+      "grizzly_bear": {
+        "guaranteed": [
+          {
+            "item_id": "grizzly_pelt",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "bear_claw",
+            "drop_chance": 0.6,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "grizzly_fang",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "bear_meat",
+            "drop_chance": 0.7,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          20
+        ]
+      },
+      "harpy": {
+        "guaranteed": [
+          {
+            "item_id": "gale_feather",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "fang",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "stolen_trinket",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              8
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          20
+        ]
+      },
+      "hawk": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "gale_feather",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          0,
+          2
+        ]
+      },
+      "hobgoblin": {
+        "guaranteed": [
+          {
+            "item_id": "crude_armor_shard",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "iron_shortsword",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "shortbow",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              2,
+              6
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          18
+        ]
+      },
+      "hydra": {
+        "guaranteed": [
+          {
+            "item_id": "large_fang",
+            "quantity_range": [
+              4,
+              8
+            ]
+          },
+          {
+            "item_id": "leather_hide",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "dragon_blood",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              8,
+              20
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          20,
+          60
+        ]
+      },
+      "iron_golem": {
+        "guaranteed": [
+          {
+            "item_id": "iron_ingot",
+            "quantity_range": [
+              4,
+              8
+            ]
+          },
+          {
+            "item_id": "iron_plate",
+            "quantity_range": [
+              3,
+              5
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "steel_ingot",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "mithral_ingot",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              15,
+              40
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "arcane_crystal",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          50,
+          200
+        ]
+      },
+      "kobold": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "stolen_trinket",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              5
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          8
+        ]
+      },
+      "lich": {
+        "guaranteed": [
+          {
+            "item_id": "arcane_crystal",
+            "quantity_range": [
+              3,
+              5
+            ]
+          },
+          {
+            "item_id": "moonstone_dust",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.7,
+            "quantity_range": [
+              30,
+              80
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          150,
+          500
+        ]
+      },
+      "lich_acolyte": {
+        "guaranteed": [
+          {
+            "item_id": "arcane_crystal",
+            "quantity_range": [
+              3,
+              5
+            ]
+          },
+          {
+            "item_id": "moonstone_dust",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.7,
+            "quantity_range": [
+              30,
+              80
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          150,
+          500
+        ]
+      },
+      "manticore": {
+        "guaranteed": [
+          {
+            "item_id": "large_fang",
+            "quantity_range": [
+              1,
+              2
+            ]
+          },
+          {
+            "item_id": "venom_sac",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "gale_feather",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "leather_hide",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              5,
+              12
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          20,
+          60
+        ]
+      },
+      "medusa": {
+        "guaranteed": [
+          {
+            "item_id": "venom_sac",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "emerald",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              8,
+              20
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "longsword",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          20,
+          75
+        ]
+      },
+      "mimic": {
+        "guaranteed": [
+          {
+            "item_id": "gold_coin",
+            "quantity_range": [
+              10,
+              25
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "stolen_trinket",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "lockpick_set",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gemstone",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "mind_flayer": {
+        "guaranteed": [
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "arcane_crystal",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "dragon_blood",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              10,
+              25
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          40,
+          120
+        ]
+      },
+      "mud_crab": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          0,
+          3
+        ]
+      },
+      "naga_guardian": {
+        "guaranteed": [
+          {
+            "item_id": "venom_sac",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "emerald",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              8,
+              20
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "longsword",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          20,
+          75
+        ]
+      },
+      "ogre": {
+        "guaranteed": [
+          {
+            "item_id": "crude_armor_shard",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "large_fang",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bear_meat",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              3,
+              10
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "stolen_trinket",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          10,
+          40
+        ]
+      },
+      "ogre_mage": {
+        "guaranteed": [
+          {
+            "item_id": "arcane_crystal",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              5,
+              15
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          20,
+          60
+        ]
+      },
+      "orc": {
+        "guaranteed": [
+          {
+            "item_id": "crude_armor_shard",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "iron_shortsword",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              6
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bear_meat",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          18
+        ]
+      },
+      "orc_berserker": {
+        "guaranteed": [
+          {
+            "item_id": "crude_armor_shard",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "iron_shortsword",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              6
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bear_meat",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          18
+        ]
+      },
+      "orc_warchief": {
+        "guaranteed": [
+          {
+            "item_id": "orc_warbanner",
+            "quantity_range": [
+              1,
+              1
+            ]
+          },
+          {
+            "item_id": "crude_armor_shard",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "longsword",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              5,
+              12
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "iron_ingot",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "owlbear": {
+        "guaranteed": [
+          {
+            "item_id": "bear_pelt",
+            "quantity_range": [
+              1,
+              1
+            ]
+          },
+          {
+            "item_id": "gale_feather",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "bear_claw",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bear_meat",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "fang",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "mysterious_egg",
+            "drop_chance": 0.03,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          20
+        ]
+      },
+      "phase_spider": {
+        "guaranteed": [
+          {
+            "item_id": "spider_silk",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "phase_crystal",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "spider_eye",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          8,
+          30
+        ]
+      },
+      "pit_fiend": {
+        "guaranteed": [
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "scorched_core",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "blazing_crystal",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "ruby",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.18,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.7,
+            "quantity_range": [
+              40,
+              100
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "adamantine_ingot",
+            "drop_chance": 0.06,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          }
+        ],
+        "gold_range": [
+          150,
+          500
+        ]
+      },
+      "plague_rat": {
+        "guaranteed": [
+          {
+            "item_id": "infected_blood",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          1,
+          5
+        ]
+      },
+      "plague_zombie": {
+        "guaranteed": [
+          {
+            "item_id": "infected_blood",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          8
+        ]
+      },
+      "red_dragon": {
+        "guaranteed": [
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "blazing_crystal",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "ruby",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "dragon_egg",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "phoenix_ash",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.7,
+            "quantity_range": [
+              30,
+              80
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          }
+        ],
+        "gold_range": [
+          150,
+          500
+        ]
+      },
+      "sand_wyrm": {
+        "guaranteed": [
+          {
+            "item_id": "large_fang",
+            "quantity_range": [
+              3,
+              6
+            ]
+          },
+          {
+            "item_id": "venom_sac",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "stone_shard",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              4,
+              8
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gemstone",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              15,
+              40
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "mithral_ore",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          100,
+          350
+        ]
+      },
+      "sewer_rat": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          0,
+          2
+        ]
+      },
+      "shadow_demon": {
+        "guaranteed": [
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "arcane_crystal",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "nightshade",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              5,
+              15
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          20,
+          60
+        ]
+      },
+      "shadow_dragon": {
+        "guaranteed": [
+          {
+            "item_id": "bone_fragment",
+            "quantity_range": [
+              8,
+              15
+            ]
+          },
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "ancient_key",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "LEGENDARY"
+          },
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "EPIC"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.6,
+            "quantity_range": [
+              30,
+              80
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "arcane_crystal",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              2,
+              3
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          150,
+          500
+        ]
+      },
+      "shadow_skeleton": {
+        "guaranteed": [
+          {
+            "item_id": "bone_fragment",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              5
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          20
+        ]
+      },
+      "skeleton": {
+        "guaranteed": [
+          {
+            "item_id": "bone_fragment",
+            "quantity_range": [
+              1,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          8
+        ]
+      },
+      "skeleton_archer": {
+        "guaranteed": [
+          {
+            "item_id": "bone_fragment",
+            "quantity_range": [
+              1,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "shortbow",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "arrowheads",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              3,
+              8
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          10
+        ]
+      },
+      "snake_pit_viper": {
+        "guaranteed": [
+          {
+            "item_id": "venom_sac",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "fang",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          1,
+          5
+        ]
+      },
+      "spectral_wolf": {
+        "guaranteed": [
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "fang",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "wolf_heart",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          5,
+          20
+        ]
+      },
+      "stone_giant": {
+        "guaranteed": [
+          {
+            "item_id": "stone_shard",
+            "quantity_range": [
+              3,
+              6
+            ]
+          },
+          {
+            "item_id": "giant_gold_ring",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "iron_ore",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              5
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              10,
+              25
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gemstone",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          25,
+          75
+        ]
+      },
+      "storm_elemental": {
+        "guaranteed": [
+          {
+            "item_id": "gale_feather",
+            "quantity_range": [
+              2,
+              4
+            ]
+          },
+          {
+            "item_id": "blazing_crystal",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "arcane_crystal",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "sapphire",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          20,
+          60
+        ]
+      },
+      "succubus": {
+        "guaranteed": [
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "arcane_crystal",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "nightshade",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              5,
+              15
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          20,
+          60
+        ]
+      },
+      "swamp_lurker": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "venom_sac",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "infected_blood",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          10
+        ]
+      },
+      "thug": {
+        "guaranteed": [],
+        "drops": [
+          {
+            "item_id": "dagger",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.45,
+            "quantity_range": [
+              1,
+              5
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          10
+        ]
+      },
+      "timber_wolf": {
+        "guaranteed": [
+          {
+            "item_id": "wolf_pelt",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "fang",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "wolf_heart",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          8
+        ]
+      },
+      "troll": {
+        "guaranteed": [
+          {
+            "item_id": "large_fang",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "infected_blood",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "healing_herb",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              3,
+              10
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "umber_hulk": {
+        "guaranteed": [
+          {
+            "item_id": "crude_armor_shard",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "large_fang",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "iron_ore",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              3,
+              8
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          5,
+          18
+        ]
+      },
+      "vampire": {
+        "guaranteed": [
+          {
+            "item_id": "infected_blood",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "large_fang",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              5,
+              15
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "ruby",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "longsword",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          50,
+          150
+        ]
+      },
+      "vampire_spawn": {
+        "guaranteed": [
+          {
+            "item_id": "infected_blood",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "fang",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              3,
+              8
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          10,
+          40
+        ]
+      },
+      "venomous_scorpion": {
+        "guaranteed": [
+          {
+            "item_id": "venom_sac",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "fang",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "void_horror": {
+        "guaranteed": [
+          {
+            "item_id": "spider_eye",
+            "quantity_range": [
+              5,
+              10
+            ]
+          },
+          {
+            "item_id": "arcane_crystal",
+            "quantity_range": [
+              2,
+              3
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "diamond",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "dragon_blood",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.6,
+            "quantity_range": [
+              15,
+              40
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          100,
+          300
+        ]
+      },
+      "water_elemental": {
+        "guaranteed": [
+          {
+            "item_id": "tidal_essence",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              3
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "pearl",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          15,
+          50
+        ]
+      },
+      "werewolf": {
+        "guaranteed": [
+          {
+            "item_id": "wolf_pelt",
+            "quantity_range": [
+              1,
+              1
+            ]
+          },
+          {
+            "item_id": "infected_blood",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "large_fang",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "wolf_heart",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "torn_cloth",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              3,
+              8
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          8,
+          30
+        ]
+      },
+      "wight": {
+        "guaranteed": [
+          {
+            "item_id": "bone_fragment",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "crude_armor_shard",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "iron_shortsword",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              2,
+              6
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          8,
+          30
+        ]
+      },
+      "wild_boar": {
+        "guaranteed": [
+          {
+            "item_id": "bear_meat",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "fang",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "leather_hide",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          8
+        ]
+      },
+      "will_o_wisp": {
+        "guaranteed": [
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "elemental_dust",
+            "drop_chance": 0.25,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          3,
+          12
+        ]
+      },
+      "wolf": {
+        "guaranteed": [
+          {
+            "item_id": "wolf_pelt",
+            "quantity_range": [
+              1,
+              1
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "fang",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "wolf_heart",
+            "drop_chance": 0.2,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          2,
+          8
+        ]
+      },
+      "wraith": {
+        "guaranteed": [
+          {
+            "item_id": "ectoplasm",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "moonstone_dust",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              3,
+              8
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "potion_of_healing",
+            "drop_chance": 0.1,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "arcane_crystal",
+            "drop_chance": 0.08,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          10,
+          40
+        ]
+      },
+      "wyvern": {
+        "guaranteed": [
+          {
+            "item_id": "leather_hide",
+            "quantity_range": [
+              2,
+              3
+            ]
+          },
+          {
+            "item_id": "venom_sac",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "gale_feather",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              2,
+              5
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "large_fang",
+            "drop_chance": 0.35,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              5,
+              15
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "mysterious_egg",
+            "drop_chance": 0.03,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          }
+        ],
+        "gold_range": [
+          20,
+          70
+        ]
+      },
+      "young_dragon": {
+        "guaranteed": [
+          {
+            "item_id": "dragon_blood",
+            "quantity_range": [
+              1,
+              2
+            ]
+          },
+          {
+            "item_id": "leather_hide",
+            "quantity_range": [
+              2,
+              4
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "large_fang",
+            "drop_chance": 0.5,
+            "quantity_range": [
+              2,
+              4
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "ruby",
+            "drop_chance": 0.12,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "gold_coin",
+            "drop_chance": 0.6,
+            "quantity_range": [
+              15,
+              40
+            ],
+            "rarity": "UNCOMMON"
+          },
+          {
+            "item_id": "mysterious_egg",
+            "drop_chance": 0.05,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "RARE"
+          },
+          {
+            "item_id": "potion_of_greater_healing",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "UNCOMMON"
+          }
+        ],
+        "gold_range": [
+          50,
+          200
+        ]
+      },
+      "zombie": {
+        "guaranteed": [
+          {
+            "item_id": "torn_cloth",
+            "quantity_range": [
+              1,
+              2
+            ]
+          }
+        ],
+        "drops": [
+          {
+            "item_id": "infected_blood",
+            "drop_chance": 0.4,
+            "quantity_range": [
+              1,
+              1
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "bone_fragment",
+            "drop_chance": 0.3,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          },
+          {
+            "item_id": "silver_coin",
+            "drop_chance": 0.15,
+            "quantity_range": [
+              1,
+              2
+            ],
+            "rarity": "COMMON"
+          }
+        ],
+        "gold_range": [
+          1,
+          6
+        ]
+      }
+    }
   }
 }
