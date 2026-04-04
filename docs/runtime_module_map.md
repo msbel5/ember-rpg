@@ -31,13 +31,14 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/campaign/debug_trace.py` | 23 | - | snapshot_hash, trace_event |
 | `frp-backend/engine/api/campaign/dialog.py` | 330 | - | build_dialog_payload, _get_player_actor, _get_npc_actor, _resolve_dialog_def |
 | `frp-backend/engine/api/campaign/live_kernel.py` | 426 | - | ensure_kernel_runtime, serialize_kernel_runtime, advance_kernel_runtime, _check_level_up |
-| `frp-backend/engine/api/campaign/party_bridge.py` | 198 | - | maybe_handle_party_command, party_member_ids, party_summary, allied_actor_ids |
+| `frp-backend/engine/api/campaign/party_bridge.py` | 199 | - | maybe_handle_party_command, party_member_ids, party_summary, allied_actor_ids |
 | `frp-backend/engine/api/campaign/persistence.py` | 201 | - | campaign_payload, persist_campaign_state, build_kernel_payload, _active_site_id |
 | `frp-backend/engine/api/campaign/quest_bridge.py` | 441 | - | maybe_handle_quest_command, apply_dialog_events, sync_runtime_objectives, start_quest |
 | `frp-backend/engine/api/campaign/quest_objectives.py` | 232 | - | sync_runtime_objectives, normalize_objectives, refresh_quest_progress, quest_ready_to_report |
+| `frp-backend/engine/api/campaign/quest_state.py` | 42 | - | snapshot_quest_state, restore_quest_state |
 | `frp-backend/engine/api/campaign/region_projection.py` | 416 | - | _preserved_party_entities, _restore_party_entities, apply_region_to_context, build_map_data |
-| `frp-backend/engine/api/campaign/runtime.py` | 431 | CampaignRuntime (22) | _try_start_tick_loop, _try_stop_tick_loop |
-| `frp-backend/engine/api/campaign/runtime_commands.py` | 251 | - | run_command, advance_world_tick, _dispatch, _advance_world |
+| `frp-backend/engine/api/campaign/runtime.py` | 434 | CampaignRuntime (22) | _try_start_tick_loop, _try_stop_tick_loop |
+| `frp-backend/engine/api/campaign/runtime_commands.py` | 254 | - | run_command, advance_world_tick, _dispatch, _advance_world |
 | `frp-backend/engine/api/campaign/runtime_common.py` | 36 | - | saved_or, saved_list_or, stable_seed, active_site_id |
 | `frp-backend/engine/api/campaign/runtime_effects.py` | 22 | - | effect_events |
 | `frp-backend/engine/api/campaign/runtime_macro_society.py` | 134 | - | macro_society_events, load_stores, default_stores, restock_store |
@@ -96,7 +97,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/kernel/data_loader.py` | 97 | - | _load_json, load_materials, load_quality_tiers, clear_cache |
 | `frp-backend/engine/kernel/dialog.py` | 385 | DialogCondition (2), DialogAction (2), DialogTransition (2), DialogStateNode (2) | start_dialog, evaluate_condition, get_available_transitions, select_transition |
 | `frp-backend/engine/kernel/effects.py` | 448 | EffectDef (2), EffectInstance (6), EffectQueue (12) | apply_effect, tick_effects, compute_effective_stat, dispel_effects |
-| `frp-backend/engine/kernel/game_state.py` | 323 | JournalEntry (2), WorldTime (3), DifficultySettings (3), GameState (2) | _normalized_party_ids, _normalized_inactive_npc_ids, create_game_state, add_to_party |
+| `frp-backend/engine/kernel/game_state.py` | 329 | JournalEntry (2), WorldTime (3), DifficultySettings (3), GameState (3) | _normalized_party_ids, _normalized_inactive_npc_ids, normalize_party_state, create_game_state |
 | `frp-backend/engine/kernel/gameplay.py` | 587 | - | add_inventory_item, restore_ground_item_entities, persist_ground_item_entities, spawn_ground_item_entity |
 | `frp-backend/engine/kernel/hybrid.py` | 48 | - | - |
 | `frp-backend/engine/kernel/hybrid_runtime.py` | 345 | - | macro_state_from_world, travel_options_for_region, initiate_travel, tick_travel |

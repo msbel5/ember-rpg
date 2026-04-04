@@ -18,6 +18,7 @@ from engine.api.campaign.quest_bridge import (
     sync_runtime_objectives,
     tick_quest_tracker,
 )
+from engine.api.campaign.quest_state import restore_quest_state, snapshot_quest_state
 from engine.api.campaign.party_bridge import maybe_handle_party_command
 from engine.api.campaign.state_sync import sync_context_clock
 from engine.api.campaign.region_projection import apply_region_to_context
@@ -206,6 +207,7 @@ def _advance_world(
 ) -> list[dict[str, Any]]:
     """Tick world, realize region, advance kernel runtime, persist state."""
     previous_settlement = copy.deepcopy(context.settlement_state)
+    preserved_quest_state = snapshot_quest_state(context)
     tick_result = tick_global(context.world, hours_advanced)
     generated_events = list(tick_result.generated_events)
     active_region_id = str(context.world.simulation_snapshot.active_region_id)
@@ -226,6 +228,7 @@ def _advance_world(
         profile_id=context.profile_id, seed=context.seed,
         preserve_position=command_type != "travel",
     )
+    restore_quest_state(context, preserved_quest_state, preserve_offers=command_type != "travel")
     sync_context_clock(context)
     live_events = advance_kernel_runtime(
         context, hours_advanced=hours_advanced,

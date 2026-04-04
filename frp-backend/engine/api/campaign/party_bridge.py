@@ -5,7 +5,7 @@ import logging
 import re
 from typing import TYPE_CHECKING, Optional
 
-from engine.kernel.game_state import add_to_party, remove_from_party
+from engine.kernel.game_state import add_to_party, normalize_party_state, remove_from_party
 from engine.world.entity import Entity, EntityType
 
 if TYPE_CHECKING:
@@ -44,6 +44,7 @@ def party_member_ids(context: "CampaignContext") -> list[str]:
     game_state = runtime.get("game_state")
     if game_state is None:
         return ["player"]
+    normalize_party_state(game_state)
     seen: set[str] = set()
     party: list[str] = []
     for actor_id in [str(item) for item in list(getattr(game_state, "party", [])) if str(item)]:

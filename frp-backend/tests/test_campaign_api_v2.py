@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from engine.api.campaign.runtime import CampaignRuntime
 from engine.api import campaign_routes
+from engine.kernel.gameplay import spawn_ground_item_entity
 from main import app
 
 
@@ -227,6 +228,93 @@ def test_report_quest_marks_completion_and_applies_rewards_once():
     assert "supply_run" not in {entry.get("quest_id") for entry in context.campaign_state.get("active_quests", [])}
     assert int(player.raw_payload.get("gold", 0)) == before_gold + 25
     assert int(player.raw_payload.get("xp", 0)) == before_xp + 50
+
+
+def test_collect_objective_survives_inventory_command_and_keeps_progress_details():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("Collector", "warrior", "fantasy_ember", "standard", 42)
+    context.quest_offers = [{
+        "id": "collect_ore",
+        "quest_id": "collect_ore",
+        "title": "Collect Ore",
+        "description": "Bring back one bundle of ore.",
+        "objectives": [{"type": "collect", "item_def_id": "iron_ore", "required": 1}],
+    }]
+    context.campaign_state["quest_offers"] = list(context.quest_offers)
+
+    from engine.api.campaign.quest_bridge import start_quest
+
+    start_quest(context, "collect_ore")
+    spawn_ground_item_entity(context, item={"id": "iron_ore", "name": "Iron Ore", "qty": 1})
+
+    result = runtime.run_command(context.campaign_id, "pickup iron ore")
+
+    assert result["command_type"] == "inventory"
+    active_quest = context.campaign_state["active_quests"][0]
+    objective = active_quest["objectives"][0]
+    assert objective["type"] == "collect"
+    assert objective["item_def_id"] == "iron_ore"
+    assert objective["progress"] == 1
+    assert objective["completed"] is True
+    assert active_quest["report_ready"] is True
+
+
+def test_visit_objective_survives_projection_refresh_and_keeps_progress_details():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("Scout", "warrior", "fantasy_ember", "standard", 42)
+    context.quest_offers = [{
+        "id": "survey_region",
+        "quest_id": "survey_region",
+        "title": "Survey Region",
+        "description": "Confirm the current region is secure.",
+        "objectives": [{"type": "visit", "region_id": context.region_snapshot.region_id, "required": 1}],
+    }]
+    context.campaign_state["quest_offers"] = list(context.quest_offers)
+
+    from engine.api.campaign.quest_bridge import start_quest
+
+    start_quest(context, "survey_region")
+    result = runtime.run_command(context.campaign_id, "look around")
+
+    assert result["command_type"] == "exploration"
+    active_quest = context.campaign_state["active_quests"][0]
+    objective = active_quest["objectives"][0]
+    assert objective["type"] == "visit"
+    assert objective["region_id"] == context.region_snapshot.region_id
+    assert objective["progress"] == 1
+    assert objective["completed"] is True
+    assert active_quest["report_ready"] is True
+
+
+def test_load_campaign_preserves_active_quest_objectives_and_progress():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("Loader", "warrior", "fantasy_ember", "standard", 42)
+    context.quest_offers = [{
+        "id": "collect_ore",
+        "quest_id": "collect_ore",
+        "title": "Collect Ore",
+        "description": "Bring back one bundle of ore.",
+        "objectives": [{"type": "collect", "item_def_id": "iron_ore", "required": 1}],
+    }]
+    context.campaign_state["quest_offers"] = list(context.quest_offers)
+
+    from engine.api.campaign.quest_bridge import start_quest
+
+    start_quest(context, "collect_ore")
+    spawn_ground_item_entity(context, item={"id": "iron_ore", "name": "Iron Ore", "qty": 1})
+    runtime.run_command(context.campaign_id, "pickup iron ore")
+    runtime.save_campaign(context.campaign_id, "quest_progress_slot", "Loader")
+
+    loaded = runtime.load_campaign("quest_progress_slot")
+
+    active_quest = loaded.campaign_state["active_quests"][0]
+    objective = active_quest["objectives"][0]
+    assert active_quest["quest_id"] == "collect_ore"
+    assert objective["type"] == "collect"
+    assert objective["item_def_id"] == "iron_ore"
+    assert objective["progress"] == 1
+    assert objective["completed"] is True
+    assert active_quest["report_ready"] is True
 
 
 def test_campaign_save_listing_filters_legacy_and_other_campaign_slots(tmp_path: Path):

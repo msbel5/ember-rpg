@@ -269,3 +269,27 @@ def test_dialog_advance_quest_updates_active_stage_and_objective_state():
     assert active_quest["stage"] == "return_to_captain"
     assert active_quest["objectives"][0]["progress"] == 1
     assert active_quest["objectives"][0]["completed"] is True
+
+
+def test_sync_runtime_objectives_marks_kill_objective_complete_for_dead_target():
+    _, ctx = _make_campaign()
+    target = _inject_npc(ctx, "fallen_raider", "Fallen Raider")
+    ctx.quest_offers = [{
+        "id": "clear_raiders",
+        "quest_id": "clear_raiders",
+        "title": "Clear Raiders",
+        "objectives": [{"type": "kill", "target_id": "fallen_raider", "required": 1}],
+    }]
+    ctx.campaign_state["quest_offers"] = list(ctx.quest_offers)
+
+    from engine.api.campaign.quest_bridge import start_quest, sync_runtime_objectives
+
+    start_quest(ctx, "clear_raiders")
+    target.alive = False
+    sync_runtime_objectives(ctx)
+
+    active_quest = ctx.campaign_state["active_quests"][0]
+    assert active_quest["objectives"][0]["type"] == "kill"
+    assert active_quest["objectives"][0]["progress"] == 1
+    assert active_quest["objectives"][0]["completed"] is True
+    assert active_quest["report_ready"] is True

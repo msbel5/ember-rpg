@@ -16,6 +16,7 @@ from .context import CampaignContext, CampaignCreationContext
 from .live_kernel import ensure_kernel_runtime
 from .persistence import campaign_payload, persist_campaign_state
 from .quest_bridge import sync_quest_state
+from .quest_state import restore_quest_state, snapshot_quest_state
 from .runtime_commands import run_command as _run_command
 from .state_sync import sync_context_clock
 from .controls import merge_settlement_controls
@@ -341,6 +342,7 @@ class CampaignRuntime:
         refreshed_settlement_state = build_settlement_state(world, region_snapshot, context.adapter_id, context.player.name)
         context.settlement_state = merge_settlement_controls(refreshed_settlement_state, settlement_state)
         self._campaigns[context.campaign_id] = context
+        preserved_quest_state = snapshot_quest_state(context)
         apply_region_to_context(
             context=context,
             world=world,
@@ -351,6 +353,7 @@ class CampaignRuntime:
             profile_id=context.profile_id,
             seed=context.seed,
         )
+        restore_quest_state(context, preserved_quest_state, preserve_offers=True)
         sync_context_clock(context)
         ensure_kernel_runtime(context, rebuild_projection=True)
         sync_quest_state(context)
