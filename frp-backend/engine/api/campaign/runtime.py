@@ -6,7 +6,7 @@ import uuid
 from typing import Any, Callable, Optional
 
 from engine.api.campaign.debug_trace import snapshot_hash, trace_event
-from engine.api.game_engine import GameEngine
+from engine.api.session_factory import create_game_session
 from engine.api.save import SaveSystem
 from engine.kernel.creation import ABILITY_ORDER, CreationState, assign_stats_to_class
 from engine.kernel import GameState
@@ -31,7 +31,6 @@ class CampaignRuntime:
     """Owns campaign-first lifecycle, command dispatch, and save/load."""
 
     def __init__(self, llm: Optional[Callable[[str], str]] = None):
-        self.engine = GameEngine(llm=llm)
         self.save_system = SaveSystem()
         self._campaigns: dict[str, CampaignContext] = {}
         self._creation_flows: dict[str, CampaignCreationContext] = {}
@@ -66,7 +65,7 @@ class CampaignRuntime:
         ) or world.settlements[0]
         initialize_simulation(world, settlement.region_id)
         region_snapshot = realize_region(world, settlement.region_id)
-        session = self.engine.new_session(
+        session = create_game_session(
             player_name=player_name,
             player_class=player_class,
             location=settlement.center_name,

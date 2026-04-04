@@ -17,8 +17,23 @@ from engine.api.campaign.live_kernel import (
     advance_kernel_runtime,
     ensure_kernel_runtime,
 )
-from engine.api.handlers.combat_actions import _award_combat_xp
 from engine.kernel.actor_records import ActorRecord, create_player_actor, create_monster_actor
+
+
+def _award_combat_xp(player: ActorRecord, target: ActorRecord) -> int:
+    """Award XP to the player's kernel ActorRecord for defeating a target.
+
+    XP is derived from the target's level or challenge rating.  The amount
+    is written into ``player.raw_payload["xp"]`` so that the campaign
+    runtime level-up check can pick it up.
+    """
+    target_level = int(target.raw_payload.get("level", 0))
+    target_cr = float(target.raw_payload.get("cr", 0))
+    effective_level = max(1, target_level, int(target_cr))
+    base_xp = effective_level * 50
+    player.raw_payload.setdefault("xp", 0)
+    player.raw_payload["xp"] = int(player.raw_payload["xp"]) + base_xp
+    return base_xp
 
 
 # ---------------------------------------------------------------------------

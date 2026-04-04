@@ -4,7 +4,7 @@ import json
 import pytest
 
 from engine.api.campaign_runtime import CampaignRuntime
-from engine.api.game_engine import GameEngine
+from engine.api.session_factory import create_game_session
 from engine.kernel import GameState
 from tools.campaign_client import CampaignClient
 
@@ -44,7 +44,7 @@ def test_campaign_runtime_lists_only_matching_campaign_saves(tmp_path: Path):
     runtime.save_campaign(first.campaign_id, "first_slot", "Saver")
     runtime.save_campaign(second.campaign_id, "second_slot", "Saver")
 
-    legacy_session = GameEngine(llm=None).new_session("Saver", "warrior", location="Harbor Town")
+    legacy_session = create_game_session("Saver", "warrior", location="Harbor Town")
     runtime.save_system.save_game(legacy_session, "legacy_slot", player_name="Saver")
 
     listed = runtime.list_campaign_saves(first.campaign_id)

@@ -14,8 +14,6 @@ import pytest
 
 from engine.api.campaign.runtime import CampaignRuntime
 from engine.api.campaign import runtime_commands
-from engine.api.game_engine import ActionResult
-from engine.kernel.narrator import SceneType
 
 
 def _make_campaign() -> tuple[CampaignRuntime, object]:
@@ -38,7 +36,6 @@ def _stub_runtime_shell(monkeypatch: pytest.MonkeyPatch, runtime: CampaignRuntim
         "build_dialog_payload",
         lambda _context, narrative: {"dialog_text": narrative, "dialog_options": []},
     )
-    monkeypatch.setattr(runtime.engine, "process_action", _unexpected_fallback)
 
 
 def _clear_top_level_handlers(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -92,22 +89,17 @@ def test_runtime_routes_specialized_commands_without_avatar_fallback(
     assert result["campaign"]["campaign_id"] == context.campaign_id
 
 
-def test_runtime_routes_attack_through_explicit_scene_bridge(monkeypatch: pytest.MonkeyPatch):
+def test_runtime_routes_attack_through_combat_bridge(monkeypatch: pytest.MonkeyPatch):
     runtime, context = _make_campaign()
-    monkeypatch.setattr(runtime_commands, "_advance_world", lambda *args, **kwargs: [])
-    monkeypatch.setattr(runtime_commands, "campaign_payload", lambda ctx: {"campaign_id": ctx.campaign_id})
-    monkeypatch.setattr(runtime_commands, "snapshot_hash", lambda _payload: "contract-hash")
-    monkeypatch.setattr(runtime_commands, "trace_event", lambda *args, **kwargs: None)
+    _stub_runtime_shell(monkeypatch, runtime)
+    _clear_top_level_handlers(monkeypatch)
 
-    def _scene_handler(_session, issued: str):
-        assert issued == "attack goblin"
-        return ActionResult(
-            narrative="handled combat",
-            scene_type=SceneType.COMBAT,
-            combat_state={"phase": "active"},
-        )
-
-    monkeypatch.setattr(runtime.engine, "process_action", _scene_handler)
+    from engine.api import combat_bridge
+    monkeypatch.setattr(
+        combat_bridge,
+        "maybe_handle_combat_command",
+        lambda _context, issued: ("handled combat", "combat", 0) if "attack" in issued else None,
+    )
 
     result = runtime.run_command(context.campaign_id, "attack goblin")
 

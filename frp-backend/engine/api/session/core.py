@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from engine.kernel.actor_records import ActorRecord
-from engine.kernel.narrator import DMContext
+from engine.kernel.scene_types import DMContext
 from engine.npc.npc_memory import NPCMemoryManager
 from engine.world import WorldState
 from engine.world.action_points import ActionPointTracker

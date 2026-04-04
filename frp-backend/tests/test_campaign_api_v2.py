@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from engine.api.campaign_runtime import CampaignRuntime
-from engine.api.game_engine import GameEngine
+from engine.api.session_factory import create_game_session
 from engine.api import campaign_routes
 from main import app
 
@@ -221,7 +221,7 @@ def test_campaign_save_listing_filters_legacy_and_other_campaign_slots(tmp_path:
         first_id = first["campaign_id"]
         client.post(f"/game/campaigns/{first_id}/save", json={"player_id": "CampaignTester", "slot_name": "first_slot"})
         client.post(f"/game/campaigns/{second['campaign_id']}/save", json={"player_id": "CampaignTester", "slot_name": "second_slot"})
-        legacy_session = GameEngine(llm=None).new_session("CampaignTester", "warrior", location="Harbor Town")
+        legacy_session = create_game_session("CampaignTester", "warrior", location="Harbor Town")
         runtime.save_system.save_game(legacy_session, "legacy_slot", player_name="CampaignTester")
 
         player_saves = client.get("/game/campaigns/saves/player/CampaignTester")

@@ -12,7 +12,7 @@ def test_runtime_module_map_covers_core_surfaces():
 
     assert "frp-backend/engine/api/session/core.py" in by_path
     assert "frp-backend/engine/api/save/core.py" in by_path
-    assert "frp-backend/engine/api/game_engine_runtime.py" in by_path
+    assert "frp-backend/engine/api/session_factory.py" in by_path
     assert "frp-backend/engine/api/runtime_constants.py" in by_path
     assert "godot-client/autoloads/backend.gd" in by_path
 

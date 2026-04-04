@@ -1,8 +1,9 @@
 """
-Ember RPG - Kernel Narrator Module
-Kernel-native replacement for engine.core.dm_agent.
-Exports same SceneType/EventType enums, NarratorEvent, NarratorContext
+Ember RPG - Kernel Scene Types and Narrator Module
+Canonical home for SceneType/EventType enums, NarratorEvent, NarratorContext
 dataclasses, and a simplified NarratorService for LLM calls.
+
+Migrated from engine.kernel.narrator to break the GameEngine dependency chain.
 """
 from __future__ import annotations
 

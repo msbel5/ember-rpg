@@ -143,7 +143,7 @@ class SaveSessionStateMixin:
 
         from engine.api.session.core import GameSession
         from engine.kernel.actor_records import ActorRecord
-        from engine.kernel.narrator import DMContext, SceneType
+        from engine.kernel.scene_types import DMContext, SceneType
         from engine.map import MapData
         from engine.npc.npc_memory import NPCMemoryManager
         from engine.world import WorldState
