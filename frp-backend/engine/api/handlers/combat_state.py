@@ -188,7 +188,8 @@ class CombatStateMixin:
                 try:
                     result = execute_attack(combat, actors, active.actor_id, player_id)
                     hit = result.combat_result.hit
-                    damage = result.combat_result.damage
+                    sr = result.combat_result.strike_resolution
+                    damage = sr.effective_damage if sr else 0
                     messages.append(
                         self._build_enemy_combat_narrative(session, active_actor, hit, damage)
                     )

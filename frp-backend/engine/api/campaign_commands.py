@@ -221,6 +221,57 @@ def merge_avatar_narrative(context: "CampaignContext", narrative: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Talk command — opens authored dialog with an NPC
+# ---------------------------------------------------------------------------
+
+_TALK_RE = __import__("re").compile(r"^talk\s+(?:to\s+)?(.+)$", __import__("re").IGNORECASE)
+
+
+def maybe_handle_talk_command(
+    context: "CampaignContext", command_text: str,
+) -> Optional[tuple[str, str, int]]:
+    """Open authored dialog with a named NPC via kernel dialog bridge."""
+    match = _TALK_RE.match(command_text.strip())
+    if not match:
+        return None
+    npc_query = match.group(1).strip()
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    # Find NPC by display_name match.
+    target_actor = None
+    target_id = ""
+    query_lower = npc_query.lower()
+    for actor_id, actor in actors.items():
+        if actor_id == "player":
+            continue
+        name = getattr(actor.identity, "display_name", "")
+        if query_lower in name.lower() or query_lower.replace(" ", "_") == actor_id.lower():
+            target_actor = actor
+            target_id = actor_id
+            break
+    if target_actor is None:
+        return (f"No one named '{npc_query}' is here.", "dialog", 0)
+    if not getattr(target_actor, "alive", True):
+        return (f"{npc_query} is dead.", "dialog", 0)
+    # Set conversation state for dialog bridge.
+    npc_name = getattr(target_actor.identity, "display_name", npc_query)
+    context.session.conversation_state = {
+        "target_type": "npc",
+        "npc_id": target_id,
+        "npc_name": npc_name,
+    }
+    # Build dialog payload from kernel dialog bridge.
+    from engine.api.campaign.dialog import build_dialog_payload
+    dialog_payload = build_dialog_payload(context, f"{npc_name} turns to face you.")
+    if not dialog_payload:
+        return (f"{npc_name} has nothing to say.", "dialog", 0)
+    # Store dialog info in context for run_command to merge into response.
+    runtime["_pending_dialog_payload"] = dialog_payload
+    logger.info("Talk: opened dialog with %s (%s)", npc_name, target_id)
+    return (dialog_payload.get("dialog_text", f"{npc_name} regards you."), "dialog", 0)
+
+
+# ---------------------------------------------------------------------------
 # Dialog commands (kernel dialog authority)
 # ---------------------------------------------------------------------------
 

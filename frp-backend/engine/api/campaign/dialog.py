@@ -120,20 +120,16 @@ def _extract_npc_role(
     npc_name: str,
     npc_actor: "ActorRecord",
 ) -> str:
-    """Get the role string for an NPC from kernel runtime."""
-    role = str(getattr(npc_actor, "raw_payload", {}).get("role", "")).strip()
-    if role:
-        return role
-    runtime = context.kernel_runtime or {}
-    actors = runtime.get("actors", {})
-    if npc_id:
-        actor = actors.get(npc_id)
-        if actor is not None:
-            return str(getattr(actor, "raw_payload", {}).get("role", "")).strip()
-    for actor in actors.values():
-        display_name = str(getattr(getattr(actor, "identity", None), "display_name", "")).strip()
-        if display_name and display_name.lower() == npc_name.lower():
-            return str(getattr(actor, "raw_payload", {}).get("role", "")).strip()
+    """Get the role string for an NPC from kernel runtime.
+
+    Checks raw_payload keys: role, template, legacy_job (worldgen NPCs
+    often use 'template' instead of 'role').
+    """
+    rp = getattr(npc_actor, "raw_payload", {})
+    for key in ("role", "template", "legacy_job"):
+        value = str(rp.get(key, "")).strip()
+        if value:
+            return value
     return ""
 
 

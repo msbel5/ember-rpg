@@ -69,7 +69,7 @@ def test_campaign_client_health_endpoint_reports_required_capabilities():
         "campaign_creation": True,
         "campaign_runtime": True,
         "campaign_save_load": True,
-        "schema_version": "3.0",
+        "schema_version": "4.0",
     }
 
 
@@ -123,10 +123,11 @@ def test_campaign_talk_command_returns_dialog_payload_when_conversation_is_activ
     assert response.status_code == 200
     body = response.json()
 
-    assert body["dialog_npc"] == target_name
-    assert body["dialog_text"]
-    assert body["dialog_options"]
-    assert body["dialog_options"][0]["command"] == "ask about work"
+    assert body.get("dialog_npc") == target_name
+    assert body.get("dialog_text")
+    assert body.get("dialog_options")
+    # Authored dialog options use "dialog <transition_id>" command format.
+    assert all(opt["command"].startswith("dialog ") for opt in body["dialog_options"])
     assert all("enabled" in option for option in body["dialog_options"])
     assert all("disabled_reason" in option for option in body["dialog_options"])
     assert any("skill_check" in option for option in body["dialog_options"])

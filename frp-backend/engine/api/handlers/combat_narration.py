@@ -122,6 +122,6 @@ class CombatNarrationMixin:
         return ActionResult(
             narrative=narrative,
             scene_type=session.dm_context.scene_type,
-            combat_state=self._combat_state(session.combat),
+            combat_state=self._combat_state(session),
             state_changes={"_skip_world_tick": True},
         )

@@ -24,6 +24,7 @@ from engine.api.campaign_commands import (
     maybe_handle_commerce_command,
     maybe_handle_dialog_command,
     maybe_handle_medical_command,
+    maybe_handle_talk_command,
     merge_avatar_narrative,
     resolve_command_text,
 )
@@ -82,7 +83,11 @@ def run_command(
     )
     narrative, command_type, hours_advanced = _dispatch(engine, context, issued, command_args)
     _advance_world(context, command_type, hours_advanced, issued)
-    dialog_payload = build_dialog_payload(context, narrative) if command_type == "dialog" else {}
+    # Dialog payload: use pre-built payload from talk handler if available, otherwise build fresh.
+    runtime = context.kernel_runtime or {}
+    dialog_payload = runtime.pop("_pending_dialog_payload", None) or (
+        build_dialog_payload(context, narrative) if command_type == "dialog" else {}
+    )
     final_payload = campaign_payload(context)
     trace_event(
         "campaign_command_output",
@@ -127,6 +132,9 @@ def _dispatch(
     handled = maybe_handle_commander_command(context, issued)
     if handled is not None:
         return handled
+    talk = maybe_handle_talk_command(context, issued)
+    if talk is not None:
+        return talk
     dialog = maybe_handle_dialog_command(context, issued)
     if dialog is not None:
         return dialog
