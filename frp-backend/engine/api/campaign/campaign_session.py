@@ -128,9 +128,14 @@ class CampaignSession:
         self.equipment[slot] = item_data
 
     @staticmethod
-    def normalize_quest_offers(offers: list) -> list:
+    def normalize_quest_offers(offers: list, default_source: str = "authored") -> list:
         """Normalize quest offers for serialization."""
-        return [dict(o) if isinstance(o, dict) else {"id": str(o)} for o in (offers or [])]
+        result = []
+        for o in (offers or []):
+            entry = dict(o) if isinstance(o, dict) else {"id": str(o)}
+            entry.setdefault("source", default_source)
+            result.append(entry)
+        return result
 
     def assess_item_addition(self, item_data: dict, merge: bool = False) -> dict:
         """Check if item can be added (weight/capacity check)."""
