@@ -9,7 +9,7 @@ from engine.api.session_utils import make_conversation_state
 class SessionConversationMixin:
     """Conversation-state methods."""
 
-    def replace_with(self, other: "GameSession", preserve_session_id: bool = False) -> None:
+    def replace_with(self, other: "CampaignSession", preserve_session_id: bool = False) -> None:
         current_session_id = self.session_id
         for field_name in self.__dataclass_fields__:
             setattr(self, field_name, getattr(other, field_name))

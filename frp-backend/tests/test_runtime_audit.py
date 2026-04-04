@@ -10,14 +10,14 @@ def test_runtime_module_map_covers_core_surfaces():
     module_map = build_runtime_module_map()
     by_path = {entry["path"]: entry for entry in module_map}
 
-    assert "frp-backend/engine/api/session/core.py" in by_path
+    assert "frp-backend/engine/api/campaign_session.py" in by_path
     assert "frp-backend/engine/api/save/core.py" in by_path
     assert "frp-backend/engine/api/session_factory.py" in by_path
     assert "frp-backend/engine/api/runtime_constants.py" in by_path
     assert "godot-client/autoloads/backend.gd" in by_path
 
-    session_core = by_path["frp-backend/engine/api/session/core.py"]
-    assert any(item["name"] == "GameSession" for item in session_core["classes"])
+    campaign_session = by_path["frp-backend/engine/api/campaign_session.py"]
+    assert any(item["name"] == "CampaignSession" for item in campaign_session["classes"])
 
     save_core = by_path["frp-backend/engine/api/save/core.py"]
     assert any(item["name"] == "SaveSystem" for item in save_core["classes"])

@@ -11,7 +11,7 @@ from .combat_state import SaveCombatStateMixin
 
 
 class SaveSessionStateMixin:
-    """GameSession serialization and deserialization."""
+    """CampaignSession serialization and deserialization."""
 
     _CAMPAIGN_ROOT_KEY = "campaign"
 
@@ -124,9 +124,9 @@ class SaveSessionStateMixin:
         if session.history_seed is not None:
             data["history_seed"] = session.history_seed.to_dict()
 
-        from engine.api.session.core import GameSession
+        from engine.api.campaign_session import CampaignSession
 
-        data["quest_offers"] = GameSession.normalize_quest_offers(
+        data["quest_offers"] = CampaignSession.normalize_quest_offers(
             getattr(session, "quest_offers", []),
             default_source="authored",
         )
@@ -141,7 +141,7 @@ class SaveSessionStateMixin:
     def _deserialize_session(data: Dict[str, Any]):
         from datetime import datetime as dt
 
-        from engine.api.session.core import GameSession
+        from engine.api.campaign_session import CampaignSession
         from engine.kernel.actor_records import ActorRecord
         from engine.kernel.scene_types import DMContext, SceneType
         from engine.map import MapData
@@ -202,7 +202,7 @@ class SaveSessionStateMixin:
             if spatial_index.get_position("player") is None:
                 spatial_index.add(player_entity)
 
-        session = object.__new__(GameSession)
+        session = object.__new__(CampaignSession)
         session.session_id = data.get("session_id", "restored")
         session.player = player
         session.dm_context = dm_context if dm_context else DMContext(
@@ -241,7 +241,7 @@ class SaveSessionStateMixin:
             if isinstance(body_data, dict):
                 entity["body"] = BodyPartTracker.from_dict(body_data)
         session.entities = raw_entities
-        session.quest_offers = GameSession.normalize_quest_offers(
+        session.quest_offers = CampaignSession.normalize_quest_offers(
             data.get("quest_offers", []),
             default_source="authored",
         )

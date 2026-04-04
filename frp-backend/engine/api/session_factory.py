@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from engine.api.session.core import GameSession
+from engine.api.campaign_session import CampaignSession
 from engine.api.runtime_constants import CLASS_ALIASES, DEFAULT_PLAYER_CLASS, LOCATION_STOCK_BASELINE, OPENING_SCENES, STARTER_KITS
 from engine.kernel.actor_records import create_player_actor
 from engine.kernel.creation import (
@@ -36,8 +36,8 @@ def create_game_session(
     stats: dict[str, int] | None = None,
     creation_answers: list | None = None,
     creation_profile: dict | None = None,
-) -> GameSession:
-    """Create a fully initialized GameSession with player actor, stats, skills, and equipment."""
+) -> CampaignSession:
+    """Create a fully initialized CampaignSession with player actor, stats, skills, and equipment."""
     unknown_class_fallback = get_creation_unknown_class_fallback()
     requested_class = str(player_class or DEFAULT_PLAYER_CLASS).lower()
     player_class = CLASS_ALIASES.get(requested_class, requested_class)
@@ -103,7 +103,7 @@ def create_game_session(
 
     loc = OPENING_SCENES[0][0] if location is None else location
     dm_context = DMContext(scene_type=SceneType.EXPLORATION, location=loc, party=[player])
-    session = GameSession(player=player, dm_context=dm_context)
+    session = CampaignSession(player=player, dm_context=dm_context)
 
     seed = hash(session.session_id) % 1000000
     session.history_seed = HistorySeed().generate(seed=seed)

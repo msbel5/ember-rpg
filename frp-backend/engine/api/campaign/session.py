@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 from typing import Any
 
-from engine.api.session.core import GameSession
+from engine.api.campaign_session import CampaignSession
 from engine.kernel.scene_types import SceneType
 from engine.map import MapData, Room, TileType
 from engine.world.entity import Entity, EntityType
@@ -77,7 +77,7 @@ _ROLE_COLORS: dict[str, str] = {
 
 def apply_region_to_session(
     *,
-    session: GameSession,
+    session: CampaignSession,
     world: WorldBlueprint,
     region_snapshot: RegionSnapshot,
     settlement_state: dict[str, Any],
@@ -214,7 +214,7 @@ def build_world_entities(world: WorldBlueprint, region_snapshot: RegionSnapshot,
 
 
 def seed_region_entities(
-    session: GameSession,
+    session: CampaignSession,
     world: WorldBlueprint,
     region_snapshot: RegionSnapshot,
     adapter_id: str,

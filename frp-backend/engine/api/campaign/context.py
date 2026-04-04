@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from engine.api.session.core import GameSession
+from engine.api.campaign_session import CampaignSession
 from engine.kernel.creation import CreationState
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
@@ -16,7 +16,7 @@ class CampaignContext:
     profile_id: str
     seed: int
     world: WorldBlueprint
-    session: GameSession
+    session: CampaignSession
     region_snapshot: RegionSnapshot
     settlement_state: dict[str, Any]
     recent_event_log: list[dict[str, Any]] = field(default_factory=list)

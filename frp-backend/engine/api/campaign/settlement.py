@@ -9,7 +9,7 @@ import copy
 import logging
 from typing import Any
 
-from engine.api.session.core import GameSession
+from engine.api.campaign_session import CampaignSession
 from engine.data.classes import get_creation_ability_order
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
@@ -121,7 +121,7 @@ def build_settlement_state(
     }
 
 
-def build_character_sheet(session: GameSession, settlement_state: dict[str, Any] | None = None) -> dict[str, Any]:
+def build_character_sheet(session: CampaignSession, settlement_state: dict[str, Any] | None = None) -> dict[str, Any]:
     player = session.player
     dominant_class = str(player.dominant_class or "adventurer")
     stats = []
@@ -194,7 +194,7 @@ def build_character_sheet(session: GameSession, settlement_state: dict[str, Any]
     }
 
 
-def current_player_turn_resources(session: GameSession) -> dict[str, int | bool]:
+def current_player_turn_resources(session: CampaignSession) -> dict[str, int | bool]:
     combat = getattr(session, "combat", None)
     player_name = str(getattr(session.player, "name", "")).strip()
     if combat is not None:

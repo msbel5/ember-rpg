@@ -17,11 +17,15 @@ ALLOWED_OVERSIZE: Dict[str, str] = {
     "frp-backend/engine/core/combat.py": "Combat core remains monolithic until rules/narration are peeled apart.",
     "frp-backend/engine/core/dm_agent.py": "DM agent still mixes prompting, fallback, and formatting.",
     "frp-backend/engine/kernel/actor_records.py": "Actor record bridging still centralizes legacy-to-kernel conversion and sync helpers.",
+    "frp-backend/engine/kernel/gameplay.py": "Gameplay kernel bundles equipment, crafting, rest, and ground-item helpers.",
     "frp-backend/engine/map/__init__.py": "Map generation package still centralizes multiple generators.",
+    "frp-backend/engine/api/campaign_commands.py": "Campaign command dispatch centralizes all command handlers and dialog/commerce routing.",
+    "frp-backend/tools/content_orchestrator.py": "Content orchestrator bundles world-building generation pipeline.",
     "godot-client/tests/automation/godot/automation_bridge.gd": "Semantic automation bridge remains centralized as a test-only control surface.",
     "godot-client/tests/run_headless_tests.gd": "Godot smoke harness intentionally centralizes lightweight client contract checks.",
     "godot-client/scripts/ui/creation_wizard.gd": "Creation wizard still owns the transitional multi-step shell flow until the UI rewrite lands.",
     "godot-client/scripts/ui/minimap_panel.gd": "Minimap panel still bundles viewport, legend, and travel affordances in one surface.",
+    "godot-client/autoloads/game_state.gd": "Game state autoload centralizes client-side state management.",
 }
 FORBIDDEN_SNIPPETS: Dict[str, List[str]] = {
     "frp-backend/engine/world/consequence.py": [

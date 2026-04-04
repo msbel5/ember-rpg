@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 from typing import Any
 
-from engine.api.session.core import GameSession
+from engine.api.campaign_session import CampaignSession
 from engine.kernel import (
     ActorRecord,
     AreaState,
@@ -22,7 +22,7 @@ def build_canonical_world_state(world: WorldBlueprint) -> dict[str, Any]:
 
 
 def build_canonical_actor_roster(
-    session: GameSession,
+    session: CampaignSession,
     *,
     active_region_id: str | None = None,
     active_site_id: str | None = None,
@@ -38,7 +38,7 @@ def build_canonical_actor_roster(
 
 
 def build_canonical_actor_records(
-    session: GameSession,
+    session: CampaignSession,
     *,
     active_region_id: str | None = None,
     active_site_id: str | None = None,
@@ -76,7 +76,7 @@ def build_canonical_actor_records(
 
 
 def build_canonical_game_state(
-    session: GameSession,
+    session: CampaignSession,
     *,
     campaign_id: str,
     seed: int,

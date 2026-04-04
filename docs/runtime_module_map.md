@@ -6,10 +6,14 @@ Oversized runtime files are only permitted when explicitly documented below.
 
 ## Oversize Exceptions
 
+- `frp-backend/engine/api/campaign_commands.py`: Campaign command dispatch centralizes all command handlers and dialog/commerce routing.
 - `frp-backend/engine/core/combat.py`: Combat core remains monolithic until rules/narration are peeled apart.
 - `frp-backend/engine/core/dm_agent.py`: DM agent still mixes prompting, fallback, and formatting.
 - `frp-backend/engine/kernel/actor_records.py`: Actor record bridging still centralizes legacy-to-kernel conversion and sync helpers.
+- `frp-backend/engine/kernel/gameplay.py`: Gameplay kernel bundles equipment, crafting, rest, and ground-item helpers.
 - `frp-backend/engine/map/__init__.py`: Map generation package still centralizes multiple generators.
+- `frp-backend/tools/content_orchestrator.py`: Content orchestrator bundles world-building generation pipeline.
+- `godot-client/autoloads/game_state.gd`: Game state autoload centralizes client-side state management.
 - `godot-client/scripts/ui/creation_wizard.gd`: Creation wizard still owns the transitional multi-step shell flow until the UI rewrite lands.
 - `godot-client/scripts/ui/minimap_panel.gd`: Minimap panel still bundles viewport, legend, and travel affordances in one surface.
 - `godot-client/tests/automation/godot/automation_bridge.gd`: Semantic automation bridge remains centralized as a test-only control surface.
@@ -45,6 +49,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/campaign_models.py` | 140 | CreateCampaignRequest (0), CampaignCreationStartRequest (0), CampaignCreationAnswerRequest (0), CampaignCreationFinalizeRequest (0) | - |
 | `frp-backend/engine/api/campaign_routes.py` | 299 | - | _make_llm_callable, get_campaign_client_health, _creation_response, get_campaign_creation_catalog |
 | `frp-backend/engine/api/campaign_runtime.py` | 5 | - | - |
+| `frp-backend/engine/api/campaign_session.py` | 99 | CampaignSession (0) | - |
 | `frp-backend/engine/api/campaign_state.py` | 33 | - | - |
 | `frp-backend/engine/api/combat_bridge.py` | 235 | - | maybe_handle_combat_command, _handle_attack, _handle_defend, _handle_flee |
 | `frp-backend/engine/api/exploration_bridge.py` | 245 | - | _player, _actors, _npc_list, _time_desc |
@@ -58,11 +63,11 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/save/core.py` | 16 | SaveSystem (1) | - |
 | `frp-backend/engine/api/save/repository.py` | 148 | SaveRepositoryMixin (11) | - |
 | `frp-backend/engine/api/save/session_state.py` | 384 | SaveSessionStateMixin (4) | - |
-| `frp-backend/engine/api/session/__init__.py` | 11 | - | - |
+| `frp-backend/engine/api/session/__init__.py` | 13 | - | - |
 | `frp-backend/engine/api/session/bootstrap.py` | 196 | SessionBootstrapMixin (3) | - |
 | `frp-backend/engine/api/session/constants.py` | 20 | - | - |
 | `frp-backend/engine/api/session/conversation.py` | 37 | SessionConversationMixin (3) | - |
-| `frp-backend/engine/api/session/core.py` | 84 | GameSession (0) | - |
+| `frp-backend/engine/api/session/core.py` | 16 | - | __getattr__ |
 | `frp-backend/engine/api/session/encumbrance.py` | 106 | SessionEncumbranceMixin (9) | - |
 | `frp-backend/engine/api/session/entity_state.py` | 92 | SessionEntityMixin (4) | - |
 | `frp-backend/engine/api/session/inventory_state.py` | 209 | SessionInventoryMixin (20) | - |
@@ -197,7 +202,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/tools/content_validator.py` | 335 | - | _infer_signature, _validate_signature, _validate_standard_list_family, _validate_campaigns |
 | `frp-backend/tools/doc_inventory.py` | 185 | - | _relative, _load_registry, _scan_active_prds, _scan_deprecated_prds |
 | `frp-backend/tools/generate_content.py` | 213 | - | header, step, ok, fail |
-| `frp-backend/tools/runtime_audit.py` | 191 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
+| `frp-backend/tools/runtime_audit.py` | 195 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
 | `godot-client/autoloads/backend.gd` | 262 | - | _ready, set_base_url, get_base_url, create_campaign |
 | `godot-client/autoloads/backend_runtime.gd` | 157 | - | ensure_bootstrap, reset_state, _run_bootstrap, _commit_backend |
 | `godot-client/autoloads/game_state.gd` | 487 | - | update_from_response, reset, is_in_combat, has_active_campaign |
