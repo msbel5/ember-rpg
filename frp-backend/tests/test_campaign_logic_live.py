@@ -29,7 +29,7 @@ def test_campaign_runtime_exposes_logic_live_slices_for_supported_adapters(adapt
     runtime = _runtime()
     context = runtime.create_campaign("Parity", adapter_id=adapter_id, seed=seed)
 
-    response = runtime.run_command(context.campaign_id, "wait one hour")
+    response = runtime.run_command(context.campaign_id, "rest")
     campaign = response["campaign"]
 
     assert campaign["world"]["adapter_id"] == adapter_id
@@ -72,7 +72,8 @@ def test_campaign_runtime_ticks_effects_and_syndromes_live():
     )
     assert apply_syndrome(actor, venom, seed=1) is True
 
-    response = runtime.run_command(context.campaign_id, "look around")
+    # "rest" advances 1 hour so effects/syndromes tick.
+    response = runtime.run_command(context.campaign_id, "rest")
     player_payload = next(
         item for item in response["campaign"]["actors"] if item["identity"]["actor_id"] == "player"
     )
@@ -156,8 +157,8 @@ def test_campaign_runtime_updates_stores_trade_migration_and_diplomacy_live():
         )
     ]
 
-    # "look around" is a valid scene-bridge command that advances world time.
-    response = runtime.run_command(context.campaign_id, "look around")
+    # "rest" advances 1 hour so world systems tick.
+    response = runtime.run_command(context.campaign_id, "rest")
     world_state = response["campaign"]["world_state"]
 
     assert response["campaign"]["stores"]
@@ -196,8 +197,8 @@ def test_campaign_runtime_ticks_systems_and_applies_environmental_consequences()
     ]
     context.settlement_state["trap_positions"] = {"gate_spikes": [5, 5]}
 
-    # "look around" is a valid scene-bridge command that triggers world tick.
-    response = runtime.run_command(context.campaign_id, "look around")
+    # "rest" advances 1 hour so environmental systems tick.
+    response = runtime.run_command(context.campaign_id, "rest")
     player_payload = next(
         item for item in response["campaign"]["actors"] if item["identity"]["actor_id"] == "player"
     )

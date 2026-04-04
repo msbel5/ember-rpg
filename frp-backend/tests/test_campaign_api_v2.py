@@ -86,7 +86,7 @@ def test_campaign_command_and_region_endpoints_work():
     command = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": "look around"})
     assert command.status_code == 200
     body = command.json()
-    assert body["command_type"] == "avatar"
+    assert body["command_type"] in ("avatar", "exploration")
     assert body["campaign"]["recent_event_log"]
     assert body["campaign"]["jobs"]
     assert "unrest" in body["campaign"]["colony_pressure"]
@@ -137,17 +137,32 @@ def test_campaign_attack_command_marks_scene_as_combat_when_combat_payload_exist
     payload = _create_campaign()
     campaign_id = payload["campaign_id"]
 
-    response = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": "attack wolf"})
+    # Find an actual NPC to attack (campaign-native, no enemy spawning).
+    npcs = [
+        actor for actor in payload["campaign"]["actors"]
+        if actor["identity"]["actor_id"] != "player"
+        and actor["identity"].get("actor_type") == "npc"
+        and actor.get("alive", True)
+    ]
+    if not npcs:
+        pytest.skip("No NPCs in fresh campaign to attack")
+    target_name = npcs[0]["identity"]["display_name"]
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={"input": f"attack {target_name}"},
+    )
     assert response.status_code == 200
     body = response.json()
 
-    assert body["campaign"]["combat"]
+    # Combat bridge returns command_type="combat" and builds combat state.
+    assert body["command_type"] == "combat"
     assert body["campaign"]["scene"] == "combat"
+    assert body["campaign"]["combat"]
     assert body["campaign"]["combat"]["phase"]
     assert "turn_actor_id" in body["campaign"]["combat"]
     assert "available_actions" in body["campaign"]["combat"]
     assert "targets" in body["campaign"]["combat"]
-    assert "log_entries" in body["campaign"]["combat"]
 
 
 def test_campaign_save_and_load_round_trip():

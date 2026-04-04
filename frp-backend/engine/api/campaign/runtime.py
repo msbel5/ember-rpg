@@ -352,7 +352,7 @@ class CampaignRuntime:
         args: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         context = self.get_campaign(campaign_id)
-        return _run_command(self.engine, context, input_text, shortcut=shortcut, args=args)
+        return _run_command(context, input_text, shortcut=shortcut, args=args)
 
     def snapshot(self, campaign_id: str, narrative: str = "") -> dict[str, Any]:
         context = self.get_campaign(campaign_id)

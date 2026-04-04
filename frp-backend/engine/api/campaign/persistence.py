@@ -47,7 +47,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     session_data = context.session.to_dict()
     runtime_state = runtime_region_state(context.world, context.region_snapshot.region_id)
     kernel_payload = build_kernel_payload(context)
-    combat_state = session_data.get("combat")
+    combat_state = session_data.get("combat") or context.session.campaign_state.get("combat_state")
     payload_scene = str(session_data.get("scene", "exploration"))
     if isinstance(combat_state, dict) and combat_state and not bool(combat_state.get("ended", False)):
         payload_scene = "combat"

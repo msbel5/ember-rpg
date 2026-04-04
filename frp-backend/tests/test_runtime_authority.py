@@ -50,13 +50,11 @@ class TestUnknownCommandRejection:
             result = rt.run_command(ctx.campaign_id, cmd)
             assert result["command_type"] != "unknown", f"'{cmd}' was rejected as unknown"
 
-    def test_look_around_routed_via_scene_bridge(self):
-        """'look around' is a scene verb routed via the quarantine bridge,
-        not through the removed catch-all fallback."""
+    def test_look_around_routed_via_exploration_bridge(self):
+        """'look around' is handled by the campaign-native exploration bridge."""
         rt, ctx = _make_campaign()
         result = rt.run_command(ctx.campaign_id, "look around")
-        # Routed through _dispatch_scene_command (allowlist), not catch-all.
-        assert result["command_type"] in ("avatar", "combat")
+        assert result["command_type"] == "exploration"
         assert "narrative" in result
 
 

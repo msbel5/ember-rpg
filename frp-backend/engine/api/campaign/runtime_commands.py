@@ -8,7 +8,6 @@ import copy
 import logging
 from typing import Any, Optional
 
-from engine.api.action_parser import ActionIntent
 from engine.api.campaign.debug_trace import snapshot_hash, trace_event
 from engine.api.campaign.dialog import build_dialog_payload
 from engine.api.campaign.live_kernel import advance_kernel_runtime
@@ -19,14 +18,18 @@ from engine.api.campaign.controls import merge_settlement_controls
 from engine.api.campaign.world import alerts_from_events
 from engine.api.campaign_commands import (
     handle_travel,
-    hours_for_avatar_command,
     maybe_handle_commander_command,
     maybe_handle_commerce_command,
     maybe_handle_dialog_command,
     maybe_handle_medical_command,
     maybe_handle_talk_command,
-    merge_avatar_narrative,
     resolve_command_text,
+)
+from engine.api.exploration_bridge import (
+    maybe_handle_look_command,
+    maybe_handle_examine_command,
+    maybe_handle_move_command,
+    maybe_handle_scene_verb_command,
 )
 from engine.worldgen import realize_region, tick_global
 
@@ -34,37 +37,8 @@ from .context import CampaignContext
 
 logger = logging.getLogger(__name__)
 
-_SCENE_BRIDGE_INTENTS = {
-    ActionIntent.ATTACK,
-    ActionIntent.DISENGAGE,
-    ActionIntent.EXAMINE,
-    ActionIntent.FILL,
-    ActionIntent.FISH,
-    ActionIntent.FLEE,
-    ActionIntent.GO_TO,
-    ActionIntent.INTERACT,
-    ActionIntent.LOOK,
-    ActionIntent.LOCKPICK,
-    ActionIntent.MINE,
-    ActionIntent.MOVE,
-    ActionIntent.OPEN,
-    ActionIntent.POUR,
-    ActionIntent.EMPTY,
-    ActionIntent.PRAY,
-    ActionIntent.PUSH,
-    ActionIntent.READ_ITEM,
-    ActionIntent.SEARCH,
-    ActionIntent.SNEAK,
-    ActionIntent.STASH,
-    ActionIntent.ROTATE_ITEM,
-    ActionIntent.STEAL,
-    ActionIntent.CHOP,
-    ActionIntent.CLIMB,
-}
-
 
 def run_command(
-    engine: Any,
     context: CampaignContext,
     input_text: str,
     shortcut: Optional[str] = None,
@@ -81,7 +55,7 @@ def run_command(
         shortcut=str(shortcut or ""),
         pre_snapshot_hash=pre_hash,
     )
-    narrative, command_type, hours_advanced = _dispatch(engine, context, issued, command_args)
+    narrative, command_type, hours_advanced = _dispatch(context, issued, command_args)
     _advance_world(context, command_type, hours_advanced, issued)
     # Dialog payload: use pre-built payload from talk handler if available, otherwise build fresh.
     runtime = context.kernel_runtime or {}
@@ -118,7 +92,6 @@ def advance_world_tick(context: CampaignContext, hours: int = 1) -> list[dict[st
 # ---------------------------------------------------------------------------
 
 def _dispatch(
-    engine: Any,
     context: CampaignContext,
     issued: str,
     command_args: dict[str, Any],
@@ -144,9 +117,6 @@ def _dispatch(
     medical = maybe_handle_medical_command(context, issued)
     if medical is not None:
         return medical
-    scene_command = _dispatch_scene_command(engine, context, issued)
-    if scene_command is not None:
-        return scene_command
     # Combat handler.
     from engine.api.combat_bridge import maybe_handle_combat_command  # noqa: E402
     combat = maybe_handle_combat_command(context, issued)
@@ -175,9 +145,20 @@ def _dispatch(
     spell = maybe_handle_spell_command(context, issued)
     if spell is not None:
         return spell
+    # Exploration bridge: look, examine, move, and skill-based scene verbs.
+    look = maybe_handle_look_command(context, issued)
+    if look is not None:
+        return look
+    examine = maybe_handle_examine_command(context, issued)
+    if examine is not None:
+        return examine
+    move_result = maybe_handle_move_command(context, issued)
+    if move_result is not None:
+        return move_result
+    scene = maybe_handle_scene_verb_command(context, issued)
+    if scene is not None:
+        return scene
     # No handler matched — return explicit unknown command response.
-    # Legacy fallback through engine.process_action() has been removed;
-    # all valid commands must be routed through campaign dispatch above.
     logger.warning("Unknown command rejected: %s", issued[:80])
     return (
         f"Unknown command: '{issued}'. Try: attack, cast, equip, craft, rest, "
@@ -186,35 +167,6 @@ def _dispatch(
         "unknown",
         0,
     )
-
-
-def _dispatch_scene_command(
-    engine: Any,
-    context: CampaignContext,
-    issued: str,
-) -> tuple[str, str, int] | None:
-    """Explicitly route supported scene commands through GameEngine.
-
-    This is a quarantine bridge, not a catch-all fallback: only a fixed
-    allowlist of exploration/combat verbs can reach GameEngine. Unknown
-    or removed commands never drop into process_action implicitly.
-    """
-    parsed = engine.parser.parse(issued)
-    if parsed.intent not in _SCENE_BRIDGE_INTENTS:
-        return None
-    result = engine.process_action(context.session, issued)
-    command_type = _scene_command_type(parsed.intent, result)
-    hours = 0 if command_type == "combat" else hours_for_avatar_command(issued)
-    return merge_avatar_narrative(context, result.narrative), command_type, hours
-
-
-def _scene_command_type(intent: ActionIntent, result: Any) -> str:
-    scene_value = str(getattr(getattr(result, "scene_type", None), "value", "")).lower()
-    if scene_value == "combat" or getattr(result, "combat_state", None) is not None:
-        return "combat"
-    if intent in {ActionIntent.LOOK, ActionIntent.EXAMINE, ActionIntent.MOVE, ActionIntent.GO_TO}:
-        return "avatar"
-    return "avatar"
 
 
 def _advance_world(

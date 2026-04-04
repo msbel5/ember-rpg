@@ -115,6 +115,9 @@ def _handle_attack(
         parts.append(f"{target.name} is slain")
     narrative = ". ".join(parts) + "."
 
+    # Persist combat state into session for campaign payload serialization.
+    _store_combat_state(context, player, target, killed)
+
     logger.info(
         "Combat: %s -> %s, damage=%d, wound=%s, killed=%s",
         player.name, target.name, damage,
@@ -185,6 +188,34 @@ def _resolve_combat_target(
         if hasattr(actor, "identity") and lower in actor.identity.display_name.lower():
             return actor
     return None
+
+
+def _store_combat_state(
+    context: "CampaignContext",
+    player: "ActorRecord",
+    target: "ActorRecord",
+    killed: bool,
+) -> None:
+    """Store combat state in session for campaign payload serialization."""
+    target_name = getattr(target.identity, "display_name", "enemy")
+    target_id = getattr(target.identity, "actor_id", "enemy")
+    combat_data = {
+        "phase": "resolved" if killed else "active",
+        "turn_actor_id": player.identity.actor_id,
+        "combatants": [
+            {"actor_id": player.identity.actor_id, "name": player.name, "is_player": True},
+            {"actor_id": target_id, "name": target_name, "is_player": False},
+        ],
+        "available_actions": ["attack", "defend", "flee", "cast", "use_item"],
+        "targets": [{"actor_id": target_id, "name": target_name, "alive": target.alive,
+                      "hp": int(target.stats.get("hp", 0)), "max_hp": int(target.stats.get("max_hp", 1))}],
+    }
+    context.session.campaign_state["combat_state"] = combat_data
+    context.session.dm_context.scene_type_name = "combat"
+    if killed:
+        # Clear combat state on kill.
+        context.session.campaign_state.pop("combat_state", None)
+        context.session.dm_context.scene_type_name = "exploration"
 
 
 def _get_equipped_weapon(player: "ActorRecord") -> Optional["ItemStack"]:
