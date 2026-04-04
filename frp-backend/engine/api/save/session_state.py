@@ -85,7 +85,7 @@ class SaveSessionStateMixin:
             data["ap_tracker"] = session.ap_tracker.to_dict()
         if getattr(session, "physical_inventory", None) is not None:
             data["physical_inventory"] = session.physical_inventory.to_dict()
-        data["inventory"] = list(session.inventory) if session.inventory else []
+        data["inventory"] = list(session.player.inventory) if session.player.inventory else []
         data["equipment"] = dict(session.equipment) if session.equipment else {}
 
         if session.entities:
@@ -263,7 +263,7 @@ class SaveSessionStateMixin:
             session.physical_inventory = PhysicalInventory.from_dict(data["physical_inventory"])
         else:
             session.physical_inventory = PhysicalInventory()
-            session.inventory = data.get("inventory", [])
+            session.player.inventory = data.get("inventory", [])
             default_equipment = {
                 "weapon": None,
                 "armor": None,

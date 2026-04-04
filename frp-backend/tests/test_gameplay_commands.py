@@ -100,7 +100,7 @@ class TestPickupCommand:
 
     def test_pickup_command_recognized(self):
         _rt, ctx = _make_campaign()
-        count_before = len(ctx.session.inventory)
+        count_before = len(ctx.session.player.inventory)
         spawn_ground_item_entity(
             ctx.session,
             item={"id": "healing_potion", "name": "Healing Potion", "qty": 1},
@@ -111,7 +111,7 @@ class TestPickupCommand:
         assert cmd_type == "inventory"
         assert hours == 0
         assert "picked up" in narrative.lower()
-        assert len(ctx.session.inventory) == count_before + 1
+        assert len(ctx.session.player.inventory) == count_before + 1
         assert ctx.session.find_inventory_item("healing_potion") is not None
         assert ctx.session.campaign_state.get("ground_items", []) == []
 
@@ -154,14 +154,14 @@ class TestDropCommand:
     def test_drop_command_recognized(self):
         _rt, ctx = _make_campaign()
         ctx.session.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 1}, merge=True)
-        count_before = len(ctx.session.inventory)
+        count_before = len(ctx.session.player.inventory)
         result = maybe_handle_inventory_command(ctx, "drop iron_ore")
         assert result is not None
         narrative, cmd_type, hours = result
         assert cmd_type == "inventory"
         assert hours == 0
         assert "dropped" in narrative.lower()
-        assert len(ctx.session.inventory) == count_before - 1
+        assert len(ctx.session.player.inventory) == count_before - 1
         ground_items = ctx.session.campaign_state.get("ground_items", [])
         assert len(ground_items) == 1
         assert ground_items[0]["name"] == "Iron Ore"

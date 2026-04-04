@@ -5,6 +5,13 @@ from typing import Any, Dict, List, Optional
 
 from engine.api.campaign.campaign_session import CampaignSession
 from engine.api.runtime_constants import CLASS_ALIASES, DEFAULT_PLAYER_CLASS, LOCATION_STOCK_BASELINE, OPENING_SCENES, STARTER_KITS
+from engine.world.action_points import ActionPointTracker
+from engine.world.body_parts import BodyPartTracker
+from engine.world.caravans import CaravanManager
+from engine.world.quest_timeout import QuestTracker
+from engine.world.schedules import GameTime as LivingGameTime
+from engine.world.spatial_index import SpatialIndex
+from engine.world.viewport import Viewport
 from engine.kernel.actor_records import create_player_actor
 from engine.kernel.creation import (
     CLASS_DEFAULT_SKILLS,
@@ -109,12 +116,20 @@ def create_game_session(
     session.history_seed = HistorySeed().generate(seed=seed)
     session.name_gen = NameGenerator(seed=seed)
 
-    hp_scale = player.max_hp / 20.0
+    # Initialize body tracker and scale HP.
+    session.body_tracker = BodyPartTracker()
+    hp_scale = max(0.1, player.max_hp / 20.0)
     for part in session.body_tracker.max_hp:
         session.body_tracker.max_hp[part] = max(1, int(session.body_tracker.max_hp[part] * hp_scale))
         session.body_tracker.current_hp[part] = session.body_tracker.max_hp[part]
 
     session.location_stock = LocationStock(location_id=loc.lower().replace(" ", "_"), baseline=LOCATION_STOCK_BASELINE)
+    session.ap_tracker = ActionPointTracker(max_ap=4)
+    session.caravan_manager = CaravanManager()
+    session.game_time = LivingGameTime()
+    session.spatial_index = SpatialIndex()
+    session.viewport = Viewport()
+    session.quest_tracker = QuestTracker()
 
     kit = STARTER_KITS.get(player_class.lower(), STARTER_KITS[DEFAULT_PLAYER_CLASS])
     for item_template in kit:

@@ -153,15 +153,6 @@ def get_creation_unknown_class_fallback() -> Dict[str, Any]:
 def get_creation_ability_order() -> List[str]:
     return list(creation_registry().get("ability_order", []))
 
-
-def get_stat_key_mapping() -> Dict[str, str]:
-    """Return D&D→Ember stat key map (e.g. {'str': 'MIG', ...}) from data."""
-    return {
-        str(k): str(v)
-        for k, v in creation_registry().get("stat_key_mapping", {}).items()
-    }
-
-
 def get_skill_stat_map() -> Dict[str, str]:
     """Return skill→governing-ability map from data (e.g. {'melee': 'MIG'})."""
     return {

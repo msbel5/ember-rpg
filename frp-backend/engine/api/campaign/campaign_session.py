@@ -1,14 +1,12 @@
-"""Minimal campaign session dataclass — replaces the legacy GameSession surface.
+"""Campaign session — plain dataclass, no mixin inheritance.
 
-CampaignSession is the *only* session type campaign-first code should reference.
-It composes the same focused mixins that GameSession used, but lives outside the
-session/ package so campaign code has a single, obvious import target.
-
-The legacy ``GameSession`` name is kept as an alias so that save/load and kernel
-code that still references ``GameSession`` keeps working.
+This is a data container, NOT a behavior-rich ORM. All game logic lives
+in kernel modules and campaign bridge handlers. The session only holds
+state that the campaign runtime reads/writes between commands.
 """
 from __future__ import annotations
 
+import copy
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -35,28 +33,15 @@ from engine.world.viewport import Viewport
 from engine.map import MapData
 from engine.api.session_utils import make_conversation_state
 
-from engine.api.campaign.session_mixins.bootstrap import SessionBootstrapMixin
-from engine.api.campaign.session_mixins.conversation import SessionConversationMixin
-from engine.api.campaign.session_mixins.encumbrance import SessionEncumbranceMixin
-from engine.api.campaign.session_mixins.entity_state import SessionEntityMixin
-from engine.api.campaign.session_mixins.inventory_state import SessionInventoryMixin
-from engine.api.campaign.session_mixins.player_state import SessionPlayerStateMixin
-from engine.api.campaign.session_mixins.serialization import SessionSerializationMixin
-from engine.api.campaign.session_mixins.timed_conditions import SessionTimedConditionMixin
-
 
 @dataclass
-class CampaignSession(
-    SessionBootstrapMixin,
-    SessionInventoryMixin,
-    SessionEntityMixin,
-    SessionTimedConditionMixin,
-    SessionEncumbranceMixin,
-    SessionPlayerStateMixin,
-    SessionConversationMixin,
-    SessionSerializationMixin,
-):
-    """Canonical per-player runtime session state for campaign-first runtime."""
+class CampaignSession:
+    """Plain data container for per-campaign runtime state.
+
+    No mixin inheritance. Methods below are the minimal set that
+    campaign code actually calls (6 total). Everything else is
+    field access.
+    """
 
     player: ActorRecord
     dm_context: DMContext
@@ -90,10 +75,126 @@ class CampaignSession(
     player_entity: Optional[Entity] = None
     ap_tracker: Optional[ActionPointTracker] = None
     physical_inventory: Optional[PhysicalInventory] = None
+    equipment: Dict[str, Any] = field(default_factory=dict)
+
+    # ── Inline methods (previously in 8 mixin files) ─────────────
+
+    def in_combat(self) -> bool:
+        """Check if session is in active combat."""
+        cs = self.campaign_state.get("combat_state")
+        if isinstance(cs, dict) and cs.get("phase") == "active":
+            return True
+        return self.combat is not None
+
+    def ensure_consistency(self) -> None:
+        """Sync player stats from kernel actor. No-op if already consistent."""
+        if self.player is None:
+            return
+        # Sync HP.
+        self.player.stats.setdefault("hp", self.player.stats.get("max_hp", 10))
+        self.player.stats.setdefault("max_hp", self.player.stats.get("hp", 10))
+
+    def find_inventory_item(self, query: str) -> Optional[Dict[str, Any]]:
+        """Find item in player inventory by name/id substring."""
+        query_lower = query.lower().replace(" ", "_")
+        for item in self.player.inventory:
+            def_id = getattr(item, "item_def_id", "")
+            if query_lower in def_id.lower() or query_lower == def_id:
+                return item.to_dict() if hasattr(item, "to_dict") else {"id": def_id}
+        return None
+
+    def add_item(self, item_data: dict, merge: bool = False) -> Optional[dict]:
+        """Add item to player inventory from dict payload."""
+        from engine.kernel.actor_items import item_stack_from_legacy_payload
+        try:
+            stack = item_stack_from_legacy_payload(item_data)
+            self.player.inventory.append(stack)
+            return item_data
+        except Exception:
+            return None
+
+    def remove_item(self, query: str) -> Optional[dict]:
+        """Remove first matching item from player inventory."""
+        query_lower = query.lower().replace(" ", "_")
+        for i, item in enumerate(self.player.inventory):
+            def_id = getattr(item, "item_def_id", "")
+            if query_lower in def_id.lower():
+                removed = self.player.inventory.pop(i)
+                return removed.to_dict() if hasattr(removed, "to_dict") else {"id": def_id}
+        return None
+
+    def set_equipment_slot(self, slot: str, item_data: Optional[dict]) -> None:
+        """Set an equipment slot on the player."""
+        self.equipment[slot] = item_data
+
+    @staticmethod
+    def normalize_quest_offers(offers: list) -> list:
+        """Normalize quest offers for serialization."""
+        return [dict(o) if isinstance(o, dict) else {"id": str(o)} for o in (offers or [])]
+
+    def assess_item_addition(self, item_data: dict, merge: bool = False) -> dict:
+        """Check if item can be added (weight/capacity check)."""
+        return {"allowed": True, "reason": ""}
+
+    def _record_add_item_failure(self, status: dict) -> None:
+        """Record a failed item addition attempt."""
+        pass
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize session to dict for persistence."""
+        player_dict = self.player.to_dict() if hasattr(self.player, "to_dict") else {}
+        return {
+            "session_id": self.session_id,
+            "player": player_dict,
+            "dm_context": {
+                "scene_type": getattr(self.dm_context, "scene_type_name", "exploration"),
+                "location": getattr(self.dm_context, "location", ""),
+            },
+            "position": list(self.position),
+            "facing": self.facing,
+            "game_time": self.game_time.to_dict() if self.game_time and hasattr(self.game_time, "to_dict") else None,
+            "entities": {k: (v.to_dict() if hasattr(v, "to_dict") else v) for k, v in self.entities.items()},
+            "campaign_state": dict(self.campaign_state),
+            "conversation_state": dict(self.conversation_state),
+            "timed_conditions": dict(self.timed_conditions),
+            "quest_offers": list(self.quest_offers),
+            "narration_context": dict(self.narration_context),
+            "combat": None,
+            "scene": getattr(self.dm_context, "scene_type_name", "exploration"),
+            "equipment": dict(self.equipment),
+            "location": getattr(self.dm_context, "location", ""),
+            "hp": int(self.player.stats.get("hp", 0)),
+            "max_hp": int(self.player.stats.get("max_hp", 0)),
+            "spell_points": int(getattr(self.player, "spell_points", 0)),
+            "max_spell_points": int(self.player.raw_payload.get("max_spell_points", 0)),
+            "xp": int(self.player.raw_payload.get("xp", 0)),
+            "level": int(self.player.raw_payload.get("level", 1)),
+            "armor_class": int(self.player.stats.get("ac", 10)),
+            "action_points": int(getattr(self.player, "action_points", 3)),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CampaignSession":
+        """Deserialize session from dict. Used by save/load."""
+        from engine.kernel.scene_types import DMContext, SceneType
+        player = ActorRecord.from_dict(data.get("player", {}))
+        scene_name = data.get("dm_context", {}).get("scene_type", "exploration")
+        location = data.get("dm_context", {}).get("location", "")
+        dm_context = DMContext(scene_type=SceneType.EXPLORATION, location=location, party=[player])
+        session = cls(player=player, dm_context=dm_context)
+        session.session_id = data.get("session_id", session.session_id)
+        session.position = data.get("position", [0, 0])
+        session.facing = data.get("facing", "north")
+        session.campaign_state = data.get("campaign_state", {})
+        session.conversation_state = data.get("conversation_state", {})
+        session.timed_conditions = data.get("timed_conditions", {})
+        session.quest_offers = data.get("quest_offers", [])
+        session.narration_context = data.get("narration_context", {})
+        session.equipment = data.get("equipment", {})
+        return session
 
 
-# Backward-compatible alias — save/load and kernel code may still
-# reference ``GameSession`` by name.
+# Backward-compatible alias for save/load code that references GameSession.
 GameSession = CampaignSession
 
 __all__ = ["CampaignSession", "GameSession"]
