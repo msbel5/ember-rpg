@@ -76,11 +76,10 @@ _ROLE_COLORS: dict[str, str] = {
 
 
 def _preserved_party_entities(context: CampaignContext) -> dict[str, dict[str, Any]]:
-    party_ids = {
-        str(actor_id)
-        for actor_id in list(context.campaign_state.get("party", []))
-        if str(actor_id) and str(actor_id) != "player"
-    }
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    raw_party_ids = list(getattr(game_state, "party", [])) if game_state is not None else list(context.campaign_state.get("party", []))
+    party_ids = {str(actor_id) for actor_id in raw_party_ids if str(actor_id) and str(actor_id) != "player"}
     preserved: dict[str, dict[str, Any]] = {}
     for actor_id in party_ids:
         record = context.entities.get(actor_id)
@@ -119,7 +118,11 @@ def _restore_party_entities(context: CampaignContext, preserved: dict[str, dict[
         if context.spatial_index.get_position(actor_id) is None:
             context.spatial_index.add(live_entity)
         restored_record = dict(record)
+        restored_record["attitude"] = "ally"
+        restored_record["disposition"] = "ally"
         restored_record["entity_ref"] = live_entity
+        live_entity.attitude = "ally"
+        live_entity.disposition = "ally"
         context.entities[actor_id] = restored_record
 
 

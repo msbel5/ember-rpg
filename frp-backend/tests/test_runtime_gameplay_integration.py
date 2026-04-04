@@ -11,6 +11,34 @@ def _make_campaign() -> tuple[CampaignRuntime, object]:
     return runtime, context
 
 
+def _inject_companion(
+    context,
+    *,
+    base_id: str,
+    name: str,
+    role: str,
+    hostile: bool = False,
+):
+    from engine.kernel.actor_records import create_monster_actor
+
+    companion = create_monster_actor(
+        {
+            "id": base_id,
+            "name": name,
+            "type": "monster",
+            "hp": 12,
+            "armor_class": 10,
+            "stats": {"MIG": 10, "AGI": 10, "END": 10, "MND": 10, "INS": 10, "PRE": 10},
+        },
+        faction_id="raiders" if hostile else "allies",
+    )
+    companion.identity.actor_type = "npc"
+    companion.raw_payload["role"] = role
+    companion.raw_payload["hostile"] = hostile
+    context.kernel_runtime["actors"][companion.identity.actor_id] = companion
+    return companion
+
+
 def test_run_command_pickup_uses_ground_item_authority() -> None:
     runtime, context = _make_campaign()
     spawn_ground_item_entity(
@@ -141,22 +169,7 @@ def test_run_command_cast_repeatedly_until_insufficient_points() -> None:
 
 def test_recruit_companion_save_load_preserves_party_membership() -> None:
     runtime, context = _make_campaign()
-    from engine.kernel.actor_records import create_monster_actor
-
-    companion = create_monster_actor(
-        {
-            "id": "companion_scout",
-            "name": "Scout Mira",
-            "type": "monster",
-            "hp": 12,
-            "armor_class": 10,
-            "stats": {"MIG": 10, "AGI": 12, "END": 10, "MND": 10, "INS": 10, "PRE": 10},
-        },
-        faction_id="allies",
-    )
-    companion.identity.actor_type = "npc"
-    companion.raw_payload["role"] = "scout"
-    context.kernel_runtime["actors"][companion.identity.actor_id] = companion
+    companion = _inject_companion(context, base_id="companion_scout", name="Scout Mira", role="scout")
 
     recruit = maybe_handle_party_command(context, "recruit Scout Mira")
     assert recruit is not None
@@ -173,22 +186,7 @@ def test_recruit_companion_save_load_preserves_party_membership() -> None:
 
 def test_dismiss_companion_save_load_removes_party_membership() -> None:
     runtime, context = _make_campaign()
-    from engine.kernel.actor_records import create_monster_actor
-
-    companion = create_monster_actor(
-        {
-            "id": "companion_warden",
-            "name": "Warden Holt",
-            "type": "monster",
-            "hp": 14,
-            "armor_class": 10,
-            "stats": {"MIG": 11, "AGI": 10, "END": 11, "MND": 10, "INS": 10, "PRE": 10},
-        },
-        faction_id="allies",
-    )
-    companion.identity.actor_type = "npc"
-    companion.raw_payload["role"] = "guard"
-    context.kernel_runtime["actors"][companion.identity.actor_id] = companion
+    companion = _inject_companion(context, base_id="companion_warden", name="Warden Holt", role="guard")
 
     assert maybe_handle_party_command(context, "recruit Warden Holt") is not None
     dismiss = maybe_handle_party_command(context, "dismiss Warden Holt")
@@ -205,22 +203,7 @@ def test_dismiss_companion_save_load_removes_party_membership() -> None:
 
 def test_party_members_do_not_break_campaign_payload_shape() -> None:
     runtime, context = _make_campaign()
-    from engine.kernel.actor_records import create_monster_actor
-
-    companion = create_monster_actor(
-        {
-            "id": "companion_mage",
-            "name": "Mage Elira",
-            "type": "monster",
-            "hp": 9,
-            "armor_class": 9,
-            "stats": {"MIG": 8, "AGI": 10, "END": 9, "MND": 14, "INS": 11, "PRE": 12},
-        },
-        faction_id="allies",
-    )
-    companion.identity.actor_type = "npc"
-    companion.raw_payload["role"] = "mage"
-    context.kernel_runtime["actors"][companion.identity.actor_id] = companion
+    companion = _inject_companion(context, base_id="companion_mage", name="Mage Elira", role="mage")
     assert maybe_handle_party_command(context, "recruit Mage Elira") is not None
 
     payload = runtime.snapshot(context.campaign_id, narrative="party")
@@ -229,3 +212,74 @@ def test_party_members_do_not_break_campaign_payload_shape() -> None:
     assert companion.identity.actor_id in payload["campaign"]["party"]
     assert isinstance(payload["campaign"]["world_entities"], list)
     assert isinstance(payload["campaign"]["player"], dict)
+
+
+def test_duplicate_recruit_does_not_duplicate_party_ids() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="companion_blade", name="Blade Nera", role="guard")
+
+    first = runtime.run_command(context.campaign_id, "recruit Blade Nera")
+    second = runtime.run_command(context.campaign_id, "recruit Blade Nera")
+
+    party = context.kernel_runtime["game_state"].party
+    assert first["command_type"] == "party"
+    assert second["command_type"] == "party"
+    assert "already in the party" in second["narrative"].lower()
+    assert party.count(companion.identity.actor_id) == 1
+    assert first["campaign"]["party"].count(companion.identity.actor_id) == 1
+    assert second["campaign"]["party"].count(companion.identity.actor_id) == 1
+
+
+def test_cannot_dismiss_player() -> None:
+    runtime, context = _make_campaign()
+
+    result = runtime.run_command(context.campaign_id, "dismiss RuntimeTester")
+
+    assert result["command_type"] == "party"
+    assert "cannot dismiss the player" in result["narrative"].lower()
+    assert context.kernel_runtime["game_state"].party == ["player"]
+
+
+def test_recruit_hostile_and_invalid_actor_fail_safely() -> None:
+    runtime, context = _make_campaign()
+    hostile = _inject_companion(context, base_id="companion_raider", name="Raider Voss", role="raider", hostile=True)
+
+    hostile_result = runtime.run_command(context.campaign_id, f"recruit {hostile.identity.display_name}")
+    invalid_result = runtime.run_command(context.campaign_id, "recruit Nobody Here")
+
+    assert hostile_result["command_type"] == "party"
+    assert "hostile" in hostile_result["narrative"].lower()
+    assert hostile.identity.actor_id not in context.kernel_runtime["game_state"].party
+    assert invalid_result["command_type"] == "party"
+    assert "no recruitable companion matched" in invalid_result["narrative"].lower()
+
+
+def test_region_projection_rebuild_preserves_allied_party_members() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="companion_mapscout", name="Map Scout Iven", role="scout")
+
+    assert runtime.run_command(context.campaign_id, "recruit Map Scout Iven")["command_type"] == "party"
+    refreshed = runtime.run_command(context.campaign_id, "look around")
+
+    assert refreshed["command_type"] == "exploration"
+    assert companion.identity.actor_id in context.kernel_runtime["game_state"].party
+    record = context.entities.get(companion.identity.actor_id)
+    assert record is not None
+    assert record.get("attitude") == "ally"
+    assert record.get("disposition") == "ally"
+    assert companion.identity.actor_id in refreshed["campaign"]["party"]
+
+
+def test_party_payload_remains_deduplicated_and_stable() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="companion_dupe", name="Dorian Pike", role="guard")
+
+    assert runtime.run_command(context.campaign_id, "recruit Dorian Pike")["command_type"] == "party"
+    context.kernel_runtime["game_state"].party = ["player", companion.identity.actor_id, companion.identity.actor_id, "player"]
+    context.kernel_runtime["game_state"].inactive_npcs = [companion.identity.actor_id, companion.identity.actor_id, "player"]
+
+    payload = runtime.snapshot(context.campaign_id, narrative="party")
+
+    assert payload["campaign"]["party"] == ["player", companion.identity.actor_id]
+    assert context.kernel_runtime["game_state"].party == ["player", companion.identity.actor_id]
+    assert companion.identity.actor_id not in context.kernel_runtime["game_state"].inactive_npcs

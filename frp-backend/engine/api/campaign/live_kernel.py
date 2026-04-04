@@ -328,9 +328,14 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
             active_site_id=active_site_id(context),
         )
     }
-    merged: dict[str, ActorRecord] = {}
+    # Preserve runtime-owned actors that are not part of the authored region
+    # projection yet, such as recruited companions and runtime-only NPCs.
+    merged: dict[str, ActorRecord] = {
+        actor_id: actor
+        for actor_id, actor in dict(runtime.get("actors", {})).items()
+    }
     for actor_id, fresh_actor in fresh_actors.items():
-        existing = runtime["actors"].get(actor_id)
+        existing = merged.get(actor_id)
         if existing is None:
             merged[actor_id] = fresh_actor
             continue

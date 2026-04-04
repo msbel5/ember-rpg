@@ -30,10 +30,7 @@ def maybe_handle_party_command(
 
     match = _RECRUIT_RE.match(text)
     if match:
-        query = match.group(1).strip()
-        if _find_recruitable_actor(context, query) is None:
-            return None
-        return _recruit(context, query)
+        return _recruit(context, match.group(1).strip())
 
     match = _DISMISS_RE.match(text)
     if match:
@@ -47,9 +44,17 @@ def party_member_ids(context: "CampaignContext") -> list[str]:
     game_state = runtime.get("game_state")
     if game_state is None:
         return ["player"]
-    party = [str(actor_id) for actor_id in list(getattr(game_state, "party", [])) if str(actor_id)]
+    seen: set[str] = set()
+    party: list[str] = []
+    for actor_id in [str(item) for item in list(getattr(game_state, "party", [])) if str(item)]:
+        if actor_id in seen:
+            continue
+        seen.add(actor_id)
+        party.append(actor_id)
     if "player" not in party and (runtime.get("actors") or {}).get("player") is not None:
         party.insert(0, "player")
+    if getattr(game_state, "party", None) != party:
+        game_state.party = list(party)
     return party or ["player"]
 
 
@@ -74,23 +79,43 @@ def allied_actor_ids(context: "CampaignContext") -> set[str]:
 
 def _recruit(context: "CampaignContext", query: str) -> tuple[str, str, int]:
     runtime = context.kernel_runtime or {}
-    actors = runtime.get("actors", {})
     game_state = runtime.get("game_state")
     if game_state is None:
         return ("Party state is unavailable.", "party", 0)
-    actor = _find_recruitable_actor(context, query)
+    actor = _find_actor_by_query(context, query)
     if actor is None:
         return (f"No recruitable companion matched '{query}'.", "party", 0)
+    if actor.identity.actor_id == "player":
+        return ("The player is already the party leader.", "party", 0)
+    if actor.identity.actor_id in allied_actor_ids(context):
+        return (f"{actor.identity.display_name} is already in the party.", "party", 0)
+    actor_type = str(getattr(actor.identity, "actor_type", ""))
+    if actor_type not in {"npc", "creature"}:
+        return (f"{actor.identity.display_name} cannot join the party.", "party", 0)
+    if bool(actor.raw_payload.get("hostile")):
+        return (f"{actor.identity.display_name} is hostile and refuses to join.", "party", 0)
     success, message = add_to_party(game_state, actor.identity.actor_id)
     if not success:
         return (f"Could not recruit {actor.identity.display_name}: {message}.", "party", 0)
-    actor.raw_payload["party_member"] = True
-    actor.raw_payload["legacy_attitude"] = "ally"
-    actor.raw_payload["legacy_disposition"] = "ally"
+    _mark_party_membership(context, actor, is_party_member=True)
+    context.campaign_state["party"] = party_member_ids(context)
+    logger.info("Recruited %s into party", actor.identity.actor_id)
+    return (f"{actor.identity.display_name} joins the party.", "party", 0)
+
+
+def _mark_party_membership(context: "CampaignContext", actor: "ActorRecord", *, is_party_member: bool) -> None:
+    actor.raw_payload["party_member"] = bool(is_party_member)
+    actor.raw_payload["legacy_attitude"] = "ally" if is_party_member else "friendly"
+    actor.raw_payload["legacy_disposition"] = "ally" if is_party_member else "friendly"
     record = context.entities.get(actor.identity.actor_id)
     if isinstance(record, dict):
-        record["attitude"] = "ally"
-        record["disposition"] = "ally"
+        record["attitude"] = "ally" if is_party_member else "friendly"
+        record["disposition"] = "ally" if is_party_member else "friendly"
+        entity_ref = record.get("entity_ref")
+        if entity_ref is not None:
+            entity_ref.attitude = record["attitude"]
+            entity_ref.disposition = record["disposition"]
+            entity_ref.faction = getattr(actor.identity, "faction_id", None)
     else:
         live_entity = Entity(
             id=actor.identity.actor_id,
@@ -102,8 +127,8 @@ def _recruit(context: "CampaignContext", query: str) -> tuple[str, str, int]:
             blocking=True,
             hp=int(actor.stats.get("hp", 0)),
             max_hp=int(actor.stats.get("max_hp", 1)),
-            disposition="friendly",
-            attitude="ally",
+            disposition="ally" if is_party_member else "friendly",
+            attitude="ally" if is_party_member else "friendly",
             faction=getattr(actor.identity, "faction_id", None),
             job=str(actor.raw_payload.get("role", "companion")),
         )
@@ -113,17 +138,14 @@ def _recruit(context: "CampaignContext", query: str) -> tuple[str, str, int]:
             "position": [int(actor.position.x), int(actor.position.y)],
             "faction": getattr(actor.identity, "faction_id", None),
             "role": str(actor.raw_payload.get("role", "companion")),
-            "attitude": "ally",
-            "disposition": "ally",
+            "attitude": "ally" if is_party_member else "friendly",
+            "disposition": "ally" if is_party_member else "friendly",
             "template": str(actor.raw_payload.get("template", actor.raw_payload.get("role", "companion"))),
             "context_actions": ["examine"],
             "entity_ref": live_entity,
         }
         if getattr(context, "spatial_index", None) is not None and context.spatial_index.get_position(actor.identity.actor_id) is None:
             context.spatial_index.add(live_entity)
-    context.campaign_state["party"] = party_member_ids(context)
-    logger.info("Recruited %s into party", actor.identity.actor_id)
-    return (f"{actor.identity.display_name} joins the party.", "party", 0)
 
 
 def _dismiss(context: "CampaignContext", query: str) -> tuple[str, str, int]:
@@ -132,52 +154,45 @@ def _dismiss(context: "CampaignContext", query: str) -> tuple[str, str, int]:
     game_state = runtime.get("game_state")
     if game_state is None:
         return ("Party state is unavailable.", "party", 0)
-    actor_id = None
-    for candidate_id in party_member_ids(context):
-        if candidate_id == "player":
-            continue
-        actor = actors.get(candidate_id)
-        if actor is None:
-            continue
-        if query.lower() in actor.identity.display_name.lower() or query.lower().replace(" ", "_") == candidate_id.lower():
-            actor_id = candidate_id
-            break
-    if actor_id is None:
+    actor = _find_actor_by_query(context, query)
+    if actor is None:
         return (f"No party member matched '{query}'.", "party", 0)
+    actor_id = actor.identity.actor_id
+    if actor_id == "player":
+        return ("You cannot dismiss the player from the party.", "party", 0)
+    if actor_id not in allied_actor_ids(context):
+        return (f"{actor.identity.display_name} is not in the party.", "party", 0)
     remove_from_party(game_state, actor_id)
     if actors.get(actor_id) is not None:
-        actors[actor_id].raw_payload["party_member"] = False
-        actors[actor_id].raw_payload["legacy_attitude"] = "friendly"
-        actors[actor_id].raw_payload["legacy_disposition"] = "friendly"
-    record = context.entities.get(actor_id)
-    if isinstance(record, dict):
-        record["attitude"] = "friendly"
-        record["disposition"] = "friendly"
-        entity_ref = record.get("entity_ref")
-        if entity_ref is not None:
-            entity_ref.attitude = "friendly"
-            entity_ref.disposition = "friendly"
+        _mark_party_membership(context, actors[actor_id], is_party_member=False)
     context.campaign_state["party"] = party_member_ids(context)
     logger.info("Dismissed %s from party", actor_id)
-    return (f"{actors[actor_id].identity.display_name} leaves the party.", "party", 0)
+    return (f"{actor.identity.display_name} leaves the party.", "party", 0)
 
 
-def _find_recruitable_actor(context: "CampaignContext", query: str) -> "ActorRecord | None":
+def _find_actor_by_query(context: "CampaignContext", query: str) -> "ActorRecord | None":
     runtime = context.kernel_runtime or {}
     actors = runtime.get("actors", {})
     query_lower = query.lower().strip()
-    party_ids = allied_actor_ids(context)
     for actor_id, actor in actors.items():
-        if actor_id == "player" or actor_id in party_ids:
-            continue
-        actor_type = str(getattr(actor.identity, "actor_type", ""))
-        if actor_type not in {"npc", "creature"}:
-            continue
-        if bool(actor.raw_payload.get("hostile")):
-            continue
-        if query_lower in actor.identity.display_name.lower() or query_lower.replace(" ", "_") == actor_id.lower():
+        display_name = str(actor.identity.display_name).lower()
+        if query_lower in display_name or query_lower.replace(" ", "_") == actor_id.lower():
             return actor
     return None
+
+
+def _find_recruitable_actor(context: "CampaignContext", query: str) -> "ActorRecord | None":
+    actor = _find_actor_by_query(context, query)
+    if actor is None:
+        return None
+    if actor.identity.actor_id == "player" or actor.identity.actor_id in allied_actor_ids(context):
+        return None
+    actor_type = str(getattr(actor.identity, "actor_type", ""))
+    if actor_type not in {"npc", "creature"}:
+        return None
+    if bool(actor.raw_payload.get("hostile")):
+        return None
+    return actor
 
 
 __all__ = ["allied_actor_ids", "maybe_handle_party_command", "party_member_ids", "party_summary"]

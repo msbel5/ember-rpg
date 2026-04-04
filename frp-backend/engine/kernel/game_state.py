@@ -105,6 +105,18 @@ def _normalized_party_ids(party_ids: list[str]) -> list[str]:
     return normalized
 
 
+def _normalized_inactive_npc_ids(inactive_ids: list[str], party_ids: list[str]) -> list[str]:
+    party = set(_normalized_party_ids(party_ids))
+    seen: set[str] = set()
+    normalized: list[str] = []
+    for actor_id in [str(item) for item in list(inactive_ids or []) if str(item)]:
+        if actor_id == "player" or actor_id in party or actor_id in seen:
+            continue
+        seen.add(actor_id)
+        normalized.append(actor_id)
+    return normalized
+
+
 @dataclass
 class GameState:
     campaign_id: str
@@ -128,11 +140,12 @@ class GameState:
 
     def to_dict(self) -> dict[str, Any]:
         party = _normalized_party_ids(self.party)
+        inactive_npcs = _normalized_inactive_npc_ids(self.inactive_npcs, party)
         return {
             "campaign_id": self.campaign_id,
             "seed": int(self.seed),
             "party": party,
-            "inactive_npcs": [actor_id for actor_id in list(self.inactive_npcs) if actor_id not in party],
+            "inactive_npcs": inactive_npcs,
             "current_area_id": self.current_area_id,
             "loaded_area_ids": list(self.loaded_area_ids),
             "loaded_areas": {key: value.to_dict() for key, value in self.loaded_areas.items()},
@@ -152,11 +165,12 @@ class GameState:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "GameState":
         party = _normalized_party_ids([str(item) for item in data.get("party", [])])
+        inactive_npcs = _normalized_inactive_npc_ids([str(item) for item in data.get("inactive_npcs", [])], party)
         return cls(
             campaign_id=str(data["campaign_id"]),
             seed=int(data["seed"]),
             party=party,
-            inactive_npcs=[str(item) for item in data.get("inactive_npcs", []) if str(item) not in party],
+            inactive_npcs=inactive_npcs,
             current_area_id=str(data.get("current_area_id", "")),
             loaded_area_ids=[str(item) for item in data.get("loaded_area_ids", [])],
             loaded_areas={key: AreaState.from_dict(value) for key, value in dict(data.get("loaded_areas", {})).items()},
@@ -185,24 +199,35 @@ def create_game_state(campaign_id: str, seed: int, difficulty: str = "normal") -
 
 def add_to_party(state: GameState, actor_id: str) -> tuple[bool, str]:
     actor_id = str(actor_id)
+    state.party = _normalized_party_ids(state.party)
+    state.inactive_npcs = _normalized_inactive_npc_ids(state.inactive_npcs, state.party)
+    if actor_id == "player":
+        if "player" not in state.party:
+            state.party.insert(0, "player")
+        state.party = _normalized_party_ids(state.party)
+        return True, "already in party"
     if actor_id in state.party:
         return True, "already in party"
     if len(state.party) >= 6:
         return False, "party full"
     state.party.append(actor_id)
     state.party = _normalized_party_ids(state.party)
-    if actor_id in state.inactive_npcs:
-        state.inactive_npcs.remove(actor_id)
+    state.inactive_npcs = _normalized_inactive_npc_ids(state.inactive_npcs, state.party)
     return True, "added"
 
 
 def remove_from_party(state: GameState, actor_id: str) -> None:
     actor_id = str(actor_id)
+    state.party = _normalized_party_ids(state.party)
+    if actor_id == "player":
+        state.inactive_npcs = _normalized_inactive_npc_ids(state.inactive_npcs, state.party)
+        return
     if actor_id in state.party:
         state.party.remove(actor_id)
     state.party = _normalized_party_ids(state.party)
-    if actor_id not in state.inactive_npcs:
+    if actor_id and actor_id not in state.party and actor_id not in state.inactive_npcs:
         state.inactive_npcs.append(actor_id)
+    state.inactive_npcs = _normalized_inactive_npc_ids(state.inactive_npcs, state.party)
 
 
 def swap_party_member(state: GameState, active_id: str, inactive_id: str) -> tuple[bool, str]:

@@ -53,6 +53,8 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     runtime_state = runtime_region_state(context.world, context.region_snapshot.region_id)
     kernel_payload = build_kernel_payload(context)
     combat_state = build_combat_payload(context)
+    normalized_party = party_member_ids(context)
+    context.campaign_state["party"] = list(normalized_party)
     payload_scene = str(context_data.get("scene", "exploration"))
     if isinstance(combat_state, dict) and combat_state and combat_state.get("phase") != "resolved":
         payload_scene = "combat"
@@ -104,7 +106,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "completed_quest_ids": list(context.campaign_state.get("completed_quest_ids", [])),
         "failed_quest_ids": list(context.campaign_state.get("failed_quest_ids", [])),
         "quest_offers": copy.deepcopy(current_quest_offers(context)),
-        "party": party_member_ids(context),
+        "party": normalized_party,
         "settlement": copy.deepcopy(context.settlement_state),
         "character_sheet": build_character_sheet(context, context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-12:]),
@@ -113,6 +115,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
 
 def persist_campaign_state(context: "CampaignContext") -> None:
     kernel_payload = build_kernel_payload(context)
+    context.campaign_state["party"] = party_member_ids(context)
     context.campaign_state["campaign"] = {
         "campaign_id": context.campaign_id,
         "adapter_id": context.adapter_id,
