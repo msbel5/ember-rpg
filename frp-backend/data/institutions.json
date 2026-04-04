@@ -117,7 +117,7 @@
     ],
     "theft": [
       {"severity_min": "low", "role": "guard_captain", "response": "investigation", "desc": "Guards begin an investigation into the theft."},
-      {"severity_min": "medium", "role": "guard_captain", "response": "bounty", "desc": "Guard Captain issues a bounty for the thief.", "params": {"bounty_gold": 50}},
+      {"severity_min": "medium", "role": "guard_captain", "response": "bounty", "desc": "Guard Captain issues a bounty for the rogue.", "params": {"bounty_gold": 50}},
       {"severity_min": "high", "role": "guard_captain", "response": "arrest", "desc": "Guard Captain orders sweep of known hideouts."}
     ],
     "riot": [

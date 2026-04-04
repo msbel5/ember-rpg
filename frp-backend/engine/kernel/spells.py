@@ -68,7 +68,7 @@ class Spellbook:
         return sum(1 for slot in self.slots.get(level, []) if slot.memorized and not slot.expended)
 
     def memorize(self, spell_id: str, level: int) -> bool:
-        if self.spell_type == "sorcerer":
+        if self.spell_type == "channeler":
             return False
         for slot in self.slots.setdefault(level, []):
             if slot.spell_id is None:
@@ -177,7 +177,7 @@ def begin_casting(
         return False, None, "aura cooldown"
     if not _target_valid(spell_def, target_id, target_point):
         return False, None, "invalid target"
-    if spell_def.spell_type in {"wizard", "priest"} and spellbook.available_slots(spell_def.level) <= 0:
+    if spell_def.spell_type in {"mage", "priest"} and spellbook.available_slots(spell_def.level) <= 0:
         return False, None, "no available slot"
     attempt = CastingAttempt(
         caster_id=caster.identity.actor_id,
@@ -258,12 +258,12 @@ def rest_refresh_spellbook(spellbook: Spellbook) -> None:
 
 
 def _spell_ability_score(actor: ActorRecord, spell_type: str) -> int:
-    """Return the spellcasting ability score: MND (wizard), INS (priest), PRE (sorcerer)."""
-    if spell_type == "wizard":
+    """Return the spellcasting ability score: MND (mage), INS (priest), PRE (channeler)."""
+    if spell_type == "mage":
         return int(actor.stats.get("MND", 10))
     if spell_type == "priest":
         return int(actor.stats.get("INS", 10))
-    if spell_type == "sorcerer":
+    if spell_type == "channeler":
         return int(actor.stats.get("PRE", 10))
     return 10
 

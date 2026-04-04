@@ -102,13 +102,13 @@ def test_ac01_can_equip_checks_minimum_stat_requirements():
         item_category="sword",
         weight=30,
         base_price=100,
-        requirements=ItemRequirements(min_str=14),
+        requirements=ItemRequirements(min_mig=14),
     )
 
     allowed, failures = can_equip(actor, item_def)
 
     assert allowed is False
-    assert failures == ["min_str: need 14 have 12"]
+    assert failures == ["min_mig: need 14 have 12"]
 
 
 def test_ac02_equip_and_unequip_apply_and_remove_effects():
@@ -255,7 +255,7 @@ def test_ac10_item_def_and_instance_round_trip_without_loss():
         base_price=1500,
         max_stack=1,
         enchantment=2,
-        requirements=ItemRequirements(min_int=12, class_usability=["mage"]),
+        requirements=ItemRequirements(min_mnd=12, class_usability=["mage"]),
         combat_headers=[CombatHeader(attack_type="launcher", range=30, speed_factor=1)],
         equip_effect_ids=["str_bonus_2"],
         use_effect_ids=["heal_20"],

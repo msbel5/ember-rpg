@@ -43,25 +43,30 @@ def compute_mood(needs: NeedState) -> tuple[str, dict[str, Any]]:
     weighted = 0.0
     for need_id, need_def in NEED_DEFS.items():
         weighted += float(needs.values.get(need_id, 100.0)) * need_def.weight
-    average = weighted / total_weight
-    for tier in MORALE_CASCADE_TIERS:
-        if average >= float(tier.unrest_max):
-            continue
-        if average >= float(tier.unrest_min) or tier == MORALE_CASCADE_TIERS[-1]:
-            return tier.tier, {
-                "work_speed_mult": tier.work_speed_mult,
-                "social_hostility": tier.social_hostility,
-                "task_refusal": tier.task_refusal,
-                "tantrum_risk": tier.tantrum_risk,
-            }
-    # Fallback: use thresholds from colony_config.
     from engine.data._shared import colony_config_registry
     thresholds = colony_config_registry().get("thresholds", {}).get("mood", {})
+    average = weighted / total_weight
     if average >= float(thresholds.get("content", 75)):
+        mood = "content"
+    elif average >= float(thresholds.get("unhappy", 50)):
+        mood = "unhappy"
+    elif average >= float(thresholds.get("miserable", 25)):
+        mood = "miserable"
+    else:
+        mood = "breakdown"
+    tier = next((candidate for candidate in MORALE_CASCADE_TIERS if candidate.tier == mood), None)
+    if tier is not None:
+        return tier.tier, {
+            "work_speed_mult": tier.work_speed_mult,
+            "social_hostility": tier.social_hostility,
+            "task_refusal": tier.task_refusal,
+            "tantrum_risk": tier.tantrum_risk,
+        }
+    if mood == "content":
         return "content", {"work_speed_mult": 1.0}
-    if average >= float(thresholds.get("unhappy", 50)):
+    if mood == "unhappy":
         return "unhappy", {"work_speed_mult": 0.8}
-    if average >= float(thresholds.get("miserable", 25)):
+    if mood == "miserable":
         return "miserable", {"work_speed_mult": 0.5, "social_hostility": True, "task_refusal": True, "tantrum_risk": 0.02}
     return "breakdown", {"work_speed_mult": 0.2, "social_hostility": True, "task_refusal": True, "tantrum_risk": 0.10}
 

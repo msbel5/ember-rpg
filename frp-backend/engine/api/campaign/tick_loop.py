@@ -94,7 +94,7 @@ class CampaignTickLoop:
             except (KeyError, ValueError):
                 logger.info("Campaign %s no longer exists, stopping tick loop", self._campaign_id[:8])
                 break
-            if context.session.in_combat():
+            if context.in_combat():
                 continue
             try:
                 events = advance_world_tick(context, hours=self._tick_hours)

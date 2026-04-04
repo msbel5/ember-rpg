@@ -64,6 +64,17 @@ class TestAttackCommand:
         else:
             assert current_hp == original_hp, "HP should not change on a miss"
 
+    def test_attack_stores_combat_only_in_kernel_game_state(self):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+
+        result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+
+        assert result is not None
+        runtime_game_state = ctx.kernel_runtime["game_state"]
+        assert isinstance(runtime_game_state.raw_payload.get("combat"), dict)
+        assert "combat_state" not in ctx.campaign_state
+
     def test_attack_hit_creates_wound(self):
         """When an attack hits, a wound should be appended to target raw_payload."""
         _rt, ctx = _make_campaign()
@@ -74,7 +85,7 @@ class TestAttackCommand:
         wound_found = False
         for seed_offset in range(20):
             # Vary the tick to get different RNG seeds.
-            ctx.session.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
+            ctx.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
             result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
             if result and "hits" in result[0]:
                 wounds = enemy.raw_payload.get("wounds", [])
@@ -92,7 +103,7 @@ class TestAttackCommand:
         # Try multiple seeds until we get a hit.
         killed = False
         for seed_offset in range(30):
-            ctx.session.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
+            ctx.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
             result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
             if result and "hits" in result[0]:
                 killed = True
@@ -158,7 +169,7 @@ class TestFleeCommand:
         for seed_offset in range(30):
             # Reset flag each attempt.
             player.raw_payload.pop("fled_combat", None)
-            ctx.session.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
+            ctx.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
             result = maybe_handle_combat_command(ctx, "flee")
             assert result is not None
             if "escapes successfully" in result[0]:
@@ -176,7 +187,7 @@ class TestFleeCommand:
         failed = False
         for seed_offset in range(30):
             player.raw_payload.pop("fled_combat", None)
-            ctx.session.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
+            ctx.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
             result = maybe_handle_combat_command(ctx, "flee")
             assert result is not None
             if "fails to escape" in result[0]:
@@ -195,6 +206,25 @@ class TestFleeCommand:
         assert "d20=" in narrative
         assert "AGI" in narrative
         assert "DC 10" in narrative
+
+    def test_successful_flee_clears_kernel_combat_without_side_channel_state(self):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        attack_result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert attack_result is not None
+        assert isinstance(ctx.kernel_runtime["game_state"].raw_payload.get("combat"), dict)
+
+        for seed_offset in range(30):
+            ctx.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
+            flee_result = maybe_handle_combat_command(ctx, "flee")
+            assert flee_result is not None
+            if "escapes successfully" in flee_result[0]:
+                break
+        else:
+            pytest.fail("Expected at least one successful flee attempt")
+
+        assert "combat" not in ctx.kernel_runtime["game_state"].raw_payload
+        assert "combat_state" not in ctx.campaign_state
 
 
 # ---------------------------------------------------------------------------

@@ -57,9 +57,9 @@ def _handle_diagnose(
     """Full diagnosis: create treatment records, show wound details and plan."""
     target = _resolve_medical_target(actors, target_name, doctor)
     if target is None:
-        return (f"No target '{target_name}' found to diagnose.", "avatar", 1)
+        return (f"No target '{target_name}' found to diagnose.", "medical", 1)
     if target.body_state is None:
-        return (f"{target.identity.display_name} has no injuries to diagnose.", "avatar", 1)
+        return (f"{target.identity.display_name} has no injuries to diagnose.", "medical", 1)
     wounds = target.raw_payload.get("wounds", [])
     tick = int(target.raw_payload.get("game_tick", 0))
     patient_id = target.identity.actor_id
@@ -97,7 +97,7 @@ def _handle_diagnose(
     status = f"CRITICAL ({reason})" if lethal else "stable"
     summary = "; ".join(summaries[:5]) if summaries else "no visible wounds"
     logger.info("Diagnose %s: %d wounds, status=%s", patient_id, len(wounds), status)
-    return (f"Diagnosis for {target.identity.display_name}: {summary}. Status: {status}.", "avatar", 1)
+    return (f"Diagnosis for {target.identity.display_name}: {summary}. Status: {status}.", "medical", 1)
 
 
 def _handle_treat(
@@ -106,10 +106,10 @@ def _handle_treat(
     """Iterate treatment plan steps with material/skill checks."""
     target = _resolve_medical_target(actors, target_name, doctor)
     if target is None:
-        return (f"No target '{target_name}' found to treat.", "avatar", 2)
+        return (f"No target '{target_name}' found to treat.", "medical", 2)
     records = target.raw_payload.get("treatment_records", [])
     if not records:
-        return ("No treatment records. Diagnose the patient first.", "avatar", 1)
+        return ("No treatment records. Diagnose the patient first.", "medical", 1)
     wounds = target.raw_payload.get("wounds", [])
     materials = _available_medical_materials(doctor)
     results: list[str] = []
@@ -133,9 +133,9 @@ def _handle_treat(
             if not ok:
                 break
     if not results:
-        return (f"No treatable wounds on {target.identity.display_name}.", "avatar", 2)
+        return (f"No treatable wounds on {target.identity.display_name}.", "medical", 2)
     logger.info("Treat %s: %s", target.identity.display_name, "; ".join(results))
-    return (f"Treatment for {target.identity.display_name}: {'; '.join(results)}.", "avatar", 2)
+    return (f"Treatment for {target.identity.display_name}: {'; '.join(results)}.", "medical", 2)
 
 
 def _handle_surgery(
@@ -144,10 +144,10 @@ def _handle_surgery(
     """Perform surgery step using kernel failure chance."""
     target = _resolve_medical_target(actors, target_name, doctor)
     if target is None:
-        return (f"No target '{target_name}' found for surgery.", "avatar", 2)
+        return (f"No target '{target_name}' found for surgery.", "medical", 2)
     records = target.raw_payload.get("treatment_records", [])
     if not records:
-        return ("No treatment records. Diagnose the patient first.", "avatar", 1)
+        return ("No treatment records. Diagnose the patient first.", "medical", 1)
     wounds = target.raw_payload.get("wounds", [])
     materials = _available_medical_materials(doctor)
     surgery_skill = int(doctor.skills.get("surgery", doctor.skills.get("surgery_skill", 0)))
@@ -171,9 +171,9 @@ def _handle_surgery(
         record.steps_completed.append(TreatmentStep.SURGERY)
         results.append(f"Surgery ({failure:.0%} failure chance): {msg}")
     if not results:
-        return ("No wounds requiring surgery.", "avatar", 2)
+        return ("No wounds requiring surgery.", "medical", 2)
     logger.info("Surgery on %s: %s", target.identity.display_name, "; ".join(results))
-    return (f"Surgery on {target.identity.display_name}: {'; '.join(results)}.", "avatar", 2)
+    return (f"Surgery on {target.identity.display_name}: {'; '.join(results)}.", "medical", 2)
 
 
 # ---------------------------------------------------------------------------

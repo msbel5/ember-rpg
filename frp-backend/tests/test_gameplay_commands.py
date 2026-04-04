@@ -100,9 +100,9 @@ class TestPickupCommand:
 
     def test_pickup_command_recognized(self):
         _rt, ctx = _make_campaign()
-        count_before = len(ctx.session.player.inventory)
+        count_before = len(ctx.player.inventory)
         spawn_ground_item_entity(
-            ctx.session,
+            ctx,
             item={"id": "healing_potion", "name": "Healing Potion", "qty": 1},
         )
         result = maybe_handle_inventory_command(ctx, "pickup healing_potion")
@@ -111,14 +111,14 @@ class TestPickupCommand:
         assert cmd_type == "inventory"
         assert hours == 0
         assert "picked up" in narrative.lower()
-        assert len(ctx.session.player.inventory) == count_before + 1
-        assert ctx.session.find_inventory_item("healing_potion") is not None
-        assert ctx.session.campaign_state.get("ground_items", []) == []
+        assert len(ctx.player.inventory) == count_before + 1
+        assert ctx.find_inventory_item("healing_potion") is not None
+        assert ctx.campaign_state.get("ground_items", []) == []
 
     def test_take_alias_recognized(self):
         _rt, ctx = _make_campaign()
         spawn_ground_item_entity(
-            ctx.session,
+            ctx,
             item={"id": "iron_ore", "name": "Iron Ore", "qty": 1},
         )
         result = maybe_handle_inventory_command(ctx, "take iron_ore")
@@ -133,8 +133,8 @@ class TestPickupCommand:
 
     def test_pickup_repeated_ground_items_stacks_into_inventory(self):
         _rt, ctx = _make_campaign()
-        spawn_ground_item_entity(ctx.session, item={"id": "iron_ore", "name": "Iron Ore", "qty": 1}, entity_id="ore_a")
-        spawn_ground_item_entity(ctx.session, item={"id": "iron_ore", "name": "Iron Ore", "qty": 1}, entity_id="ore_b")
+        spawn_ground_item_entity(ctx, item={"id": "iron_ore", "name": "Iron Ore", "qty": 1}, entity_id="ore_a")
+        spawn_ground_item_entity(ctx, item={"id": "iron_ore", "name": "Iron Ore", "qty": 1}, entity_id="ore_b")
 
         first = maybe_handle_inventory_command(ctx, "pickup iron_ore")
         second = maybe_handle_inventory_command(ctx, "pickup iron ore")
@@ -143,26 +143,26 @@ class TestPickupCommand:
         assert first is not None and "picked up" in first[0].lower()
         assert second is not None and "picked up" in second[0].lower()
         assert third is not None and "nothing to pick up" in third[0].lower()
-        stack = ctx.session.find_inventory_item("iron_ore")
+        stack = ctx.find_inventory_item("iron_ore")
         assert stack is not None
         assert int(stack.get("qty", 1)) == 2
-        assert ctx.session.campaign_state.get("ground_items", []) == []
+        assert ctx.campaign_state.get("ground_items", []) == []
 
 
 class TestDropCommand:
 
     def test_drop_command_recognized(self):
         _rt, ctx = _make_campaign()
-        ctx.session.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 1}, merge=True)
-        count_before = len(ctx.session.player.inventory)
+        ctx.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 1}, merge=True)
+        count_before = len(ctx.player.inventory)
         result = maybe_handle_inventory_command(ctx, "drop iron_ore")
         assert result is not None
         narrative, cmd_type, hours = result
         assert cmd_type == "inventory"
         assert hours == 0
         assert "dropped" in narrative.lower()
-        assert len(ctx.session.player.inventory) == count_before - 1
-        ground_items = ctx.session.campaign_state.get("ground_items", [])
+        assert len(ctx.player.inventory) == count_before - 1
+        ground_items = ctx.campaign_state.get("ground_items", [])
         assert len(ground_items) == 1
         assert ground_items[0]["name"] == "Iron Ore"
 
@@ -174,7 +174,7 @@ class TestDropCommand:
 
     def test_drop_repeated_items_until_inventory_empty(self):
         _rt, ctx = _make_campaign()
-        ctx.session.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 2}, merge=True)
+        ctx.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 2}, merge=True)
 
         first = maybe_handle_inventory_command(ctx, "drop iron ore")
         second = maybe_handle_inventory_command(ctx, "drop iron_ore")
@@ -183,8 +183,8 @@ class TestDropCommand:
         assert first is not None and "dropped" in first[0].lower()
         assert second is not None and "dropped" in second[0].lower()
         assert third is not None and "don't have" in third[0].lower()
-        assert ctx.session.find_inventory_item("iron_ore") is None
-        assert len(ctx.session.campaign_state.get("ground_items", [])) == 2
+        assert ctx.find_inventory_item("iron_ore") is None
+        assert len(ctx.campaign_state.get("ground_items", [])) == 2
 
 
 # ---------------------------------------------------------------------------

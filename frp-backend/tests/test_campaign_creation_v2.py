@@ -55,6 +55,7 @@ def test_start_creation_returns_guided_creation_state():
     assert len(payload["questions"]) >= 3
     assert len(payload["current_roll"]) == 6
     assert payload["roll_pool"] == sorted(payload["current_roll"], reverse=True)
+    assert payload["saved_roll_pool"] == []
     assert payload["allocation_rules"]["mode"] == "rolled_array_assignment"
     assert payload["campaign_genesis"]["world_premise"]
     assert payload["world_seed_hints"]["preferred_adapter"] == "fantasy_ember"
@@ -86,6 +87,7 @@ def test_creation_answer_roll_management_and_finalize_yield_campaign_snapshot():
     assert saved.status_code == 200
     saved_payload = saved.json()
     assert saved_payload["saved_roll"] == started["current_roll"]
+    assert saved_payload["saved_roll_pool"] == sorted(started["current_roll"], reverse=True)
 
     rerolled = client.post(f"/game/campaigns/creation/{creation_id}/reroll")
     assert rerolled.status_code == 200

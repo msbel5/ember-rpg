@@ -38,7 +38,7 @@ def _actor(
     if effect_registry is not None:
         raw_payload["effect_registry"] = effect_registry
     if spellbook is not None:
-        raw_payload["spellbooks"] = {"wizard": spellbook}
+        raw_payload["spellbooks"] = {"mage": spellbook}
     return ActorRecord(
         identity=ActorIdentity(actor_id=actor_id, display_name=actor_id, actor_type="pc"),
         position=ActorPosition(x=0, y=0),
@@ -127,7 +127,7 @@ def test_ac05_buy_item_fails_with_insufficient_gold():
 
 
 def test_ac06_attempt_steal_succeeds_when_roll_plus_skill_meets_dc():
-    thief = _actor("thief", pickpocket=10)
+    rogue = _actor("rogue", pickpocket=10)
     store = StoreDef(
         store_id="market",
         label="Market",
@@ -136,15 +136,15 @@ def test_ac06_attempt_steal_succeeds_when_roll_plus_skill_meets_dc():
         items=[StoreItem(item_def_id="gem", quantity=1)],
     )
 
-    success, _message = attempt_steal(thief, store, "gem", d100_roll=15)
+    success, _message = attempt_steal(rogue, store, "gem", d100_roll=15)
 
     assert success is True
-    assert len(thief.inventory) == 1
-    assert thief.inventory[0].item_def_id == "gem"
+    assert len(rogue.inventory) == 1
+    assert rogue.inventory[0].item_def_id == "gem"
 
 
 def test_ac07_attempt_steal_failure_makes_store_hostile_and_reduces_reputation():
-    thief = _actor("thief", reputation=10, pickpocket=10)
+    rogue = _actor("rogue", reputation=10, pickpocket=10)
     store = StoreDef(
         store_id="market",
         label="Market",
@@ -153,11 +153,11 @@ def test_ac07_attempt_steal_failure_makes_store_hostile_and_reduces_reputation()
         items=[StoreItem(item_def_id="gem", quantity=1)],
     )
 
-    success, _message = attempt_steal(thief, store, "gem", d100_roll=5)
+    success, _message = attempt_steal(rogue, store, "gem", d100_roll=5)
 
     assert success is False
     assert store.hostile is True
-    assert thief.raw_payload["reputation"] == 8
+    assert rogue.raw_payload["reputation"] == 8
 
 
 def test_ac08_buy_identification_succeeds_when_store_lore_is_sufficient():
@@ -235,7 +235,7 @@ def test_healing_and_rest_services_apply_effects_and_refresh_spellbook():
     )
     spellbook = Spellbook(
         actor_id="buyer",
-        spell_type="wizard",
+        spell_type="mage",
         slots={1: [SpellSlot(spell_level=1, spell_id="magic_missile", memorized=True, expended=True)]},
     )
     buyer = _actor(

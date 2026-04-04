@@ -54,20 +54,20 @@ def test_ac01_compute_max_spell_slots_adds_ability_bonus():
         stats={"MND": 16, "INS": 10, "PRE": 10, "END": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20},
         raw_payload={"level": 5},
     )
-    class_table = {"wizard": {5: {1: 2, 2: 1}}}
+    class_table = {"mage": {5: {1: 2, 2: 1}}}
 
-    slots = compute_max_spell_slots(actor, "wizard", class_table)
+    slots = compute_max_spell_slots(actor, "mage", class_table)
 
     assert slots[1] == 3
 
 
 def test_ac02_learn_spell_succeeds_when_roll_is_within_int_chance():
     actor = _actor(stats={"MND": 14, "INS": 10, "PRE": 10, "END": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20})
-    spellbook = Spellbook(actor_id=actor.identity.actor_id, spell_type="wizard")
+    spellbook = Spellbook(actor_id=actor.identity.actor_id, spell_type="mage")
     spell_def = SpellDef(
         spell_id="magic_missile",
         label="Magic Missile",
-        spell_type="wizard",
+        spell_type="mage",
         school="evocation",
         level=1,
         casting_time=1,
@@ -83,11 +83,11 @@ def test_ac02_learn_spell_succeeds_when_roll_is_within_int_chance():
 
 def test_ac03_learn_spell_fails_and_consumes_scroll_on_bad_roll():
     actor = _actor(stats={"MND": 14, "INS": 10, "PRE": 10, "END": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20})
-    spellbook = Spellbook(actor_id=actor.identity.actor_id, spell_type="wizard")
+    spellbook = Spellbook(actor_id=actor.identity.actor_id, spell_type="mage")
     spell_def = SpellDef(
         spell_id="magic_missile",
         label="Magic Missile",
-        spell_type="wizard",
+        spell_type="mage",
         school="evocation",
         level=1,
         casting_time=1,
@@ -104,7 +104,7 @@ def test_ac03_learn_spell_fails_and_consumes_scroll_on_bad_roll():
 def test_ac04_rest_refresh_clears_expended_flags():
     spellbook = Spellbook(
         actor_id="caster",
-        spell_type="wizard",
+        spell_type="mage",
         slots={1: [SpellSlot(1, "magic_missile", memorized=True, expended=True) for _ in range(3)]},
     )
 
@@ -117,7 +117,7 @@ def test_ac05_begin_casting_returns_attempt_for_memorized_spell():
     spell_def = SpellDef(
         spell_id="magic_missile",
         label="Magic Missile",
-        spell_type="wizard",
+        spell_type="mage",
         school="evocation",
         level=1,
         casting_time=3,
@@ -126,7 +126,7 @@ def test_ac05_begin_casting_returns_attempt_for_memorized_spell():
     )
     spellbook = Spellbook(
         actor_id="caster",
-        spell_type="wizard",
+        spell_type="mage",
         slots={1: [SpellSlot(1, "magic_missile", memorized=True, expended=False)]},
     )
 
@@ -141,7 +141,7 @@ def test_ac06_tick_casting_interrupts_when_concentration_fails():
     caster = _actor(stats={"MND": 14, "INS": 10, "PRE": 10, "END": 14, "magic_resistance": 0, "hp": 20, "max_hp": 20})
     attempt = CastingAttempt(
         caster_id="caster",
-        spell_def=SpellDef("magic_missile", "Magic Missile", "wizard", "evocation", 1, 2, 60, "creature"),
+        spell_def=SpellDef("magic_missile", "Magic Missile", "mage", "evocation", 1, 2, 60, "creature"),
         tick_started=10,
         ticks_remaining=2,
     )
@@ -156,7 +156,7 @@ def test_ac07_tick_casting_continues_when_concentration_succeeds():
     caster = _actor(stats={"MND": 14, "INS": 10, "PRE": 10, "END": 14, "magic_resistance": 0, "hp": 20, "max_hp": 20})
     attempt = CastingAttempt(
         caster_id="caster",
-        spell_def=SpellDef("magic_missile", "Magic Missile", "wizard", "evocation", 1, 2, 60, "creature"),
+        spell_def=SpellDef("magic_missile", "Magic Missile", "mage", "evocation", 1, 2, 60, "creature"),
         tick_started=10,
         ticks_remaining=2,
     )
@@ -171,7 +171,7 @@ def test_ac08_tick_casting_fails_on_spell_failure_roll():
     caster = _actor(raw_payload={"spell_failure": 20})
     attempt = CastingAttempt(
         caster_id="caster",
-        spell_def=SpellDef("magic_missile", "Magic Missile", "wizard", "evocation", 1, 1, 60, "creature"),
+        spell_def=SpellDef("magic_missile", "Magic Missile", "mage", "evocation", 1, 1, 60, "creature"),
         tick_started=10,
         ticks_remaining=1,
     )
@@ -186,7 +186,7 @@ def test_ac09_tick_casting_succeeds_when_spell_failure_roll_misses():
     caster = _actor(raw_payload={"spell_failure": 20})
     attempt = CastingAttempt(
         caster_id="caster",
-        spell_def=SpellDef("magic_missile", "Magic Missile", "wizard", "evocation", 1, 1, 60, "creature"),
+        spell_def=SpellDef("magic_missile", "Magic Missile", "mage", "evocation", 1, 1, 60, "creature"),
         tick_started=10,
         ticks_remaining=1,
     )
@@ -199,8 +199,8 @@ def test_ac09_tick_casting_succeeds_when_spell_failure_roll_misses():
 
 def test_ac10_begin_casting_blocks_on_aura_cooldown():
     caster = _actor(raw_payload={"last_cast_tick": 100})
-    spellbook = Spellbook(actor_id="caster", spell_type="wizard", slots={1: [SpellSlot(1, "magic_missile", memorized=True, expended=False)]})
-    spell_def = SpellDef("magic_missile", "Magic Missile", "wizard", "evocation", 1, 1, 60, "creature")
+    spellbook = Spellbook(actor_id="caster", spell_type="mage", slots={1: [SpellSlot(1, "magic_missile", memorized=True, expended=False)]})
+    spell_def = SpellDef("magic_missile", "Magic Missile", "mage", "evocation", 1, 1, 60, "creature")
 
     ok, attempt, error = begin_casting(caster, spellbook, spell_def, target_id="target", target_point=None, current_tick=103)
 
@@ -211,8 +211,8 @@ def test_ac10_begin_casting_blocks_on_aura_cooldown():
 
 def test_ac11_begin_casting_allows_after_aura_cooldown_expires():
     caster = _actor(raw_payload={"last_cast_tick": 100})
-    spellbook = Spellbook(actor_id="caster", spell_type="wizard", slots={1: [SpellSlot(1, "magic_missile", memorized=True, expended=False)]})
-    spell_def = SpellDef("magic_missile", "Magic Missile", "wizard", "evocation", 1, 1, 60, "creature")
+    spellbook = Spellbook(actor_id="caster", spell_type="mage", slots={1: [SpellSlot(1, "magic_missile", memorized=True, expended=False)]})
+    spell_def = SpellDef("magic_missile", "Magic Missile", "mage", "evocation", 1, 1, 60, "creature")
 
     ok, attempt, error = begin_casting(caster, spellbook, spell_def, target_id="target", target_point=None, current_tick=106)
 
@@ -229,7 +229,7 @@ def test_ac12_resolve_cast_negates_effects_on_magic_resistance():
         spell_def=SpellDef(
             "magic_missile",
             "Magic Missile",
-            "wizard",
+            "mage",
             "evocation",
             1,
             1,
@@ -255,7 +255,7 @@ def test_ac13_resolve_cast_applies_effects_when_not_resisted():
         spell_def=SpellDef(
             "magic_missile",
             "Magic Missile",
-            "wizard",
+            "mage",
             "evocation",
             1,
             1,
@@ -276,7 +276,7 @@ def test_ac13_resolve_cast_applies_effects_when_not_resisted():
 def test_ac14_spellbook_round_trip_preserves_known_and_slot_state():
     spellbook = Spellbook(
         actor_id="caster",
-        spell_type="wizard",
+        spell_type="mage",
         known_spells={1: ["magic_missile", "shield"], 2: ["mirror_image"]},
         slots={1: [SpellSlot(1, "magic_missile", memorized=True, expended=False), SpellSlot(1, "shield", memorized=True, expended=True)]},
         max_slots={1: 2, 2: 1},
@@ -285,3 +285,26 @@ def test_ac14_spellbook_round_trip_preserves_known_and_slot_state():
     restored = Spellbook.from_dict(spellbook.to_dict())
 
     assert restored == spellbook
+
+
+def test_ac15_channeler_casting_uses_presence_and_skips_memorization():
+    actor = _actor(stats={"MND": 11, "INS": 12, "PRE": 16, "END": 10, "magic_resistance": 0, "hp": 20, "max_hp": 20})
+    spellbook = Spellbook(actor_id=actor.identity.actor_id, spell_type="channeler")
+    spell_def = SpellDef(
+        spell_id="ember_burst",
+        label="Ember Burst",
+        spell_type="channeler",
+        school="channeling",
+        level=1,
+        casting_time=1,
+        range=30,
+        target_type="creature",
+    )
+
+    assert spellbook.memorize("ember_burst", 1) is False
+
+    ok, attempt, error = begin_casting(actor, spellbook, spell_def, target_id="target", target_point=None, current_tick=10)
+
+    assert ok is True
+    assert error == ""
+    assert attempt is not None

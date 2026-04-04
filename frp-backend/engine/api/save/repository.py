@@ -19,23 +19,23 @@ class SaveRepositoryMixin:
 
     def save_game(
         self,
-        session,
+        context,
         slot_name: str = "autosave",
         *,
         player_name: Optional[str] = None,
     ) -> str:
-        if hasattr(session, "last_save_slot"):
-            session.last_save_slot = slot_name
-        state = self._serialize_session(session)
+        if hasattr(context, "last_save_slot"):
+            context.last_save_slot = slot_name
+        state = self._serialize_campaign_context(context)
         save_data = {
             "schema_version": CURRENT_SCHEMA_VERSION,
             "slot_name": slot_name,
             "timestamp": datetime.now().isoformat(),
-            "player_name": player_name or (session.player.name if session.player else "Unknown"),
-            "player_level": session.player.level if session.player else 1,
-            "location": session.dm_context.location if session.dm_context else "Unknown",
-            "game_time_display": (session.game_time.to_string() if session.game_time else "Day 1, 08:00"),
-            "session_state": state,
+            "player_name": player_name or (context.player.name if context.player else "Unknown"),
+            "player_level": context.player.level if context.player else 1,
+            "location": context.dm_context.location if context.dm_context else "Unknown",
+            "game_time_display": (context.game_time.to_string() if context.game_time else "Day 1, 08:00"),
+            "campaign_context": state,
         }
         filepath = self.save_dir / f"{slot_name}.json"
         tmp = filepath.with_suffix(".tmp")
@@ -47,10 +47,10 @@ class SaveRepositoryMixin:
 
     @staticmethod
     def _campaign_state_root(save_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        session_state = save_data.get("session_state", {})
-        if not isinstance(session_state, dict):
+        campaign_context = save_data.get("campaign_context", {})
+        if not isinstance(campaign_context, dict):
             return None
-        campaign_state = session_state.get("campaign_state", {})
+        campaign_state = campaign_context.get("campaign_state", {})
         if not isinstance(campaign_state, dict):
             return None
         campaign_root = campaign_state.get("campaign")
@@ -80,14 +80,13 @@ class SaveRepositoryMixin:
             "timestamp": save_data.get("timestamp", ""),
             "game_time": save_data.get("game_time_display", ""),
             "schema_version": save_data.get("schema_version", ""),
-            "session_id": save_data.get("session_state", {}).get("session_id"),
             "campaign_compatible": campaign_root is not None,
             "campaign_id": str(campaign_root.get("campaign_id", "")) if campaign_root else "",
         }
 
-    def find_slot_by_session_id(self, session_id: str) -> Optional[str]:
+    def find_slot_by_campaign_id(self, campaign_id: str) -> Optional[str]:
         for save in self.list_saves():
-            if save.get("session_id") == session_id:
+            if save.get("campaign_id") == campaign_id:
                 return save.get("slot_name")
         return None
 
@@ -98,12 +97,12 @@ class SaveRepositoryMixin:
                 if strict:
                     raise FileNotFoundError(slot_name)
                 return None
-            state = save_data.get("session_state", {})
+            state = save_data.get("campaign_context", {})
             if not state or "player" not in state:
                 if strict:
                     raise ValueError(f"Corrupt save slot: {slot_name}")
                 return None
-            return self._deserialize_session(state)
+            return self._deserialize_campaign_context(state)
         except (json.JSONDecodeError, KeyError, TypeError, ValueError):
             if strict:
                 raise
@@ -123,7 +122,6 @@ class SaveRepositoryMixin:
                     "timestamp": data.get("timestamp", ""),
                     "game_time": data.get("game_time_display", ""),
                     "schema_version": data.get("schema_version", ""),
-                    "session_id": data.get("session_state", {}).get("session_id"),
                     "campaign_compatible": campaign_root is not None,
                     "campaign_id": str(campaign_root.get("campaign_id", "")) if campaign_root else "",
                 }
@@ -141,8 +139,8 @@ class SaveRepositoryMixin:
             return True
         return False
 
-    def autosave(self, session) -> str:
-        return self.save_game(session, "autosave")
+    def autosave(self, context) -> str:
+        return self.save_game(context, "autosave")
 
     def save_exists(self, slot_name: str) -> bool:
         return (self.save_dir / f"{slot_name}.json").exists()

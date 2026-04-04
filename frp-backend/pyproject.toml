@@ -15,9 +15,11 @@ pythonpath = ["."]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
+asyncio_mode = "auto"
 markers = [
     "playtest: chaotic FRP player integration/scenario tests",
     "slow: long-running chaos tests (500+ turns)",
+    "asyncio: async test requiring event loop",
 ]
 
 [tool.mypy]

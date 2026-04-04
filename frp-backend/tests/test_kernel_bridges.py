@@ -31,21 +31,25 @@ class TestCommerceCommands:
         # May fail to find merchant, but command is recognized.
         assert result is not None
         assert isinstance(result[0], str)
+        assert result[1] == "commerce"
 
     def test_sell_command_recognized(self):
         _, ctx = _make_campaign()
         result = maybe_handle_commerce_command(ctx, "sell iron_bar")
         assert result is not None
+        assert result[1] == "commerce"
 
     def test_rent_room_recognized(self):
         _, ctx = _make_campaign()
         result = maybe_handle_commerce_command(ctx, "rent room")
         assert result is not None
+        assert result[1] == "commerce"
 
     def test_identify_recognized(self):
         _, ctx = _make_campaign()
         result = maybe_handle_commerce_command(ctx, "identify strange ring")
         assert result is not None
+        assert result[1] == "commerce"
 
     def test_non_commerce_returns_none(self):
         _, ctx = _make_campaign()
@@ -57,6 +61,7 @@ class TestCommerceCommands:
         result = rt.run_command(ctx.campaign_id, "buy bread")
         assert "narrative" in result
         assert "command_type" in result
+        assert result["command_type"] == "commerce"
 
 
 # ---------------------------------------------------------------------------
@@ -69,11 +74,13 @@ class TestMedicalCommands:
         result = maybe_handle_medical_command(ctx, "diagnose self")
         assert result is not None
         assert isinstance(result[0], str)
+        assert result[1] == "medical"
 
     def test_treat_self(self):
         _, ctx = _make_campaign()
         result = maybe_handle_medical_command(ctx, "treat self")
         assert result is not None
+        assert result[1] == "medical"
 
     def test_non_medical_returns_none(self):
         _, ctx = _make_campaign()
@@ -84,6 +91,7 @@ class TestMedicalCommands:
         rt, ctx = _make_campaign()
         result = rt.run_command(ctx.campaign_id, "diagnose self")
         assert "narrative" in result
+        assert result["command_type"] == "medical"
 
 
 # ---------------------------------------------------------------------------
@@ -109,16 +117,18 @@ class TestSpellPipeline:
 # ---------------------------------------------------------------------------
 
 class TestCommandDispatchOrder:
-    def test_commerce_before_avatar(self):
-        """Buy/sell should be intercepted before falling through to avatar."""
+    def test_commerce_uses_specialized_command_type(self):
+        """Buy/sell should be intercepted by the commerce handler."""
         rt, ctx = _make_campaign()
         result = rt.run_command(ctx.campaign_id, "buy healing_potion")
         # Commerce handler intercepts — could be item not found, no merchant, etc.
         narrative = result.get("narrative", "").lower()
+        assert result.get("command_type") == "commerce"
         assert any(k in narrative for k in ("buy", "merchant", "bought", "not found", "stock", "item", "gold"))
 
-    def test_medical_before_avatar(self):
+    def test_medical_uses_specialized_command_type(self):
         rt, ctx = _make_campaign()
         result = rt.run_command(ctx.campaign_id, "diagnose self")
         narrative = result.get("narrative", "").lower()
+        assert result.get("command_type") == "medical"
         assert "diagnos" in narrative or "wound" in narrative or "injur" in narrative or "stable" in narrative

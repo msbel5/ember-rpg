@@ -23,8 +23,6 @@ from engine.save.save_models import CURRENT_SCHEMA_VERSION
 
 
 router = APIRouter()
-
-
 def _make_llm_callable():
     from engine.llm import build_game_narrator
 
@@ -73,7 +71,7 @@ def _creation_response(context) -> CampaignCreationStateResponse:
         current_roll=payload["current_roll"],
         saved_roll=payload["saved_roll"],
         roll_pool=payload["roll_pool"],
-        saved_roll_pool=payload["saved_roll_pool"],
+        saved_roll_pool=list(payload.get("saved_roll_pool") or []),
         catalog=get_creation_catalog(),
     )
 
@@ -139,9 +137,9 @@ def swap_campaign_creation_roll(creation_id: str):
 def finalize_campaign_creation(creation_id: str, req: CampaignCreationFinalizeRequest):
     try:
         context = campaign_runtime.finalize_creation(
-            creation_id,
-            player_name=req.player_name,
-            adapter_id=req.adapter_id,
+        creation_id,
+        player_name=req.player_name,
+        adapter_id=req.adapter_id,
             profile_id=req.profile_id,
             seed=req.seed,
             player_class=req.player_class,
@@ -157,10 +155,11 @@ def finalize_campaign_creation(creation_id: str, req: CampaignCreationFinalizeRe
         raise HTTPException(status_code=404, detail=f"Creation flow not found: {creation_id}") from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return campaign_runtime.snapshot(
+    snapshot = campaign_runtime.snapshot(
         context.campaign_id,
         narrative=context.recent_event_log[0]["summary"] if context.recent_event_log else "",
     )
+    return snapshot
 
 
 @router.post("/campaigns", response_model=CampaignSnapshotResponse)

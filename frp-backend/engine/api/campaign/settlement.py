@@ -9,7 +9,7 @@ import copy
 import logging
 from typing import Any
 
-from engine.api.campaign.campaign_session import CampaignSession
+from engine.api.campaign.context import CampaignContext
 from engine.data.classes import get_creation_ability_order
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
@@ -121,8 +121,8 @@ def build_settlement_state(
     }
 
 
-def build_character_sheet(session: CampaignSession, settlement_state: dict[str, Any] | None = None) -> dict[str, Any]:
-    player = session.player
+def build_character_sheet(context: CampaignContext, settlement_state: dict[str, Any] | None = None) -> dict[str, Any]:
+    player = context.player
     dominant_class = str(player.dominant_class or "adventurer")
     stats = []
     # Ability order loaded from character_creation.json — not hardcoded
@@ -150,10 +150,15 @@ def build_character_sheet(session: CampaignSession, settlement_state: dict[str, 
             }
         )
 
+    ap = getattr(context, "ap_tracker", None)
     resources = {
         "hp": {"current": player.hp, "max": player.max_hp},
         "sp": {"current": player.spell_points, "max": player.max_spell_points},
-        "turn": current_player_turn_resources(session),
+        "ap": {
+            "current": int(getattr(ap, "current_ap", getattr(ap, "max_ap", 4)) if ap else 4),
+            "max": int(getattr(ap, "max_ap", 4) if ap else 4),
+        },
+        "turn": current_player_turn_resources(context),
     }
     creation_profile = dict(player.creation_profile or {})
     creation_summary = {
@@ -194,21 +199,22 @@ def build_character_sheet(session: CampaignSession, settlement_state: dict[str, 
     }
 
 
-def current_player_turn_resources(session: CampaignSession) -> dict[str, int | bool]:
-    combat = getattr(session, "combat", None)
-    player_name = str(getattr(session.player, "name", "")).strip()
-    if combat is not None:
-        for combatant in getattr(combat, "combatants", []):
-            if str(getattr(combatant, "name", "")).strip() != player_name:
+def current_player_turn_resources(context: CampaignContext) -> dict[str, int | bool]:
+    combat = context.kernel_combat_state()
+    player_id = str(getattr(getattr(context, "player", None), "identity", None).actor_id if getattr(context, "player", None) is not None else "")
+    if isinstance(combat, dict):
+        for combatant in combat.get("combatants", []):
+            if str(combatant.get("actor_id", "")).strip() != player_id:
                 continue
+            turn_resources = dict(combatant.get("turn_resources", {}))
             return {
-                "action_available": bool(getattr(combatant, "action_available", True)),
-                "bonus_action_available": bool(getattr(combatant, "bonus_action_available", True)),
-                "reaction_available": bool(getattr(combatant, "reaction_available", True)),
-                "movement_remaining": int(getattr(combatant, "movement_remaining", 0)),
-                "speed": int(getattr(combatant, "speed", 6)),
+                "action_available": bool(turn_resources.get("action", True)),
+                "bonus_action_available": bool(turn_resources.get("bonus_action", True)),
+                "reaction_available": bool(turn_resources.get("reaction", True)),
+                "movement_remaining": int(turn_resources.get("movement", 0)),
+                "speed": int(turn_resources.get("max_movement", 6)),
             }
-    speed = max(6, int(getattr(getattr(session, "ap_tracker", None), "max_ap", 6) or 6))
+    speed = max(6, int(getattr(getattr(context, "ap_tracker", None), "max_ap", 6) or 6))
     return {
         "action_available": True,
         "bonus_action_available": True,

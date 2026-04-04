@@ -34,9 +34,9 @@ def macro_society_events(context, runtime: dict[str, Any]) -> list[dict[str, Any
         for item in store.items:
             context.settlement_state.setdefault("economy", {}).setdefault("prices", {})[item.item_def_id] = item.price_multiplier
     current_hour = int(context.world.simulation_snapshot.current_hour)
-    caravan_events = context.session.caravan_manager.tick(current_hour)
+    caravan_events = context.caravan_manager.tick(current_hour)
     world_state: WorldState = runtime["world_state"]
-    world_state.active_caravans = context.session.caravan_manager.get_active_caravans()
+    world_state.active_caravans = context.caravan_manager.get_active_caravans()
     for event in caravan_events:
         if event.get("type") != "arrival":
             continue

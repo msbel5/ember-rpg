@@ -2,7 +2,7 @@
   "classes": {
     "warrior": {
       "name": "Warrior",
-      "description": "A strong frontline fighter skilled with weapons and armor.",
+      "description": "A strong frontline warrior skilled with weapons and armor.",
       "hit_die": "d10",
       "hit_die_size": 10,
       "ap_per_turn": 4,
@@ -157,7 +157,7 @@
     },
     "mage": {
       "name": "Mage",
-      "description": "A scholar who wields arcane magic through study and intellect.",
+      "description": "A scholar who wields ember magic through study and intellect.",
       "hit_die": "d6",
       "hit_die_size": 6,
       "ap_per_turn": 3,

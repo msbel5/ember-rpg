@@ -1,10 +1,10 @@
-"""Session projection helpers for campaign runtime."""
+"""Campaign context projection helpers for campaign runtime."""
 from __future__ import annotations
 
 import copy
 from typing import Any
 
-from engine.api.campaign.campaign_session import CampaignSession
+from engine.api.campaign.context import CampaignContext
 from engine.kernel.scene_types import SceneType
 from engine.map import MapData, Room, TileType
 from engine.world.entity import Entity, EntityType
@@ -75,9 +75,9 @@ _ROLE_COLORS: dict[str, str] = {
 }
 
 
-def apply_region_to_session(
+def apply_region_to_context(
     *,
-    session: CampaignSession,
+    context: CampaignContext,
     world: WorldBlueprint,
     region_snapshot: RegionSnapshot,
     settlement_state: dict[str, Any],
@@ -92,49 +92,49 @@ def apply_region_to_session(
         world.settlements[0],
     )
     map_data = build_map_data(region_snapshot)
-    session.map_data = map_data
+    context.map_data = map_data
     next_position = list(map_data.spawn_point)
-    if preserve_position and session.position:
-        px = int(session.position[0])
-        py = int(session.position[1])
+    if preserve_position and context.position:
+        px = int(context.position[0])
+        py = int(context.position[1])
         if 0 <= py < region_snapshot.height and 0 <= px < region_snapshot.width and region_snapshot.typed_tiles[py][px]["passable"]:
             next_position = [px, py]
-    session.position = next_position
-    session.dm_context.scene_type = SceneType.EXPLORATION
-    session.dm_context.location = active_settlement.center_name
-    session.entities = {}
-    session.spatial_index = SpatialIndex()
-    session.player_entity = Entity(
+    context.position = next_position
+    context.dm_context.scene_type = SceneType.EXPLORATION
+    context.dm_context.location = active_settlement.center_name
+    context.entities = {}
+    context.spatial_index = SpatialIndex()
+    context.player_entity = Entity(
         id="player",
         entity_type=EntityType.NPC,
-        name=session.player.name,
-        position=tuple(session.position),
+        name=context.player.name,
+        position=tuple(context.position),
         glyph="@",
         color="white",
         blocking=True,
-        hp=session.player.hp,
-        max_hp=session.player.max_hp,
+        hp=context.player.hp,
+        max_hp=context.player.max_hp,
         disposition="friendly",
     )
-    session.spatial_index.add(session.player_entity)
-    session.viewport = None
-    seed_region_entities(session, world, region_snapshot, adapter_id)
-    session.campaign_state.setdefault("active_quests", [])
-    session.campaign_state.setdefault("completed_quests", [])
-    session.campaign_state.setdefault("failed_quests", [])
-    session.campaign_state.setdefault("completed_quest_ids", [])
-    session.campaign_state.setdefault("failed_quest_ids", [])
-    session.campaign_state.setdefault("emergent_counter", 0)
-    session.campaign_state["active_region_id"] = region_snapshot.region_id
-    session.campaign_state["campaign_id"] = campaign_id
-    session.campaign_state["adapter_id"] = adapter_id
-    session.campaign_state["profile_id"] = profile_id
-    session.campaign_state["world_seed"] = seed
-    session.campaign_state["settlement_state"] = copy.deepcopy(settlement_state)
+    context.spatial_index.add(context.player_entity)
+    context.viewport = None
+    seed_region_entities(context, world, region_snapshot, adapter_id)
+    context.campaign_state.setdefault("active_quests", [])
+    context.campaign_state.setdefault("completed_quests", [])
+    context.campaign_state.setdefault("failed_quests", [])
+    context.campaign_state.setdefault("completed_quest_ids", [])
+    context.campaign_state.setdefault("failed_quest_ids", [])
+    context.campaign_state.setdefault("emergent_counter", 0)
+    context.campaign_state["active_region_id"] = region_snapshot.region_id
+    context.campaign_state["campaign_id"] = campaign_id
+    context.campaign_state["adapter_id"] = adapter_id
+    context.campaign_state["profile_id"] = profile_id
+    context.campaign_state["world_seed"] = seed
+    context.campaign_state["settlement_state"] = copy.deepcopy(settlement_state)
     runtime_state = runtime_region_state(world, region_snapshot.region_id)
-    session.campaign_state["active_quests"] = copy.deepcopy(runtime_state.get("active_quests", []))
-    session.campaign_state["quest_offers"] = copy.deepcopy(runtime_state.get("quest_offers", []))
-    session.ensure_consistency()
+    context.campaign_state["active_quests"] = copy.deepcopy(runtime_state.get("active_quests", []))
+    context.campaign_state["quest_offers"] = copy.deepcopy(runtime_state.get("quest_offers", []))
+    context.ensure_consistency()
 
 
 def build_map_data(region_snapshot: RegionSnapshot) -> MapData:
@@ -214,7 +214,7 @@ def build_world_entities(world: WorldBlueprint, region_snapshot: RegionSnapshot,
 
 
 def seed_region_entities(
-    session: CampaignSession,
+    context: CampaignContext,
     world: WorldBlueprint,
     region_snapshot: RegionSnapshot,
     adapter_id: str,
@@ -246,8 +246,8 @@ def seed_region_entities(
             schedule={"npc_id": str(spawn["id"]), "npc_name": display_name, "entries": copy.deepcopy(spawn.get("schedule", []))},
             job=role,
         )
-        session.spatial_index.add(entity)
-        session.entities[entity.id] = {
+        context.spatial_index.add(entity)
+        context.entities[entity.id] = {
             "name": entity.name,
             "type": "npc",
             "position": [entity.position[0], entity.position[1]],
@@ -271,8 +271,8 @@ def seed_region_entities(
             faction=None,
             job=str(furniture["kind"]),
         )
-        session.spatial_index.add(furniture_entity)
-        session.entities[furniture_entity.id] = {
+        context.spatial_index.add(furniture_entity)
+        context.entities[furniture_entity.id] = {
             "name": furniture_entity.name,
             "type": "furniture",
             "position": [furniture_entity.position[0], furniture_entity.position[1]],
@@ -298,8 +298,8 @@ def seed_region_entities(
             faction=f"{adapter_id}_wilds",
             job="predator",
         )
-        session.spatial_index.add(hostile)
-        session.entities[hostile.id] = {
+        context.spatial_index.add(hostile)
+        context.entities[hostile.id] = {
             "name": hostile.name,
             "type": "creature",
             "position": [hostile.position[0], hostile.position[1]],
@@ -353,7 +353,7 @@ def furniture_actions(kind: str) -> list[str]:
 
 
 __all__ = [
-    "apply_region_to_session",
+    "apply_region_to_context",
     "build_map_data",
     "build_world_entities",
     "furniture_actions",

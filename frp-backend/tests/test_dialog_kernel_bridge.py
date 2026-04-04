@@ -57,7 +57,7 @@ class TestAuthoredDialogResolution:
         _, ctx = _make_campaign()
         _inject_npc(ctx, "test_unknown", "Unknowner")
         ctx.kernel_runtime["actors"]["test_unknown"].raw_payload["role"] = "unwritten_role"
-        ctx.session.conversation_state = {
+        ctx.conversation_state = {
             "target_type": "npc",
             "npc_id": "test_unknown",
             "npc_name": "Unknowner",
@@ -129,7 +129,7 @@ class TestBuildDialogPayload:
     def test_returns_dialog_when_talking_to_npc(self):
         _, ctx = _make_campaign()
         _inject_npc(ctx, "test_guard", "Guard")
-        ctx.session.conversation_state = {
+        ctx.conversation_state = {
             "target_type": "npc",
             "npc_id": "test_guard",
             "npc_name": "Guard",
@@ -142,7 +142,7 @@ class TestBuildDialogPayload:
     def test_options_have_required_fields(self):
         _, ctx = _make_campaign()
         _inject_npc(ctx, "test_merchant", "Merchant")
-        ctx.session.conversation_state = {
+        ctx.conversation_state = {
             "target_type": "npc", "npc_id": "test_merchant", "npc_name": "Merchant",
         }
         result = build_dialog_payload(ctx, "Hello.")

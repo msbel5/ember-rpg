@@ -4,7 +4,6 @@ import json
 import pytest
 
 from engine.api.campaign_runtime import CampaignRuntime
-from engine.api.session_factory import create_game_session
 from engine.kernel import GameState
 from tools.campaign_client import CampaignClient
 
@@ -44,9 +43,6 @@ def test_campaign_runtime_lists_only_matching_campaign_saves(tmp_path: Path):
     runtime.save_campaign(first.campaign_id, "first_slot", "Saver")
     runtime.save_campaign(second.campaign_id, "second_slot", "Saver")
 
-    legacy_session = create_game_session("Saver", "warrior", location="Harbor Town")
-    runtime.save_system.save_game(legacy_session, "legacy_slot", player_name="Saver")
-
     listed = runtime.list_campaign_saves(first.campaign_id)
 
     assert [entry["slot_name"] for entry in listed] == ["first_slot"]
@@ -57,7 +53,7 @@ def test_campaign_runtime_persists_kernel_game_state_in_campaign_meta():
     runtime = CampaignRuntime(llm=None)
 
     context = runtime.create_campaign("Saver", "warrior", "fantasy_ember", "standard", 42)
-    meta = context.session.campaign_state["campaign"]
+    meta = context.campaign_state["campaign"]
     restored = GameState.from_dict(meta["game_state"])
 
     assert restored.campaign_id == context.campaign_id
@@ -66,7 +62,7 @@ def test_campaign_runtime_persists_kernel_game_state_in_campaign_meta():
     assert restored.party == ["player"]
 
 
-def test_campaign_save_persists_top_level_kernel_roots_in_session_state(tmp_path: Path):
+def test_campaign_save_persists_kernel_roots_in_campaign_context(tmp_path: Path):
     runtime = CampaignRuntime(llm=None)
     runtime.save_system.save_dir = tmp_path / "campaign_saves"
     runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
@@ -76,11 +72,11 @@ def test_campaign_save_persists_top_level_kernel_roots_in_session_state(tmp_path
     raw = runtime.save_system.read_save("kernel_root_slot")
 
     assert raw is not None
-    session_state = raw["session_state"]
-    assert "kernel_game_state" not in session_state
-    assert "kernel_world_state" not in session_state
-    assert session_state["campaign_state"]["campaign"]["game_state"]["campaign_id"] == context.campaign_id
-    assert session_state["campaign_state"]["campaign"]["world_state"]["seed"] == 42
+    campaign_context = raw["campaign_context"]
+    assert "kernel_game_state" not in campaign_context
+    assert "kernel_world_state" not in campaign_context
+    assert campaign_context["campaign_state"]["campaign"]["game_state"]["campaign_id"] == context.campaign_id
+    assert campaign_context["campaign_state"]["campaign"]["world_state"]["seed"] == 42
 
 
 def test_campaign_load_rejects_invalid_kernel_game_state(tmp_path: Path):
@@ -92,7 +88,7 @@ def test_campaign_load_rejects_invalid_kernel_game_state(tmp_path: Path):
     runtime.save_campaign(context.campaign_id, "broken_kernel_state", "Saver")
     save_data = runtime.save_system.read_save("broken_kernel_state")
     assert save_data is not None
-    save_data["session_state"]["campaign_state"]["campaign"]["game_state"] = {"seed": 42}
+    save_data["campaign_context"]["campaign_state"]["campaign"]["game_state"] = {"seed": 42}
     save_path = runtime.save_system.save_dir / "broken_kernel_state.json"
     save_path.write_text(json.dumps(save_data, indent=2), encoding="utf-8")
 
@@ -109,7 +105,7 @@ def test_campaign_load_rejects_invalid_kernel_world_state(tmp_path: Path):
     runtime.save_campaign(context.campaign_id, "broken_kernel_world", "Saver")
     save_data = runtime.save_system.read_save("broken_kernel_world")
     assert save_data is not None
-    save_data["session_state"]["campaign_state"]["campaign"]["world_state"] = {"seed": 42}
+    save_data["campaign_context"]["campaign_state"]["campaign"]["world_state"] = {"seed": 42}
     save_path = runtime.save_system.save_dir / "broken_kernel_world.json"
     save_path.write_text(json.dumps(save_data, indent=2), encoding="utf-8")
 

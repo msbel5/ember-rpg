@@ -27,61 +27,48 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/__init__.py` | 0 | - | - |
 | `frp-backend/engine/api/action_parser.py` | 439 | ActionIntent (0), ParsedAction (1), ActionParser (3) | _normalize, _looks_turkish, _restore_turkish_final_consonant, _strip_turkish_case_suffix |
 | `frp-backend/engine/api/campaign/__init__.py` | 3 | - | - |
-| `frp-backend/engine/api/campaign/context.py` | 35 | CampaignContext (0), CampaignCreationContext (0) | - |
+| `frp-backend/engine/api/campaign/context.py` | 275 | CampaignContext (11), CampaignCreationContext (0) | - |
 | `frp-backend/engine/api/campaign/controls.py` | 72 | - | merge_settlement_controls |
 | `frp-backend/engine/api/campaign/debug_trace.py` | 23 | - | snapshot_hash, trace_event |
-| `frp-backend/engine/api/campaign/dialog.py` | 203 | - | build_dialog_payload, _get_player_actor, _get_npc_actor, _resolve_dialog_def |
-| `frp-backend/engine/api/campaign/live_kernel.py` | 443 | - | ensure_kernel_runtime, serialize_kernel_runtime, advance_kernel_runtime, _check_level_up |
-| `frp-backend/engine/api/campaign/persistence.py` | 175 | - | campaign_payload, persist_campaign_state, build_kernel_payload, _active_site_id |
-| `frp-backend/engine/api/campaign/runtime.py` | 411 | CampaignRuntime (22) | _try_start_tick_loop, _try_stop_tick_loop |
-| `frp-backend/engine/api/campaign/runtime_commands.py` | 217 | - | run_command, advance_world_tick, _dispatch, _advance_world |
+| `frp-backend/engine/api/campaign/dialog.py` | 202 | - | build_dialog_payload, _get_player_actor, _get_npc_actor, _resolve_dialog_def |
+| `frp-backend/engine/api/campaign/live_kernel.py` | 407 | - | ensure_kernel_runtime, serialize_kernel_runtime, advance_kernel_runtime, _check_level_up |
+| `frp-backend/engine/api/campaign/persistence.py` | 193 | - | campaign_payload, persist_campaign_state, build_kernel_payload, _active_site_id |
+| `frp-backend/engine/api/campaign/region_projection.py` | 362 | - | apply_region_to_context, build_map_data, build_world_entities, seed_region_entities |
+| `frp-backend/engine/api/campaign/runtime.py` | 425 | CampaignRuntime (22) | _try_start_tick_loop, _try_stop_tick_loop |
+| `frp-backend/engine/api/campaign/runtime_commands.py` | 218 | - | run_command, advance_world_tick, _dispatch, _advance_world |
 | `frp-backend/engine/api/campaign/runtime_common.py` | 36 | - | saved_or, saved_list_or, stable_seed, active_site_id |
 | `frp-backend/engine/api/campaign/runtime_effects.py` | 22 | - | effect_events |
 | `frp-backend/engine/api/campaign/runtime_macro_society.py` | 134 | - | macro_society_events, load_stores, default_stores, restock_store |
 | `frp-backend/engine/api/campaign/runtime_settlement.py` | 184 | - | job_and_farm_events, apply_job_outputs, refresh_runtime_views, project_runtime_to_settlement |
 | `frp-backend/engine/api/campaign/runtime_systems.py` | 132 | - | systems_events, load_systems |
-| `frp-backend/engine/api/campaign/session.py` | 362 | - | apply_region_to_session, build_map_data, build_world_entities, seed_region_entities |
-| `frp-backend/engine/api/campaign/settlement.py` | 221 | - | build_settlement_state, build_character_sheet, current_player_turn_resources |
+| `frp-backend/engine/api/campaign/settlement.py` | 227 | - | build_settlement_state, build_character_sheet, current_player_turn_resources |
 | `frp-backend/engine/api/campaign/tick_loop.py` | 141 | CampaignTickLoop (9) | start_tick_loop, stop_tick_loop, get_tick_loop |
 | `frp-backend/engine/api/campaign/world.py` | 303 | - | build_world, derive_creation_world_seed, choose_starting_settlement, region_payload |
-| `frp-backend/engine/api/campaign_commands.py` | 492 | - | resolve_command_text, maybe_handle_commander_command, handle_travel, hours_for_avatar_command |
-| `frp-backend/engine/api/campaign_kernel.py` | 116 | - | build_canonical_world_state, build_canonical_actor_roster, build_canonical_actor_records, build_canonical_game_state |
+| `frp-backend/engine/api/campaign_commands.py` | 477 | - | resolve_command_text, maybe_handle_commander_command, handle_travel, maybe_handle_talk_command |
+| `frp-backend/engine/api/campaign_kernel.py` | 113 | - | build_canonical_world_state, build_canonical_actor_roster, build_canonical_actor_records, build_canonical_game_state |
 | `frp-backend/engine/api/campaign_models.py` | 140 | CreateCampaignRequest (0), CampaignCreationStartRequest (0), CampaignCreationAnswerRequest (0), CampaignCreationFinalizeRequest (0) | - |
-| `frp-backend/engine/api/campaign_routes.py` | 299 | - | _make_llm_callable, get_campaign_client_health, _creation_response, get_campaign_creation_catalog |
+| `frp-backend/engine/api/campaign_routes.py` | 298 | - | _make_llm_callable, get_campaign_client_health, _creation_response, get_campaign_creation_catalog |
 | `frp-backend/engine/api/campaign_runtime.py` | 5 | - | - |
-| `frp-backend/engine/api/campaign_session.py` | 99 | CampaignSession (0) | - |
 | `frp-backend/engine/api/campaign_state.py` | 33 | - | - |
-| `frp-backend/engine/api/combat_bridge.py` | 235 | - | maybe_handle_combat_command, _handle_attack, _handle_defend, _handle_flee |
+| `frp-backend/engine/api/combat_bridge.py` | 334 | - | maybe_handle_combat_command, _handle_attack, _handle_defend, _handle_flee |
+| `frp-backend/engine/api/context_factory.py` | 183 | PlayerInitState (0) | create_player_state |
 | `frp-backend/engine/api/exploration_bridge.py` | 245 | - | _player, _actors, _npc_list, _time_desc |
 | `frp-backend/engine/api/gameplay_bridge.py` | 432 | - | _player, _fuzzy_match, _fuzzy_match_list, _find_inventory_item_by_name |
 | `frp-backend/engine/api/kernel_adapter.py` | 151 | - | create_player, create_monster, start_fight, run_attack |
 | `frp-backend/engine/api/medical_bridge.py` | 221 | - | maybe_handle_medical_command, _handle_diagnose, _handle_treat, _handle_surgery |
-| `frp-backend/engine/api/runtime_constants.py` | 57 | - | _build_starter_kits |
+| `frp-backend/engine/api/runtime_constants.py` | 55 | - | _build_starter_kits |
 | `frp-backend/engine/api/save/__init__.py` | 6 | - | - |
-| `frp-backend/engine/api/save/combat_state.py` | 109 | SaveCombatStateMixin (2) | - |
+| `frp-backend/engine/api/save/campaign_state_serializer.py` | 371 | SaveCampaignStateMixin (4) | - |
 | `frp-backend/engine/api/save/constants.py` | 6 | - | - |
-| `frp-backend/engine/api/save/core.py` | 16 | SaveSystem (1) | - |
-| `frp-backend/engine/api/save/repository.py` | 148 | SaveRepositoryMixin (11) | - |
-| `frp-backend/engine/api/save/session_state.py` | 384 | SaveSessionStateMixin (4) | - |
-| `frp-backend/engine/api/session/__init__.py` | 13 | - | - |
-| `frp-backend/engine/api/session/bootstrap.py` | 196 | SessionBootstrapMixin (3) | - |
-| `frp-backend/engine/api/session/constants.py` | 20 | - | - |
-| `frp-backend/engine/api/session/conversation.py` | 37 | SessionConversationMixin (3) | - |
-| `frp-backend/engine/api/session/core.py` | 16 | - | __getattr__ |
-| `frp-backend/engine/api/session/encumbrance.py` | 106 | SessionEncumbranceMixin (9) | - |
-| `frp-backend/engine/api/session/entity_state.py` | 92 | SessionEntityMixin (4) | - |
-| `frp-backend/engine/api/session/inventory_state.py` | 209 | SessionInventoryMixin (20) | - |
-| `frp-backend/engine/api/session/player_state.py` | 243 | SessionPlayerStateMixin (6) | _armor_keyword_map |
-| `frp-backend/engine/api/session/serialization.py` | 288 | SessionSerializationMixin (2) | - |
-| `frp-backend/engine/api/session/timed_conditions.py` | 76 | SessionTimedConditionMixin (7) | - |
-| `frp-backend/engine/api/session_factory.py` | 138 | - | create_game_session |
+| `frp-backend/engine/api/save/core.py` | 15 | SaveSystem (1) | - |
+| `frp-backend/engine/api/save/repository.py` | 146 | SaveRepositoryMixin (11) | - |
 | `frp-backend/engine/api/session_utils.py` | 206 | - | make_conversation_state, normalize_conversation_state, canonical_slot, display_name |
 | `frp-backend/engine/api/ws_campaign.py` | 161 | - | set_runtime, _get_runtime, get_connections, push_tick_events |
 | `frp-backend/engine/campaign/__init__.py` | 435 | QuestStatus (0), QuestType (0), EventType (0), QuestObjective (2) | - |
 | `frp-backend/engine/data/__init__.py` | 2 | - | - |
 | `frp-backend/engine/data/_shared.py` | 196 | - | load_json_path, _load_json, _unwrap, _normalize_list |
 | `frp-backend/engine/data/catalogs.py` | 68 | - | get_item, list_items, get_monster, list_monsters |
-| `frp-backend/engine/data/classes.py` | 213 | - | get_class, _default_class_data, list_classes, list_class_ids |
+| `frp-backend/engine/data/classes.py` | 197 | - | get_class, _default_class_data, list_classes, list_class_ids |
 | `frp-backend/engine/data/runtime.py` | 113 | - | get_xp_thresholds, get_hp_per_level, get_sp_per_level, get_stat_bonus_by_class |
 | `frp-backend/engine/data/world.py` | 180 | - | get_opening_scenes, get_default_opening_scene, get_location_stock_baseline, get_scene_anchor_offsets |
 | `frp-backend/engine/data_loader.py` | 53 | - | - |
@@ -90,10 +77,10 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/kernel/actor_body.py` | 285 | TissueLayerDef (2), BodyPartDef (2), BodyPlanDef (2), BodyPartState (2) | status_for_ratio |
 | `frp-backend/engine/kernel/actor_foundation.py` | 225 | ActorIdentity (2), ActorPosition (2), NeedState (4), ScheduleEntry (2) | - |
 | `frp-backend/engine/kernel/actor_items.py` | 151 | MaterialDef (2), ItemDef (2), ItemStack (2), EquipmentLoadout (5) | item_stack_from_legacy_payload, equipment_layer_order |
-| `frp-backend/engine/kernel/actor_records.py` | 705 | ActorRecord (53) | actor_record_from_entity, actor_record_from_character, sync_body_state_to_tracker, _turn_resources_from_legacy_points |
+| `frp-backend/engine/kernel/actor_records.py` | 706 | ActorRecord (53) | actor_record_from_entity, actor_record_from_character, sync_body_state_to_tracker, _turn_resources_from_legacy_points |
 | `frp-backend/engine/kernel/area.py` | 353 | RegionDef (2), ContainerDef (2), DoorDef (2), SpawnPointDef (2) | open_door, open_container, tick_spawns, check_region_entry |
 | `frp-backend/engine/kernel/colony.py` | 42 | - | - |
-| `frp-backend/engine/kernel/colony_runtime.py` | 241 | - | decay_needs, fulfill_need, compute_mood, apply_morale_cascade |
+| `frp-backend/engine/kernel/colony_runtime.py` | 246 | - | decay_needs, fulfill_need, compute_mood, apply_morale_cascade |
 | `frp-backend/engine/kernel/colony_types.py` | 148 | NeedDef (2), QuestSeed (2), MoraleCascade (2), ProductionLedger (2) | _load_colony_config, _build_need_defs, _build_morale_tiers |
 | `frp-backend/engine/kernel/combat.py` | 107 | - | resolve_attack, resolve_combat_round |
 | `frp-backend/engine/kernel/combat_engine.py` | 307 | TurnResources (3), CombatantEntry (2), CombatState (3), TurnStartResult (0) | roll_initiative, start_combat, start_turn, end_turn |
@@ -102,8 +89,10 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/kernel/combat_types.py` | 285 | ArmorInteraction (1), EquipmentWearUpdate (1), StrikeResolution (1), AttackRoll (1) | material_def_from_legacy_name |
 | `frp-backend/engine/kernel/combat_wounds.py` | 202 | - | choose_hit_part, damage_type_for_weapon, attack_force, resolve_armor |
 | `frp-backend/engine/kernel/common.py` | 16 | - | serialize_value |
-| `frp-backend/engine/kernel/creation.py` | 448 | CreationState (17) | _creation_reg, _default_class_id, _default_adapter_id, _default_profile_id |
-| `frp-backend/engine/kernel/data_loader.py` | 74 | - | _load_json, load_materials, load_quality_tiers, clear_cache |
+| `frp-backend/engine/kernel/creation.py` | 37 | - | - |
+| `frp-backend/engine/kernel/creation_catalog.py` | 259 | - | _creation_reg, _default_class_id, _default_adapter_id, _default_profile_id |
+| `frp-backend/engine/kernel/creation_state.py` | 309 | CreationState (21) | - |
+| `frp-backend/engine/kernel/data_loader.py` | 97 | - | _load_json, load_materials, load_quality_tiers, clear_cache |
 | `frp-backend/engine/kernel/dialog.py` | 381 | DialogCondition (2), DialogAction (2), DialogTransition (2), DialogStateNode (2) | start_dialog, evaluate_condition, get_available_transitions, select_transition |
 | `frp-backend/engine/kernel/effects.py` | 448 | EffectDef (2), EffectInstance (6), EffectQueue (12) | apply_effect, tick_effects, compute_effective_stat, dispel_effects |
 | `frp-backend/engine/kernel/game_state.py` | 280 | JournalEntry (2), WorldTime (3), DifficultySettings (3), GameState (2) | create_game_state, add_to_party, remove_from_party, swap_party_member |
@@ -119,9 +108,9 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/kernel/pathfinding.py` | 20 | - | - |
 | `frp-backend/engine/kernel/pathfinding_algorithms.py` | 203 | - | find_path, tick_movement, attempt_bump, random_walk_target |
 | `frp-backend/engine/kernel/pathfinding_types.py` | 235 | TilePassability (0), SearchMap (10), PathResult (2), MovementState (5) | - |
-| `frp-backend/engine/kernel/progression.py` | 244 | ClassDef (2), LevelUpResult (1), ProgressionState (2) | award_xp, can_level_up, execute_level_up, compute_bab |
+| `frp-backend/engine/kernel/progression.py` | 249 | ClassDef (2), LevelUpResult (1), ProgressionState (2) | award_xp, can_level_up, execute_level_up, compute_bab |
 | `frp-backend/engine/kernel/projectiles.py` | 395 | ProjectileDef (3), ProjectileInstance (4) | launch_projectile, tick_projectile, resolve_impact, actors_in_cone |
-| `frp-backend/engine/kernel/scene_types.py` | 213 | SceneType (0), EventType (0), NarratorEvent (2), NarratorContext (5) | - |
+| `frp-backend/engine/kernel/scene_types.py` | 162 | SceneType (0), EventType (0), SceneEvent (2), SceneContext (7) | - |
 | `frp-backend/engine/kernel/scripts.py` | 394 | Trigger (2), Action (2), ScriptBlock (2), ScriptDef (2) | evaluate_trigger, evaluate_script_block, tick_script, execute_action |
 | `frp-backend/engine/kernel/spells.py` | 306 | SpellDef (2), SpellSlot (2), Spellbook (6), CastingAttempt (2) | compute_max_spell_slots, learn_spell, begin_casting, tick_casting |
 | `frp-backend/engine/kernel/store.py` | 364 | StoreItem (2), StoreService (2), StoreDef (2) | compute_buy_price, compute_sell_price, buy_item, sell_item |

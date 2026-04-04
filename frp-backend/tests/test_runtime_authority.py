@@ -75,7 +75,7 @@ class TestDialogNoFallback:
         from engine.api.campaign.dialog import build_dialog_payload
         _rt, ctx = _make_campaign()
         # Force a conversation state but with no matching kernel actor.
-        ctx.session.conversation_state = {
+        ctx.conversation_state = {
             "target_type": "npc",
             "npc_id": "nonexistent_npc_999",
             "npc_name": "Ghost",

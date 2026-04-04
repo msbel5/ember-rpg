@@ -121,7 +121,7 @@ class GameState:
             "current_area_id": self.current_area_id,
             "loaded_area_ids": list(self.loaded_area_ids),
             "loaded_areas": {key: value.to_dict() for key, value in self.loaded_areas.items()},
-            "actors": {key: value.to_dict() for key, value in self.actors.items()},
+            "actors": {key: value.to_dict(include_action_points=True) for key, value in self.actors.items()},
             "global_variables": serialize_value(self.global_variables),
             "local_variables": serialize_value(self.local_variables),
             "journal": [entry.to_dict() for entry in self.journal],

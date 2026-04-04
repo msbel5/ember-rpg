@@ -38,7 +38,7 @@ class _MockRuntime:
         self.last_command = input_text
         return {
             "narrative": f"You said: {input_text}",
-            "events": [{"type": "test_event"}],
+            "generated_events": [{"type": "test_event"}],
         }
 
 

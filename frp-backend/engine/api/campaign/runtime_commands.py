@@ -12,7 +12,7 @@ from engine.api.campaign.debug_trace import snapshot_hash, trace_event
 from engine.api.campaign.dialog import build_dialog_payload
 from engine.api.campaign.live_kernel import advance_kernel_runtime
 from engine.api.campaign.persistence import campaign_payload, persist_campaign_state
-from engine.api.campaign.session import apply_region_to_session
+from engine.api.campaign.region_projection import apply_region_to_context
 from engine.api.campaign.settlement import build_settlement_state
 from engine.api.campaign.controls import merge_settlement_controls
 from engine.api.campaign.world import alerts_from_events
@@ -56,10 +56,11 @@ def run_command(
         pre_snapshot_hash=pre_hash,
     )
     narrative, command_type, hours_advanced = _dispatch(context, issued, command_args)
+    pending_dialog_payload = (context.kernel_runtime or {}).pop("_pending_dialog_payload", None)
     _advance_world(context, command_type, hours_advanced, issued)
     # Dialog payload: use pre-built payload from talk handler if available, otherwise build fresh.
     runtime = context.kernel_runtime or {}
-    dialog_payload = runtime.pop("_pending_dialog_payload", None) or (
+    dialog_payload = pending_dialog_payload or runtime.pop("_pending_dialog_payload", None) or (
         build_dialog_payload(context, narrative) if command_type == "dialog" else {}
     )
     final_payload = campaign_payload(context)
@@ -100,7 +101,7 @@ def _dispatch(
     lower = issued.lower()
     if lower.startswith("travel"):
         narrative = handle_travel(context, issued, command_args)
-        hours = int(context.session.campaign_state.get("last_travel_hours", 4))
+        hours = int(context.campaign_state.get("last_travel_hours", 4))
         return narrative, "travel", hours
     handled = maybe_handle_commander_command(context, issued)
     if handled is not None:
@@ -183,14 +184,14 @@ def _advance_world(
     context.region_snapshot = realize_region(context.world, active_region_id)
     context.settlement_state = build_settlement_state(
         context.world, context.region_snapshot,
-        context.adapter_id, context.session.player.name,
+        context.adapter_id, context.player.name,
     )
     if command_type != "travel":
         context.settlement_state = merge_settlement_controls(
             context.settlement_state, previous_settlement,
         )
-    apply_region_to_session(
-        session=context.session, world=context.world,
+    apply_region_to_context(
+        context=context, world=context.world,
         region_snapshot=context.region_snapshot,
         settlement_state=context.settlement_state,
         campaign_id=context.campaign_id, adapter_id=context.adapter_id,

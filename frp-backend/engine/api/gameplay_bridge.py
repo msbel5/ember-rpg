@@ -194,7 +194,7 @@ def maybe_handle_inventory_command(
     match = _PICKUP_RE.match(command_text.strip())
     if match:
         item_name = match.group(1).strip()
-        pickup_result = pickup_ground_item(context.session, query=item_name)
+        pickup_result = pickup_ground_item(context, query=item_name)
         if not pickup_result["success"]:
             if pickup_result.get("reason") == "overweight":
                 return (_inventory_add_failure_message(context, str(pickup_result.get("item_name", item_name))), "inventory", 0)
@@ -205,9 +205,9 @@ def maybe_handle_inventory_command(
     match = _DROP_RE.match(command_text.strip())
     if match:
         item_name = match.group(1).strip()
-        if context.session.find_inventory_item(item_name.lower()) is None:
+        if context.find_inventory_item(item_name.lower()) is None:
             return (f"You don't have '{item_name}' to drop.", "inventory", 0)
-        drop_result = drop_inventory_item(context.session, query=item_name.lower())
+        drop_result = drop_inventory_item(context, query=item_name.lower())
         if not drop_result["success"]:
             return (f"You don't have '{item_name}' to drop.", "inventory", 0)
         logger.info("Drop: %s dropped %s", player.name, item_name)
@@ -401,7 +401,7 @@ def _resolve_spell_target(
     runtime = context.kernel_runtime or {}
     actors = runtime.get("actors", {})
     normalized_target = str(target_name or "").strip().lower()
-    if normalized_target in {"self", "me", "myself", context.session.player.name.lower()}:
+    if normalized_target in {"self", "me", "myself", context.player.name.lower()}:
         return _player(context)
     if normalized_target:
         for actor in actors.values():
@@ -422,7 +422,7 @@ def _resolve_spell_target(
 
 
 def _inventory_add_failure_message(context: "CampaignContext", item_name: str) -> str:
-    error = dict(context.session.narration_context.pop("_last_add_item_error", {}) or {})
+    error = dict(context.narration_context.pop("_last_add_item_error", {}) or {})
     if error.get("reason") == "overweight":
         return (
             f"{item_name} is too heavy to carry right now. It would bring you to "

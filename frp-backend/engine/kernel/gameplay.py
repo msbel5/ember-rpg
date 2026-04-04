@@ -396,7 +396,7 @@ def _spell_def_from_registry_data(
     return SpellDef(
         spell_id=spell_id,
         label=str(spell_data.get("name", spell_id.replace("_", " ").title())),
-        spell_type=str(spell_data.get("spell_type", "sorcerer")),
+        spell_type=str(spell_data.get("spell_type", "channeler")),
         school=str(spell_data.get("school", "evocation")),
         level=int(spell_data.get("level", 1)),
         casting_time=int(spell_data.get("casting_time", 0)),

@@ -1,4 +1,4 @@
-"""Shared helper utilities for GameSession state normalization."""
+"""Shared helper utilities for campaign context state normalization."""
 from __future__ import annotations
 
 import copy

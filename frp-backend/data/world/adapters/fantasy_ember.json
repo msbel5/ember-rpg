@@ -22,7 +22,7 @@
     "wolf": "Wolf"
   },
   "starter_content": {
-    "player_classes": ["warrior", "rogue", "mage", "cleric"],
+    "player_classes": ["warrior", "rogue", "mage", "priest"],
     "default_player_class": "warrior",
     "starting_focus": "frontier hamlet"
   }

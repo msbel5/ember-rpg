@@ -9,6 +9,7 @@ from engine.api.campaign_kernel import (
     build_canonical_game_state,
     build_canonical_world_state,
 )
+from engine.kernel.creation import ABILITY_ORDER
 from engine.kernel import (
     colony_pressure_from_settlement,
     fluid_state_from_region,
@@ -27,7 +28,9 @@ from engine.kernel import (
 )
 from engine.worldgen import snapshot_world
 
-from .session import build_world_entities
+from engine.api.combat_bridge import build_combat_payload
+
+from .region_projection import build_world_entities
 from .settlement import build_character_sheet, current_player_turn_resources
 from .live_kernel import ensure_kernel_runtime, serialize_kernel_runtime
 from .world import (
@@ -44,15 +47,30 @@ if TYPE_CHECKING:
 
 
 def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
-    session_data = context.session.to_dict()
+    context_data = context.to_dict()
     runtime_state = runtime_region_state(context.world, context.region_snapshot.region_id)
     kernel_payload = build_kernel_payload(context)
-    combat_state = session_data.get("combat") or context.session.campaign_state.get("combat_state")
-    payload_scene = str(session_data.get("scene", "exploration"))
-    if isinstance(combat_state, dict) and combat_state and not bool(combat_state.get("ended", False)):
+    combat_state = build_combat_payload(context)
+    payload_scene = str(context_data.get("scene", "exploration"))
+    if isinstance(combat_state, dict) and combat_state and combat_state.get("phase") != "resolved":
         payload_scene = "combat"
-    player_payload = copy.deepcopy(session_data["player"])
-    player_payload["turn_resources"] = current_player_turn_resources(context.session)
+    player_payload = copy.deepcopy(context_data["player"])
+    # Ensure top-level name/hp fields for frontend contract.
+    if context.player:
+        player_payload.setdefault("name", context.player.name)
+        player_payload.setdefault("hp", int(context.player.stats.get("hp", 0)))
+        player_payload.setdefault("max_hp", int(context.player.stats.get("max_hp", 0)))
+        player_payload.setdefault("alignment", context.player.alignment)
+        stats = player_payload.get("stats")
+        if isinstance(stats, dict):
+            normalized_stats = {
+                ability: stats[ability]
+                for ability in ABILITY_ORDER
+                if ability in stats
+            }
+            if normalized_stats:
+                player_payload["stats"] = normalized_stats
+    player_payload["turn_resources"] = current_player_turn_resources(context)
     return {
         "world": {
             "seed": context.world.seed,
@@ -73,24 +91,24 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "current_region_summary": build_current_region_summary(context.world, context.region_snapshot),
         "player": player_payload,
         "scene": payload_scene,
-        "location": session_data["location"],
+        "location": context_data["location"],
         "combat": combat_state,
-        "conversation_state": session_data.get("conversation_state", {}),
+        "conversation_state": context_data.get("conversation_state", {}),
         "region": region_payload(context),
         "map_data": map_payload_from_region(context.region_snapshot),
         "world_entities": build_world_entities(context.world, context.region_snapshot, context.adapter_id),
-        "ground_items": copy.deepcopy(session_data.get("ground_items", [])),
-        "active_quests": copy.deepcopy(runtime_state.get("active_quests", session_data.get("active_quests", []))),
-        "quest_offers": copy.deepcopy(runtime_state.get("quest_offers", session_data.get("quest_offers", []))),
+        "ground_items": copy.deepcopy(context_data.get("ground_items", [])),
+        "active_quests": copy.deepcopy(runtime_state.get("active_quests", context_data.get("active_quests", []))),
+        "quest_offers": copy.deepcopy(runtime_state.get("quest_offers", context_data.get("quest_offers", []))),
         "settlement": copy.deepcopy(context.settlement_state),
-        "character_sheet": build_character_sheet(context.session, context.settlement_state),
+        "character_sheet": build_character_sheet(context, context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-12:]),
     }
 
 
 def persist_campaign_state(context: "CampaignContext") -> None:
     kernel_payload = build_kernel_payload(context)
-    context.session.campaign_state["campaign"] = {
+    context.campaign_state["campaign"] = {
         "campaign_id": context.campaign_id,
         "adapter_id": context.adapter_id,
         "profile_id": context.profile_id,
@@ -113,7 +131,7 @@ def persist_campaign_state(context: "CampaignContext") -> None:
         "settlement_state": copy.deepcopy(context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-20:]),
     }
-    context.session.campaign_state.pop("campaign_v2", None)
+    context.campaign_state.pop("campaign_v2", None)
 
 
 def build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:
@@ -122,12 +140,12 @@ def build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:
     active_site_id = _active_site_id(context)
     canonical_world_state = build_canonical_world_state(context.world)
     canonical_actor_records = build_canonical_actor_records(
-        context.session,
+        context,
         active_region_id=context.region_snapshot.region_id,
         active_site_id=active_site_id,
     )
     canonical_game_state = build_canonical_game_state(
-        context.session,
+        context,
         campaign_id=context.campaign_id,
         seed=context.seed,
         active_region_id=context.region_snapshot.region_id,

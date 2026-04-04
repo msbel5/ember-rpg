@@ -30,6 +30,7 @@ LEGACY_PATTERNS = [
     r"import engine\.api\.handlers\.inventory_handlers\b",
     r"from engine\.api\.handlers\.social_handlers import",
     r"import engine\.api\.handlers\.social_handlers\b",
+    r"from engine\.kernel\.scene_types import DMContext\b",
 ]
 
 

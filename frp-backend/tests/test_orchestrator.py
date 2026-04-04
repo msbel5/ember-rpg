@@ -146,61 +146,28 @@ def test_orchestrator_enter_scene_returns_complete_response():
         assert len(result.narrative_stream) > 0
         assert len(result.available_actions) > 0
 
-def test_orchestrator_scene_complete_endpoint():
+def test_legacy_scene_enter_route_is_dead():
+    """Legacy /game/scene/enter was removed in campaign-first migration."""
     from fastapi.testclient import TestClient
     from main import app
     client = TestClient(app)
-    with patch('engine.llm.get_llm_router') as mock_fn:
-        mock_router = MagicMock()
-        mock_router.narrative.return_value = None
-        mock_fn.return_value = mock_router
-        resp = client.post("/game/scene/enter", json={
-            "session_id": "test_session",
-            "location": "harbor_town",
-            "location_type": "town",
-            "time_of_day": "morning",
-            "player_name": "Hero",
-            "player_level": 1
-        })
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["session_id"] == "test_session"
-        assert "map_data" in data
-        assert "entities" in data
-        assert "narrative_stream" in data
-        assert "available_actions" in data
+    resp = client.post("/game/scene/enter", json={"session_id": "x", "location": "town", "location_type": "town"})
+    assert resp.status_code == 404
 
-def test_available_types_endpoint():
+
+def test_legacy_available_types_route_is_dead():
+    """Legacy /game/scene/available-types was removed in campaign-first migration."""
     from fastapi.testclient import TestClient
     from main import app
     client = TestClient(app)
     resp = client.get("/game/scene/available-types")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert "town" in data["types"]
-    assert "dungeon" in data["types"]
+    assert resp.status_code == 404
 
-def test_orchestrator_streaming_endpoint():
+
+def test_legacy_scene_stream_route_is_dead():
+    """Legacy /game/scene/enter/stream was removed in campaign-first migration."""
     from fastapi.testclient import TestClient
     from main import app
     client = TestClient(app)
-    with patch('engine.llm.get_llm_router') as mock_fn:
-        mock_router = MagicMock()
-        mock_router.narrative.return_value = None
-        mock_fn.return_value = mock_router
-        resp = client.post("/game/scene/enter/stream", json={
-            "session_id": "test_stream",
-            "location": "old_crypt",
-            "location_type": "dungeon"
-        })
-        assert resp.status_code == 200
-        lines = [l for l in resp.text.strip().split('\n') if l]
-        import json
-        events = [json.loads(l) for l in lines]
-        event_types = [e["event"] for e in events]
-        assert "map_ready" in event_types
-        assert "narrative" in event_types
-        assert "entities_ready" in event_types
-        assert "scene_complete" in event_types
-        # map_ready comes before scene_complete
-        assert event_types.index("map_ready") < event_types.index("scene_complete")
+    resp = client.post("/game/scene/enter/stream", json={"session_id": "x", "location": "dungeon", "location_type": "dungeon"})
+    assert resp.status_code == 404

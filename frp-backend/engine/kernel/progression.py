@@ -125,7 +125,7 @@ def execute_level_up(
     class_id: str,
     class_def: ClassDef,
     hit_die_roll: int,
-    end_modifier: int,
+    end_modifier: int = 0,
 ) -> LevelUpResult:
     class_ids = progression.classes or list(progression.class_levels.keys()) or [class_id]
     if class_id not in class_ids and class_id not in progression.class_levels:
@@ -138,7 +138,12 @@ def execute_level_up(
     if shared_xp < int(class_def.xp_table[current_level]):
         raise ValueError(f"{class_id} does not meet next level threshold")
 
-    hp_gained = _hp_gain_for_level(class_def, next_level, int(hit_die_roll), int(end_modifier))
+    hp_gained = _hp_gain_for_level(
+        class_def,
+        next_level,
+        int(hit_die_roll),
+        int(end_modifier),
+    )
     updated_levels = dict(progression.class_levels)
     updated_levels[class_id] = next_level
     bab_new = compute_bab(updated_levels, {class_id: class_def, **class_defs_without(class_id, {})})
@@ -231,11 +236,11 @@ def _save_for_class(level: int, good: bool) -> int:
 def _spell_slots_for_level(class_def: ClassDef, level: int) -> dict[int, int]:
     if not class_def.spell_type:
         return {}
-    if class_def.spell_type == "wizard":
+    if class_def.spell_type == "mage":
         return {1: max(1, (int(level) + 1) // 2)}
     if class_def.spell_type == "priest":
         return {1: max(1, (int(level) + 2) // 2)}
-    if class_def.spell_type == "sorcerer":
+    if class_def.spell_type == "channeler":
         return {1: max(1, int(level))}
     return {}
 

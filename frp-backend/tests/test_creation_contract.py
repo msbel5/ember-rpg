@@ -160,6 +160,9 @@ class TestGenesisAndHints:
         genesis = state.campaign_genesis()
         assert "settlement_bias" in genesis
         assert "faction_bias" in genesis
+        assert genesis["world_premise"]
+        assert genesis["history_events"]
+        assert genesis["history_timeline"]
 
     def test_world_seed_hints(self):
         state = _make_state()
@@ -167,6 +170,7 @@ class TestGenesisAndHints:
         state.answer_question(q["id"], q["answers"][0]["id"])
         hints = state.world_seed_hints()
         assert isinstance(hints, dict)
+        assert hints["preferred_adapter"]
 
     def test_allocation_rules(self):
         state = _make_state()
@@ -202,6 +206,7 @@ class TestSerialization:
         state.ensure_roll()
         d = state.to_dict()
         assert d["roll_pool"] == sorted(d["current_roll"], reverse=True)
+        assert d["saved_roll_pool"] == []
 
 
 # ---------------------------------------------------------------------------
@@ -255,4 +260,4 @@ class TestCampaignRuntimeIntegration:
             rt.answer_creation(ctx.state.creation_id, q["id"], q["answers"][0]["id"])
         campaign = rt.finalize_creation(ctx.state.creation_id)
         assert campaign.campaign_id
-        assert campaign.session is not None
+        assert campaign.player is not None

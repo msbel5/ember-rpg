@@ -48,7 +48,7 @@ Commands routed through campaign runtime:
 - **Commander**: `assign`, `prioritize`, `build`, `draft`, `recruit`, `defend`
 - **Commerce**: `buy <item>`, `sell <item>`, `rent room`, `identify <item>`
 - **Medical**: `diagnose <target>`, `treat <target>`, `surgery <target>`
-- **Avatar**: any other text routed to GameEngine
+- **Fallback**: unrecognized text returns explicit unknown-command rejection
 
 ## Verification
 

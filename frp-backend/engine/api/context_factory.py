@@ -1,10 +1,14 @@
-"""Standalone session creation extracted from GameEngine.new_session()."""
+"""Player initialization for campaign context.
+
+Returns player-state fields that get set on CampaignContext directly.
+No separate session object is created.
+"""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, Optional
 
-from engine.api.campaign.campaign_session import CampaignSession
-from engine.api.runtime_constants import CLASS_ALIASES, DEFAULT_PLAYER_CLASS, LOCATION_STOCK_BASELINE, OPENING_SCENES, STARTER_KITS
+from engine.api.runtime_constants import DEFAULT_PLAYER_CLASS, LOCATION_STOCK_BASELINE, OPENING_SCENES, STARTER_KITS
 from engine.world.action_points import ActionPointTracker
 from engine.world.body_parts import BodyPartTracker
 from engine.world.caravans import CaravanManager
@@ -20,7 +24,7 @@ from engine.kernel.creation import (
     recommended_alignment_from_axes,
     recommended_skills_for_class,
 )
-from engine.kernel.scene_types import DMContext, SceneType
+from engine.kernel.scene_types import SceneContext, SceneType
 from engine.data_loader import (
     get_class,
     get_class_default_hp,
@@ -33,7 +37,24 @@ from engine.world.history import HistorySeed
 from engine.world.naming import NameGenerator
 
 
-def create_game_session(
+@dataclass
+class PlayerInitState:
+    """Data returned by create_player_state — absorbed into CampaignContext."""
+    player: Any
+    dm_context: SceneContext
+    body_tracker: Optional[Any] = None
+    location_stock: Optional[Any] = None
+    ap_tracker: Optional[Any] = None
+    caravan_manager: Optional[Any] = None
+    game_time: Optional[Any] = None
+    spatial_index: Optional[Any] = None
+    viewport: Optional[Any] = None
+    quest_tracker: Optional[Any] = None
+    history_seed: Optional[Any] = None
+    name_gen: Optional[Any] = None
+
+
+def create_player_state(
     player_name: str,
     player_class: str = "warrior",
     location: str | None = None,
@@ -43,11 +64,10 @@ def create_game_session(
     stats: dict[str, int] | None = None,
     creation_answers: list | None = None,
     creation_profile: dict | None = None,
-) -> CampaignSession:
-    """Create a fully initialized CampaignSession with player actor, stats, skills, and equipment."""
+) -> PlayerInitState:
+    """Create player actor and subsystems. Returns PlayerInitState for context absorption."""
     unknown_class_fallback = get_creation_unknown_class_fallback()
-    requested_class = str(player_class or DEFAULT_PLAYER_CLASS).lower()
-    player_class = CLASS_ALIASES.get(requested_class, requested_class)
+    player_class = str(player_class or DEFAULT_PLAYER_CLASS).lower()
     unknown_class = not get_class(player_class)
     class_stats_template = {} if unknown_class else get_class_default_stats(player_class)
     if unknown_class:
@@ -83,7 +103,6 @@ def create_game_session(
         level=1,
         skills={skill: 0 for skill in selected_skills},
     )
-    # Carry over legacy fields in raw_payload
     player.stats["hp"] = hp
     player.stats["max_hp"] = hp
     player.raw_payload.update({
@@ -100,7 +119,6 @@ def create_game_session(
         "use_death_saves": True,
     })
     if not alignment and recommended_axes:
-        # Derive alignment code from axes
         lc = recommended_axes.get("law_chaos", 0)
         ge = recommended_axes.get("good_evil", 0)
         first = "L" if lc > 0 else ("C" if lc < 0 else "T")
@@ -109,35 +127,38 @@ def create_game_session(
         player.raw_payload["alignment_axes"] = dict(recommended_axes)
 
     loc = OPENING_SCENES[0][0] if location is None else location
-    dm_context = DMContext(scene_type=SceneType.EXPLORATION, location=loc, party=[player])
-    session = CampaignSession(player=player, dm_context=dm_context)
+    dm_context = SceneContext(scene_type=SceneType.EXPLORATION, location=loc, party=[player])
 
-    seed = hash(session.session_id) % 1000000
-    session.history_seed = HistorySeed().generate(seed=seed)
-    session.name_gen = NameGenerator(seed=seed)
+    result = PlayerInitState(player=player, dm_context=dm_context)
 
-    # Initialize body tracker and scale HP.
-    session.body_tracker = BodyPartTracker()
+    seed = hash(str(id(player))) % 1000000
+    result.history_seed = HistorySeed().generate(seed=seed)
+    result.name_gen = NameGenerator(seed=seed)
+
+    result.body_tracker = BodyPartTracker()
     hp_scale = max(0.1, player.max_hp / 20.0)
-    for part in session.body_tracker.max_hp:
-        session.body_tracker.max_hp[part] = max(1, int(session.body_tracker.max_hp[part] * hp_scale))
-        session.body_tracker.current_hp[part] = session.body_tracker.max_hp[part]
+    for part in result.body_tracker.max_hp:
+        result.body_tracker.max_hp[part] = max(1, int(result.body_tracker.max_hp[part] * hp_scale))
+        result.body_tracker.current_hp[part] = result.body_tracker.max_hp[part]
 
-    session.location_stock = LocationStock(location_id=loc.lower().replace(" ", "_"), baseline=LOCATION_STOCK_BASELINE)
-    session.ap_tracker = ActionPointTracker(max_ap=4)
-    session.caravan_manager = CaravanManager()
-    session.game_time = LivingGameTime()
-    session.spatial_index = SpatialIndex()
-    session.viewport = Viewport()
-    session.quest_tracker = QuestTracker()
+    result.location_stock = LocationStock(location_id=loc.lower().replace(" ", "_"), baseline=LOCATION_STOCK_BASELINE)
+    result.ap_tracker = ActionPointTracker(max_ap=4)
+    result.caravan_manager = CaravanManager()
+    result.game_time = LivingGameTime()
+    result.spatial_index = SpatialIndex()
+    result.viewport = Viewport()
+    result.quest_tracker = QuestTracker()
 
     kit = STARTER_KITS.get(player_class.lower(), STARTER_KITS[DEFAULT_PLAYER_CLASS])
     for item_template in kit:
         item = dict(item_template)
         slot = item.get("slot")
-        if slot and session.equipment.get(slot) is None:
-            session.set_equipment_slot(slot, item)
-            if slot == "armor" and session.ap_tracker:
+        if slot and not player.equipment.slots.get(slot):
+            from engine.kernel.actor_items import item_stack_from_legacy_payload
+
+            equipped_item = item_stack_from_legacy_payload(item)
+            player.equipment.add_item(slot, equipped_item)
+            if slot == "armor" and result.ap_tracker:
                 material = item.get("material", "none")
                 armor_weight_map = {
                     "cloth": "cloth",
@@ -145,9 +166,18 @@ def create_game_session(
                     "iron": "chain_mail",
                     "steel": "plate_armor",
                 }
-                session.ap_tracker.set_armor(armor_weight_map.get(material, "none"))
+                result.ap_tracker.set_armor(armor_weight_map.get(material, "none"))
         else:
-            session.add_item(item)
+            from engine.kernel.actor_items import item_stack_from_legacy_payload
+            try:
+                stack = item_stack_from_legacy_payload(item)
+                player.inventory.append(stack)
+            except Exception:
+                pass
 
-    session.ensure_consistency()
-    return session
+    player.stats.setdefault("hp", player.stats.get("max_hp", 10))
+    player.stats.setdefault("max_hp", player.stats.get("hp", 10))
+    return result
+
+
+__all__ = ["create_player_state", "PlayerInitState"]

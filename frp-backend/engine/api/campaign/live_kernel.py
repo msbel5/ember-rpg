@@ -23,9 +23,7 @@ from engine.kernel import (
     path_authority_from_world,
     production_ledger_from_settlement,
     spread_contagion,
-    sync_body_state_to_tracker,
 )
-from engine.world.body_parts import BodyPartTracker
 
 from .runtime_common import active_site_id, saved_list_or, saved_or, stable_seed
 from .runtime_effects import effect_events
@@ -44,9 +42,10 @@ if TYPE_CHECKING:
 
 def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: bool = False) -> dict[str, Any]:
     if context.kernel_runtime and not rebuild_projection:
-        _sync_runtime_from_session(context, context.kernel_runtime)
+        _sync_runtime_from_context(context, context.kernel_runtime)
+        context.player = context.kernel_runtime.get("actors", {}).get("player", context.player)
         return context.kernel_runtime
-    meta = dict(context.session.campaign_state.get("campaign") or {})
+    meta = dict(context.campaign_state.get("campaign") or {})
     runtime = {
         "world_state": saved_or(
             meta.get("world_state"),
@@ -57,7 +56,7 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
             meta.get("game_state"),
             GameState,
             lambda: build_canonical_game_state(
-                context.session,
+                context,
                 campaign_id=context.campaign_id,
                 seed=context.seed,
                 active_region_id=context.region_snapshot.region_id,
@@ -98,7 +97,8 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
     }
     context.kernel_runtime = runtime
     rebase_projection_slices(context, runtime, force=True)
-    _sync_runtime_from_session(context, runtime)
+    _sync_runtime_from_context(context, runtime)
+    context.player = runtime.get("actors", {}).get("player", context.player)
     return runtime
 
 
@@ -139,7 +139,7 @@ def advance_kernel_runtime(
 ) -> list[dict[str, Any]]:
     runtime = ensure_kernel_runtime(context, rebuild_projection=command_type == "travel")
     merge_projection_changes_from_settlement(context, runtime)
-    _sync_runtime_from_session(context, runtime)
+    _sync_runtime_from_context(context, runtime)
     game_state: GameState = runtime["game_state"]
     actors = list(runtime["actors"].values())
     step_count = max(0, int(hours_advanced))
@@ -171,12 +171,15 @@ def advance_kernel_runtime(
         events.extend(job_and_farm_events(context, runtime, seed + step))
         events.extend(macro_society_events(context, runtime))
         events.extend(systems_events(context, runtime, seed + step))
-    # ── Progression: check for level-up after all ticks ──────────
+    # ── Post-tick: promote conditions, check level-up ──────────
+    for actor in actors:
+        # Promote raw string conditions to ConditionRecord objects.
+        _ = actor.condition_names  # noqa: property triggers in-place promotion
     player = runtime["actors"].get("player")
     if player is not None:
         events.extend(_check_level_up(player))
     refresh_runtime_views(context, runtime)
-    _sync_runtime_to_session(context, runtime)
+    context.player = runtime.get("actors", {}).get("player", context.player)
     return events
 
 
@@ -309,18 +312,18 @@ def _load_actors(saved_payload: Any, context: "CampaignContext") -> dict[str, Ac
     return {
         actor.identity.actor_id: actor
         for actor in build_canonical_actor_records(
-            context.session,
+            context,
             active_region_id=context.region_snapshot.region_id,
             active_site_id=active_site_id(context),
         )
     }
 
 
-def _sync_runtime_from_session(context: "CampaignContext", runtime: dict[str, Any]) -> None:
+def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, Any]) -> None:
     fresh_actors = {
         actor.identity.actor_id: actor
         for actor in build_canonical_actor_records(
-            context.session,
+            context,
             active_region_id=context.region_snapshot.region_id,
             active_site_id=active_site_id(context),
         )
@@ -337,46 +340,7 @@ def _sync_runtime_from_session(context: "CampaignContext", runtime: dict[str, An
     runtime["game_state"].actors = dict(merged)
     runtime["game_state"].party = ["player"] if "player" in merged else []
     runtime["game_state"].inactive_npcs = [actor_id for actor_id in merged if actor_id not in runtime["game_state"].party]
-
-
-def _sync_runtime_to_session(context: "CampaignContext", runtime: dict[str, Any]) -> None:
-    actors = runtime["actors"]
-    player = actors.get("player")
-    if player is not None:
-        context.session.player.hp = int(player.stats.get("hp", context.session.player.hp))
-        context.session.player.max_hp = int(player.stats.get("max_hp", context.session.player.max_hp))
-        context.session.player.conditions = player.condition_names
-        # Sync XP and level from kernel ActorRecord to session player.
-        # ActorRecord.level is a read-only property backed by raw_payload,
-        # so we write to raw_payload directly.  xp has a proper setter.
-        context.session.player.xp = int(player.raw_payload.get("xp", 0))
-        context.session.player.raw_payload["level"] = int(player.raw_payload.get("level", 1))
-        if context.session.body_tracker is None:
-            context.session.body_tracker = BodyPartTracker()
-        if player.body_state is not None:
-            sync_body_state_to_tracker(player.body_state, context.session.body_tracker)
-        if context.session.player_entity is not None:
-            context.session.player_entity.hp = context.session.player.hp
-            context.session.player_entity.max_hp = context.session.player.max_hp
-            context.session.player_entity.position = (player.position.x, player.position.y)
-    for entity_id, record in context.session.entities.items():
-        actor = actors.get(entity_id)
-        live_entity = record.get("entity_ref")
-        if actor is None or live_entity is None:
-            continue
-        live_entity.position = (actor.position.x, actor.position.y)
-        live_entity.hp = int(actor.stats.get("hp", live_entity.hp))
-        live_entity.max_hp = int(actor.stats.get("max_hp", live_entity.max_hp))
-        live_entity.alive = bool(actor.alive)
-        if actor.body_state is not None:
-            live_entity.body = actor.body_state.to_tracker()
-            record["body"] = live_entity.body
-        record["position"] = [actor.position.x, actor.position.y]
-        record["hp"] = live_entity.hp
-        record["max_hp"] = live_entity.max_hp
-        record["alive"] = live_entity.alive
-        record["needs"] = actor.needs.to_dict()
-        record["schedule"] = actor.schedule.to_dict()
+    context.player = merged.get("player", context.player)
 
 
 def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:

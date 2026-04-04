@@ -164,18 +164,18 @@ def sell_item(
     return True, f"sold {item_instance.item_def_id}", price
 
 
-def attempt_steal(thief: ActorRecord, store: StoreDef, item_def_id: str, d100_roll: int) -> tuple[bool, str]:
+def attempt_steal(rogue: ActorRecord, store: StoreDef, item_def_id: str, d100_roll: int) -> tuple[bool, str]:
     store_item = _find_store_item(store, item_def_id)
     if store_item is None or store_item.quantity == 0:
         return False, "item not in stock"
-    total = int(d100_roll) + (int(thief.skills.get("pickpocket", 0)) * 5)
+    total = int(d100_roll) + (int(rogue.skills.get("pickpocket", 0)) * 5)
     if total >= int(store.steal_difficulty):
-        _grant_item_instances(thief, ItemDef(item_def_id=item_def_id, label=item_def_id, item_type="misc", item_category="misc", weight=1, base_price=0), 1)
+        _grant_item_instances(rogue, ItemDef(item_def_id=item_def_id, label=item_def_id, item_type="misc", item_category="misc", weight=1, base_price=0), 1)
         if store_item.quantity > 0:
             store_item.quantity -= 1
         return True, "stolen"
     store.hostile = True
-    _set_actor_reputation(thief, _actor_reputation(thief) - 2)
+    _set_actor_reputation(rogue, _actor_reputation(rogue) - 2)
     return False, "caught stealing"
 
 

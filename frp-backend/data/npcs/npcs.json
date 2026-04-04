@@ -94,7 +94,7 @@
           "I've armed kings and peasants alike. They all bleed the same."
         ],
         "quest_related": [
-          "I need someone to recover a sword I sold to a thief.",
+          "I need someone to recover a sword I sold to a rogue.",
           "There's rare ore in the old mine \u2014 bring me a sample and I'll reward you.",
           "My apprentice went missing near the forge district. Find him."
         ]
@@ -482,10 +482,10 @@
       }
     },
     {
-      "id": "wizard_elowen",
+      "id": "mage_elowen",
       "name": "Elowen the Grey",
       "race": "elf",
-      "role": "wizard",
+      "role": "mage",
       "faction_alignment": "arcane_conclave",
       "personality": {
         "traits": [
@@ -536,10 +536,10 @@
       }
     },
     {
-      "id": "cleric_brother_oswin",
+      "id": "priest_brother_oswin",
       "name": "Brother Oswin",
       "race": "human",
-      "role": "cleric",
+      "role": "priest",
       "faction_alignment": "order_of_the_flame",
       "personality": {
         "traits": [
@@ -572,7 +572,7 @@
         "idle": [
           "I've been treating wounded travellers all week. Something is happening out there.",
           "Faith isn't certainty. It's choosing to keep walking in the dark.",
-          "I wasn't always a cleric. That life feels very distant now."
+          "I wasn't always a priest. That life feels very distant now."
         ],
         "quest_related": [
           "A family in the lower quarter has been afflicted with a strange sickness.",

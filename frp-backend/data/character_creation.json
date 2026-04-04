@@ -7,17 +7,7 @@
       "class_id": "warrior",
       "hp": 16
     },
-    "class_aliases": {
-      "fighter": "warrior",
-      "cleric": "priest",
-      "thief": "rogue",
-      "wizard": "mage"
-    },
     "ability_order": ["MIG", "AGI", "END", "MND", "INS", "PRE"],
-    "stat_key_mapping": {
-      "str": "MIG", "dex": "AGI", "con": "END",
-      "int": "MND", "wis": "INS", "cha": "PRE"
-    },
     "skill_stat_map": {
       "melee": "MIG", "athletics": "MIG",
       "stealth": "AGI", "acrobatics": "AGI", "sleight_of_hand": "AGI",

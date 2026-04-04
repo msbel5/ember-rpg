@@ -21,11 +21,10 @@ logger = logging.getLogger(__name__)
 
 def build_dialog_payload(context: "CampaignContext", narrative: str) -> dict[str, Any]:
     """Build dialog payload using kernel dialog authority."""
-    session = context.session
-    conversation = dict(session.conversation_state or {})
+    conversation = dict(context.conversation_state or {})
     if str(conversation.get("target_type", "")).strip() != "npc":
         return {}
-    if session.in_combat():
+    if context.in_combat():
         return {}
 
     npc_id = str(conversation.get("npc_id", "")).strip()

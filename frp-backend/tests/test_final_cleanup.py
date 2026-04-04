@@ -156,15 +156,13 @@ def test_tools_campaign_client_imports_kernel():
     assert "engine.kernel.creation" in source, "campaign_client.py must use engine.kernel.creation"
 
 
-def test_tools_play_topdown_imports_kernel():
-    """play_topdown.py must import from engine.kernel.creation, not engine.core."""
+def test_tools_play_topdown_deleted():
+    """play_topdown.py was removed in campaign-first migration."""
     path = BACKEND_DIR / "tools" / "play_topdown.py"
-    source = path.read_text(encoding="utf-8")
-    assert "engine.core" not in source, "play_topdown.py still imports engine.core"
+    assert not path.exists(), f"Stale tool should be deleted: {path}"
 
 
-def test_tools_play_topdown_view_imports_kernel():
-    """play_topdown_view.py must import from engine.kernel.creation, not engine.core."""
+def test_tools_play_topdown_view_deleted():
+    """play_topdown_view.py was removed in campaign-first migration."""
     path = BACKEND_DIR / "tools" / "play_topdown_view.py"
-    source = path.read_text(encoding="utf-8")
-    assert "engine.core" not in source, "play_topdown_view.py still imports engine.core"
+    assert not path.exists(), f"Stale tool should be deleted: {path}"

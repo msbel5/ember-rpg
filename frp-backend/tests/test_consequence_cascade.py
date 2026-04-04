@@ -1,26 +1,16 @@
 """
 Ember RPG - Consequence Cascading System Tests
-Phase 3c
+Pure CascadeEngine unit tests — no HTTP dependency.
 """
 import pytest
-from fastapi.testclient import TestClient
-from main import app
 from engine.world import WorldState, FactionState
 from engine.world.consequence import CascadeEngine, Effect, PendingEffect
-
-client = TestClient(app)
 
 
 def _make_world() -> WorldState:
     ws = WorldState("g1")
     ws.factions["merchants_guild"] = FactionState(id="merchants_guild", name="Merchants Guild", reputation=0)
     return ws
-
-
-def _new_session():
-    resp = client.post("/game/session/new", json={"player_name": "Aria", "player_class": "warrior"})
-    assert resp.status_code == 200
-    return resp.json()["session_id"]
 
 
 class TestConsequenceCascade:
@@ -154,20 +144,3 @@ class TestConsequenceCascade:
         assert engine2.pending_effects[0].rule_id == "test"
 
 
-class TestConsequenceAPI:
-    def test_consequences_endpoint(self):
-        sid = _new_session()
-        resp = client.get(f"/game/session/{sid}/consequences")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "pending_effects" in data
-
-    def test_trigger_endpoint(self):
-        sid = _new_session()
-        resp = client.post(
-            f"/game/session/{sid}/trigger",
-            json={"trigger_type": "item_stolen", "detected": True},
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "triggered_effects" in data

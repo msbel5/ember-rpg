@@ -6,6 +6,7 @@ Tests for:
 - Multi-step reputation accumulation and disposition branching
 - build_prompt() with populated event history
 """
+import json
 import os
 import pytest
 from engine.npc import NPC, NPCRole, Disposition, NPCMemory, NPCManager
@@ -24,8 +25,9 @@ class TestLoadTemplates:
         """Load npc_templates.json and verify the expected NPC count."""
         manager = NPCManager()
         loaded = manager.load_templates(TEMPLATES_PATH)
-        # The file should have 22 NPCs after the rogue archetype addition
-        assert len(loaded) == 22, f"Expected 22 NPCs, got {len(loaded)}"
+        with open(TEMPLATES_PATH, encoding="utf-8") as handle:
+            expected_count = len(json.load(handle).get("npc_templates", []))
+        assert len(loaded) == expected_count, f"Expected {expected_count} NPCs, got {len(loaded)}"
 
     def test_spot_check_blacksmith_fields(self):
         """Spot-check misc_blacksmith: role must be COMMONER (not NEUTRAL)."""

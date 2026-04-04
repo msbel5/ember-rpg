@@ -1,19 +1,9 @@
 """
 Ember RPG - Per-NPC Persistent Memory Tests
-Phase 3b
+Pure NPCMemory/NPCMemoryManager unit tests — no HTTP dependency.
 """
 import pytest
-from fastapi.testclient import TestClient
-from main import app
 from engine.npc.npc_memory import NPCMemory, NPCMemoryManager
-
-client = TestClient(app)
-
-
-def _new_session():
-    resp = client.post("/game/session/new", json={"player_name": "Aria", "player_class": "warrior"})
-    assert resp.status_code == 200
-    return resp.json()["session_id"]
 
 
 class TestNPCMemoryUnit:
@@ -98,21 +88,3 @@ class TestNPCMemoryUnit:
         assert len(mem2.conversations) == 1
 
 
-class TestNPCMemoryAPI:
-    def test_get_npc_memory_endpoint(self):
-        sid = _new_session()
-        resp = client.get(f"/game/session/{sid}/npc/npc1/memory")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["npc_id"] == "npc1"
-        assert data["relationship_label"] == "stranger"
-
-    def test_add_fact_endpoint(self):
-        sid = _new_session()
-        resp = client.post(
-            f"/game/session/{sid}/npc/npc1/fact",
-            json={"fact": "Player saved the village"},
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "Player saved the village" in data["known_facts"]

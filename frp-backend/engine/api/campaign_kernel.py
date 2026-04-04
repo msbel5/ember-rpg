@@ -4,12 +4,11 @@ from __future__ import annotations
 import copy
 from typing import Any
 
-from engine.api.campaign.campaign_session import CampaignSession
+from engine.api.campaign.context import CampaignContext
 from engine.kernel import (
     ActorRecord,
     AreaState,
     GameState,
-    actor_record_from_character,
     actor_record_from_entity,
     create_game_state,
     world_state_from_blueprint,
@@ -22,7 +21,7 @@ def build_canonical_world_state(world: WorldBlueprint) -> dict[str, Any]:
 
 
 def build_canonical_actor_roster(
-    session: CampaignSession,
+    context: CampaignContext,
     *,
     active_region_id: str | None = None,
     active_site_id: str | None = None,
@@ -30,7 +29,7 @@ def build_canonical_actor_roster(
     return [
         actor.to_dict()
         for actor in build_canonical_actor_records(
-            session,
+            context,
             active_region_id=active_region_id,
             active_site_id=active_site_id,
         )
@@ -38,28 +37,27 @@ def build_canonical_actor_roster(
 
 
 def build_canonical_actor_records(
-    session: CampaignSession,
+    context: CampaignContext,
     *,
     active_region_id: str | None = None,
     active_site_id: str | None = None,
 ) -> list[ActorRecord]:
-    if hasattr(session, "ensure_consistency"):
-        session.ensure_consistency()
+    if hasattr(context, "ensure_consistency"):
+        context.ensure_consistency()
 
     actors: list[ActorRecord] = []
-    player_actor = actor_record_from_character(
-        session.player,
-        actor_id="player",
-        position=tuple(session.position),
-        region_id=active_region_id,
-        site_id=active_site_id,
-        equipment_payloads=session.equipment,
-    )
-    player_actor.raw_payload["source"] = "player_character"
+    player_actor = ActorRecord.from_dict(context.player.to_dict())
+    player_actor.identity.actor_id = "player"
+    player_actor.identity.site_id = active_site_id
+    player_actor.position.x = int(context.position[0])
+    player_actor.position.y = int(context.position[1])
+    player_actor.position.region_id = active_region_id
+    player_actor.position.site_id = active_site_id
+    player_actor.raw_payload["source"] = "player_runtime"
     actors.append(player_actor)
 
-    for entity_id in sorted(session.entities):
-        record = session.entities[entity_id]
+    for entity_id in sorted(context.entities):
+        record = context.entities[entity_id]
         entity_ref = record.get("entity_ref")
         if entity_ref is None:
             continue
@@ -68,7 +66,7 @@ def build_canonical_actor_records(
             region_id=active_region_id,
             site_id=active_site_id,
         )
-        actor.raw_payload["source"] = "session_entity"
+        actor.raw_payload["source"] = "campaign_entity"
         actor.raw_payload["template"] = record.get("template")
         actor.raw_payload["context_actions"] = copy.deepcopy(record.get("context_actions", []))
         actors.append(actor)
@@ -76,7 +74,7 @@ def build_canonical_actor_records(
 
 
 def build_canonical_game_state(
-    session: CampaignSession,
+    context: CampaignContext,
     *,
     campaign_id: str,
     seed: int,
@@ -84,7 +82,7 @@ def build_canonical_game_state(
     active_site_id: str | None = None,
 ) -> GameState:
     actors = build_canonical_actor_records(
-        session,
+        context,
         active_region_id=active_region_id,
         active_site_id=active_site_id,
     )
@@ -100,17 +98,16 @@ def build_canonical_game_state(
     state.inactive_npcs = [
         actor_id for actor_id in state.actors if actor_id not in state.party
     ]
-    if session.game_time is not None:
-        state.world_time.hour = int(getattr(session.game_time, "hour", state.world_time.hour))
+    if context.game_time is not None:
+        state.world_time.hour = int(getattr(context.game_time, "hour", state.world_time.hour))
     state.raw_payload.update(
         {
             "active_site_id": str(active_site_id or ""),
-            "session_id": str(getattr(session, "session_id", "")),
-            "adapter_id": str(session.campaign_state.get("adapter_id", "")),
-            "profile_id": str(session.campaign_state.get("profile_id", "")),
-            "world_seed": int(session.campaign_state.get("world_seed", seed)),
+            "adapter_id": str(context.campaign_state.get("adapter_id", "")),
+            "profile_id": str(context.campaign_state.get("profile_id", "")),
+            "world_seed": int(context.campaign_state.get("world_seed", seed)),
         }
     )
-    if getattr(session, "position", None):
-        state.raw_payload["current_area_position"] = [int(session.position[0]), int(session.position[1])]
+    if getattr(context, "position", None):
+        state.raw_payload["current_area_position"] = [int(context.position[0]), int(context.position[1])]
     return state

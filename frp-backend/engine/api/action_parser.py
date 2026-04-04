@@ -195,7 +195,7 @@ _PATTERNS: list[tuple[ActionIntent, list[re.Pattern]]] = [
     (ActionIntent.TALK, _compile(
         r"^(?:talk\s+to|talk|speak\s+(?:to|with)|chat\s+with|greet|konuş|selamla|söyle|sor|pazarlık|hey|excuse\s+me|what\s+does)\s+(?P<target>[\w\s]+)$",
         r"^(?P<target>[\w\s]+?)\s+konuş(?:uyorum|uyom|urum|uruz|)$",
-        r"^(?:innkeeper|merchant|guard|blacksmith|priest|wizard|elder|captain|barkeep|tavernkeeper)(?:\s+[\w\s]*)?$",
+        r"^(?:innkeeper|merchant|guard|blacksmith|priest|mage|elder|captain|barkeep|tavernkeeper)(?:\s+[\w\s]*)?$",
     )),
     (ActionIntent.TRADE, _compile(
         r"^(?:trade\s+(?:with\s+)?|barter\s+(?:with\s+)?|buy\s+from\s+|shop\s+(?:with\s+)?)(?P<target>[\w\s]+)$",

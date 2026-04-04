@@ -13,7 +13,8 @@ import re
 from random import Random
 from typing import TYPE_CHECKING, Any, Optional
 
-from engine.kernel.combat import resolve_attack
+from engine.api.kernel_adapter import advance_turn, check_combat_end, run_attack, start_fight
+from engine.kernel.combat_engine import CombatState
 from engine.kernel.combat_math import ability_modifier
 
 if TYPE_CHECKING:
@@ -76,9 +77,19 @@ def _handle_attack(
         return (f"{target.identity.display_name} is already dead.", "combat", 0)
 
     weapon = _get_equipped_weapon(player)
-    tick = int(context.session.campaign_state.get("campaign", {}).get("tick", 0))
+    tick = int(context.campaign_state.get("campaign", {}).get("tick", 0))
 
-    result = resolve_attack(player, target, weapon=weapon, seed=tick)
+    combat_state = _ensure_combat_state(context, actors, player, target, tick)
+    _set_active_turn(combat_state, player.identity.actor_id)
+    attack_result = run_attack(
+        combat_state,
+        actors,
+        player.identity.actor_id,
+        target.identity.actor_id,
+        weapon=weapon,
+        seed=tick,
+    )
+    result = attack_result.combat_result
 
     if not result.hit:
         roll_total = result.attack_roll.total
@@ -116,7 +127,11 @@ def _handle_attack(
     narrative = ". ".join(parts) + "."
 
     # Persist combat state into session for campaign payload serialization.
-    _store_combat_state(context, player, target, killed)
+    if check_combat_end(combat_state, actors):
+        combat_state.phase = "resolved"
+    else:
+        advance_turn(combat_state)
+    _store_combat_state(context, combat_state)
 
     logger.info(
         "Combat: %s -> %s, damage=%d, wound=%s, killed=%s",
@@ -149,7 +164,7 @@ def _handle_flee(
     player: "ActorRecord",
 ) -> tuple[str, str, int]:
     """AGI check: d20 + AGI modifier >= 10 to escape combat."""
-    tick = int(context.session.campaign_state.get("campaign", {}).get("tick", 0))
+    tick = int(context.campaign_state.get("campaign", {}).get("tick", 0))
     rng = Random(tick)
     d20 = rng.randint(1, 20)
     agi_value = int(player.stats.get("AGI", 10))
@@ -159,6 +174,7 @@ def _handle_flee(
 
     if total >= dc:
         player.raw_payload["fled_combat"] = True
+        _clear_combat_state(context)
         return (
             f"{player.name} attempts to flee (d20={d20} + AGI {agi_mod:+d} = {total} vs DC {dc}) "
             f"and escapes successfully!",
@@ -192,30 +208,113 @@ def _resolve_combat_target(
 
 def _store_combat_state(
     context: "CampaignContext",
+    combat_state: CombatState,
+) -> None:
+    """Store combat state on the kernel game state only."""
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if game_state is None:
+        return
+    if combat_state.phase == "resolved":
+        game_state.raw_payload.pop("combat", None)
+        if context.dm_context is not None:
+            context.dm_context.scene_type_name = "exploration"
+        return
+    game_state.raw_payload["combat"] = combat_state.to_dict()
+    if context.dm_context is not None:
+        context.dm_context.scene_type_name = "combat"
+
+
+def _clear_combat_state(context: "CampaignContext") -> None:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if game_state is not None:
+        game_state.raw_payload.pop("combat", None)
+    if context.dm_context is not None:
+        context.dm_context.scene_type_name = "exploration"
+
+
+def _combat_state(context: "CampaignContext") -> Optional[CombatState]:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if game_state is None:
+        return None
+    raw_payload = getattr(game_state, "raw_payload", {}) or {}
+    combat_payload = raw_payload.get("combat")
+    if not isinstance(combat_payload, dict) or not combat_payload.get("combatants"):
+        return None
+    return CombatState.from_dict(dict(combat_payload))
+
+
+def _ensure_combat_state(
+    context: "CampaignContext",
+    actors: dict[str, Any],
     player: "ActorRecord",
     target: "ActorRecord",
-    killed: bool,
-) -> None:
-    """Store combat state in session for campaign payload serialization."""
-    target_name = getattr(target.identity, "display_name", "enemy")
-    target_id = getattr(target.identity, "actor_id", "enemy")
-    combat_data = {
-        "phase": "resolved" if killed else "active",
-        "turn_actor_id": player.identity.actor_id,
-        "combatants": [
-            {"actor_id": player.identity.actor_id, "name": player.name, "is_player": True},
-            {"actor_id": target_id, "name": target_name, "is_player": False},
-        ],
+    seed: int,
+) -> CombatState:
+    combat_state = _combat_state(context)
+    if combat_state is not None:
+        actor_ids = {entry.actor_id for entry in combat_state.combatants}
+        if target.identity.actor_id in actor_ids and player.identity.actor_id in actor_ids:
+            return combat_state
+    combat_state = start_fight([player, target], seed=seed)
+    _set_active_turn(combat_state, player.identity.actor_id)
+    return combat_state
+
+
+def _set_active_turn(combat_state: CombatState, actor_id: str) -> None:
+    for index, entry in enumerate(combat_state.combatants):
+        if entry.actor_id == actor_id:
+            combat_state.current_turn_index = index
+            return
+
+
+def build_combat_payload(context: "CampaignContext") -> Optional[dict[str, Any]]:
+    combat_state = _combat_state(context)
+    if combat_state is None or combat_state.phase == "resolved":
+        return None
+    actors = (context.kernel_runtime or {}).get("actors", {})
+    active_actor_id = combat_state.active_combatant.actor_id if combat_state.combatants else ""
+    combatants: list[dict[str, Any]] = []
+    targets: list[dict[str, Any]] = []
+    for entry in combat_state.combatants:
+        actor = actors.get(entry.actor_id)
+        if actor is None:
+            continue
+        payload = {
+            "actor_id": entry.actor_id,
+            "name": actor.name,
+            "is_player": entry.is_player,
+            "initiative": entry.initiative,
+            "alive": bool(actor.alive),
+            "hp": int(actor.stats.get("hp", 0)),
+            "max_hp": int(actor.stats.get("max_hp", 1)),
+            "turn_resources": {
+                "action_available": bool(entry.turn_resources.action),
+                "bonus_action_available": bool(entry.turn_resources.bonus_action),
+                "reaction_available": bool(entry.turn_resources.reaction),
+                "movement_remaining": int(entry.turn_resources.movement),
+                "speed": int(entry.turn_resources.max_movement),
+            },
+        }
+        combatants.append(payload)
+        if not entry.is_player:
+            targets.append({
+                "actor_id": entry.actor_id,
+                "name": actor.name,
+                "alive": bool(actor.alive),
+                "hp": int(actor.stats.get("hp", 0)),
+                "max_hp": int(actor.stats.get("max_hp", 1)),
+            })
+    return {
+        "phase": combat_state.phase,
+        "round": int(combat_state.round_number),
+        "turn_actor_id": active_actor_id,
+        "combatants": combatants,
         "available_actions": ["attack", "defend", "flee", "cast", "use_item"],
-        "targets": [{"actor_id": target_id, "name": target_name, "alive": target.alive,
-                      "hp": int(target.stats.get("hp", 0)), "max_hp": int(target.stats.get("max_hp", 1))}],
+        "targets": targets,
     }
-    context.session.campaign_state["combat_state"] = combat_data
-    context.session.dm_context.scene_type_name = "combat"
-    if killed:
-        # Clear combat state on kill.
-        context.session.campaign_state.pop("combat_state", None)
-        context.session.dm_context.scene_type_name = "exploration"
 
 
 def _get_equipped_weapon(player: "ActorRecord") -> Optional["ItemStack"]:

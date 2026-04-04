@@ -135,9 +135,9 @@ class TestSmithingRecipes:
         r = ALL_RECIPES["plate_armor"]
         assert r.skill_dc >= 18
 
-    def test_smithing_has_14_recipes(self):
+    def test_smithing_has_15_recipes(self):
         smithing = recipes_by_discipline("smithing")
-        assert len(smithing) == 14
+        assert len(smithing) == 15
 
 
 class TestAlchemyRecipes:
@@ -153,9 +153,9 @@ class TestAlchemyRecipes:
         r = ALL_RECIPES["invisibility_potion"]
         assert r.skill_dc == 20
 
-    def test_alchemy_has_10_recipes(self):
+    def test_alchemy_has_12_recipes(self):
         alchemy = recipes_by_discipline("alchemy")
-        assert len(alchemy) == 10
+        assert len(alchemy) == 12
 
 
 class TestCookingRecipes:
@@ -200,9 +200,9 @@ class TestLeatherworkingRecipes:
         ing_ids = [i.item_id for i in r.ingredients]
         assert "sinew" in ing_ids
 
-    def test_leatherworking_has_9_recipes(self):
+    def test_leatherworking_has_11_recipes(self):
         lw = recipes_by_discipline("leatherworking")
-        assert len(lw) == 9
+        assert len(lw) == 11
 
 
 # ── CraftingSystem logic ────────────────────────────────────────────────

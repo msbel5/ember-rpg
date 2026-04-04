@@ -40,9 +40,32 @@ def load_materials() -> dict[str, MaterialDef]:
     """Load all material definitions from data/materials.json."""
     raw = _load_json("materials.json")
     result: dict[str, MaterialDef] = {}
-    for mat_id, entry in raw.items():
+    entries: list[tuple[str, Any]] = []
+    if isinstance(raw, dict):
+        for mat_id, entry in raw.items():
+            if mat_id == "materials" and isinstance(entry, list):
+                for list_entry in entry:
+                    if not isinstance(list_entry, dict):
+                        continue
+                    list_material_id = str(list_entry.get("material_id", "")).strip()
+                    if not list_material_id:
+                        continue
+                    entries.append((list_material_id, list_entry))
+                continue
+            entries.append((str(mat_id), entry))
+    elif isinstance(raw, list):
+        for entry in raw:
+            if not isinstance(entry, dict):
+                continue
+            mat_id = str(entry.get("material_id", "")).strip()
+            if not mat_id:
+                continue
+            entries.append((mat_id, entry))
+    for mat_id, entry in entries:
+        if not isinstance(entry, dict):
+            continue
         result[mat_id] = MaterialDef(
-            material_id=str(entry["material_id"]),
+            material_id=str(entry.get("material_id", mat_id)),
             label=str(entry["label"]),
             category=str(entry.get("category", "unknown")),
             density=float(entry.get("density", 1.0)),

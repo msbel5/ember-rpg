@@ -320,10 +320,11 @@ class ActorRecord:
         self.conditions = result
 
     # ── Serialization ──────────────────────────────────────────
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self, *, include_action_points: bool = False) -> dict[str, Any]:
         payload = serialize_value(self)
-        payload.pop("action_points", None)
-        payload.pop("max_action_points", None)
+        if not include_action_points:
+            payload.pop("action_points", None)
+            payload.pop("max_action_points", None)
         return payload
 
     @classmethod

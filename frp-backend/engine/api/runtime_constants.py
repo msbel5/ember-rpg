@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from engine.data_loader import (
     CLASSES,
-    get_creation_class_aliases,
     get_creation_default_class,
     get_default_npc_alignment_map,
     get_default_npc_attitude_map,
@@ -39,7 +38,6 @@ DEFAULT_NPC_ALIGNMENT = get_default_npc_alignment_map()
 THINK_TOPIC_SKILLS = {skill: set(keywords) for skill, keywords in get_think_topic_skills().items()}
 ROLE_PRODUCTION = {role: tuple(values) for role, values in get_role_production_map().items()}
 HOSTILE_KEYWORDS = get_hostile_keywords()
-CLASS_ALIASES = get_creation_class_aliases()
 DEFAULT_PLAYER_CLASS = get_creation_default_class()
 DEFAULT_OPENING_SCENE = get_default_opening_scene()
 LOCATION_STOCK_BASELINE = get_location_stock_baseline()

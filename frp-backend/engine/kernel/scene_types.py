@@ -1,15 +1,14 @@
 """
-Ember RPG - Kernel Scene Types and Narrator Module
-Canonical home for SceneType/EventType enums, NarratorEvent, NarratorContext
-dataclasses, and a simplified NarratorService for LLM calls.
+Kernel scene-state types for campaign-first runtime.
 
-Migrated from engine.kernel.narrator to break the GameEngine dependency chain.
+This module defines the neutral scene context used by campaign runtime and
+save/load code. It intentionally does not provide narrator/freeform services.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engine.kernel.actor import Actor
@@ -69,8 +68,8 @@ VALID_TRANSITIONS: Dict[SceneType, set] = {
 
 
 @dataclass
-class NarratorEvent:
-    """A single narrated game event."""
+class SceneEvent:
+    """A single scene event record."""
     type: EventType
     description: str
     data: dict = field(default_factory=dict)
@@ -83,29 +82,32 @@ class NarratorEvent:
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> "NarratorEvent":
+    def from_dict(cls, d: dict) -> "SceneEvent":
         return cls(
             type=EventType(d["type"]),
             description=d["description"],
             data=d.get("data", {}),
         )
 
-
-# Legacy alias for NarratorEvent.
-DMEvent = NarratorEvent
-
-
 @dataclass
-class NarratorContext:
-    """Snapshot of game state visible to the narrator."""
+class SceneContext:
+    """Snapshot of active scene state used by campaign runtime."""
     scene_type: SceneType
     location: str
     party: List["Actor"] = field(default_factory=list)
-    history: List[NarratorEvent] = field(default_factory=list)
+    history: List[SceneEvent] = field(default_factory=list)
     turn: int = 0
     max_history: int = 10
 
-    def add_event(self, event: NarratorEvent) -> None:
+    @property
+    def scene_type_name(self) -> str:
+        return self.scene_type.value
+
+    @scene_type_name.setter
+    def scene_type_name(self, value: str) -> None:
+        self.scene_type = SceneType(str(value))
+
+    def add_event(self, event: SceneEvent) -> None:
         """Append event and trim history to max_history."""
         self.history.append(event)
         if len(self.history) > self.max_history:
@@ -138,9 +140,9 @@ class NarratorContext:
         }
 
     @classmethod
-    def from_dict(cls, data: dict, party: list | None = None) -> "NarratorContext":
+    def from_dict(cls, data: dict, party: list | None = None) -> "SceneContext":
         """Deserialize from a dict. Pass party separately (not serialized)."""
-        history = [NarratorEvent.from_dict(h) for h in data.get("history", [])]
+        history = [SceneEvent.from_dict(h) for h in data.get("history", [])]
         return cls(
             scene_type=SceneType(data["scene_type"]),
             location=data["location"],
@@ -151,63 +153,10 @@ class NarratorContext:
         )
 
 
-# Legacy alias for NarratorContext.
-DMContext = NarratorContext
-
-
-class NarratorService:
-    """Kernel-native narrator that wraps LLM calls."""
-
-    def transition(self, ctx: NarratorContext, target: SceneType) -> bool:
-        """Transition ctx to target scene. Raises ValueError if invalid."""
-        allowed = VALID_TRANSITIONS.get(ctx.scene_type, set())
-        if target not in allowed:
-            raise ValueError(
-                f"Invalid transition: {ctx.scene_type.value} -> {target.value}"
-            )
-        ctx.scene_type = target
-        return True
-
-    def build_prompt(self, event: NarratorEvent, ctx: NarratorContext) -> str:
-        """Build a structured LLM prompt from event + context."""
-        history_block = ""
-        if ctx.history:
-            recent = ctx.history[-5:]
-            history_block = "\n".join(
-                f"- [{e.type.value}] {e.description}" for e in recent
-            )
-        return (
-            "You are the Dungeon Master of Ember RPG, a dark fantasy world.\n\n"
-            f"## Current Scene\n"
-            f"Location: {ctx.location}\n"
-            f"Scene: {ctx.scene_type.value}\n"
-            f"Turn: {ctx.turn}\n\n"
-            f"## Party\n{ctx.party_summary()}\n\n"
-            f"## Recent History\n"
-            f"{history_block or '(no recent events)'}\n\n"
-            f"## Event\n"
-            f"Type: {event.type.value}\n"
-            f"Description: {event.description}\n\n"
-            f"## Task\n"
-            "Narrate this event in 2-3 sentences. "
-            "Keep the tone dark, immersive, and concise."
-        )
-
-    def narrate(
-        self,
-        event: NarratorEvent,
-        ctx: NarratorContext,
-        llm: Optional[Callable[[str], str]] = None,
-    ) -> str:
-        """Generate narrative for event. Uses LLM if provided, else raw description."""
-        ctx.add_event(event)
-        if llm is not None:
-            prompt = self.build_prompt(event, ctx)
-            result = llm(prompt)
-            if result is not None:
-                return result
-        # Fallback: return the event description directly.
-        return event.description
-
-# Legacy alias for DMAIAgent.
-DMAIAgent = NarratorService
+__all__ = [
+    "EventType",
+    "SceneContext",
+    "SceneEvent",
+    "SceneType",
+    "VALID_TRANSITIONS",
+]

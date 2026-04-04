@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from engine.worldgen import realize_region
 
-from .campaign_state import apply_region_to_session, build_settlement_state
+from .campaign_state import apply_region_to_context, build_settlement_state
 
 if TYPE_CHECKING:
     from engine.api.campaign_runtime import CampaignContext
@@ -188,10 +188,10 @@ def handle_travel(context: "CampaignContext", command_text: str, args: Optional[
     context.world.simulation_snapshot.active_region_id = chosen["region_id"]
     context.region_snapshot = realize_region(context.world, chosen["region_id"])
     context.settlement_state = build_settlement_state(
-        context.world, context.region_snapshot, context.adapter_id, context.session.player.name
+        context.world, context.region_snapshot, context.adapter_id, context.player.name
     )
-    apply_region_to_session(
-        session=context.session,
+    apply_region_to_context(
+        context=context,
         world=context.world,
         region_snapshot=context.region_snapshot,
         settlement_state=context.settlement_state,
@@ -201,23 +201,8 @@ def handle_travel(context: "CampaignContext", command_text: str, args: Optional[
         seed=context.seed,
     )
     travel_hours = int(chosen_edge.get("travel_hours", 4)) if chosen_edge is not None else 4
-    context.session.campaign_state["last_travel_hours"] = travel_hours
+    context.campaign_state["last_travel_hours"] = travel_hours
     return f"Travel complete after {travel_hours}h. You arrive at {chosen['name']}."
-
-
-def hours_for_avatar_command(command_text: str) -> int:
-    if command_text.startswith("rest"):
-        return 8
-    if command_text.startswith("travel"):
-        return 4
-    if command_text.startswith("craft"):
-        return 2
-    return 1
-
-
-def merge_avatar_narrative(context: "CampaignContext", narrative: str) -> str:
-    # Explainability metadata is for debug logging only, not player-facing narrative.
-    return narrative
 
 
 # ---------------------------------------------------------------------------
@@ -255,7 +240,7 @@ def maybe_handle_talk_command(
         return (f"{npc_query} is dead.", "dialog", 0)
     # Set conversation state for dialog bridge.
     npc_name = getattr(target_actor.identity, "display_name", npc_query)
-    context.session.conversation_state = {
+    context.conversation_state = {
         "target_type": "npc",
         "npc_id": target_id,
         "npc_name": npc_name,
@@ -378,12 +363,12 @@ def maybe_handle_commerce_command(
         item_name = item_name.strip()
         store = _find_store(stores, npc_part.strip())
         if store is None:
-            return (f"No merchant found to buy '{item_name}' from.", "avatar", 1)
+            return (f"No merchant found to buy '{item_name}' from.", "commerce", 1)
         ok, msg = buy_item(player, store, item_name, 1, item_registry)
         if not ok:
-            return (msg, "avatar", 1)
+            return (msg, "commerce", 1)
         logger.info("Buy: %s bought %s", player.identity.display_name, item_name)
-        return (f"Bought {item_name}. {msg}", "avatar", 1)
+        return (f"Bought {item_name}. {msg}", "commerce", 1)
     if lower.startswith("sell "):
         item_name = command_text[5:].strip()
         npc_part = ""
@@ -392,40 +377,40 @@ def maybe_handle_commerce_command(
         item_name = item_name.strip()
         store = _find_store(stores, npc_part.strip())
         if store is None:
-            return (f"No merchant found to sell '{item_name}' to.", "avatar", 1)
+            return (f"No merchant found to sell '{item_name}' to.", "commerce", 1)
         # Find item in player inventory by def_id.
         item_instance = next((i for i in player.inventory if i.item_def_id == item_name), None)
         if item_instance is None:
-            return (f"You don't have '{item_name}' to sell.", "avatar", 1)
+            return (f"You don't have '{item_name}' to sell.", "commerce", 1)
         ok, msg = sell_item(player, store, item_instance, item_registry)
         if not ok:
-            return (msg, "avatar", 1)
+            return (msg, "commerce", 1)
         logger.info("Sell: %s sold %s", player.identity.display_name, item_name)
-        return (f"Sold {item_name}. {msg}", "avatar", 1)
+        return (f"Sold {item_name}. {msg}", "commerce", 1)
     if lower.startswith("rent room") or lower.startswith("rent a room"):
         store = _find_store(stores, "")
         if store is None:
-            return ("No inn found to rent a room.", "avatar", 1)
+            return ("No inn found to rent a room.", "commerce", 1)
         ok, msg = rent_room(player, store, "room")
         if not ok:
-            return (msg, "avatar", 8)
-        return (f"Rented a room. You rest for the night.", "avatar", 8)
+            return (msg, "commerce", 8)
+        return (f"Rented a room. You rest for the night.", "commerce", 8)
     if lower.startswith("identify "):
         item_name = command_text[9:].strip()
         store = _find_store_with_service(stores, "identify")
         if store is None:
-            return ("No merchant with identification services found.", "avatar", 1)
+            return ("No merchant with identification services found.", "commerce", 1)
         item_instance = _find_inventory_item(player, item_name)
         if item_instance is None:
-            return (f"You don't have '{item_name}' to identify.", "avatar", 1)
+            return (f"You don't have '{item_name}' to identify.", "commerce", 1)
         item_def = _item_def_from_registry(item_instance.item_def_id, item_registry)
         if item_def is None:
-            return (f"Unknown item definition for '{item_name}'.", "avatar", 1)
+            return (f"Unknown item definition for '{item_name}'.", "commerce", 1)
         ok, msg = buy_identification(player, store, item_instance, item_def)
         if not ok:
-            return (f"Cannot identify: {msg}.", "avatar", 1)
+            return (f"Cannot identify: {msg}.", "commerce", 1)
         logger.info("Identify: %s identified %s", player.identity.display_name, item_name)
-        return (f"Identified {item_name}. {msg}", "avatar", 1)
+        return (f"Identified {item_name}. {msg}", "commerce", 1)
     return None
 
 

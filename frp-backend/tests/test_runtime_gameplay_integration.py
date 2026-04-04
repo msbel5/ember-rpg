@@ -13,7 +13,7 @@ def _make_campaign() -> tuple[CampaignRuntime, object]:
 def test_run_command_pickup_uses_ground_item_authority() -> None:
     runtime, context = _make_campaign()
     spawn_ground_item_entity(
-        context.session,
+        context,
         item={"id": "iron_ore", "name": "Iron Ore", "qty": 1},
     )
 
@@ -21,26 +21,26 @@ def test_run_command_pickup_uses_ground_item_authority() -> None:
 
     assert result["command_type"] == "inventory"
     assert "picked up" in result["narrative"].lower()
-    assert context.session.find_inventory_item("iron_ore") is not None
+    assert context.find_inventory_item("iron_ore") is not None
     assert any(item.get("id") == "iron_ore" for item in result["campaign"]["player"]["inventory"])
-    assert context.session.campaign_state.get("ground_items", []) == []
+    assert context.campaign_state.get("ground_items", []) == []
 
 
 def test_run_command_drop_persists_ground_item_authority_for_next_command() -> None:
     runtime, context = _make_campaign()
-    context.session.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 1}, merge=True)
+    context.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 1}, merge=True)
 
     drop_result = runtime.run_command(context.campaign_id, "drop iron ore")
 
     assert drop_result["command_type"] == "inventory"
     assert "dropped" in drop_result["narrative"].lower()
-    assert len(context.session.campaign_state.get("ground_items", [])) == 1
+    assert len(context.campaign_state.get("ground_items", [])) == 1
 
     pickup_result = runtime.run_command(context.campaign_id, "pickup iron ore")
 
     assert pickup_result["command_type"] == "inventory"
     assert "picked up" in pickup_result["narrative"].lower()
-    assert context.session.find_inventory_item("iron_ore") is not None
+    assert context.find_inventory_item("iron_ore") is not None
 
 
 def test_run_command_spell_uses_kernel_spell_flow() -> None:
@@ -59,8 +59,8 @@ def test_run_command_spell_uses_kernel_spell_flow() -> None:
 
 def test_run_command_repeated_pickup_then_missing() -> None:
     runtime, context = _make_campaign()
-    spawn_ground_item_entity(context.session, item={"id": "iron_ore", "name": "Iron Ore", "qty": 1}, entity_id="ore_a")
-    spawn_ground_item_entity(context.session, item={"id": "iron_ore", "name": "Iron Ore", "qty": 1}, entity_id="ore_b")
+    spawn_ground_item_entity(context, item={"id": "iron_ore", "name": "Iron Ore", "qty": 1}, entity_id="ore_a")
+    spawn_ground_item_entity(context, item={"id": "iron_ore", "name": "Iron Ore", "qty": 1}, entity_id="ore_b")
 
     first = runtime.run_command(context.campaign_id, "pickup iron ore")
     second = runtime.run_command(context.campaign_id, "pickup iron ore")
@@ -69,15 +69,15 @@ def test_run_command_repeated_pickup_then_missing() -> None:
     assert first["command_type"] == "inventory"
     assert second["command_type"] == "inventory"
     assert "nothing to pick up" in third["narrative"].lower()
-    stack = context.session.find_inventory_item("iron_ore")
+    stack = context.find_inventory_item("iron_ore")
     assert stack is not None
     assert int(stack.get("qty", 1)) == 2
-    assert context.session.campaign_state.get("ground_items", []) == []
+    assert context.campaign_state.get("ground_items", []) == []
 
 
 def test_run_command_repeated_drop_then_missing() -> None:
     runtime, context = _make_campaign()
-    context.session.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 2}, merge=True)
+    context.add_item({"id": "iron_ore", "name": "Iron Ore", "qty": 2}, merge=True)
 
     first = runtime.run_command(context.campaign_id, "drop iron ore")
     second = runtime.run_command(context.campaign_id, "drop iron ore")
@@ -86,13 +86,13 @@ def test_run_command_repeated_drop_then_missing() -> None:
     assert first["command_type"] == "inventory"
     assert second["command_type"] == "inventory"
     assert "don't have" in third["narrative"].lower()
-    assert len(context.session.campaign_state.get("ground_items", [])) == 2
+    assert len(context.campaign_state.get("ground_items", [])) == 2
 
 
 def test_run_command_craft_repeated_missing_ingredients_stays_non_mutating() -> None:
     runtime, context = _make_campaign()
     context.kernel_runtime["actors"]["player"].skills["smithing"] = 15
-    baseline_inventory = list(context.session.inventory)
+    baseline_inventory = list(context.player.inventory)
 
     first = runtime.run_command(context.campaign_id, "craft iron bar")
     second = runtime.run_command(context.campaign_id, "craft iron bar")
@@ -101,7 +101,7 @@ def test_run_command_craft_repeated_missing_ingredients_stays_non_mutating() -> 
     assert second["command_type"] == "craft"
     assert "missing ingredient" in first["narrative"].lower()
     assert "missing ingredient" in second["narrative"].lower()
-    assert context.session.inventory == baseline_inventory
+    assert context.player.inventory == baseline_inventory
 
 
 def test_run_command_long_rest_repeatedly_hits_cooldown() -> None:

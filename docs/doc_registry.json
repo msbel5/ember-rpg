@@ -276,6 +276,97 @@
       ],
       "supersedes": [],
       "note": "Canonical gameplay-shell UX contract for movement, interaction, dialog, camera, inventory, combat, and world travel."
+    },
+    "PRD_actor_record_authority_v1.md": {
+      "owner": "kernel_actor",
+      "mechanism_ids": ["DF:M02", "GEMRB:M01"],
+      "runtime_surface": ["frp-backend/engine/kernel/actor_records.py", "frp-backend/engine/api/campaign_kernel.py"],
+      "supersedes": [],
+      "note": "Canonical ActorRecord authority: kernel owns stats, conditions, inventory for all actors."
+    },
+    "PRD_api_handler_cleanup_v1.md": {
+      "owner": "runtime_cleanup",
+      "mechanism_ids": ["EMBER:CLEANUP"],
+      "runtime_surface": ["frp-backend/engine/api/campaign/runtime_commands.py"],
+      "supersedes": [],
+      "note": "Removal of legacy handler mixins; all commands now route through campaign dispatch chain."
+    },
+    "PRD_campaign_combat_turn_economy_v1.md": {
+      "owner": "kernel_combat",
+      "mechanism_ids": ["DF:M01", "GEMRB:M02", "GEMRB:M03"],
+      "runtime_surface": ["frp-backend/engine/kernel/combat_engine.py", "frp-backend/engine/api/combat_bridge.py"],
+      "supersedes": [],
+      "note": "Canonical turn-economy model for initiative, action/bonus/reaction, and movement."
+    },
+    "PRD_campaign_runtime_authority_v1.md": {
+      "owner": "runtime_campaign",
+      "mechanism_ids": ["EMBER:RUNTIME"],
+      "runtime_surface": ["frp-backend/engine/api/campaign/runtime.py", "frp-backend/engine/api/campaign/context.py"],
+      "supersedes": [],
+      "note": "CampaignRuntime as the single orchestration authority; CampaignContext as sole state container."
+    },
+    "PRD_campaign_save_schema_v3.md": {
+      "owner": "persistence",
+      "mechanism_ids": ["EMBER:SAVELOAD"],
+      "runtime_surface": ["frp-backend/engine/api/save"],
+      "supersedes": [],
+      "note": "Superseded by PRD_save_schema_v4 but kept as historical reference for migration path."
+    },
+    "PRD_data_externalization_v1.md": {
+      "owner": "data_registries",
+      "mechanism_ids": ["DATA:REGISTRY"],
+      "runtime_surface": ["frp-backend/data", "frp-backend/engine/data_loader.py"],
+      "supersedes": [],
+      "note": "Extraction of hardcoded game data to JSON registries under data/."
+    },
+    "PRD_godot_campaign_shell_contract_v1.md": {
+      "owner": "client_runtime",
+      "mechanism_ids": ["CLIENT:CONTRACT"],
+      "runtime_surface": ["godot-client/autoloads/backend.gd", "godot-client/scenes/game_session.gd"],
+      "supersedes": [],
+      "note": "Canonical Godot campaign shell contract for state consumption and command dispatch."
+    },
+    "PRD_kernel_combat_engine_v1.md": {
+      "owner": "kernel_combat",
+      "mechanism_ids": ["DF:M01", "GEMRB:M02"],
+      "runtime_surface": ["frp-backend/engine/kernel/combat_engine.py"],
+      "supersedes": [],
+      "note": "Kernel combat engine: initiative, combatant state, round lifecycle."
+    },
+    "PRD_legacy_deletion_v1.md": {
+      "owner": "runtime_cleanup",
+      "mechanism_ids": ["EMBER:CLEANUP"],
+      "runtime_surface": ["frp-backend/engine/api/campaign"],
+      "supersedes": [],
+      "note": "Tracking document for GameEngine, handler mixins, narrator, and session deletion."
+    },
+    "PRD_PLAYABILITY_RESCUE.md": {
+      "owner": "runtime_campaign",
+      "mechanism_ids": ["EMBER:RUNTIME"],
+      "runtime_surface": ["frp-backend/engine/api/campaign/runtime_commands.py", "frp-backend/tests/test_playability_contract.py"],
+      "supersedes": [],
+      "note": "Emergency playability rescue: verify command dispatch, payload shape, and Godot consumption."
+    },
+    "PRD_save_schema_v4.md": {
+      "owner": "persistence",
+      "mechanism_ids": ["EMBER:SAVELOAD"],
+      "runtime_surface": ["frp-backend/engine/api/save", "frp-backend/engine/save/save_models.py"],
+      "supersedes": ["docs/prd/active/PRD_campaign_save_schema_v3.md"],
+      "note": "Current save schema v4.0 with kernel-native serialization."
+    },
+    "PRD_stat_unification_v1.md": {
+      "owner": "kernel_actor",
+      "mechanism_ids": ["DF:M02", "GEMRB:M01"],
+      "runtime_surface": ["frp-backend/engine/kernel/actor_records.py", "frp-backend/data/classes.json"],
+      "supersedes": [],
+      "note": "Unified stat namespace: MIG/AGI/END/MND/INS/PRE replacing legacy D&D ability names."
+    },
+    "PRD_websocket_transport_v1.md": {
+      "owner": "runtime_transport",
+      "mechanism_ids": ["EMBER:WS"],
+      "runtime_surface": ["frp-backend/engine/api/ws_campaign.py"],
+      "supersedes": [],
+      "note": "WebSocket as primary live runtime transport for campaign commands and state push."
     }
   }
 }

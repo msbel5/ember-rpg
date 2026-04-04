@@ -250,17 +250,16 @@
         },
         {
           "id": "md_q2_dungeon_run",
-          "title": "Into the Thieves' Den",
-          "description": "The investigation points to a thieves' guild hideout in the old sewers beneath the city. Retrieve the stolen goods or the ledger proving Aldric's innocence.",
+          "title": "Into the Rogues' Den",
+          "description": "The investigation points to a rogues' guild hideout in the old sewers beneath the city. Retrieve the stolen goods or the ledger proving Aldric's innocence.",
           "objectives": [
-            "Enter the thieves' guild hideout through the sewer entrance",
+            "Enter the rogues' guild hideout through the sewer entrance",
             "Defeat or bypass the guild sentries (combat or stealth)",
             "Find and retrieve the stolen ledger or spice crates",
             "Confront the guild lieutenant responsible for the theft"
           ],
           "recommended_level": 4,
           "enemy_ids": [
-            "thief",
             "rogue",
             "bandit_captain"
           ],
@@ -278,7 +277,7 @@
         {
           "id": "md_q3_resolution",
           "title": "A Debt Repaid",
-          "description": "With evidence in hand, the players must help Aldric resolve his debt with the thieves' guild. The outcome depends on how the players handled the investigation — diplomacy, force, or deception all lead to different ends.",
+          "description": "With evidence in hand, the players must help Aldric resolve his debt with the rogues' guild. The outcome depends on how the players handled the investigation — diplomacy, force, or deception all lead to different ends.",
           "objectives": [
             "Bring the evidence to Aldric Voss",
             "Negotiate with or defeat the guild master to cancel the debt",
@@ -401,7 +400,7 @@
           ],
           "recommended_level": 2,
           "enemy_ids": [
-            "thief",
+            "rogue",
             "bandit"
           ],
           "rewards": {
@@ -420,7 +419,7 @@
           "description": "The investigation leads to a masked ball, where the true culprit must be revealed before they escape.",
           "objectives": [
             "Attend the masked ball and blend in",
-            "Expose the thief using evidence or social skill",
+            "Expose the rogue using evidence or social skill",
             "Recover the artifact and ensure justice is served"
           ],
           "recommended_level": 3,

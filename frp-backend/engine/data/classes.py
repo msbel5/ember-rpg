@@ -107,13 +107,6 @@ def get_creation_default_profile() -> str:
     return str(creation_registry().get("default_profile", "standard"))
 
 
-def get_creation_class_aliases() -> Dict[str, str]:
-    return {
-        str(alias): str(class_id)
-        for alias, class_id in creation_registry().get("class_aliases", {}).items()
-    }
-
-
 def get_creation_allocation_rules() -> Dict[str, Any]:
     return dict(creation_registry().get("allocation_rules", {}))
 

@@ -107,13 +107,13 @@ def test_defense_agi_stat_uses_agi():
 
 # ── spells: ability scores use Ember keys ─────────────────────────────
 def test_spell_ability_score_uses_ember_keys():
-    """_spell_ability_score must use MND/INS/PRE for wizard/priest/sorcerer."""
+    """_spell_ability_score must use MND/INS/PRE for mage/priest/channeler."""
     from engine.kernel.spells import _spell_ability_score
 
     actor = _make_actor({"MIG": 10, "AGI": 10, "END": 10, "MND": 16, "INS": 14, "PRE": 12})
-    assert _spell_ability_score(actor, "wizard") == 16   # MND
-    assert _spell_ability_score(actor, "priest") == 14    # INS
-    assert _spell_ability_score(actor, "sorcerer") == 12  # PRE
+    assert _spell_ability_score(actor, "mage") == 16   # MND
+    assert _spell_ability_score(actor, "priest") == 14  # INS
+    assert _spell_ability_score(actor, "channeler") == 12  # PRE
 
 
 # ── dialog: NPC reaction uses PRE ─────────────────────────────────────

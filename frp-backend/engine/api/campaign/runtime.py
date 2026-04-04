@@ -6,7 +6,7 @@ import uuid
 from typing import Any, Callable, Optional
 
 from engine.api.campaign.debug_trace import snapshot_hash, trace_event
-from engine.api.session_factory import create_game_session
+from engine.api.context_factory import create_player_state
 from engine.api.save import SaveSystem
 from engine.kernel.creation import ABILITY_ORDER, CreationState, assign_stats_to_class
 from engine.kernel import GameState
@@ -17,7 +17,7 @@ from .live_kernel import ensure_kernel_runtime
 from .persistence import campaign_payload, persist_campaign_state
 from .runtime_commands import run_command as _run_command
 from .controls import merge_settlement_controls
-from .session import apply_region_to_session
+from .region_projection import apply_region_to_context
 from .settlement import build_character_sheet, build_settlement_state
 from .world import (
     build_world,
@@ -65,7 +65,7 @@ class CampaignRuntime:
         ) or world.settlements[0]
         initialize_simulation(world, settlement.region_id)
         region_snapshot = realize_region(world, settlement.region_id)
-        session = create_game_session(
+        init_state = create_player_state(
             player_name=player_name,
             player_class=player_class,
             location=settlement.center_name,
@@ -77,16 +77,6 @@ class CampaignRuntime:
         )
         settlement_state = build_settlement_state(world, region_snapshot, adapter_id, player_name)
         campaign_id = str(uuid.uuid4())
-        apply_region_to_session(
-            session=session,
-            world=world,
-            region_snapshot=region_snapshot,
-            settlement_state=settlement_state,
-            campaign_id=campaign_id,
-            adapter_id=adapter_id,
-            profile_id=profile_id,
-            seed=chosen_seed,
-        )
         opening = (
             f"{player_name} enters {settlement.center_name}, a {adapter_id.replace('_', ' ')} frontier "
             f"settlement shaped by {region_snapshot.metadata.get('explainability', {}).get('terrain_driver', 'local forces')}."
@@ -97,10 +87,31 @@ class CampaignRuntime:
             profile_id=profile_id,
             seed=chosen_seed,
             world=world,
-            session=session,
             region_snapshot=region_snapshot,
             settlement_state=settlement_state,
             recent_event_log=[{"event_type": "campaign_start", "summary": opening}],
+            player=init_state.player,
+            dm_context=init_state.dm_context,
+            body_tracker=init_state.body_tracker,
+            location_stock=init_state.location_stock,
+            ap_tracker=init_state.ap_tracker,
+            caravan_manager=init_state.caravan_manager,
+            game_time=init_state.game_time,
+            spatial_index=init_state.spatial_index,
+            viewport=init_state.viewport,
+            quest_tracker=init_state.quest_tracker,
+            history_seed=init_state.history_seed,
+            name_gen=init_state.name_gen,
+        )
+        apply_region_to_context(
+            context=context,
+            world=world,
+            region_snapshot=region_snapshot,
+            settlement_state=settlement_state,
+            campaign_id=campaign_id,
+            adapter_id=adapter_id,
+            profile_id=profile_id,
+            seed=chosen_seed,
         )
         ensure_kernel_runtime(context)
         self._campaigns[campaign_id] = context
@@ -118,7 +129,13 @@ class CampaignRuntime:
         location: Optional[str] = None,
     ) -> CampaignCreationContext:
         chosen_seed = seed if seed is not None else int(WorldSeed(f"{player_name}:{adapter_id}:{profile_id}:creation"))
-        state = CreationState(player_name=player_name, location=location, rng_seed=chosen_seed)
+        state = CreationState(
+            player_name=player_name,
+            adapter_id=adapter_id,
+            profile_id=profile_id,
+            location=location,
+            rng_seed=chosen_seed,
+        )
         state.ensure_roll()
         context = CampaignCreationContext(
             state=state,
@@ -220,7 +237,7 @@ class CampaignRuntime:
             creation_profile=merged_creation_profile,
         )
         if location:
-            context.session.dm_context.location = location
+            context.dm_context.location = location
         self._creation_flows.pop(creation_id, None)
         persist_campaign_state(context)
         return context
@@ -244,7 +261,7 @@ class CampaignRuntime:
 
     def build_character_sheet(self, campaign_id: str) -> dict[str, Any]:
         context = self.get_campaign(campaign_id)
-        return build_character_sheet(context.session, context.settlement_state)
+        return build_character_sheet(context, context.settlement_state)
 
     def save_campaign(
         self,
@@ -254,10 +271,10 @@ class CampaignRuntime:
     ) -> dict[str, Any]:
         context = self.get_campaign(campaign_id)
         persist_campaign_state(context)
-        chosen_player = (player_id or context.session.player.name or "player").strip() or "player"
+        chosen_player = (player_id or context.player.name or "player").strip() or "player"
         chosen_slot = slot_name.strip() if slot_name else f"{campaign_id[:8]}_{context.adapter_id}"
         hashed_snapshot = snapshot_hash(campaign_payload(context))
-        self.save_system.save_game(context.session, chosen_slot, player_name=chosen_player)
+        self.save_system.save_game(context, chosen_slot, player_name=chosen_player)
         trace_event(
             "campaign_save_written",
             campaign_id=context.campaign_id,
@@ -272,7 +289,7 @@ class CampaignRuntime:
 
     def list_campaign_saves(self, campaign_id: str) -> list[dict[str, Any]]:
         context = self.get_campaign(campaign_id)
-        saves = self.save_system.list_saves(player_name=context.session.player.name)
+        saves = self.save_system.list_saves(player_name=context.player.name)
         return [
             entry
             for entry in saves
@@ -293,10 +310,10 @@ class CampaignRuntime:
         return {"status": "deleted", "save_id": save_id, "slot_name": save_id}
 
     def load_campaign(self, save_id: str) -> CampaignContext:
-        session = self.save_system.load_game(save_id, strict=True)
-        if session is None:
+        context = self.save_system.load_game(save_id, strict=True)
+        if context is None:
             raise FileNotFoundError(save_id)
-        meta = dict(session.campaign_state.get("campaign") or {})
+        meta = dict(context.campaign_state.get("campaign") or {})
         if not meta:
             trace_event("campaign_save_validation_failed", save_id=save_id, reason="missing_campaign_root")
             raise ValueError(f"Save {save_id} does not contain canonical campaign state")
@@ -307,24 +324,21 @@ class CampaignRuntime:
         region_snapshot = realize_region(world, active_region_id)
         settlement_state = copy.deepcopy(
             meta.get("settlement_state")
-            or build_settlement_state(world, region_snapshot, str(meta.get("adapter_id", "fantasy_ember")), session.player.name)
+            or build_settlement_state(world, region_snapshot, str(meta.get("adapter_id", "fantasy_ember")), context.player.name)
         )
-        context = CampaignContext(
-            campaign_id=str(meta.get("campaign_id", uuid.uuid4())),
-            adapter_id=str(meta.get("adapter_id", "fantasy_ember")),
-            profile_id=str(meta.get("profile_id", world.profile_id)),
-            seed=int(meta.get("seed", world.seed)),
-            world=world,
-            session=session,
-            region_snapshot=region_snapshot,
-            settlement_state=settlement_state,
-            recent_event_log=list(meta.get("recent_event_log") or []),
-        )
-        refreshed_settlement_state = build_settlement_state(world, region_snapshot, context.adapter_id, session.player.name)
+        context.campaign_id = str(meta.get("campaign_id", context.campaign_id or uuid.uuid4()))
+        context.adapter_id = str(meta.get("adapter_id", "fantasy_ember"))
+        context.profile_id = str(meta.get("profile_id", world.profile_id))
+        context.seed = int(meta.get("seed", world.seed))
+        context.world = world
+        context.region_snapshot = region_snapshot
+        context.settlement_state = settlement_state
+        context.recent_event_log = list(meta.get("recent_event_log") or [])
+        refreshed_settlement_state = build_settlement_state(world, region_snapshot, context.adapter_id, context.player.name)
         context.settlement_state = merge_settlement_controls(refreshed_settlement_state, settlement_state)
         self._campaigns[context.campaign_id] = context
-        apply_region_to_session(
-            session=session,
+        apply_region_to_context(
+            context=context,
             world=world,
             region_snapshot=region_snapshot,
             settlement_state=context.settlement_state,
