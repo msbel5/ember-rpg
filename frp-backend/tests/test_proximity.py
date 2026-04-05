@@ -1,10 +1,23 @@
 """Tests for Module 10: Proximity Rules (FR-42..FR-45)"""
 import pytest
 from engine.world.proximity import (
-    distance, manhattan_distance, in_range, check_proximity,
+    combat_targeting_check, distance, manhattan_distance, in_range, check_proximity,
     move_cardinal, astar_path, has_line_of_sight,
     RANGE_MELEE, RANGE_RANGED, RANGE_SHOUT, MAX_MOVE_PER_TURN,
 )
+from engine.map import MapData, TileType
+
+
+def _map_from_rows(*rows: str) -> MapData:
+    tile_map = {".": TileType.FLOOR, "#": TileType.WALL}
+    tiles = [[tile_map[cell] for cell in row] for row in rows]
+    return MapData(
+        width=len(rows[0]),
+        height=len(rows),
+        tiles=tiles,
+        rooms=[],
+        spawn_point=(0, 0),
+    )
 
 
 class TestDistance:
@@ -66,6 +79,38 @@ class TestCheckProximity:
     def test_ranged_attack_in_range(self):
         ok, _ = check_proximity([0, 0], [4, 0], "attack_ranged")
         assert ok is True
+
+
+class TestCombatTargetingCheck:
+    def test_melee_requires_cardinal_adjacency(self):
+        result = combat_targeting_check([0, 0], [1, 1], max_range=1, adjacency_only=True)
+
+        assert result["allowed"] is False
+        assert result["reason"] == "out_of_range"
+
+    def test_ranged_attack_allows_clear_line_of_sight_within_range(self):
+        result = combat_targeting_check(
+            [0, 0],
+            [3, 0],
+            max_range=5,
+            requires_line_of_sight=True,
+            map_data=_map_from_rows("....", "....", "...."),
+        )
+
+        assert result["allowed"] is True
+        assert result["distance"] == 3
+
+    def test_ranged_attack_blocks_when_wall_breaks_line_of_sight(self):
+        result = combat_targeting_check(
+            [0, 0],
+            [2, 0],
+            max_range=5,
+            requires_line_of_sight=True,
+            map_data=_map_from_rows(".#.", "...", "..."),
+        )
+
+        assert result["allowed"] is False
+        assert result["reason"] == "no_line_of_sight"
 
 
 class TestMoveCardinal:

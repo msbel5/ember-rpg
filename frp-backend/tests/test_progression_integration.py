@@ -271,3 +271,30 @@ class TestRuntimeLevelUp:
         assert progression["proficiency_points_available"] == 3
         assert progression["skill_points_available"] == expected_skill_points
         assert progression["ability_increases_available"] == 1
+
+    def test_multiclass_progression_levels_each_eligible_class_from_shared_xp(self):
+        _, ctx = _make_campaign()
+        player = _get_player(ctx)
+        player.raw_payload["class_name"] = "warrior"
+        player.raw_payload["xp"] = 900
+        player.raw_payload["level"] = 2
+        player.raw_payload["progression"] = {
+            "actor_id": "player",
+            "xp": 900,
+            "level": 2,
+            "classes": ["warrior", "rogue"],
+            "class_levels": {"warrior": 1, "rogue": 1},
+            "bab": int(player.raw_payload.get("bab", 0)),
+            "saves": dict(player.raw_payload.get("saves", {})),
+        }
+
+        events = advance_kernel_runtime(
+            ctx, hours_advanced=1, command_type="rest", command_text="rest",
+        )
+
+        level_events = [e for e in events if e.get("event_type") == "level_up"]
+        progression = player.raw_payload["progression"]
+
+        assert [event["leveled_class"] for event in level_events] == ["warrior", "rogue"]
+        assert progression["class_levels"] == {"warrior": 2, "rogue": 2}
+        assert int(player.raw_payload.get("level", 1)) == 4

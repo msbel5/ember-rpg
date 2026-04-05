@@ -63,6 +63,72 @@ def check_proximity(player_pos: list, target_pos: list, action_type: str) -> Tup
     return False, f"Too far away ({int(dist)} tiles). Move closer to interact (need {required} or less)."
 
 
+def combat_targeting_check(
+    attacker_pos: list | tuple,
+    target_pos: list | tuple,
+    *,
+    max_range: int,
+    map_data: Optional[MapData] = None,
+    requires_line_of_sight: bool = False,
+    adjacency_only: bool = False,
+) -> dict:
+    """Return a normalized legality snapshot for a combat targeting attempt."""
+    source = [int(attacker_pos[0]), int(attacker_pos[1])]
+    target = [int(target_pos[0]), int(target_pos[1])]
+    tile_distance = int(distance(source, target))
+    cardinal_distance = int(manhattan_distance(source, target))
+    if adjacency_only:
+        if cardinal_distance != 1:
+            return {
+                "allowed": False,
+                "reason": "out_of_range",
+                "distance": tile_distance,
+                "cardinal_distance": cardinal_distance,
+                "max_range": 1,
+                "requires_line_of_sight": False,
+                "adjacency_only": True,
+            }
+        return {
+            "allowed": True,
+            "reason": None,
+            "distance": tile_distance,
+            "cardinal_distance": cardinal_distance,
+            "max_range": 1,
+            "requires_line_of_sight": False,
+            "adjacency_only": True,
+        }
+    normalized_max_range = max(0, int(max_range))
+    if tile_distance > normalized_max_range:
+        return {
+            "allowed": False,
+            "reason": "out_of_range",
+            "distance": tile_distance,
+            "cardinal_distance": cardinal_distance,
+            "max_range": normalized_max_range,
+            "requires_line_of_sight": bool(requires_line_of_sight),
+            "adjacency_only": False,
+        }
+    if requires_line_of_sight and not has_line_of_sight(map_data, source, target):
+        return {
+            "allowed": False,
+            "reason": "no_line_of_sight",
+            "distance": tile_distance,
+            "cardinal_distance": cardinal_distance,
+            "max_range": normalized_max_range,
+            "requires_line_of_sight": True,
+            "adjacency_only": False,
+        }
+    return {
+        "allowed": True,
+        "reason": None,
+        "distance": tile_distance,
+        "cardinal_distance": cardinal_distance,
+        "max_range": normalized_max_range,
+        "requires_line_of_sight": bool(requires_line_of_sight),
+        "adjacency_only": False,
+    }
+
+
 def has_line_of_sight(map_data: Optional[MapData], pos_a: list, pos_b: list) -> bool:
     """
     Check line of sight between two positions using Bresenham's line algorithm.

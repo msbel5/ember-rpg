@@ -126,6 +126,7 @@ def execute_level_up(
     class_def: ClassDef,
     hit_die_roll: int,
     end_modifier: int = 0,
+    class_defs: dict[str, ClassDef] | None = None,
 ) -> LevelUpResult:
     class_ids = progression.classes or list(progression.class_levels.keys()) or [class_id]
     if class_id not in class_ids and class_id not in progression.class_levels:
@@ -146,8 +147,14 @@ def execute_level_up(
     )
     updated_levels = dict(progression.class_levels)
     updated_levels[class_id] = next_level
-    bab_new = compute_bab(updated_levels, {class_id: class_def, **class_defs_without(class_id, {})})
-    saves_new = compute_saves(updated_levels, {class_id: class_def, **class_defs_without(class_id, {})})
+    available_class_defs = {
+        str(key): value
+        for key, value in dict(class_defs or {}).items()
+        if isinstance(value, ClassDef)
+    }
+    available_class_defs[class_id] = class_def
+    bab_new = compute_bab(updated_levels, available_class_defs)
+    saves_new = compute_saves(updated_levels, available_class_defs)
     proficiency_points = 1 if next_level % max(1, int(class_def.proficiency_rate)) == 0 else 0
     skill_points = int(class_def.skill_points_per_level)
     new_spell_slots = _spell_slots_for_level(class_def, next_level)

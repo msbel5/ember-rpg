@@ -114,6 +114,36 @@ def test_character_sheet_progression_exposes_runtime_class_ability_metadata():
     assert "resource_cost" in second_wind
 
 
+def test_character_sheet_progression_exposes_multiclass_levels_and_abilities():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign(player_name="SheetHybrid", player_class="warrior", seed=202)
+    player = context.kernel_runtime["actors"]["player"]
+    player.raw_payload["progression"] = {
+        "actor_id": "player",
+        "xp": 900,
+        "level": 3,
+        "classes": ["warrior", "rogue"],
+        "class_levels": {"warrior": 2, "rogue": 1},
+        "bab": int(player.raw_payload.get("bab", 0)),
+        "saves": dict(player.raw_payload.get("saves", {})),
+    }
+    player.raw_payload["level"] = 3
+    player.raw_payload["class_name"] = "warrior"
+
+    payload = runtime.snapshot(context.campaign_id)
+    progression = payload["campaign"]["character_sheet"]["progression"]
+    abilities = progression["class_abilities"]
+    ability_ids = {entry["id"] for entry in abilities}
+    class_names = {entry["class_name"] for entry in abilities}
+
+    assert progression["classes"] == ["warrior", "rogue"]
+    assert progression["class_levels"] == {"warrior": 2, "rogue": 1}
+    assert progression["dominant_class"] == "warrior"
+    assert "second_wind" in ability_ids
+    assert "sneak_attack" in ability_ids
+    assert class_names >= {"warrior", "rogue"}
+
+
 def test_character_sheet_equipment_exposes_topology_freeze_metadata():
     runtime = CampaignRuntime()
     context = runtime.create_campaign(player_name="SheetArmor", player_class="warrior", seed=141)

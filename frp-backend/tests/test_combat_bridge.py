@@ -11,7 +11,9 @@ from engine.api.campaign.runtime import CampaignRuntime
 import engine.api.combat_bridge as combat_bridge
 from engine.api.campaign.state_sync import sync_player_position
 from engine.api.combat_bridge import build_combat_payload, maybe_handle_combat_command
+from engine.kernel import item_stack_from_legacy_payload
 from engine.kernel.actor_records import create_monster_actor, create_player_actor
+from engine.map import MapData, TileType
 
 
 # ---------------------------------------------------------------------------
@@ -39,12 +41,28 @@ def _inject_enemy(context, *, base_id="test_goblin", name="Goblin", hp=10, mig=8
     }
     enemy = create_monster_actor(template, faction_id="hostile")
     actors = context.kernel_runtime.setdefault("actors", {})
+    player = actors.get("player")
+    if player is not None:
+        enemy.position.x = int(player.position.x) + 1
+        enemy.position.y = int(player.position.y)
     actors[enemy.identity.actor_id] = enemy
     return enemy
 
 
 def _set_runtime_tick(context, tick: int) -> None:
     context.kernel_runtime["game_state"].world_time.game_tick = int(tick)
+
+
+def _map_from_rows(*rows: str) -> MapData:
+    tile_map = {".": TileType.FLOOR, "#": TileType.WALL}
+    tiles = [[tile_map[cell] for cell in row] for row in rows]
+    return MapData(
+        width=len(rows[0]),
+        height=len(rows),
+        tiles=tiles,
+        rooms=[],
+        spawn_point=(0, 0),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -199,6 +217,61 @@ class TestAttackCommand:
         assert "Invalid called shot 'antenna'" in result[0]
         assert "Valid zones:" in result[0]
         assert "head" in result[0]
+
+    def test_out_of_range_attack_starts_combat_without_free_hit(self):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=30)
+        sync_player_position(ctx, 0, 0, center_viewport=False)
+        enemy.position.x = 3
+        enemy.position.y = 0
+        original_hp = int(enemy.stats["hp"])
+
+        result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+
+        assert result is not None
+        assert result[1] == "combat"
+        assert "out of range" in result[0].lower()
+        assert int(enemy.stats["hp"]) == original_hp
+        payload = build_combat_payload(ctx)
+        assert payload is not None
+        target_entry = next(item for item in payload["targets"] if item["actor_id"] == enemy.identity.actor_id)
+        assert target_entry["attackable"] is False
+        assert target_entry["attack_blocked_reason"] == "out_of_range"
+        assert target_entry["distance"] == 3
+        assert target_entry["targeting"]["attack_mode"] == "melee"
+        assert target_entry["targeting"]["geometry"] == "contact"
+
+    def test_ranged_attack_requires_clear_line_of_sight(self):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=30)
+        sync_player_position(ctx, 0, 0, center_viewport=False)
+        enemy.position.x = 2
+        enemy.position.y = 0
+        ctx.map_data = _map_from_rows(".#.", "...", "...")
+        player = ctx.kernel_runtime["actors"]["player"]
+        player.equipment.slots["weapon"] = [
+            item_stack_from_legacy_payload(
+                {
+                    "id": "shortbow",
+                    "name": "Shortbow",
+                    "slot": "weapon",
+                    "attack_profile": {"attack_type": "ranged", "range": 5, "projectile_type": "arrow"},
+                }
+            )
+        ]
+
+        result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+
+        assert result is not None
+        assert result[1] == "combat"
+        assert "line of sight" in result[0].lower()
+        payload = build_combat_payload(ctx)
+        assert payload is not None
+        target_entry = next(item for item in payload["targets"] if item["actor_id"] == enemy.identity.actor_id)
+        assert target_entry["attackable"] is False
+        assert target_entry["attack_blocked_reason"] == "no_line_of_sight"
+        assert target_entry["targeting"]["attack_mode"] == "ranged"
+        assert target_entry["targeting"]["geometry"] == "arrow"
 
 
 # ---------------------------------------------------------------------------
@@ -482,6 +555,25 @@ class TestCombatMovementAndPayload:
         assert cast["command_type"] == "spell"
         assert "not enough spell points" in cast["narrative"].lower()
         assert cast["campaign"]["combat"]["turn_actor_id"] == "player"
+
+    def test_enemy_turn_moves_closer_when_out_of_range(self):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=30)
+        sync_player_position(ctx, 0, 0, center_viewport=False)
+        enemy.position.x = 3
+        enemy.position.y = 0
+        player = ctx.kernel_runtime["actors"]["player"]
+        player_hp = int(player.stats["hp"])
+
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+        result = maybe_handle_combat_command(ctx, "end turn")
+
+        assert result is not None
+        assert result[1] == "combat"
+        assert "advances toward" in result[0].lower()
+        assert (int(enemy.position.x), int(enemy.position.y)) == (2, 0)
+        assert int(player.stats["hp"]) == player_hp
 
 
 # ---------------------------------------------------------------------------

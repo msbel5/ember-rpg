@@ -11,8 +11,8 @@ from typing import Any
 
 from engine.api.campaign.context import CampaignContext
 from engine.api.campaign.live_kernel import build_actor_equipment_payload, build_actor_spell_payload, build_medical_payload
-from engine.api.gameplay_bridge import inventory_item_row, progression_class_abilities
-from engine.data.classes import get_creation_ability_order
+from engine.api.gameplay_bridge import inventory_item_row, progression_class_abilities, progression_runtime_state
+from engine.data.classes import get_class, get_creation_ability_order
 from engine.kernel.progression import ProgressionState
 from engine.world.interactions_catalog import load_interaction_rules
 from engine.world.interactions_runtime import build_skilldex_entries
@@ -23,25 +23,16 @@ _INTERACTION_RULES = load_interaction_rules()
 
 
 def _build_progression_summary(player) -> dict[str, Any]:
-    raw_progression = player.raw_payload.get("progression")
-    state: ProgressionState | None = None
-    if isinstance(raw_progression, dict):
-        try:
-            state = ProgressionState.from_dict(raw_progression)
-        except Exception:  # pragma: no cover - malformed legacy payloads should not break projection
-            state = None
-    if state is None:
-        class_id = str(player.dominant_class or "adventurer")
-        state = ProgressionState(
-            actor_id="player",
-            xp=player.xp,
-            level=player.level,
-            classes=[class_id],
-            class_levels={class_id: player.level},
-            bab=int(player.raw_payload.get("bab", 0)),
-            saves={str(key): int(value) for key, value in dict(player.raw_payload.get("saves", {})).items()},
-        )
+    state = progression_runtime_state(player)
+    dominant_class = str(player.raw_payload.get("class_name", player.dominant_class or "adventurer")).strip().lower() or "adventurer"
+    dominant_class_label = str(get_class(dominant_class).get("name", dominant_class.replace("_", " ").title()))
     return {
+        "xp": int(state.xp),
+        "level": int(state.level),
+        "classes": list(state.classes),
+        "class_levels": {str(key): int(value) for key, value in state.class_levels.items()},
+        "dominant_class": dominant_class,
+        "dominant_class_label": dominant_class_label,
         "proficiency_points_available": int(state.proficiency_points_available),
         "skill_points_available": int(state.skill_points_available),
         "ability_increases_available": int(state.ability_increases_available),
@@ -157,7 +148,8 @@ def build_settlement_state(
 def build_character_sheet(context: CampaignContext, settlement_state: dict[str, Any] | None = None) -> dict[str, Any]:
     player = context.player
     equipment_payload = build_actor_equipment_payload(player)
-    dominant_class = str(player.dominant_class or "adventurer")
+    progression_summary = _build_progression_summary(player)
+    dominant_class = str(progression_summary.get("dominant_class", player.dominant_class or "adventurer"))
     stats = []
     # Ability order loaded from character_creation.json — not hardcoded
     for ability in get_creation_ability_order():
@@ -217,7 +209,7 @@ def build_character_sheet(context: CampaignContext, settlement_state: dict[str, 
     return {
         "name": player.name,
         "race": player.race,
-        "class_name": dominant_class.capitalize(),
+        "class_name": str(progression_summary.get("dominant_class_label", dominant_class.capitalize())),
         "level": player.level,
         "alignment": player.alignment,
         "stats": stats,
@@ -236,7 +228,7 @@ def build_character_sheet(context: CampaignContext, settlement_state: dict[str, 
         "inventory": [inventory_item_row(item) for item in player.inventory],
         "passives": copy.deepcopy(player.passives),
         "medical": build_medical_payload(player),
-        "progression": _build_progression_summary(player),
+        "progression": progression_summary,
         "settlement_role": str((settlement_state or {}).get("player_role", "commander")),
         "creation_summary": creation_summary,
     }

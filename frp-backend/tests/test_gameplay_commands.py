@@ -442,20 +442,21 @@ class TestClassAbilityCommand:
         assert third is not None
         assert "second wind" in third[0].lower()
 
-    def test_unimplemented_active_ability_fails_non_mutating(self):
+    def test_generic_active_ability_resolves_via_dispatcher(self):
+        """Active abilities without bespoke handlers resolve through the
+        generic dispatcher instead of returning 'not yet implemented'."""
         _rt, ctx = _make_campaign()
         player = _player_actor(ctx)
         player.raw_payload["class_name"] = "warrior"
         player.raw_payload["level"] = 5
-        baseline_hp = int(player.stats.get("hp", 0))
-        baseline_state = dict(player.raw_payload.get("class_ability_state", {}))
 
         result = maybe_handle_progression_command(ctx, "use ability mighty blow")
 
         assert result is not None
-        assert "not yet implemented" in result[0].lower()
-        assert int(player.stats.get("hp", 0)) == baseline_hp
-        assert dict(player.raw_payload.get("class_ability_state", {})) == baseline_state
+        assert result[1] == "progression"
+        # Generic dispatcher handles damage/strike abilities
+        assert "mighty blow" in result[0].lower()
+        assert "not yet implemented" not in result[0].lower()
 
 
 # ---------------------------------------------------------------------------

@@ -1611,36 +1611,46 @@ def _check_level_up(player: ActorRecord) -> list[dict[str, Any]]:
     narrow adapter over kernel/progression.py so level-up behavior stays
     data-driven and testable without reviving legacy progression code.
     """
-    from engine.kernel.progression import can_level_up, execute_level_up
+    from engine.kernel.progression import execute_level_up
 
     events: list[dict[str, Any]] = []
-    progression_state, class_id, class_def = _progression_adapter(player)
-    if progression_state is None or class_def is None:
+    progression_state, primary_class_id, class_defs = _progression_adapter(player)
+    if progression_state is None or not class_defs:
         return events
 
     end_mod = (int(player.stats.get("END", 10)) - 10) // 2
-    hit_die_roll = _deterministic_hit_die_roll(player, class_id)
+    preferred_class = primary_class_id
 
-    while can_level_up(progression_state, {class_id: class_def}):
+    while True:
+        class_id = _next_level_up_class_id(progression_state, class_defs, preferred_class)
+        if class_id is None:
+            break
+        class_def = class_defs[class_id]
+        hit_die_roll = _deterministic_hit_die_roll(player, class_id)
         result = execute_level_up(
             progression_state,
             class_id,
             class_def,
             hit_die_roll=hit_die_roll,
             end_modifier=end_mod,
+            class_defs=class_defs,
         )
         _apply_progression_state(player, progression_state, result.hp_gained)
         events.append({
             "event_type": "level_up",
             "summary": (
-                f"{player.identity.display_name} reached level {progression_state.level}! "
+                f"{player.identity.display_name} reached {class_def.label} {result.new_level} "
+                f"(total level {progression_state.level})! "
                 f"(+{result.hp_gained} HP, max HP now {int(player.stats.get('max_hp', 1))})"
             ),
             "actor_id": player.identity.actor_id,
             "new_level": progression_state.level,
+            "leveled_class": class_id,
+            "new_class_level": result.new_level,
             "hp_gained": result.hp_gained,
             "new_max_hp": int(player.stats.get("max_hp", 1)),
         })
+        preferred_class = class_id
 
     return events
 
@@ -1650,9 +1660,8 @@ def _progression_adapter(player: ActorRecord):
     from engine.data.runtime import get_xp_thresholds
     from engine.kernel.progression import ClassDef, ProgressionState
 
-    class_id = str(player.raw_payload.get("class_name", "warrior")).lower()
+    primary_class_id = str(player.raw_payload.get("class_name", "warrior")).strip().lower() or "warrior"
     thresholds = get_xp_thresholds()
-    class_data = get_class(class_id)
     if not thresholds:
         return None, None, None
 
@@ -1666,20 +1675,49 @@ def _progression_adapter(player: ActorRecord):
         progression_state = ProgressionState(actor_id=player.identity.actor_id)
     progression_state.actor_id = player.identity.actor_id
     progression_state.xp = int(player.raw_payload.get("xp", progression_state.xp))
-    progression_state.level = int(player.raw_payload.get("level", progression_state.level or 1))
-    progression_state.classes = list(progression_state.classes or [class_id])
-    if class_id not in progression_state.classes:
-        progression_state.classes.append(class_id)
-    if not progression_state.class_levels:
-        progression_state.class_levels = {class_id: progression_state.level}
-    else:
-        progression_state.class_levels[class_id] = int(player.raw_payload.get("level", progression_state.class_levels.get(class_id, progression_state.level)))
     progression_state.bab = int(player.raw_payload.get("bab", progression_state.bab))
     progression_state.saves = {
         str(key): int(value)
         for key, value in dict(player.raw_payload.get("saves", progression_state.saves)).items()
     }
-    class_def = ClassDef(
+    fallback_level = max(1, int(player.raw_payload.get("level", progression_state.level or 1)))
+    normalized_levels = {
+        str(key).strip().lower(): int(value)
+        for key, value in dict(progression_state.class_levels).items()
+        if str(key).strip()
+    }
+    class_order: list[str] = []
+    for candidate in [primary_class_id, *progression_state.classes, *normalized_levels.keys()]:
+        normalized = str(candidate).strip().lower()
+        if normalized and normalized not in class_order:
+            class_order.append(normalized)
+    if not class_order:
+        class_order = [primary_class_id]
+    if not normalized_levels:
+        normalized_levels = {class_order[0]: fallback_level}
+    elif class_order[0] not in normalized_levels:
+        remaining_levels = max(1, fallback_level - sum(normalized_levels.values()))
+        normalized_levels[class_order[0]] = remaining_levels
+    for class_id in normalized_levels:
+        if class_id not in class_order:
+            class_order.append(class_id)
+    progression_state.class_levels = normalized_levels
+    progression_state.classes = class_order
+    progression_state.level = max(1, sum(normalized_levels.values()))
+
+    class_defs = {
+        class_id: _runtime_class_def(player, class_id, thresholds)
+        for class_id in class_order
+    }
+    return progression_state, primary_class_id, class_defs
+
+
+def _runtime_class_def(player: ActorRecord, class_id: str, thresholds: list[int]):
+    from engine.data.classes import get_class
+    from engine.kernel.progression import ClassDef
+
+    class_data = get_class(class_id)
+    return ClassDef(
         class_id=class_id,
         label=str(class_data.get("name", class_id.title())),
         hit_die=int(class_data.get("hit_die_size", player.raw_payload.get("hit_die_size", 8) or 8)),
@@ -1692,7 +1730,25 @@ def _progression_adapter(player: ActorRecord):
         hit_die_cap_level=len(thresholds),
         xp_table=list(thresholds),
     )
-    return progression_state, class_id, class_def
+
+
+def _next_level_up_class_id(progression_state: Any, class_defs: dict[str, Any], preferred_class_id: str | None = None) -> str | None:
+    shared_xp = int(progression_state.xp) // max(1, len(class_defs))
+    ordered_classes: list[str] = []
+    for candidate in [preferred_class_id, *progression_state.classes, *class_defs.keys()]:
+        normalized = str(candidate or "").strip().lower()
+        if normalized and normalized not in ordered_classes:
+            ordered_classes.append(normalized)
+    for class_id in ordered_classes:
+        class_def = class_defs.get(class_id)
+        if class_def is None:
+            continue
+        current_level = int(progression_state.class_levels.get(class_id, 0))
+        if current_level >= len(class_def.xp_table):
+            continue
+        if shared_xp >= int(class_def.xp_table[current_level]):
+            return class_id
+    return None
 
 
 def _adapter_bab_rate(player: ActorRecord, class_data: dict[str, Any]) -> str:
@@ -1733,10 +1789,20 @@ def _apply_progression_state(player: ActorRecord, progression_state: Any, hp_gai
     new_max_hp = int(player.stats.get("max_hp", 1)) + int(hp_gained)
     player.stats["max_hp"] = new_max_hp
     player.stats["hp"] = new_max_hp
+    if getattr(progression_state, "class_levels", None):
+        progression_state.level = max(1, sum(int(value) for value in progression_state.class_levels.values()))
     player.raw_payload["level"] = int(progression_state.level)
     player.raw_payload["xp"] = int(progression_state.xp)
     player.raw_payload["bab"] = int(progression_state.bab)
     player.raw_payload["saves"] = dict(progression_state.saves)
+    class_order = [str(item).strip().lower() for item in list(getattr(progression_state, "classes", [])) if str(item).strip()]
+    primary_class = str(player.raw_payload.get("class_name", "warrior")).strip().lower() or "warrior"
+    if primary_class and primary_class not in class_order:
+        class_order.insert(0, primary_class)
+    for class_id in class_order:
+        if int(getattr(progression_state, "class_levels", {}).get(class_id, 0)) > int(getattr(progression_state, "class_levels", {}).get(primary_class, 0)):
+            primary_class = class_id
+    player.raw_payload["class_name"] = primary_class
     player.raw_payload["progression"] = progression_state.to_dict()
 
 

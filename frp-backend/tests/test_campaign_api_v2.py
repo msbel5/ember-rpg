@@ -424,6 +424,19 @@ def test_new_campaign_seeds_only_level_gated_authored_act_one_offers():
     assert "main_shadows_over_aldenmoor" not in offers
 
 
+def test_new_campaign_also_exposes_live_procedural_region_offers():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("WorldQuester", "warrior", "fantasy_ember", "standard", 42)
+
+    from engine.api.campaign.quest_bridge import current_quest_offers
+
+    procedural = [offer for offer in current_quest_offers(context) if offer.get("source") == "procedural_region"]
+
+    assert procedural
+    assert all(str(offer.get("quest_id", "")).startswith(f"{context.region_snapshot.region_id}_") for offer in procedural)
+    assert all(offer.get("kind") for offer in procedural)
+
+
 def test_accepting_authored_offer_normalizes_required_count_objectives():
     runtime = CampaignRuntime()
     context = runtime.create_campaign("Normalizer", "warrior", "fantasy_ember", "standard", 42)
@@ -516,6 +529,76 @@ def test_travel_does_not_erase_authored_offers():
     assert travel["command_type"] == "travel"
     assert "tutorial_troubled_village" in before
     assert "tutorial_troubled_village" in after
+
+
+def test_world_tick_refreshes_live_region_procedural_offer_ids():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("Ticker", "warrior", "fantasy_ember", "standard", 42)
+
+    from engine.api.campaign.quest_bridge import current_quest_offers
+    from engine.api.campaign.runtime_commands import advance_world_tick
+
+    before = {
+        offer["quest_id"]
+        for offer in current_quest_offers(context)
+        if offer.get("source") == "procedural_region"
+    }
+
+    advance_world_tick(context, hours=24)
+
+    after = {
+        offer["quest_id"]
+        for offer in current_quest_offers(context)
+        if offer.get("source") == "procedural_region"
+    }
+
+    assert before
+    assert after
+    assert before != after
+    assert all(quest_id.startswith(f"{context.region_snapshot.region_id}_") for quest_id in after)
+
+
+def test_travel_switches_procedural_offers_to_destination_region():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign("TravelerOffers", "warrior", "fantasy_ember", "standard", 42)
+
+    from engine.api.campaign.quest_bridge import current_quest_offers
+
+    start_region_id = context.region_snapshot.region_id
+    before = {
+        offer["quest_id"]
+        for offer in current_quest_offers(context)
+        if offer.get("source") == "procedural_region"
+    }
+    destination = next(option for option in runtime.snapshot(context.campaign_id)["campaign"]["travel_options"] if not option["is_current"])
+
+    started = runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="travel",
+        args={
+            "action_id": "start",
+            "route_id": destination["route_id"],
+            "destination_region_id": destination["destination_region_id"],
+            "destination_settlement_id": destination["destination_settlement_id"],
+        },
+    )
+    assert started["command_type"] == "travel"
+
+    while context.region_snapshot.region_id != destination["destination_region_id"]:
+        runtime.run_command(context.campaign_id, "continue travel")
+
+    after = {
+        offer["quest_id"]
+        for offer in current_quest_offers(context)
+        if offer.get("source") == "procedural_region"
+    }
+    assert context.region_snapshot.region_id == destination["destination_region_id"]
+    assert context.region_snapshot.region_id != start_region_id
+    assert before
+    assert after
+    assert before != after
+    assert all(quest_id.startswith(f"{context.region_snapshot.region_id}_") for quest_id in after)
 
 
 def test_collect_objective_survives_inventory_command_and_keeps_progress_details():

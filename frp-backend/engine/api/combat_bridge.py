@@ -13,6 +13,7 @@ from engine.kernel.gameplay import actor_can_cast_registry_spells
 from engine.kernel.combat_math import ability_modifier
 from engine.kernel.game_state import FORMATIONS, party_tactic_for_actor
 from engine.map import TileType
+from engine.world.proximity import combat_targeting_check
 
 if TYPE_CHECKING:
     from engine.api.campaign.context import CampaignContext
@@ -36,6 +37,8 @@ _DIRECTION_DELTAS: dict[str, tuple[int, int]] = {
     "east": (1, 0),
     "west": (-1, 0),
 }
+_RANGED_ATTACK_TYPES = {"ranged", "launcher", "thrown", "projectile", "beam"}
+_LOS_PROJECTILE_TYPES = {"arrow", "fireball", "cone", "bouncing", "traveling", "beam", "laser"}
 
 
 def maybe_handle_combat_command(context: "CampaignContext", command_text: str) -> Optional[tuple[str, str, int]]:
@@ -175,12 +178,17 @@ def _execute_attack(
 ) -> tuple[str, str, int]:
     if not getattr(target, "alive", True):
         return (f"{target.identity.display_name} is already dead.", "combat", 0)
+    combat_was_active = _combat_state(context) is not None
     combat_state = _ensure_combat_state(context, actors, player, target, _combat_seed(context, offset=1))
     state_ready = _ensure_player_turn(context, combat_state, actors)
     if state_ready["resolved"]:
         return (state_ready["summary"] or "Combat is already over.", "combat", 0)
     if state_ready["blocked"]:
         return (state_ready["summary"], "combat", 0)
+    legality = _combat_attack_legality(context, player, target, weapon=_get_equipped_weapon(player))
+    if not legality["allowed"]:
+        _store_combat_state(context, combat_state)
+        return (_attack_blocked_message(target, legality, combat_started=not combat_was_active), "combat", 0)
     attack_result = run_attack(
         combat_state,
         actors,
@@ -406,21 +414,31 @@ def _resolve_non_player_turns(
                 )
             )
         else:
-            try:
-                attack_result = run_attack(
-                    combat_state,
-                    actors,
-                    active.actor_id,
-                    target_id,
-                    weapon=_get_equipped_weapon(actor),
-                    seed=_combat_seed(context, combat_state, offset=seed_offset + (step * 37) + 11),
-                )
-            except ValueError as exc:
-                logger.debug("Combat auto-turn skipped for %s: %s", active.actor_id, exc)
+            target_actor = actors.get(target_id)
+            if target_actor is None:
                 active.turn_resources.action = False
-                attack_result = None
-            if attack_result is not None:
-                messages.append(_apply_attack_result(actors, attack_result))
+                actor.raw_payload["defensive_stance"] = True
+                messages.append(f"{actor.name} takes a defensive stance.")
+            else:
+                legality = _combat_attack_legality(context, actor, target_actor, weapon=_get_equipped_weapon(actor))
+                if legality["allowed"]:
+                    try:
+                        attack_result = run_attack(
+                            combat_state,
+                            actors,
+                            active.actor_id,
+                            target_id,
+                            weapon=_get_equipped_weapon(actor),
+                            seed=_combat_seed(context, combat_state, offset=seed_offset + (step * 37) + 11),
+                        )
+                    except ValueError as exc:
+                        logger.debug("Combat auto-turn skipped for %s: %s", active.actor_id, exc)
+                        active.turn_resources.action = False
+                        attack_result = None
+                    if attack_result is not None:
+                        messages.append(_apply_attack_result(actors, attack_result))
+                else:
+                    messages.append(_advance_toward_target(context, actors, active, actor, target_actor))
         if check_combat_end(combat_state, actors):
             combat_state.phase = "resolved"
             break
@@ -785,7 +803,8 @@ def _resolve_companion_turn(
         active_entry.turn_resources.action = False
         actor.raw_payload["defensive_stance"] = True
         return f"{actor.name} takes a defensive stance."
-    if _adjacent(actor, target):
+    legality = _combat_attack_legality(context, actor, target, weapon=_get_equipped_weapon(actor))
+    if legality["allowed"]:
         try:
             attack_result = run_attack(
                 combat_state,
@@ -812,15 +831,7 @@ def _resolve_companion_turn(
             active_entry.turn_resources.action = False
             actor.raw_payload["defensive_stance"] = True
             return f"{actor.name} holds position near the party."
-    next_step = _companion_step_toward(context, actor, target)
-    if next_step is not None:
-        _move_actor_projection(context, active_entry.actor_id, next_step[0], next_step[1], actors)
-        active_entry.turn_resources.movement = max(0, int(active_entry.turn_resources.movement) - 1)
-        active_entry.turn_resources.action = False
-        return f"{actor.name} advances toward {target.name}."
-    active_entry.turn_resources.action = False
-    actor.raw_payload["defensive_stance"] = True
-    return f"{actor.name} takes a defensive stance."
+    return _advance_toward_target(context, actors, active_entry, actor, target)
 
 
 def _apply_attack_result(actors: dict[str, Any], attack_result: Any) -> str:
@@ -924,6 +935,88 @@ def _build_move_options(
     return options
 
 
+def _weapon_attack_profile(weapon: "ItemStack" | None) -> dict[str, Any]:
+    payload = dict(getattr(weapon, "payload", {}) or {}) if weapon is not None else {}
+    profile: dict[str, Any] = dict(payload.get("attack_profile", {}) or {})
+    combat_headers = payload.get("combat_headers")
+    if not profile and isinstance(combat_headers, list) and combat_headers:
+        first_header = combat_headers[0]
+        if isinstance(first_header, dict):
+            profile.update(first_header)
+    for key in ("range", "max_range"):
+        value = profile.get(key, payload.get(key))
+        if value not in (None, ""):
+            profile["range"] = int(value)
+            break
+    attack_type = str(profile.get("attack_type", payload.get("attack_type", ""))).strip().lower()
+    projectile_type = str(profile.get("projectile_type", payload.get("projectile_type", "none"))).strip().lower() or "none"
+    max_range = max(1, int(profile.get("range", 1)))
+    if attack_type in _RANGED_ATTACK_TYPES or projectile_type in _LOS_PROJECTILE_TYPES or max_range > 1:
+        return {
+            "attack_mode": "ranged",
+            "geometry": projectile_type if projectile_type != "none" else "line",
+            "max_range": max_range,
+            "requires_line_of_sight": True,
+            "projectile_type": projectile_type,
+        }
+    return {
+        "attack_mode": "melee",
+        "geometry": "contact",
+        "max_range": 1,
+        "requires_line_of_sight": False,
+        "projectile_type": projectile_type,
+    }
+
+
+def _combat_attack_legality(
+    context: "CampaignContext",
+    attacker: Any,
+    target: Any,
+    *,
+    weapon: "ItemStack" | None,
+) -> dict[str, Any]:
+    targeting = _weapon_attack_profile(weapon)
+    legality = combat_targeting_check(
+        [int(attacker.position.x), int(attacker.position.y)],
+        [int(target.position.x), int(target.position.y)],
+        max_range=int(targeting["max_range"]),
+        map_data=getattr(context, "map_data", None),
+        requires_line_of_sight=bool(targeting["requires_line_of_sight"]),
+        adjacency_only=str(targeting["attack_mode"]) == "melee",
+    )
+    legality["targeting"] = targeting
+    return legality
+
+
+def _attack_blocked_message(target: Any, legality: dict[str, Any], *, combat_started: bool) -> str:
+    target_name = getattr(target, "name", target.identity.display_name)
+    prefix = "Combat begins. " if combat_started else ""
+    if legality.get("reason") == "no_line_of_sight":
+        return f"{prefix}You do not have a clear line of sight to {target_name}."
+    max_range = int(legality.get("max_range", 1))
+    distance = int(legality.get("distance", 0))
+    attack_mode = str((legality.get("targeting") or {}).get("attack_mode", "attack"))
+    return f"{prefix}{target_name} is out of range for your {attack_mode} attack ({distance} tiles vs {max_range})."
+
+
+def _advance_toward_target(
+    context: "CampaignContext",
+    actors: dict[str, Any],
+    active_entry: Any,
+    actor: Any,
+    target: Any,
+) -> str:
+    next_step = _companion_step_toward(context, actor, target)
+    if next_step is not None:
+        _move_actor_projection(context, active_entry.actor_id, next_step[0], next_step[1], actors)
+        active_entry.turn_resources.movement = max(0, int(active_entry.turn_resources.movement) - 1)
+        active_entry.turn_resources.action = False
+        return f"{actor.name} advances toward {target.name}."
+    active_entry.turn_resources.action = False
+    actor.raw_payload["defensive_stance"] = True
+    return f"{actor.name} takes a defensive stance."
+
+
 def build_combat_payload(context: "CampaignContext") -> Optional[dict[str, Any]]:
     combat_state = _combat_state(context)
     if combat_state is None or combat_state.phase == "resolved":
@@ -955,7 +1048,7 @@ def build_combat_payload(context: "CampaignContext") -> Optional[dict[str, Any]]
         }
         combatants.append(payload)
         if not entry.is_player:
-            targets.append({
+            target_payload = {
                 "actor_id": entry.actor_id,
                 "name": actor.name,
                 "alive": bool(actor.alive),
@@ -963,7 +1056,20 @@ def build_combat_payload(context: "CampaignContext") -> Optional[dict[str, Any]]
                 "max_hp": int(actor.stats.get("max_hp", 1)),
                 "position": [int(actor.position.x), int(actor.position.y)],
                 "called_shot_zones": _called_shot_zones(actor),
-            })
+            }
+            if active_actor_id == "player":
+                player_actor = actors.get("player")
+                if player_actor is not None:
+                    legality = _combat_attack_legality(context, player_actor, actor, weapon=_get_equipped_weapon(player_actor))
+                    target_payload.update(
+                        {
+                            "attackable": bool(legality["allowed"]),
+                            "attack_blocked_reason": legality["reason"],
+                            "distance": int(legality["distance"]),
+                            "targeting": legality["targeting"],
+                        }
+                    )
+            targets.append(target_payload)
     available_actions = list(_SUPPORTED_ACTIONS) if active_actor_id == "player" else []
     if active_actor_id == "player":
         active_actor = actors.get("player")

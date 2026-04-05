@@ -269,6 +269,104 @@ def buy_repair(
     return True, cost
 
 
+# ── Generic service dispatcher ───────────────────────────────────────
+#
+# Centralizes service resolution so new service types (donation,
+# weapon_training, mount_rental, etc.) can be added in _SERVICE_HANDLERS
+# without touching campaign_commands.py parser logic.
+#
+# Each handler receives (actor, store, service, **kwargs) and returns
+# (bool, str) = (success, message).
+
+
+def _handle_room(actor: ActorRecord, store: StoreDef, service: StoreService, **kwargs: Any) -> tuple[bool, str]:
+    return rent_room(actor, store, service.service_id)
+
+
+def _handle_identify(actor: ActorRecord, store: StoreDef, service: StoreService, **kwargs: Any) -> tuple[bool, str]:
+    item = kwargs.get("item")
+    item_def = kwargs.get("item_def")
+    if item is None or item_def is None:
+        return False, "item and item_def required for identification"
+    ok, msg = buy_identification(actor, store, item, item_def)
+    return ok, msg
+
+
+def _handle_healing(actor: ActorRecord, store: StoreDef, service: StoreService, **kwargs: Any) -> tuple[bool, str]:
+    return buy_healing(actor, store, service.service_id)
+
+
+def _handle_repair(actor: ActorRecord, store: StoreDef, service: StoreService, **kwargs: Any) -> tuple[bool, str]:
+    item = kwargs.get("item")
+    item_def = kwargs.get("item_def")
+    if item is None or item_def is None:
+        return False, "item and item_def required for repair"
+    ok, cost = buy_repair(actor, store, item, item_def)
+    return ok, f"repaired for {cost} gold" if ok else f"repair costs {cost} gold"
+
+
+def _handle_generic_gold_service(
+    actor: ActorRecord, store: StoreDef, service: StoreService, **kwargs: Any,
+) -> tuple[bool, str]:
+    """Fallback for simple gold-for-effect services (donation, training, rental, etc.)."""
+    if _actor_gold(actor) < int(service.price):
+        return False, "insufficient gold"
+    _set_actor_gold(actor, _actor_gold(actor) - int(service.price))
+    return True, f"{service.label} complete"
+
+
+# Map of service_type -> handler.  New services go here, nowhere else.
+_SERVICE_HANDLERS: dict[str, Any] = {
+    "room": _handle_room,
+    "identify": _handle_identify,
+    "healing": _handle_healing,
+    "repair": _handle_repair,
+    # Future services — add handler and register here:
+    # "donation": _handle_generic_gold_service,
+    # "weapon_training": _handle_generic_gold_service,
+    # "mount_rental": _handle_generic_gold_service,
+}
+
+
+def dispatch_service(
+    actor: ActorRecord,
+    store: StoreDef,
+    service_type: str,
+    service_id: str | None = None,
+    **kwargs: Any,
+) -> tuple[bool, str]:
+    """
+    Resolve a store service through the centralized dispatcher.
+
+    Looks up ``service_type`` in ``_SERVICE_HANDLERS`` and delegates.
+    If the type has no explicit handler, falls back to the generic
+    gold-for-effect handler so new service types work without parser changes.
+
+    Args:
+        actor: The customer ActorRecord.
+        store: The StoreDef providing the service.
+        service_type: Key in _SERVICE_HANDLERS (e.g. "room", "identify").
+        service_id: Optional specific service_id (first match of type used otherwise).
+        **kwargs: Extra arguments forwarded to the handler (item, item_def, etc.).
+
+    Returns:
+        (success, message) tuple.
+    """
+    if service_id is not None:
+        service = _find_service(store, service_id, service_type)
+    else:
+        service = _first_service_of_type(store, service_type)
+    if service is None:
+        return False, f"{service_type} service unavailable"
+    handler = _SERVICE_HANDLERS.get(service_type, _handle_generic_gold_service)
+    return handler(actor, store, service, **kwargs)
+
+
+def register_service_handler(service_type: str, handler: Any) -> None:
+    """Register a new service handler at runtime (for plugins/extensions)."""
+    _SERVICE_HANDLERS[service_type] = handler
+
+
 def adjust_store_prices(store: StoreDef, colony_ledger: ProductionLedger) -> None:
     surplus = set(str(entry) for entry in colony_ledger.surpluses)
     shortage = set(str(entry) for entry in colony_ledger.shortages)

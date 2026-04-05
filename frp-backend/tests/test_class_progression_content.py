@@ -9,7 +9,7 @@ import pytest
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 
-ALL_CLASS_IDS = {"warrior", "rogue", "mage", "priest", "ranger", "paladin", "bard"}
+ALL_CLASS_IDS = {"warrior", "rogue", "mage", "priest", "ranger", "paladin", "bard", "druid", "monk", "warlock", "sorcerer"}
 VALID_STATS = {"MIG", "AGI", "END", "MND", "INS", "PRE"}
 ABILITY_REQUIRED_KEYS = {"name", "description", "passive", "required_level", "class_name", "cost"}
 
@@ -45,7 +45,7 @@ class TestClassIdNormalization:
             )
 
     def test_class_ids_match_count(self, classes):
-        assert len(classes) == 7, f"Expected 7 classes, got {len(classes)}"
+        assert len(classes) == 11, f"Expected 11 classes, got {len(classes)}"
 
 
 # ── Progression table coverage ───────────────────────────────────────
@@ -113,10 +113,10 @@ class TestClassAbilitiesCoverage:
         missing = ALL_CLASS_IDS - set(abilities.keys())
         assert not missing, f"class_abilities missing: {sorted(missing)}"
 
-    def test_each_class_has_exactly_5_abilities(self, progression):
+    def test_each_class_has_at_least_5_abilities(self, progression):
         for cls, ab_list in progression["class_abilities"].items():
-            assert len(ab_list) == 5, (
-                f"class_abilities[{cls}] has {len(ab_list)} abilities, expected 5"
+            assert len(ab_list) >= 5, (
+                f"class_abilities[{cls}] has {len(ab_list)} abilities, expected at least 5"
             )
 
     def test_abilities_have_required_schema(self, progression):
@@ -149,10 +149,10 @@ class TestClassAbilitiesCoverage:
                 f"class_abilities[{cls}] levels are not ascending: {levels}"
             )
 
-    def test_ability_levels_range_1_to_5(self, progression):
+    def test_ability_levels_cover_1_through_5_at_minimum(self, progression):
         for cls, ab_list in progression["class_abilities"].items():
             levels = {ab["required_level"] for ab in ab_list}
-            assert levels == {1, 2, 3, 4, 5}, (
+            assert {1, 2, 3, 4, 5} <= levels, (
                 f"class_abilities[{cls}] does not cover levels 1-5: {sorted(levels)}"
             )
 

@@ -21,6 +21,7 @@ from engine.api.campaign.authored_campaigns import (
     resolve_authored_offer,
 )
 from engine.kernel.game_state import add_journal_entry, modify_reputation
+from .world import runtime_region_state
 
 if TYPE_CHECKING:
     from engine.api.campaign.context import CampaignContext
@@ -242,9 +243,18 @@ def sync_quest_state(context: "CampaignContext") -> None:
 
 
 def current_quest_offers(context: "CampaignContext") -> list[dict[str, Any]]:
-    region_offers = list((context.campaign_state or {}).get("quest_offers", []) or [])
-    if not region_offers:
-        region_offers = list(getattr(context, "quest_offers", []) or [])
+    region_offers = _runtime_region_offers(context)
+    preserved_offers = [
+        copy.deepcopy(offer)
+        for offer in list(getattr(context, "quest_offers", []) or [])
+        if isinstance(offer, dict) and str(offer.get("source", "")).strip().lower() != "procedural_region"
+    ]
+    if not preserved_offers:
+        preserved_offers = [
+            copy.deepcopy(offer)
+            for offer in list((context.campaign_state or {}).get("quest_offers", []) or [])
+            if isinstance(offer, dict) and str(offer.get("source", "")).strip().lower() != "procedural_region"
+        ]
     authored_offers = refresh_authored_campaign_offers(context)
     claimed_ids = {
         *{str(item.get("quest_id", item.get("id", ""))) for item in context.campaign_state.get("active_quests", [])},
@@ -252,7 +262,7 @@ def current_quest_offers(context: "CampaignContext") -> list[dict[str, Any]]:
         *{str(item) for item in context.campaign_state.get("failed_quest_ids", [])},
     }
     visible_offers: dict[str, dict[str, Any]] = {}
-    for offer in [*region_offers, *authored_offers]:
+    for offer in [*preserved_offers, *region_offers, *authored_offers]:
         if not isinstance(offer, dict):
             continue
         quest_id = str(offer.get("quest_id", offer.get("id", "")))
@@ -260,6 +270,24 @@ def current_quest_offers(context: "CampaignContext") -> list[dict[str, Any]]:
             continue
         visible_offers[quest_id] = copy.deepcopy(offer)
     return list(visible_offers.values())
+
+
+def _runtime_region_offers(context: "CampaignContext") -> list[dict[str, Any]]:
+    world = getattr(context, "world", None)
+    region_snapshot = getattr(context, "region_snapshot", None)
+    region_id = str(getattr(region_snapshot, "region_id", "")).strip()
+    if world is None or not region_id:
+        return []
+    runtime_state = runtime_region_state(world, region_id)
+    offers = list(runtime_state.get("quest_offers", []) or [])
+    normalized: list[dict[str, Any]] = []
+    for offer in offers:
+        if not isinstance(offer, dict):
+            continue
+        entry = copy.deepcopy(offer)
+        entry.setdefault("source", "procedural_region")
+        normalized.append(entry)
+    return normalized
 
 
 def tick_quest_tracker(context: "CampaignContext") -> list[dict[str, Any]]:
