@@ -363,7 +363,7 @@ class TestSpellRequestShape:
         assert result["command_type"] == "spell"
         assert "unknown" in result["narrative"].lower()
 
-    def test_cast_insufficient_sp_returns_spell_cmd_type(self):
+    def test_cast_without_prepared_slot_returns_spell_cmd_type(self):
         from engine.api.campaign.runtime import CampaignRuntime
         rt = CampaignRuntime()
         ctx = rt.create_campaign("SpellProbe3", "mage", "fantasy_ember", "standard", 44)
@@ -371,7 +371,7 @@ class TestSpellRequestShape:
         player.spell_points = 0
         result = rt.run_command(ctx.campaign_id, "cast fireball")
         assert result["command_type"] == "spell"
-        assert "not enough" in result["narrative"].lower()
+        assert "no available slot" in result["narrative"].lower()
 
 
 # ── Combat available_actions cast truthfulness ───────────────────────
@@ -379,10 +379,9 @@ class TestSpellRequestShape:
 
 class TestCombatCastTruthfulness:
     """Combat available_actions should only include 'cast' when the runtime
-    actually supports casting in combat-time. Currently it is hardcoded
-    and should NOT be advertised until the runtime wires it."""
+    can actually dispatch casting for the acting combatant."""
 
-    def test_combat_available_actions_does_not_include_cast_unless_supported(self):
+    def test_combat_available_actions_include_cast_for_supported_mage(self):
         from fastapi.testclient import TestClient
         from main import app
         tc = TestClient(app)
@@ -412,7 +411,6 @@ class TestCombatCastTruthfulness:
             pytest.skip("Attack did not enter combat")
 
         actions = body["campaign"]["combat"]["available_actions"]
-        # Contract: cast must not be advertised when runtime cannot dispatch it in combat
-        assert "cast" not in actions, (
-            "Combat payload advertises 'cast' but combat-time casting is not wired"
+        assert "cast" in actions, (
+            "Combat payload should advertise 'cast' when the active mage can cast in combat"
         )

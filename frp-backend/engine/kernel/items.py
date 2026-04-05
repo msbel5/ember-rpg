@@ -5,19 +5,33 @@ from random import Random
 from typing import Any
 
 from engine.kernel.actor import ActorRecord, MaterialDef
+from engine.kernel.actor_items import (
+    CANONICAL_EQUIPMENT_SLOTS,
+    LEGACY_SLOT_ALIASES,
+    candidate_canonical_slots_for_item_payload,
+    canonical_equipment_slot,
+    preferred_storage_slot_for_item,
+    storage_slots_for_canonical_slot,
+)
 from engine.kernel.common import serialize_value
 from engine.kernel.combat import QUALITY_MULTIPLIERS
 from engine.kernel.effects import apply_effect
 
 
-EQUIPMENT_SLOTS = [
-    "helmet", "armor", "shield", "gloves",
-    "left_ring", "right_ring", "amulet", "belt",
-    "boots", "cloak",
-    "weapon_1", "weapon_2", "weapon_3", "weapon_4",
-    "quiver_1", "quiver_2", "quiver_3", "quiver_4",
-    "quick_item_1", "quick_item_2", "quick_item_3",
-]
+EQUIPMENT_SLOTS = sorted(
+    set(
+        [
+            "helmet", "armor", "shield", "gloves",
+            "left_ring", "right_ring", "amulet", "belt",
+            "boots", "cloak", "cover", "weapon",
+            "weapon_1", "weapon_2", "weapon_3", "weapon_4",
+            "quiver_1", "quiver_2", "quiver_3", "quiver_4",
+            "quick_item_1", "quick_item_2", "quick_item_3",
+        ]
+        + list(CANONICAL_EQUIPMENT_SLOTS)
+        + list(LEGACY_SLOT_ALIASES.keys())
+    )
+)
 INVENTORY_SIZE = 16
 
 
@@ -171,14 +185,32 @@ def equip_item(actor: ActorRecord, item: ItemInstance, slot: str, item_def: Item
         raise ValueError("; ".join(failures))
 
     events: list[dict[str, Any]] = []
-    existing = list(actor.equipment.slots.get(slot, []))
+    requested_slot = str(slot)
+    canonical_slot = canonical_equipment_slot(requested_slot)
+    storage_slot = requested_slot
+    if canonical_slot is not None and requested_slot == canonical_slot:
+        storage_slot = preferred_storage_slot_for_item(
+            canonical_slot,
+            {
+                "id": item_def.item_def_id,
+                "item_def_id": item_def.item_def_id,
+                "name": item_def.label,
+                "type": item_def.item_type,
+            },
+        )
+    alias_slots = storage_slots_for_canonical_slot(canonical_slot) if canonical_slot is not None else [storage_slot]
+    existing: list[ItemInstance] = []
+    for alias_slot in alias_slots:
+        existing.extend(actor.equipment.slots.get(alias_slot, []))
+        if alias_slot != storage_slot:
+            actor.equipment.slots[alias_slot] = []
     if existing:
         for previous in existing:
             previous.equipped_slot = None
             actor.inventory.append(previous)
-            events.append({"type": "unequipped", "item_id": previous.instance_id, "slot": slot})
-    actor.equipment.slots[slot] = [item]
-    item.equipped_slot = slot
+            events.append({"type": "unequipped", "item_id": previous.instance_id, "slot": storage_slot, "canonical_slot": canonical_slot or storage_slot})
+    actor.equipment.slots[storage_slot] = [item]
+    item.equipped_slot = storage_slot
     if item in actor.inventory:
         actor.inventory.remove(item)
     for effect_id in item_def.equip_effect_ids:
@@ -187,7 +219,7 @@ def equip_item(actor: ActorRecord, item: ItemInstance, slot: str, item_def: Item
             continue
         apply_effect(actor, effect_def, source_id=item.instance_id, current_tick=0)
         events.append({"type": "equip_effect", "effect_id": effect_id})
-    events.append({"type": "equipped", "item_id": item.instance_id, "slot": slot})
+    events.append({"type": "equipped", "item_id": item.instance_id, "slot": storage_slot, "canonical_slot": canonical_slot or storage_slot})
     return events
 
 
@@ -295,6 +327,7 @@ def bypasses_weapon_immunity(item_def: ItemDef, target_traits: dict[str, Any]) -
 
 
 def _item_fits_slot(item_def: ItemDef, slot: str) -> bool:
+    normalized_slot = str(slot).strip().lower()
     slot_map = {
         "helmet": {"helmet"},
         "armor": {"armor"},
@@ -307,13 +340,35 @@ def _item_fits_slot(item_def: ItemDef, slot: str) -> bool:
         "boots": {"boots"},
         "cloak": {"cloak"},
     }
-    if slot.startswith("weapon_"):
+    if normalized_slot.startswith("weapon_"):
         return item_def.item_type == "weapon"
-    if slot.startswith("quiver_"):
+    if normalized_slot.startswith("quiver_"):
         return item_def.item_type in {"ammunition"}
-    if slot.startswith("quick_item_"):
+    if normalized_slot.startswith("quick_item_"):
         return item_def.item_type in {"potion", "scroll", "wand", "misc"}
-    return item_def.item_type in slot_map.get(slot, {item_def.item_type})
+    if normalized_slot in slot_map:
+        return item_def.item_type in slot_map.get(normalized_slot, {item_def.item_type})
+    canonical_slot = canonical_equipment_slot(normalized_slot)
+    if canonical_slot is None:
+        return item_def.item_type in slot_map.get(normalized_slot, {item_def.item_type})
+    candidates = set(
+        candidate_canonical_slots_for_item_payload(
+            {
+                "id": item_def.item_def_id,
+                "item_def_id": item_def.item_def_id,
+                "name": item_def.label,
+                "type": item_def.item_type,
+                "slot": normalized_slot,
+            }
+        )
+    )
+    if canonical_slot in candidates:
+        return True
+    if canonical_slot == "ring_right" and "ring_left" in candidates:
+        return True
+    if canonical_slot.startswith("attunement_") and {"trinket_1", "trinket_2"} & candidates:
+        return True
+    return False
 
 
 def _effect_registry(actor: ActorRecord) -> dict[str, Any]:

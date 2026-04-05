@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import re
 from collections import defaultdict
 from typing import Any
 
@@ -997,6 +999,18 @@ def _social_projection_fields(
     last_interaction = _normalized_optional_text(getattr(memory, "last_interaction", None))
     recent_conversation_count = len(list(getattr(memory, "conversations", []) or [])) if memory is not None else 0
     known_facts_count = len(list(getattr(memory, "known_facts", []) or [])) if memory is not None else 0
+    known_topic_ids = _known_topic_ids_for_actor(
+        context,
+        actor_id=actor_id,
+        memory_id=memory_id,
+        named_npc_id=named_npc_id,
+    )
+    ask_about_topic_ids = _ask_about_topic_ids_for_actor(
+        context,
+        actor_id=actor_id,
+        actor=actor,
+        known_topic_ids=known_topic_ids,
+    )
     has_met_player = any(
         (
             last_interaction,
@@ -1018,8 +1032,199 @@ def _social_projection_fields(
         "last_interaction": last_interaction,
         "recent_conversation_count": recent_conversation_count,
         "known_facts_count": known_facts_count,
+        "ask_about_topic_ids": ask_about_topic_ids,
+        "ask_about_topics_count": len(ask_about_topic_ids),
+        "known_topic_ids": known_topic_ids,
+        "known_topics_count": len(known_topic_ids),
         "memory_summary": _memory_summary(memory),
     }
+
+
+def build_canonical_knowledge_topics(context: CampaignContext | None) -> list[dict[str, Any]]:
+    cache = _knowledge_topic_cache(context)
+    return [copy.deepcopy(topic) for topic in cache["topics"]]
+
+
+def _knowledge_topic_cache(context: CampaignContext | None) -> dict[str, Any]:
+    if context is None:
+        return {"topics": [], "owners_by_topic_id": {}}
+    cached = getattr(context, "_knowledge_topic_cache", None)
+    if isinstance(cached, dict) and "topics" in cached and "owners_by_topic_id" in cached:
+        return cached
+
+    topics_by_id: dict[str, dict[str, Any]] = {}
+    manager = getattr(context, "npc_memory", None)
+    memories = getattr(manager, "memories", {}) if manager is not None else {}
+    for memory_id, memory in sorted(dict(memories).items(), key=lambda item: str(item[0])):
+        for fact in list(getattr(memory, "known_facts", []) or []):
+            label = _normalized_knowledge_label(fact)
+            if label is None:
+                continue
+            topic_id = _knowledge_topic_id(label)
+            topic_entry = topics_by_id.setdefault(
+                topic_id,
+                {
+                    "topic_id": topic_id,
+                    "label": label,
+                    "source_types": set(),
+                    "owner_ids": set(),
+                },
+            )
+            topic_entry["source_types"].add("memory_fact")
+            topic_entry["owner_ids"].add(str(memory_id))
+
+    rumor_network = getattr(context, "rumor_network", None)
+    active_rumors = rumor_network.get_all_active() if rumor_network is not None else []
+    for rumor in sorted(active_rumors, key=lambda item: (_normalized_knowledge_label(getattr(item, "fact", "")) or "", str(getattr(item, "rumor_id", "")))):
+        label = _normalized_knowledge_label(getattr(rumor, "fact", ""))
+        if label is None:
+            continue
+        topic_id = _knowledge_topic_id(label)
+        topic_entry = topics_by_id.setdefault(
+            topic_id,
+            {
+                "topic_id": topic_id,
+                "label": label,
+                "source_types": set(),
+                "owner_ids": set(),
+            },
+        )
+        topic_entry["source_types"].add("rumor")
+        topic_entry["owner_ids"].update(
+            str(owner_id).strip()
+            for owner_id in list(getattr(rumor, "heard_by", set()) or set())
+            if str(owner_id).strip()
+        )
+        source_npc = str(getattr(rumor, "source_npc", "") or "").strip()
+        if source_npc:
+            topic_entry["owner_ids"].add(source_npc)
+
+    topics: list[dict[str, Any]] = []
+    owners_by_topic_id: dict[str, list[str]] = {}
+    for topic_id, topic_entry in sorted(topics_by_id.items(), key=lambda item: (str(item[1]["label"]).lower(), str(item[0]))):
+        source_types = sorted({str(source_type) for source_type in topic_entry["source_types"] if str(source_type).strip()})
+        owners_by_topic_id[topic_id] = sorted({str(owner_id) for owner_id in topic_entry["owner_ids"] if str(owner_id).strip()})
+        topics.append(
+            {
+                "topic_id": topic_id,
+                "label": str(topic_entry["label"]),
+                "category": _knowledge_category(source_types),
+                "source_types": source_types,
+            }
+        )
+
+    cache = {
+        "topics": topics,
+        "owners_by_topic_id": owners_by_topic_id,
+    }
+    setattr(context, "_knowledge_topic_cache", cache)
+    return cache
+
+
+def _known_topic_ids_for_actor(
+    context: CampaignContext,
+    *,
+    actor_id: str,
+    memory_id: str,
+    named_npc_id: str | None,
+) -> list[str]:
+    candidate_ids = {
+        str(value).strip()
+        for value in (actor_id, memory_id, named_npc_id)
+        if str(value or "").strip()
+    }
+    if not candidate_ids:
+        return []
+    known_topic_ids: list[str] = []
+    seen: set[str] = set()
+
+    memory = _memory_entry_for_actor(context, actor_id=actor_id, memory_id=memory_id)
+    for fact in sorted({str(fact).strip() for fact in list(getattr(memory, "known_facts", []) or []) if str(fact).strip()}):
+        topic_id = f"fact.{_topic_slug_fragment(fact)}"
+        if topic_id in seen:
+            continue
+        seen.add(topic_id)
+        known_topic_ids.append(topic_id)
+
+    rumor_network = getattr(context, "rumor_network", None)
+    active_rumors = rumor_network.get_all_active() if rumor_network is not None else []
+    for rumor in sorted(active_rumors, key=lambda item: str(getattr(item, "rumor_id", ""))):
+        rumor_id = str(getattr(rumor, "rumor_id", "")).strip()
+        if not rumor_id:
+            continue
+        owner_ids = {
+            str(owner_id).strip()
+            for owner_id in list(getattr(rumor, "heard_by", set()) or set())
+            if str(owner_id).strip()
+        }
+        source_npc = str(getattr(rumor, "source_npc", "") or "").strip()
+        if source_npc:
+            owner_ids.add(source_npc)
+        if not owner_ids.intersection(candidate_ids):
+            continue
+        topic_id = f"rumor.{rumor_id}"
+        if topic_id in seen:
+            continue
+        seen.add(topic_id)
+        known_topic_ids.append(topic_id)
+    return known_topic_ids
+
+
+def _ask_about_topic_ids_for_actor(
+    context: CampaignContext,
+    *,
+    actor_id: str,
+    actor: Any,
+    known_topic_ids: list[str],
+) -> list[str]:
+    from .knowledge import related_discovered_topic_ids_for_actor
+
+    faction_id = str(getattr(getattr(actor, "identity", None), "faction_id", "") or "").strip()
+    ask_about_topic_ids: list[str] = []
+    seen: set[str] = set()
+
+    for topic_id in related_discovered_topic_ids_for_actor(context, actor_id, faction_id):
+        normalized = str(topic_id).strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        ask_about_topic_ids.append(normalized)
+
+    for topic_id in list(known_topic_ids or []):
+        normalized = str(topic_id).strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        ask_about_topic_ids.append(normalized)
+
+    return ask_about_topic_ids
+
+
+def _topic_slug_fragment(value: Any) -> str:
+    normalized = str(_normalized_knowledge_label(value) or "topic").lower()
+    normalized = re.sub(r"[^a-z0-9]+", "_", normalized)
+    return normalized.strip("_") or "topic"
+
+
+def _normalized_knowledge_label(value: Any) -> str | None:
+    text = " ".join(str(value or "").split()).strip()
+    return text or None
+
+
+def _knowledge_topic_id(label: str) -> str:
+    normalized = str(_normalized_knowledge_label(label) or "topic")
+    slug = re.sub(r"[^a-z0-9]+", "_", normalized.lower()).strip("_")[:48] or "topic"
+    digest = hashlib.sha1(normalized.lower().encode("utf-8")).hexdigest()[:12]
+    return f"topic_{slug}_{digest}"
+
+
+def _knowledge_category(source_types: list[str]) -> str:
+    normalized = sorted({str(source_type).strip() for source_type in source_types if str(source_type).strip()})
+    if normalized == ["rumor"]:
+        return "rumor"
+    if normalized == ["memory_fact"]:
+        return "fact"
+    return "mixed"
 
 
 def sync_combat_projection_state(context: CampaignContext) -> None:

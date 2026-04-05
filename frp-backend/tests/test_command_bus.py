@@ -56,3 +56,15 @@ def test_defend_and_stockpile_commands_change_settlement_controls():
     stockpile = runtime.run_command(context.campaign_id, "set stockpile medkits")
     stockpiles = stockpile["campaign"]["settlement"]["stockpiles"]
     assert any(entry["label"] == "Medkits Stockpile" for entry in stockpiles)
+
+
+def test_topics_command_routes_through_command_bus():
+    runtime = _runtime()
+    context = runtime.create_campaign("Scholar", adapter_id="fantasy_ember", seed=42)
+
+    result = runtime.run_command(context.campaign_id, "topics")
+
+    assert result["command_type"] == "knowledge"
+    assert "knowledge_view" in result
+    assert "topics" in result["knowledge_view"]
+    assert isinstance(result["campaign"]["knowledge"]["discovered_topic_ids"], list)

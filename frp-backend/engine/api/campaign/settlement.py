@@ -10,7 +10,7 @@ import logging
 from typing import Any
 
 from engine.api.campaign.context import CampaignContext
-from engine.api.campaign.live_kernel import build_actor_spell_payload, build_medical_payload
+from engine.api.campaign.live_kernel import build_actor_equipment_payload, build_actor_spell_payload, build_medical_payload
 from engine.api.gameplay_bridge import inventory_item_row, progression_class_abilities
 from engine.data.classes import get_creation_ability_order
 from engine.kernel.progression import ProgressionState
@@ -156,6 +156,7 @@ def build_settlement_state(
 
 def build_character_sheet(context: CampaignContext, settlement_state: dict[str, Any] | None = None) -> dict[str, Any]:
     player = context.player
+    equipment_payload = build_actor_equipment_payload(player)
     dominant_class = str(player.dominant_class or "adventurer")
     stats = []
     # Ability order loaded from character_creation.json — not hardcoded
@@ -227,7 +228,10 @@ def build_character_sheet(context: CampaignContext, settlement_state: dict[str, 
         "armor_class": player.ac,
         "initiative_bonus": player.initiative_bonus,
         "gold": player.gold,
-        "equipment": player.equipment.to_dict(),
+        "equipment": equipment_payload["equipment"],
+        "equipment_topology": equipment_payload["equipment_topology"],
+        "equipment_modifiers": equipment_payload["equipment_modifiers"],
+        "attunement": equipment_payload["attunement"],
         "inventory_count": len(player.inventory),
         "inventory": [inventory_item_row(item) for item in player.inventory],
         "passives": copy.deepcopy(player.passives),

@@ -503,6 +503,1073 @@
         }
       ],
       "quest_id": "main_abyssal_gate"
+    },
+    {
+      "id": "act_6",
+      "name": "Siege of Ironhold",
+      "description": "The fortress-city of Ironhold is under siege by an army of orcs and giants. Break through enemy lines, sabotage their siege engines, and rally the garrison to mount a counter-attack.",
+      "encounters": [
+        {
+          "id": "enc_6_1",
+          "name": "Orc Vanguard at the Gates",
+          "description": "Orc warriors have breached the outer walls and are streaming into the courtyard.",
+          "monsters": ["orc_warrior", "orc_warrior", "orc_warrior", "orc_warrior"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_6_2",
+          "name": "Hill Giant Siege Crew",
+          "description": "Hill giants operate massive catapults. Destroy them before the inner keep falls.",
+          "monsters": ["hill_giant", "hill_giant"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_6_3",
+          "name": "The Hobgoblin War Chief",
+          "description": "A hobgoblin captain commands the siege from a fortified position. Eliminating him will break the assault.",
+          "monsters": ["hobgoblin_captain", "orc_warrior", "orc_warrior"],
+          "difficulty": "hard"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_6_reach_ironhold",
+          "description": "Reach the besieged fortress of Ironhold",
+          "type": "visit",
+          "target": "ironhold_gates",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_6_repel_orcs",
+          "description": "Repel the orc vanguard from the courtyard",
+          "type": "kill",
+          "target": "orc_warrior",
+          "required_count": 4
+        },
+        {
+          "id": "main_act_6_destroy_catapults",
+          "description": "Defeat the hill giant siege crew",
+          "type": "kill",
+          "target": "hill_giant",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_6_defeat_war_chief",
+          "description": "Defeat the hobgoblin war chief directing the siege",
+          "type": "kill",
+          "target": "hobgoblin_captain",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_6_talk_garrison",
+          "description": "Rally the garrison commander for the counter-attack",
+          "type": "talk",
+          "target": "garrison_commander",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "potion_of_greater_healing", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "steel_ingot", "quantity": 3},
+        {"item_id": "ruby", "quantity": 1}
+      ],
+      "quest_id": "main_siege_of_ironhold"
+    },
+    {
+      "id": "act_7",
+      "name": "The Crown of Shadows",
+      "description": "Royal court intrigue draws you into a web of political assassination and betrayal. A shadow demon has infiltrated the king's court, possessing advisors one by one. Root out the demon before the kingdom falls to chaos.",
+      "encounters": [
+        {
+          "id": "enc_7_1",
+          "name": "Cultist Fanatics in the Catacombs",
+          "description": "Beneath the palace, cultists perform dark rituals to empower the shadow demon.",
+          "monsters": ["cultist_fanatic", "cultist_fanatic", "cultist_fanatic"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_7_2",
+          "name": "The Shadow Demon Revealed",
+          "description": "The shadow demon drops its disguise and attacks in the throne room.",
+          "monsters": ["shadow_demon", "cultist_fanatic"],
+          "difficulty": "very_hard"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_7_enter_palace",
+          "description": "Gain entry to the royal palace",
+          "type": "visit",
+          "target": "royal_palace",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_7_talk_spymaster",
+          "description": "Consult the royal spymaster about the infiltration",
+          "type": "talk",
+          "target": "royal_spymaster",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_7_clear_cultists",
+          "description": "Clear the cultist cell beneath the palace",
+          "type": "kill",
+          "target": "cultist_fanatic",
+          "required_count": 4
+        },
+        {
+          "id": "main_act_7_destroy_shadow_demon",
+          "description": "Destroy the shadow demon in the throne room",
+          "type": "kill",
+          "target": "shadow_demon",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_7_collect_crown",
+          "description": "Recover the Crown of Shadows used to channel the demon",
+          "type": "collect",
+          "target": "diamond",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "diamond", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 250},
+        {"item_id": "potion_of_greater_healing", "quantity": 2},
+        {"item_id": "scroll_of_haste", "quantity": 1}
+      ],
+      "quest_id": "main_crown_of_shadows"
+    },
+    {
+      "id": "act_8",
+      "name": "The Dragon Hunt: Green Peril",
+      "description": "A young green dragon terrorizes the farming valleys, poisoning rivers and livestock. Track the beast to its swamp lair and put an end to its reign of toxic terror.",
+      "encounters": [
+        {
+          "id": "enc_8_1",
+          "name": "Poisoned Shambling Mound",
+          "description": "Shambling mounds corrupted by the dragon's poison lurk in the wetlands.",
+          "monsters": ["shambling_mound", "shambling_mound"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_8_2",
+          "name": "The Green Dragon's Lair",
+          "description": "The young green dragon awaits in its poison-mist lair, surrounded by toxic pools.",
+          "monsters": ["young_green_dragon"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_8_visit_swamp",
+          "description": "Track the dragon to its swamp lair",
+          "type": "visit",
+          "target": "dragon_swamp_lair",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_8_clear_mounds",
+          "description": "Clear the shambling mounds blocking the path",
+          "type": "kill",
+          "target": "shambling_mound",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_8_slay_dragon",
+          "description": "Slay the young green dragon",
+          "type": "kill",
+          "target": "young_green_dragon",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_8_talk_villagers",
+          "description": "Report the dragon's defeat to the valley villagers",
+          "type": "talk",
+          "target": "valley_elder",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_8_collect_scales",
+          "description": "Harvest scales from the dragon's corpse",
+          "type": "collect",
+          "target": "emerald",
+          "required_count": 2
+        }
+      ],
+      "rewards": [
+        {"item_id": "emerald", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 300},
+        {"item_id": "potion_of_greater_healing", "quantity": 3},
+        {"item_id": "mandrake_root", "quantity": 3}
+      ],
+      "quest_id": "main_dragon_hunt_green"
+    },
+    {
+      "id": "act_9",
+      "name": "The Lich's Spire",
+      "description": "An ancient lich has awakened in its tower north of the mountains, raising an undead army that threatens all living lands. Ascend the spire, break the phylactery wards, and confront the lich itself.",
+      "encounters": [
+        {
+          "id": "enc_9_1",
+          "name": "Death Knight Gatekeeper",
+          "description": "A death knight guards the entrance to the lich's spire, commanding a squad of wraiths.",
+          "monsters": ["death_knight", "wraith", "wraith"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_9_2",
+          "name": "Mummy Chamber",
+          "description": "Ancient mummies rise from their sarcophagi to protect the phylactery vault.",
+          "monsters": ["mummy", "mummy", "skeleton"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_9_3",
+          "name": "The Lich Lord",
+          "description": "The lich awaits at the top of the spire, surrounded by necromantic energy.",
+          "monsters": ["lich"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_9_enter_spire",
+          "description": "Enter the Lich's Spire",
+          "type": "visit",
+          "target": "lich_spire",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_9_defeat_death_knight",
+          "description": "Defeat the death knight gatekeeper",
+          "type": "kill",
+          "target": "death_knight",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_9_clear_mummies",
+          "description": "Clear the mummy guardians from the phylactery vault",
+          "type": "kill",
+          "target": "mummy",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_9_destroy_lich",
+          "description": "Destroy the lich and shatter its phylactery",
+          "type": "kill",
+          "target": "lich",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_9_collect_phylactery",
+          "description": "Collect the shattered phylactery fragments",
+          "type": "collect",
+          "target": "arcane_crystal",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "arcane_crystal", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 400},
+        {"item_id": "scroll_of_fireball", "quantity": 2},
+        {"item_id": "diamond", "quantity": 2}
+      ],
+      "quest_id": "main_lich_tower"
+    },
+    {
+      "id": "act_10",
+      "name": "The Planar Gate of Xel'thor",
+      "description": "A rift to another plane has opened in the wastelands, spewing demons and aberrations into the world. Seal the gate before the planar incursion becomes unstoppable.",
+      "encounters": [
+        {
+          "id": "enc_10_1",
+          "name": "Demon Vanguard",
+          "description": "Imps and a succubus lead the demon advance party through the rift.",
+          "monsters": ["imp", "imp", "imp", "succubus"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_10_2",
+          "name": "The Beholder Guardian",
+          "description": "A beholder has been drawn through the rift and now guards the gate's nexus point.",
+          "monsters": ["beholder"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_10_3",
+          "name": "Pit Fiend Gatekeeper",
+          "description": "A pit fiend holds the gate open from the other side. Defeat it to collapse the rift.",
+          "monsters": ["pit_fiend"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_10_reach_rift",
+          "description": "Reach the planar rift in the wastelands",
+          "type": "visit",
+          "target": "planar_rift",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_10_defeat_vanguard",
+          "description": "Destroy the demon vanguard",
+          "type": "kill",
+          "target": "succubus",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_10_defeat_beholder",
+          "description": "Defeat the beholder guardian at the nexus",
+          "type": "kill",
+          "target": "beholder",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_10_defeat_pit_fiend",
+          "description": "Destroy the pit fiend and collapse the gate",
+          "type": "kill",
+          "target": "pit_fiend",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_10_collect_essences",
+          "description": "Collect planar essences from the closing rift",
+          "type": "collect",
+          "target": "fire_essence",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "fire_essence", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 450},
+        {"item_id": "ruby", "quantity": 3},
+        {"item_id": "potion_of_greater_healing", "quantity": 3}
+      ],
+      "quest_id": "main_planar_gate"
+    },
+    {
+      "id": "act_11",
+      "name": "The Dark Forest of Whispers",
+      "description": "An ancient forest has been corrupted by a green hag coven. Twisted trees attack travelers, and the hags plot to spread their curse across the realm. Navigate the haunted woods and destroy the coven.",
+      "encounters": [
+        {
+          "id": "enc_11_1",
+          "name": "Treant Sentinels",
+          "description": "Corrupted treants block the forest paths, attacking anything that moves.",
+          "monsters": ["treant", "treant"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_11_2",
+          "name": "Werewolf Pack",
+          "description": "Werewolves cursed by the hags hunt through the moonlit forest.",
+          "monsters": ["werewolf", "werewolf", "werewolf"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_11_3",
+          "name": "The Green Hag Coven",
+          "description": "Three green hags perform a ritual of corruption at the forest's heart.",
+          "monsters": ["green_hag", "green_hag", "green_hag"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_11_enter_forest",
+          "description": "Enter the Dark Forest of Whispers",
+          "type": "visit",
+          "target": "dark_forest",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_11_defeat_treants",
+          "description": "Clear the corrupted treant sentinels",
+          "type": "kill",
+          "target": "treant",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_11_defeat_werewolves",
+          "description": "Defeat the werewolf pack",
+          "type": "kill",
+          "target": "werewolf",
+          "required_count": 3
+        },
+        {
+          "id": "main_act_11_destroy_coven",
+          "description": "Destroy the green hag coven",
+          "type": "kill",
+          "target": "green_hag",
+          "required_count": 3
+        },
+        {
+          "id": "main_act_11_collect_herbs",
+          "description": "Gather rare herbs from the purified forest",
+          "type": "collect",
+          "target": "moonpetal",
+          "required_count": 5
+        }
+      ],
+      "rewards": [
+        {"item_id": "moonpetal", "quantity": 5},
+        {"item_id": "healing_herb", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 280},
+        {"item_id": "emerald", "quantity": 2}
+      ],
+      "quest_id": "main_dark_forest"
+    },
+    {
+      "id": "act_12",
+      "name": "The Underwater Temple of Thalassar",
+      "description": "A sunken temple beneath the Sapphire Coast holds an artifact of immense power. Sahuagin priestesses and their minions guard the depths. Dive into the abyss to claim the artifact before the enemy does.",
+      "encounters": [
+        {
+          "id": "enc_12_1",
+          "name": "Sahuagin Patrol",
+          "description": "Sahuagin priestesses patrol the temple approach, commanding water elementals.",
+          "monsters": ["sahuagin_priestess", "sahuagin_priestess", "water_elemental"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_12_2",
+          "name": "The Black Pudding Depths",
+          "description": "A massive black pudding fills the lower corridors, dissolving everything it touches.",
+          "monsters": ["black_pudding", "black_pudding"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_12_3",
+          "name": "The Yuan-ti Priest",
+          "description": "A yuan-ti abomination has taken control of the temple's inner sanctum.",
+          "monsters": ["yuan_ti_abomination"],
+          "difficulty": "very_hard"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_12_reach_temple",
+          "description": "Reach the sunken temple of Thalassar",
+          "type": "visit",
+          "target": "underwater_temple",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_12_defeat_sahuagin",
+          "description": "Defeat the sahuagin temple guards",
+          "type": "kill",
+          "target": "sahuagin_priestess",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_12_clear_puddings",
+          "description": "Destroy the black puddings in the lower corridors",
+          "type": "kill",
+          "target": "black_pudding",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_12_defeat_yuan_ti",
+          "description": "Defeat the yuan-ti abomination in the sanctum",
+          "type": "kill",
+          "target": "yuan_ti_abomination",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_12_collect_artifact",
+          "description": "Retrieve the artifact from the temple altar",
+          "type": "collect",
+          "target": "sapphire",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "sapphire", "quantity": 4},
+        {"item_id": "pearl", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 350},
+        {"item_id": "potion_of_greater_healing", "quantity": 3}
+      ],
+      "quest_id": "main_underwater_temple"
+    },
+    {
+      "id": "act_13",
+      "name": "The Volcanic Forge of Ignis",
+      "description": "Deep within an active volcano lies the legendary Forge of Ignis, where the most powerful weapons were once created. Fire giants guard the approach, and a fire giant warrior commands the forge itself.",
+      "encounters": [
+        {
+          "id": "enc_13_1",
+          "name": "Fire Giant Patrol",
+          "description": "Fire giant warriors patrol the volcanic tunnels leading to the forge.",
+          "monsters": ["fire_giant_warrior", "fire_giant_warrior"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_13_2",
+          "name": "Elemental Furnace",
+          "description": "Fire elementals swarm from the forge's molten furnace.",
+          "monsters": ["fire_elemental", "fire_elemental", "fire_elemental"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_13_3",
+          "name": "The Iron Golem Smith",
+          "description": "An iron golem, the forge's eternal smith, attacks any who approach the central anvil.",
+          "monsters": ["iron_golem"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_13_enter_volcano",
+          "description": "Enter the volcanic tunnels",
+          "type": "visit",
+          "target": "volcanic_forge_entrance",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_13_defeat_fire_giants",
+          "description": "Defeat the fire giant patrol",
+          "type": "kill",
+          "target": "fire_giant_warrior",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_13_clear_elementals",
+          "description": "Clear the fire elementals from the furnace room",
+          "type": "kill",
+          "target": "fire_elemental",
+          "required_count": 3
+        },
+        {
+          "id": "main_act_13_defeat_golem",
+          "description": "Defeat the iron golem smith",
+          "type": "kill",
+          "target": "iron_golem",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_13_collect_mithral",
+          "description": "Collect mithral ingots from the forge stockpile",
+          "type": "collect",
+          "target": "mithral_ingot",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "mithral_ingot", "quantity": 5},
+        {"item_id": "fire_essence", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 500},
+        {"item_id": "ruby", "quantity": 3}
+      ],
+      "quest_id": "main_volcanic_forge"
+    },
+    {
+      "id": "act_14",
+      "name": "The Sky Citadel of the Storm King",
+      "description": "A floating citadel above the clouds is home to a storm giant and its court. The giant holds a key to sealing the planar breaches. Ascend through the cloud layer and negotiate or fight your way to the key.",
+      "encounters": [
+        {
+          "id": "enc_14_1",
+          "name": "Cloud Gargoyles",
+          "description": "Chimeras circle the citadel's lower platforms, attacking anyone who approaches.",
+          "monsters": ["chimera", "chimera"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_14_2",
+          "name": "Stone Golem Sentries",
+          "description": "Stone golems guard the citadel's inner gates.",
+          "monsters": ["stone_golem", "stone_golem"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_14_3",
+          "name": "The Storm Giant's Challenge",
+          "description": "The storm giant challenges you to prove your worth before granting the key.",
+          "monsters": ["storm_giant"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_14_reach_citadel",
+          "description": "Reach the sky citadel above the clouds",
+          "type": "visit",
+          "target": "sky_citadel",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_14_defeat_chimeras",
+          "description": "Defeat the chimeras guarding the approach",
+          "type": "kill",
+          "target": "chimera",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_14_defeat_golems",
+          "description": "Defeat the stone golem sentries",
+          "type": "kill",
+          "target": "stone_golem",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_14_challenge_giant",
+          "description": "Accept and survive the storm giant's challenge",
+          "type": "kill",
+          "target": "storm_giant",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_14_collect_key",
+          "description": "Collect the planar seal key",
+          "type": "collect",
+          "target": "storm_crystal",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "storm_crystal", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 550},
+        {"item_id": "diamond", "quantity": 2},
+        {"item_id": "potion_of_greater_healing", "quantity": 4}
+      ],
+      "quest_id": "main_sky_citadel"
+    },
+    {
+      "id": "act_15",
+      "name": "Descent into the Shadow Realm",
+      "description": "The boundary between the mortal realm and the Shadowfell has weakened. Vampires, ghosts, and banshees pour through the breach. Enter the Shadow Realm to find and destroy the anchor holding the rift open.",
+      "encounters": [
+        {
+          "id": "enc_15_1",
+          "name": "Vampire Court",
+          "description": "A vampire lord and its spawn control the shadow crossing.",
+          "monsters": ["vampire", "ghost", "ghost"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_15_2",
+          "name": "Banshee's Wail",
+          "description": "Banshees haunt the shadow corridors, their wails draining life force.",
+          "monsters": ["banshee", "banshee", "wraith"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_15_3",
+          "name": "The Shadow Anchor",
+          "description": "A mind flayer maintains the shadow anchor, feeding on the psychic energy of the rift.",
+          "monsters": ["mind_flayer", "shadow_demon"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_15_enter_shadow",
+          "description": "Cross into the Shadow Realm",
+          "type": "visit",
+          "target": "shadow_realm_entrance",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_15_defeat_vampire",
+          "description": "Defeat the vampire lord at the crossing",
+          "type": "kill",
+          "target": "vampire",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_15_defeat_banshees",
+          "description": "Silence the banshees in the shadow corridors",
+          "type": "kill",
+          "target": "banshee",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_15_destroy_anchor",
+          "description": "Destroy the mind flayer maintaining the shadow anchor",
+          "type": "kill",
+          "target": "mind_flayer",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_15_collect_shards",
+          "description": "Collect shadow crystal shards from the collapsed anchor",
+          "type": "collect",
+          "target": "arcane_crystal",
+          "required_count": 5
+        }
+      ],
+      "rewards": [
+        {"item_id": "arcane_crystal", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 500},
+        {"item_id": "sapphire", "quantity": 3},
+        {"item_id": "scroll_of_haste", "quantity": 2}
+      ],
+      "quest_id": "main_shadow_realm"
+    },
+    {
+      "id": "act_16",
+      "name": "The Dragon Hunt: Red Fury",
+      "description": "A young red dragon has claimed a mountain stronghold and demands tribute from nearby towns. Unlike the green dragon, this beast must be confronted directly in its burning lair.",
+      "encounters": [
+        {
+          "id": "enc_16_1",
+          "name": "Kobold Warband",
+          "description": "Kobold servants of the dragon patrol the mountain trail with fire traps.",
+          "monsters": ["goblin", "goblin", "goblin", "goblin"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "enc_16_2",
+          "name": "Manticore Guardians",
+          "description": "Manticores nest on the cliff ledges, raining spikes on climbers.",
+          "monsters": ["manticore", "manticore"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_16_3",
+          "name": "The Young Red Dragon",
+          "description": "The young red dragon breathes fire from its hoard-filled lair.",
+          "monsters": ["young_red_dragon"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_16_climb_mountain",
+          "description": "Ascend the mountain to the dragon's lair",
+          "type": "visit",
+          "target": "red_dragon_lair",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_16_clear_path",
+          "description": "Clear the warband from the mountain trail",
+          "type": "kill",
+          "target": "goblin",
+          "required_count": 4
+        },
+        {
+          "id": "main_act_16_defeat_manticores",
+          "description": "Defeat the manticore guardians on the cliffs",
+          "type": "kill",
+          "target": "manticore",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_16_slay_red_dragon",
+          "description": "Slay the young red dragon",
+          "type": "kill",
+          "target": "young_red_dragon",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_16_collect_hoard",
+          "description": "Claim treasure from the dragon's hoard",
+          "type": "collect",
+          "target": "ruby",
+          "required_count": 5
+        }
+      ],
+      "rewards": [
+        {"item_id": "ruby", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 600},
+        {"item_id": "mithral_ingot", "quantity": 2},
+        {"item_id": "fire_essence", "quantity": 3}
+      ],
+      "quest_id": "main_dragon_hunt_red"
+    },
+    {
+      "id": "act_17",
+      "name": "The Drow Incursion",
+      "description": "Drow elite warriors have surfaced from the Underdark, establishing a beachhead in the caverns beneath the eastern provinces. Their goal is to capture surface-dwellers for their slave pens. Put an end to the incursion.",
+      "encounters": [
+        {
+          "id": "enc_17_1",
+          "name": "Drow Ambush Party",
+          "description": "Drow elite warriors ambush the party at a cavern intersection.",
+          "monsters": ["drow_elite", "drow_elite", "drow_elite"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_17_2",
+          "name": "Phase Spider Scouts",
+          "description": "Phase spiders serve as the drow's scouts, phasing through walls to attack.",
+          "monsters": ["phase_spider", "phase_spider"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_17_3",
+          "name": "The Drow Commander",
+          "description": "A drow commander leads the incursion from a fortified cavern camp.",
+          "monsters": ["drow_elite", "drow_elite", "succubus"],
+          "difficulty": "very_hard"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_17_enter_caverns",
+          "description": "Enter the Underdark caverns",
+          "type": "visit",
+          "target": "underdark_caverns",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_17_defeat_ambush",
+          "description": "Survive the drow ambush party",
+          "type": "kill",
+          "target": "drow_elite",
+          "required_count": 3
+        },
+        {
+          "id": "main_act_17_clear_spiders",
+          "description": "Eliminate the phase spider scouts",
+          "type": "kill",
+          "target": "phase_spider",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_17_defeat_commander",
+          "description": "Defeat the drow commander and end the incursion",
+          "type": "kill",
+          "target": "drow_elite",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_17_free_captives",
+          "description": "Free the captured surface-dwellers",
+          "type": "talk",
+          "target": "captive_villagers",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "mithral_ingot", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 400},
+        {"item_id": "pearl", "quantity": 4},
+        {"item_id": "enchanted_thread", "quantity": 3}
+      ],
+      "quest_id": "main_drow_incursion"
+    },
+    {
+      "id": "act_18",
+      "name": "The Gnoll Warfront",
+      "description": "Gnoll packmasters have united the gnoll tribes into a marauding army. Bugbear chiefs serve as their heavy shock troops. Defeat the warlord coalition before they overrun the border settlements.",
+      "encounters": [
+        {
+          "id": "enc_18_1",
+          "name": "Gnoll Raiding Party",
+          "description": "A gnoll packmaster leads a raiding party against a border village.",
+          "monsters": ["gnoll_packmaster", "dire_wolf", "dire_wolf"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_18_2",
+          "name": "Bugbear Shock Troops",
+          "description": "Bugbear chiefs lead the heavy assault on the defensive line.",
+          "monsters": ["bugbear_chief", "bugbear_chief", "orc_warrior"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_18_3",
+          "name": "The Gnoll Warlord",
+          "description": "The gnoll warlord commands from a fortified war camp.",
+          "monsters": ["gnoll_packmaster", "gnoll_packmaster", "hobgoblin_captain"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_18_reach_border",
+          "description": "Reach the besieged border settlement",
+          "type": "visit",
+          "target": "border_settlement",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_18_defeat_raiders",
+          "description": "Defeat the gnoll raiding party",
+          "type": "kill",
+          "target": "gnoll_packmaster",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_18_defeat_bugbears",
+          "description": "Defeat the bugbear shock troops",
+          "type": "kill",
+          "target": "bugbear_chief",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_18_defeat_warlord",
+          "description": "Defeat the gnoll warlord and break the coalition",
+          "type": "kill",
+          "target": "gnoll_packmaster",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_18_talk_commander",
+          "description": "Report the victory to the border commander",
+          "type": "talk",
+          "target": "border_commander",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 350},
+        {"item_id": "steel_ingot", "quantity": 5},
+        {"item_id": "potion_of_greater_healing", "quantity": 3},
+        {"item_id": "potion_of_strength", "quantity": 2}
+      ],
+      "quest_id": "main_gnoll_warfront"
+    },
+    {
+      "id": "act_19",
+      "name": "The Elder Evil: Basilisk Depths",
+      "description": "Beneath the shattered mountains, an ancient basilisk and its chimera offspring guard the entrance to the Elder Evil's prison. This penultimate challenge tests all your skills before the final confrontation.",
+      "encounters": [
+        {
+          "id": "enc_19_1",
+          "name": "Chimera Nest",
+          "description": "Chimeras have nested in the cavern entrance, breathing fire and swooping from above.",
+          "monsters": ["chimera", "chimera", "manticore"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "enc_19_2",
+          "name": "The Ancient Basilisk",
+          "description": "An enormous basilisk guards the passage to the deepest chamber. Its gaze turns flesh to stone.",
+          "monsters": ["basilisk", "basilisk"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_19_3",
+          "name": "Iron Golem Warden",
+          "description": "An iron golem, placed here millennia ago, serves as the final lock on the Elder Evil's prison.",
+          "monsters": ["iron_golem"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_19_enter_depths",
+          "description": "Enter the basilisk depths beneath the mountains",
+          "type": "visit",
+          "target": "basilisk_depths",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_19_clear_chimeras",
+          "description": "Clear the chimera nest at the entrance",
+          "type": "kill",
+          "target": "chimera",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_19_defeat_basilisks",
+          "description": "Defeat the basilisk guardians",
+          "type": "kill",
+          "target": "basilisk",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_19_defeat_golem",
+          "description": "Defeat the iron golem warden",
+          "type": "kill",
+          "target": "iron_golem",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_19_collect_seal",
+          "description": "Retrieve the warden's seal key",
+          "type": "collect",
+          "target": "diamond",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "diamond", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 700},
+        {"item_id": "mithral_ingot", "quantity": 3},
+        {"item_id": "scroll_of_fireball", "quantity": 3}
+      ],
+      "quest_id": "main_elder_evil"
+    },
+    {
+      "id": "act_20",
+      "name": "The Final Confrontation: The Adult Red Dragon",
+      "description": "The ultimate threat reveals itself: an adult red dragon, corrupted by abyssal energy, threatens to consume the world in fire. All allies rally for one last stand against the most powerful foe you have ever faced.",
+      "encounters": [
+        {
+          "id": "enc_20_1",
+          "name": "Fire Giant Honor Guard",
+          "description": "Fire giant warriors serve as the dragon's honor guard at the caldera entrance.",
+          "monsters": ["fire_giant_warrior", "fire_giant_warrior", "fire_giant_warrior"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_20_2",
+          "name": "Frost Giant Defectors",
+          "description": "Frost giants, enslaved by the dragon, must be defeated or freed.",
+          "monsters": ["frost_giant", "frost_giant"],
+          "difficulty": "very_hard"
+        },
+        {
+          "id": "enc_20_3",
+          "name": "The Adult Red Dragon",
+          "description": "The corrupted adult red dragon fights with apocalyptic fury atop its volcanic throne.",
+          "monsters": ["adult_red_dragon"],
+          "difficulty": "boss"
+        }
+      ],
+      "objectives": [
+        {
+          "id": "main_act_20_reach_caldera",
+          "description": "Reach the volcanic caldera of the final battle",
+          "type": "visit",
+          "target": "volcanic_caldera",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_20_defeat_fire_guard",
+          "description": "Defeat the fire giant honor guard",
+          "type": "kill",
+          "target": "fire_giant_warrior",
+          "required_count": 3
+        },
+        {
+          "id": "main_act_20_defeat_frost_giants",
+          "description": "Defeat or free the enslaved frost giants",
+          "type": "kill",
+          "target": "frost_giant",
+          "required_count": 2
+        },
+        {
+          "id": "main_act_20_slay_dragon",
+          "description": "Slay the adult red dragon and save the realm",
+          "type": "kill",
+          "target": "adult_red_dragon",
+          "required_count": 1
+        },
+        {
+          "id": "main_act_20_collect_treasure",
+          "description": "Claim the dragon's legendary hoard",
+          "type": "collect",
+          "target": "ruby",
+          "required_count": 10
+        }
+      ],
+      "rewards": [
+        {"item_id": "ruby", "quantity": 10},
+        {"item_id": "diamond", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 2000},
+        {"item_id": "mithral_ingot", "quantity": 5},
+        {"item_id": "fire_essence", "quantity": 5}
+      ],
+      "quest_id": "main_final_confrontation"
     }
   ]
 }

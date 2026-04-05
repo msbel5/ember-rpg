@@ -6,7 +6,14 @@ import uuid
 from typing import Any
 
 from engine.kernel.actor_records import ActorRecord
-from engine.kernel.actor_items import ItemStack, item_stack_from_legacy_payload
+from engine.kernel.actor_items import (
+    ItemStack,
+    canonical_equipment_slot,
+    canonical_slot_for_item_payload,
+    item_stack_from_legacy_payload,
+    preferred_storage_slot_for_item,
+    storage_slots_for_canonical_slot,
+)
 from engine.kernel.effects import EffectDef, tick_effects
 from engine.kernel.spells import SpellDef, SpellSlot, Spellbook, begin_casting, resolve_cast, tick_casting
 from engine.world.entity import Entity, EntityType
@@ -183,29 +190,78 @@ def drop_inventory_item(session: Any, *, query: str) -> dict[str, Any]:
 
 def equip_inventory_item(actor: ActorRecord, *, item: ItemStack, slot: str) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
-    existing = list(actor.equipment.slots.get(slot, []))
+    requested_slot = str(slot).strip()
+    payload = dict(getattr(item, "payload", {}) or {})
+    canonical_slot = canonical_equipment_slot(requested_slot) or canonical_slot_for_item_payload(
+        payload,
+        explicit_slot=requested_slot,
+        occupied_slots={
+            canonical_equipment_slot(existing_slot) or ""
+            for existing_slot, items in actor.equipment.slots.items()
+            if items
+        },
+    )
+    if canonical_slot is None:
+        raise ValueError("item is not equippable in the canonical wearable topology")
+    storage_slot = requested_slot
+    if requested_slot == canonical_slot:
+        storage_slot = preferred_storage_slot_for_item(canonical_slot, payload)
+    alias_slots = storage_slots_for_canonical_slot(canonical_slot)
+    existing: list[ItemStack] = []
+    for alias_slot in alias_slots:
+        existing.extend(actor.equipment.slots.get(alias_slot, []))
+        actor.equipment.slots[alias_slot] = []
     if existing:
         for previous in existing:
             previous.payload.pop("equipped_slot", None)
+            previous.payload.pop("canonical_slot", None)
             actor.inventory.append(previous)
-            events.append({"type": "unequipped", "item_id": previous.instance_id, "slot": slot})
-    actor.equipment.slots[slot] = [item]
-    item.payload["equipped_slot"] = slot
+            events.append(
+                {
+                    "type": "unequipped",
+                    "item_id": previous.instance_id,
+                    "slot": storage_slot,
+                    "canonical_slot": canonical_slot,
+                }
+            )
+    actor.equipment.slots[storage_slot] = [item]
+    item.payload["equipped_slot"] = storage_slot
+    item.payload["canonical_slot"] = canonical_slot
+    if storage_slot != canonical_slot:
+        item.payload["legacy_slot"] = storage_slot
+    else:
+        item.payload.pop("legacy_slot", None)
     if item in actor.inventory:
         actor.inventory.remove(item)
-    events.append({"type": "equipped", "item_id": item.instance_id, "slot": slot})
+    events.append({"type": "equipped", "item_id": item.instance_id, "slot": storage_slot, "canonical_slot": canonical_slot})
     return events
 
 
 def unequip_actor_slot(actor: ActorRecord, *, slot: str) -> list[dict[str, Any]]:
-    items = list(actor.equipment.slots.get(slot, []))
+    requested_slot = str(slot).strip()
+    canonical_slot = canonical_equipment_slot(requested_slot)
+    slots_to_clear = storage_slots_for_canonical_slot(canonical_slot) if canonical_slot is not None else [requested_slot]
+    items: list[ItemStack] = []
+    for slot_name in slots_to_clear:
+        items.extend(actor.equipment.slots.get(slot_name, []))
     if not items:
         return []
-    actor.equipment.slots[slot] = []
+    for slot_name in slots_to_clear:
+        actor.equipment.slots[slot_name] = []
     for item in items:
         item.payload.pop("equipped_slot", None)
+        item.payload.pop("canonical_slot", None)
+        item.payload.pop("legacy_slot", None)
         actor.inventory.append(item)
-    return [{"type": "unequipped", "item_id": item.instance_id, "slot": slot} for item in items]
+    return [
+        {
+            "type": "unequipped",
+            "item_id": item.instance_id,
+            "slot": requested_slot,
+            "canonical_slot": canonical_slot or requested_slot,
+        }
+        for item in items
+    ]
 
 
 def craft_recipe(

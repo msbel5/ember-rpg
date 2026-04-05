@@ -182,6 +182,29 @@ def test_campaign_travel_shortcut_starts_active_travel_without_immediate_region_
     assert "requires_resolution" in campaign["travel_state"]
 
 
+def test_campaign_knowledge_shortcut_returns_knowledge_view_shape():
+    payload = _create_campaign(seed=321)
+    campaign_id = payload["campaign_id"]
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "knowledge",
+            "args": {"action_id": "topics"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["command_type"] == "knowledge"
+    assert isinstance(body["campaign"]["knowledge"], dict)
+    assert "knowledge_view" in body
+    assert isinstance(body["knowledge_view"]["topics"], list)
+    assert isinstance(body["campaign"]["knowledge"]["discovered_topic_ids"], list)
+    assert isinstance(body["campaign"]["knowledge"]["pinned_topic_ids"], list)
+
+
 def test_campaign_talk_command_returns_dialog_payload_when_conversation_is_active():
     payload = _create_campaign()
     campaign_id = payload["campaign_id"]
@@ -215,6 +238,56 @@ def test_campaign_talk_command_returns_dialog_payload_when_conversation_is_activ
         break
     else:
         pytest.skip("No authored dialog available for talkable NPCs in this campaign seed")
+
+
+def test_campaign_dialog_shortcut_ask_about_returns_additive_payload_during_active_conversation():
+    payload = _create_campaign(seed=42)
+    campaign_id = payload["campaign_id"]
+    region_topic_id = f"region.{payload['campaign']['world']['active_region_id']}"
+    talkables = [
+        entity
+        for entity in payload["campaign"]["world_entities"]
+        if entity.get("entity_type") == "npc" and "talk" in entity.get("context_actions", [])
+    ]
+
+    for talkable in talkables:
+        target_name = str(talkable["name"])
+        target_position = talkable["position"]
+        move_x = max(0, int(target_position[0]) - 3)
+        move_y = int(target_position[1])
+
+        moved = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": f"move to {move_x},{move_y}"})
+        assert moved.status_code == 200
+
+        opened = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": f"talk {target_name}"})
+        assert opened.status_code == 200
+        if opened.json().get("dialog_npc") != target_name:
+            continue
+
+        response = client.post(
+            f"/game/campaigns/{campaign_id}/commands",
+            json={
+                "input": "",
+                "shortcut": "dialog",
+                "args": {"action_id": "ask_about", "topic_id": region_topic_id},
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+
+        assert body["command_type"] == "dialog"
+        assert isinstance(body["knowledge_view"], dict)
+        assert isinstance(body["knowledge_view"]["ask_about"], dict)
+        assert body["knowledge_view"]["ask_about"]["topic"]["topic_id"] == region_topic_id
+        assert body["knowledge_view"]["ask_about"]["response_type"] in {"fact", "rumor", "redirect", "refusal"}
+        assert isinstance(body["knowledge_view"]["ask_about"]["facts"], list)
+        assert isinstance(body["knowledge_view"]["ask_about"]["rumors"], list)
+        assert isinstance(body["knowledge_view"]["ask_about"]["redirect_topic_ids"], list)
+        assert isinstance(body["campaign"]["conversation_state"]["ask_about"], dict)
+        assert body["campaign"]["conversation_state"]["ask_about"]["topic"]["topic_id"] == region_topic_id
+        break
+    else:
+        pytest.skip("No authored dialog opening available for ask-about API coverage")
 
 
 def test_campaign_attack_command_marks_scene_as_combat_when_combat_payload_exists():

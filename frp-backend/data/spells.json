@@ -1018,7 +1018,7 @@
       "target_type": "self",
       "school": "illusion",
       "level": 1,
-      "description": "You make yourself—including clothing, armor, weapons, and belongings—look different.",
+      "description": "You make yourself\u00e2\u20ac\u201dincluding clothing, armor, weapons, and belongings\u00e2\u20ac\u201dlook different.",
       "effects": [
         {
           "type": "status",
@@ -1102,6 +1102,5085 @@
             "enlarge",
             "reduce"
           ]
+        }
+      ]
+    },
+    {
+      "name": "Firebolt",
+      "cost": 0,
+      "range": 120,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 0,
+      "description": "You hurl a mote of fire at a creature or object within range.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d10",
+          "damage_type": "fire"
+        }
+      ]
+    },
+    {
+      "name": "Eldritch Blast",
+      "cost": 0,
+      "range": 120,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 0,
+      "description": "A beam of crackling energy streaks toward a creature within range.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d10",
+          "damage_type": "force"
+        }
+      ]
+    },
+    {
+      "name": "Spark",
+      "cost": 0,
+      "range": 60,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 0,
+      "description": "A tiny arc of electricity leaps from your finger to a nearby target.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "lightning"
+        }
+      ]
+    },
+    {
+      "name": "Chromatic Orb",
+      "cost": 2,
+      "range": 90,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 1,
+      "description": "You hurl a sphere of energy that you choose the damage type of upon casting.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d8",
+          "damage_type": "fire"
+        }
+      ]
+    },
+    {
+      "name": "Witch Bolt",
+      "cost": 2,
+      "range": 30,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 1,
+      "description": "A sustained arc of blue energy lances out toward a creature, dealing ongoing damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d12",
+          "damage_type": "lightning",
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Flame Blade",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "evocation",
+      "level": 2,
+      "description": "You evoke a fiery blade in your free hand, ready to strike with searing heat.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d6",
+          "damage_type": "fire",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Gust of Wind",
+      "cost": 2,
+      "range": 60,
+      "target_type": "cone",
+      "school": "evocation",
+      "level": 2,
+      "description": "A line of strong wind blasts from you, pushing creatures and dispersing gases.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "knockback",
+          "distance": 15,
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Erupting Earth",
+      "cost": 3,
+      "range": 120,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 3,
+      "description": "The ground erupts violently, hurling stone and debris at creatures in the area.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d12",
+          "damage_type": "bludgeoning",
+          "save": "dexterity",
+          "save_dc": 14
+        }
+      ]
+    },
+    {
+      "name": "Storm Sphere",
+      "cost": 4,
+      "range": 150,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 4,
+      "description": "A roiling sphere of wind and lightning materializes, lashing nearby foes.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d6",
+          "damage_type": "bludgeoning"
+        },
+        {
+          "type": "damage",
+          "amount": "4d6",
+          "damage_type": "lightning",
+          "duration": 4
+        }
+      ]
+    },
+    {
+      "name": "Dawn",
+      "cost": 6,
+      "range": 60,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 5,
+      "description": "A column of brilliant radiance pours down from above, searing undead and shadow.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d10",
+          "damage_type": "radiant",
+          "duration": 5,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Sunbeam",
+      "cost": 7,
+      "range": 60,
+      "target_type": "cone",
+      "school": "evocation",
+      "level": 6,
+      "description": "A beam of brilliant light flashes out from your hand in a searing line.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d8",
+          "damage_type": "radiant",
+          "save": "constitution",
+          "save_dc": 17
+        }
+      ]
+    },
+    {
+      "name": "Prismatic Spray",
+      "cost": 8,
+      "range": 60,
+      "target_type": "cone",
+      "school": "evocation",
+      "level": 7,
+      "description": "Seven multicolored rays of light flash from your hand, each with a devastating effect.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "10d6",
+          "damage_type": "force",
+          "save": "dexterity",
+          "save_dc": 18
+        }
+      ]
+    },
+    {
+      "name": "Incendiary Cloud",
+      "cost": 9,
+      "range": 150,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 8,
+      "description": "A roiling cloud of smoke and embers fills the area, burning all within.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "10d8",
+          "damage_type": "fire",
+          "save": "dexterity",
+          "save_dc": 19,
+          "duration": 5,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Sunburst",
+      "cost": 10,
+      "range": 150,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 8,
+      "description": "Brilliant sunlight flashes in a 60-foot radius sphere, blinding and burning all.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "12d6",
+          "damage_type": "radiant",
+          "save": "constitution",
+          "save_dc": 19
+        },
+        {
+          "type": "status",
+          "status": "blinded",
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Meteor Swarm",
+      "cost": 12,
+      "range": 300,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 9,
+      "description": "Four blazing orbs of fire streak across the sky and detonate in massive explosions.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "20d6",
+          "damage_type": "fire",
+          "save": "dexterity",
+          "save_dc": 21
+        },
+        {
+          "type": "damage",
+          "amount": "20d6",
+          "damage_type": "bludgeoning"
+        }
+      ]
+    },
+    {
+      "name": "Delayed Blast Fireball",
+      "cost": 8,
+      "range": 150,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 7,
+      "description": "A glowing bead of fire lodges at a point you choose and detonates after a delay.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "12d6",
+          "damage_type": "fire",
+          "save": "dexterity",
+          "save_dc": 18
+        }
+      ]
+    },
+    {
+      "name": "Frost Fingers",
+      "cost": 1,
+      "range": 15,
+      "target_type": "cone",
+      "school": "evocation",
+      "level": 1,
+      "description": "Freezing cold blasts from your fingertips in a short cone.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d8",
+          "damage_type": "cold",
+          "save": "constitution",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Radiant Burst",
+      "cost": 3,
+      "range": 60,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 3,
+      "description": "A brilliant flash of holy light erupts in a sphere, searing dark creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "5d6",
+          "damage_type": "radiant",
+          "save": "dexterity",
+          "save_dc": 14
+        }
+      ]
+    },
+    {
+      "name": "Thunder Clap",
+      "cost": 5,
+      "range": 30,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 4,
+      "description": "You clap your hands and release a devastating shockwave of thunder.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "5d8",
+          "damage_type": "thunder",
+          "save": "constitution",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Investiture of Flame",
+      "cost": 7,
+      "range": 0,
+      "target_type": "self",
+      "school": "evocation",
+      "level": 6,
+      "description": "Flames wreathe your body, granting fire immunity and the ability to hurl fire.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damage_immunity",
+          "value": "fire",
+          "duration": 5
+        },
+        {
+          "type": "damage",
+          "amount": "4d8",
+          "damage_type": "fire"
+        }
+      ]
+    },
+    {
+      "name": "Booming Blade",
+      "cost": 0,
+      "range": 5,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 0,
+      "description": "Your weapon rings with thunderous energy that punishes movement.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d8",
+          "damage_type": "thunder"
+        }
+      ]
+    },
+    {
+      "name": "Force Cascade",
+      "cost": 6,
+      "range": 90,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 5,
+      "description": "Waves of raw arcane force ripple outward, battering all caught in their path.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "8d6",
+          "damage_type": "force",
+          "save": "strength",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Resistance",
+      "cost": 0,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 0,
+      "description": "You touch a willing creature, granting it a brief ward against harm.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "saving_throw",
+          "amount": 1,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Blade Ward",
+      "cost": 0,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 0,
+      "description": "You trace a sigil of warding in the air, gaining brief resistance to weapon attacks.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damage_resistance",
+          "value": "physical",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Sanctuary",
+      "cost": 1,
+      "range": 30,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 1,
+      "description": "You ward a creature, and attackers must overcome the ward to strike.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "sanctuary",
+          "amount": 1,
+          "duration": 5,
+          "save": "wisdom",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Protection from Evil",
+      "cost": 1,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 1,
+      "description": "A shimmering barrier protects a creature from aberrations, fiends, and undead.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "protection",
+          "value": "evil",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Warding Bond",
+      "cost": 2,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 2,
+      "description": "You create a mystic bond with a creature, sharing its pain and granting protection.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "armor_class",
+          "amount": 1,
+          "duration": 8
+        },
+        {
+          "type": "buff",
+          "stat": "saving_throw",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Protection from Energy",
+      "cost": 3,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 3,
+      "description": "A creature you touch gains resistance to one elemental damage type.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damage_resistance",
+          "value": "elemental",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Remove Curse",
+      "cost": 3,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 3,
+      "description": "At your touch, all curses affecting one creature or object end.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "cure_condition",
+          "conditions": [
+            "cursed"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Death Ward",
+      "cost": 4,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 4,
+      "description": "You touch a creature and grant it a ward against death's embrace.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "death_ward",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Antilife Shell",
+      "cost": 6,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 5,
+      "description": "A shimmering barrier prevents living creatures from approaching you.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "antilife_barrier",
+          "amount": 10,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Globe of Invulnerability",
+      "cost": 7,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 6,
+      "description": "An immobile shimmering sphere blocks spells of 5th level or lower cast from outside.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "spell_immunity",
+          "value": 5,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Symbol of Warding",
+      "cost": 8,
+      "range": 5,
+      "target_type": "area",
+      "school": "abjuration",
+      "level": 7,
+      "description": "You inscribe a harmful glyph that triggers when a creature enters its area.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "10d8",
+          "damage_type": "force",
+          "save": "dexterity",
+          "save_dc": 18
+        }
+      ]
+    },
+    {
+      "name": "Holy Aura",
+      "cost": 10,
+      "range": 30,
+      "target_type": "area",
+      "school": "abjuration",
+      "level": 8,
+      "description": "Divine light washes out from you in a 30-foot radius, protecting allies.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "armor_class",
+          "amount": 4,
+          "duration": 5
+        },
+        {
+          "type": "buff",
+          "stat": "saving_throw",
+          "amount": 4,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Prismatic Wall",
+      "cost": 12,
+      "range": 60,
+      "target_type": "area",
+      "school": "abjuration",
+      "level": 9,
+      "description": "A shimmering multicolored plane of light forms a wall, each layer with a different deadly effect.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "wall_barrier",
+          "amount": 7,
+          "duration": 10
+        }
+      ]
+    },
+    {
+      "name": "Greater Restoration",
+      "cost": 6,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 5,
+      "description": "You imbue a creature with positive energy to undo a debilitating effect.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "cure_condition",
+          "conditions": [
+            "charmed",
+            "petrified",
+            "cursed",
+            "exhausted",
+            "stunned"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Abjure Enemy",
+      "cost": 6,
+      "range": 60,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 5,
+      "description": "You utter a word of divine authority, forcing an enemy to halt and cower.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "frightened",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Shield of Faith",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 1,
+      "description": "A shimmering field of divine energy surrounds a creature, boosting defenses.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "armor_class",
+          "amount": 2,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Absorb Elements",
+      "cost": 1,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 1,
+      "description": "You capture incoming elemental energy and channel it into your next melee strike.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damage_resistance",
+          "value": "elemental",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Mending",
+      "cost": 0,
+      "range": 5,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 0,
+      "description": "This cantrip repairs a single break or tear in an object you touch.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "repair"
+        }
+      ]
+    },
+    {
+      "name": "Thorn Whip",
+      "cost": 0,
+      "range": 30,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 0,
+      "description": "You create a long vine-like whip covered in thorns that lashes out at a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "piercing"
+        }
+      ]
+    },
+    {
+      "name": "Shillelagh",
+      "cost": 0,
+      "range": 0,
+      "target_type": "self",
+      "school": "transmutation",
+      "level": 0,
+      "description": "The wood of a club or staff you hold is imbued with nature's power.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "weapon_damage",
+          "amount": "1d8",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Feather Fall",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 1,
+      "description": "You slow the descent of falling creatures, letting them land safely.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "slow_fall",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Jump",
+      "cost": 1,
+      "range": 5,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 1,
+      "description": "A creature's jump distance is tripled for the duration.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "jump_distance",
+          "amount": 3,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Longstrider",
+      "cost": 1,
+      "range": 5,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 1,
+      "description": "You touch a creature and its speed increases by 10 feet.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "speed",
+          "amount": 10,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Heat Metal",
+      "cost": 2,
+      "range": 60,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 2,
+      "description": "You cause a metal object to glow red-hot, burning any creature in contact with it.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d8",
+          "damage_type": "fire",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Spider Climb",
+      "cost": 2,
+      "range": 5,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 2,
+      "description": "A creature you touch gains the ability to move along walls and ceilings.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "climb_speed",
+          "amount": 30,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Gaseous Form",
+      "cost": 3,
+      "range": 5,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 3,
+      "description": "You transform a willing creature into a misty cloud, able to pass through small gaps.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "gaseous",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Stone Shape",
+      "cost": 4,
+      "range": 5,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 4,
+      "description": "You touch a stone object and form it into any shape that suits your purpose.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "shape_stone"
+        }
+      ]
+    },
+    {
+      "name": "Passwall",
+      "cost": 6,
+      "range": 30,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 5,
+      "description": "A passage appears at a point you choose on a wooden, plaster, or stone surface.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_passage",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Flesh to Stone",
+      "cost": 7,
+      "range": 60,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 6,
+      "description": "You attempt to turn one creature you can see to stone through petrification.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "petrified",
+          "duration": 10,
+          "save": "constitution",
+          "save_dc": 17
+        }
+      ]
+    },
+    {
+      "name": "Reverse Gravity",
+      "cost": 8,
+      "range": 100,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 7,
+      "description": "You reverse gravity in a 50-foot radius cylinder, sending creatures and objects flying upward.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "reverse_gravity",
+          "duration": 5,
+          "save": "dexterity",
+          "save_dc": 18
+        }
+      ]
+    },
+    {
+      "name": "Control Weather",
+      "cost": 10,
+      "range": 0,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 8,
+      "description": "You take control of the weather within a 5-mile radius for the duration.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "control_weather",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Shapechange",
+      "cost": 12,
+      "range": 0,
+      "target_type": "self",
+      "school": "transmutation",
+      "level": 9,
+      "description": "You assume the form of any creature, gaining its abilities and physical traits.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "shapechanged",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Disintegrate",
+      "cost": 7,
+      "range": 60,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 6,
+      "description": "A thin green ray springs from your finger, reducing a target to fine dust.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "10d6+40",
+          "damage_type": "force",
+          "save": "dexterity",
+          "save_dc": 17
+        }
+      ]
+    },
+    {
+      "name": "Chill Touch",
+      "cost": 0,
+      "range": 120,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 0,
+      "description": "A ghostly skeletal hand reaches out and assails a creature with the chill of the grave.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d8",
+          "damage_type": "necrotic"
+        }
+      ]
+    },
+    {
+      "name": "Spare the Dying",
+      "cost": 0,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 0,
+      "description": "You touch a living creature that has 0 hit points, stabilizing it.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "0",
+          "stabilize": true
+        }
+      ]
+    },
+    {
+      "name": "Toll the Dead",
+      "cost": 0,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 0,
+      "description": "You point at a creature and the sound of a dolorous bell fills the air around it.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d12",
+          "damage_type": "necrotic",
+          "save": "wisdom",
+          "save_dc": 11
+        }
+      ]
+    },
+    {
+      "name": "Inflict Wounds",
+      "cost": 1,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 1,
+      "description": "You channel necrotic energy through your touch, withering flesh.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d10",
+          "damage_type": "necrotic"
+        }
+      ]
+    },
+    {
+      "name": "Ray of Enfeeblement",
+      "cost": 2,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 2,
+      "description": "A black beam of enervating energy springs from your finger toward a creature.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "weakened",
+          "duration": 4,
+          "save": "constitution",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Gentle Repose",
+      "cost": 2,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 2,
+      "description": "You touch a corpse, protecting it from decay and preventing it from becoming undead.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "preserve_corpse",
+          "duration": 240
+        }
+      ]
+    },
+    {
+      "name": "Speak with Dead",
+      "cost": 3,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 3,
+      "description": "You grant a semblance of life to a corpse, allowing it to answer questions.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "speak_dead",
+          "questions": 5
+        }
+      ]
+    },
+    {
+      "name": "Enervation",
+      "cost": 6,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 5,
+      "description": "A tendril of dark energy issues from you, draining the life force of a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d8",
+          "damage_type": "necrotic",
+          "lifesteal": 0.5,
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Create Undead",
+      "cost": 7,
+      "range": 10,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 6,
+      "description": "You create a more powerful undead servant by imbuing a corpse with dark energy.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "ghoul",
+          "count": 3,
+          "duration": 24
+        }
+      ]
+    },
+    {
+      "name": "Finger of Death",
+      "cost": 8,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 7,
+      "description": "You send negative energy coursing through a creature, causing searing pain.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "7d8+30",
+          "damage_type": "necrotic",
+          "save": "constitution",
+          "save_dc": 18
+        }
+      ]
+    },
+    {
+      "name": "Soul Cage",
+      "cost": 7,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 6,
+      "description": "You trap the soul of a recently slain humanoid, harnessing its energy.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "capture_soul",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Clone",
+      "cost": 10,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 8,
+      "description": "You grow an inert duplicate of a living creature as a failsafe against death.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_clone"
+        }
+      ]
+    },
+    {
+      "name": "Power Word Kill",
+      "cost": 12,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 9,
+      "description": "You utter a word of power that can compel a creature with low vitality to die instantly.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "100",
+          "damage_type": "necrotic",
+          "hp_threshold": 100
+        }
+      ]
+    },
+    {
+      "name": "Wither and Bloom",
+      "cost": 2,
+      "range": 60,
+      "target_type": "area",
+      "school": "necromancy",
+      "level": 2,
+      "description": "You drain vitality from one area and channel it to heal an ally nearby.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d6",
+          "damage_type": "necrotic"
+        },
+        {
+          "type": "heal",
+          "amount": "2d6"
+        }
+      ]
+    },
+    {
+      "name": "Negative Energy Flood",
+      "cost": 6,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 5,
+      "description": "You send ribbons of negative energy at a creature, potentially slaying and raising it.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "5d12",
+          "damage_type": "necrotic",
+          "save": "constitution",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Produce Flame",
+      "cost": 0,
+      "range": 30,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 0,
+      "description": "A flickering flame appears in your hand, useful as light or as a weapon to hurl.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d8",
+          "damage_type": "fire"
+        }
+      ]
+    },
+    {
+      "name": "Sword Burst",
+      "cost": 0,
+      "range": 5,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 0,
+      "description": "You create a momentary circle of spectral blades that sweep around you.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "force",
+          "save": "dexterity",
+          "save_dc": 11
+        }
+      ]
+    },
+    {
+      "name": "Infestation",
+      "cost": 0,
+      "range": 30,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 0,
+      "description": "You cause a swarm of biting mites to appear momentarily on a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "poison",
+          "save": "constitution",
+          "save_dc": 11
+        }
+      ]
+    },
+    {
+      "name": "Grease",
+      "cost": 1,
+      "range": 60,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 1,
+      "description": "Slick grease covers the ground in a 10-foot square, making creatures fall prone.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "prone",
+          "save": "dexterity",
+          "save_dc": 12,
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Entangle",
+      "cost": 1,
+      "range": 90,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 1,
+      "description": "Grasping weeds and vines sprout from the ground, restraining creatures in the area.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "restrained",
+          "duration": 3,
+          "save": "strength",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Fog Cloud",
+      "cost": 1,
+      "range": 120,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 1,
+      "description": "A 20-foot radius sphere of fog appears, heavily obscuring the area.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "obscured",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Flaming Sphere",
+      "cost": 2,
+      "range": 60,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 2,
+      "description": "A 5-foot diameter sphere of fire appears and rolls toward enemies each round.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d6",
+          "damage_type": "fire",
+          "duration": 5,
+          "save": "dexterity",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Stinking Cloud",
+      "cost": 3,
+      "range": 90,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 3,
+      "description": "A roiling cloud of nauseating yellow gas fills the area, incapacitating creatures.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "incapacitated",
+          "duration": 4,
+          "save": "constitution",
+          "save_dc": 14
+        }
+      ]
+    },
+    {
+      "name": "Conjure Barrage",
+      "cost": 3,
+      "range": 60,
+      "target_type": "cone",
+      "school": "conjuration",
+      "level": 3,
+      "description": "You throw a projectile and hundreds of duplicates rain down in a wide cone.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d8",
+          "damage_type": "piercing",
+          "save": "dexterity",
+          "save_dc": 14
+        }
+      ]
+    },
+    {
+      "name": "Black Tentacles",
+      "cost": 4,
+      "range": 90,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 4,
+      "description": "Writhing black tentacles fill the area, bludgeoning and restraining creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d6",
+          "damage_type": "bludgeoning"
+        },
+        {
+          "type": "status",
+          "status": "restrained",
+          "duration": 4,
+          "save": "dexterity",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Dimension Door",
+      "cost": 4,
+      "range": 500,
+      "target_type": "self",
+      "school": "conjuration",
+      "level": 4,
+      "description": "You teleport yourself to any spot within range that you can visualize.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "teleport",
+          "distance": 500
+        }
+      ]
+    },
+    {
+      "name": "Conjure Volley",
+      "cost": 6,
+      "range": 150,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 5,
+      "description": "You fire a piece of ammunition into the air, creating a rain of duplicates.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "8d8",
+          "damage_type": "piercing",
+          "save": "dexterity",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Wall of Thorns",
+      "cost": 7,
+      "range": 120,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 6,
+      "description": "A wall of tough, pliable, tangled brush bristling with needle-sharp thorns springs into existence.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "7d8",
+          "damage_type": "piercing",
+          "duration": 5,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Mordenkainen's Sword",
+      "cost": 8,
+      "range": 60,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 7,
+      "description": "You create a sword-shaped plane of force that hovers and strikes at your command.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d10",
+          "damage_type": "force",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Demiplane",
+      "cost": 10,
+      "range": 60,
+      "target_type": "self",
+      "school": "conjuration",
+      "level": 8,
+      "description": "You create a shadowy door that opens to an empty extradimensional room.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_demiplane",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Gate",
+      "cost": 12,
+      "range": 60,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 9,
+      "description": "You conjure a portal linking your plane to a different plane of existence.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_portal",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Insect Plague",
+      "cost": 6,
+      "range": 300,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 5,
+      "description": "A swarm of biting locusts fills a 20-foot radius sphere, dealing piercing damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d10",
+          "damage_type": "piercing",
+          "save": "constitution",
+          "save_dc": 16,
+          "duration": 5,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Minor Illusion",
+      "cost": 0,
+      "range": 30,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 0,
+      "description": "You create a sound or an image of an object within range that lasts for one minute.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_illusion",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Prestidigitation",
+      "cost": 0,
+      "range": 10,
+      "target_type": "single",
+      "school": "illusion",
+      "level": 0,
+      "description": "A minor magical trick used for practice or entertainment.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "minor_trick",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Silent Image",
+      "cost": 1,
+      "range": 60,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 1,
+      "description": "You create the image of an object, creature, or visible phenomenon. It has no sound.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_illusion",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Color Spray",
+      "cost": 1,
+      "range": 15,
+      "target_type": "cone",
+      "school": "illusion",
+      "level": 1,
+      "description": "A dazzling array of flashing colors springs from your hand, blinding creatures.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "blinded",
+          "duration": 1,
+          "hp_budget": "6d10"
+        }
+      ]
+    },
+    {
+      "name": "Blur",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "illusion",
+      "level": 2,
+      "description": "Your body becomes blurred, wavering to all who can see you.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasion",
+          "amount": 1,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Phantasmal Killer",
+      "cost": 4,
+      "range": 120,
+      "target_type": "single",
+      "school": "illusion",
+      "level": 4,
+      "description": "You tap into the nightmares of a creature, creating an illusory manifestation of its fears.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d10",
+          "damage_type": "psychic",
+          "save": "wisdom",
+          "save_dc": 15,
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Seeming",
+      "cost": 6,
+      "range": 30,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 5,
+      "description": "You make a number of creatures look different for the duration.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "disguised",
+          "duration": 8,
+          "max_targets": 6
+        }
+      ]
+    },
+    {
+      "name": "Programmed Illusion",
+      "cost": 7,
+      "range": 120,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 6,
+      "description": "You craft an illusion that activates when a specific condition occurs.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_illusion",
+          "duration": 24,
+          "triggered": true
+        }
+      ]
+    },
+    {
+      "name": "Project Image",
+      "cost": 8,
+      "range": 500,
+      "target_type": "self",
+      "school": "illusion",
+      "level": 7,
+      "description": "You create an illusory copy of yourself that appears at a location within range.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_illusion",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Illusory Dragon",
+      "cost": 10,
+      "range": 120,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 8,
+      "description": "You create an enormous shadowy illusion of a dragon that terrifies and damages foes.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "7d6",
+          "damage_type": "psychic",
+          "save": "wisdom",
+          "save_dc": 19
+        },
+        {
+          "type": "status",
+          "status": "frightened",
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Weird",
+      "cost": 12,
+      "range": 120,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 9,
+      "description": "Drawing on the deepest fears of a group, you create phantasmal horrors visible only to them.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d10",
+          "damage_type": "psychic",
+          "save": "wisdom",
+          "save_dc": 21,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Hypnotic Pattern",
+      "cost": 3,
+      "range": 120,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 3,
+      "description": "You conjure a twisting pattern of colors that weaves through the air, charming creatures.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "charmed",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 14
+        }
+      ]
+    },
+    {
+      "name": "Hallucinatory Terrain",
+      "cost": 4,
+      "range": 300,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 4,
+      "description": "You make terrain in a 150-foot cube look, sound, and smell like another natural terrain.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_illusion",
+          "duration": 24
+        }
+      ]
+    },
+    {
+      "name": "Friends",
+      "cost": 0,
+      "range": 5,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 0,
+      "description": "You magically emanate a sense of friendship toward a creature.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "charisma",
+          "amount": 2,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Vicious Mockery",
+      "cost": 0,
+      "range": 60,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 0,
+      "description": "You unleash a string of insults laced with subtle enchantments at a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d4",
+          "damage_type": "psychic",
+          "save": "wisdom",
+          "save_dc": 11
+        }
+      ]
+    },
+    {
+      "name": "Command",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 1,
+      "description": "You speak a one-word command to a creature, which it must obey on its next turn.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "commanded",
+          "duration": 1,
+          "save": "wisdom",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Calm Emotions",
+      "cost": 2,
+      "range": 60,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 2,
+      "description": "You suppress strong emotions in a group of creatures, calming hostility or fear.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "suppress_emotions",
+          "duration": 3,
+          "save": "charisma",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Suggestion",
+      "cost": 2,
+      "range": 30,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 2,
+      "description": "You suggest a course of activity to a creature, which it pursues to the best of its ability.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "suggested",
+          "duration": 8,
+          "save": "wisdom",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Compulsion",
+      "cost": 4,
+      "range": 30,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 4,
+      "description": "Creatures you choose must move in a direction you designate before taking actions.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "compelled",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Geas",
+      "cost": 6,
+      "range": 60,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 5,
+      "description": "You place a magical command on a creature, forcing it to carry out some service.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "geased",
+          "duration": 30,
+          "save": "wisdom",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Mass Suggestion",
+      "cost": 7,
+      "range": 60,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 6,
+      "description": "You suggest a course of activity to up to twelve creatures that you can see.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "suggested",
+          "duration": 24,
+          "save": "wisdom",
+          "save_dc": 17,
+          "max_targets": 12
+        }
+      ]
+    },
+    {
+      "name": "Feeblemind",
+      "cost": 10,
+      "range": 150,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 8,
+      "description": "You blast the mind of a creature, attempting to shatter its intellect and personality.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d6",
+          "damage_type": "psychic",
+          "save": "intelligence",
+          "save_dc": 19
+        },
+        {
+          "type": "status",
+          "status": "feebleminded",
+          "duration": 30
+        }
+      ]
+    },
+    {
+      "name": "Power Word Stun",
+      "cost": 10,
+      "range": 60,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 8,
+      "description": "You speak a word of power that can overwhelm the mind of a creature, stunning it.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "stunned",
+          "duration": 5,
+          "hp_threshold": 150
+        }
+      ]
+    },
+    {
+      "name": "Psychic Scream",
+      "cost": 12,
+      "range": 90,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 9,
+      "description": "You unleash a wave of devastating psychic energy that shatters minds.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "14d6",
+          "damage_type": "psychic",
+          "save": "intelligence",
+          "save_dc": 21,
+          "max_targets": 10
+        }
+      ]
+    },
+    {
+      "name": "Enthrall",
+      "cost": 2,
+      "range": 60,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 2,
+      "description": "You weave a distracting string of words, causing those who hear to focus entirely on you.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "distracted",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Modify Memory",
+      "cost": 6,
+      "range": 5,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 5,
+      "description": "You attempt to reshape another creature's memories of an event.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "modify_memory",
+          "save": "wisdom",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Guidance",
+      "cost": 0,
+      "range": 5,
+      "target_type": "single",
+      "school": "divination",
+      "level": 0,
+      "description": "You touch a creature and grant it divine guidance on its next ability check.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "ability_check",
+          "amount": 1,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "True Strike",
+      "cost": 0,
+      "range": 30,
+      "target_type": "single",
+      "school": "divination",
+      "level": 0,
+      "description": "You point at a target and briefly perceive the ideal moment to strike.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "attack_bonus",
+          "amount": 2,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Identify",
+      "cost": 1,
+      "range": 5,
+      "target_type": "single",
+      "school": "divination",
+      "level": 1,
+      "description": "You touch an object and learn its properties, how to use it, and any spells affecting it.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "identify_item"
+        }
+      ]
+    },
+    {
+      "name": "Hunter's Mark",
+      "cost": 1,
+      "range": 90,
+      "target_type": "single",
+      "school": "divination",
+      "level": 1,
+      "description": "You choose a creature and mystically mark it as your quarry.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonus_damage",
+          "amount": "1d6",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Augury",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 2,
+      "description": "You receive an omen about the results of a specific course of action.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "divine_omen"
+        }
+      ]
+    },
+    {
+      "name": "Clairvoyance",
+      "cost": 3,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 3,
+      "description": "You create an invisible sensor in a location you are familiar with.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "remote_sense",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Divination",
+      "cost": 4,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 4,
+      "description": "Your magic puts you in contact with a divine entity, who answers one question.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "ask_question"
+        }
+      ]
+    },
+    {
+      "name": "Scrying",
+      "cost": 6,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 5,
+      "description": "You can see and hear a particular creature of your choice on the same plane.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "scry_creature",
+          "duration": 5,
+          "save": "wisdom",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "True Seeing",
+      "cost": 7,
+      "range": 5,
+      "target_type": "single",
+      "school": "divination",
+      "level": 6,
+      "description": "A creature you touch gains truesight, seeing through illusions and into the ethereal.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "truesight",
+          "amount": 120,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Legend Lore",
+      "cost": 6,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 5,
+      "description": "You learn significant lore about a person, place, or object of legendary importance.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "learn_lore"
+        }
+      ]
+    },
+    {
+      "name": "Mind Blank",
+      "cost": 10,
+      "range": 5,
+      "target_type": "single",
+      "school": "divination",
+      "level": 8,
+      "description": "A creature you touch is immune to psychic damage, divination, and charm effects.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "mind_immunity",
+          "amount": 1,
+          "duration": 24
+        }
+      ]
+    },
+    {
+      "name": "Foresight",
+      "cost": 12,
+      "range": 5,
+      "target_type": "single",
+      "school": "divination",
+      "level": 9,
+      "description": "You touch a creature and it gains an uncanny ability to see the immediate future.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "advantage_all",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Locate Creature",
+      "cost": 4,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 4,
+      "description": "You sense the direction to a creature you are familiar with, if within 1000 feet.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "locate_creature",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Temporal Flicker",
+      "cost": 0,
+      "range": 0,
+      "target_type": "self",
+      "school": "chronomancy",
+      "level": 0,
+      "description": "You briefly phase in and out of the timestream, becoming harder to hit for an instant.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "evasion",
+          "amount": 1,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Chrono Jolt",
+      "cost": 0,
+      "range": 60,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 0,
+      "description": "You hurl a shard of displaced time at a creature, stinging it with temporal energy.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d8",
+          "damage_type": "temporal"
+        }
+      ]
+    },
+    {
+      "name": "Hasten Step",
+      "cost": 1,
+      "range": 0,
+      "target_type": "self",
+      "school": "chronomancy",
+      "level": 1,
+      "description": "You briefly accelerate your personal timeflow, moving faster than normal.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "speed",
+          "amount": 20,
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Slow Time",
+      "cost": 2,
+      "range": 60,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 1,
+      "description": "You decelerate a creature's personal time, making its movements sluggish.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "slowed",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Temporal Shield",
+      "cost": 1,
+      "range": 0,
+      "target_type": "self",
+      "school": "chronomancy",
+      "level": 1,
+      "description": "A faint shimmer of distorted time wraps around you, deflecting incoming blows.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "armor_class",
+          "amount": 3,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Time Slip",
+      "cost": 2,
+      "range": 30,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 2,
+      "description": "You briefly skip a creature forward in time, causing it to vanish and reappear.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "time_skip",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Borrowed Time",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "chronomancy",
+      "level": 2,
+      "description": "You steal vitality from your future self, gaining temporary hit points now.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "temp_hp",
+          "amount": "2d8+4",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Aging Touch",
+      "cost": 3,
+      "range": 5,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 3,
+      "description": "You accelerate time for a creature you touch, rapidly aging its body.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d8",
+          "damage_type": "temporal"
+        },
+        {
+          "type": "status",
+          "status": "weakened",
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Rewind Wound",
+      "cost": 3,
+      "range": 30,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 3,
+      "description": "You reverse time on an ally's injuries, undoing recently suffered wounds.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "4d8+4"
+        }
+      ]
+    },
+    {
+      "name": "Temporal Anchor",
+      "cost": 4,
+      "range": 0,
+      "target_type": "self",
+      "school": "chronomancy",
+      "level": 4,
+      "description": "You anchor yourself to this moment in time, and can snap back to it if harmed.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "temporal_anchor",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Chrono Bolt",
+      "cost": 4,
+      "range": 120,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 4,
+      "description": "A bolt of concentrated temporal energy strikes a creature, disrupting its timeline.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d8",
+          "damage_type": "temporal",
+          "save": "wisdom",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Stasis Field",
+      "cost": 4,
+      "range": 60,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 4,
+      "description": "You freeze a creature in a bubble of stopped time. It cannot act or be harmed.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "frozen_in_time",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Temporal Rift",
+      "cost": 5,
+      "range": 90,
+      "target_type": "area",
+      "school": "chronomancy",
+      "level": 5,
+      "description": "You tear open a rift in time, buffeting creatures with chaotic temporal energies.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "8d6",
+          "damage_type": "temporal",
+          "save": "constitution",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Accelerate Ally",
+      "cost": 5,
+      "range": 30,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 5,
+      "description": "You speed up an ally's timestream so greatly they can take an extra action.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "extra_action",
+          "amount": 1,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Age Storm",
+      "cost": 7,
+      "range": 120,
+      "target_type": "area",
+      "school": "chronomancy",
+      "level": 6,
+      "description": "A swirling vortex of time energy ravages an area, aging and withering all within.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "8d10",
+          "damage_type": "temporal",
+          "save": "constitution",
+          "save_dc": 17
+        },
+        {
+          "type": "status",
+          "status": "weakened",
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Temporal Prison",
+      "cost": 8,
+      "range": 120,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 7,
+      "description": "You imprison a creature in a tiny sphere of frozen time, trapping it completely.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "imprisoned",
+          "duration": 10,
+          "save": "wisdom",
+          "save_dc": 18
+        }
+      ]
+    },
+    {
+      "name": "Chronostrike",
+      "cost": 8,
+      "range": 120,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 7,
+      "description": "You strike a creature with a focused beam that ruptures its personal timeline.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "10d10",
+          "damage_type": "temporal",
+          "save": "wisdom",
+          "save_dc": 18
+        }
+      ]
+    },
+    {
+      "name": "Rewrite History",
+      "cost": 10,
+      "range": 0,
+      "target_type": "self",
+      "school": "chronomancy",
+      "level": 8,
+      "description": "You reach back through time and alter a recent event, changing its outcome.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "rewrite_event"
+        }
+      ]
+    },
+    {
+      "name": "Temporal Cascade",
+      "cost": 10,
+      "range": 120,
+      "target_type": "area",
+      "school": "chronomancy",
+      "level": 8,
+      "description": "Time fractures in a massive area, dealing devastating temporal damage to all caught within.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "12d8",
+          "damage_type": "temporal",
+          "save": "constitution",
+          "save_dc": 19
+        }
+      ]
+    },
+    {
+      "name": "Time Stop",
+      "cost": 12,
+      "range": 0,
+      "target_type": "self",
+      "school": "chronomancy",
+      "level": 9,
+      "description": "You briefly stop the flow of time for all creatures except yourself.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "extra_turns",
+          "amount": 3,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Paradox Unraveling",
+      "cost": 6,
+      "range": 60,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 5,
+      "description": "You unravel the temporal fabric around a creature, causing paradoxical harm.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d10",
+          "damage_type": "temporal"
+        },
+        {
+          "type": "status",
+          "status": "confused",
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "name": "D\u00c3\u00a9j\u00c3\u00a0 Vu",
+      "cost": 2,
+      "range": 60,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 2,
+      "description": "You force a creature to re-experience a painful moment, stunning it briefly.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "stunned",
+          "duration": 1,
+          "save": "wisdom",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Temporal Echo",
+      "cost": 3,
+      "range": 0,
+      "target_type": "self",
+      "school": "chronomancy",
+      "level": 3,
+      "description": "You summon an echo of yourself from a moment ago to fight alongside you.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "temporal_echo",
+          "count": 1,
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Moment of Prescience",
+      "cost": 7,
+      "range": 0,
+      "target_type": "self",
+      "school": "chronomancy",
+      "level": 6,
+      "description": "You peer a few seconds into the future, gaining perfect foresight in combat.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "attack_bonus",
+          "amount": 5,
+          "duration": 3
+        },
+        {
+          "type": "buff",
+          "stat": "armor_class",
+          "amount": 5,
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Searing Smite",
+      "cost": 1,
+      "range": 0,
+      "target_type": "self",
+      "school": "evocation",
+      "level": 1,
+      "description": "Your weapon flares with white-hot intensity, adding fire damage to your strike.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "fire",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Hellish Rebuke",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 1,
+      "description": "You point your finger and the creature that damaged you is engulfed in hellish flames.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d10",
+          "damage_type": "fire",
+          "save": "dexterity",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Aganazzar's Scorcher",
+      "cost": 2,
+      "range": 30,
+      "target_type": "cone",
+      "school": "evocation",
+      "level": 2,
+      "description": "A jet of roaring flame sprays out in a line, scorching everything in its path.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d8",
+          "damage_type": "fire",
+          "save": "dexterity",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Snilloc's Snowball Swarm",
+      "cost": 2,
+      "range": 90,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 2,
+      "description": "A flurry of magic snowballs erupts, pelting creatures with frigid impacts.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d6",
+          "damage_type": "cold",
+          "save": "dexterity",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Spirit Guardians",
+      "cost": 3,
+      "range": 0,
+      "target_type": "self",
+      "school": "evocation",
+      "level": 3,
+      "description": "Spectral warriors orbit you, striking at hostile creatures that come too close.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d8",
+          "damage_type": "radiant",
+          "duration": 5,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Vitriolic Sphere",
+      "cost": 4,
+      "range": 150,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 4,
+      "description": "You hurl a glowing green orb that bursts into a splash of acid on impact.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "10d4",
+          "damage_type": "acid",
+          "save": "dexterity",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Destructive Wave",
+      "cost": 6,
+      "range": 30,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 5,
+      "description": "You strike the ground, creating a burst of divine energy that ripples outward.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "5d6",
+          "damage_type": "thunder"
+        },
+        {
+          "type": "damage",
+          "amount": "5d6",
+          "damage_type": "radiant"
+        }
+      ]
+    },
+    {
+      "name": "Otiluke's Freezing Sphere",
+      "cost": 7,
+      "range": 300,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 6,
+      "description": "A frigid globe of cold energy streaks to a point and explodes in a 60-foot radius.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "10d6",
+          "damage_type": "cold",
+          "save": "constitution",
+          "save_dc": 17
+        }
+      ]
+    },
+    {
+      "name": "Fire Storm",
+      "cost": 8,
+      "range": 150,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 7,
+      "description": "A storm of roaring flame appears in multiple designated areas, burning selectively.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "7d10",
+          "damage_type": "fire",
+          "save": "dexterity",
+          "save_dc": 18
+        }
+      ]
+    },
+    {
+      "name": "Dispel Evil and Good",
+      "cost": 6,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 5,
+      "description": "Shimmering energy surrounds and protects you from fey, undead, and fiends.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "protection",
+          "value": "extraplanar",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Arcane Lock",
+      "cost": 2,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 2,
+      "description": "You touch a closed door, window, gate, or chest and it becomes magically locked.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "magical_lock"
+        }
+      ]
+    },
+    {
+      "name": "Nondetection",
+      "cost": 3,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 3,
+      "description": "You hide a target from divination magic for 8 hours.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "divination_immunity",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Fire Shield",
+      "cost": 4,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 4,
+      "description": "Thin flickering flames wreathe your body, granting resistance and retaliatory damage.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damage_resistance",
+          "value": "cold",
+          "duration": 5
+        },
+        {
+          "type": "damage",
+          "amount": "2d8",
+          "damage_type": "fire"
+        }
+      ]
+    },
+    {
+      "name": "Forbiddance",
+      "cost": 7,
+      "range": 5,
+      "target_type": "area",
+      "school": "abjuration",
+      "level": 6,
+      "description": "You create a ward against magical travel that also damages certain creature types.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "5d10",
+          "damage_type": "radiant",
+          "duration": 24
+        }
+      ]
+    },
+    {
+      "name": "Regenerate",
+      "cost": 8,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 7,
+      "description": "You touch a creature and stimulate its natural healing, restoring vitality over time.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "4d8+15"
+        },
+        {
+          "type": "heal",
+          "amount": "1d6",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Antimagic Field",
+      "cost": 10,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 8,
+      "description": "A 10-foot radius invisible sphere of antimagic surrounds you, suppressing all magic.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "suppress_magic",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Water Breathing",
+      "cost": 3,
+      "range": 30,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 3,
+      "description": "You grant up to ten willing creatures the ability to breathe underwater.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "water_breathing",
+          "amount": 1,
+          "duration": 24,
+          "max_targets": 10
+        }
+      ]
+    },
+    {
+      "name": "Alter Self",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "transmutation",
+      "level": 2,
+      "description": "You assume a different form, gaining natural weapons, aquatic adaptation, or disguise.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "altered",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Catapult",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 1,
+      "description": "You choose an unattended object and magically fling it at a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d8",
+          "damage_type": "bludgeoning",
+          "save": "dexterity",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Levitate",
+      "cost": 2,
+      "range": 60,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 2,
+      "description": "One creature or object rises vertically up to 20 feet and remains suspended.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "levitate",
+          "duration": 5,
+          "save": "constitution",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Etherealness",
+      "cost": 8,
+      "range": 0,
+      "target_type": "self",
+      "school": "transmutation",
+      "level": 7,
+      "description": "You step into the border regions of the Ethereal Plane, becoming ghostlike.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "ethereal",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "True Polymorph",
+      "cost": 12,
+      "range": 30,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 9,
+      "description": "You transform a creature into another creature or object permanently.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "polymorphed",
+          "duration": 999,
+          "save": "wisdom",
+          "save_dc": 21
+        }
+      ]
+    },
+    {
+      "name": "Circle of Death",
+      "cost": 7,
+      "range": 150,
+      "target_type": "area",
+      "school": "necromancy",
+      "level": 6,
+      "description": "A sphere of negative energy ripples out, dealing necrotic damage to all living creatures within.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "8d6",
+          "damage_type": "necrotic",
+          "save": "constitution",
+          "save_dc": 17
+        }
+      ]
+    },
+    {
+      "name": "Harm",
+      "cost": 7,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 6,
+      "description": "You unleash a virulent disease on a creature, reducing its hit point maximum.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "14d6",
+          "damage_type": "necrotic",
+          "save": "constitution",
+          "save_dc": 17
+        }
+      ]
+    },
+    {
+      "name": "Eyebite",
+      "cost": 7,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 6,
+      "description": "Your eyes become pools of darkness, cursing a creature each round with sleep, panic, or sickness.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "asleep_or_frightened",
+          "duration": 5,
+          "save": "wisdom",
+          "save_dc": 17
+        }
+      ]
+    },
+    {
+      "name": "Abi-Dalzim's Horrid Wilting",
+      "cost": 10,
+      "range": 150,
+      "target_type": "area",
+      "school": "necromancy",
+      "level": 8,
+      "description": "You draw the moisture from every creature in a 30-foot cube, causing devastating pain.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "12d8",
+          "damage_type": "necrotic",
+          "save": "constitution",
+          "save_dc": 19
+        }
+      ]
+    },
+    {
+      "name": "Astral Projection",
+      "cost": 12,
+      "range": 10,
+      "target_type": "area",
+      "school": "necromancy",
+      "level": 9,
+      "description": "You project your astral body into the astral plane, leaving your physical body behind.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "astral_project",
+          "max_targets": 8
+        }
+      ]
+    },
+    {
+      "name": "Contagion",
+      "cost": 6,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 5,
+      "description": "Your touch inflicts disease on a creature, poisoning it with a terrible plague.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "diseased",
+          "duration": 7,
+          "save": "constitution",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Tsunami",
+      "cost": 10,
+      "range": 0,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 8,
+      "description": "A wall of water springs into existence, crashing forward and sweeping away everything.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d10",
+          "damage_type": "bludgeoning",
+          "save": "strength",
+          "save_dc": 19,
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Conjure Elemental",
+      "cost": 6,
+      "range": 90,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 5,
+      "description": "You call forth an elemental servant from the corresponding elemental plane.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "elemental",
+          "count": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Create Food and Water",
+      "cost": 3,
+      "range": 30,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 3,
+      "description": "You create enough food and water to sustain up to fifteen humanoids for a day.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_sustenance",
+          "max_targets": 15
+        }
+      ]
+    },
+    {
+      "name": "Unseen Servant",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 1,
+      "description": "An invisible, mindless, shapeless force performs simple tasks at your command.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "unseen_servant",
+          "count": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Find Familiar",
+      "cost": 1,
+      "range": 10,
+      "target_type": "self",
+      "school": "conjuration",
+      "level": 1,
+      "description": "You gain the service of a familiar, a spirit that takes an animal form you choose.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "familiar",
+          "count": 1,
+          "duration": 999
+        }
+      ]
+    },
+    {
+      "name": "Sleet Storm",
+      "cost": 3,
+      "range": 150,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 3,
+      "description": "Freezing rain and sleet fall in a 20-foot radius, creating difficult terrain.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "prone",
+          "save": "dexterity",
+          "save_dc": 14,
+          "duration": 4
+        }
+      ]
+    },
+    {
+      "name": "Arcane Gate",
+      "cost": 7,
+      "range": 500,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 6,
+      "description": "You create linked teleportation portals at two points within range.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_portal",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Conjure Fey",
+      "cost": 7,
+      "range": 90,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 6,
+      "description": "You summon a fey creature to serve and fight for you.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "fey_spirit",
+          "count": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Plane Shift",
+      "cost": 8,
+      "range": 5,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 7,
+      "description": "You transport yourself and up to eight creatures to a different plane of existence.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "plane_shift",
+          "max_targets": 8
+        }
+      ]
+    },
+    {
+      "name": "Maze",
+      "cost": 10,
+      "range": 60,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 8,
+      "description": "You banish a creature into a labyrinthine demiplane, trapping it.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "banish_maze",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Creation",
+      "cost": 6,
+      "range": 30,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 5,
+      "description": "You pull wisps of shadow material to create a nonliving object of vegetable or mineral matter.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_object",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Phantom Steed",
+      "cost": 3,
+      "range": 30,
+      "target_type": "single",
+      "school": "illusion",
+      "level": 3,
+      "description": "A quasi-real horse-like creature appears, serving as a swift mount.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "phantom_steed",
+          "count": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Major Image",
+      "cost": 3,
+      "range": 120,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 3,
+      "description": "You create the image of an object, creature, or phenomenon with sound, smell, and temperature.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_illusion",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Shadow Blade",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "illusion",
+      "level": 2,
+      "description": "You weave together threads of shadow to create a blade of solidified gloom.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d8",
+          "damage_type": "psychic",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Nathair's Mischief",
+      "cost": 2,
+      "range": 60,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 2,
+      "description": "You fill a cube with fey mischief: blinding light, charming scents, or other tricks.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "charmed",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Mirage Arcane",
+      "cost": 8,
+      "range": 0,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 7,
+      "description": "You make terrain in an area up to one mile square look, sound, and smell like other terrain.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_illusion",
+          "duration": 240
+        }
+      ]
+    },
+    {
+      "name": "Mental Prison",
+      "cost": 7,
+      "range": 60,
+      "target_type": "single",
+      "school": "illusion",
+      "level": 6,
+      "description": "You attempt to bind a creature within an illusory cell that it perceives as deadly.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "5d10",
+          "damage_type": "psychic",
+          "save": "intelligence",
+          "save_dc": 17
+        },
+        {
+          "type": "status",
+          "status": "restrained",
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Antipathy/Sympathy",
+      "cost": 10,
+      "range": 60,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 8,
+      "description": "You target an object or area with an aura that attracts or repels specified creatures.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "attracted_or_repelled",
+          "duration": 240,
+          "save": "wisdom",
+          "save_dc": 19
+        }
+      ]
+    },
+    {
+      "name": "Dominate Monster",
+      "cost": 10,
+      "range": 60,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 8,
+      "description": "You attempt to beguile a creature, which must make a Wisdom save or become your puppet.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "dominated",
+          "duration": 8,
+          "save": "wisdom",
+          "save_dc": 19
+        }
+      ]
+    },
+    {
+      "name": "Crown of Madness",
+      "cost": 2,
+      "range": 120,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 2,
+      "description": "A twisted crown of jagged iron appears on a humanoid's head, driving it to attack allies.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "charmed",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Irresistible Dance",
+      "cost": 7,
+      "range": 30,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 6,
+      "description": "You compel a creature to begin dancing, capering, and shuffling its feet.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "incapacitated",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 17
+        }
+      ]
+    },
+    {
+      "name": "Synaptic Static",
+      "cost": 6,
+      "range": 120,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 5,
+      "description": "You cause psychic energy to erupt at a point, scrambling the thoughts of creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "8d6",
+          "damage_type": "psychic",
+          "save": "intelligence",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Zone of Truth",
+      "cost": 2,
+      "range": 60,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 2,
+      "description": "You create a magical zone where creatures cannot speak a deliberate lie.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "truth_zone",
+          "duration": 5,
+          "save": "charisma",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Tongues",
+      "cost": 3,
+      "range": 5,
+      "target_type": "single",
+      "school": "divination",
+      "level": 3,
+      "description": "A creature you touch gains the ability to understand and speak any language.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "comprehend_languages",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Commune",
+      "cost": 6,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 5,
+      "description": "You contact your deity or a divine proxy and ask up to three yes-or-no questions.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "ask_question",
+          "questions": 3
+        }
+      ]
+    },
+    {
+      "name": "Contact Other Plane",
+      "cost": 6,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 5,
+      "description": "You mentally contact a demigod or the spirit of a sage from another plane.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "ask_question",
+          "questions": 5
+        }
+      ]
+    },
+    {
+      "name": "Arcane Eye",
+      "cost": 4,
+      "range": 30,
+      "target_type": "self",
+      "school": "divination",
+      "level": 4,
+      "description": "You create an invisible, magical eye that hovers in the air and scouts for you.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "remote_sense",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Comprehend Languages",
+      "cost": 1,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 1,
+      "description": "For the duration, you understand the literal meaning of any spoken language.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "comprehend_languages",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Find Traps",
+      "cost": 2,
+      "range": 120,
+      "target_type": "area",
+      "school": "divination",
+      "level": 2,
+      "description": "You sense the presence of any trap within line of sight.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "detect_traps"
+        }
+      ]
+    },
+    {
+      "name": "Rary's Telepathic Bond",
+      "cost": 6,
+      "range": 30,
+      "target_type": "area",
+      "school": "divination",
+      "level": 5,
+      "description": "You forge a telepathic link among up to eight willing creatures.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "telepathic_link",
+          "duration": 8,
+          "max_targets": 8
+        }
+      ]
+    },
+    {
+      "name": "Divination Sigil",
+      "cost": 0,
+      "range": 5,
+      "target_type": "single",
+      "school": "divination",
+      "level": 0,
+      "description": "You mark a surface with a glowing sigil that reveals the last creature to touch it.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "detect_presence",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Mass Heal",
+      "cost": 12,
+      "range": 60,
+      "target_type": "area",
+      "school": "abjuration",
+      "level": 9,
+      "description": "A flood of healing energy flows from you into injured creatures around you.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "700",
+          "max_targets": 6
+        }
+      ]
+    },
+    {
+      "name": "Thunder Step",
+      "cost": 3,
+      "range": 90,
+      "target_type": "self",
+      "school": "conjuration",
+      "level": 3,
+      "description": "You teleport to a visible unoccupied space, and a thunderclap erupts where you stood.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "teleport",
+          "distance": 90
+        },
+        {
+          "type": "damage",
+          "amount": "3d10",
+          "damage_type": "thunder"
+        }
+      ]
+    },
+    {
+      "name": "Scatter",
+      "cost": 7,
+      "range": 30,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 6,
+      "description": "You teleport up to five creatures you can see to unoccupied spaces you choose.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "teleport_others",
+          "max_targets": 5,
+          "distance": 120
+        }
+      ]
+    },
+    {
+      "name": "Mordenkainen's Magnificent Mansion",
+      "cost": 8,
+      "range": 300,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 7,
+      "description": "You conjure an extradimensional dwelling with lavish accommodations and invisible servants.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_dwelling",
+          "duration": 24
+        }
+      ]
+    },
+    {
+      "name": "Telepathy",
+      "cost": 10,
+      "range": 0,
+      "target_type": "self",
+      "school": "divination",
+      "level": 8,
+      "description": "You create a telepathic link with a willing creature anywhere on the same plane.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "telepathic_link",
+          "duration": 24
+        }
+      ]
+    },
+    {
+      "name": "Hunger of Hadar",
+      "cost": 3,
+      "range": 150,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 3,
+      "description": "You open a gateway to the void between the stars, a region of cold darkness.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d6",
+          "damage_type": "cold"
+        },
+        {
+          "type": "damage",
+          "amount": "2d6",
+          "damage_type": "acid",
+          "duration": 4,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Eldritch Smite",
+      "cost": 6,
+      "range": 5,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 5,
+      "description": "Your weapon flares with eldritch power, delivering a devastating blast of force.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d8",
+          "damage_type": "force"
+        },
+        {
+          "type": "status",
+          "status": "prone",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Guiding Bolt",
+      "cost": 1,
+      "range": 120,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 1,
+      "description": "A flash of light streaks toward a creature, granting advantage on the next attack against it.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d6",
+          "damage_type": "radiant"
+        },
+        {
+          "type": "status",
+          "status": "illuminated",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Healing Word",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 1,
+      "description": "You speak a word of healing power, mending an ally's wounds from a distance.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "1d4+3"
+        }
+      ]
+    },
+    {
+      "name": "Aura of Vitality",
+      "cost": 3,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 3,
+      "description": "A healing aura radiates from you, allowing you to restore hit points to nearby allies each round.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "2d6",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Warding Wind",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "evocation",
+      "level": 2,
+      "description": "Strong wind swirls around you, deflecting ranged attacks and dispersing gases.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "ranged_defense",
+          "amount": 1,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Wind Wall",
+      "cost": 3,
+      "range": 120,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 3,
+      "description": "A wall of strong wind rises from the ground, deflecting arrows and small creatures.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "ranged_barrier",
+          "amount": 1,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Maelstrom",
+      "cost": 6,
+      "range": 120,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 5,
+      "description": "A churning mass of water appears, pulling creatures toward its center.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d6",
+          "damage_type": "bludgeoning",
+          "save": "strength",
+          "save_dc": 16,
+          "duration": 5,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Immolation",
+      "cost": 6,
+      "range": 90,
+      "target_type": "single",
+      "school": "evocation",
+      "level": 5,
+      "description": "Flames wreathe a creature, burning it continuously until the spell ends.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "8d6",
+          "damage_type": "fire",
+          "save": "dexterity",
+          "save_dc": 16,
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Bones of the Earth",
+      "cost": 7,
+      "range": 120,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 6,
+      "description": "You cause up to six pillars of stone to burst from the ground, potentially trapping creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d6",
+          "damage_type": "bludgeoning",
+          "save": "dexterity",
+          "save_dc": 17
+        },
+        {
+          "type": "status",
+          "status": "restrained",
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "name": "Move Earth",
+      "cost": 7,
+      "range": 120,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 6,
+      "description": "You reshape dirt, sand, or clay in a 40-foot cube, creating trenches or raising terrain.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "shape_terrain",
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "name": "Fabricate",
+      "cost": 4,
+      "range": 120,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 4,
+      "description": "You convert raw materials into products of the same material.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "fabricate_item"
+        }
+      ]
+    },
+    {
+      "name": "Transmute Rock",
+      "cost": 6,
+      "range": 120,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 5,
+      "description": "You choose an area of rock and transform it into mud, or vice versa.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "transmute_material",
+          "duration": 999
+        }
+      ]
+    },
+    {
+      "name": "Animal Shapes",
+      "cost": 10,
+      "range": 30,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 8,
+      "description": "You transform up to ten willing creatures into beasts of your choice.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "polymorphed",
+          "duration": 24,
+          "max_targets": 10
+        }
+      ]
+    },
+    {
+      "name": "Mass Polymorph",
+      "cost": 12,
+      "range": 120,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 9,
+      "description": "You transform up to ten creatures into new forms of your choosing.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "polymorphed",
+          "duration": 8,
+          "save": "wisdom",
+          "save_dc": 21,
+          "max_targets": 10
+        }
+      ]
+    },
+    {
+      "name": "Slow Decay",
+      "cost": 1,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 1,
+      "description": "You slow the progress of a poison or disease in a creature, buying time for a cure.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "slow_condition",
+          "duration": 24
+        }
+      ]
+    },
+    {
+      "name": "Life Transference",
+      "cost": 3,
+      "range": 30,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 3,
+      "description": "You sacrifice some of your own vitality to mend another creature's injuries.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d8",
+          "damage_type": "necrotic"
+        },
+        {
+          "type": "heal",
+          "amount": "8d8"
+        }
+      ]
+    },
+    {
+      "name": "Danse Macabre",
+      "cost": 6,
+      "range": 60,
+      "target_type": "area",
+      "school": "necromancy",
+      "level": 5,
+      "description": "You reanimate up to five corpses to serve as undead warriors under your command.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "zombie",
+          "count": 5,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Soul Jar",
+      "cost": 10,
+      "range": 0,
+      "target_type": "self",
+      "school": "necromancy",
+      "level": 8,
+      "description": "You trap your soul in a specially prepared container, gaining lichlike resilience.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "soul_vessel"
+        }
+      ]
+    },
+    {
+      "name": "Phantom Fog",
+      "cost": 1,
+      "range": 120,
+      "target_type": "area",
+      "school": "illusion",
+      "level": 1,
+      "description": "You create a bank of illusory fog that creatures believe is real.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "obscured",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Simulacrum",
+      "cost": 8,
+      "range": 5,
+      "target_type": "single",
+      "school": "illusion",
+      "level": 7,
+      "description": "You shape an illusory duplicate of a beast or humanoid made partly of ice and snow.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "simulacrum",
+          "count": 1,
+          "duration": 999
+        }
+      ]
+    },
+    {
+      "name": "Creation of Thralls",
+      "cost": 4,
+      "range": 60,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 4,
+      "description": "You place a charm upon a creature, binding it to serve your will in combat.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "charmed",
+          "duration": 8,
+          "save": "wisdom",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Intellect Fortress",
+      "cost": 3,
+      "range": 30,
+      "target_type": "area",
+      "school": "abjuration",
+      "level": 3,
+      "description": "You create a barrier of psychic energy around allies, granting resistance to psychic damage.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damage_resistance",
+          "value": "psychic",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Catnap",
+      "cost": 3,
+      "range": 30,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 3,
+      "description": "You make up to three willing creatures fall unconscious for a brief restorative sleep.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "short_rest",
+          "max_targets": 3
+        }
+      ]
+    },
+    {
+      "name": "Hex",
+      "cost": 1,
+      "range": 90,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 1,
+      "description": "You place a curse on a creature, dealing extra necrotic damage when you hit it.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonus_damage",
+          "amount": "1d6",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Tasha's Hideous Laughter",
+      "cost": 1,
+      "range": 30,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 1,
+      "description": "A creature perceives everything as hilariously funny and falls into fits of laughter.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "incapacitated",
+          "duration": 3,
+          "save": "wisdom",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Tasha's Mind Whip",
+      "cost": 2,
+      "range": 90,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 2,
+      "description": "You psychically lash out at a creature, disrupting its ability to act.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d6",
+          "damage_type": "psychic",
+          "save": "intelligence",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Rime's Binding Ice",
+      "cost": 2,
+      "range": 0,
+      "target_type": "cone",
+      "school": "evocation",
+      "level": 2,
+      "description": "A burst of rime spreads from you in a cone, freezing and restraining creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "3d8",
+          "damage_type": "cold",
+          "save": "constitution",
+          "save_dc": 13
+        },
+        {
+          "type": "status",
+          "status": "restrained",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Tidal Wave",
+      "cost": 3,
+      "range": 120,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 3,
+      "description": "You conjure up a wave of water that crashes down on an area, sweeping creatures away.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d8",
+          "damage_type": "bludgeoning",
+          "save": "dexterity",
+          "save_dc": 14
+        },
+        {
+          "type": "status",
+          "status": "prone",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "name": "Watery Sphere",
+      "cost": 4,
+      "range": 90,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 4,
+      "description": "You conjure a sphere of water that can engulf and restrain creatures inside it.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "restrained",
+          "duration": 5,
+          "save": "strength",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Steel Wind Strike",
+      "cost": 6,
+      "range": 30,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 5,
+      "description": "You flourish a weapon and vanish, striking up to five creatures with wind-quick blows.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d10",
+          "damage_type": "force",
+          "max_targets": 5
+        }
+      ]
+    },
+    {
+      "name": "Temporal Reverberation",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 1,
+      "description": "You cause a creature to experience the same injury twice as time echoes back on itself.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d6",
+          "damage_type": "temporal"
+        }
+      ]
+    },
+    {
+      "name": "Chronal Disruption",
+      "cost": 7,
+      "range": 90,
+      "target_type": "area",
+      "school": "chronomancy",
+      "level": 6,
+      "description": "You shatter the timestream in an area, causing creatures to age and de-age wildly.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d12",
+          "damage_type": "temporal",
+          "save": "constitution",
+          "save_dc": 17
+        },
+        {
+          "type": "status",
+          "status": "confused",
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "name": "Ray of Sickness",
+      "cost": 1,
+      "range": 60,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 1,
+      "description": "A ray of sickening greenish energy lashes out toward a creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "2d8",
+          "damage_type": "poison",
+          "save": "constitution",
+          "save_dc": 12
+        }
+      ]
+    },
+    {
+      "name": "Shadow of Moil",
+      "cost": 4,
+      "range": 0,
+      "target_type": "self",
+      "school": "necromancy",
+      "level": 4,
+      "description": "Threads of dark shadow wrap around you, dealing necrotic damage to those who strike you.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damage_resistance",
+          "value": "radiant",
+          "duration": 5
+        },
+        {
+          "type": "damage",
+          "amount": "2d8",
+          "damage_type": "necrotic"
+        }
+      ]
+    },
+    {
+      "name": "Spirit Shroud",
+      "cost": 3,
+      "range": 0,
+      "target_type": "self",
+      "school": "necromancy",
+      "level": 3,
+      "description": "Spirits of the dead surround you, adding necrotic damage to your strikes.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "bonus_damage",
+          "amount": "1d8",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Summon Undead",
+      "cost": 3,
+      "range": 90,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 3,
+      "description": "You call forth a spirit of undeath that manifests as a ghostly, putrid, or skeletal form.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "undead_spirit",
+          "count": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Summon Fey",
+      "cost": 3,
+      "range": 90,
+      "target_type": "single",
+      "school": "conjuration",
+      "level": 3,
+      "description": "You call forth a fey spirit that takes on a tricksy, fuming, or mirthful form.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "fey_spirit",
+          "count": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Armor of Agathys",
+      "cost": 1,
+      "range": 0,
+      "target_type": "self",
+      "school": "abjuration",
+      "level": 1,
+      "description": "A protective magical force surrounds you in a coat of spectral frost.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "temp_hp",
+          "amount": 5,
+          "duration": 8
+        },
+        {
+          "type": "damage",
+          "amount": "5",
+          "damage_type": "cold"
+        }
+      ]
+    },
+    {
+      "name": "Motivational Speech",
+      "cost": 3,
+      "range": 60,
+      "target_type": "area",
+      "school": "enchantment",
+      "level": 3,
+      "description": "You give an inspiring speech that bolsters up to five allies with temporary vitality.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "temp_hp",
+          "amount": 5,
+          "duration": 8,
+          "max_targets": 5
+        }
+      ]
+    },
+    {
+      "name": "Gift of Alacrity",
+      "cost": 1,
+      "range": 5,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 1,
+      "description": "You touch a creature and quicken its reflexes, adding a burst of temporal speed.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "initiative",
+          "amount": 3,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Fortune's Favor",
+      "cost": 2,
+      "range": 60,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 2,
+      "description": "You grant a creature a shard of future luck, letting it reroll a failed check.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "lucky_reroll",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Wristpocket",
+      "cost": 2,
+      "range": 0,
+      "target_type": "self",
+      "school": "chronomancy",
+      "level": 2,
+      "description": "You flick an object into an extratemporal pocket, storing it outside normal time.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "store_item",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Pulse Wave",
+      "cost": 3,
+      "range": 30,
+      "target_type": "cone",
+      "school": "chronomancy",
+      "level": 3,
+      "description": "A wave of temporal force blasts from you, pushing or pulling creatures caught in it.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d6",
+          "damage_type": "force",
+          "save": "constitution",
+          "save_dc": 14
+        }
+      ]
+    },
+    {
+      "name": "Gravity Sinkhole",
+      "cost": 4,
+      "range": 120,
+      "target_type": "area",
+      "school": "chronomancy",
+      "level": 4,
+      "description": "You create a localized point of intense gravity that pulls creatures toward its center.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "5d10",
+          "damage_type": "force",
+          "save": "constitution",
+          "save_dc": 15
+        }
+      ]
+    },
+    {
+      "name": "Temporal Shunt",
+      "cost": 6,
+      "range": 120,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 5,
+      "description": "You push a creature moments into the future, causing it to vanish temporarily.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "time_skip",
+          "duration": 1,
+          "save": "wisdom",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Reality Break",
+      "cost": 10,
+      "range": 60,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 8,
+      "description": "You shatter the fabric of reality around a creature, subjecting it to random temporal effects.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "10d12",
+          "damage_type": "temporal",
+          "save": "wisdom",
+          "save_dc": 19
+        }
+      ]
+    },
+    {
+      "name": "Tether Essence",
+      "cost": 8,
+      "range": 60,
+      "target_type": "single",
+      "school": "chronomancy",
+      "level": 7,
+      "description": "You link two creatures' timelines so that damage to one echoes onto the other.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "tether_creatures",
+          "duration": 5,
+          "save": "constitution",
+          "save_dc": 18
+        }
+      ]
+    },
+    {
+      "name": "Plant Growth",
+      "cost": 3,
+      "range": 150,
+      "target_type": "area",
+      "school": "transmutation",
+      "level": 3,
+      "description": "Plants in the area grow thick and overgrown, turning the terrain into difficult ground.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "difficult_terrain",
+          "duration": 999
+        }
+      ]
+    },
+    {
+      "name": "Elemental Weapon",
+      "cost": 3,
+      "range": 5,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 3,
+      "description": "A weapon you touch becomes infused with elemental energy, granting bonus damage.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "weapon_damage",
+          "amount": "1d4",
+          "duration": 8
+        },
+        {
+          "type": "buff",
+          "stat": "attack_bonus",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Magic Weapon",
+      "cost": 2,
+      "range": 5,
+      "target_type": "single",
+      "school": "transmutation",
+      "level": 2,
+      "description": "You touch a nonmagical weapon and it becomes magical with a bonus to attack and damage.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "attack_bonus",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Investiture of Ice",
+      "cost": 7,
+      "range": 0,
+      "target_type": "self",
+      "school": "transmutation",
+      "level": 6,
+      "description": "Icy rime covers your body, granting cold immunity and a freezing ground aura.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "damage_immunity",
+          "value": "cold",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Whirlwind",
+      "cost": 8,
+      "range": 300,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 7,
+      "description": "A raging whirlwind appears at a point you designate, hurling creatures skyward.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "10d6",
+          "damage_type": "bludgeoning",
+          "save": "dexterity",
+          "save_dc": 18
+        }
+      ]
+    },
+    {
+      "name": "Crown of Stars",
+      "cost": 8,
+      "range": 0,
+      "target_type": "self",
+      "school": "evocation",
+      "level": 7,
+      "description": "Seven star-like motes of light orbit your head. You can send them streaking at foes.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d12",
+          "damage_type": "radiant",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Illusory Script",
+      "cost": 1,
+      "range": 5,
+      "target_type": "single",
+      "school": "illusion",
+      "level": 1,
+      "description": "You write on parchment or another surface and imbue it with an illusion.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "create_illusion",
+          "duration": 240
+        }
+      ]
+    },
+    {
+      "name": "Enemies Abound",
+      "cost": 3,
+      "range": 120,
+      "target_type": "single",
+      "school": "enchantment",
+      "level": 3,
+      "description": "You reach into a creature's mind and make it perceive all other creatures as enemies.",
+      "effects": [
+        {
+          "type": "status",
+          "status": "confused",
+          "duration": 3,
+          "save": "intelligence",
+          "save_dc": 14
+        }
+      ]
+    },
+    {
+      "name": "Phantasmal Force",
+      "cost": 2,
+      "range": 60,
+      "target_type": "single",
+      "school": "illusion",
+      "level": 2,
+      "description": "You craft an illusion that takes root in a creature's mind, causing perceived damage.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "1d6",
+          "damage_type": "psychic",
+          "duration": 5,
+          "save": "intelligence",
+          "save_dc": 13
+        }
+      ]
+    },
+    {
+      "name": "Wail of the Banshee",
+      "cost": 12,
+      "range": 60,
+      "target_type": "area",
+      "school": "necromancy",
+      "level": 9,
+      "description": "You release a terrible scream of death that drains the life from all who hear it.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "15d6",
+          "damage_type": "necrotic",
+          "save": "constitution",
+          "save_dc": 21,
+          "max_targets": 10
+        }
+      ]
+    },
+    {
+      "name": "Witch's Cauldron",
+      "cost": 4,
+      "range": 60,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 4,
+      "description": "You conjure a bubbling cauldron of foul liquid that splashes and poisons nearby creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "4d6",
+          "damage_type": "poison",
+          "save": "constitution",
+          "save_dc": 15,
+          "duration": 3,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Dawn of the Temporal Tide",
+      "cost": 12,
+      "range": 120,
+      "target_type": "area",
+      "school": "chronomancy",
+      "level": 9,
+      "description": "You unleash a tidal wave of raw time energy that rips through the fabric of reality.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "15d10",
+          "damage_type": "temporal",
+          "save": "wisdom",
+          "save_dc": 21
+        }
+      ]
+    },
+    {
+      "name": "Prayer of Healing",
+      "cost": 2,
+      "range": 30,
+      "target_type": "area",
+      "school": "abjuration",
+      "level": 2,
+      "description": "Up to six creatures of your choice regain hit points as you lead a healing prayer.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "2d8+3",
+          "max_targets": 6
+        }
+      ]
+    },
+    {
+      "name": "Aid",
+      "cost": 2,
+      "range": 30,
+      "target_type": "area",
+      "school": "abjuration",
+      "level": 2,
+      "description": "Your spell bolsters allies, increasing their hit point maximum and current hit points.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "max_hp",
+          "amount": 5,
+          "duration": 8,
+          "max_targets": 3
+        }
+      ]
+    },
+    {
+      "name": "Beacon of Hope",
+      "cost": 3,
+      "range": 30,
+      "target_type": "area",
+      "school": "abjuration",
+      "level": 3,
+      "description": "You bestow hope among allies, maximizing healing received and granting advantage on death saves.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "healing_bonus",
+          "amount": 1,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "name": "Revivify",
+      "cost": 3,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 3,
+      "description": "You touch a creature that has died within the last minute, returning it to life with 1 hit point.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "resurrect",
+          "hp_restored": 1
+        }
+      ]
+    },
+    {
+      "name": "Guardian of Faith",
+      "cost": 4,
+      "range": 30,
+      "target_type": "area",
+      "school": "conjuration",
+      "level": 4,
+      "description": "A Large spectral guardian appears and strikes at creatures that approach it.",
+      "effects": [
+        {
+          "type": "summon",
+          "creature": "guardian_spirit",
+          "count": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Planar Binding",
+      "cost": 6,
+      "range": 60,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 5,
+      "description": "You attempt to bind a celestial, elemental, fey, or fiend to your service.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "bind_creature",
+          "duration": 24,
+          "save": "charisma",
+          "save_dc": 16
+        }
+      ]
+    },
+    {
+      "name": "Blade Barrier",
+      "cost": 7,
+      "range": 90,
+      "target_type": "area",
+      "school": "evocation",
+      "level": 6,
+      "description": "You create a vertical wall of spinning blades made of magical energy.",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": "6d10",
+          "damage_type": "force",
+          "save": "dexterity",
+          "save_dc": 17,
+          "duration": 5,
+          "area_persist": true
+        }
+      ]
+    },
+    {
+      "name": "Heal",
+      "cost": 7,
+      "range": 60,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 6,
+      "description": "You channel a massive surge of positive energy into a creature, restoring vitality.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "70"
+        }
+      ]
+    },
+    {
+      "name": "Resurrection",
+      "cost": 8,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 7,
+      "description": "You touch a dead creature that has been dead for no more than a century, restoring it to life.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "resurrect",
+          "hp_restored": "full"
+        }
+      ]
+    },
+    {
+      "name": "True Resurrection",
+      "cost": 12,
+      "range": 5,
+      "target_type": "single",
+      "school": "necromancy",
+      "level": 9,
+      "description": "You restore a creature to life even if no body remains, provided you know its name.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "resurrect",
+          "hp_restored": "full",
+          "body_required": false
+        }
+      ]
+    },
+    {
+      "name": "Meld into Stone",
+      "cost": 3,
+      "range": 0,
+      "target_type": "self",
+      "school": "transmutation",
+      "level": 3,
+      "description": "You step into a stone object large enough to contain you, merging with it for safety.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "merge_stone",
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Freedom of Movement",
+      "cost": 4,
+      "range": 5,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 4,
+      "description": "You touch a willing creature. Its movement is unaffected by difficult terrain or restraints.",
+      "effects": [
+        {
+          "type": "buff",
+          "stat": "free_movement",
+          "amount": 1,
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "name": "Wish",
+      "cost": 12,
+      "range": 0,
+      "target_type": "self",
+      "school": "conjuration",
+      "level": 9,
+      "description": "The mightiest spell a mortal creature can cast. State your wish and reality reshapes.",
+      "effects": [
+        {
+          "type": "utility",
+          "action": "wish"
+        }
+      ]
+    },
+    {
+      "name": "Power Word Heal",
+      "cost": 12,
+      "range": 60,
+      "target_type": "single",
+      "school": "abjuration",
+      "level": 9,
+      "description": "You speak a word of power that heals a creature to its full hit points instantly.",
+      "effects": [
+        {
+          "type": "heal",
+          "amount": "999"
         }
       ]
     }

@@ -709,6 +709,2136 @@
         }
       ],
       "quest_id": "side_proving_grounds"
+    },
+    {
+      "id": "act_8",
+      "name": "The Lost Caravan",
+      "description": "A merchant caravan vanished on the northern trade road. Bandits and worgs prowl the area, and the wreckage holds valuable trade goods. Find the survivors and recover what you can.",
+      "encounters": [
+        {
+          "id": "enc_8_1",
+          "name": "Bandit Scavengers",
+          "description": "Bandits are looting the wrecked wagons when you arrive.",
+          "monsters": ["bandit", "bandit", "bandit"],
+          "difficulty": "medium",
+          "exploration_note": "Search the wagons for trade manifests that reveal the full cargo."
+        },
+        {
+          "id": "enc_8_2",
+          "name": "Worg Pack",
+          "description": "A pack of worgs tracked the blood trail from the caravan. They attack at dusk.",
+          "monsters": ["worg", "worg", "dire_wolf"],
+          "difficulty": "hard",
+          "exploration_note": "The worgs' den is nearby. Check it for survivors who may have been dragged there."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_8_find_wreckage",
+          "description": "Find the caravan wreckage on the north road",
+          "type": "visit",
+          "target": "caravan_wreckage",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_8_defeat_bandits",
+          "description": "Defeat the bandit scavengers",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_8_defeat_worgs",
+          "description": "Defeat the worg pack",
+          "type": "kill",
+          "target": "worg",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_8_recover_goods",
+          "description": "Recover the trade goods from the wagons",
+          "type": "collect",
+          "target": "gold_coin",
+          "required_count": 50
+        },
+        {
+          "id": "side_act_8_talk_survivor",
+          "description": "Speak with the surviving merchant",
+          "type": "talk",
+          "target": "caravan_survivor",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 150},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "iron_ingot", "quantity": 3},
+        {"item_id": "enchanted_thread", "quantity": 1}
+      ],
+      "quest_id": "side_lost_caravan"
+    },
+    {
+      "id": "act_9",
+      "name": "The Haunted Mine",
+      "description": "Miners refuse to enter the old silver mine after reporting ghostly apparitions and strange noises. Investigate the haunting and clear the mine so operations can resume.",
+      "encounters": [
+        {
+          "id": "enc_9_1",
+          "name": "Ghostly Miners",
+          "description": "The ghosts of dead miners wander the upper tunnels, reliving their final moments.",
+          "monsters": ["ghost", "ghost"],
+          "difficulty": "hard",
+          "exploration_note": "The ghosts carry spectral pickaxes. They may be appeased if you find their remains."
+        },
+        {
+          "id": "enc_9_2",
+          "name": "The Banshee of Shaft Seven",
+          "description": "A banshee haunts the deepest shaft, her wail echoing through the tunnels.",
+          "monsters": ["banshee"],
+          "difficulty": "very_hard",
+          "exploration_note": "The banshee was once the mine foreman's wife. Finding her locket may weaken her."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_9_enter_mine",
+          "description": "Enter the haunted silver mine",
+          "type": "visit",
+          "target": "haunted_mine",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_9_defeat_ghosts",
+          "description": "Put the ghostly miners to rest",
+          "type": "kill",
+          "target": "ghost",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_9_defeat_banshee",
+          "description": "Defeat the banshee in Shaft Seven",
+          "type": "kill",
+          "target": "banshee",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_9_collect_silver",
+          "description": "Collect silver ore from the cleared tunnels",
+          "type": "collect",
+          "target": "steel_ingot",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_9_talk_foreman",
+          "description": "Report to the mine foreman",
+          "type": "talk",
+          "target": "mine_foreman",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "steel_ingot", "quantity": 4},
+        {"item_id": "pearl", "quantity": 2},
+        {"item_id": "potion_of_healing", "quantity": 2}
+      ],
+      "quest_id": "side_haunted_mine"
+    },
+    {
+      "id": "act_10",
+      "name": "Monster Bounty: The Troll Bridge",
+      "description": "The bounty board posts a reward for clearing the troll that has taken residence under the Great Bridge. Multiple trolls have been spotted and travelers are being eaten.",
+      "encounters": [
+        {
+          "id": "enc_10_1",
+          "name": "Troll Lair Under the Bridge",
+          "description": "Two trolls lurk beneath the bridge, ambushing anyone who tries to cross.",
+          "monsters": ["troll", "troll"],
+          "difficulty": "hard",
+          "exploration_note": "Trolls regenerate. Use fire or acid to stop their healing."
+        },
+        {
+          "id": "enc_10_2",
+          "name": "The Ogre Toll Collector",
+          "description": "An ogre works with the trolls, collecting loot from victims.",
+          "monsters": ["ogre", "ogre"],
+          "difficulty": "hard",
+          "exploration_note": "The ogre's sack contains stolen goods from previous victims."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_10_visit_bridge",
+          "description": "Reach the Great Bridge",
+          "type": "visit",
+          "target": "great_bridge",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_10_kill_trolls",
+          "description": "Slay the trolls under the bridge",
+          "type": "kill",
+          "target": "troll",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_10_kill_ogres",
+          "description": "Defeat the ogre toll collectors",
+          "type": "kill",
+          "target": "ogre",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_10_collect_bounty_proof",
+          "description": "Collect proof of the kills for the bounty",
+          "type": "collect",
+          "target": "iron_ingot",
+          "required_count": 2
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 180},
+        {"item_id": "potion_of_strength", "quantity": 2},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "iron_ingot", "quantity": 3}
+      ],
+      "quest_id": "side_troll_bridge_bounty"
+    },
+    {
+      "id": "act_11",
+      "name": "Rescue at Goblin Hold",
+      "description": "A farmer's children have been kidnapped by goblins and taken to their mountain hold. Time is short. Fight through the goblin defenses and rescue the captives before they are sold to slavers.",
+      "encounters": [
+        {
+          "id": "enc_11_1",
+          "name": "Goblin Gate Guard",
+          "description": "Goblins guard the entrance to their mountain hold with crude barricades.",
+          "monsters": ["goblin", "goblin", "goblin", "goblin"],
+          "difficulty": "medium",
+          "exploration_note": "There is a side tunnel that bypasses the main gate if you look carefully."
+        },
+        {
+          "id": "enc_11_2",
+          "name": "Hobgoblin Slavers",
+          "description": "Hobgoblin captains oversee the captive pens deep in the hold.",
+          "monsters": ["hobgoblin_captain", "hobgoblin_captain", "goblin"],
+          "difficulty": "hard",
+          "exploration_note": "The captives are chained. Find the key on the hobgoblin captain's belt."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_11_enter_hold",
+          "description": "Enter the goblin mountain hold",
+          "type": "visit",
+          "target": "goblin_hold",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_11_defeat_guards",
+          "description": "Defeat the goblin gate guards",
+          "type": "kill",
+          "target": "goblin",
+          "required_count": 4
+        },
+        {
+          "id": "side_act_11_defeat_slavers",
+          "description": "Defeat the hobgoblin slavers",
+          "type": "kill",
+          "target": "hobgoblin_captain",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_11_talk_captives",
+          "description": "Free and speak with the captive children",
+          "type": "talk",
+          "target": "captive_children",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 120},
+        {"item_id": "potion_of_healing", "quantity": 4},
+        {"item_id": "healing_herb", "quantity": 3},
+        {"item_id": "iron_ingot", "quantity": 2}
+      ],
+      "quest_id": "side_rescue_goblin_hold"
+    },
+    {
+      "id": "act_12",
+      "name": "The Basilisk Artifact",
+      "description": "An antiquarian has located a petrified temple containing a powerful artifact. Basilisks roam its halls, turning intruders to stone. Navigate carefully and claim the relic.",
+      "encounters": [
+        {
+          "id": "enc_12_1",
+          "name": "Basilisk Den",
+          "description": "Basilisks nest among the petrified statues of previous adventurers.",
+          "monsters": ["basilisk", "basilisk"],
+          "difficulty": "hard",
+          "exploration_note": "Mirrors can reflect the basilisk's gaze. Search the entry hall for polished shields."
+        },
+        {
+          "id": "enc_12_2",
+          "name": "Cockatrice Flock",
+          "description": "Cockatrices roosting in the upper levels swoop down to attack intruders.",
+          "monsters": ["cockatrice", "cockatrice", "cockatrice"],
+          "difficulty": "hard",
+          "exploration_note": "Cockatrices are weaker than basilisks but faster. Keep moving."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_12_enter_temple",
+          "description": "Enter the petrified temple",
+          "type": "visit",
+          "target": "petrified_temple",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_12_defeat_basilisks",
+          "description": "Defeat the basilisks in the den",
+          "type": "kill",
+          "target": "basilisk",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_12_defeat_cockatrices",
+          "description": "Clear the cockatrice flock",
+          "type": "kill",
+          "target": "cockatrice",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_12_collect_artifact",
+          "description": "Retrieve the artifact from the inner sanctum",
+          "type": "collect",
+          "target": "arcane_crystal",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_12_talk_antiquarian",
+          "description": "Return the artifact to the antiquarian",
+          "type": "talk",
+          "target": "antiquarian",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "arcane_crystal", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 220},
+        {"item_id": "potion_of_greater_healing", "quantity": 2},
+        {"item_id": "emerald", "quantity": 1}
+      ],
+      "quest_id": "side_basilisk_artifact"
+    },
+    {
+      "id": "act_13",
+      "name": "The Sunken Ruins",
+      "description": "A drought has revealed ancient ruins in a dried lakebed. Explore the crumbling structures, avoid traps, and deal with the undead that still guard the site.",
+      "encounters": [
+        {
+          "id": "enc_13_1",
+          "name": "Skeleton Patrol",
+          "description": "Skeletons march endlessly through the ruined corridors.",
+          "monsters": ["skeleton", "skeleton", "skeleton"],
+          "difficulty": "medium",
+          "exploration_note": "The skeletons follow a set patrol route. Time your movements to avoid large groups."
+        },
+        {
+          "id": "enc_13_2",
+          "name": "Wraith of the High Priest",
+          "description": "The wraith of a long-dead priest guards the temple treasury.",
+          "monsters": ["wraith", "zombie", "zombie"],
+          "difficulty": "hard",
+          "exploration_note": "Holy water from the altar font can weaken the wraith."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_13_explore_ruins",
+          "description": "Explore the sunken ruins",
+          "type": "visit",
+          "target": "sunken_ruins",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_13_defeat_skeletons",
+          "description": "Clear the skeleton patrols",
+          "type": "kill",
+          "target": "skeleton",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_13_defeat_wraith",
+          "description": "Defeat the wraith guardian",
+          "type": "kill",
+          "target": "wraith",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_13_collect_relics",
+          "description": "Collect ancient relics from the treasury",
+          "type": "collect",
+          "target": "pearl",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "pearl", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 160},
+        {"item_id": "scroll_of_fireball", "quantity": 1},
+        {"item_id": "potion_of_healing", "quantity": 2}
+      ],
+      "quest_id": "side_sunken_ruins"
+    },
+    {
+      "id": "act_14",
+      "name": "The Puzzle Dungeon of Korrath",
+      "description": "An eccentric wizard built a dungeon of mechanical puzzles and guardian constructs. The reward for completing all puzzles is said to be immense, but none have survived the final chamber.",
+      "encounters": [
+        {
+          "id": "enc_14_1",
+          "name": "Clay Golem Sentries",
+          "description": "Clay golems guard the first puzzle chamber, attacking anyone who touches the wrong lever.",
+          "monsters": ["clay_golem", "clay_golem"],
+          "difficulty": "hard",
+          "exploration_note": "The correct lever sequence is carved on the floor tiles in dwarven runes."
+        },
+        {
+          "id": "enc_14_2",
+          "name": "Stone Golem Final Guardian",
+          "description": "A stone golem stands in the final chamber, the last test of the dungeon.",
+          "monsters": ["stone_golem"],
+          "difficulty": "very_hard",
+          "exploration_note": "The golem has a weak point on its back where the control gem is exposed."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_14_enter_dungeon",
+          "description": "Enter the Puzzle Dungeon of Korrath",
+          "type": "visit",
+          "target": "puzzle_dungeon",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_14_defeat_clay_golems",
+          "description": "Defeat the clay golem sentries",
+          "type": "kill",
+          "target": "clay_golem",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_14_defeat_stone_golem",
+          "description": "Defeat the stone golem final guardian",
+          "type": "kill",
+          "target": "stone_golem",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_14_collect_treasure",
+          "description": "Claim the wizard's treasure hoard",
+          "type": "collect",
+          "target": "sapphire",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "sapphire", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 300},
+        {"item_id": "arcane_crystal", "quantity": 3},
+        {"item_id": "scroll_of_haste", "quantity": 1}
+      ],
+      "quest_id": "side_puzzle_dungeon"
+    },
+    {
+      "id": "act_15",
+      "name": "Escort to the Mountain Pass",
+      "description": "A group of refugees needs safe passage through a treacherous mountain pass infested with giants and wyverns. Protect them from ambush along the narrow trails.",
+      "encounters": [
+        {
+          "id": "enc_15_1",
+          "name": "Hill Giant Ambush",
+          "description": "Hill giants roll boulders down the narrow pass to crush the refugee column.",
+          "monsters": ["hill_giant", "hill_giant"],
+          "difficulty": "hard",
+          "exploration_note": "Scout ahead to spot the ambush positions before the refugees arrive."
+        },
+        {
+          "id": "enc_15_2",
+          "name": "Manticore Aerial Assault",
+          "description": "Manticores dive-bomb the column from the mountain peaks.",
+          "monsters": ["manticore", "manticore"],
+          "difficulty": "hard",
+          "exploration_note": "The manticores nest on the highest ledge. Destroying the nest discourages them."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_15_begin_escort",
+          "description": "Begin the escort at the pass entrance",
+          "type": "visit",
+          "target": "mountain_pass_entrance",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_15_defeat_giants",
+          "description": "Defeat the hill giant ambushers",
+          "type": "kill",
+          "target": "hill_giant",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_15_defeat_manticores",
+          "description": "Repel the manticore aerial assault",
+          "type": "kill",
+          "target": "manticore",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_15_talk_refugees",
+          "description": "Ensure the refugees reach safety and speak with their leader",
+          "type": "talk",
+          "target": "refugee_leader",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "potion_of_greater_healing", "quantity": 2},
+        {"item_id": "steel_ingot", "quantity": 3},
+        {"item_id": "healing_herb", "quantity": 3}
+      ],
+      "quest_id": "side_mountain_escort"
+    },
+    {
+      "id": "act_16",
+      "name": "The Werewolf Investigation",
+      "description": "Villagers are going missing during full moons. Investigate the disappearances, track the werewolf to its lair, and put an end to the curse before more innocents fall.",
+      "encounters": [
+        {
+          "id": "enc_16_1",
+          "name": "Werewolf Pack",
+          "description": "A pack of werewolves emerges under the full moon to hunt.",
+          "monsters": ["werewolf", "werewolf", "werewolf"],
+          "difficulty": "hard",
+          "exploration_note": "Silver weapons deal extra damage to werewolves. Check the blacksmith for silver bolts."
+        },
+        {
+          "id": "enc_16_2",
+          "name": "The Alpha Werewolf",
+          "description": "The alpha werewolf is the source of the curse. Defeating it may lift the affliction from the others.",
+          "monsters": ["werewolf", "dire_wolf", "dire_wolf"],
+          "difficulty": "very_hard",
+          "exploration_note": "The alpha retreats to a cave when wounded. Follow the blood trail."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_16_investigate_village",
+          "description": "Investigate the disappearances in the village",
+          "type": "visit",
+          "target": "werewolf_village",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_16_defeat_pack",
+          "description": "Defeat the werewolf hunting pack",
+          "type": "kill",
+          "target": "werewolf",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_16_defeat_alpha",
+          "description": "Track and defeat the alpha werewolf",
+          "type": "kill",
+          "target": "werewolf",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_16_talk_survivors",
+          "description": "Report to the village survivors",
+          "type": "talk",
+          "target": "village_survivors",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_16_collect_pelts",
+          "description": "Collect werewolf pelts as proof",
+          "type": "collect",
+          "target": "enchanted_thread",
+          "required_count": 2
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 250},
+        {"item_id": "enchanted_thread", "quantity": 3},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "mandrake_root", "quantity": 2}
+      ],
+      "quest_id": "side_werewolf_investigation"
+    },
+    {
+      "id": "act_17",
+      "name": "Treasure Map: The Pirate Cove",
+      "description": "You found a treasure map leading to a hidden pirate cove. Navigate past traps, fight the undead pirates who still guard their loot, and claim the legendary treasure.",
+      "encounters": [
+        {
+          "id": "enc_17_1",
+          "name": "Undead Pirates",
+          "description": "Skeleton pirates defend the cove entrance, cutlasses in hand.",
+          "monsters": ["skeleton", "skeleton", "skeleton", "zombie"],
+          "difficulty": "medium",
+          "exploration_note": "The tide reveals a hidden path to the cove at low water."
+        },
+        {
+          "id": "enc_17_2",
+          "name": "The Ghost Captain",
+          "description": "The ghost of the pirate captain haunts the treasure vault.",
+          "monsters": ["ghost", "wraith"],
+          "difficulty": "hard",
+          "exploration_note": "The captain's logbook reveals the combination to the treasure chest."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_17_find_cove",
+          "description": "Find the hidden pirate cove",
+          "type": "visit",
+          "target": "pirate_cove",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_17_defeat_pirates",
+          "description": "Defeat the undead pirate crew",
+          "type": "kill",
+          "target": "skeleton",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_17_defeat_captain",
+          "description": "Defeat the ghost captain",
+          "type": "kill",
+          "target": "ghost",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_17_collect_treasure",
+          "description": "Open the treasure chest and claim the loot",
+          "type": "collect",
+          "target": "ruby",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "ruby", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 400},
+        {"item_id": "sapphire", "quantity": 2},
+        {"item_id": "pearl", "quantity": 3}
+      ],
+      "quest_id": "side_pirate_cove_treasure"
+    },
+    {
+      "id": "act_18",
+      "name": "The Imp Infestation",
+      "description": "A wizard's tower has been overrun by imps after a summoning went wrong. Clear the tower floor by floor and seal the portal they came through.",
+      "encounters": [
+        {
+          "id": "enc_18_1",
+          "name": "Imp Swarm",
+          "description": "Dozens of imps have infested the lower floors, causing chaos.",
+          "monsters": ["imp", "imp", "imp", "imp"],
+          "difficulty": "medium",
+          "exploration_note": "Imps are vulnerable to cold damage. Look for frost scrolls in the wizard's study."
+        },
+        {
+          "id": "enc_18_2",
+          "name": "Succubus Summoner",
+          "description": "A succubus controls the portal from the tower's top floor.",
+          "monsters": ["succubus", "imp", "imp"],
+          "difficulty": "hard",
+          "exploration_note": "Destroying the summoning circle will weaken the succubus and stop reinforcements."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_18_enter_tower",
+          "description": "Enter the infested wizard's tower",
+          "type": "visit",
+          "target": "wizard_tower",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_18_clear_imps",
+          "description": "Clear the imp infestation",
+          "type": "kill",
+          "target": "imp",
+          "required_count": 4
+        },
+        {
+          "id": "side_act_18_defeat_succubus",
+          "description": "Defeat the succubus controlling the portal",
+          "type": "kill",
+          "target": "succubus",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_18_collect_scrolls",
+          "description": "Recover the wizard's stolen scrolls",
+          "type": "collect",
+          "target": "scroll_of_fireball",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_18_talk_wizard",
+          "description": "Report to the tower's wizard owner",
+          "type": "talk",
+          "target": "tower_wizard",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "scroll_of_fireball", "quantity": 2},
+        {"item_id": "scroll_of_haste", "quantity": 1},
+        {"item_id": "gold_coin", "quantity": 180},
+        {"item_id": "arcane_crystal", "quantity": 2}
+      ],
+      "quest_id": "side_imp_infestation"
+    },
+    {
+      "id": "act_19",
+      "name": "The Orc Bounty",
+      "description": "The local lord has placed a bounty on the orc war camp that has been raiding nearby farms. Assault the camp, defeat the orc warriors, and claim the bounty.",
+      "encounters": [
+        {
+          "id": "enc_19_1",
+          "name": "Orc Perimeter Guard",
+          "description": "Orc warriors stand watch at the camp's perimeter with worg sentries.",
+          "monsters": ["orc_warrior", "orc_warrior", "worg"],
+          "difficulty": "hard",
+          "exploration_note": "The guards change shift at midnight. That is the best time to strike."
+        },
+        {
+          "id": "enc_19_2",
+          "name": "Orc War Chief",
+          "description": "The orc war chief commands from the central tent, surrounded by his best fighters.",
+          "monsters": ["orc_warrior", "orc_warrior", "orc_warrior"],
+          "difficulty": "hard",
+          "exploration_note": "The war chief's tent contains a battle map showing future raid targets."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_19_reach_camp",
+          "description": "Locate the orc war camp",
+          "type": "visit",
+          "target": "orc_war_camp",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_19_defeat_guards",
+          "description": "Defeat the orc perimeter guards",
+          "type": "kill",
+          "target": "orc_warrior",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_19_defeat_chief",
+          "description": "Defeat the orc war chief and his retinue",
+          "type": "kill",
+          "target": "orc_warrior",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_19_collect_battle_map",
+          "description": "Recover the battle map from the chief's tent",
+          "type": "collect",
+          "target": "iron_ingot",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_19_talk_lord",
+          "description": "Report to the local lord to claim the bounty",
+          "type": "talk",
+          "target": "local_lord",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 250},
+        {"item_id": "potion_of_strength", "quantity": 2},
+        {"item_id": "steel_ingot", "quantity": 2},
+        {"item_id": "potion_of_healing", "quantity": 3}
+      ],
+      "quest_id": "side_orc_bounty"
+    },
+    {
+      "id": "act_20",
+      "name": "The Drow Artifact Hunt",
+      "description": "A drow artifact has surfaced in a cave system near the surface. Drow elite warriors race to reclaim it. Beat them to the prize and secure the artifact for the surface world.",
+      "encounters": [
+        {
+          "id": "enc_20_1",
+          "name": "Drow Scouts",
+          "description": "Drow elite scouts guard the cave entrance, using darkness to their advantage.",
+          "monsters": ["drow_elite", "drow_elite"],
+          "difficulty": "hard",
+          "exploration_note": "Torches and light spells negate the drow's darkvision advantage."
+        },
+        {
+          "id": "enc_20_2",
+          "name": "Phase Spider Guardians",
+          "description": "Phase spiders serve as the drow's guardians in the deeper tunnels.",
+          "monsters": ["phase_spider", "phase_spider", "drow_elite"],
+          "difficulty": "very_hard",
+          "exploration_note": "Phase spiders vanish between attacks. Area spells can catch them mid-phase."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_20_enter_caves",
+          "description": "Enter the cave system",
+          "type": "visit",
+          "target": "drow_caves",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_20_defeat_scouts",
+          "description": "Defeat the drow scouts",
+          "type": "kill",
+          "target": "drow_elite",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_20_defeat_spiders",
+          "description": "Defeat the phase spider guardians",
+          "type": "kill",
+          "target": "phase_spider",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_20_collect_artifact",
+          "description": "Secure the drow artifact",
+          "type": "collect",
+          "target": "arcane_crystal",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "arcane_crystal", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 280},
+        {"item_id": "mithral_ingot", "quantity": 2},
+        {"item_id": "potion_of_greater_healing", "quantity": 2}
+      ],
+      "quest_id": "side_drow_artifact_hunt"
+    },
+    {
+      "id": "act_21",
+      "name": "The Elemental Nexus",
+      "description": "An elemental nexus has destabilized, spewing creatures of fire and earth into the surrounding countryside. Venture to the nexus and restore balance before it tears the land apart.",
+      "encounters": [
+        {
+          "id": "enc_21_1",
+          "name": "Fire Elemental Outbreak",
+          "description": "Fire elementals rage across the scorched fields.",
+          "monsters": ["fire_elemental", "fire_elemental"],
+          "difficulty": "hard",
+          "exploration_note": "Water from the nearby river can be used to create steam barriers."
+        },
+        {
+          "id": "enc_21_2",
+          "name": "Earth Elemental Blockade",
+          "description": "Earth elementals have formed a wall around the nexus core.",
+          "monsters": ["earth_elemental", "earth_elemental"],
+          "difficulty": "hard",
+          "exploration_note": "Mining picks can crack the elemental's stone armor if you find the seams."
+        },
+        {
+          "id": "enc_21_3",
+          "name": "Nexus Core Guardian",
+          "description": "A water elemental and fire elemental clash at the nexus core. Both must be stopped.",
+          "monsters": ["water_elemental", "fire_elemental"],
+          "difficulty": "very_hard",
+          "exploration_note": "Restore the nexus crystals in the correct order: earth, water, fire, air."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_21_reach_nexus",
+          "description": "Reach the destabilized elemental nexus",
+          "type": "visit",
+          "target": "elemental_nexus",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_21_defeat_fire",
+          "description": "Defeat the fire elemental outbreak",
+          "type": "kill",
+          "target": "fire_elemental",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_21_defeat_earth",
+          "description": "Break through the earth elemental blockade",
+          "type": "kill",
+          "target": "earth_elemental",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_21_defeat_water",
+          "description": "Calm the water elemental at the core",
+          "type": "kill",
+          "target": "water_elemental",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_21_collect_essences",
+          "description": "Collect elemental essences from the nexus",
+          "type": "collect",
+          "target": "fire_essence",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "fire_essence", "quantity": 4},
+        {"item_id": "storm_crystal", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 300},
+        {"item_id": "potion_of_greater_healing", "quantity": 2}
+      ],
+      "quest_id": "side_elemental_nexus"
+    },
+    {
+      "id": "act_22",
+      "name": "The Vampire's Manor",
+      "description": "A noble family's manor has been taken over by a vampire. Investigate the disappearances, navigate the trap-filled manor, and confront the vampire lord in its crypt.",
+      "encounters": [
+        {
+          "id": "enc_22_1",
+          "name": "Zombie Servants",
+          "description": "The manor's former servants, now zombified, shamble through the halls.",
+          "monsters": ["zombie", "zombie", "zombie", "zombie"],
+          "difficulty": "medium",
+          "exploration_note": "The servants' quarters contain a key to the cellar entrance."
+        },
+        {
+          "id": "enc_22_2",
+          "name": "The Vampire Lord",
+          "description": "The vampire lord awaits in the manor's underground crypt.",
+          "monsters": ["vampire"],
+          "difficulty": "boss",
+          "exploration_note": "Sunlight from the broken skylight can be redirected with mirrors to weaken the vampire."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_22_enter_manor",
+          "description": "Enter the vampire's manor",
+          "type": "visit",
+          "target": "vampire_manor",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_22_clear_zombies",
+          "description": "Clear the zombie servants from the manor",
+          "type": "kill",
+          "target": "zombie",
+          "required_count": 4
+        },
+        {
+          "id": "side_act_22_defeat_vampire",
+          "description": "Defeat the vampire lord in the crypt",
+          "type": "kill",
+          "target": "vampire",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_22_collect_heirlooms",
+          "description": "Recover the noble family's heirlooms",
+          "type": "collect",
+          "target": "ruby",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_22_talk_family",
+          "description": "Return the heirlooms to the noble family",
+          "type": "talk",
+          "target": "noble_family",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "ruby", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 350},
+        {"item_id": "potion_of_greater_healing", "quantity": 3},
+        {"item_id": "diamond", "quantity": 1}
+      ],
+      "quest_id": "side_vampire_manor"
+    },
+    {
+      "id": "act_23",
+      "name": "The Shambling Swamp",
+      "description": "A shambling mound colony has overgrown an old druid grove. The local herbalists cannot reach their medicinal plants. Clear the overgrowth and restore access to the grove.",
+      "encounters": [
+        {
+          "id": "enc_23_1",
+          "name": "Shambling Mound Colony",
+          "description": "Shambling mounds block every path through the swamp.",
+          "monsters": ["shambling_mound", "shambling_mound"],
+          "difficulty": "hard",
+          "exploration_note": "Fire and cold damage prevent the mounds from regenerating."
+        },
+        {
+          "id": "enc_23_2",
+          "name": "The Green Hag Manipulator",
+          "description": "A green hag has been feeding the shambling mounds, growing them to immense size.",
+          "monsters": ["green_hag", "shambling_mound"],
+          "difficulty": "hard",
+          "exploration_note": "The hag disguises herself as a friendly druid. Be cautious of strangers in the swamp."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_23_enter_grove",
+          "description": "Reach the overgrown druid grove",
+          "type": "visit",
+          "target": "overgrown_grove",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_23_defeat_mounds",
+          "description": "Destroy the shambling mound colony",
+          "type": "kill",
+          "target": "shambling_mound",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_23_defeat_hag",
+          "description": "Defeat the green hag manipulator",
+          "type": "kill",
+          "target": "green_hag",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_23_collect_herbs",
+          "description": "Gather medicinal herbs from the restored grove",
+          "type": "collect",
+          "target": "healing_herb",
+          "required_count": 5
+        },
+        {
+          "id": "side_act_23_talk_herbalist",
+          "description": "Report to the lead herbalist",
+          "type": "talk",
+          "target": "lead_herbalist",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "healing_herb", "quantity": 8},
+        {"item_id": "mandrake_root", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 180},
+        {"item_id": "moonpetal", "quantity": 3}
+      ],
+      "quest_id": "side_shambling_swamp"
+    },
+    {
+      "id": "act_24",
+      "name": "The Iron Golem Factory",
+      "description": "An abandoned dwarven factory has reactivated on its own, producing iron golems that march out and attack nearby settlements. Shut down the factory before an army of constructs is assembled.",
+      "encounters": [
+        {
+          "id": "enc_24_1",
+          "name": "Golem Assembly Line",
+          "description": "Partially assembled golems activate and attack as you enter the factory floor.",
+          "monsters": ["clay_golem", "clay_golem", "clay_golem"],
+          "difficulty": "hard",
+          "exploration_note": "The control panels on the walls can shut down individual assembly stations."
+        },
+        {
+          "id": "enc_24_2",
+          "name": "The Master Golem",
+          "description": "A fully assembled iron golem guards the factory's control room.",
+          "monsters": ["iron_golem"],
+          "difficulty": "boss",
+          "exploration_note": "Overloading the power conduit will stun the iron golem for one round."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_24_enter_factory",
+          "description": "Enter the reactivated golem factory",
+          "type": "visit",
+          "target": "golem_factory",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_24_defeat_clay_golems",
+          "description": "Destroy the assembly line golems",
+          "type": "kill",
+          "target": "clay_golem",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_24_defeat_iron_golem",
+          "description": "Defeat the master iron golem",
+          "type": "kill",
+          "target": "iron_golem",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_24_collect_mithral",
+          "description": "Salvage mithral from the factory stores",
+          "type": "collect",
+          "target": "mithral_ingot",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "mithral_ingot", "quantity": 4},
+        {"item_id": "iron_ingot", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 400},
+        {"item_id": "steel_ingot", "quantity": 3}
+      ],
+      "quest_id": "side_golem_factory"
+    },
+    {
+      "id": "act_25",
+      "name": "The Mummy's Tomb",
+      "description": "Grave robbers accidentally unsealed an ancient tomb, releasing mummies and their death curse. Enter the tomb, defeat the mummy lord, and reseal the crypt.",
+      "encounters": [
+        {
+          "id": "enc_25_1",
+          "name": "Mummy Guardians",
+          "description": "Mummies rise from their sarcophagi as you enter the burial chamber.",
+          "monsters": ["mummy", "mummy", "skeleton"],
+          "difficulty": "hard",
+          "exploration_note": "The mummies are bound by the hieroglyphs on the walls. Defacing them weakens the curse."
+        },
+        {
+          "id": "enc_25_2",
+          "name": "The Death Knight's Vigil",
+          "description": "A death knight guards the innermost chamber where the seal stone lies.",
+          "monsters": ["death_knight"],
+          "difficulty": "very_hard",
+          "exploration_note": "The death knight was once a holy paladin. Remnants of its honor may be exploited."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_25_enter_tomb",
+          "description": "Enter the unsealed tomb",
+          "type": "visit",
+          "target": "mummy_tomb",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_25_defeat_mummies",
+          "description": "Defeat the mummy guardians",
+          "type": "kill",
+          "target": "mummy",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_25_defeat_death_knight",
+          "description": "Defeat the death knight guardian",
+          "type": "kill",
+          "target": "death_knight",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_25_collect_gems",
+          "description": "Collect gems from the tomb treasury before resealing",
+          "type": "collect",
+          "target": "emerald",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "emerald", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 350},
+        {"item_id": "scroll_of_fireball", "quantity": 2},
+        {"item_id": "potion_of_greater_healing", "quantity": 2}
+      ],
+      "quest_id": "side_mummy_tomb"
+    },
+    {
+      "id": "act_26",
+      "name": "The Hag's Bargain",
+      "description": "A village has made a bargain with a green hag for protection, but the price is growing too steep. Break the contract by entering the hag's domain and destroying the binding totem.",
+      "encounters": [
+        {
+          "id": "enc_26_1",
+          "name": "Enchanted Forest Guardians",
+          "description": "Treants corrupted by the hag block the path to her domain.",
+          "monsters": ["treant", "shambling_mound"],
+          "difficulty": "hard",
+          "exploration_note": "The treants can be calmed with druidic chants if you learned them from the village elder."
+        },
+        {
+          "id": "enc_26_2",
+          "name": "The Green Hag's Lair",
+          "description": "The hag defends her domain with illusions and dark magic.",
+          "monsters": ["green_hag", "green_hag"],
+          "difficulty": "very_hard",
+          "exploration_note": "One hag is an illusion. True sight or dispel magic reveals the fake."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_26_enter_domain",
+          "description": "Enter the hag's forest domain",
+          "type": "visit",
+          "target": "hag_domain",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_26_defeat_treant",
+          "description": "Defeat the corrupted treant guardian",
+          "type": "kill",
+          "target": "treant",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_26_defeat_hags",
+          "description": "Defeat the green hags",
+          "type": "kill",
+          "target": "green_hag",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_26_collect_totem",
+          "description": "Destroy and collect the binding totem fragments",
+          "type": "collect",
+          "target": "mandrake_root",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_26_talk_village",
+          "description": "Return to the village with proof the bargain is broken",
+          "type": "talk",
+          "target": "bargain_village_elder",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "mandrake_root", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 220},
+        {"item_id": "moonpetal", "quantity": 4},
+        {"item_id": "healing_herb", "quantity": 5}
+      ],
+      "quest_id": "side_hag_bargain"
+    },
+    {
+      "id": "act_27",
+      "name": "The Chimera Hunt",
+      "description": "A chimera has been terrorizing livestock and travelers in the hill country. Track the beast to its mountaintop den and slay it for a hefty bounty.",
+      "encounters": [
+        {
+          "id": "enc_27_1",
+          "name": "Chimera's Hunting Grounds",
+          "description": "The chimera swoops from the sky to attack on the open hillside.",
+          "monsters": ["chimera"],
+          "difficulty": "hard",
+          "exploration_note": "The chimera circles before diving. Watch the sky for its shadow."
+        },
+        {
+          "id": "enc_27_2",
+          "name": "The Chimera's Den",
+          "description": "A second chimera guards the den and its hatchlings.",
+          "monsters": ["chimera", "cockatrice"],
+          "difficulty": "very_hard",
+          "exploration_note": "The den entrance is narrow. The chimera cannot fly inside."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_27_track_chimera",
+          "description": "Track the chimera to its hunting grounds",
+          "type": "visit",
+          "target": "chimera_hunting_grounds",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_27_slay_chimeras",
+          "description": "Slay the chimeras",
+          "type": "kill",
+          "target": "chimera",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_27_defeat_cockatrice",
+          "description": "Defeat the cockatrice in the den",
+          "type": "kill",
+          "target": "cockatrice",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_27_collect_heads",
+          "description": "Collect chimera heads as proof for the bounty",
+          "type": "collect",
+          "target": "fire_essence",
+          "required_count": 2
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 300},
+        {"item_id": "fire_essence", "quantity": 3},
+        {"item_id": "potion_of_strength", "quantity": 2},
+        {"item_id": "ruby", "quantity": 2}
+      ],
+      "quest_id": "side_chimera_hunt"
+    },
+    {
+      "id": "act_28",
+      "name": "The Black Pudding Cellar",
+      "description": "A tavern's wine cellar has been invaded by black puddings that dissolved through the bedrock. Clear them out before the entire building collapses into the underground cavity.",
+      "encounters": [
+        {
+          "id": "enc_28_1",
+          "name": "Pudding Infestation",
+          "description": "Black puddings ooze through the cellar walls, dissolving everything they touch.",
+          "monsters": ["black_pudding", "ochre_jelly"],
+          "difficulty": "hard",
+          "exploration_note": "Slashing black puddings splits them into smaller puddings. Use blunt or magic attacks."
+        },
+        {
+          "id": "enc_28_2",
+          "name": "The Source Cavity",
+          "description": "A massive ochre jelly blocks the underground cavity that the puddings emerged from.",
+          "monsters": ["ochre_jelly", "ochre_jelly", "black_pudding"],
+          "difficulty": "hard",
+          "exploration_note": "Collapsing the cavity entrance with explosives will seal it permanently."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_28_enter_cellar",
+          "description": "Enter the infested cellar",
+          "type": "visit",
+          "target": "pudding_cellar",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_28_defeat_puddings",
+          "description": "Destroy the black puddings",
+          "type": "kill",
+          "target": "black_pudding",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_28_defeat_jellies",
+          "description": "Destroy the ochre jellies",
+          "type": "kill",
+          "target": "ochre_jelly",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_28_talk_tavernkeep",
+          "description": "Report the all-clear to the tavern keeper",
+          "type": "talk",
+          "target": "tavern_keeper",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 130},
+        {"item_id": "potion_of_healing", "quantity": 4},
+        {"item_id": "iron_ingot", "quantity": 3},
+        {"item_id": "healing_herb", "quantity": 3}
+      ],
+      "quest_id": "side_black_pudding_cellar"
+    },
+    {
+      "id": "act_29",
+      "name": "The Yuan-ti Nest",
+      "description": "Yuan-ti abominations have established a nest in the ruins of an old temple. Their expansion threatens to overrun the surrounding villages. Destroy the nest before they grow too powerful.",
+      "encounters": [
+        {
+          "id": "enc_29_1",
+          "name": "Yuan-ti Scouts",
+          "description": "Yuan-ti scouts patrol the temple perimeter with their serpent minions.",
+          "monsters": ["yuan_ti_abomination", "giant_spider"],
+          "difficulty": "hard",
+          "exploration_note": "The yuan-ti use heat vision. Cold spells can mask your thermal signature."
+        },
+        {
+          "id": "enc_29_2",
+          "name": "The Brood Mother",
+          "description": "The yuan-ti brood mother guards the egg chamber deep in the temple.",
+          "monsters": ["yuan_ti_abomination", "yuan_ti_abomination"],
+          "difficulty": "very_hard",
+          "exploration_note": "Destroying the eggs will enrage the brood mother but prevent future threats."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_29_enter_temple",
+          "description": "Enter the yuan-ti occupied temple",
+          "type": "visit",
+          "target": "yuan_ti_temple",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_29_defeat_scouts",
+          "description": "Defeat the yuan-ti scout patrols",
+          "type": "kill",
+          "target": "yuan_ti_abomination",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_29_defeat_brood",
+          "description": "Defeat the brood mother and clear the nest",
+          "type": "kill",
+          "target": "yuan_ti_abomination",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_29_collect_scales",
+          "description": "Collect yuan-ti scales for the alchemist",
+          "type": "collect",
+          "target": "emerald",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_29_talk_alchemist",
+          "description": "Deliver the scales to the village alchemist",
+          "type": "talk",
+          "target": "village_alchemist",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "emerald", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 280},
+        {"item_id": "potion_of_greater_healing", "quantity": 2},
+        {"item_id": "mandrake_root", "quantity": 2}
+      ],
+      "quest_id": "side_yuan_ti_nest"
+    },
+    {
+      "id": "act_30",
+      "name": "The Bugbear Fortress",
+      "description": "A bugbear chief has fortified an old watchtower and is using it as a base to raid trade routes. Storm the fortress and defeat the chief to restore safe passage.",
+      "encounters": [
+        {
+          "id": "enc_30_1",
+          "name": "Bugbear Sentries",
+          "description": "Bugbear sentries with crossbows guard the tower's approaches.",
+          "monsters": ["bugbear_chief", "orc_warrior", "orc_warrior"],
+          "difficulty": "hard",
+          "exploration_note": "The tower has a hidden sewer entrance on the north side."
+        },
+        {
+          "id": "enc_30_2",
+          "name": "The Bugbear Chief",
+          "description": "The bugbear chief fights from the tower's top floor, hurling boulders.",
+          "monsters": ["bugbear_chief", "bugbear_chief"],
+          "difficulty": "very_hard",
+          "exploration_note": "The chief's warbanner provides morale to his troops. Destroy it first."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_30_reach_fortress",
+          "description": "Reach the bugbear fortress",
+          "type": "visit",
+          "target": "bugbear_fortress",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_30_defeat_sentries",
+          "description": "Defeat the bugbear sentries",
+          "type": "kill",
+          "target": "bugbear_chief",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_30_defeat_chief",
+          "description": "Defeat the bugbear chief at the tower top",
+          "type": "kill",
+          "target": "bugbear_chief",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_30_collect_trade_goods",
+          "description": "Recover stolen trade goods from the fortress stores",
+          "type": "collect",
+          "target": "gold_coin",
+          "required_count": 100
+        },
+        {
+          "id": "side_act_30_talk_merchant_guild",
+          "description": "Report to the merchant guild about the cleared route",
+          "type": "talk",
+          "target": "merchant_guild_rep",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 300},
+        {"item_id": "steel_ingot", "quantity": 4},
+        {"item_id": "potion_of_strength", "quantity": 2},
+        {"item_id": "potion_of_healing", "quantity": 3}
+      ],
+      "quest_id": "side_bugbear_fortress"
+    },
+    {
+      "id": "act_31",
+      "name": "The Gnoll Slavers",
+      "description": "Gnoll packmasters have been capturing travelers and selling them in underground slave markets. Infiltrate their operation, free the captives, and shut down the network.",
+      "encounters": [
+        {
+          "id": "enc_31_1",
+          "name": "Gnoll Patrol",
+          "description": "A gnoll packmaster leads a patrol with dire wolf companions.",
+          "monsters": ["gnoll_packmaster", "dire_wolf", "dire_wolf"],
+          "difficulty": "hard",
+          "exploration_note": "The gnolls communicate with hyena-like calls. Silence spells disrupt coordination."
+        },
+        {
+          "id": "enc_31_2",
+          "name": "The Slave Pens",
+          "description": "The gnoll packmaster oversees the slave pens from a fortified position.",
+          "monsters": ["gnoll_packmaster", "gnoll_packmaster"],
+          "difficulty": "hard",
+          "exploration_note": "The captives can assist in the fight if freed from their chains first."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_31_find_camp",
+          "description": "Find the gnoll slaver camp",
+          "type": "visit",
+          "target": "gnoll_slaver_camp",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_31_defeat_patrol",
+          "description": "Defeat the gnoll patrol",
+          "type": "kill",
+          "target": "gnoll_packmaster",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_31_defeat_slavers",
+          "description": "Defeat the gnoll slavers at the pens",
+          "type": "kill",
+          "target": "gnoll_packmaster",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_31_free_captives",
+          "description": "Free the captive travelers",
+          "type": "talk",
+          "target": "freed_captives",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_31_collect_evidence",
+          "description": "Collect evidence of the slave network",
+          "type": "collect",
+          "target": "iron_ingot",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 250},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "healing_herb", "quantity": 4},
+        {"item_id": "steel_ingot", "quantity": 2}
+      ],
+      "quest_id": "side_gnoll_slavers"
+    },
+    {
+      "id": "act_32",
+      "name": "The Cultist Hideout",
+      "description": "A demon cult has established a hidden temple in the city sewers. Their rituals threaten to summon a shadow demon. Find the hideout and destroy it before the summoning is complete.",
+      "encounters": [
+        {
+          "id": "enc_32_1",
+          "name": "Cultist Guards",
+          "description": "Cultist fanatics guard the sewer entrance to the hidden temple.",
+          "monsters": ["cultist_fanatic", "cultist_fanatic", "cultist_fanatic"],
+          "difficulty": "hard",
+          "exploration_note": "The cultists wear distinctive amulets. Destroying them disrupts their dark blessing."
+        },
+        {
+          "id": "enc_32_2",
+          "name": "The Summoning Chamber",
+          "description": "The head cultist attempts to complete the shadow demon summoning.",
+          "monsters": ["cultist_fanatic", "shadow_demon"],
+          "difficulty": "very_hard",
+          "exploration_note": "Breaking the summoning circle before the ritual completes weakens the demon significantly."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_32_find_hideout",
+          "description": "Find the cultist hideout in the sewers",
+          "type": "visit",
+          "target": "cultist_hideout",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_32_defeat_guards",
+          "description": "Defeat the cultist guards",
+          "type": "kill",
+          "target": "cultist_fanatic",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_32_stop_summoning",
+          "description": "Stop the summoning and defeat the shadow demon",
+          "type": "kill",
+          "target": "shadow_demon",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_32_collect_texts",
+          "description": "Collect the cult's ritual texts as evidence",
+          "type": "collect",
+          "target": "scroll_of_fireball",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_32_talk_city_guard",
+          "description": "Report the cult to the city guard captain",
+          "type": "talk",
+          "target": "city_guard_captain",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "scroll_of_fireball", "quantity": 2},
+        {"item_id": "arcane_crystal", "quantity": 2},
+        {"item_id": "potion_of_healing", "quantity": 3}
+      ],
+      "quest_id": "side_cultist_hideout"
+    },
+    {
+      "id": "act_33",
+      "name": "The Frost Giant's Toll",
+      "description": "A frost giant has seized a critical mountain pass and demands tribute from all who wish to cross. Either pay the toll, find an alternate route, or defeat the giant to reopen the pass.",
+      "encounters": [
+        {
+          "id": "enc_33_1",
+          "name": "The Frost Giant and Wolves",
+          "description": "The frost giant stands with dire wolves at its feet, blocking the pass.",
+          "monsters": ["frost_giant", "dire_wolf", "dire_wolf"],
+          "difficulty": "very_hard",
+          "exploration_note": "The giant's weakness is fire. Its thick furs are highly flammable."
+        },
+        {
+          "id": "enc_33_2",
+          "name": "Winter Wolves of the Pass",
+          "description": "Additional wolves ambush from the snowdrifts during the fight.",
+          "monsters": ["dire_wolf", "dire_wolf", "worg"],
+          "difficulty": "hard",
+          "exploration_note": "The snowdrifts provide cover. Use them to avoid the giant's thrown boulders."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_33_reach_pass",
+          "description": "Reach the frost giant's mountain pass",
+          "type": "visit",
+          "target": "frost_giant_pass",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_33_defeat_giant",
+          "description": "Defeat the frost giant",
+          "type": "kill",
+          "target": "frost_giant",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_33_defeat_wolves",
+          "description": "Defeat the wolves guarding the pass",
+          "type": "kill",
+          "target": "dire_wolf",
+          "required_count": 4
+        },
+        {
+          "id": "side_act_33_collect_loot",
+          "description": "Loot the giant's treasure pile",
+          "type": "collect",
+          "target": "sapphire",
+          "required_count": 2
+        }
+      ],
+      "rewards": [
+        {"item_id": "sapphire", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 350},
+        {"item_id": "storm_crystal", "quantity": 2},
+        {"item_id": "potion_of_greater_healing", "quantity": 2}
+      ],
+      "quest_id": "side_frost_giant_toll"
+    },
+    {
+      "id": "act_34",
+      "name": "The Sahuagin Raiders",
+      "description": "Sahuagin priestesses lead raids on coastal villages from their underwater caves. Dive into the coastal caves and end the raids by defeating their leadership.",
+      "encounters": [
+        {
+          "id": "enc_34_1",
+          "name": "Sahuagin Cave Guards",
+          "description": "Sahuagin priestesses guard the cave entrance with water magic.",
+          "monsters": ["sahuagin_priestess", "sahuagin_priestess"],
+          "difficulty": "hard",
+          "exploration_note": "The caves flood at high tide. Time your assault for low tide."
+        },
+        {
+          "id": "enc_34_2",
+          "name": "The Deep Priestess",
+          "description": "The high priestess performs rituals in the deepest cave chamber.",
+          "monsters": ["sahuagin_priestess", "water_elemental"],
+          "difficulty": "very_hard",
+          "exploration_note": "Disrupting the ritual circle removes the priestess's magical shield."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_34_enter_caves",
+          "description": "Enter the sahuagin coastal caves",
+          "type": "visit",
+          "target": "sahuagin_caves",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_34_defeat_guards",
+          "description": "Defeat the sahuagin cave guards",
+          "type": "kill",
+          "target": "sahuagin_priestess",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_34_defeat_priestess",
+          "description": "Defeat the deep priestess",
+          "type": "kill",
+          "target": "sahuagin_priestess",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_34_collect_pearls",
+          "description": "Collect pearls from the sahuagin treasury",
+          "type": "collect",
+          "target": "pearl",
+          "required_count": 5
+        },
+        {
+          "id": "side_act_34_talk_fishermen",
+          "description": "Report the victory to the coastal fishermen",
+          "type": "talk",
+          "target": "coastal_fishermen",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "pearl", "quantity": 6},
+        {"item_id": "gold_coin", "quantity": 220},
+        {"item_id": "sapphire", "quantity": 2},
+        {"item_id": "potion_of_healing", "quantity": 3}
+      ],
+      "quest_id": "side_sahuagin_raiders"
+    },
+    {
+      "id": "act_35",
+      "name": "The Mind Flayer Conspiracy",
+      "description": "People in the capital are behaving strangely, their wills sapped by psionic influence. Trace the conspiracy to a mind flayer hidden beneath the city and destroy it before the entire population falls under thrall.",
+      "encounters": [
+        {
+          "id": "enc_35_1",
+          "name": "Thralled Guards",
+          "description": "City guards, thralled by the mind flayer, attack on sight in the underground tunnels.",
+          "monsters": ["bandit", "bandit", "bandit", "bandit"],
+          "difficulty": "medium",
+          "exploration_note": "The thralled guards can be freed if the mind flayer's control is broken."
+        },
+        {
+          "id": "enc_35_2",
+          "name": "The Mind Flayer's Chamber",
+          "description": "The mind flayer lurks in a chamber deep beneath the city, surrounded by psionic amplifiers.",
+          "monsters": ["mind_flayer"],
+          "difficulty": "boss",
+          "exploration_note": "Destroying the psionic amplifiers before engaging halves the mind flayer's power."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_35_investigate_city",
+          "description": "Investigate the strange behavior in the capital",
+          "type": "visit",
+          "target": "capital_underground",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_35_defeat_thralls",
+          "description": "Subdue the thralled guards",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 4
+        },
+        {
+          "id": "side_act_35_destroy_mind_flayer",
+          "description": "Destroy the mind flayer and free the populace",
+          "type": "kill",
+          "target": "mind_flayer",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_35_collect_amplifiers",
+          "description": "Collect the psionic amplifier crystals",
+          "type": "collect",
+          "target": "arcane_crystal",
+          "required_count": 4
+        },
+        {
+          "id": "side_act_35_talk_magistrate",
+          "description": "Report to the city magistrate",
+          "type": "talk",
+          "target": "city_magistrate",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "arcane_crystal", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 400},
+        {"item_id": "diamond", "quantity": 2},
+        {"item_id": "scroll_of_haste", "quantity": 2}
+      ],
+      "quest_id": "side_mind_flayer_conspiracy"
+    },
+    {
+      "id": "act_36",
+      "name": "The Spider Silk Harvest",
+      "description": "Tailors need giant spider silk for enchanted robes, but the spider caves are dangerous. Clear the caves of hostile spiders and harvest the precious silk safely.",
+      "encounters": [
+        {
+          "id": "enc_36_1",
+          "name": "Giant Spider Nest",
+          "description": "Giant spiders fill the upper caves with thick webs.",
+          "monsters": ["giant_spider", "giant_spider", "giant_spider"],
+          "difficulty": "medium",
+          "exploration_note": "Fire clears webs quickly but may damage the silk. Use blades for careful cutting."
+        },
+        {
+          "id": "enc_36_2",
+          "name": "Phase Spider Matriarch",
+          "description": "A phase spider matriarch guards the deepest silk deposits.",
+          "monsters": ["phase_spider", "giant_spider"],
+          "difficulty": "hard",
+          "exploration_note": "The matriarch's silk is the most valuable. Harvest it carefully after the fight."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_36_enter_caves",
+          "description": "Enter the spider caves",
+          "type": "visit",
+          "target": "spider_caves",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_36_defeat_spiders",
+          "description": "Clear the giant spider nest",
+          "type": "kill",
+          "target": "giant_spider",
+          "required_count": 4
+        },
+        {
+          "id": "side_act_36_defeat_matriarch",
+          "description": "Defeat the phase spider matriarch",
+          "type": "kill",
+          "target": "phase_spider",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_36_collect_silk",
+          "description": "Harvest spider silk from the caves",
+          "type": "collect",
+          "target": "enchanted_thread",
+          "required_count": 5
+        },
+        {
+          "id": "side_act_36_talk_tailor",
+          "description": "Deliver the silk to the master tailor",
+          "type": "talk",
+          "target": "master_tailor",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "enchanted_thread", "quantity": 6},
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "moonpetal", "quantity": 2}
+      ],
+      "quest_id": "side_spider_silk_harvest"
+    },
+    {
+      "id": "act_37",
+      "name": "The Beholder's Gallery",
+      "description": "An ancient gallery filled with petrified adventurers is home to a beholder that collects trophies. Enter the gallery to rescue a petrified ally and defeat the aberration.",
+      "encounters": [
+        {
+          "id": "enc_37_1",
+          "name": "Gallery Guardians",
+          "description": "Basilisks serve as the beholder's gallery guards, adding to its collection.",
+          "monsters": ["basilisk", "basilisk"],
+          "difficulty": "hard",
+          "exploration_note": "Mirrors on the gallery walls can reflect the basilisk's gaze back at it."
+        },
+        {
+          "id": "enc_37_2",
+          "name": "The Beholder Curator",
+          "description": "The beholder floats among its petrified collection, eye rays sweeping the gallery.",
+          "monsters": ["beholder"],
+          "difficulty": "boss",
+          "exploration_note": "The beholder's central eye projects an anti-magic cone. Approach from its blind spots."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_37_enter_gallery",
+          "description": "Enter the beholder's gallery",
+          "type": "visit",
+          "target": "beholder_gallery",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_37_defeat_basilisks",
+          "description": "Defeat the basilisk guards",
+          "type": "kill",
+          "target": "basilisk",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_37_defeat_beholder",
+          "description": "Defeat the beholder curator",
+          "type": "kill",
+          "target": "beholder",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_37_collect_gems",
+          "description": "Collect gems from the beholder's hoard",
+          "type": "collect",
+          "target": "diamond",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "diamond", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 500},
+        {"item_id": "arcane_crystal", "quantity": 3},
+        {"item_id": "potion_of_greater_healing", "quantity": 3}
+      ],
+      "quest_id": "side_beholder_gallery"
+    },
+    {
+      "id": "act_38",
+      "name": "The Treant Grove Awakening",
+      "description": "Ancient treants have awakened in a sacred grove, angry at loggers who have been felling their kin. Mediate the conflict or choose a side. If combat is unavoidable, the treants are formidable foes.",
+      "encounters": [
+        {
+          "id": "enc_38_1",
+          "name": "Angry Treants",
+          "description": "Treants march toward the logging camp, crushing everything in their path.",
+          "monsters": ["treant", "treant", "shambling_mound"],
+          "difficulty": "very_hard",
+          "exploration_note": "The treants can be calmed if you offer to stop the logging. Diplomacy is an option."
+        },
+        {
+          "id": "enc_38_2",
+          "name": "The Elder Treant",
+          "description": "The eldest treant, filled with ancient wrath, is the hardest to appease.",
+          "monsters": ["treant", "treant"],
+          "difficulty": "hard",
+          "exploration_note": "Planting a moonpetal seed at the grove's heart may calm the elder."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_38_reach_grove",
+          "description": "Reach the sacred treant grove",
+          "type": "visit",
+          "target": "treant_grove",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_38_handle_treants",
+          "description": "Defeat or calm the angry treants",
+          "type": "kill",
+          "target": "treant",
+          "required_count": 4
+        },
+        {
+          "id": "side_act_38_defeat_mound",
+          "description": "Clear the shambling mound from the path",
+          "type": "kill",
+          "target": "shambling_mound",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_38_collect_wood",
+          "description": "Collect rare heartwood from fallen treants",
+          "type": "collect",
+          "target": "mandrake_root",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_38_talk_loggers",
+          "description": "Negotiate with the logging camp foreman",
+          "type": "talk",
+          "target": "logging_foreman",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "mandrake_root", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "healing_herb", "quantity": 5},
+        {"item_id": "moonpetal", "quantity": 3}
+      ],
+      "quest_id": "side_treant_grove"
+    },
+    {
+      "id": "act_39",
+      "name": "The Ancient Red Dragon",
+      "description": "The most legendary bounty ever posted: an ancient red dragon has awoken from its centuries-long slumber. Only the most powerful adventurers dare attempt this hunt. The reward is beyond imagination.",
+      "encounters": [
+        {
+          "id": "enc_39_1",
+          "name": "Fire Giant Thralls",
+          "description": "Fire giant warriors, enslaved by the ancient dragon, guard the volcanic approach.",
+          "monsters": ["fire_giant_warrior", "fire_giant_warrior"],
+          "difficulty": "very_hard",
+          "exploration_note": "The fire giants are compelled by fear. Breaking the dragon's aura may free them."
+        },
+        {
+          "id": "enc_39_2",
+          "name": "The Ancient Red Dragon",
+          "description": "The ancient red dragon, largest and most fearsome of all dragonkind, awaits in its volcanic throne room.",
+          "monsters": ["ancient_red_dragon"],
+          "difficulty": "boss",
+          "exploration_note": "This is the hardest fight in the game. Bring every potion, scroll, and ally you have."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_39_reach_volcano",
+          "description": "Reach the ancient dragon's volcanic lair",
+          "type": "visit",
+          "target": "ancient_dragon_lair",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_39_defeat_thralls",
+          "description": "Defeat the fire giant thralls",
+          "type": "kill",
+          "target": "fire_giant_warrior",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_39_slay_ancient_dragon",
+          "description": "Slay the ancient red dragon",
+          "type": "kill",
+          "target": "ancient_red_dragon",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_39_collect_hoard",
+          "description": "Claim the legendary dragon hoard",
+          "type": "collect",
+          "target": "ruby",
+          "required_count": 10
+        },
+        {
+          "id": "side_act_39_talk_king",
+          "description": "Present proof to the king for the ultimate bounty",
+          "type": "talk",
+          "target": "the_king",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "ruby", "quantity": 10},
+        {"item_id": "diamond", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 2000},
+        {"item_id": "mithral_ingot", "quantity": 5},
+        {"item_id": "fire_essence", "quantity": 5}
+      ],
+      "quest_id": "side_ancient_dragon_hunt"
+    },
+    {
+      "id": "act_40",
+      "name": "The Lich's Library",
+      "description": "A dead lich's library has been discovered, filled with forbidden knowledge and undead guardians. Scholars want the books, but the library's defenses still function. Clear it out and recover the tomes.",
+      "encounters": [
+        {
+          "id": "enc_40_1",
+          "name": "Undead Librarians",
+          "description": "Wraiths and skeletons patrol the library stacks endlessly.",
+          "monsters": ["wraith", "skeleton", "skeleton", "zombie"],
+          "difficulty": "hard",
+          "exploration_note": "The books are fragile. Avoid fire spells in the library to preserve the collection."
+        },
+        {
+          "id": "enc_40_2",
+          "name": "The Lich's Final Ward",
+          "description": "A death knight serves as the lich's final ward, bound to protect the innermost vault of books.",
+          "monsters": ["death_knight", "mummy"],
+          "difficulty": "very_hard",
+          "exploration_note": "The death knight's binding can be broken by reading the release incantation from the lich's own journal."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_40_enter_library",
+          "description": "Enter the lich's library",
+          "type": "visit",
+          "target": "lich_library",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_40_clear_undead",
+          "description": "Clear the undead librarians",
+          "type": "kill",
+          "target": "wraith",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_40_defeat_ward",
+          "description": "Defeat the death knight final ward",
+          "type": "kill",
+          "target": "death_knight",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_40_collect_tomes",
+          "description": "Collect the rare tomes from the vault",
+          "type": "collect",
+          "target": "scroll_of_haste",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_40_talk_scholar",
+          "description": "Deliver the tomes to the head scholar",
+          "type": "talk",
+          "target": "head_scholar",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "scroll_of_haste", "quantity": 3},
+        {"item_id": "scroll_of_fireball", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 500},
+        {"item_id": "arcane_crystal", "quantity": 5},
+        {"item_id": "diamond", "quantity": 2}
+      ],
+      "quest_id": "side_lich_library"
     }
   ]
 }

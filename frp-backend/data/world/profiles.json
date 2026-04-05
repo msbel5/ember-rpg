@@ -149,6 +149,256 @@
       "climate_bands": 5,
       "region_size": 8,
       "history_end_year": 3000
+    },
+    "jungle_continent": {
+      "id": "jungle_continent",
+      "title": "Vast Jungle Continent",
+      "world_width": 300,
+      "world_height": 280,
+      "plate_count": 5,
+      "climate_bands": 4,
+      "region_size": 90,
+      "history_end_year": 1800
+    },
+    "tundra_expanse": {
+      "id": "tundra_expanse",
+      "title": "Frozen Tundra Expanse",
+      "world_width": 350,
+      "world_height": 250,
+      "plate_count": 3,
+      "climate_bands": 3,
+      "region_size": 100,
+      "history_end_year": 900
+    },
+    "island_chains": {
+      "id": "island_chains",
+      "title": "Scattered Island Chains",
+      "world_width": 400,
+      "world_height": 300,
+      "plate_count": 8,
+      "climate_bands": 6,
+      "region_size": 50,
+      "history_end_year": 1100
+    },
+    "floating_isles": {
+      "id": "floating_isles",
+      "title": "Drifting Floating Isles",
+      "world_width": 250,
+      "world_height": 350,
+      "plate_count": 7,
+      "climate_bands": 5,
+      "region_size": 45,
+      "history_end_year": 700
+    },
+    "underground_realm": {
+      "id": "underground_realm",
+      "title": "Vast Underground Realm",
+      "world_width": 200,
+      "world_height": 200,
+      "plate_count": 4,
+      "climate_bands": 3,
+      "region_size": 60,
+      "history_end_year": 2500
+    },
+    "planar_nexus": {
+      "id": "planar_nexus",
+      "title": "Planar Nexus Crossroads",
+      "world_width": 180,
+      "world_height": 180,
+      "plate_count": 6,
+      "climate_bands": 8,
+      "region_size": 40,
+      "history_end_year": 2000
+    },
+    "post_apocalypse": {
+      "id": "post_apocalypse",
+      "title": "Post-Apocalyptic Wasteland",
+      "world_width": 280,
+      "world_height": 220,
+      "plate_count": 5,
+      "climate_bands": 4,
+      "region_size": 70,
+      "history_end_year": 500
+    },
+    "eternal_twilight": {
+      "id": "eternal_twilight",
+      "title": "Realm of Eternal Twilight",
+      "world_width": 220,
+      "world_height": 220,
+      "plate_count": 4,
+      "climate_bands": 3,
+      "region_size": 80,
+      "history_end_year": 1500
+    },
+    "dragon_empire": {
+      "id": "dragon_empire",
+      "title": "Dragon Empire Dominion",
+      "world_width": 320,
+      "world_height": 300,
+      "plate_count": 6,
+      "climate_bands": 6,
+      "region_size": 100,
+      "history_end_year": 2800
+    },
+    "fey_dominion": {
+      "id": "fey_dominion",
+      "title": "Fey Dominion Wilds",
+      "world_width": 240,
+      "world_height": 260,
+      "plate_count": 5,
+      "climate_bands": 5,
+      "region_size": 55,
+      "history_end_year": 1600
+    },
+    "shadow_realm": {
+      "id": "shadow_realm",
+      "title": "Shadow Realm Depths",
+      "world_width": 200,
+      "world_height": 200,
+      "plate_count": 3,
+      "climate_bands": 3,
+      "region_size": 65,
+      "history_end_year": 2200
+    },
+    "crystal_wastes": {
+      "id": "crystal_wastes",
+      "title": "Shimmering Crystal Wastes",
+      "world_width": 260,
+      "world_height": 200,
+      "plate_count": 4,
+      "climate_bands": 4,
+      "region_size": 75,
+      "history_end_year": 1300
+    },
+    "storm_archipelago": {
+      "id": "storm_archipelago",
+      "title": "Storm-Wracked Archipelago",
+      "world_width": 380,
+      "world_height": 280,
+      "plate_count": 7,
+      "climate_bands": 5,
+      "region_size": 45,
+      "history_end_year": 800
+    },
+    "titan_graveyard": {
+      "id": "titan_graveyard",
+      "title": "Titan Graveyard Barrens",
+      "world_width": 300,
+      "world_height": 250,
+      "plate_count": 3,
+      "climate_bands": 4,
+      "region_size": 110,
+      "history_end_year": 3000
+    },
+    "living_forest": {
+      "id": "living_forest",
+      "title": "The Living Forest",
+      "world_width": 220,
+      "world_height": 240,
+      "plate_count": 4,
+      "climate_bands": 4,
+      "region_size": 70,
+      "history_end_year": 1700
+    },
+    "demon_wastes": {
+      "id": "demon_wastes",
+      "title": "Blighted Demon Wastes",
+      "world_width": 250,
+      "world_height": 250,
+      "plate_count": 5,
+      "climate_bands": 3,
+      "region_size": 80,
+      "history_end_year": 600
+    },
+    "celestial_heights": {
+      "id": "celestial_heights",
+      "title": "Celestial Heights Above",
+      "world_width": 200,
+      "world_height": 300,
+      "plate_count": 6,
+      "climate_bands": 7,
+      "region_size": 50,
+      "history_end_year": 2000
+    },
+    "elemental_chaos": {
+      "id": "elemental_chaos",
+      "title": "Elemental Chaos Frontier",
+      "world_width": 280,
+      "world_height": 280,
+      "plate_count": 8,
+      "climate_bands": 8,
+      "region_size": 40,
+      "history_end_year": 1000
+    },
+    "mercantile_republic": {
+      "id": "mercantile_republic",
+      "title": "Grand Mercantile Republic",
+      "world_width": 340,
+      "world_height": 260,
+      "plate_count": 6,
+      "climate_bands": 5,
+      "region_size": 85,
+      "history_end_year": 1400
+    },
+    "nomad_steppes": {
+      "id": "nomad_steppes",
+      "title": "Endless Nomad Steppes",
+      "world_width": 400,
+      "world_height": 200,
+      "plate_count": 3,
+      "climate_bands": 4,
+      "region_size": 120,
+      "history_end_year": 1200
+    },
+    "sunken_kingdom": {
+      "id": "sunken_kingdom",
+      "title": "Sunken Kingdom Depths",
+      "world_width": 300,
+      "world_height": 300,
+      "plate_count": 5,
+      "climate_bands": 4,
+      "region_size": 70,
+      "history_end_year": 2600
+    },
+    "plague_lands": {
+      "id": "plague_lands",
+      "title": "Forsaken Plague Lands",
+      "world_width": 240,
+      "world_height": 220,
+      "plate_count": 4,
+      "climate_bands": 3,
+      "region_size": 75,
+      "history_end_year": 800
+    },
+    "mechanical_world": {
+      "id": "mechanical_world",
+      "title": "Clockwork Mechanical World",
+      "world_width": 180,
+      "world_height": 180,
+      "plate_count": 2,
+      "climate_bands": 3,
+      "region_size": 60,
+      "history_end_year": 1900
+    },
+    "astral_sea": {
+      "id": "astral_sea",
+      "title": "Boundless Astral Sea",
+      "world_width": 400,
+      "world_height": 400,
+      "plate_count": 7,
+      "climate_bands": 6,
+      "region_size": 55,
+      "history_end_year": 2400
+    },
+    "primordial_jungle": {
+      "id": "primordial_jungle",
+      "title": "Primordial Jungle Wilds",
+      "world_width": 320,
+      "world_height": 320,
+      "plate_count": 5,
+      "climate_bands": 5,
+      "region_size": 95,
+      "history_end_year": 2800
     }
   }
 }

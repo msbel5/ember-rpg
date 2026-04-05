@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import re
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from engine.api.campaign_kernel import (
@@ -31,6 +33,7 @@ from engine.kernel import (
 )
 from engine.npc.npc_memory import NPCMemoryManager
 from engine.kernel.scene_types import SceneContext, SceneType
+from engine.world.body_parts import ARMOR_COVERAGE
 
 from .runtime_common import active_site_id, saved_list_or, saved_or, stable_seed
 from .runtime_effects import effect_events
@@ -61,6 +64,36 @@ _TRAVEL_STATE_KEYS = {
     "paused_for_encounter",
     "encounter_resolved",
 }
+_KNOWLEDGE_STATE_KEYS = {
+    "discovered_topic_ids",
+    "pinned_topic_ids",
+}
+_EQUIPMENT_CANONICAL_SLOT_ALIASES: dict[str, tuple[str, ...]] = {
+    "head": ("helmet",),
+    "body": ("armor", "body", "chest"),
+    "shield": ("shield",),
+    "hands": ("gloves", "gauntlets"),
+    "waist": ("belt",),
+    "feet": ("boots", "greaves"),
+    "cloak": ("cloak", "cover", "over"),
+    "neck": ("amulet", "neck"),
+    "ring_left": ("left_ring", "ring_left"),
+    "ring_right": ("right_ring",),
+    "main_hand": ("weapon", "main_hand", "weapon_1"),
+    "off_hand": ("off_hand",),
+    "weapon_2": ("weapon_2",),
+    "weapon_3": ("weapon_3",),
+    "weapon_4": ("weapon_4",),
+    "quiver_1": ("quiver_1",),
+    "quiver_2": ("quiver_2",),
+    "quiver_3": ("quiver_3",),
+    "quiver_4": ("quiver_4",),
+    "quick_item_1": ("quick_item_1",),
+    "quick_item_2": ("quick_item_2",),
+    "quick_item_3": ("quick_item_3",),
+    "underlayer": ("under", "underlayer", "clothes"),
+}
+_EQUIPMENT_CANONICAL_SLOT_ORDER = tuple(_EQUIPMENT_CANONICAL_SLOT_ALIASES)
 
 
 def _normalize_runtime_scene_name(value: Any) -> str:
@@ -93,6 +126,59 @@ def _normalize_travel_state_payload(raw_state: Any) -> dict[str, Any] | None:
         return TravelState.from_dict(normalized).to_dict()
     except Exception:
         return None
+
+
+def _normalize_topic_id_list(raw_topic_ids: Any) -> list[str]:
+    if not isinstance(raw_topic_ids, Sequence) or isinstance(raw_topic_ids, (str, bytes, bytearray)):
+        return []
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for entry in raw_topic_ids:
+        topic_id = str(entry or "").strip()
+        if not topic_id or topic_id in seen:
+            continue
+        seen.add(topic_id)
+        normalized.append(topic_id)
+    return normalized
+
+
+def _normalize_knowledge_state_payload(raw_state: Any) -> dict[str, Any] | None:
+    if not isinstance(raw_state, dict):
+        return None
+    normalized = {
+        "discovered_topic_ids": _normalize_topic_id_list(raw_state.get("discovered_topic_ids", [])),
+        "pinned_topic_ids": _normalize_topic_id_list(raw_state.get("pinned_topic_ids", [])),
+    }
+    if not normalized["discovered_topic_ids"] and not normalized["pinned_topic_ids"]:
+        return None
+    return normalized
+
+
+def _knowledge_state(runtime: dict[str, Any]) -> dict[str, Any]:
+    game_state = runtime.get("game_state")
+    raw_payload = getattr(game_state, "raw_payload", {}) if game_state is not None else {}
+    normalized = _normalize_knowledge_state_payload(raw_payload.get("knowledge"))
+    if normalized is None:
+        return {
+            "discovered_topic_ids": [],
+            "pinned_topic_ids": [],
+        }
+    return normalized
+
+
+def _persist_knowledge_state(runtime: dict[str, Any], knowledge_state: Any) -> None:
+    game_state = runtime.get("game_state")
+    if game_state is None:
+        return
+    raw_payload = getattr(game_state, "raw_payload", None)
+    if not isinstance(raw_payload, dict):
+        raw_payload = {}
+        game_state.raw_payload = raw_payload
+    normalized = _normalize_knowledge_state_payload(knowledge_state)
+    if normalized is None:
+        raw_payload.pop("knowledge", None)
+        return
+    raw_payload["knowledge"] = {key: normalized[key] for key in _KNOWLEDGE_STATE_KEYS}
 
 
 def _travel_state(runtime: dict[str, Any]) -> TravelState | None:
@@ -203,6 +289,315 @@ def build_runtime_travel_payload(runtime: dict[str, Any]) -> dict[str, Any] | No
         "encounter_resolved": bool(travel.encounter_resolved),
         "can_advance": can_advance,
         "requires_resolution": requires_resolution,
+    }
+
+
+_KNOWLEDGE_CATEGORIES = {"npc", "faction", "region", "settlement", "quest", "rumor", "fact"}
+
+
+def _normalize_knowledge_ids(values: Any) -> list[str]:
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for value in list(values or []):
+        topic_id = str(value or "").strip()
+        if not topic_id or topic_id in seen:
+            continue
+        seen.add(topic_id)
+        normalized.append(topic_id)
+    return normalized
+
+
+def _slugify_topic_fragment(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    text = re.sub(r"[^a-z0-9]+", "_", text)
+    return text.strip("_")
+
+
+def _titleize_topic_fragment(value: Any) -> str:
+    text = str(value or "").strip().replace("_", " ").replace(".", " ")
+    return text.title().strip() or "Unknown Topic"
+
+
+def _topic_category(topic_id: str) -> str:
+    prefix = str(topic_id).split(".", 1)[0].strip().lower()
+    return prefix if prefix in _KNOWLEDGE_CATEGORIES else "fact"
+
+
+def _knowledge_raw_state(runtime: dict[str, Any]) -> dict[str, list[str]]:
+    game_state = runtime.get("game_state")
+    raw_payload = getattr(game_state, "raw_payload", {}) if game_state is not None else {}
+    raw_knowledge = raw_payload.get("knowledge", {}) if isinstance(raw_payload, dict) else {}
+    if not isinstance(raw_knowledge, dict):
+        raw_knowledge = {}
+    return {
+        "discovered_topic_ids": _normalize_knowledge_ids(raw_knowledge.get("discovered_topic_ids", [])),
+        "pinned_topic_ids": _normalize_knowledge_ids(raw_knowledge.get("pinned_topic_ids", [])),
+    }
+
+
+def _world_region_label(world: Any, region_id: str) -> str:
+    regions = list(getattr(world, "regions", []) or [])
+    for region in regions:
+        if str(region.get("id", "")) != str(region_id):
+            continue
+        label = str(region.get("name", region.get("title", region_id))).strip()
+        return label or _titleize_topic_fragment(region_id)
+    return _titleize_topic_fragment(region_id)
+
+
+def _world_settlement_label(world: Any, settlement_id: str) -> str:
+    settlements = list(getattr(world, "settlements", []) or [])
+    for settlement in settlements:
+        if str(getattr(settlement, "id", settlement.get("id", "")) if isinstance(settlement, dict) else getattr(settlement, "id", "")) != str(settlement_id):
+            continue
+        label = ""
+        if isinstance(settlement, dict):
+            label = str(settlement.get("center_name", settlement.get("name", settlement_id))).strip()
+        else:
+            label = str(getattr(settlement, "center_name", getattr(settlement, "name", settlement_id))).strip()
+        return label or _titleize_topic_fragment(settlement_id)
+    return _titleize_topic_fragment(settlement_id)
+
+
+def _register_knowledge_topic(
+    topics: dict[str, dict[str, Any]],
+    topic_id: str,
+    *,
+    label: str,
+    category: str,
+    source_type: str,
+) -> None:
+    normalized_topic_id = str(topic_id).strip()
+    if not normalized_topic_id:
+        return
+    normalized_category = category if category in _KNOWLEDGE_CATEGORIES else _topic_category(normalized_topic_id)
+    entry = topics.get(normalized_topic_id)
+    if entry is None:
+        entry = {
+            "topic_id": normalized_topic_id,
+            "label": str(label).strip() or _titleize_topic_fragment(normalized_topic_id),
+            "category": normalized_category,
+            "source_types": [source_type] if source_type else [],
+        }
+        topics[normalized_topic_id] = entry
+        return
+    if label and (entry.get("label") in {"", normalized_topic_id} or len(str(label)) > len(str(entry.get("label", "")))) :
+        entry["label"] = str(label).strip()
+    if normalized_category and entry.get("category") in {"", "fact"}:
+        entry["category"] = normalized_category
+    if source_type:
+        source_types = list(entry.get("source_types", []))
+        if source_type not in source_types:
+            source_types.append(source_type)
+        entry["source_types"] = source_types
+
+
+def _current_settlement_id(context: "CampaignContext") -> str:
+    return str(
+        context.settlement_state.get("settlement_id")
+        or getattr(getattr(context, "region_snapshot", None), "metadata", {}).get("settlement_id")
+        or getattr(getattr(context, "region_snapshot", None), "region_id", "")
+    ).strip()
+
+
+def _current_region_id(context: "CampaignContext") -> str:
+    return str(getattr(getattr(context, "region_snapshot", None), "region_id", "")).strip()
+
+
+def _knowledge_bootstrap_topic_ids(context: "CampaignContext") -> list[str]:
+    bootstrap: list[str] = []
+    region_id = _current_region_id(context)
+    if region_id:
+        bootstrap.append(f"region.{region_id}")
+    settlement_id = _current_settlement_id(context)
+    if settlement_id and settlement_id != region_id:
+        bootstrap.append(f"settlement.{settlement_id}")
+    active_quests = list((context.campaign_state or {}).get("active_quests", []) or [])
+    for quest in active_quests:
+        quest_id = str(quest.get("quest_id", quest.get("id", ""))).strip()
+        if quest_id:
+            bootstrap.append(f"quest.{quest_id}")
+    return _normalize_knowledge_ids(bootstrap)
+
+
+def _knowledge_topic_catalog(context: "CampaignContext", runtime: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    topics: dict[str, dict[str, Any]] = {}
+    world = getattr(context, "world", None)
+
+    region_id = _current_region_id(context)
+    if region_id:
+        _register_knowledge_topic(
+            topics,
+            f"region.{region_id}",
+            label=_world_region_label(world, region_id),
+            category="region",
+            source_type="world",
+        )
+
+    settlement_id = _current_settlement_id(context)
+    if settlement_id:
+        _register_knowledge_topic(
+            topics,
+            f"settlement.{settlement_id}",
+            label=_world_settlement_label(world, settlement_id),
+            category="settlement",
+            source_type="world",
+        )
+
+    if world is not None:
+        factions = sorted(list(getattr(world, "factions", []) or []), key=lambda item: str(getattr(item, "id", "") if not isinstance(item, dict) else item.get("id", "")))
+        for faction in factions:
+            faction_id = str(getattr(faction, "id", faction.get("id", "")) if isinstance(faction, dict) else getattr(faction, "id", "")).strip()
+            if not faction_id:
+                continue
+            label = str(getattr(faction, "id", faction.get("id", "")) if isinstance(faction, dict) else getattr(faction, "id", "")).strip()
+            _register_knowledge_topic(
+                topics,
+                f"faction.{faction_id}",
+                label=_titleize_topic_fragment(label),
+                category="faction",
+                source_type="world",
+            )
+
+    active_quests = sorted(
+        list((context.campaign_state or {}).get("active_quests", []) or []),
+        key=lambda item: str(item.get("quest_id", item.get("id", ""))),
+    )
+    for quest in active_quests:
+        quest_id = str(quest.get("quest_id", quest.get("id", ""))).strip()
+        if not quest_id:
+            continue
+        _register_knowledge_topic(
+            topics,
+            f"quest.{quest_id}",
+            label=str(quest.get("title", quest_id)).strip() or _titleize_topic_fragment(quest_id),
+            category="quest",
+            source_type="quest",
+        )
+
+    actors = runtime.get("actors") or {}
+    if isinstance(actors, dict):
+        for actor_id in sorted(actors):
+            if actor_id == "player":
+                continue
+            actor = actors.get(actor_id)
+            if actor is None:
+                continue
+            actor_type = str(getattr(getattr(actor, "identity", None), "actor_type", "")).lower().strip()
+            if actor_type not in {"npc", "creature"}:
+                continue
+            _register_knowledge_topic(
+                topics,
+                f"npc.{actor_id}",
+                label=str(getattr(getattr(actor, "identity", None), "display_name", actor_id)).strip() or _titleize_topic_fragment(actor_id),
+                category="npc",
+                source_type="npc",
+            )
+            faction_id = str(getattr(getattr(actor, "identity", None), "faction_id", "")).strip()
+            if faction_id:
+                _register_knowledge_topic(
+                    topics,
+                    f"faction.{faction_id}",
+                    label=_titleize_topic_fragment(faction_id),
+                    category="faction",
+                    source_type="npc",
+                )
+
+    rumor_network = getattr(context, "rumor_network", None)
+    if rumor_network is not None:
+        rumors = sorted(list(getattr(rumor_network, "get_all_active", lambda: [])() or []), key=lambda rumor: str(getattr(rumor, "rumor_id", "")))
+        for rumor in rumors:
+            rumor_id = str(getattr(rumor, "rumor_id", "")).strip()
+            if not rumor_id:
+                continue
+            _register_knowledge_topic(
+                topics,
+                f"rumor.{rumor_id}",
+                label=str(getattr(rumor, "fact", rumor_id)).strip() or _titleize_topic_fragment(rumor_id),
+                category="rumor",
+                source_type="rumor_network",
+            )
+
+    history_seed = getattr(context, "history_seed", None)
+    if history_seed is not None:
+        history_events = list(getattr(history_seed, "events", []) or [])
+        history_events = sorted(
+            history_events,
+            key=lambda event: (int(getattr(event, "year", 0)), str(getattr(event, "name", ""))),
+        )[-5:]
+        for event in history_events:
+            event_name = str(getattr(event, "name", "")).strip()
+            if not event_name:
+                continue
+            _register_knowledge_topic(
+                topics,
+                f"fact.{_slugify_topic_fragment(event_name)}",
+                label=event_name,
+                category="fact",
+                source_type="history",
+            )
+
+    npc_memory = getattr(context, "npc_memory", None)
+    if npc_memory is not None:
+        seen_fact_ids: set[str] = set()
+        memories = getattr(npc_memory, "memories", {}) or {}
+        for memory_id in sorted(memories):
+            memory = memories.get(memory_id)
+            if memory is None:
+                continue
+            known_facts = list(getattr(memory, "known_facts", []) or [])
+            for fact in sorted({str(fact).strip() for fact in known_facts if str(fact).strip()}):
+                fact_topic_id = f"fact.{_slugify_topic_fragment(fact)}"
+                if fact_topic_id in seen_fact_ids:
+                    continue
+                seen_fact_ids.add(fact_topic_id)
+                _register_knowledge_topic(
+                    topics,
+                    fact_topic_id,
+                    label=fact,
+                    category="fact",
+                    source_type="npc_memory",
+                )
+
+    return topics
+
+
+def build_runtime_knowledge_payload(context: "CampaignContext", runtime: dict[str, Any]) -> dict[str, Any]:
+    knowledge_state = _knowledge_raw_state(runtime)
+    bootstrap_topic_ids = _knowledge_bootstrap_topic_ids(context)
+    discovered_topic_ids = _normalize_knowledge_ids(knowledge_state["discovered_topic_ids"] + bootstrap_topic_ids)
+    pinned_topic_ids = _normalize_knowledge_ids(knowledge_state["pinned_topic_ids"])
+    effective_discovered = set(discovered_topic_ids) | set(pinned_topic_ids)
+    topics = _knowledge_topic_catalog(context, runtime)
+
+    for topic_id in sorted(effective_discovered | set(pinned_topic_ids)):
+        if topic_id in topics:
+            continue
+        topics[topic_id] = {
+            "topic_id": topic_id,
+            "label": _titleize_topic_fragment(topic_id),
+            "category": _topic_category(topic_id),
+            "source_types": ["persisted"],
+        }
+
+    topic_payloads: list[dict[str, Any]] = []
+    for topic_id in sorted(topics):
+        topic = topics[topic_id]
+        topic_payloads.append(
+            {
+                "topic_id": topic_id,
+                "label": str(topic.get("label", topic_id)).strip() or _titleize_topic_fragment(topic_id),
+                "category": topic.get("category", _topic_category(topic_id)),
+                "discovered": topic_id in effective_discovered,
+                "pinned": topic_id in pinned_topic_ids,
+                "source_types": sorted({str(item).strip() for item in list(topic.get("source_types", [])) if str(item).strip()}),
+            }
+        )
+
+    return {
+        "discovered_topic_ids": sorted(effective_discovered),
+        "pinned_topic_ids": sorted(pinned_topic_ids),
+        "topics": topic_payloads,
     }
 
 
@@ -540,6 +935,243 @@ def build_actor_spell_payload(actor: ActorRecord | None) -> dict[str, Any]:
     }
 
 
+def _equipment_canonical_slot(legacy_slot: str) -> str:
+    normalized = str(legacy_slot or "").strip().lower()
+    for canonical_slot, aliases in _EQUIPMENT_CANONICAL_SLOT_ALIASES.items():
+        if normalized == canonical_slot or normalized in aliases:
+            return canonical_slot
+    return normalized or "unknown"
+
+
+def _equipment_canonical_slot_index(canonical_slot: str) -> int:
+    try:
+        return _EQUIPMENT_CANONICAL_SLOT_ORDER.index(canonical_slot)
+    except ValueError:
+        return len(_EQUIPMENT_CANONICAL_SLOT_ORDER)
+
+
+def _normalized_equipment_lookup_key(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
+
+
+def _armor_piece_for_item(item_payload: dict[str, Any], legacy_slot: str, canonical_slot: str) -> Any:
+    normalized_lookup = {_normalized_equipment_lookup_key(key): piece for key, piece in ARMOR_COVERAGE.items()}
+    for candidate in (
+        item_payload.get("armor_piece"),
+        item_payload.get("armor_profile"),
+        item_payload.get("item_def_id"),
+        item_payload.get("id"),
+        item_payload.get("name"),
+        legacy_slot,
+        canonical_slot,
+    ):
+        piece = normalized_lookup.get(_normalized_equipment_lookup_key(candidate))
+        if piece is not None:
+            return piece
+    return None
+
+
+def _equipment_coverage_zones(item_payload: dict[str, Any], legacy_slot: str, canonical_slot: str) -> list[str]:
+    explicit = item_payload.get("coverage") or item_payload.get("covers") or item_payload.get("coverage_zones") or []
+    zones = sorted({str(zone).strip() for zone in list(explicit or []) if str(zone).strip()})
+    if zones:
+        return zones
+    piece = _armor_piece_for_item(item_payload, legacy_slot, canonical_slot)
+    if piece is not None:
+        return sorted({str(zone).strip() for zone in getattr(piece, "covers", ()) if str(zone).strip()})
+    fallback_by_slot = {
+        "head": ["head"],
+        "body": ["chest", "torso"],
+        "shield": ["left_arm"],
+        "hands": ["left_arm", "right_arm"],
+        "feet": ["left_leg", "right_leg"],
+    }
+    return list(fallback_by_slot.get(canonical_slot, []))
+
+
+def _equipment_armor_weight_class(item_payload: dict[str, Any], legacy_slot: str, canonical_slot: str) -> str:
+    explicit = str(
+        item_payload.get("armor_weight_class")
+        or item_payload.get("weight_class")
+        or item_payload.get("armor_class")
+        or ""
+    ).strip().lower()
+    if explicit in {"none", "light", "medium", "heavy"}:
+        return explicit
+    item_type = str(item_payload.get("type", "")).strip().lower()
+    if canonical_slot not in {"body", "shield", "hands", "feet", "head", "cloak", "underlayer"} and item_type not in {"armor", "shield"}:
+        return "none"
+    material = str(item_payload.get("material") or item_payload.get("material_id") or "").strip().lower()
+    item_name = " ".join(
+        str(part).strip().lower()
+        for part in (
+            item_payload.get("item_def_id"),
+            item_payload.get("id"),
+            item_payload.get("name"),
+            legacy_slot,
+        )
+        if str(part or "").strip()
+    )
+    if canonical_slot == "shield":
+        return "medium"
+    if any(token in item_name for token in ("plate", "breastplate", "full_plate")) or material in {"steel"}:
+        return "heavy"
+    if any(token in item_name for token in ("chain", "mail", "greaves")) or material in {"iron"}:
+        return "medium"
+    if any(token in item_name for token in ("leather", "hide", "cloak", "robe", "cap", "gloves", "boots")) or material in {"cloth", "linen", "leather", "hide", "silk"}:
+        return "light"
+    return "none"
+
+
+def _equipment_modifier_int(item_payload: dict[str, Any], *keys: str) -> int | None:
+    for key in keys:
+        if key not in item_payload:
+            continue
+        try:
+            return int(item_payload.get(key, 0) or 0)
+        except Exception:
+            return 0
+    return None
+
+
+def _equipment_default_modifiers(canonical_slot: str, armor_weight_class: str) -> tuple[int, int, int]:
+    if canonical_slot == "shield":
+        return (1, 1, 0)
+    if armor_weight_class == "light":
+        return (0, 1, 0)
+    if armor_weight_class == "medium":
+        return (1, 2, 1)
+    if armor_weight_class == "heavy":
+        return (2, 3, 2)
+    return (0, 0, 0)
+
+
+def _equipment_attunement_required(item_payload: dict[str, Any]) -> bool:
+    if any(bool(item_payload.get(key, False)) for key in ("attunement_required", "requires_attunement", "requires_attune")):
+        return True
+    tags = {str(tag).strip().lower() for tag in list(item_payload.get("tags", []) or []) if str(tag).strip()}
+    return "attunement_required" in tags or "requires_attunement" in tags
+
+
+def _equipment_item_is_attuned(item_payload: dict[str, Any]) -> bool:
+    return any(bool(item_payload.get(key, False)) for key in ("attuned", "is_attuned"))
+
+
+def _equipment_item_payload(stack: Any, legacy_slot: str) -> dict[str, Any]:
+    item_payload = copy.deepcopy(stack.to_dict() if hasattr(stack, "to_dict") else dict(stack))
+    source_payload = dict(item_payload.get("payload", {}))
+    source_payload.setdefault("item_def_id", item_payload.get("item_def_id"))
+    source_payload.setdefault("id", source_payload.get("id", item_payload.get("item_def_id")))
+    canonical_slot = _equipment_canonical_slot(legacy_slot)
+    coverage_zones = _equipment_coverage_zones(source_payload, legacy_slot, canonical_slot)
+    armor_weight_class = _equipment_armor_weight_class(source_payload, legacy_slot, canonical_slot)
+    movement_penalty = _equipment_modifier_int(source_payload, "movement_penalty")
+    stealth_noise = _equipment_modifier_int(source_payload, "stealth_noise")
+    spell_interference = _equipment_modifier_int(source_payload, "spell_interference")
+    if movement_penalty is None or stealth_noise is None or spell_interference is None:
+        defaults = _equipment_default_modifiers(canonical_slot, armor_weight_class)
+        movement_penalty = defaults[0] if movement_penalty is None else movement_penalty
+        stealth_noise = defaults[1] if stealth_noise is None else stealth_noise
+        spell_interference = defaults[2] if spell_interference is None else spell_interference
+    item_payload["canonical_slot"] = canonical_slot
+    if canonical_slot != str(legacy_slot or "").strip().lower():
+        item_payload["legacy_slot"] = str(legacy_slot)
+    item_payload["coverage_zones"] = coverage_zones
+    item_payload["armor_weight_class"] = armor_weight_class
+    item_payload["movement_penalty"] = int(movement_penalty)
+    item_payload["stealth_noise"] = int(stealth_noise)
+    item_payload["spell_interference"] = int(spell_interference)
+    item_payload["attunement_required"] = _equipment_attunement_required(source_payload)
+    return item_payload
+
+
+def build_actor_equipment_payload(actor: ActorRecord | None) -> dict[str, Any]:
+    base_slots = {canonical_slot: None for canonical_slot in _EQUIPMENT_CANONICAL_SLOT_ORDER}
+    if actor is None or getattr(actor, "equipment", None) is None:
+        return {
+            "equipment": {"slots": {}},
+            "equipment_topology": {
+                "slots": base_slots,
+                "legacy_slot_aliases": {key: list(value) for key, value in _EQUIPMENT_CANONICAL_SLOT_ALIASES.items()},
+                "coverage_summary": {},
+            },
+            "equipment_modifiers": {
+                "total_movement_penalty": 0,
+                "total_stealth_noise": 0,
+                "total_spell_interference": 0,
+            },
+            "attunement": {
+                "slot_count": 3,
+                "attuned_item_ids": [],
+                "available_slots": 3,
+            },
+        }
+
+    raw_slots = dict(getattr(actor.equipment, "slots", {}) or {})
+    equipment_slots_payload: dict[str, list[dict[str, Any]]] = {}
+    topology_slots = dict(base_slots)
+    coverage_summary: dict[str, list[str]] = {}
+    attuned_item_ids: list[str] = []
+    total_movement_penalty = 0
+    total_stealth_noise = 0
+    total_spell_interference = 0
+
+    sorted_slots = sorted(
+        raw_slots.items(),
+        key=lambda item: (
+            _equipment_canonical_slot_index(_equipment_canonical_slot(item[0])),
+            str(item[0]),
+        ),
+    )
+    for legacy_slot, stacks in sorted_slots:
+        enriched_items = [_equipment_item_payload(stack, str(legacy_slot)) for stack in list(stacks or [])]
+        if not enriched_items:
+            continue
+        equipment_slots_payload[str(legacy_slot)] = enriched_items
+        for item in enriched_items:
+            canonical_slot = str(item.get("canonical_slot", _equipment_canonical_slot(legacy_slot)))
+            if canonical_slot not in topology_slots:
+                topology_slots[canonical_slot] = None
+            if topology_slots[canonical_slot] is None:
+                topology_slots[canonical_slot] = copy.deepcopy(item)
+            total_movement_penalty += int(item.get("movement_penalty", 0) or 0)
+            total_stealth_noise += int(item.get("stealth_noise", 0) or 0)
+            total_spell_interference += int(item.get("spell_interference", 0) or 0)
+            instance_id = str(item.get("instance_id", item.get("item_def_id", ""))).strip()
+            if bool(item.get("attunement_required", False)) and _equipment_item_is_attuned(dict(item.get("payload", {}))):
+                if instance_id and instance_id not in attuned_item_ids:
+                    attuned_item_ids.append(instance_id)
+            for zone in list(item.get("coverage_zones", []) or []):
+                zone_key = str(zone).strip()
+                if not zone_key:
+                    continue
+                coverage_summary.setdefault(zone_key, [])
+                if instance_id and instance_id not in coverage_summary[zone_key]:
+                    coverage_summary[zone_key].append(instance_id)
+
+    for zone in sorted(coverage_summary):
+        coverage_summary[zone] = sorted(coverage_summary[zone])
+
+    return {
+        "equipment": {"slots": equipment_slots_payload},
+        "equipment_topology": {
+            "slots": topology_slots,
+            "legacy_slot_aliases": {key: list(value) for key, value in _EQUIPMENT_CANONICAL_SLOT_ALIASES.items()},
+            "coverage_summary": coverage_summary,
+        },
+        "equipment_modifiers": {
+            "total_movement_penalty": total_movement_penalty,
+            "total_stealth_noise": total_stealth_noise,
+            "total_spell_interference": total_spell_interference,
+        },
+        "attunement": {
+            "slot_count": 3,
+            "attuned_item_ids": sorted(attuned_item_ids),
+            "available_slots": max(0, 3 - len(attuned_item_ids)),
+        },
+    }
+
+
 def build_travel_state_payload(
     travel_state: TravelState | dict[str, Any] | None,
     *,
@@ -801,6 +1433,8 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
         existing_game_state = existing_runtime.get("game_state")
         game_state_meta = dict(meta.get("game_state") or {})
         raw_payload_meta = dict(game_state_meta.get("raw_payload") or {})
+        if existing_game_state is not None and isinstance(getattr(existing_game_state, "raw_payload", None), dict):
+            raw_payload_meta.update(copy.deepcopy(existing_game_state.raw_payload))
         if existing_travel is not None:
             status = str(existing_travel.status or "").lower().strip()
             if status in {"", "idle", "cancelled"}:
@@ -808,9 +1442,12 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
             else:
                 raw_payload_meta["travel_state"] = existing_travel.to_dict()
             meta["travel_state"] = existing_travel.to_dict()
-        elif existing_game_state is not None and isinstance(getattr(existing_game_state, "raw_payload", None), dict):
-            raw_payload_meta.update(copy.deepcopy(existing_game_state.raw_payload))
         if raw_payload_meta:
+            normalized_knowledge = _normalize_knowledge_state_payload(raw_payload_meta.get("knowledge"))
+            if normalized_knowledge is None:
+                raw_payload_meta.pop("knowledge", None)
+            else:
+                raw_payload_meta["knowledge"] = normalized_knowledge
             game_state_meta["raw_payload"] = raw_payload_meta
             meta["game_state"] = game_state_meta
         for key in ("world_state", "path_authority", "local_map_state"):
@@ -873,6 +1510,7 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
     }
     context.kernel_runtime = runtime
     rebase_projection_slices(context, runtime, force=True)
+    _persist_knowledge_state(runtime, _knowledge_state(runtime))
     _sync_travel_runtime_state(context, runtime)
     _sync_combat_runtime_state(context, runtime)
     _sync_runtime_from_context(context, runtime)
@@ -884,6 +1522,7 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
 
 def serialize_kernel_runtime(context: "CampaignContext") -> dict[str, Any]:
     runtime = ensure_kernel_runtime(context)
+    _persist_knowledge_state(runtime, _knowledge_state(runtime))
     return {
         "world_state": runtime["world_state"].to_dict(),
         "game_state": runtime["game_state"].to_dict(),
@@ -1165,6 +1804,7 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
             normalize_actor_medical_state(actor, sync_derived=True)
     runtime["actors"] = merged
     _sync_social_identity(context, runtime)
+    _persist_knowledge_state(runtime, _knowledge_state(runtime))
     _sync_travel_runtime_state(context, runtime)
     _sync_combat_runtime_state(context, runtime)
     runtime["game_state"].actors = dict(merged)
@@ -1796,7 +2436,9 @@ def _medical_tick_events(actors: list, current_tick: int) -> list[dict[str, Any]
 __all__ = [
     "_check_level_up",
     "advance_kernel_runtime",
+    "build_actor_equipment_payload",
     "build_actor_spell_payload",
+    "build_runtime_knowledge_payload",
     "build_travel_state_payload",
     "ensure_kernel_runtime",
     "serialize_kernel_runtime",

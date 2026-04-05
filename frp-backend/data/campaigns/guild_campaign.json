@@ -1,0 +1,1024 @@
+{
+  "id": "guild_campaign",
+  "title": "The Guild Halls",
+  "description": "Rise through the ranks of the great guilds. Whether you choose the shadow-cloaked Thieves Guild, the arcane Mages Circle, the ironclad Fighters Arena, or the cunning Merchants Consortium, each path offers unique challenges, allies, and rewards.",
+  "recommended_level": 5,
+  "max_cr": 15,
+  "min_cr": 2,
+  "acts": [
+    {
+      "id": "act_1",
+      "name": "Thieves Guild: The Initiation",
+      "description": "To join the Thieves Guild, you must complete three tasks: steal a gem from a guarded vault, pick the pocket of a noble, and escape the city watch without being caught.",
+      "encounters": [
+        {
+          "id": "enc_1_1",
+          "name": "Vault Guards",
+          "description": "Guards patrol the merchant vault where the initiation gem is kept.",
+          "monsters": ["bandit", "bandit", "bandit"],
+          "difficulty": "medium",
+          "exploration_note": "The vault has a side entrance through the sewers. Avoid the main door."
+        },
+        {
+          "id": "enc_1_2",
+          "name": "City Watch Pursuit",
+          "description": "The city watch pursues you through the alleyways after the theft is discovered.",
+          "monsters": ["bandit", "bandit", "worg"],
+          "difficulty": "hard",
+          "exploration_note": "Use the rooftops to evade the watch. The chimney on Baker Street leads to a safe house."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_1_visit_guild",
+          "description": "Find the hidden Thieves Guild entrance",
+          "type": "visit",
+          "target": "thieves_guild_entrance",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_1_talk_guildmaster",
+          "description": "Speak with the Thieves Guild master",
+          "type": "talk",
+          "target": "thieves_guildmaster",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_1_defeat_guards",
+          "description": "Subdue the vault guards",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 3
+        },
+        {
+          "id": "guild_act_1_collect_gem",
+          "description": "Steal the initiation gem from the vault",
+          "type": "collect",
+          "target": "ruby",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_1_escape_watch",
+          "description": "Evade the city watch pursuit",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 2
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 150},
+        {"item_id": "ruby", "quantity": 1},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "enchanted_thread", "quantity": 1}
+      ],
+      "quest_id": "guild_thieves_initiation"
+    },
+    {
+      "id": "act_2",
+      "name": "Thieves Guild: The Grand Heist",
+      "description": "The guild's biggest job: steal the Star of Aldenmoor from the duke's treasury. Navigate traps, defeat guards, and escape with the prize before the alarm sounds.",
+      "encounters": [
+        {
+          "id": "enc_2_1",
+          "name": "Treasury Vault Constructs",
+          "description": "Clay golem sentries guard the duke's treasury, immune to bribery.",
+          "monsters": ["clay_golem", "clay_golem"],
+          "difficulty": "hard",
+          "exploration_note": "The golems respond to a control word. Find the duke's journal for the command."
+        },
+        {
+          "id": "enc_2_2",
+          "name": "The Duke's Champion",
+          "description": "The duke's personal champion guards the innermost vault with deadly skill.",
+          "monsters": ["hobgoblin_captain", "bandit", "bandit"],
+          "difficulty": "very_hard",
+          "exploration_note": "The champion has a weakness: flattery. Distract him while an ally grabs the Star."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_2_enter_treasury",
+          "description": "Infiltrate the duke's treasury",
+          "type": "visit",
+          "target": "duke_treasury",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_2_defeat_constructs",
+          "description": "Bypass or defeat the treasury constructs",
+          "type": "kill",
+          "target": "clay_golem",
+          "required_count": 2
+        },
+        {
+          "id": "guild_act_2_defeat_champion",
+          "description": "Defeat the duke's champion",
+          "type": "kill",
+          "target": "hobgoblin_captain",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_2_steal_star",
+          "description": "Steal the Star of Aldenmoor",
+          "type": "collect",
+          "target": "diamond",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_2_talk_fence",
+          "description": "Deliver the Star to the guild fence",
+          "type": "talk",
+          "target": "guild_fence",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "diamond", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 400},
+        {"item_id": "potion_of_greater_healing", "quantity": 2},
+        {"item_id": "scroll_of_haste", "quantity": 1}
+      ],
+      "quest_id": "guild_thieves_heist"
+    },
+    {
+      "id": "act_3",
+      "name": "Thieves Guild: The Betrayal",
+      "description": "A traitor within the guild has sold information to the authorities. Hunt down the informant, who has allied with dangerous mercenaries, and settle the score before the guild is destroyed.",
+      "encounters": [
+        {
+          "id": "enc_3_1",
+          "name": "Mercenary Bodyguards",
+          "description": "The traitor has hired orc mercenaries for protection.",
+          "monsters": ["orc_warrior", "orc_warrior", "orc_warrior"],
+          "difficulty": "hard",
+          "exploration_note": "The orcs are paid muscle. Offering them double may convince some to switch sides."
+        },
+        {
+          "id": "enc_3_2",
+          "name": "The Traitor's Last Stand",
+          "description": "The traitor makes a final stand in an abandoned warehouse, backed by a summoned succubus.",
+          "monsters": ["succubus", "bandit", "bandit"],
+          "difficulty": "very_hard",
+          "exploration_note": "The succubus feeds on the traitor's fear. Eliminating the traitor first weakens it."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_3_find_hideout",
+          "description": "Track the traitor to their hideout",
+          "type": "visit",
+          "target": "traitor_hideout",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_3_defeat_mercs",
+          "description": "Defeat the mercenary bodyguards",
+          "type": "kill",
+          "target": "orc_warrior",
+          "required_count": 3
+        },
+        {
+          "id": "guild_act_3_defeat_succubus",
+          "description": "Defeat the succubus ally",
+          "type": "kill",
+          "target": "succubus",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_3_collect_ledger",
+          "description": "Recover the stolen guild ledger",
+          "type": "collect",
+          "target": "gold_coin",
+          "required_count": 100
+        },
+        {
+          "id": "guild_act_3_talk_guildmaster_report",
+          "description": "Report back to the guildmaster",
+          "type": "talk",
+          "target": "thieves_guildmaster",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 300},
+        {"item_id": "sapphire", "quantity": 2},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "pearl", "quantity": 2}
+      ],
+      "quest_id": "guild_thieves_betrayal"
+    },
+    {
+      "id": "act_4",
+      "name": "Mage Tower: The Entrance Exam",
+      "description": "To join the Mages Circle, pass the entrance exam: navigate an enchanted maze filled with elemental challenges, solve arcane puzzles, and demonstrate mastery over at least one school of magic.",
+      "encounters": [
+        {
+          "id": "enc_4_1",
+          "name": "Fire Elemental Test",
+          "description": "A fire elemental manifests as the first trial of elemental mastery.",
+          "monsters": ["fire_elemental"],
+          "difficulty": "hard",
+          "exploration_note": "Water spells deal double damage. The fountains in the maze provide water ammunition."
+        },
+        {
+          "id": "enc_4_2",
+          "name": "Earth Elemental Test",
+          "description": "An earth elemental blocks the maze's second junction.",
+          "monsters": ["earth_elemental", "earth_elemental"],
+          "difficulty": "hard",
+          "exploration_note": "The floor tiles spell out the weakness. Step on them in the right order."
+        },
+        {
+          "id": "enc_4_3",
+          "name": "Arcane Golem Final Exam",
+          "description": "A stone golem serves as the final examiner, testing all spell schools.",
+          "monsters": ["stone_golem"],
+          "difficulty": "very_hard",
+          "exploration_note": "The golem adapts to repeated spell types. Vary your attacks."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_4_enter_maze",
+          "description": "Enter the enchanted examination maze",
+          "type": "visit",
+          "target": "mage_exam_maze",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_4_pass_fire_test",
+          "description": "Pass the fire elemental trial",
+          "type": "kill",
+          "target": "fire_elemental",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_4_pass_earth_test",
+          "description": "Pass the earth elemental trial",
+          "type": "kill",
+          "target": "earth_elemental",
+          "required_count": 2
+        },
+        {
+          "id": "guild_act_4_defeat_golem",
+          "description": "Defeat the stone golem examiner",
+          "type": "kill",
+          "target": "stone_golem",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_4_talk_archmage",
+          "description": "Receive your acceptance from the Archmage",
+          "type": "talk",
+          "target": "circle_archmage",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "arcane_crystal", "quantity": 4},
+        {"item_id": "scroll_of_fireball", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "fire_essence", "quantity": 2}
+      ],
+      "quest_id": "guild_mage_entrance_exam"
+    },
+    {
+      "id": "act_5",
+      "name": "Mage Tower: The Research Assignment",
+      "description": "Your first assignment as a Circle member: retrieve rare reagents from a dangerous location for the Archmage's research. The caves are infested with oozes and the reagents are guarded.",
+      "encounters": [
+        {
+          "id": "enc_5_1",
+          "name": "Ooze-Infested Caves",
+          "description": "Black puddings and ochre jellies have overrun the reagent caves.",
+          "monsters": ["black_pudding", "ochre_jelly", "ochre_jelly"],
+          "difficulty": "hard",
+          "exploration_note": "Oozes dissolve metal. Use wooden or magical weapons."
+        },
+        {
+          "id": "enc_5_2",
+          "name": "Water Elemental Spring",
+          "description": "A water elemental guards the purest reagent spring.",
+          "monsters": ["water_elemental", "water_elemental"],
+          "difficulty": "hard",
+          "exploration_note": "Lightning spells are devastating against water elementals."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_5_enter_caves",
+          "description": "Enter the reagent caves",
+          "type": "visit",
+          "target": "reagent_caves",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_5_clear_oozes",
+          "description": "Clear the ooze infestation",
+          "type": "kill",
+          "target": "black_pudding",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_5_defeat_water",
+          "description": "Defeat the water elemental spring guardians",
+          "type": "kill",
+          "target": "water_elemental",
+          "required_count": 2
+        },
+        {
+          "id": "guild_act_5_collect_reagents",
+          "description": "Collect rare reagents from the caves",
+          "type": "collect",
+          "target": "moonpetal",
+          "required_count": 5
+        },
+        {
+          "id": "guild_act_5_talk_researcher",
+          "description": "Deliver the reagents to the lead researcher",
+          "type": "talk",
+          "target": "lead_researcher",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "moonpetal", "quantity": 5},
+        {"item_id": "mandrake_root", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "arcane_crystal", "quantity": 2}
+      ],
+      "quest_id": "guild_mage_research"
+    },
+    {
+      "id": "act_6",
+      "name": "Mage Tower: Arcane Defense",
+      "description": "The Mage Tower is under attack by a demon cult seeking to steal forbidden tomes. Defend the tower, repel the attackers, and prevent the shadow demon from breaching the wards.",
+      "encounters": [
+        {
+          "id": "enc_6_1",
+          "name": "Cultist Assault Wave",
+          "description": "Cultist fanatics storm the tower's lower floors.",
+          "monsters": ["cultist_fanatic", "cultist_fanatic", "cultist_fanatic"],
+          "difficulty": "hard",
+          "exploration_note": "The tower's ward stones can be activated to create barriers on each floor."
+        },
+        {
+          "id": "enc_6_2",
+          "name": "Shadow Demon Breach",
+          "description": "A shadow demon phases through the wards, attacking from the ethereal plane.",
+          "monsters": ["shadow_demon", "imp", "imp"],
+          "difficulty": "very_hard",
+          "exploration_note": "The light crystals on the walls can banish the shadow demon back to the ethereal."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_6_defend_tower",
+          "description": "Defend the Mage Tower entrance",
+          "type": "visit",
+          "target": "mage_tower_entrance",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_6_repel_cultists",
+          "description": "Repel the cultist assault",
+          "type": "kill",
+          "target": "cultist_fanatic",
+          "required_count": 3
+        },
+        {
+          "id": "guild_act_6_banish_demon",
+          "description": "Banish the shadow demon",
+          "type": "kill",
+          "target": "shadow_demon",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_6_collect_tomes",
+          "description": "Secure the forbidden tomes",
+          "type": "collect",
+          "target": "scroll_of_fireball",
+          "required_count": 2
+        },
+        {
+          "id": "guild_act_6_talk_archmage_report",
+          "description": "Report the attack to the Archmage",
+          "type": "talk",
+          "target": "circle_archmage",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "scroll_of_fireball", "quantity": 3},
+        {"item_id": "scroll_of_haste", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 250},
+        {"item_id": "arcane_crystal", "quantity": 3}
+      ],
+      "quest_id": "guild_mage_arcane_defense"
+    },
+    {
+      "id": "act_7",
+      "name": "Fighters Arena: The First Blood",
+      "description": "Enter the Fighters Arena and prove your worth in the first tier of combat. Defeat increasingly tough opponents in the gladiatorial pit to earn your arena name.",
+      "encounters": [
+        {
+          "id": "enc_7_1",
+          "name": "Orc Gladiators",
+          "description": "Three orc warriors fight as a team in the arena pit.",
+          "monsters": ["orc_warrior", "orc_warrior", "orc_warrior"],
+          "difficulty": "hard",
+          "exploration_note": "The orcs fight in formation. Break their line to gain the advantage."
+        },
+        {
+          "id": "enc_7_2",
+          "name": "The Ogre Champion",
+          "description": "An ogre champion enters the ring for the final bout of the first tier.",
+          "monsters": ["ogre"],
+          "difficulty": "hard",
+          "exploration_note": "The ogre is slow. Use the arena pillars for cover between attacks."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_7_enter_arena",
+          "description": "Enter the Fighters Arena",
+          "type": "visit",
+          "target": "fighters_arena",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_7_defeat_orcs",
+          "description": "Defeat the orc gladiator team",
+          "type": "kill",
+          "target": "orc_warrior",
+          "required_count": 3
+        },
+        {
+          "id": "guild_act_7_defeat_ogre",
+          "description": "Defeat the ogre champion",
+          "type": "kill",
+          "target": "ogre",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_7_talk_arena_master",
+          "description": "Receive your arena name from the arena master",
+          "type": "talk",
+          "target": "arena_master",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "potion_of_strength", "quantity": 3},
+        {"item_id": "steel_ingot", "quantity": 3},
+        {"item_id": "potion_of_healing", "quantity": 3}
+      ],
+      "quest_id": "guild_fighters_first_blood"
+    },
+    {
+      "id": "act_8",
+      "name": "Fighters Arena: The Grand Tournament",
+      "description": "The annual Grand Tournament draws the best fighters from across the realm. Battle through four rounds of increasingly deadly opponents to claim the champion's belt.",
+      "encounters": [
+        {
+          "id": "enc_8_1",
+          "name": "Troll Berserker",
+          "description": "A troll enters the arena, its regeneration making it nearly unstoppable.",
+          "monsters": ["troll", "troll"],
+          "difficulty": "hard",
+          "exploration_note": "Fire braziers around the arena can be knocked onto the troll to stop regeneration."
+        },
+        {
+          "id": "enc_8_2",
+          "name": "The Iron Champion",
+          "description": "An iron golem serves as the tournament's final challenger.",
+          "monsters": ["iron_golem"],
+          "difficulty": "boss",
+          "exploration_note": "The iron golem is immune to many attacks. Use lightning or acid."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_8_enter_tournament",
+          "description": "Register for the Grand Tournament",
+          "type": "visit",
+          "target": "grand_tournament_arena",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_8_defeat_trolls",
+          "description": "Defeat the troll berserkers in the semi-finals",
+          "type": "kill",
+          "target": "troll",
+          "required_count": 2
+        },
+        {
+          "id": "guild_act_8_defeat_champion",
+          "description": "Defeat the iron golem champion in the finals",
+          "type": "kill",
+          "target": "iron_golem",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_8_collect_belt",
+          "description": "Claim the champion's belt",
+          "type": "collect",
+          "target": "mithral_ingot",
+          "required_count": 2
+        },
+        {
+          "id": "guild_act_8_talk_king",
+          "description": "Receive the king's commendation",
+          "type": "talk",
+          "target": "tournament_king",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "mithral_ingot", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 500},
+        {"item_id": "potion_of_greater_healing", "quantity": 3},
+        {"item_id": "diamond", "quantity": 1}
+      ],
+      "quest_id": "guild_fighters_tournament"
+    },
+    {
+      "id": "act_9",
+      "name": "Fighters Arena: War Contract",
+      "description": "The Fighters Guild has accepted a war contract to clear a monster-infested fortress for a noble lord. Lead a squad of guild fighters to storm the stronghold and eliminate all threats.",
+      "encounters": [
+        {
+          "id": "enc_9_1",
+          "name": "Fortress Garrison",
+          "description": "Gnoll packmasters and their bugbear allies hold the outer fortress.",
+          "monsters": ["gnoll_packmaster", "bugbear_chief", "orc_warrior"],
+          "difficulty": "hard",
+          "exploration_note": "The fortress gate can be breached with a battering ram found in the siege camp."
+        },
+        {
+          "id": "enc_9_2",
+          "name": "The Chimera in the Tower",
+          "description": "A chimera nests in the fortress tower, the final obstacle.",
+          "monsters": ["chimera", "manticore"],
+          "difficulty": "very_hard",
+          "exploration_note": "Lure the chimera out of the tower where it cannot use its flight advantage."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_9_reach_fortress",
+          "description": "Reach the monster-infested fortress",
+          "type": "visit",
+          "target": "war_contract_fortress",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_9_clear_garrison",
+          "description": "Clear the fortress garrison",
+          "type": "kill",
+          "target": "gnoll_packmaster",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_9_defeat_bugbear",
+          "description": "Defeat the bugbear chief",
+          "type": "kill",
+          "target": "bugbear_chief",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_9_defeat_chimera",
+          "description": "Defeat the chimera in the tower",
+          "type": "kill",
+          "target": "chimera",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_9_talk_noble",
+          "description": "Report mission completion to the noble lord",
+          "type": "talk",
+          "target": "contract_noble",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 400},
+        {"item_id": "steel_ingot", "quantity": 4},
+        {"item_id": "potion_of_strength", "quantity": 2},
+        {"item_id": "ruby", "quantity": 2}
+      ],
+      "quest_id": "guild_fighters_war_contract"
+    },
+    {
+      "id": "act_10",
+      "name": "Merchant Guild: The Trade Route",
+      "description": "The Merchants Consortium needs a new trade route opened through bandit territory. Clear the road, establish waypoints, and ensure the first caravan arrives safely.",
+      "encounters": [
+        {
+          "id": "enc_10_1",
+          "name": "Bandit Roadblock",
+          "description": "Bandits have set up a fortified roadblock on the trade route.",
+          "monsters": ["bandit", "bandit", "bandit", "bandit"],
+          "difficulty": "medium",
+          "exploration_note": "The bandits have a hidden cache of stolen goods nearby."
+        },
+        {
+          "id": "enc_10_2",
+          "name": "Hobgoblin Toll Station",
+          "description": "A hobgoblin captain has set up an illegal toll station at the mountain pass.",
+          "monsters": ["hobgoblin_captain", "orc_warrior", "orc_warrior"],
+          "difficulty": "hard",
+          "exploration_note": "The toll records reveal connections to a larger criminal network."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_10_survey_route",
+          "description": "Survey the proposed trade route",
+          "type": "visit",
+          "target": "trade_route_start",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_10_clear_bandits",
+          "description": "Clear the bandit roadblock",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 4
+        },
+        {
+          "id": "guild_act_10_defeat_hobgoblin",
+          "description": "Remove the hobgoblin toll station",
+          "type": "kill",
+          "target": "hobgoblin_captain",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_10_collect_goods",
+          "description": "Recover stolen trade goods",
+          "type": "collect",
+          "target": "gold_coin",
+          "required_count": 200
+        },
+        {
+          "id": "guild_act_10_talk_consortium",
+          "description": "Report to the Consortium headquarters",
+          "type": "talk",
+          "target": "consortium_leader",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 350},
+        {"item_id": "iron_ingot", "quantity": 5},
+        {"item_id": "enchanted_thread", "quantity": 2},
+        {"item_id": "potion_of_healing", "quantity": 3}
+      ],
+      "quest_id": "guild_merchant_trade_route"
+    },
+    {
+      "id": "act_11",
+      "name": "Merchant Guild: The Price War",
+      "description": "A rival merchant has been undercutting guild prices using counterfeit goods produced by a yuan-ti counterfeiting ring. Infiltrate the operation and shut it down.",
+      "encounters": [
+        {
+          "id": "enc_11_1",
+          "name": "Warehouse Guards",
+          "description": "Hired thugs guard the counterfeit warehouse on the docks.",
+          "monsters": ["bandit", "bandit", "bandit"],
+          "difficulty": "medium",
+          "exploration_note": "The warehouse manifest reveals the scale of the counterfeiting operation."
+        },
+        {
+          "id": "enc_11_2",
+          "name": "Yuan-ti Counterfeiters",
+          "description": "Yuan-ti abominations run the counterfeiting operation from a hidden basement.",
+          "monsters": ["yuan_ti_abomination", "yuan_ti_abomination"],
+          "difficulty": "very_hard",
+          "exploration_note": "The yuan-ti's acid is used to dissolve real coins and recast them as fakes."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_11_find_warehouse",
+          "description": "Find the counterfeit warehouse",
+          "type": "visit",
+          "target": "counterfeit_warehouse",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_11_defeat_guards",
+          "description": "Defeat the warehouse guards",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 3
+        },
+        {
+          "id": "guild_act_11_defeat_yuan_ti",
+          "description": "Defeat the yuan-ti counterfeiters",
+          "type": "kill",
+          "target": "yuan_ti_abomination",
+          "required_count": 2
+        },
+        {
+          "id": "guild_act_11_collect_evidence",
+          "description": "Collect counterfeiting evidence and equipment",
+          "type": "collect",
+          "target": "steel_ingot",
+          "required_count": 3
+        },
+        {
+          "id": "guild_act_11_talk_magistrate",
+          "description": "Present evidence to the city magistrate",
+          "type": "talk",
+          "target": "city_magistrate",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 300},
+        {"item_id": "emerald", "quantity": 2},
+        {"item_id": "pearl", "quantity": 3},
+        {"item_id": "potion_of_healing", "quantity": 2}
+      ],
+      "quest_id": "guild_merchant_price_war"
+    },
+    {
+      "id": "act_12",
+      "name": "Thieves Guild: The Sewer Heist",
+      "description": "The guild has discovered a forgotten vault beneath the city sewers. Navigate the flooded tunnels, defeat the creatures lurking below, and crack the vault before a rival gang gets there first.",
+      "encounters": [
+        {
+          "id": "enc_12_1",
+          "name": "Sewer Lurkers",
+          "description": "Giant spiders and oozes infest the sewer tunnels leading to the vault.",
+          "monsters": ["giant_spider", "giant_spider", "ochre_jelly"],
+          "difficulty": "hard",
+          "exploration_note": "The higher tunnels are drier and have fewer oozes. Stick to the upper passages."
+        },
+        {
+          "id": "enc_12_2",
+          "name": "Rival Gang Ambush",
+          "description": "A rival gang has beaten you to the vault approach and set up an ambush.",
+          "monsters": ["bandit", "bandit", "hobgoblin_captain"],
+          "difficulty": "hard",
+          "exploration_note": "The rival gang has a lookout. Taking them out quietly prevents the ambush."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_12_enter_sewers",
+          "description": "Enter the city sewers",
+          "type": "visit",
+          "target": "city_sewers",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_12_clear_creatures",
+          "description": "Clear the sewer creatures from the tunnel",
+          "type": "kill",
+          "target": "giant_spider",
+          "required_count": 2
+        },
+        {
+          "id": "guild_act_12_defeat_rivals",
+          "description": "Defeat the rival gang",
+          "type": "kill",
+          "target": "hobgoblin_captain",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_12_crack_vault",
+          "description": "Crack the forgotten vault",
+          "type": "collect",
+          "target": "sapphire",
+          "required_count": 3
+        },
+        {
+          "id": "guild_act_12_talk_guildmaster_sewer",
+          "description": "Report the haul to the guildmaster",
+          "type": "talk",
+          "target": "thieves_guildmaster",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "sapphire", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 350},
+        {"item_id": "ruby", "quantity": 2},
+        {"item_id": "potion_of_healing", "quantity": 3}
+      ],
+      "quest_id": "guild_thieves_sewer_heist"
+    },
+    {
+      "id": "act_13",
+      "name": "Mage Tower: The Forbidden Experiment",
+      "description": "A rogue mage has been conducting forbidden experiments in a hidden laboratory, creating aberrant creatures. The Circle tasks you with shutting down the lab and neutralizing the creations.",
+      "encounters": [
+        {
+          "id": "enc_13_1",
+          "name": "Aberrant Constructs",
+          "description": "Clay golems twisted by forbidden magic guard the laboratory entrance.",
+          "monsters": ["clay_golem", "clay_golem", "imp"],
+          "difficulty": "hard",
+          "exploration_note": "The twisted golems have unstable cores. A strong enough hit may cause them to explode."
+        },
+        {
+          "id": "enc_13_2",
+          "name": "The Rogue Mage's Creation",
+          "description": "The rogue mage's ultimate creation, a beholder-like construct, awakens.",
+          "monsters": ["beholder"],
+          "difficulty": "boss",
+          "exploration_note": "The construct is powered by three crystals. Destroying them before combat is ideal."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_13_find_lab",
+          "description": "Find the hidden laboratory",
+          "type": "visit",
+          "target": "forbidden_laboratory",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_13_defeat_constructs",
+          "description": "Defeat the aberrant constructs",
+          "type": "kill",
+          "target": "clay_golem",
+          "required_count": 2
+        },
+        {
+          "id": "guild_act_13_defeat_creation",
+          "description": "Neutralize the rogue mage's creation",
+          "type": "kill",
+          "target": "beholder",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_13_collect_notes",
+          "description": "Collect the rogue mage's research notes",
+          "type": "collect",
+          "target": "arcane_crystal",
+          "required_count": 5
+        },
+        {
+          "id": "guild_act_13_talk_circle",
+          "description": "Deliver the notes to the Circle council",
+          "type": "talk",
+          "target": "circle_council",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "arcane_crystal", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 400},
+        {"item_id": "scroll_of_haste", "quantity": 2},
+        {"item_id": "diamond", "quantity": 2}
+      ],
+      "quest_id": "guild_mage_forbidden_experiment"
+    },
+    {
+      "id": "act_14",
+      "name": "Fighters Arena: The Monster Pit",
+      "description": "The arena's most dangerous event: the Monster Pit. Survive waves of increasingly deadly creatures released from the arena's dungeons. Only the strongest survive all five waves.",
+      "encounters": [
+        {
+          "id": "enc_14_1",
+          "name": "Wave One: Dire Wolves",
+          "description": "A pack of dire wolves is released into the pit.",
+          "monsters": ["dire_wolf", "dire_wolf", "dire_wolf"],
+          "difficulty": "medium",
+          "exploration_note": "The wolves attack the weakest target. Protect your flanks."
+        },
+        {
+          "id": "enc_14_2",
+          "name": "Wave Three: Trolls",
+          "description": "Two trolls charge from the gates, eager for blood.",
+          "monsters": ["troll", "ogre"],
+          "difficulty": "hard",
+          "exploration_note": "The arena torches can be used to ignite the trolls and stop regeneration."
+        },
+        {
+          "id": "enc_14_3",
+          "name": "Final Wave: The Pit Champion",
+          "description": "A frost giant, the reigning pit champion, enters for the final wave.",
+          "monsters": ["frost_giant"],
+          "difficulty": "boss",
+          "exploration_note": "The frost giant throws ice boulders. Keep moving between the arena pillars."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_14_enter_pit",
+          "description": "Enter the Monster Pit",
+          "type": "visit",
+          "target": "monster_pit",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_14_survive_wolves",
+          "description": "Survive the dire wolf wave",
+          "type": "kill",
+          "target": "dire_wolf",
+          "required_count": 3
+        },
+        {
+          "id": "guild_act_14_survive_trolls",
+          "description": "Survive the troll wave",
+          "type": "kill",
+          "target": "troll",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_14_defeat_pit_champion",
+          "description": "Defeat the frost giant pit champion",
+          "type": "kill",
+          "target": "frost_giant",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_14_talk_crowd",
+          "description": "Accept the crowd's adulation and the champion's prize",
+          "type": "talk",
+          "target": "arena_master",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 500},
+        {"item_id": "mithral_ingot", "quantity": 2},
+        {"item_id": "potion_of_greater_healing", "quantity": 4},
+        {"item_id": "storm_crystal", "quantity": 2}
+      ],
+      "quest_id": "guild_fighters_monster_pit"
+    },
+    {
+      "id": "act_15",
+      "name": "Merchant Guild: Hostile Takeover",
+      "description": "A rival consortium backed by drow mercenaries is attempting a hostile takeover of the guild's most valuable mine. Defend the mine, defeat the mercenaries, and secure the guild's holdings.",
+      "encounters": [
+        {
+          "id": "enc_15_1",
+          "name": "Drow Mercenary Assault",
+          "description": "Drow elite mercenaries attack the mine entrance at nightfall.",
+          "monsters": ["drow_elite", "drow_elite", "drow_elite"],
+          "difficulty": "hard",
+          "exploration_note": "The drow attack at night for their darkvision advantage. Light spells even the field."
+        },
+        {
+          "id": "enc_15_2",
+          "name": "The Rival Consortium Leader",
+          "description": "The rival consortium's enforcer, backed by a mind flayer advisor, leads the final push.",
+          "monsters": ["mind_flayer", "drow_elite"],
+          "difficulty": "boss",
+          "exploration_note": "The mind flayer controls the drow mercenaries. Defeating it may scatter them."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "guild_act_15_defend_mine",
+          "description": "Reach and defend the guild mine",
+          "type": "visit",
+          "target": "guild_mine",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_15_repel_drow",
+          "description": "Repel the drow mercenary assault",
+          "type": "kill",
+          "target": "drow_elite",
+          "required_count": 4
+        },
+        {
+          "id": "guild_act_15_defeat_mind_flayer",
+          "description": "Defeat the mind flayer enforcer",
+          "type": "kill",
+          "target": "mind_flayer",
+          "required_count": 1
+        },
+        {
+          "id": "guild_act_15_collect_ore",
+          "description": "Secure the mine's mithral ore reserves",
+          "type": "collect",
+          "target": "mithral_ingot",
+          "required_count": 5
+        },
+        {
+          "id": "guild_act_15_talk_consortium_leader",
+          "description": "Report the victory to the Consortium leader",
+          "type": "talk",
+          "target": "consortium_leader",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "mithral_ingot", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 600},
+        {"item_id": "diamond", "quantity": 3},
+        {"item_id": "potion_of_greater_healing", "quantity": 3}
+      ],
+      "quest_id": "guild_merchant_hostile_takeover"
+    }
+  ]
+}

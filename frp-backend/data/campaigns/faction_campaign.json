@@ -1,0 +1,1040 @@
+{
+  "id": "faction_campaign",
+  "title": "The War of Crowns",
+  "description": "The great factions of the realm vie for power. Border disputes, trade wars, political assassinations, rebellions, and fragile alliances define this era of conflict. Choose your allegiance wisely, for every action shifts the balance of power.",
+  "recommended_level": 5,
+  "max_cr": 15,
+  "min_cr": 2,
+  "acts": [
+    {
+      "id": "act_1",
+      "name": "The Border Dispute",
+      "description": "Two noble houses contest a fertile valley at their shared border. Skirmishes have escalated and both sides have hired mercenaries. Resolve the dispute through force or diplomacy before full war erupts.",
+      "encounters": [
+        {
+          "id": "enc_1_1",
+          "name": "Border Skirmish",
+          "description": "Orc mercenaries hired by one house clash with the other side's forces at the river crossing.",
+          "monsters": ["orc_warrior", "orc_warrior", "orc_warrior", "bandit"],
+          "difficulty": "hard",
+          "exploration_note": "The river ford is the strategic key. Controlling it gives a tactical advantage."
+        },
+        {
+          "id": "enc_1_2",
+          "name": "The Hobgoblin Mediator",
+          "description": "A hobgoblin captain offers to mediate for a price, but he plans to betray both sides.",
+          "monsters": ["hobgoblin_captain", "hobgoblin_captain"],
+          "difficulty": "hard",
+          "exploration_note": "The hobgoblin's tent contains letters proving his treachery."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_1_reach_border",
+          "description": "Reach the contested border valley",
+          "type": "visit",
+          "target": "border_valley",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_1_defeat_mercs",
+          "description": "Defeat the mercenary forces at the ford",
+          "type": "kill",
+          "target": "orc_warrior",
+          "required_count": 3
+        },
+        {
+          "id": "faction_act_1_defeat_hobgoblin",
+          "description": "Expose and defeat the treacherous hobgoblin mediator",
+          "type": "kill",
+          "target": "hobgoblin_captain",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_1_collect_treaty",
+          "description": "Recover the original border treaty documents",
+          "type": "collect",
+          "target": "gold_coin",
+          "required_count": 50
+        },
+        {
+          "id": "faction_act_1_talk_nobles",
+          "description": "Present the treaty to both noble houses",
+          "type": "talk",
+          "target": "border_nobles",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "steel_ingot", "quantity": 3},
+        {"item_id": "iron_ingot", "quantity": 3}
+      ],
+      "quest_id": "faction_border_dispute"
+    },
+    {
+      "id": "act_2",
+      "name": "The Trade War",
+      "description": "Two powerful merchant factions are waging an economic war that threatens to destabilize the region. Smugglers, pirates, and saboteurs operate on both sides. End the conflict before the economy collapses.",
+      "encounters": [
+        {
+          "id": "enc_2_1",
+          "name": "Smuggler's Den",
+          "description": "Bandits running a smuggling operation for one faction attack when discovered.",
+          "monsters": ["bandit", "bandit", "bandit", "bandit"],
+          "difficulty": "medium",
+          "exploration_note": "The smugglers' ledger reveals the full extent of the illegal trade network."
+        },
+        {
+          "id": "enc_2_2",
+          "name": "Pirate Ship Boarding",
+          "description": "Board a pirate vessel hired to blockade the harbor. Skeletons crew the undead ship.",
+          "monsters": ["skeleton", "skeleton", "skeleton", "ghost"],
+          "difficulty": "hard",
+          "exploration_note": "The pirate captain is already dead. The ghost keeps the crew in line."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_2_find_den",
+          "description": "Locate the smuggler's den",
+          "type": "visit",
+          "target": "smuggler_den",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_2_defeat_smugglers",
+          "description": "Defeat the smugglers",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 4
+        },
+        {
+          "id": "faction_act_2_defeat_pirates",
+          "description": "Board and clear the pirate ship",
+          "type": "kill",
+          "target": "skeleton",
+          "required_count": 3
+        },
+        {
+          "id": "faction_act_2_defeat_ghost_captain",
+          "description": "Defeat the ghost pirate captain",
+          "type": "kill",
+          "target": "ghost",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_2_collect_ledger",
+          "description": "Collect the smuggling ledgers as evidence",
+          "type": "collect",
+          "target": "pearl",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "pearl", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 250},
+        {"item_id": "sapphire", "quantity": 2},
+        {"item_id": "potion_of_healing", "quantity": 3}
+      ],
+      "quest_id": "faction_trade_war"
+    },
+    {
+      "id": "act_3",
+      "name": "The Political Assassination",
+      "description": "A faction leader has been assassinated by a shapeshifting succubus. Track the assassin through the city, clear your name as a suspect, and bring the true killer to justice before war breaks out.",
+      "encounters": [
+        {
+          "id": "enc_3_1",
+          "name": "Framed and Hunted",
+          "description": "City guards, believing you are the assassin, pursue you through the streets.",
+          "monsters": ["bandit", "bandit", "bandit"],
+          "difficulty": "medium",
+          "exploration_note": "Subdue the guards without killing them to prove your innocence."
+        },
+        {
+          "id": "enc_3_2",
+          "name": "The Succubus Assassin",
+          "description": "The succubus reveals her true form in the faction leader's private chambers.",
+          "monsters": ["succubus", "imp", "imp"],
+          "difficulty": "very_hard",
+          "exploration_note": "The succubus has charm abilities. Protection from evil magic is essential."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_3_investigate",
+          "description": "Investigate the assassination scene",
+          "type": "visit",
+          "target": "assassination_scene",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_3_evade_guards",
+          "description": "Evade the pursuing city guards",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 3
+        },
+        {
+          "id": "faction_act_3_defeat_succubus",
+          "description": "Defeat the succubus assassin",
+          "type": "kill",
+          "target": "succubus",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_3_collect_proof",
+          "description": "Collect proof of the succubus's involvement",
+          "type": "collect",
+          "target": "arcane_crystal",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_3_talk_council",
+          "description": "Present evidence to the faction council",
+          "type": "talk",
+          "target": "faction_council",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "arcane_crystal", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 300},
+        {"item_id": "scroll_of_haste", "quantity": 1},
+        {"item_id": "potion_of_greater_healing", "quantity": 2}
+      ],
+      "quest_id": "faction_political_assassination"
+    },
+    {
+      "id": "act_4",
+      "name": "The Peasant Rebellion",
+      "description": "Oppressed peasants have risen in rebellion against a tyrannical baron. The baron has hired monsters to crush the revolt. Choose your side and fight to determine the province's fate.",
+      "encounters": [
+        {
+          "id": "enc_4_1",
+          "name": "Ogre Enforcers",
+          "description": "The baron's ogre enforcers march on the rebel camp to crush it.",
+          "monsters": ["ogre", "ogre", "orc_warrior"],
+          "difficulty": "hard",
+          "exploration_note": "The rebels have set traps along the approach. Lure the ogres into them."
+        },
+        {
+          "id": "enc_4_2",
+          "name": "The Baron's Troll Guard",
+          "description": "A troll serves as the baron's personal bodyguard in his fortified manor.",
+          "monsters": ["troll", "bandit", "bandit"],
+          "difficulty": "very_hard",
+          "exploration_note": "The manor has a secret passage from the wine cellar to the baron's chamber."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_4_reach_rebel_camp",
+          "description": "Reach the rebel camp",
+          "type": "visit",
+          "target": "rebel_camp",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_4_defeat_ogres",
+          "description": "Defeat the baron's ogre enforcers",
+          "type": "kill",
+          "target": "ogre",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_4_defeat_troll",
+          "description": "Defeat the baron's troll bodyguard",
+          "type": "kill",
+          "target": "troll",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_4_collect_decree",
+          "description": "Find the baron's secret decrees proving his tyranny",
+          "type": "collect",
+          "target": "gold_coin",
+          "required_count": 100
+        },
+        {
+          "id": "faction_act_4_talk_rebels",
+          "description": "Report to the rebel leaders",
+          "type": "talk",
+          "target": "rebel_leaders",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "potion_of_healing", "quantity": 4},
+        {"item_id": "healing_herb", "quantity": 5},
+        {"item_id": "iron_ingot", "quantity": 3}
+      ],
+      "quest_id": "faction_peasant_rebellion"
+    },
+    {
+      "id": "act_5",
+      "name": "The Alliance Forging",
+      "description": "Two rival factions must be united against a common threat. Escort diplomats through dangerous territory, protect them from assassins, and ensure the alliance treaty is signed.",
+      "encounters": [
+        {
+          "id": "enc_5_1",
+          "name": "Drow Assassins",
+          "description": "Drow elite assassins hired to prevent the alliance ambush the diplomatic party.",
+          "monsters": ["drow_elite", "drow_elite", "drow_elite"],
+          "difficulty": "hard",
+          "exploration_note": "The drow strike from the shadows at night. Set a watch and use light spells."
+        },
+        {
+          "id": "enc_5_2",
+          "name": "Bugbear Saboteurs",
+          "description": "Bugbear chiefs attempt to destroy the bridge the diplomats must cross.",
+          "monsters": ["bugbear_chief", "bugbear_chief", "goblin"],
+          "difficulty": "hard",
+          "exploration_note": "The bugbears have planted explosives on the bridge supports. Defuse them quickly."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_5_begin_escort",
+          "description": "Begin escorting the diplomats",
+          "type": "visit",
+          "target": "diplomat_meeting_point",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_5_defeat_assassins",
+          "description": "Defeat the drow assassins",
+          "type": "kill",
+          "target": "drow_elite",
+          "required_count": 3
+        },
+        {
+          "id": "faction_act_5_defeat_saboteurs",
+          "description": "Stop the bugbear saboteurs at the bridge",
+          "type": "kill",
+          "target": "bugbear_chief",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_5_talk_diplomats",
+          "description": "Deliver the diplomats safely and witness the treaty signing",
+          "type": "talk",
+          "target": "faction_diplomats",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_5_collect_treaty",
+          "description": "Secure the signed alliance treaty",
+          "type": "collect",
+          "target": "enchanted_thread",
+          "required_count": 2
+        }
+      ],
+      "rewards": [
+        {"item_id": "enchanted_thread", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 250},
+        {"item_id": "potion_of_greater_healing", "quantity": 2},
+        {"item_id": "emerald", "quantity": 2}
+      ],
+      "quest_id": "faction_alliance_forging"
+    },
+    {
+      "id": "act_6",
+      "name": "The Espionage Ring",
+      "description": "A spy ring operating within the faction must be dismantled. Follow clues, interrogate suspects, and uncover the mind flayer pulling the strings from the shadows.",
+      "encounters": [
+        {
+          "id": "enc_6_1",
+          "name": "Spy Ring Operatives",
+          "description": "Cultist spies attack when you get too close to the truth.",
+          "monsters": ["cultist_fanatic", "cultist_fanatic", "bandit"],
+          "difficulty": "hard",
+          "exploration_note": "The spies use coded messages. The cipher key is tattooed on the lead operative's arm."
+        },
+        {
+          "id": "enc_6_2",
+          "name": "The Mind Flayer Spymaster",
+          "description": "A mind flayer orchestrates the spy ring from a hidden underground chamber.",
+          "monsters": ["mind_flayer"],
+          "difficulty": "boss",
+          "exploration_note": "The mind flayer has contingency plans. Destroy its escape portal first."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_6_investigate",
+          "description": "Investigate the spy ring's headquarters",
+          "type": "visit",
+          "target": "spy_headquarters",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_6_defeat_operatives",
+          "description": "Defeat the spy ring operatives",
+          "type": "kill",
+          "target": "cultist_fanatic",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_6_defeat_spymaster",
+          "description": "Defeat the mind flayer spymaster",
+          "type": "kill",
+          "target": "mind_flayer",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_6_collect_intel",
+          "description": "Collect the spy ring's intelligence files",
+          "type": "collect",
+          "target": "scroll_of_fireball",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_6_talk_intelligence_chief",
+          "description": "Report to the faction's intelligence chief",
+          "type": "talk",
+          "target": "intelligence_chief",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "scroll_of_fireball", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 350},
+        {"item_id": "arcane_crystal", "quantity": 3},
+        {"item_id": "potion_of_healing", "quantity": 3}
+      ],
+      "quest_id": "faction_espionage_ring"
+    },
+    {
+      "id": "act_7",
+      "name": "Siege Defense: Fort Stormwatch",
+      "description": "Fort Stormwatch, a critical defensive position, is under siege by a gnoll army. Organize the defense, man the walls, and hold until reinforcements arrive.",
+      "encounters": [
+        {
+          "id": "enc_7_1",
+          "name": "First Assault Wave",
+          "description": "Gnoll packmasters lead the first wave against the fort's eastern wall.",
+          "monsters": ["gnoll_packmaster", "gnoll_packmaster", "dire_wolf"],
+          "difficulty": "hard",
+          "exploration_note": "The eastern wall has a weak section. Reinforce it with wooden barricades."
+        },
+        {
+          "id": "enc_7_2",
+          "name": "Battering Ram Assault",
+          "description": "Ogres push a battering ram against the main gate while orcs provide cover.",
+          "monsters": ["ogre", "ogre", "orc_warrior", "orc_warrior"],
+          "difficulty": "very_hard",
+          "exploration_note": "Pouring oil and lighting it stops the ram. The oil barrels are in the gatehouse."
+        },
+        {
+          "id": "enc_7_3",
+          "name": "The Gnoll Warlord's Charge",
+          "description": "The gnoll warlord leads a final desperate charge through the breached gate.",
+          "monsters": ["gnoll_packmaster", "hobgoblin_captain", "orc_warrior"],
+          "difficulty": "boss",
+          "exploration_note": "If the warlord falls, the remaining gnolls will rout."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_7_defend_fort",
+          "description": "Take command of Fort Stormwatch's defenses",
+          "type": "visit",
+          "target": "fort_stormwatch",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_7_repel_first_wave",
+          "description": "Repel the first assault wave",
+          "type": "kill",
+          "target": "gnoll_packmaster",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_7_stop_ram",
+          "description": "Stop the battering ram assault",
+          "type": "kill",
+          "target": "ogre",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_7_defeat_warlord",
+          "description": "Defeat the gnoll warlord",
+          "type": "kill",
+          "target": "gnoll_packmaster",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_7_talk_commander",
+          "description": "Report the victory to the relief force commander",
+          "type": "talk",
+          "target": "relief_commander",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 400},
+        {"item_id": "steel_ingot", "quantity": 5},
+        {"item_id": "potion_of_greater_healing", "quantity": 3},
+        {"item_id": "storm_crystal", "quantity": 2}
+      ],
+      "quest_id": "faction_siege_defense"
+    },
+    {
+      "id": "act_8",
+      "name": "The Diplomatic Summit",
+      "description": "All major factions gather for a summit to negotiate peace. But a vampire has infiltrated the delegation, planning to assassinate key leaders and plunge the realm into chaos. Expose the vampire before it strikes.",
+      "encounters": [
+        {
+          "id": "enc_8_1",
+          "name": "Thralled Delegates",
+          "description": "Several delegates, charmed by the vampire, attack when confronted.",
+          "monsters": ["bandit", "bandit", "bandit", "zombie"],
+          "difficulty": "medium",
+          "exploration_note": "Breaking the vampire's charm requires removing its charm focus: a ruby amulet."
+        },
+        {
+          "id": "enc_8_2",
+          "name": "The Vampire Infiltrator",
+          "description": "The vampire reveals itself during the closing ceremony, attacking the faction leaders.",
+          "monsters": ["vampire", "wraith"],
+          "difficulty": "boss",
+          "exploration_note": "Sunlight from the summit hall's skylights can be directed at the vampire with mirrors."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_8_attend_summit",
+          "description": "Attend the diplomatic summit",
+          "type": "visit",
+          "target": "summit_hall",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_8_subdue_thralls",
+          "description": "Subdue the charmed delegates",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 3
+        },
+        {
+          "id": "faction_act_8_destroy_vampire",
+          "description": "Destroy the vampire infiltrator",
+          "type": "kill",
+          "target": "vampire",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_8_collect_amulet",
+          "description": "Recover the vampire's charm focus amulet",
+          "type": "collect",
+          "target": "ruby",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_8_talk_leaders",
+          "description": "Report to the assembled faction leaders",
+          "type": "talk",
+          "target": "summit_leaders",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "ruby", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 350},
+        {"item_id": "diamond", "quantity": 1},
+        {"item_id": "potion_of_greater_healing", "quantity": 3}
+      ],
+      "quest_id": "faction_diplomatic_summit"
+    },
+    {
+      "id": "act_9",
+      "name": "The Succession Crisis",
+      "description": "The king has died without a clear heir. Three claimants vie for the throne, each backed by different factions. Prevent the succession crisis from becoming a civil war by uncovering the true heir's identity.",
+      "encounters": [
+        {
+          "id": "enc_9_1",
+          "name": "Claimant's Mercenaries",
+          "description": "One false claimant sends mercenaries to destroy evidence of the true heir.",
+          "monsters": ["orc_warrior", "orc_warrior", "hobgoblin_captain"],
+          "difficulty": "hard",
+          "exploration_note": "The mercenaries carry orders with the false claimant's seal. Keep one as evidence."
+        },
+        {
+          "id": "enc_9_2",
+          "name": "The Lich Advisor",
+          "description": "An ancient lich once served as the royal advisor and knows the truth, but demands a price.",
+          "monsters": ["lich"],
+          "difficulty": "boss",
+          "exploration_note": "The lich may be willing to trade information if offered its stolen spellbook."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_9_investigate_claims",
+          "description": "Investigate the succession claims at the royal archives",
+          "type": "visit",
+          "target": "royal_archives",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_9_defeat_mercs",
+          "description": "Defeat the mercenaries destroying evidence",
+          "type": "kill",
+          "target": "orc_warrior",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_9_confront_lich",
+          "description": "Confront the lich advisor for the truth",
+          "type": "kill",
+          "target": "lich",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_9_collect_proof",
+          "description": "Collect proof of the true heir's lineage",
+          "type": "collect",
+          "target": "diamond",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_9_talk_council",
+          "description": "Present the evidence to the royal council",
+          "type": "talk",
+          "target": "royal_council",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "diamond", "quantity": 3},
+        {"item_id": "gold_coin", "quantity": 500},
+        {"item_id": "scroll_of_haste", "quantity": 2},
+        {"item_id": "arcane_crystal", "quantity": 3}
+      ],
+      "quest_id": "faction_succession_crisis"
+    },
+    {
+      "id": "act_10",
+      "name": "The Orc Invasion",
+      "description": "A massive orc horde has crossed the northern border, threatening all factions equally. Unite the feuding factions and lead a combined force to repel the invasion at the Battle of Thornfield.",
+      "encounters": [
+        {
+          "id": "enc_10_1",
+          "name": "Orc Advance Guard",
+          "description": "The orc advance guard probes the defensive line with coordinated strikes.",
+          "monsters": ["orc_warrior", "orc_warrior", "orc_warrior", "orc_warrior"],
+          "difficulty": "hard",
+          "exploration_note": "The orcs test for weak points. Reinforce the center and hold the flanks."
+        },
+        {
+          "id": "enc_10_2",
+          "name": "Hill Giant Shock Troops",
+          "description": "Hill giants smash through the barricades, creating openings for the orc infantry.",
+          "monsters": ["hill_giant", "hill_giant", "orc_warrior"],
+          "difficulty": "very_hard",
+          "exploration_note": "Trenches slow the giants. Dig defensive positions before the battle."
+        },
+        {
+          "id": "enc_10_3",
+          "name": "The Orc Warchief",
+          "description": "The orc warchief rides atop a dire wolf, commanding the entire horde.",
+          "monsters": ["orc_warrior", "dire_wolf", "hobgoblin_captain"],
+          "difficulty": "boss",
+          "exploration_note": "Killing the warchief will break the horde's morale and end the invasion."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_10_reach_thornfield",
+          "description": "Reach the Battle of Thornfield",
+          "type": "visit",
+          "target": "thornfield_battlefield",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_10_repel_advance",
+          "description": "Repel the orc advance guard",
+          "type": "kill",
+          "target": "orc_warrior",
+          "required_count": 4
+        },
+        {
+          "id": "faction_act_10_defeat_giants",
+          "description": "Defeat the hill giant shock troops",
+          "type": "kill",
+          "target": "hill_giant",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_10_defeat_warchief",
+          "description": "Defeat the orc warchief",
+          "type": "kill",
+          "target": "orc_warrior",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_10_talk_alliance_leaders",
+          "description": "Celebrate the victory with the allied faction leaders",
+          "type": "talk",
+          "target": "allied_leaders",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 500},
+        {"item_id": "mithral_ingot", "quantity": 3},
+        {"item_id": "potion_of_greater_healing", "quantity": 4},
+        {"item_id": "ruby", "quantity": 3}
+      ],
+      "quest_id": "faction_orc_invasion"
+    },
+    {
+      "id": "act_11",
+      "name": "The Supply Line Sabotage",
+      "description": "Enemy agents are sabotaging the faction's supply lines. Convoys are being destroyed, warehouses burned, and poisoned goods distributed. Track down the saboteurs and protect the supply chain.",
+      "encounters": [
+        {
+          "id": "enc_11_1",
+          "name": "Convoy Ambush",
+          "description": "Werewolves ambush a supply convoy under the cover of a full moon.",
+          "monsters": ["werewolf", "werewolf", "werewolf"],
+          "difficulty": "hard",
+          "exploration_note": "Silver-tipped bolts are stashed in the lead wagon's toolbox."
+        },
+        {
+          "id": "enc_11_2",
+          "name": "Warehouse Arsonists",
+          "description": "Fire elementals have been summoned to burn the main supply warehouse.",
+          "monsters": ["fire_elemental", "fire_elemental", "imp"],
+          "difficulty": "hard",
+          "exploration_note": "The water barrels along the walls can be used to douse the elementals."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_11_protect_convoy",
+          "description": "Protect the supply convoy",
+          "type": "visit",
+          "target": "supply_convoy",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_11_defeat_werewolves",
+          "description": "Defeat the werewolf ambushers",
+          "type": "kill",
+          "target": "werewolf",
+          "required_count": 3
+        },
+        {
+          "id": "faction_act_11_save_warehouse",
+          "description": "Save the warehouse from the fire elementals",
+          "type": "kill",
+          "target": "fire_elemental",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_11_collect_supplies",
+          "description": "Recover the surviving supplies",
+          "type": "collect",
+          "target": "healing_herb",
+          "required_count": 5
+        },
+        {
+          "id": "faction_act_11_talk_quartermaster",
+          "description": "Report to the faction quartermaster",
+          "type": "talk",
+          "target": "faction_quartermaster",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "healing_herb", "quantity": 8},
+        {"item_id": "gold_coin", "quantity": 200},
+        {"item_id": "potion_of_healing", "quantity": 4},
+        {"item_id": "fire_essence", "quantity": 2}
+      ],
+      "quest_id": "faction_supply_sabotage"
+    },
+    {
+      "id": "act_12",
+      "name": "The Undead Pretender",
+      "description": "A death knight has claimed an abandoned fortress and declared itself a new faction, raising an army of undead. All living factions agree this abomination must be destroyed before it grows too powerful.",
+      "encounters": [
+        {
+          "id": "enc_12_1",
+          "name": "Undead Vanguard",
+          "description": "Zombies and skeletons form the death knight's vanguard, marching in eerie silence.",
+          "monsters": ["zombie", "zombie", "zombie", "skeleton", "skeleton"],
+          "difficulty": "hard",
+          "exploration_note": "The undead march endlessly but are poorly commanded. Target the command wraith."
+        },
+        {
+          "id": "enc_12_2",
+          "name": "The Wraith Lieutenants",
+          "description": "Wraith lieutenants coordinate the undead army from the fortress walls.",
+          "monsters": ["wraith", "wraith", "mummy"],
+          "difficulty": "very_hard",
+          "exploration_note": "Destroying the command wraiths causes nearby undead to collapse."
+        },
+        {
+          "id": "enc_12_3",
+          "name": "The Death Knight Pretender",
+          "description": "The death knight sits on a throne of bones, wielding dark power.",
+          "monsters": ["death_knight"],
+          "difficulty": "boss",
+          "exploration_note": "The death knight's power comes from its unholy blade. Disarm it if possible."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_12_reach_fortress",
+          "description": "Reach the death knight's fortress",
+          "type": "visit",
+          "target": "undead_fortress",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_12_clear_vanguard",
+          "description": "Clear the undead vanguard",
+          "type": "kill",
+          "target": "zombie",
+          "required_count": 3
+        },
+        {
+          "id": "faction_act_12_defeat_wraiths",
+          "description": "Defeat the wraith lieutenants",
+          "type": "kill",
+          "target": "wraith",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_12_defeat_death_knight",
+          "description": "Defeat the death knight pretender",
+          "type": "kill",
+          "target": "death_knight",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_12_collect_blade",
+          "description": "Secure the death knight's unholy blade",
+          "type": "collect",
+          "target": "mithral_ingot",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "mithral_ingot", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 450},
+        {"item_id": "diamond", "quantity": 2},
+        {"item_id": "scroll_of_fireball", "quantity": 2}
+      ],
+      "quest_id": "faction_undead_pretender"
+    },
+    {
+      "id": "act_13",
+      "name": "The Dragon's Demand",
+      "description": "An adult red dragon has declared itself sovereign over a strategic mountain pass and demands tribute from all factions. Unite the factions to reject the dragon's demand and reclaim the pass.",
+      "encounters": [
+        {
+          "id": "enc_13_1",
+          "name": "Dragon Cultists",
+          "description": "Cultist fanatics worship the dragon and attack anyone who defies it.",
+          "monsters": ["cultist_fanatic", "cultist_fanatic", "cultist_fanatic", "fire_elemental"],
+          "difficulty": "hard",
+          "exploration_note": "The cultists' fire resistance amulets can be looted and used against the dragon."
+        },
+        {
+          "id": "enc_13_2",
+          "name": "The Adult Red Dragon",
+          "description": "The adult red dragon descends from its perch to battle the united forces.",
+          "monsters": ["adult_red_dragon"],
+          "difficulty": "boss",
+          "exploration_note": "The ballista on the pass walls can deal massive damage. Man them during the fight."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_13_rally_forces",
+          "description": "Rally the united faction forces at the mountain pass",
+          "type": "visit",
+          "target": "dragon_pass",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_13_defeat_cultists",
+          "description": "Defeat the dragon's cultist followers",
+          "type": "kill",
+          "target": "cultist_fanatic",
+          "required_count": 3
+        },
+        {
+          "id": "faction_act_13_slay_dragon",
+          "description": "Slay the adult red dragon",
+          "type": "kill",
+          "target": "adult_red_dragon",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_13_collect_hoard",
+          "description": "Divide the dragon's hoard among the factions",
+          "type": "collect",
+          "target": "ruby",
+          "required_count": 5
+        },
+        {
+          "id": "faction_act_13_talk_faction_leaders",
+          "description": "Attend the victory celebration with all faction leaders",
+          "type": "talk",
+          "target": "united_faction_leaders",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "ruby", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 800},
+        {"item_id": "fire_essence", "quantity": 5},
+        {"item_id": "mithral_ingot", "quantity": 3}
+      ],
+      "quest_id": "faction_dragons_demand"
+    },
+    {
+      "id": "act_14",
+      "name": "The Beholder's Conspiracy",
+      "description": "A beholder has been manipulating all factions from the shadows, orchestrating conflicts to weaken them for an eventual takeover. Uncover the conspiracy and destroy the aberration.",
+      "encounters": [
+        {
+          "id": "enc_14_1",
+          "name": "Mind-Controlled Agents",
+          "description": "Agents from every faction, under beholder control, guard the approach to its lair.",
+          "monsters": ["drow_elite", "orc_warrior", "cultist_fanatic"],
+          "difficulty": "hard",
+          "exploration_note": "The agents wear identical rings that channel the beholder's control. Remove them."
+        },
+        {
+          "id": "enc_14_2",
+          "name": "The Beholder Mastermind",
+          "description": "The beholder floats in its underground chamber, surrounded by scrying orbs showing every faction.",
+          "monsters": ["beholder"],
+          "difficulty": "boss",
+          "exploration_note": "Destroying the scrying orbs first removes the beholder's omniscience advantage."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_14_find_lair",
+          "description": "Locate the beholder's hidden lair",
+          "type": "visit",
+          "target": "beholder_lair",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_14_free_agents",
+          "description": "Free the mind-controlled agents",
+          "type": "kill",
+          "target": "drow_elite",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_14_destroy_beholder",
+          "description": "Destroy the beholder mastermind",
+          "type": "kill",
+          "target": "beholder",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_14_collect_orbs",
+          "description": "Collect the scrying orbs as evidence",
+          "type": "collect",
+          "target": "arcane_crystal",
+          "required_count": 5
+        },
+        {
+          "id": "faction_act_14_talk_all_factions",
+          "description": "Present the evidence to all faction leaders",
+          "type": "talk",
+          "target": "all_faction_leaders",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "arcane_crystal", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 600},
+        {"item_id": "diamond", "quantity": 3},
+        {"item_id": "scroll_of_haste", "quantity": 3}
+      ],
+      "quest_id": "faction_beholder_conspiracy"
+    },
+    {
+      "id": "act_15",
+      "name": "The Peace Accord",
+      "description": "After years of conflict, all factions gather to sign a lasting peace accord. But one final threat remains: a pit fiend has been summoned to disrupt the ceremony. Defeat the demon and secure peace for the realm.",
+      "encounters": [
+        {
+          "id": "enc_15_1",
+          "name": "Demon Infiltrators",
+          "description": "Shadow demons and imps infiltrate the peace ceremony, causing chaos.",
+          "monsters": ["shadow_demon", "shadow_demon", "imp", "imp"],
+          "difficulty": "hard",
+          "exploration_note": "Holy wards around the ceremony hall can be activated to repel demons."
+        },
+        {
+          "id": "enc_15_2",
+          "name": "The Pit Fiend's Arrival",
+          "description": "A pit fiend tears through reality into the ceremony hall for the final battle.",
+          "monsters": ["pit_fiend"],
+          "difficulty": "boss",
+          "exploration_note": "The combined magical power of all faction mages can weaken the pit fiend's defenses."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "faction_act_15_attend_accord",
+          "description": "Attend the peace accord ceremony",
+          "type": "visit",
+          "target": "peace_accord_hall",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_15_defeat_infiltrators",
+          "description": "Defeat the demon infiltrators",
+          "type": "kill",
+          "target": "shadow_demon",
+          "required_count": 2
+        },
+        {
+          "id": "faction_act_15_destroy_pit_fiend",
+          "description": "Destroy the pit fiend and save the peace accord",
+          "type": "kill",
+          "target": "pit_fiend",
+          "required_count": 1
+        },
+        {
+          "id": "faction_act_15_collect_seals",
+          "description": "Collect the faction seals for the peace treaty",
+          "type": "collect",
+          "target": "emerald",
+          "required_count": 5
+        },
+        {
+          "id": "faction_act_15_talk_signatories",
+          "description": "Witness the signing of the peace accord",
+          "type": "talk",
+          "target": "peace_signatories",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "emerald", "quantity": 5},
+        {"item_id": "gold_coin", "quantity": 1000},
+        {"item_id": "diamond", "quantity": 5},
+        {"item_id": "mithral_ingot", "quantity": 5},
+        {"item_id": "potion_of_greater_healing", "quantity": 5}
+      ],
+      "quest_id": "faction_peace_accord"
+    }
+  ]
+}

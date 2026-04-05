@@ -35,6 +35,7 @@ from .region_projection import build_world_entities, sync_combat_projection
 from .settlement import build_character_sheet, current_player_turn_resources
 from .live_kernel import (
     build_actor_spell_payload,
+    build_runtime_knowledge_payload,
     build_runtime_travel_payload,
     ensure_kernel_runtime,
     serialize_kernel_runtime,
@@ -58,10 +59,13 @@ if TYPE_CHECKING:
 def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     ensure_kernel_runtime(context)
     sync_combat_projection(context)
+    if hasattr(context, "_knowledge_topic_cache"):
+        delattr(context, "_knowledge_topic_cache")
     context_data = context.to_dict()
     runtime_state = runtime_region_state(context.world, context.region_snapshot.region_id)
     combat_state = _enrich_combat_payload(context, build_combat_payload(context))
     kernel_payload = build_kernel_payload(context)
+    knowledge_payload = build_campaign_knowledge_payload(context)
     travel_payload = build_runtime_travel_payload(context.kernel_runtime or {})
     fog_payload = build_fog_payload(context)
     normalized_party = party_member_ids(context)
@@ -112,6 +116,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "scene": payload_scene,
         "location": context_data["location"],
         "combat": combat_state,
+        "knowledge": knowledge_payload,
         "conversation_state": context_data.get("conversation_state", {}),
         "region": region_payload(context),
         "map_data": map_payload_from_region(context.region_snapshot),
@@ -162,6 +167,10 @@ def persist_campaign_state(context: "CampaignContext") -> None:
         "recent_event_log": copy.deepcopy(context.recent_event_log[-20:]),
     }
     context.campaign_state.pop("campaign_v2", None)
+
+
+def build_campaign_knowledge_payload(context: "CampaignContext") -> dict[str, Any]:
+    return build_runtime_knowledge_payload(context, context.kernel_runtime or {})
 
 
 def build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:

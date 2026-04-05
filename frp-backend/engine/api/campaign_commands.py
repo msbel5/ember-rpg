@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from engine.worldgen import realize_region
 from engine.api.campaign.dialog import build_dialog_payload, clear_dialog_state, store_dialog_state
+from engine.api.campaign.knowledge import discover_npc_topics, discover_travel_topics
 from engine.api.campaign.party_bridge import allied_actor_ids
 from engine.api.campaign.quest_bridge import apply_dialog_events
 from engine.api.campaign.region_projection import apply_region_to_context
@@ -106,6 +107,22 @@ def resolve_command_text(*, input_text: str, shortcut: Optional[str], args: dict
         if args.get("destination"):
             return "travel %s" % args.get("destination")
         return "travel next outpost"
+    if shortcut_value == "knowledge":
+        action_id = str(args.get("action_id", "topics")).strip().lower() or "topics"
+        query = str(args.get("topic_id") or args.get("query") or "").strip()
+        if action_id == "topics":
+            return "topics"
+        if action_id == "think":
+            return f"think {query}".strip()
+        if action_id == "pin":
+            return f"pin {query}".strip()
+        return f"knowledge {action_id}".strip()
+    if shortcut_value == "dialog":
+        action_id = str(args.get("action_id", "")).strip().lower()
+        query = str(args.get("topic_id") or args.get("query") or "").strip()
+        if action_id == "ask_about":
+            return f"ask about {query}".strip()
+        return f"dialog {action_id}".strip()
     if shortcut_value == "build":
         return "build %s" % args.get("kind", "house")
     return "look around"
@@ -536,6 +553,10 @@ def _apply_completed_travel(context: "CampaignContext", travel_state: TravelStat
     runtime["travel_state"] = TravelState(status="idle")
     if context.world.simulation_snapshot is not None:
         context.world.simulation_snapshot.active_region_id = authority.active_region_id
+    discover_travel_topics(
+        context,
+        destination_region_id=str(travel_state.destination_region_id or authority.active_region_id),
+    )
     _set_travel_scene(context, "exploration")
     route = _current_travel_route(context)
     destination_name = ""
@@ -594,6 +615,11 @@ def handle_travel(context: "CampaignContext", command_text: str, args: Optional[
         )
         travel_state.edge_id = str(selected.get("route_id", "")).strip() or travel_state.edge_id
         runtime["travel_state"] = travel_state
+        discover_travel_topics(
+            context,
+            destination_region_id=str(selected.get("destination_region_id", "")).strip(),
+            destination_settlement_id=str(selected.get("destination_settlement_id", "")).strip(),
+        )
         context.campaign_state["last_travel_hours"] = 0
         _set_travel_scene(context, "travel")
         return (
@@ -682,11 +708,13 @@ def maybe_handle_talk_command(
         "target_type": "npc",
         "npc_id": target_id,
         "npc_name": npc_name,
+        "ask_about": {},
     }
     dialog_payload = build_dialog_payload(context, f"{npc_name} turns to face you.")
     if not dialog_payload:
         clear_dialog_state(context)
         return (f"{npc_name} has nothing to say.", "dialog", 0)
+    discover_npc_topics(context, target_actor)
     runtime["_pending_dialog_payload"] = dialog_payload
     logger.info("Talk: opened dialog with %s (%s)", npc_name, target_id)
     return (dialog_payload.get("dialog_text", f"{npc_name} regards you."), "dialog", 0)
@@ -765,6 +793,12 @@ def maybe_handle_dialog_command(
 
     next_dialog_def = dialog_defs.get(new_state.dialog_id, dialog_def)
     store_dialog_state(context, new_state, next_dialog_def, npc)
+    context.conversation_state = {
+        "target_type": "npc",
+        "npc_id": npc_id,
+        "npc_name": str(getattr(npc.identity, "display_name", npc_id)).strip() or npc_id,
+        "ask_about": {},
+    }
     dialog_payload = build_dialog_payload(context, next_node.text or f"{npc.identity.display_name} waits for your response.")
     if dialog_payload:
         runtime["_pending_dialog_payload"] = dialog_payload

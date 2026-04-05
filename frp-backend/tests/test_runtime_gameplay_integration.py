@@ -21,6 +21,7 @@ from engine.kernel.progression import ProgressionState
 from engine.kernel.spells import CastingAttempt, SpellDef, SpellSlot, Spellbook
 from engine.kernel.hybrid_types import TravelState
 from engine.world.entity import Entity, EntityType
+from engine.world.rumors import RumorNetwork
 
 
 def _make_campaign() -> tuple[CampaignRuntime, object]:
@@ -511,6 +512,87 @@ def test_snapshot_payload_exposes_spell_state_deterministically() -> None:
     assert first["character_sheet"]["spellcasting"]["slot_state"]["by_level"]["1"]["available"] == 1
 
 
+def test_equipment_payload_is_deterministic_and_save_load_stable() -> None:
+    from engine.kernel.actor_items import item_stack_from_legacy_payload
+
+    runtime, context = _make_campaign()
+    ensure_kernel_runtime(context)
+    player = context.kernel_runtime["actors"]["player"]
+    player.equipment.slots = {}
+    player.equipment.add_item(
+        "armor",
+        item_stack_from_legacy_payload(
+            {
+                "id": "chain_mail",
+                "name": "Chain Mail",
+                "type": "armor",
+                "material": "iron",
+                "slot": "armor",
+                "coverage": ["torso", "chest"],
+                "movement_penalty": 2,
+                "stealth_noise": 3,
+                "spell_interference": 2,
+            }
+        ),
+    )
+    player.equipment.add_item(
+        "shield",
+        item_stack_from_legacy_payload(
+            {
+                "id": "kite_shield",
+                "name": "Kite Shield",
+                "type": "shield",
+                "material": "steel",
+                "slot": "shield",
+                "coverage": ["left_arm"],
+                "movement_penalty": 1,
+                "stealth_noise": 1,
+                "spell_interference": 0,
+            }
+        ),
+    )
+    player.equipment.add_item(
+        "left_ring",
+        item_stack_from_legacy_payload(
+            {
+                "id": "ring_of_focus",
+                "name": "Ring of Focus",
+                "type": "trinket",
+                "slot": "left_ring",
+                "attunement_required": True,
+                "attuned": True,
+            }
+        ),
+    )
+
+    before = runtime.snapshot(context.campaign_id, narrative="equipment-before-save")["campaign"]["character_sheet"]
+    second = runtime.snapshot(context.campaign_id, narrative="equipment-repeat")["campaign"]["character_sheet"]
+
+    runtime.save_campaign(context.campaign_id, "equipment_payload_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("equipment_payload_slot")
+    after = runtime.snapshot(loaded.campaign_id, narrative="equipment-after-load")["campaign"]["character_sheet"]
+
+    assert before["equipment_topology"] == second["equipment_topology"] == after["equipment_topology"]
+    assert before["equipment_modifiers"] == second["equipment_modifiers"] == after["equipment_modifiers"]
+    assert before["attunement"] == second["attunement"] == after["attunement"]
+    assert before["equipment_modifiers"] == {
+        "total_movement_penalty": 3,
+        "total_stealth_noise": 4,
+        "total_spell_interference": 2,
+    }
+    assert before["attunement"] == {
+        "slot_count": 3,
+        "attuned_item_ids": ["ring_of_focus"],
+        "available_slots": 2,
+    }
+    assert before["equipment_topology"]["coverage_summary"] == {
+        "chest": ["chain_mail"],
+        "left_arm": ["kite_shield"],
+        "torso": ["chain_mail"],
+    }
+    assert set(loaded.kernel_runtime["actors"]["player"].raw_payload).isdisjoint({"equipment_topology", "equipment_modifiers", "attunement"})
+
+
 def test_diagnose_populates_character_sheet_medical() -> None:
     runtime, context = _make_campaign()
     _injure_active_player(context)
@@ -711,6 +793,99 @@ def test_save_load_preserves_explored_state() -> None:
     assert after["region_id"] == before["region_id"]
     assert _tile_points(after["explored_tiles"]) == _tile_points(before["explored_tiles"])
     assert tuple(loaded.position) in _tile_points(after["visible_tiles"])
+
+
+def test_campaign_knowledge_payload_is_deterministic_and_save_load_stable() -> None:
+    runtime, context = _make_campaign()
+    ensure_kernel_runtime(context)
+    rumor_network = context.rumor_network or RumorNetwork()
+    context.rumor_network = rumor_network
+
+    context.npc_memory.get_memory("keeper_memory", "Keeper").add_known_fact("Bandits watch the old road")
+    context.npc_memory.get_memory("keeper_memory", "Keeper").add_known_fact("Player carries an ember shard")
+    hidden_shrine = rumor_network.add_rumor("Hidden shrine beneath the hill", "town_crier", "market_square")
+    shared_rumor = rumor_network.add_rumor("Bandits watch the old road", "watch_captain", "gate_square")
+    hidden_shrine.heard_by.add("keeper_memory")
+    shared_rumor.heard_by.add("keeper_memory")
+
+    baseline = runtime.snapshot(context.campaign_id, narrative="knowledge-baseline")["campaign"]["knowledge"]
+    topics_by_label = {topic["label"]: topic for topic in baseline["topics"]}
+    discovered_topic_ids = [
+        topics_by_label["Bandits watch the old road"]["topic_id"],
+        topics_by_label["Hidden shrine beneath the hill"]["topic_id"],
+        "topic_orphan_entry",
+    ]
+    pinned_topic_ids = [
+        topics_by_label["Hidden shrine beneath the hill"]["topic_id"],
+        topics_by_label["Bandits watch the old road"]["topic_id"],
+        topics_by_label["Hidden shrine beneath the hill"]["topic_id"],
+    ]
+    context.kernel_runtime["game_state"].raw_payload["knowledge"] = {
+        "discovered_topic_ids": list(discovered_topic_ids),
+        "pinned_topic_ids": list(pinned_topic_ids),
+        "topics": [{"topic_id": "stale"}],
+        "facts": ["should not persist"],
+    }
+
+    before = runtime.snapshot(context.campaign_id, narrative="knowledge-before-save")["campaign"]["knowledge"]
+    second = runtime.snapshot(context.campaign_id, narrative="knowledge-repeat")["campaign"]["knowledge"]
+
+    runtime.save_campaign(context.campaign_id, "knowledge_payload_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("knowledge_payload_slot")
+    after = runtime.snapshot(loaded.campaign_id, narrative="knowledge-after-load")["campaign"]["knowledge"]
+
+    assert before == second
+    assert before == after
+    assert set(discovered_topic_ids).issubset(set(before["discovered_topic_ids"]))
+    assert set(pinned_topic_ids[:2]).issubset(set(before["pinned_topic_ids"]))
+    assert {
+        "topic_id",
+        "label",
+        "category",
+        "discovered",
+        "pinned",
+        "source_types",
+    }.issubset(before["topics"][0].keys())
+    persisted_knowledge = loaded.kernel_runtime["game_state"].raw_payload["knowledge"]
+    assert set(persisted_knowledge) == {"discovered_topic_ids", "pinned_topic_ids"}
+    assert set(discovered_topic_ids).issubset(set(persisted_knowledge["discovered_topic_ids"]))
+    assert persisted_knowledge["pinned_topic_ids"] == pinned_topic_ids[:2]
+
+
+def test_ask_about_projection_is_deterministic_and_save_load_stable() -> None:
+    runtime, context = _make_campaign()
+    ensure_kernel_runtime(context)
+    rumor_network = context.rumor_network or RumorNetwork()
+    context.rumor_network = rumor_network
+
+    baseline = runtime.snapshot(context.campaign_id, narrative="ask-about-baseline")
+    target = next(
+        entity
+        for entity in baseline["campaign"]["world_entities"]
+        if entity.get("entity_type") == "npc" and entity.get("target_kind") == "npc"
+    )
+    actor_id = str(target["id"])
+    actor = context.kernel_runtime["actors"][actor_id]
+    memory_id = str(actor.raw_payload.get("memory_id", "")).strip() or str(actor.raw_payload.get("named_npc_id", "")).strip() or actor_id
+    memory = context.npc_memory.get_memory(memory_id, actor.identity.display_name)
+    memory.add_known_fact("The old bridge is watched at dusk")
+    rumor = rumor_network.add_rumor("The ferryman owes silver to bandits", "market_gossip", "river_gate")
+    rumor.heard_by.add(memory_id)
+
+    before_payload = runtime.snapshot(context.campaign_id, narrative="ask-about-before-save")
+    before_npc = next(item for item in before_payload["campaign"]["world_entities"] if item["id"] == actor_id)
+
+    runtime.save_campaign(context.campaign_id, "ask_about_projection_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("ask_about_projection_slot")
+    after_payload = runtime.snapshot(loaded.campaign_id, narrative="ask-about-after-load")
+    after_npc = next(item for item in after_payload["campaign"]["world_entities"] if item["id"] == actor_id)
+
+    assert before_npc["ask_about_topic_ids"] == after_npc["ask_about_topic_ids"]
+    assert before_npc["ask_about_topics_count"] == after_npc["ask_about_topics_count"]
+    assert set(before_npc["known_topic_ids"]).issubset(set(before_npc["ask_about_topic_ids"]))
+    assert f"rumor.{rumor.rumor_id}" in set(before_npc["ask_about_topic_ids"])
+    assert "ask_about" not in loaded.kernel_runtime["game_state"].raw_payload
+    assert loaded.kernel_runtime["game_state"].raw_payload["knowledge"] == context.kernel_runtime["game_state"].raw_payload["knowledge"]
 
 
 def test_campaign_payload_exposes_fog_shape() -> None:

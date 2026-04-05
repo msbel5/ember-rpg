@@ -5,6 +5,7 @@ from engine.api.campaign_commands import maybe_handle_talk_command
 from engine.kernel.dialog import compute_npc_reaction
 from engine.kernel.actor_records import create_monster_actor
 from engine.world.entity import Entity, EntityType
+from engine.world.rumors import RumorNetwork
 
 
 SOCIAL_KEYS = {
@@ -19,6 +20,10 @@ SOCIAL_KEYS = {
     "last_interaction",
     "recent_conversation_count",
     "known_facts_count",
+    "ask_about_topic_ids",
+    "ask_about_topics_count",
+    "known_topic_ids",
+    "known_topics_count",
     "memory_summary",
 }
 
@@ -162,3 +167,59 @@ def test_talk_refreshes_compact_memory_state() -> None:
     assert memory.last_interaction
     assert memory.npc_id == memory_id
     assert memory.relationship_label
+
+
+def test_social_projection_exposes_known_topic_ids_without_duplicating_ownership() -> None:
+    runtime, context = _make_campaign()
+    actor_id = _inject_generated_social_npc(context, actor_id="knowledge_social_npc", name="Topic Keeper")
+    rumor_network = context.rumor_network or RumorNetwork()
+    context.rumor_network = rumor_network
+
+    memory = context.npc_memory.get_memory(actor_id, "Topic Keeper")
+    memory.add_known_fact("Bandits watch the old road")
+    memory.add_known_fact("Player carries an ember shard")
+
+    rumor = rumor_network.add_rumor("Bandits watch the old road", "town_crier", "market_square")
+    rumor.heard_by.add(actor_id)
+
+    payload = runtime.snapshot(context.campaign_id, narrative="knowledge-projection")
+    npc = _world_entity(payload, actor_id)
+    knowledge = payload["campaign"]["knowledge"]
+    topic_ids = {topic["topic_id"] for topic in knowledge["topics"]}
+
+    assert npc["known_facts_count"] == 2
+    assert npc["ask_about_topics_count"] == len(npc["ask_about_topic_ids"])
+    assert npc["known_topics_count"] == len(npc["known_topic_ids"])
+    assert set(npc["known_topic_ids"]) == {
+        "fact.bandits_watch_the_old_road",
+        "fact.player_carries_an_ember_shard",
+        f"rumor.{rumor.rumor_id}",
+    }
+    assert set(npc["known_topic_ids"]).issubset(set(npc["ask_about_topic_ids"]))
+    assert f"region.{context.region_snapshot.region_id}" in set(npc["ask_about_topic_ids"])
+    assert set(npc["known_topic_ids"]).issubset(topic_ids)
+
+
+def test_social_projection_exposes_ask_about_topics_without_persisting_duplicate_payload() -> None:
+    runtime, context = _make_campaign()
+    actor_id = _inject_generated_social_npc(context, actor_id="ask_about_social_npc", name="Ask Keeper")
+    rumor_network = context.rumor_network or RumorNetwork()
+    context.rumor_network = rumor_network
+
+    memory = context.npc_memory.get_memory(actor_id, "Ask Keeper")
+    memory.add_known_fact("A hidden cache sits below the east wall")
+    rumor = rumor_network.add_rumor("Smugglers bribe the ferry master", "dockhand", "river_gate")
+    rumor.heard_by.add(actor_id)
+
+    payload = runtime.snapshot(context.campaign_id, narrative="ask-about-projection")
+    npc = _world_entity(payload, actor_id)
+
+    assert npc["ask_about_topics_count"] == len(npc["ask_about_topic_ids"])
+    assert set(npc["ask_about_topic_ids"]) == {
+        f"region.{context.region_snapshot.region_id}",
+        f"settlement.{context.settlement_state.get('settlement_id') or context.region_snapshot.metadata.get('settlement_id') or context.region_snapshot.region_id}",
+        "fact.a_hidden_cache_sits_below_the_east_wall",
+        f"rumor.{rumor.rumor_id}",
+    }
+    assert "ask_about" not in context.kernel_runtime["game_state"].raw_payload
+    assert context.kernel_runtime["game_state"].raw_payload.get("knowledge", {}).get("ask_about_topic_ids") is None

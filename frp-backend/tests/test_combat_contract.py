@@ -132,9 +132,9 @@ class TestAvailableActionsTruthfulness:
     def test_flee_is_advertised(self):
         assert "flee" in self.actions
 
-    def test_cast_is_not_advertised(self):
+    def test_cast_is_not_advertised_for_noncasters(self):
         assert "cast" not in self.actions, (
-            "Combat payload advertises 'cast' but casting is not supported in combat time"
+            "Combat payload should not advertise 'cast' for a non-caster combatant"
         )
 
     def test_use_item_is_not_advertised(self):

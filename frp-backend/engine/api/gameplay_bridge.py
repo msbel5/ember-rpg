@@ -26,6 +26,13 @@ from engine.kernel.gameplay import (
     resolve_rest,
     unequip_actor_slot,
 )
+from engine.kernel.actor_items import (
+    candidate_canonical_slots_for_item_payload,
+    canonical_equipment_slot,
+    canonical_slot_for_item_payload,
+    canonical_slot_query_aliases,
+    preferred_storage_slot_for_item,
+)
 from engine.kernel.items import ItemDef as KernelItemDef, ItemInstance, use_item
 from engine.kernel.progression import ProgressionState
 from engine.world.crafting import CraftingSystem
@@ -103,21 +110,13 @@ def _item_def_from_registry(item_def_id: str) -> Optional[dict]:
     return registry.get(item_def_id)
 
 
-def _slot_for_item_type(item_type: str) -> str:
-    """Determine equipment slot from item type string."""
-    mapping = {
-        "weapon": "weapon_1",
-        "armor": "armor",
-        "shield": "shield",
-        "helmet": "helmet",
-        "boots": "boots",
-        "gloves": "gloves",
-        "ring": "left_ring",
-        "amulet": "amulet",
-        "belt": "belt",
-        "cloak": "cloak",
-    }
-    return mapping.get(item_type.lower(), "quick_item_1")
+def _slot_for_item_type(item_def_id: str, raw_def: dict[str, Any], occupied_slots: set[str]) -> tuple[str | None, str | None]:
+    payload = {"id": item_def_id, "item_def_id": item_def_id, **dict(raw_def or {})}
+    canonical_slot = canonical_slot_for_item_payload(payload, occupied_slots=occupied_slots)
+    if canonical_slot is None:
+        return None, None
+    storage_slot = preferred_storage_slot_for_item(canonical_slot, payload)
+    return canonical_slot, storage_slot
 
 
 def _resolve_effect_amount(raw_amount: Any) -> int:
@@ -386,10 +385,11 @@ def _summarize_events(events: list[dict]) -> str:
     parts = []
     for ev in events:
         ev_type = ev.get("type", "")
+        display_slot = str(ev.get("canonical_slot") or ev.get("slot", "slot"))
         if ev_type == "equipped":
-            parts.append(f"Equipped item to {ev.get('slot', 'slot')}.")
+            parts.append(f"Equipped item to {display_slot}.")
         elif ev_type == "unequipped":
-            parts.append(f"Unequipped item from {ev.get('slot', 'slot')}.")
+            parts.append(f"Unequipped item from {display_slot}.")
         elif ev_type == "equip_effect":
             parts.append(f"Applied effect {ev.get('effect_id', '')}.")
     return " ".join(parts) if parts else "Done."
@@ -690,13 +690,21 @@ def maybe_handle_equipment_command(
         raw_def = _item_def_from_registry(item.item_def_id)
         if raw_def is None:
             return (f"Unknown item definition for '{item_name}'.", "equipment", 0)
-        slot = _slot_for_item_type(str(raw_def.get("type", "misc")))
+        occupied_slots = {
+            canonical_equipment_slot(slot_name) or ""
+            for slot_name, slot_items in player.equipment.slots.items()
+            if slot_items
+        }
+        occupied_slots.discard("")
+        canonical_slot, slot = _slot_for_item_type(item.item_def_id, raw_def, occupied_slots)
+        if canonical_slot is None or slot is None:
+            return (f"Cannot equip '{item_name}': not part of the canonical wearable topology.", "equipment", 0)
         try:
             events = equip_inventory_item(player, item=item, slot=slot)
         except ValueError as exc:
-            return (f"Cannot equip: {exc}", "equipment", 0)
+            return (f"Cannot equip '{item_name}': {exc}. Expected canonical slot `{canonical_slot}`.", "equipment", 0)
         narrative = _summarize_events(events)
-        logger.info("Equip: %s equipped %s to %s", player.name, item_name, slot)
+        logger.info("Equip: %s equipped %s to %s", player.name, item_name, canonical_slot)
         return (narrative, "equipment", 0)
 
     match = _UNEQUIP_RE.match(command_text.strip())
@@ -704,7 +712,12 @@ def maybe_handle_equipment_command(
         item_name = match.group(1).strip().lower().replace(" ", "_")
         # Search equipped slots for matching item.
         target_slot = None
+        slot_aliases = set(canonical_slot_query_aliases(item_name))
         for slot_name, slot_items in player.equipment.slots.items():
+            normalized_slot_name = str(slot_name).strip().lower()
+            if normalized_slot_name in slot_aliases or (canonical_equipment_slot(normalized_slot_name) or "") in slot_aliases:
+                target_slot = slot_name
+                break
             for equipped in slot_items:
                 def_id = getattr(equipped, "item_def_id", "")
                 if item_name in def_id.lower() or item_name == slot_name.lower():

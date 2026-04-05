@@ -114,6 +114,29 @@ def test_character_sheet_progression_exposes_runtime_class_ability_metadata():
     assert "resource_cost" in second_wind
 
 
+def test_character_sheet_equipment_exposes_topology_freeze_metadata():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign(player_name="SheetArmor", player_class="warrior", seed=141)
+
+    payload = runtime.snapshot(context.campaign_id)
+    sheet = payload["campaign"]["character_sheet"]
+    equipment = sheet["equipment"]
+    topology = sheet["equipment_topology"]
+    chest_item = topology["slots"]["body"]
+    main_hand_item = topology["slots"]["main_hand"]
+
+    assert equipment["slots"]
+    assert chest_item is not None
+    assert chest_item["canonical_slot"] == "body"
+    assert "torso" in chest_item["coverage_zones"]
+    assert main_hand_item is not None
+    assert main_hand_item["canonical_slot"] == "main_hand"
+    assert "armor" in topology["legacy_slot_aliases"]["body"]
+    assert sheet["equipment_modifiers"]["total_movement_penalty"] >= 0
+    assert sheet["attunement"]["slot_count"] == 3
+    assert "chain_mail" in topology["coverage_summary"]["chest"]
+
+
 @pytest.mark.parametrize(
     ("requested_class", "canonical_class", "expected_label"),
     [
@@ -139,6 +162,6 @@ def test_character_sheet_supports_extended_classes_without_silent_fallback(
     assert str(player.raw_payload.get("class_name")) == canonical_class
     assert sheet["class_name"] == expected_label
     assert stats == get_class_default_stats(canonical_class)
-    assert len(class_abilities) == 5
+    assert len(class_abilities) >= 5
     assert all(entry["class_name"] == canonical_class for entry in class_abilities)
     assert class_abilities[0]["unlocked"] is True

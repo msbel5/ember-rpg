@@ -14,8 +14,6 @@ RUNTIME_ROOTS = [
 ]
 MAX_RUNTIME_LINES = 450
 ALLOWED_OVERSIZE: Dict[str, str] = {
-    "frp-backend/engine/core/combat.py": "Combat core remains monolithic until rules/narration are peeled apart.",
-    "frp-backend/engine/core/dm_agent.py": "DM agent still mixes prompting, fallback, and formatting.",
     "frp-backend/engine/kernel/actor_records.py": "Actor record bridging still centralizes legacy-to-kernel conversion and sync helpers.",
     "frp-backend/engine/kernel/gameplay.py": "Gameplay kernel bundles equipment, crafting, rest, and ground-item helpers.",
     "frp-backend/engine/map/__init__.py": "Map generation package still centralizes multiple generators.",

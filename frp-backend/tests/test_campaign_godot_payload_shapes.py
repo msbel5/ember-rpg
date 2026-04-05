@@ -32,6 +32,7 @@ def _first_travel_destination(payload: dict) -> dict:
 def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
     payload = _create_campaign(seed=42)
     campaign = payload["campaign"]
+    sheet = campaign["character_sheet"]
 
     assert campaign["world_state"]["seed"] == 42
     assert campaign["game_state"]["campaign_id"] == payload["campaign_id"]
@@ -45,6 +46,14 @@ def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
     assert campaign["world_entities"]
     assert campaign["settlement"]["residents"]
     assert campaign["recent_event_log"]
+    assert isinstance(sheet["equipment_topology"], dict)
+    assert isinstance(sheet["equipment_modifiers"], dict)
+    assert isinstance(sheet["attunement"], dict)
+    assert isinstance(sheet["equipment_topology"]["slots"], dict)
+    assert isinstance(sheet["equipment_topology"]["legacy_slot_aliases"], dict)
+    assert isinstance(sheet["equipment_topology"]["coverage_summary"], dict)
+    assert {"total_movement_penalty", "total_stealth_noise", "total_spell_interference"} <= set(sheet["equipment_modifiers"])
+    assert {"slot_count", "attuned_item_ids", "available_slots"} <= set(sheet["attunement"])
     assert all("danger_level" in entry for entry in campaign["travel_options"])
     assert all("known" in entry for entry in campaign["travel_options"])
     assert all("visited" in entry for entry in campaign["travel_options"])
@@ -69,6 +78,7 @@ def test_campaign_command_preserves_godot_payload_shape():
     )
     assert response.status_code == 200
     payload = response.json()
+    sheet = payload["campaign"]["character_sheet"]
 
     assert payload["campaign"]["settlement"]["defense_posture"] == "fortified"
     assert payload["campaign"]["map_data"]["metadata"]["region_id"]
@@ -76,6 +86,10 @@ def test_campaign_command_preserves_godot_payload_shape():
     assert payload["campaign"]["world_state"]["active_region_id"] == payload["campaign"]["world"]["active_region_id"]
     assert payload["campaign"]["game_state"]["current_area_id"] == payload["campaign"]["world"]["active_region_id"]
     assert payload["campaign"]["systems"]["temperature_state"]["ambient_band"]
+    assert isinstance(sheet["equipment"]["slots"], dict)
+    first_slot_items = next(iter(sheet["equipment"]["slots"].values()))
+    assert isinstance(first_slot_items, list)
+    assert {"canonical_slot", "coverage_zones", "armor_weight_class", "movement_penalty", "stealth_noise", "spell_interference", "attunement_required"} <= set(first_slot_items[0])
 
 
 def test_campaign_combat_payload_shape_is_present_for_godot_consumers():

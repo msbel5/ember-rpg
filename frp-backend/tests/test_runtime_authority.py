@@ -57,6 +57,44 @@ class TestUnknownCommandRejection:
         assert result["command_type"] == "exploration"
         assert "narrative" in result
 
+    def test_undiscovered_think_command_rejects_cleanly(self):
+        rt, ctx = _make_campaign()
+        snapshot = rt.snapshot(ctx.campaign_id)
+        undiscovered = next(
+            topic for topic in snapshot["campaign"]["knowledge"]["topics"] if topic.get("discovered") is False
+        )
+        result = rt.run_command(ctx.campaign_id, f"think {undiscovered['topic_id']}")
+        assert result["command_type"] == "knowledge"
+        assert "have not discovered" in result["narrative"].lower()
+        assert result["knowledge_view"]["blockers"] == ["undiscovered_topic"]
+
+    def test_ask_about_requires_active_dialog(self):
+        rt, ctx = _make_campaign()
+        region_topic_id = f"region.{ctx.region_snapshot.region_id}"
+
+        result = rt.run_command(ctx.campaign_id, f"ask about {region_topic_id}")
+
+        assert result["command_type"] == "dialog"
+        assert "active npc conversation" in result["narrative"].lower()
+        assert result["knowledge_view"]["blockers"] == ["no_active_dialog"]
+        assert result["knowledge_view"]["ask_about"]["response_type"] == "refusal"
+        assert result["knowledge_view"]["ask_about"]["refusal_reason"] == "no_active_dialog"
+
+    def test_structured_ask_about_requires_topic_query(self):
+        rt, ctx = _make_campaign()
+
+        result = rt.run_command(
+            ctx.campaign_id,
+            "",
+            shortcut="dialog",
+            args={"action_id": "ask_about"},
+        )
+
+        assert result["command_type"] == "dialog"
+        assert "requires a topic_id or query" in result["narrative"].lower()
+        assert result["knowledge_view"]["blockers"] == ["missing_topic_query"]
+        assert result["knowledge_view"]["ask_about"]["refusal_reason"] == "missing_topic_query"
+
 
 # ---------------------------------------------------------------------------
 # Task 2: Dialog — no fallback payload

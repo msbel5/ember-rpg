@@ -116,6 +116,49 @@ class TestEquipCommand:
         assert "don't have" in narrative.lower() or "inventory" in narrative.lower()
         assert cmd_type == "equipment"
 
+    def test_equip_command_resolves_weapon_to_canonical_main_hand(self):
+        _rt, ctx = _make_campaign()
+        player = _player_actor(ctx)
+        sword = _add_inventory_item(
+            player,
+            "iron_shortsword",
+            payload={"name": "Iron Shortsword", "type": "weapon"},
+        )
+
+        result = maybe_handle_equipment_command(ctx, "equip iron_shortsword")
+
+        assert result is not None
+        assert result[1] == "equipment"
+        assert "main_hand" in result[0]
+        assert player.equipment.slots["main_hand"][0].instance_id == sword.instance_id
+        assert player.equipment.slots.get("weapon", []) == []
+        assert sword.payload["canonical_slot"] == "main_hand"
+        assert sword.payload["equipped_slot"] == "main_hand"
+
+    def test_equip_command_uses_ring_right_after_ring_left_is_occupied(self):
+        _rt, ctx = _make_campaign()
+        player = _player_actor(ctx)
+        first_ring = _add_inventory_item(
+            player,
+            "ring_of_protection",
+            payload={"name": "Ring of Protection", "type": "armor"},
+        )
+        second_ring = _add_inventory_item(
+            player,
+            "ring_of_protection",
+            payload={"name": "Ring of Protection", "type": "armor"},
+        )
+
+        first = maybe_handle_equipment_command(ctx, "equip ring of protection")
+        second = maybe_handle_equipment_command(ctx, "equip ring of protection")
+
+        assert first is not None and "ring_left" in first[0]
+        assert second is not None and "ring_right" in second[0]
+        assert player.equipment.slots["left_ring"][0].instance_id == first_ring.instance_id
+        assert player.equipment.slots["right_ring"][0].instance_id == second_ring.instance_id
+        assert first_ring.payload["canonical_slot"] == "ring_left"
+        assert second_ring.payload["canonical_slot"] == "ring_right"
+
 
 class TestUnequipCommand:
 
@@ -143,6 +186,16 @@ class TestUnequipCommand:
         assert result is not None
         narrative, _cmd_type, _hours = result
         assert "no equipped" in narrative.lower() or "not found" in narrative.lower()
+
+    def test_unequip_command_accepts_canonical_slot_alias(self):
+        _rt, ctx = _make_campaign()
+
+        result = maybe_handle_equipment_command(ctx, "unequip chest")
+
+        assert result is not None
+        assert result[1] == "equipment"
+        assert "chest" in result[0]
+        assert ctx.kernel_runtime["actors"]["player"].equipment.slots.get("armor", []) == []
 
 
 # ---------------------------------------------------------------------------

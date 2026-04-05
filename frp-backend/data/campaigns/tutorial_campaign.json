@@ -261,6 +261,471 @@
         }
       ],
       "quest_id": "tutorial_goblin_ringleader"
+    },
+    {
+      "id": "act_4",
+      "name": "Herb Gathering in the Wilds",
+      "description": "The village healer needs rare herbs from the forest edge, but dangerous creatures lurk among the undergrowth. Learn to gather resources while managing threats in the wilderness.",
+      "encounters": [
+        {
+          "id": "enc_4_1",
+          "name": "Wolves Among the Thickets",
+          "description": "A pair of dire wolves guard the herb-rich clearing. Defeat them to access the healing plants.",
+          "monsters": ["dire_wolf", "dire_wolf"],
+          "difficulty": "medium",
+          "tutorial_hint": "Dire wolves hit harder than regular wolves. Use a potion if your HP drops below half."
+        },
+        {
+          "id": "enc_4_2",
+          "name": "Giant Spider Nest",
+          "description": "A giant spider has spun webs across the path to the rarest moonpetal grove.",
+          "monsters": ["giant_spider", "giant_spider"],
+          "difficulty": "medium",
+          "tutorial_hint": "Spiders can poison you. Keep antidotes or healing potions ready."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "tutorial_act_4_speak_healer",
+          "description": "Speak with the village healer about the needed herbs",
+          "type": "talk",
+          "target": "ashvale_healer",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_4_visit_clearing",
+          "description": "Reach the herb clearing past the wolf territory",
+          "type": "visit",
+          "target": "herb_clearing",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_4_defeat_wolves",
+          "description": "Defeat the dire wolves guarding the clearing",
+          "type": "kill",
+          "target": "dire_wolf",
+          "required_count": 2
+        },
+        {
+          "id": "tutorial_act_4_collect_herbs",
+          "description": "Gather healing herbs from the forest",
+          "type": "collect",
+          "target": "healing_herb",
+          "required_count": 3
+        },
+        {
+          "id": "tutorial_act_4_collect_moonpetal",
+          "description": "Collect moonpetals from the spider-guarded grove",
+          "type": "collect",
+          "target": "moonpetal",
+          "required_count": 2
+        }
+      ],
+      "rewards": [
+        {"item_id": "healing_herb", "quantity": 5},
+        {"item_id": "moonpetal", "quantity": 3},
+        {"item_id": "potion_of_healing", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 20}
+      ],
+      "quest_id": "tutorial_herb_gathering"
+    },
+    {
+      "id": "act_5",
+      "name": "The First Dungeon",
+      "description": "A collapsed mine on the village outskirts has been overtaken by skeletons and oozes. Descend into the darkness to learn dungeon navigation, torch management, and how to handle mixed enemy types.",
+      "encounters": [
+        {
+          "id": "enc_5_1",
+          "name": "Skeleton Miners",
+          "description": "Undead miners still swing their pickaxes in the dark. Learn to fight in confined spaces.",
+          "monsters": ["skeleton", "skeleton", "skeleton"],
+          "difficulty": "medium",
+          "tutorial_hint": "In tight corridors, only one enemy can reach you at a time. Use this to your advantage."
+        },
+        {
+          "id": "enc_5_2",
+          "name": "The Ooze Pit",
+          "description": "An ochre jelly blocks the passage deeper into the mine. Slashing weapons are less effective against it.",
+          "monsters": ["ochre_jelly"],
+          "difficulty": "medium",
+          "tutorial_hint": "Oozes resist slashing damage. Try using blunt weapons or magic instead."
+        },
+        {
+          "id": "enc_5_3",
+          "name": "Mine Collapse Chamber",
+          "description": "A zombie and skeletons guard the mine's deepest chamber where iron ore still glints.",
+          "monsters": ["zombie", "skeleton"],
+          "difficulty": "hard",
+          "tutorial_hint": "Focus fire on one enemy at a time to reduce incoming damage quickly."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "tutorial_act_5_enter_mine",
+          "description": "Enter the collapsed mine",
+          "type": "visit",
+          "target": "collapsed_mine_entrance",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_5_clear_skeletons",
+          "description": "Clear the skeleton miners from the upper tunnels",
+          "type": "kill",
+          "target": "skeleton",
+          "required_count": 4
+        },
+        {
+          "id": "tutorial_act_5_defeat_ooze",
+          "description": "Defeat the ochre jelly blocking the lower passage",
+          "type": "kill",
+          "target": "ochre_jelly",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_5_collect_iron",
+          "description": "Collect iron ingots from the mine depths",
+          "type": "collect",
+          "target": "iron_ingot",
+          "required_count": 3
+        }
+      ],
+      "rewards": [
+        {"item_id": "iron_ingot", "quantity": 5},
+        {"item_id": "potion_of_healing", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 25},
+        {"item_id": "scroll_of_fireball", "quantity": 1}
+      ],
+      "quest_id": "tutorial_first_dungeon"
+    },
+    {
+      "id": "act_6",
+      "name": "The Merchant Escort",
+      "description": "A traveling merchant needs safe passage through bandit-controlled roads to reach the next town. Learn to protect an NPC ally while managing waves of enemies along a route.",
+      "encounters": [
+        {
+          "id": "enc_6_1",
+          "name": "Roadside Bandits",
+          "description": "Bandits emerge from behind overturned carts to ambush the merchant wagon.",
+          "monsters": ["bandit", "bandit", "bandit"],
+          "difficulty": "medium",
+          "tutorial_hint": "Keep the merchant behind you. If enemies reach the wagon, you fail the escort."
+        },
+        {
+          "id": "enc_6_2",
+          "name": "Worg Riders",
+          "description": "Goblin riders on worgs charge from the treeline in a mounted assault.",
+          "monsters": ["worg", "worg", "goblin"],
+          "difficulty": "hard",
+          "tutorial_hint": "Worgs are fast. Use ranged attacks or scrolls to soften them before they close in."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "tutorial_act_6_talk_merchant",
+          "description": "Speak with the merchant to begin the escort",
+          "type": "talk",
+          "target": "traveling_merchant",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_6_defeat_bandits",
+          "description": "Defeat the bandit ambush on the road",
+          "type": "kill",
+          "target": "bandit",
+          "required_count": 3
+        },
+        {
+          "id": "tutorial_act_6_defeat_worgs",
+          "description": "Defeat the worg riders attacking the wagon",
+          "type": "kill",
+          "target": "worg",
+          "required_count": 2
+        },
+        {
+          "id": "tutorial_act_6_reach_town",
+          "description": "Reach the destination town safely with the merchant",
+          "type": "visit",
+          "target": "briarwood_town",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "gold_coin", "quantity": 40},
+        {"item_id": "potion_of_healing", "quantity": 3},
+        {"item_id": "potion_of_strength", "quantity": 1},
+        {"item_id": "iron_ingot", "quantity": 2}
+      ],
+      "quest_id": "tutorial_escort_mission"
+    },
+    {
+      "id": "act_7",
+      "name": "Craft Training at the Forge",
+      "description": "The village blacksmith offers to teach you the basics of crafting. Gather materials from nearby sources and learn to combine them at the forge. A clay golem guards the best ore vein.",
+      "encounters": [
+        {
+          "id": "enc_7_1",
+          "name": "Cave Guardians",
+          "description": "Skeletons haunt the entrance to the ore cave where the finest steel ingots can be found.",
+          "monsters": ["skeleton", "skeleton"],
+          "difficulty": "medium",
+          "tutorial_hint": "After combat, search the area for crafting materials. Loot everything."
+        },
+        {
+          "id": "enc_7_2",
+          "name": "The Clay Guardian",
+          "description": "A clay golem protects the deepest ore vein, left behind by an ancient miner-mage.",
+          "monsters": ["clay_golem"],
+          "difficulty": "hard",
+          "tutorial_hint": "Golems are resistant to many damage types. Use acid or adamantine weapons if available."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "tutorial_act_7_talk_blacksmith",
+          "description": "Speak with the village blacksmith about crafting",
+          "type": "talk",
+          "target": "ashvale_blacksmith",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_7_collect_iron",
+          "description": "Gather iron ingots from the cave",
+          "type": "collect",
+          "target": "iron_ingot",
+          "required_count": 3
+        },
+        {
+          "id": "tutorial_act_7_collect_steel",
+          "description": "Find steel ingots from the golem-guarded vein",
+          "type": "collect",
+          "target": "steel_ingot",
+          "required_count": 2
+        },
+        {
+          "id": "tutorial_act_7_defeat_golem",
+          "description": "Defeat the clay golem guarding the deep vein",
+          "type": "kill",
+          "target": "clay_golem",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_7_visit_forge",
+          "description": "Return to the forge and craft your first item",
+          "type": "visit",
+          "target": "ashvale_forge",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "steel_ingot", "quantity": 3},
+        {"item_id": "iron_ingot", "quantity": 4},
+        {"item_id": "gold_coin", "quantity": 30},
+        {"item_id": "enchanted_thread", "quantity": 1}
+      ],
+      "quest_id": "tutorial_craft_training"
+    },
+    {
+      "id": "act_8",
+      "name": "Combat Basics: The Training Yard",
+      "description": "The village militia captain invites you to the training yard. Face progressively tougher sparring partners to master defensive stances, special attacks, and the use of scrolls in combat.",
+      "encounters": [
+        {
+          "id": "enc_8_1",
+          "name": "Sparring with Imps",
+          "description": "Summoned imps serve as agile sparring partners. Learn to deal with fast, evasive enemies.",
+          "monsters": ["imp", "imp", "imp"],
+          "difficulty": "medium",
+          "tutorial_hint": "Imps are small and quick. Area spells like fireball can hit multiple imps at once."
+        },
+        {
+          "id": "enc_8_2",
+          "name": "The Cockatrice Challenge",
+          "description": "A captured cockatrice tests your ability to avoid special attacks. Its bite can petrify.",
+          "monsters": ["cockatrice"],
+          "difficulty": "hard",
+          "tutorial_hint": "The cockatrice can turn you to stone. Stay at range or use protective scrolls."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "tutorial_act_8_talk_captain",
+          "description": "Speak with the militia captain about advanced combat",
+          "type": "talk",
+          "target": "militia_captain",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_8_defeat_imps",
+          "description": "Defeat the imp sparring partners",
+          "type": "kill",
+          "target": "imp",
+          "required_count": 3
+        },
+        {
+          "id": "tutorial_act_8_defeat_cockatrice",
+          "description": "Survive the cockatrice challenge",
+          "type": "kill",
+          "target": "cockatrice",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_8_visit_yard",
+          "description": "Complete all exercises in the training yard",
+          "type": "visit",
+          "target": "training_yard",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "scroll_of_haste", "quantity": 1},
+        {"item_id": "scroll_of_fireball", "quantity": 1},
+        {"item_id": "potion_of_healing", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 25}
+      ],
+      "quest_id": "tutorial_combat_basics"
+    },
+    {
+      "id": "act_9",
+      "name": "Town Defense: The Night Raid",
+      "description": "Ashvale is under attack. Orcs and goblins assault the walls under cover of darkness. Rally the militia, defend the gates, and protect the villagers in this multi-wave defense scenario.",
+      "encounters": [
+        {
+          "id": "enc_9_1",
+          "name": "First Wave: Goblin Assault",
+          "description": "Goblins swarm the eastern gate with crude ladders and torches.",
+          "monsters": ["goblin", "goblin", "goblin", "goblin"],
+          "difficulty": "medium",
+          "tutorial_hint": "Defense missions have waves. Conserve potions for later waves when enemies get tougher."
+        },
+        {
+          "id": "enc_9_2",
+          "name": "Second Wave: Orc Warriors",
+          "description": "Orc warriors batter down the western gate with a ram. Hold the breach.",
+          "monsters": ["orc_warrior", "orc_warrior", "orc_warrior"],
+          "difficulty": "hard",
+          "tutorial_hint": "Orcs are strong but slow. Kite them through chokepoints for tactical advantage."
+        },
+        {
+          "id": "enc_9_3",
+          "name": "The Ogre Breacher",
+          "description": "A massive ogre leads the final push, hurling boulders at the town hall.",
+          "monsters": ["ogre"],
+          "difficulty": "hard",
+          "tutorial_hint": "The ogre has high HP. Use your strongest abilities and scrolls to burn it down fast."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "tutorial_act_9_talk_elder_defense",
+          "description": "Speak with the village elder about the defense plan",
+          "type": "talk",
+          "target": "ashvale_elder",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_9_defend_east_gate",
+          "description": "Repel the goblin assault at the eastern gate",
+          "type": "kill",
+          "target": "goblin",
+          "required_count": 4
+        },
+        {
+          "id": "tutorial_act_9_hold_west_gate",
+          "description": "Hold the western gate against the orc warriors",
+          "type": "kill",
+          "target": "orc_warrior",
+          "required_count": 3
+        },
+        {
+          "id": "tutorial_act_9_defeat_ogre",
+          "description": "Defeat the ogre breacher",
+          "type": "kill",
+          "target": "ogre",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_9_visit_town_hall",
+          "description": "Secure the town hall after the battle",
+          "type": "visit",
+          "target": "ashvale_town_hall",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "potion_of_greater_healing", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 50},
+        {"item_id": "iron_ingot", "quantity": 3},
+        {"item_id": "potion_of_strength", "quantity": 1}
+      ],
+      "quest_id": "tutorial_town_defense"
+    },
+    {
+      "id": "act_10",
+      "name": "The Graduation Trial",
+      "description": "The village council declares you ready for the wider world. One final trial awaits: descend into the Proving Cavern and defeat the troll guardian to earn your adventurer's writ. This is the culmination of all tutorial lessons.",
+      "encounters": [
+        {
+          "id": "enc_10_1",
+          "name": "Undead Sentinels of the Cavern",
+          "description": "Zombies and a wraith guard the entrance to the Proving Cavern.",
+          "monsters": ["zombie", "zombie", "wraith"],
+          "difficulty": "hard",
+          "tutorial_hint": "Wraiths are incorporeal. Magic damage works best against them."
+        },
+        {
+          "id": "enc_10_2",
+          "name": "The Troll Guardian",
+          "description": "A massive troll serves as the final test. Use fire to stop its regeneration and prove your worth.",
+          "monsters": ["troll"],
+          "difficulty": "boss",
+          "tutorial_hint": "Trolls regenerate HP each turn unless hit with fire. Use fire essence or fireball scrolls."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "tutorial_act_10_talk_council",
+          "description": "Receive the trial briefing from the village council",
+          "type": "talk",
+          "target": "ashvale_council",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_10_enter_cavern",
+          "description": "Enter the Proving Cavern",
+          "type": "visit",
+          "target": "proving_cavern",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_10_defeat_undead",
+          "description": "Defeat the undead sentinels at the entrance",
+          "type": "kill",
+          "target": "zombie",
+          "required_count": 2
+        },
+        {
+          "id": "tutorial_act_10_defeat_troll",
+          "description": "Defeat the troll guardian to complete the trial",
+          "type": "kill",
+          "target": "troll",
+          "required_count": 1
+        },
+        {
+          "id": "tutorial_act_10_collect_writ",
+          "description": "Collect the adventurer's writ from the trial chest",
+          "type": "collect",
+          "target": "arcane_crystal",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {"item_id": "potion_of_greater_healing", "quantity": 3},
+        {"item_id": "arcane_crystal", "quantity": 2},
+        {"item_id": "gold_coin", "quantity": 75},
+        {"item_id": "fire_essence", "quantity": 2},
+        {"item_id": "diamond", "quantity": 1}
+      ],
+      "quest_id": "tutorial_graduation_trial"
     }
   ]
 }

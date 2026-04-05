@@ -20,6 +20,12 @@ from engine.api.campaign.quest_bridge import (
 )
 from engine.api.campaign.quest_state import restore_quest_state, snapshot_quest_state
 from engine.api.campaign.party_bridge import maybe_handle_party_command
+from engine.api.campaign.knowledge import (
+    maybe_handle_ask_about_command,
+    maybe_handle_knowledge_command,
+    maybe_handle_structured_ask_about_command,
+    maybe_handle_structured_knowledge_command,
+)
 from engine.api.campaign.state_sync import sync_context_clock
 from engine.api.campaign.region_projection import apply_region_to_context, persist_projected_npc_state
 from engine.api.campaign.settlement import build_settlement_state
@@ -74,12 +80,14 @@ def run_command(
         shortcut=str(shortcut or "").strip().lower(),
     )
     pending_dialog_payload = (context.kernel_runtime or {}).pop("_pending_dialog_payload", None)
+    pending_knowledge_payload = (context.kernel_runtime or {}).pop("_pending_knowledge_payload", None)
     _advance_world(context, command_type, hours_advanced, issued)
     # Dialog payload: use pre-built payload from talk handler if available, otherwise build fresh.
     runtime = context.kernel_runtime or {}
     dialog_payload = pending_dialog_payload or runtime.pop("_pending_dialog_payload", None) or (
         build_dialog_payload(context, narrative) if command_type == "dialog" else {}
     )
+    knowledge_payload = pending_knowledge_payload or runtime.pop("_pending_knowledge_payload", None) or {}
     final_payload = campaign_payload(context)
     trace_event(
         "campaign_command_output",
@@ -97,6 +105,7 @@ def run_command(
         "generated_events": list(context.recent_event_log[-20:]),
         "campaign": final_payload,
         **dialog_payload,
+        **knowledge_payload,
     }
 
 
@@ -155,6 +164,13 @@ def _dispatch(
     dialog = maybe_handle_dialog_command(context, issued)
     if dialog is not None:
         return dialog
+    if shortcut == "dialog":
+        structured_ask_about = maybe_handle_structured_ask_about_command(context, command_args)
+        if structured_ask_about is not None:
+            return structured_ask_about
+    ask_about = maybe_handle_ask_about_command(context, issued)
+    if ask_about is not None:
+        return ask_about
     if _dialog_is_active(context):
         return (
             "You are in a conversation. Choose a dialog option before doing anything else.",
@@ -174,10 +190,18 @@ def _dispatch(
         structured_spell = maybe_handle_structured_spell_command(context, command_args)
         if structured_spell is not None:
             return structured_spell
+    if shortcut == "knowledge":
+        structured_knowledge = maybe_handle_structured_knowledge_command(context, command_args)
+        if structured_knowledge is not None:
+            return structured_knowledge
 
     talk = maybe_handle_talk_command(context, issued)
     if talk is not None:
         return talk
+
+    knowledge = maybe_handle_knowledge_command(context, issued)
+    if knowledge is not None:
+        return knowledge
 
     combat = maybe_handle_combat_command(context, issued)
     if combat is not None:
@@ -255,7 +279,7 @@ def _dispatch(
     logger.warning("Unknown command rejected: %s", issued[:80])
     return (
         f"Unknown command: '{issued}'. Try: attack, cast, use, use ability, abilities, equip, craft, rest, "
-        f"travel, train, proficiency, raise, buy, sell, diagnose, dialog, recruit, quests, or world interaction controls.",
+        f"travel, topics, think, pin, train, proficiency, raise, buy, sell, diagnose, dialog, recruit, quests, or world interaction controls.",
         "unknown",
         0,
     )

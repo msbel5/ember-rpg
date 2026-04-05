@@ -29,7 +29,11 @@
       "mage": 6,
       "ranger": 8,
       "paladin": 10,
-      "bard": 8
+      "bard": 8,
+      "druid": 8,
+      "monk": 8,
+      "warlock": 8,
+      "sorcerer": 6
     },
     "sp_per_level": {
       "mage": 4,
@@ -38,7 +42,11 @@
       "rogue": 0,
       "ranger": 0,
       "paladin": 2,
-      "bard": 3
+      "bard": 3,
+      "druid": 3,
+      "monk": 2,
+      "warlock": 4,
+      "sorcerer": 5
     },
     "stat_bonus_by_class": {
       "warrior": "MIG",
@@ -48,6 +56,10 @@
       "ranger": "AGI",
       "paladin": "PRE",
       "bard": "PRE",
+      "druid": "INS",
+      "monk": "AGI",
+      "warlock": "PRE",
+      "sorcerer": "PRE",
       "null": "MIG"
     },
     "xp_rewards": {
@@ -68,12 +80,28 @@
           "cost": 0
         },
         {
+          "name": "Power Strike",
+          "description": "Spend 1 AP to add your MIG modifier as bonus damage to a melee attack.",
+          "passive": false,
+          "required_level": 1,
+          "class_name": "warrior",
+          "cost": 1
+        },
+        {
           "name": "Second Wind",
           "description": "Once per rest, regain 1d10 + level HP as a bonus action.",
           "passive": false,
           "required_level": 2,
           "class_name": "warrior",
           "cost": 1
+        },
+        {
+          "name": "Armor Mastery",
+          "description": "Reduce armor check penalties by 1. Heavy armor no longer slows you.",
+          "passive": true,
+          "required_level": 2,
+          "class_name": "warrior",
+          "cost": 0
         },
         {
           "name": "Extra Attack",
@@ -84,8 +112,24 @@
           "cost": 0
         },
         {
+          "name": "Rallying Cry",
+          "description": "Shout to grant all allies within 30 feet +1 to attack rolls for 2 rounds.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "warrior",
+          "cost": 1
+        },
+        {
           "name": "Battle Hardened",
           "description": "Years of combat have toughened your hide. Gain +2 AC permanently.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Weapon Specialization",
+          "description": "+2 damage with your equipped weapon type permanently.",
           "passive": true,
           "required_level": 4,
           "class_name": "warrior",
@@ -98,12 +142,244 @@
           "required_level": 5,
           "class_name": "warrior",
           "cost": 1
+        },
+        {
+          "name": "Enduring Stamina",
+          "description": "Gain +5 max HP. Your Second Wind now heals an additional 1d6.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Indomitable",
+          "description": "Once per rest, reroll a failed saving throw and use the new result.",
+          "passive": false,
+          "required_level": 6,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Improved Critical",
+          "description": "Your weapon attacks score a critical hit on a roll of 19 or 20.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Tactical Advance",
+          "description": "Move up to 10 feet without provoking opportunity attacks after hitting an enemy.",
+          "passive": true,
+          "required_level": 7,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Sweeping Strike",
+          "description": "Attack all adjacent enemies with a single swing for normal weapon damage.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "warrior",
+          "cost": 2
+        },
+        {
+          "name": "Iron Will",
+          "description": "+2 to saving throws against charm, fear, and psychic effects.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Shield Bash",
+          "description": "If wielding a shield, make a bonus attack that deals 1d6+MIG and staggers the target for 1 round.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "warrior",
+          "cost": 1
+        },
+        {
+          "name": "Relentless Endurance",
+          "description": "When reduced to 0 HP, drop to 1 HP instead. Once per long rest.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Whirlwind Attack",
+          "description": "Make a melee attack against every enemy within 5 feet for full weapon damage.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "warrior",
+          "cost": 3
+        },
+        {
+          "name": "Battle Master",
+          "description": "Gain a superiority die (d8). Add it to attack rolls, damage, or saving throws 3 times per rest.",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Fortified Body",
+          "description": "Gain resistance to non-magical bludgeoning, piercing, and slashing damage.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Extra Attack II",
+          "description": "You can now make two additional attacks per turn instead of one.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Intimidating Presence",
+          "description": "Spend 1 AP to frighten one creature within 30 feet for 1 round on a failed PRE save.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "warrior",
+          "cost": 1
+        },
+        {
+          "name": "Superior Critical",
+          "description": "Your critical hits now deal triple damage instead of double.",
+          "passive": true,
+          "required_level": 12,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Indomitable II",
+          "description": "You can now use Indomitable twice per rest.",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Devastating Critical",
+          "description": "When you score a critical hit, the target must make an END save or be stunned for 1 round.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Unyielding",
+          "description": "+3 to all saving throws. Your resolve is nearly unbreakable.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Commanding Shout",
+          "description": "Shout a command that forces all enemies within 20 feet to make a PRE save or lose their reaction until your next turn.",
+          "passive": false,
+          "required_level": 14,
+          "class_name": "warrior",
+          "cost": 1
+        },
+        {
+          "name": "War Leader",
+          "description": "Allies within 30 feet gain +2 to attack rolls and saving throws while you are conscious.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Crushing Blow",
+          "description": "Make a single devastating attack dealing 3x weapon damage that ignores armor.",
+          "passive": false,
+          "required_level": 15,
+          "class_name": "warrior",
+          "cost": 3
+        },
+        {
+          "name": "Survivor",
+          "description": "At the start of each turn, if below half HP, regain HP equal to 5 + END modifier.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Extra Attack III",
+          "description": "You can now make three additional attacks per turn.",
+          "passive": true,
+          "required_level": 17,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Legendary Resistance",
+          "description": "Automatically succeed on a failed saving throw. Usable 3 times per long rest.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Unstoppable Force",
+          "description": "Your attacks cannot be reduced by resistance. You ignore all damage reduction.",
+          "passive": true,
+          "required_level": 18,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Avatar of War",
+          "description": "For 1 minute, gain +4 to MIG, double movement speed, and advantage on all attacks. Once per long rest.",
+          "passive": false,
+          "required_level": 19,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Indomitable III",
+          "description": "You can now use Indomitable three times per rest. Your will is absolute.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Paragon of Battle",
+          "description": "Gain +4 to MIG and END permanently. Your max for these stats is now 24.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "warrior",
+          "cost": 0
+        },
+        {
+          "name": "Warlord's Decree",
+          "description": "Once per long rest, command all allies within 60 feet to immediately make one free attack or move.",
+          "passive": false,
+          "required_level": 20,
+          "class_name": "warrior",
+          "cost": 0
         }
       ],
       "rogue": [
         {
           "name": "Sneak Attack",
           "description": "Deal +1d6 bonus damage when attacking with advantage.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Thieves' Cant",
+          "description": "You know a secret criminal language. Gain +2 to deception checks with underworld contacts.",
           "passive": true,
           "required_level": 1,
           "class_name": "rogue",
@@ -118,12 +394,28 @@
           "cost": 0
         },
         {
+          "name": "Expertise",
+          "description": "Double your proficiency bonus for two skills you are proficient in.",
+          "passive": true,
+          "required_level": 2,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
           "name": "Cunning Action",
           "description": "Dash, Disengage, or Hide costs only 1 AP instead of 2.",
           "passive": true,
           "required_level": 3,
           "class_name": "rogue",
           "cost": 0
+        },
+        {
+          "name": "Dirty Trick",
+          "description": "Throw sand or a concealed blade to blind or disarm a target for 1 round.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "rogue",
+          "cost": 1
         },
         {
           "name": "Uncanny Dodge",
@@ -134,10 +426,242 @@
           "cost": 0
         },
         {
+          "name": "Shadow Step",
+          "description": "Teleport up to 30 feet to a space in dim light or darkness as a bonus action.",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "rogue",
+          "cost": 1
+        },
+        {
           "name": "Evasion",
           "description": "When you succeed on a DEX saving throw, you take 0 damage.",
           "passive": true,
           "required_level": 5,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Sneak Attack II",
+          "description": "Sneak Attack damage increases to +2d6.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Reliable Talent",
+          "description": "Treat any roll of 9 or lower on a skill check as a 10.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Ambush",
+          "description": "If you act in the first round of combat, deal an extra 2d6 damage on your first attack.",
+          "passive": false,
+          "required_level": 6,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Elusive",
+          "description": "No attack roll can have advantage against you while you are conscious.",
+          "passive": true,
+          "required_level": 7,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Garrote",
+          "description": "Grapple an unaware target to deal 3d6 damage per round until they escape.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "rogue",
+          "cost": 2
+        },
+        {
+          "name": "Slippery Mind",
+          "description": "Gain proficiency in MND saving throws.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Poisoner",
+          "description": "Apply poison to your weapon as a bonus action. Adds 1d8 poison damage for 3 attacks.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "rogue",
+          "cost": 1
+        },
+        {
+          "name": "Sneak Attack III",
+          "description": "Sneak Attack damage increases to +3d6.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Assassinate",
+          "description": "Attacks against surprised targets are automatic critical hits.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Expertise II",
+          "description": "Double your proficiency bonus for two additional skills.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Vanishing Act",
+          "description": "Become invisible for 1 round after killing an enemy or reducing them to 0 HP.",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Blindsense",
+          "description": "Detect invisible or hidden creatures within 10 feet.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Sneak Attack IV",
+          "description": "Sneak Attack damage increases to +4d6.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Thief's Reflexes",
+          "description": "Take two turns during the first round of combat instead of one.",
+          "passive": true,
+          "required_level": 12,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Sneak Attack V",
+          "description": "Sneak Attack damage increases to +5d6.",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Death Strike",
+          "description": "When you hit a surprised creature, it must make an END save or take double damage.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Shadow Dance",
+          "description": "In dim light, gain +3 AC and advantage on all AGI saves.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Sneak Attack VI",
+          "description": "Sneak Attack damage increases to +6d6.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Master Infiltrator",
+          "description": "You can perfectly mimic voices and disguise yourself. +5 to deception checks.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Sneak Attack VII",
+          "description": "Sneak Attack damage increases to +7d6.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Crippling Strike",
+          "description": "Your attacks against surprised or flanked targets reduce their movement speed by half for 2 rounds.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Stroke of Luck",
+          "description": "Once per rest, turn a missed attack into a hit or treat a failed skill check as a 20.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Sneak Attack VIII",
+          "description": "Sneak Attack damage increases to +8d6.",
+          "passive": true,
+          "required_level": 17,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Ghost Walk",
+          "description": "Become ethereal for 1 round, passing through walls and ignoring all damage. Once per rest.",
+          "passive": false,
+          "required_level": 18,
+          "class_name": "rogue",
+          "cost": 2
+        },
+        {
+          "name": "Sneak Attack IX",
+          "description": "Sneak Attack damage increases to +9d6.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Perfect Evasion",
+          "description": "When you fail a DEX saving throw, you take half damage. When you succeed, you take none.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Shadow Master",
+          "description": "Gain permanent invisibility in dim light. Sneak Attack damage increases to +10d6.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "rogue",
+          "cost": 0
+        },
+        {
+          "name": "Coup de Grace",
+          "description": "Once per long rest, make an attack that automatically crits and applies max Sneak Attack damage.",
+          "passive": false,
+          "required_level": 20,
           "class_name": "rogue",
           "cost": 0
         }
@@ -152,12 +676,28 @@
           "cost": 0
         },
         {
+          "name": "Mage Armor",
+          "description": "When not wearing armor, your AC equals 10 + AGI modifier + MND modifier.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
           "name": "Spellcraft",
           "description": "Your mastery of spell theory increases your spell save DC by 1.",
           "passive": true,
           "required_level": 2,
           "class_name": "mage",
           "cost": 0
+        },
+        {
+          "name": "Arcane Ward",
+          "description": "Create a magical shield with HP equal to twice your mage level. Absorbs damage before your HP.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "mage",
+          "cost": 2
         },
         {
           "name": "Expanded Spells",
@@ -168,6 +708,14 @@
           "cost": 0
         },
         {
+          "name": "Counterspell",
+          "description": "As a reaction, attempt to negate an enemy spell. Automatic if their spell costs fewer SP.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "mage",
+          "cost": 3
+        },
+        {
           "name": "Metamagic: Quicken",
           "description": "Spend 2 spell points to cast a spell as a bonus action (1 AP instead of 2).",
           "passive": false,
@@ -176,12 +724,244 @@
           "cost": 2
         },
         {
+          "name": "Spell Sculpting",
+          "description": "When casting area spells, choose a number of creatures equal to your MND modifier to automatically succeed on their save.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
           "name": "Potent Cantrip",
           "description": "Your cantrips deal bonus damage equal to your MND modifier.",
           "passive": true,
           "required_level": 5,
           "class_name": "mage",
           "cost": 0
+        },
+        {
+          "name": "Empowered Evocation",
+          "description": "Add your MND modifier to the damage of any evocation spell you cast.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Spell Mastery",
+          "description": "Choose one 1st-level and one 2nd-level spell. You can cast them without spending spell points.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Arcane Blast",
+          "description": "Channel raw arcane energy to deal 4d8 force damage in a 15-foot cone.",
+          "passive": false,
+          "required_level": 6,
+          "class_name": "mage",
+          "cost": 3
+        },
+        {
+          "name": "Spell Penetration",
+          "description": "Your spells ignore resistance to their damage type. +2 to overcome spell immunity.",
+          "passive": true,
+          "required_level": 7,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Teleport",
+          "description": "Instantly teleport to any location you can see within 60 feet.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "mage",
+          "cost": 3
+        },
+        {
+          "name": "Arcane Ward II",
+          "description": "Your Arcane Ward now has HP equal to three times your mage level and regenerates 1d6 per turn.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Chain Spell",
+          "description": "When you cast a single-target spell, spend 3 extra SP to have it jump to a second target.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "mage",
+          "cost": 3
+        },
+        {
+          "name": "Signature Spell",
+          "description": "Choose one 3rd-level spell. You can cast it once per rest without spending spell points.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Time Stop",
+          "description": "Freeze time for 1 round, gaining 2 extra turns. Cannot attack frozen creatures directly.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "mage",
+          "cost": 6
+        },
+        {
+          "name": "Metamagic: Twin",
+          "description": "When casting a single-target spell, spend SP equal to its cost to target a second creature.",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Spell Resistance",
+          "description": "Gain advantage on saving throws against spells and magical effects.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Overchannel",
+          "description": "Maximize the damage of a spell of 5th level or lower. Take 2d12 necrotic damage per spell level above 1st.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Greater Spell Focus",
+          "description": "Your spell save DC increases by an additional +2.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Arcane Recovery II",
+          "description": "Arcane Recovery now restores spell points equal to your full level.",
+          "passive": true,
+          "required_level": 12,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Spell Absorption",
+          "description": "When you succeed on a save against a spell, regain SP equal to half the spell's cost.",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Meteor Swarm",
+          "description": "Call down 4 meteors in a 40-foot area dealing 6d6 fire and 6d6 bludgeoning damage each.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "mage",
+          "cost": 8
+        },
+        {
+          "name": "Arcane Mastery",
+          "description": "You can concentrate on two spells simultaneously instead of one.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Elemental Mastery",
+          "description": "Choose one element. Spells of that element deal +3 damage and cost 1 less SP.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Greater Signature Spell",
+          "description": "Choose one 5th-level spell. You can cast it once per rest without spending spell points.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Prismatic Wall",
+          "description": "Create a shimmering wall of 7 layers, each with a different damaging effect. Lasts 10 minutes.",
+          "passive": false,
+          "required_level": 15,
+          "class_name": "mage",
+          "cost": 7
+        },
+        {
+          "name": "Eldritch Immunity",
+          "description": "Gain immunity to one damage type of your choice. Choose a new type after each long rest.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Power Word Kill",
+          "description": "Speak a word of power that instantly kills a creature with fewer than 50 HP.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "mage",
+          "cost": 9
+        },
+        {
+          "name": "Infinite Arcana",
+          "description": "All 1st and 2nd level spells cost 0 SP to cast.",
+          "passive": true,
+          "required_level": 17,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Reality Warp",
+          "description": "Alter reality in a 30-foot area: reverse gravity, transmute elements, or reshape terrain. Once per rest.",
+          "passive": false,
+          "required_level": 18,
+          "class_name": "mage",
+          "cost": 8
+        },
+        {
+          "name": "Spell Perfection",
+          "description": "Choose one spell you know. It costs half SP, has +4 to hit, and its save DC increases by 3.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Metamagic: Maximize",
+          "description": "Spend 4 extra SP to maximize all damage dice of a spell automatically.",
+          "passive": false,
+          "required_level": 19,
+          "class_name": "mage",
+          "cost": 4
+        },
+        {
+          "name": "Arcane Supremacy",
+          "description": "Gain +4 to MND permanently. Your spell save DC and spell attacks gain +3. Max MND is now 24.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "mage",
+          "cost": 0
+        },
+        {
+          "name": "Wish",
+          "description": "Once per long rest, duplicate any spell effect or create a unique magical outcome as determined by the GM.",
+          "passive": false,
+          "required_level": 20,
+          "class_name": "mage",
+          "cost": 10
         }
       ],
       "priest": [
@@ -194,12 +974,28 @@
           "cost": 1
         },
         {
+          "name": "Sacred Focus",
+          "description": "Your healing spells always heal at least their minimum value + your INS modifier.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
           "name": "Healing Touch",
           "description": "Cure Wounds and similar spells heal additional HP equal to your level.",
           "passive": true,
           "required_level": 2,
           "class_name": "priest",
           "cost": 0
+        },
+        {
+          "name": "Spiritual Weapon",
+          "description": "Summon a floating spectral weapon that attacks for 1d8+INS damage each turn for 3 rounds.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "priest",
+          "cost": 2
         },
         {
           "name": "Channel Divinity",
@@ -210,6 +1006,14 @@
           "cost": 2
         },
         {
+          "name": "Blessed Healer",
+          "description": "When you cast a healing spell on another, regain HP equal to the spell's level + 2.",
+          "passive": true,
+          "required_level": 3,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
           "name": "Sacred Flame",
           "description": "Your fire damage ignores resistance. Sacred attacks bypass normal defenses.",
           "passive": true,
@@ -218,18 +1022,258 @@
           "cost": 0
         },
         {
+          "name": "Guardian Spirit",
+          "description": "Summon a guardian spirit that grants +2 AC to an ally for 3 rounds.",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "priest",
+          "cost": 2
+        },
+        {
           "name": "Greater Heal",
           "description": "Channel 4 spell points to restore 4d8+5 HP to one target.",
           "passive": false,
           "required_level": 5,
           "class_name": "priest",
           "cost": 4
+        },
+        {
+          "name": "Divine Shield",
+          "description": "Grant an ally a divine shield absorbing up to 15 damage. Lasts until depleted or 1 minute.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "priest",
+          "cost": 3
+        },
+        {
+          "name": "Channel Divinity II",
+          "description": "You can now use Channel Divinity twice per rest.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Banish Undead",
+          "description": "Undead within 30 feet must make an INS save or be destroyed if CR 1/2 or lower, or flee for 1 minute.",
+          "passive": false,
+          "required_level": 6,
+          "class_name": "priest",
+          "cost": 3
+        },
+        {
+          "name": "Divine Strike",
+          "description": "Once per turn, add 1d8 radiant damage to a weapon attack.",
+          "passive": true,
+          "required_level": 7,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Mass Healing Word",
+          "description": "Heal up to 6 allies within 60 feet for 1d4 + INS modifier HP each.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "priest",
+          "cost": 3
+        },
+        {
+          "name": "Potent Spellcasting",
+          "description": "Add your INS modifier to the damage of any cleric cantrip.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Resurrection",
+          "description": "Restore a dead ally to life with 1 HP if they died within the last hour. Requires a diamond worth 300 gold.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "priest",
+          "cost": 6
+        },
+        {
+          "name": "Supreme Healing",
+          "description": "When you roll to restore HP, treat any dice result of 1-3 as a 4.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Holy Fire",
+          "description": "Call down a pillar of holy fire dealing 6d8 radiant damage in a 15-foot radius.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "priest",
+          "cost": 5
+        },
+        {
+          "name": "Aura of Sanctity",
+          "description": "You and allies within 15 feet gain +2 to all saving throws against spells.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Greater Restoration",
+          "description": "Remove one curse, disease, poison, or ability drain from a target.",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "priest",
+          "cost": 5
+        },
+        {
+          "name": "Divine Strike II",
+          "description": "Divine Strike damage increases to 2d8 radiant.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Mass Cure Wounds",
+          "description": "Heal up to 6 allies within 60 feet for 3d8 + INS modifier HP each.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "priest",
+          "cost": 5
+        },
+        {
+          "name": "Channel Divinity III",
+          "description": "You can now use Channel Divinity three times per rest.",
+          "passive": true,
+          "required_level": 12,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Celestial Radiance",
+          "description": "Emit holy light in 30 feet. Undead take 2d6 radiant damage per round. Allies heal 1d6 per round.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "priest",
+          "cost": 5
+        },
+        {
+          "name": "Miracle Worker",
+          "description": "Your healing spells restore an additional 50% HP (round up).",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Divine Intervention",
+          "description": "Once per long rest, call upon your deity. Roll percentile; if under your level, the deity intervenes directly.",
+          "passive": false,
+          "required_level": 14,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Empowered Healing",
+          "description": "All healing spells you cast gain +5 flat bonus HP healed.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Regeneration",
+          "description": "Touch an ally to grant them regeneration of 4d8+15 HP over 1 minute.",
+          "passive": false,
+          "required_level": 15,
+          "class_name": "priest",
+          "cost": 7
+        },
+        {
+          "name": "Holy Aura",
+          "description": "All allies within 30 feet gain advantage on saving throws and emit dim light for 1 minute.",
+          "passive": false,
+          "required_level": 16,
+          "class_name": "priest",
+          "cost": 6
+        },
+        {
+          "name": "Beacon of Hope",
+          "description": "For 1 minute, allies within 30 feet gain advantage on INS saves and healing spells restore maximum HP.",
+          "passive": false,
+          "required_level": 16,
+          "class_name": "priest",
+          "cost": 4
+        },
+        {
+          "name": "True Resurrection",
+          "description": "Restore a creature dead for up to 200 years to full life, even without a body.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "priest",
+          "cost": 9
+        },
+        {
+          "name": "Avatar of the Divine",
+          "description": "Once per rest, assume a divine form gaining +4 INS, wings (fly speed 60), and radiant aura for 1 minute.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "priest",
+          "cost": 7
+        },
+        {
+          "name": "Blessed Body",
+          "description": "You are immune to disease and poison. You do not age and cannot be aged magically.",
+          "passive": true,
+          "required_level": 18,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Mass Heal",
+          "description": "Restore up to 700 HP total, distributed among any creatures within 60 feet as you choose.",
+          "passive": false,
+          "required_level": 19,
+          "class_name": "priest",
+          "cost": 9
+        },
+        {
+          "name": "Undying Faith",
+          "description": "When reduced to 0 HP, automatically stabilize and regain 1 HP at the start of your next turn.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Divine Intervention II",
+          "description": "Divine Intervention now succeeds automatically once per long rest.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "priest",
+          "cost": 0
+        },
+        {
+          "name": "Hand of God",
+          "description": "Once per long rest, call down divine wrath dealing 10d10 radiant damage in a 60-foot radius, healing allies for the same amount.",
+          "passive": false,
+          "required_level": 20,
+          "class_name": "priest",
+          "cost": 10
         }
       ],
       "ranger": [
         {
           "name": "Keen Eye",
           "description": "+2 to INS skill checks for tracking, spotting traps, and detecting hidden creatures.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Favored Enemy",
+          "description": "Choose a creature type. Gain +2 damage and advantage on tracking checks against that type.",
           "passive": true,
           "required_level": 1,
           "class_name": "ranger",
@@ -244,12 +1288,28 @@
           "cost": 1
         },
         {
+          "name": "Natural Explorer",
+          "description": "Difficult terrain does not slow your group. You cannot become lost except by magical means.",
+          "passive": true,
+          "required_level": 2,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
           "name": "Fieldcraft",
           "description": "Natural terrain no longer costs extra AP to traverse. Ignore movement penalties from undergrowth, mud, and shallow water.",
           "passive": true,
           "required_level": 3,
           "class_name": "ranger",
           "cost": 0
+        },
+        {
+          "name": "Hail of Thorns",
+          "description": "Your ranged attack explodes on impact dealing 1d10 piercing damage to all within 5 feet of the target.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "ranger",
+          "cost": 1
         },
         {
           "name": "Volley",
@@ -260,18 +1320,258 @@
           "cost": 2
         },
         {
+          "name": "Hunter's Instinct",
+          "description": "Gain advantage on initiative rolls and +2 to perception checks.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
           "name": "Vanish",
           "description": "Once per rest, become hidden as a free action even while observed. Lasts until you attack or end of your next turn.",
           "passive": false,
           "required_level": 5,
           "class_name": "ranger",
           "cost": 1
+        },
+        {
+          "name": "Extra Attack",
+          "description": "Make one additional attack per turn for 1 AP.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Favored Enemy II",
+          "description": "Choose an additional favored enemy type. Bonus damage increases to +4 against all favored enemies.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Conjure Barrage",
+          "description": "Throw a weapon or fire ammunition in a 60-foot cone dealing 3d8 damage to all targets.",
+          "passive": false,
+          "required_level": 6,
+          "class_name": "ranger",
+          "cost": 2
+        },
+        {
+          "name": "Evasion",
+          "description": "When you succeed on an AGI save against an area effect, you take no damage instead of half.",
+          "passive": true,
+          "required_level": 7,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Steel Wind Strike",
+          "description": "Vanish and make a melee attack against up to 5 creatures within 30 feet, teleporting between them.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "ranger",
+          "cost": 3
+        },
+        {
+          "name": "Land's Stride",
+          "description": "Moving through nonmagical difficult terrain costs no extra movement. +2 to saves against plants that impede movement.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Guardian of Nature",
+          "description": "Transform into a nature guardian gaining +2 AC, 10 temp HP, and advantage on AGI-based attacks for 1 minute.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "ranger",
+          "cost": 3
+        },
+        {
+          "name": "Hide in Plain Sight",
+          "description": "Spend 1 minute camouflaging yourself. Gain +10 to stealth checks while remaining still.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Marked Shot II",
+          "description": "Marked Shot damage increases to +2d6 and the mark lasts for 2 attacks.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Nature's Veil",
+          "description": "Become invisible until the start of your next turn. Usable a number of times equal to your INS modifier per rest.",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "ranger",
+          "cost": 1
+        },
+        {
+          "name": "Tireless",
+          "description": "Gain temp HP equal to 1d8 + INS modifier when finishing a short rest. Reduce exhaustion by 1 on short rest.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Volley II",
+          "description": "Volley now hits up to 6 enemies and deals +1d6 bonus damage.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Swift Quiver",
+          "description": "For 1 minute, make two additional ranged attacks each turn as bonus actions.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "ranger",
+          "cost": 4
+        },
+        {
+          "name": "Camouflage Expert",
+          "description": "You can attempt to hide even when only lightly obscured. +5 to stealth in natural terrain.",
+          "passive": true,
+          "required_level": 12,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Favored Enemy III",
+          "description": "Add a third favored enemy. Bonus damage increases to +6 against all favored enemies.",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Wounding Strike",
+          "description": "Your attacks cause bleeding: target takes 1d6 damage at the start of each turn for 3 rounds.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "ranger",
+          "cost": 2
+        },
+        {
+          "name": "Stalker's Flurry",
+          "description": "Once per turn, when you miss with an attack, make another attack against the same or different target.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Primal Awareness",
+          "description": "You can sense the presence of aberrations, celestials, fiends, and undead within 1 mile.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Feral Senses",
+          "description": "You can sense invisible creatures within 30 feet and attack them without disadvantage.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Killing Shot",
+          "description": "Make a single devastating ranged attack dealing 4x weapon damage. Must spend a full turn aiming.",
+          "passive": false,
+          "required_level": 15,
+          "class_name": "ranger",
+          "cost": 3
+        },
+        {
+          "name": "Vanish II",
+          "description": "Vanish is now usable 3 times per rest and lasts for 2 rounds.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Multiattack Defense",
+          "description": "After a creature hits you, gain +4 AC against all subsequent attacks from that creature until your next turn.",
+          "passive": true,
+          "required_level": 17,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Arrow Storm",
+          "description": "Fire a barrage of arrows dealing 8d6 piercing damage in a 20-foot radius at a point within 150 feet.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "ranger",
+          "cost": 5
+        },
+        {
+          "name": "One with Nature",
+          "description": "You are immune to poison, disease, and cannot be tracked by nonmagical means.",
+          "passive": true,
+          "required_level": 18,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Foe Slayer",
+          "description": "Once per turn, add your INS modifier to the attack roll or damage of an attack against a favored enemy.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Eyes of the Eagle",
+          "description": "Your vision extends to 1 mile with perfect clarity. You cannot be surprised.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Apex Predator",
+          "description": "Gain +4 to AGI and INS permanently. Your max for these stats is now 24.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Perfect Shot",
+          "description": "Once per long rest, make a ranged attack that automatically hits and deals maximum damage plus 10d6 bonus damage.",
+          "passive": false,
+          "required_level": 20,
+          "class_name": "ranger",
+          "cost": 0
         }
       ],
       "paladin": [
         {
           "name": "Lay on Hands",
           "description": "Once per rest, restore HP equal to paladin level x 3 to one ally by touch.",
+          "passive": false,
+          "required_level": 1,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Divine Sense",
+          "description": "Detect the presence of undead, fiends, or celestials within 60 feet. Usable 1+PRE modifier times per rest.",
           "passive": false,
           "required_level": 1,
           "class_name": "paladin",
@@ -286,12 +1586,28 @@
           "cost": 2
         },
         {
+          "name": "Fighting Style",
+          "description": "+2 damage with melee weapons when wielding a weapon in one hand and a shield in the other.",
+          "passive": true,
+          "required_level": 2,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
           "name": "Aura of Courage",
           "description": "You and allies within 10 feet are immune to fear effects.",
           "passive": true,
           "required_level": 3,
           "class_name": "paladin",
           "cost": 0
+        },
+        {
+          "name": "Sacred Weapon",
+          "description": "Bless your weapon to gain +PRE modifier to attack rolls and emit bright light for 1 minute.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "paladin",
+          "cost": 1
         },
         {
           "name": "Sacred Oath",
@@ -302,12 +1618,244 @@
           "cost": 0
         },
         {
+          "name": "Compelled Duel",
+          "description": "Force a creature to focus on you. It has disadvantage on attacks against others for 1 minute.",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "paladin",
+          "cost": 1
+        },
+        {
           "name": "Cleansing Strike",
           "description": "Once per rest, make a melee attack that deals normal damage and removes one disease, poison, or curse from the target.",
           "passive": false,
           "required_level": 5,
           "class_name": "paladin",
           "cost": 2
+        },
+        {
+          "name": "Extra Attack",
+          "description": "Make one additional attack per turn for 1 AP.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Aura of Protection",
+          "description": "You and allies within 10 feet add your PRE modifier to all saving throws.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Divine Smite II",
+          "description": "Divine Smite now deals +3d8 radiant damage and +2d8 against undead or fiends.",
+          "passive": false,
+          "required_level": 6,
+          "class_name": "paladin",
+          "cost": 3
+        },
+        {
+          "name": "Relentless Avenger",
+          "description": "When you hit a creature with an opportunity attack, move up to half your speed toward it.",
+          "passive": true,
+          "required_level": 7,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Shield of Faith",
+          "description": "Grant an ally +2 AC for 10 minutes as a bonus action.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "paladin",
+          "cost": 1
+        },
+        {
+          "name": "Aura of Courage II",
+          "description": "Your Aura of Courage extends to 30 feet and also grants immunity to charm.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Blinding Smite",
+          "description": "On a melee hit, deal +3d8 radiant and the target must save or be blinded for 1 round.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "paladin",
+          "cost": 3
+        },
+        {
+          "name": "Cleansing Touch",
+          "description": "End one spell on yourself or a willing creature you touch. Usable PRE modifier times per rest.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Radiant Defense",
+          "description": "When hit by a melee attack, the attacker takes 1d8 radiant damage.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Aura of Protection II",
+          "description": "Aura of Protection extends to 30 feet.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Banishing Smite",
+          "description": "On a melee hit, deal +5d10 radiant damage. If target drops below 50 HP, banish it to a demiplane.",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "paladin",
+          "cost": 5
+        },
+        {
+          "name": "Improved Divine Smite",
+          "description": "All your melee attacks deal an additional 1d8 radiant damage automatically.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Circle of Power",
+          "description": "Allies within 30 feet gain advantage on saves against spells and magical effects for 1 minute.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "paladin",
+          "cost": 4
+        },
+        {
+          "name": "Radiant Defense II",
+          "description": "Radiant Defense damage increases to 2d8 and affects ranged attacks within 5 feet.",
+          "passive": true,
+          "required_level": 12,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Crusader's Mantle",
+          "description": "Allies within 30 feet deal an extra 1d4 radiant damage on all weapon attacks for 1 minute.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "paladin",
+          "cost": 3
+        },
+        {
+          "name": "Undying Sentinel",
+          "description": "When reduced to 0 HP, drop to 1 HP instead. Once per long rest. You also do not suffer disadvantages of old age.",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Elder Champion",
+          "description": "For 1 minute, regenerate 10 HP per round, cast spells as bonus actions, and enemies within 10 feet have disadvantage on saves.",
+          "passive": false,
+          "required_level": 14,
+          "class_name": "paladin",
+          "cost": 5
+        },
+        {
+          "name": "Aura of the Sentinel",
+          "description": "You and allies within 30 feet gain +5 to initiative rolls.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Holy Weapon",
+          "description": "Imbue your weapon with divine power: +2d8 radiant damage on every hit for 1 hour.",
+          "passive": false,
+          "required_level": 15,
+          "class_name": "paladin",
+          "cost": 4
+        },
+        {
+          "name": "Bulwark of Faith",
+          "description": "Gain +3 AC permanently. Your armor seems to glow with divine protection.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Inspiring Smite",
+          "description": "After using Divine Smite, distribute temp HP equal to 2d8 + PRE modifier among allies within 30 feet.",
+          "passive": false,
+          "required_level": 16,
+          "class_name": "paladin",
+          "cost": 2
+        },
+        {
+          "name": "Holy Nimbus",
+          "description": "Emit an aura of sunlight in 30 feet. Enemies starting their turn in it take 10 radiant damage. Lasts 1 minute.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "paladin",
+          "cost": 6
+        },
+        {
+          "name": "Champion's Grace",
+          "description": "You are immune to disease, poison, and the frightened condition permanently.",
+          "passive": true,
+          "required_level": 17,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Celestial Form",
+          "description": "Once per rest, grow angelic wings (fly speed 60) and gain resistance to all damage for 1 minute.",
+          "passive": false,
+          "required_level": 18,
+          "class_name": "paladin",
+          "cost": 7
+        },
+        {
+          "name": "Lay on Hands II",
+          "description": "Lay on Hands pool doubles and can now resurrect a creature dead for less than 1 minute.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Oath Fulfilled",
+          "description": "Your auras extend to 60 feet. PRE modifier is added twice to saving throws for allies.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Divine Champion",
+          "description": "Gain +4 to MIG and PRE permanently. Your max for these stats is now 24.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Judgment of the Righteous",
+          "description": "Once per long rest, judge all enemies within 60 feet. They take 8d10 radiant damage and are stunned for 1 round.",
+          "passive": false,
+          "required_level": 20,
+          "class_name": "paladin",
+          "cost": 8
         }
       ],
       "bard": [
@@ -320,12 +1868,28 @@
           "cost": 1
         },
         {
+          "name": "Cantrip Versatility",
+          "description": "You know 2 cantrips from any class spell list. Your performance is your spellcasting focus.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
           "name": "Jack of All Trades",
           "description": "+1 to all skill checks you are not proficient in.",
           "passive": true,
           "required_level": 2,
           "class_name": "bard",
           "cost": 0
+        },
+        {
+          "name": "Song of Courage",
+          "description": "Play a rallying song granting all allies within 30 feet +1 to attack rolls for 3 rounds.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "bard",
+          "cost": 2
         },
         {
           "name": "Cutting Words",
@@ -336,6 +1900,14 @@
           "cost": 1
         },
         {
+          "name": "Expertise",
+          "description": "Double proficiency bonus for two skills you are proficient in.",
+          "passive": true,
+          "required_level": 3,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
           "name": "Song of Rest",
           "description": "During a rest, allies regain additional 1d6 HP. Stacks with normal rest recovery.",
           "passive": true,
@@ -344,12 +1916,1436 @@
           "cost": 0
         },
         {
+          "name": "Dissonant Whispers",
+          "description": "Whisper a discordant melody dealing 3d6 psychic damage and forcing the target to flee on a failed INS save.",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "bard",
+          "cost": 2
+        },
+        {
           "name": "Countercharm",
           "description": "Once per rest, all allies within 30 feet gain advantage on saving throws against charm and fear for 1 minute.",
           "passive": false,
           "required_level": 5,
           "class_name": "bard",
           "cost": 2
+        },
+        {
+          "name": "Font of Inspiration",
+          "description": "Bardic Inspiration now recharges on a short rest instead of a long rest.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Bardic Inspiration II",
+          "description": "Bardic Inspiration die increases to 1d8. Usable PRE modifier times per rest.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Magical Secrets",
+          "description": "Learn 2 spells from any class spell list. They count as bard spells for you.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Hypnotic Pattern",
+          "description": "Create a mesmerizing pattern that charms all creatures in a 30-foot cube on a failed INS save.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "bard",
+          "cost": 3
+        },
+        {
+          "name": "War Drummer",
+          "description": "While you perform, allies within 30 feet gain +10 movement speed.",
+          "passive": true,
+          "required_level": 7,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Song of Rest II",
+          "description": "Song of Rest die increases to 1d8.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Mantle of Inspiration",
+          "description": "Grant up to 5 allies 8 temp HP each and they can immediately move half their speed without opportunity attacks.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "bard",
+          "cost": 3
+        },
+        {
+          "name": "Bardic Inspiration III",
+          "description": "Bardic Inspiration die increases to 1d10.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Irresistible Dance",
+          "description": "Force a creature to dance, wasting its movement and granting attacks against it advantage. INS save each turn to end.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "bard",
+          "cost": 4
+        },
+        {
+          "name": "Magical Secrets II",
+          "description": "Learn 2 additional spells from any class spell list.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Enthralling Performance",
+          "description": "After performing for 1 minute, charm up to 5 humanoids who watched for 1 hour.",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "bard",
+          "cost": 2
+        },
+        {
+          "name": "Cutting Words II",
+          "description": "Cutting Words now reduces attack, damage, or ability check rolls by 1d8.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Power Word Stun",
+          "description": "Speak a word of power that stuns a creature with 150 HP or fewer until it saves at end of each turn.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "bard",
+          "cost": 5
+        },
+        {
+          "name": "Song of Rest III",
+          "description": "Song of Rest die increases to 1d10.",
+          "passive": true,
+          "required_level": 12,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Bardic Inspiration IV",
+          "description": "Bardic Inspiration die increases to 1d12.",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Mass Suggestion",
+          "description": "Suggest a course of activity to up to 12 creatures. Those that fail an INS save follow it for 24 hours.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "bard",
+          "cost": 5
+        },
+        {
+          "name": "Magical Secrets III",
+          "description": "Learn 2 additional spells from any class spell list.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Panache",
+          "description": "Your charm is irresistible. Hostile creatures within 30 feet must save or be unable to target anyone but you.",
+          "passive": false,
+          "required_level": 14,
+          "class_name": "bard",
+          "cost": 2
+        },
+        {
+          "name": "Mantle of Majesty",
+          "description": "For 1 minute, cast Command as a bonus action each turn without spending SP. Targets have disadvantage on the save.",
+          "passive": false,
+          "required_level": 15,
+          "class_name": "bard",
+          "cost": 4
+        },
+        {
+          "name": "Song of Rest IV",
+          "description": "Song of Rest die increases to 1d12.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Master Performer",
+          "description": "Your performance-based abilities have their DCs increased by 3 and their effects last twice as long.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Power Word Heal",
+          "description": "Speak a word of power to restore a creature to full HP and end all conditions on it.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "bard",
+          "cost": 7
+        },
+        {
+          "name": "Superior Inspiration",
+          "description": "If you have no Bardic Inspiration uses when you roll initiative, regain one use.",
+          "passive": true,
+          "required_level": 17,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Glibness",
+          "description": "For 1 hour, treat any PRE check roll below 15 as a 15. You cannot be detected as lying by magic.",
+          "passive": false,
+          "required_level": 18,
+          "class_name": "bard",
+          "cost": 5
+        },
+        {
+          "name": "Magical Secrets IV",
+          "description": "Learn 2 additional spells from any class spell list. You now know spells from every tradition.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Cutting Words III",
+          "description": "Cutting Words now reduces by 1d12 and can affect saving throws as well.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Virtuoso",
+          "description": "Gain +4 to PRE permanently. Your max PRE is now 24. Bardic Inspiration uses are unlimited.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Magnum Opus",
+          "description": "Once per long rest, perform a masterwork that duplicates any spell of 7th level or lower from any class list.",
+          "passive": false,
+          "required_level": 20,
+          "class_name": "bard",
+          "cost": 0
+        }
+      ],
+      "druid": [
+        {
+          "name": "Druidic",
+          "description": "You know the secret language of druids. Gain +2 to nature and survival checks.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Entangle",
+          "description": "Grasping vines erupt in a 20-foot area. Creatures must make an AGI save or be restrained for 1 minute.",
+          "passive": false,
+          "required_level": 1,
+          "class_name": "druid",
+          "cost": 1
+        },
+        {
+          "name": "Wild Shape",
+          "description": "Transform into a beast you have seen with CR 1/4 or lower. Lasts 1 hour. Usable twice per rest.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Natural Recovery",
+          "description": "Once per rest, recover spell points equal to half your druid level during a short rest.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Wild Shape II",
+          "description": "You can now transform into beasts with CR 1/2. Your beast forms gain +2 AC.",
+          "passive": true,
+          "required_level": 3,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Moonbeam",
+          "description": "Call down a beam of moonlight in a 5-foot cylinder dealing 2d10 radiant damage per round.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "druid",
+          "cost": 2
+        },
+        {
+          "name": "Wild Shape III",
+          "description": "Transform into beasts with CR 1. You can now assume forms with a swim speed.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Call Lightning",
+          "description": "Summon a storm cloud. Each turn, call a lightning bolt dealing 3d10 damage in a 5-foot radius.",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "druid",
+          "cost": 3
+        },
+        {
+          "name": "Primal Strike",
+          "description": "Your attacks in beast form count as magical for the purpose of overcoming resistance.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Conjure Animals",
+          "description": "Summon 2 beasts of CR 1 or lower that obey your commands for 1 hour.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "druid",
+          "cost": 3
+        },
+        {
+          "name": "Wild Shape IV",
+          "description": "Transform into beasts with CR 2. Your beast forms gain +10 temp HP.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Wall of Thorns",
+          "description": "Create a wall of thorns up to 60 feet long. Creatures passing through take 7d8 piercing damage.",
+          "passive": false,
+          "required_level": 6,
+          "class_name": "druid",
+          "cost": 4
+        },
+        {
+          "name": "Elemental Wild Shape",
+          "description": "Spend two Wild Shape uses to transform into an earth, water, fire, or air elemental.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Nature's Ward",
+          "description": "You are immune to poison and disease. You cannot be charmed or frightened by fey or elementals.",
+          "passive": true,
+          "required_level": 7,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Land's Blessing",
+          "description": "Choose a terrain type. While in that terrain, regain 1d6 SP at the start of each combat round.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Ice Storm",
+          "description": "Hail and sleet pound a 20-foot radius dealing 2d8 bludgeoning and 4d6 cold damage.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "druid",
+          "cost": 4
+        },
+        {
+          "name": "Beast Spells",
+          "description": "You can cast spells while in Wild Shape form, using natural movements as somatic components.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Sunbeam",
+          "description": "Fire a beam of brilliant light dealing 6d8 radiant damage in a 60-foot line. Blinds on failed END save.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "druid",
+          "cost": 5
+        },
+        {
+          "name": "Wild Shape V",
+          "description": "Transform into beasts with CR 3. You retain your mental stats in beast form.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Commune with Nature",
+          "description": "Become one with the land in a 3-mile radius, learning terrain, water, inhabitants, and buildings.",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "druid",
+          "cost": 3
+        },
+        {
+          "name": "Improved Elemental Form",
+          "description": "Your elemental Wild Shape gains +20 temp HP and +2 to attack and damage rolls.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Tsunami",
+          "description": "Conjure a massive wave 300 feet long and 50 feet tall dealing 6d10 bludgeoning damage.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "druid",
+          "cost": 6
+        },
+        {
+          "name": "Timeless Body",
+          "description": "You age 1 year for every 10 that pass. You no longer need food or water.",
+          "passive": true,
+          "required_level": 12,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Regenerate",
+          "description": "Touch a creature to restore 4d8+15 HP and regrow severed limbs over 2 minutes.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "druid",
+          "cost": 5
+        },
+        {
+          "name": "Thousand Forms",
+          "description": "You can cast Alter Self at will without spending SP, changing your appearance freely.",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Nature's Sanctuary",
+          "description": "Beasts and plant creatures must make an INS save to attack you. On fail, they must choose a different target.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Wild Shape VI",
+          "description": "Transform into beasts with CR 4 or lower. Beast forms gain resistance to non-magical physical damage.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Earthquake",
+          "description": "Create a seismic disturbance in a 100-foot radius. Structures take 50 damage. Creatures are knocked prone on failed AGI save.",
+          "passive": false,
+          "required_level": 15,
+          "class_name": "druid",
+          "cost": 7
+        },
+        {
+          "name": "Ancient's Resilience",
+          "description": "Gain resistance to all spell damage. Your Wild Shape forms share this resistance.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Elemental Adept",
+          "description": "Choose one element. Treat any 1 on damage dice as a 2 for spells of that element. Ignore resistance.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Foresight",
+          "description": "For 8 hours, one creature cannot be surprised, has advantage on all rolls, and attackers have disadvantage.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "druid",
+          "cost": 7
+        },
+        {
+          "name": "Master of Beasts",
+          "description": "Conjured beasts gain +4 to attack, +10 HP, and their CR limit increases by 1.",
+          "passive": true,
+          "required_level": 17,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Storm of Vengeance",
+          "description": "Create a 360-foot storm dealing acid, lightning, hail, and wind damage over 10 rounds.",
+          "passive": false,
+          "required_level": 18,
+          "class_name": "druid",
+          "cost": 8
+        },
+        {
+          "name": "Archdruid",
+          "description": "Wild Shape uses are unlimited. You can ignore verbal and somatic components for druid spells.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Primal Rejuvenation",
+          "description": "At the start of each turn, if not at max HP, regain HP equal to your INS modifier.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Avatar of Nature",
+          "description": "Gain +4 to INS and END permanently. Your max for these stats is now 24. All nature spells cost half SP.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "druid",
+          "cost": 0
+        },
+        {
+          "name": "Wrath of the World",
+          "description": "Once per long rest, command the land itself to attack. All enemies within 120 feet take 10d10 damage and are restrained.",
+          "passive": false,
+          "required_level": 20,
+          "class_name": "druid",
+          "cost": 9
+        }
+      ],
+      "monk": [
+        {
+          "name": "Martial Arts",
+          "description": "Your unarmed strikes deal 1d4 damage. You can use AGI instead of MIG for attack and damage rolls.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Flurry of Blows",
+          "description": "After taking the Attack action, spend 1 ki to make two unarmed strikes as a bonus action.",
+          "passive": false,
+          "required_level": 1,
+          "class_name": "monk",
+          "cost": 1
+        },
+        {
+          "name": "Unarmored Defense",
+          "description": "While wearing no armor, your AC equals 10 + AGI modifier + INS modifier.",
+          "passive": true,
+          "required_level": 2,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Patient Defense",
+          "description": "Spend 1 ki to take the Dodge action as a bonus action, imposing disadvantage on attacks against you.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "monk",
+          "cost": 1
+        },
+        {
+          "name": "Deflect Missiles",
+          "description": "Use your reaction to reduce ranged weapon damage by 1d10 + AGI modifier + level. If reduced to 0, catch and throw it back.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Unarmored Movement",
+          "description": "Your speed increases by 10 feet while not wearing armor.",
+          "passive": true,
+          "required_level": 3,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Slow Fall",
+          "description": "Use your reaction to reduce falling damage by 5 times your monk level.",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Martial Arts II",
+          "description": "Unarmed strike damage increases to 1d6.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Stunning Strike",
+          "description": "When you hit with a melee attack, spend 1 ki to stun the target until the end of your next turn on a failed END save.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "monk",
+          "cost": 1
+        },
+        {
+          "name": "Extra Attack",
+          "description": "Make one additional attack per turn for 1 AP.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Ki-Empowered Strikes",
+          "description": "Your unarmed strikes count as magical for the purpose of overcoming resistance and immunity.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Wholeness of Body",
+          "description": "Once per rest, regain HP equal to 3 times your monk level as an action.",
+          "passive": false,
+          "required_level": 6,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Evasion",
+          "description": "When you succeed on an AGI save, take no damage. On a fail, take half damage.",
+          "passive": true,
+          "required_level": 7,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Step of the Wind",
+          "description": "Spend 1 ki to Dash or Disengage as a bonus action and double your jump distance.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "monk",
+          "cost": 1
+        },
+        {
+          "name": "Stillness of Mind",
+          "description": "Use your action to end one charmed or frightened condition on yourself.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Unarmored Movement II",
+          "description": "Your speed bonus increases to +20 feet. You can move along vertical surfaces and across liquids.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Martial Arts III",
+          "description": "Unarmed strike damage increases to 1d8.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Focused Aim",
+          "description": "When you miss an attack, spend 1-3 ki to add +2 per ki spent to the attack roll, potentially turning it into a hit.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "monk",
+          "cost": 1
+        },
+        {
+          "name": "Purity of Body",
+          "description": "You are immune to disease and poison.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Quivering Palm",
+          "description": "Strike a creature and set up imperceptible vibrations. Within 14 days, use an action to deal 10d10 necrotic damage or reduce to 0 HP on failed END save.",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "monk",
+          "cost": 3
+        },
+        {
+          "name": "Tongue of Sun and Moon",
+          "description": "You can understand and speak all languages.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Fist of Four Thunders",
+          "description": "Spend 2 ki to unleash a shockwave in a 15-foot cone dealing 4d8 thunder damage and pushing enemies 10 feet.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "monk",
+          "cost": 2
+        },
+        {
+          "name": "Diamond Soul",
+          "description": "Gain proficiency in all saving throws. Spend 1 ki to reroll a failed save.",
+          "passive": true,
+          "required_level": 12,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Martial Arts IV",
+          "description": "Unarmed strike damage increases to 1d10.",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Shadow Arts",
+          "description": "Spend 2 ki to cast Darkness, Darkvision, Pass without Trace, or Silence without material components.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "monk",
+          "cost": 2
+        },
+        {
+          "name": "Timeless Body",
+          "description": "You no longer suffer the frailty of old age. You cannot be aged magically. You need no food or water.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Ki Surge",
+          "description": "Once per rest, regain all expended ki points as a bonus action.",
+          "passive": false,
+          "required_level": 14,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Unarmored Movement III",
+          "description": "Your speed bonus increases to +30 feet. You are immune to the slowed condition.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Open Hand Technique",
+          "description": "When you hit with Flurry of Blows, impose one: knocked prone, pushed 15 feet, or cannot take reactions.",
+          "passive": false,
+          "required_level": 15,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Empty Body",
+          "description": "Spend 4 ki to become invisible for 1 minute and gain resistance to all damage except force.",
+          "passive": false,
+          "required_level": 16,
+          "class_name": "monk",
+          "cost": 4
+        },
+        {
+          "name": "Martial Arts V",
+          "description": "Unarmed strike damage increases to 1d12.",
+          "passive": true,
+          "required_level": 17,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Touch of Death",
+          "description": "Spend 3 ki when you hit. Target must make an END save or be reduced to 0 HP. On success, take 10d10 necrotic.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "monk",
+          "cost": 3
+        },
+        {
+          "name": "Astral Projection",
+          "description": "Spend 8 ki to project your astral form, leaving your body behind. You can travel across planes.",
+          "passive": false,
+          "required_level": 18,
+          "class_name": "monk",
+          "cost": 8
+        },
+        {
+          "name": "Flurry of Blows II",
+          "description": "Flurry of Blows now makes four unarmed strikes instead of two.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Transcendent Awareness",
+          "description": "You have blindsight 30 feet, cannot be surprised, and have advantage on all AGI and INS saves.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "Perfect Self",
+          "description": "Gain +4 to AGI and INS permanently. Max for these stats is now 24. If you roll initiative with 0 ki, regain 4 ki.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "monk",
+          "cost": 0
+        },
+        {
+          "name": "One Thousand Fists",
+          "description": "Once per long rest, make 10 unarmed strike attacks in a single action, each dealing martial arts die + AGI modifier.",
+          "passive": false,
+          "required_level": 20,
+          "class_name": "monk",
+          "cost": 5
+        }
+      ],
+      "warlock": [
+        {
+          "name": "Eldritch Blast",
+          "description": "Fire a beam of crackling energy dealing 1d10 force damage. This is your pact cantrip.",
+          "passive": false,
+          "required_level": 1,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Dark One's Blessing",
+          "description": "When you reduce a hostile creature to 0 HP, gain temp HP equal to your PRE modifier + warlock level.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Agonizing Blast",
+          "description": "Add your PRE modifier to the damage of Eldritch Blast.",
+          "passive": true,
+          "required_level": 2,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Hex",
+          "description": "Curse a creature dealing an extra 1d6 necrotic damage on each hit. Lasts 1 hour or until target dies.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "warlock",
+          "cost": 1
+        },
+        {
+          "name": "Pact of the Blade",
+          "description": "Create a magical weapon from nothing. It counts as magical and uses PRE for attack and damage rolls.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Devil's Sight",
+          "description": "You can see normally in magical and nonmagical darkness up to 120 feet.",
+          "passive": true,
+          "required_level": 3,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Repelling Blast",
+          "description": "Each Eldritch Blast hit pushes the target 10 feet away from you.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Hunger of Hadar",
+          "description": "Open a gate to the void in a 20-foot sphere. Creatures inside take 2d6 cold damage and can't see.",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "warlock",
+          "cost": 3
+        },
+        {
+          "name": "Thirsting Blade",
+          "description": "Attack twice with your pact weapon instead of once when you take the Attack action.",
+          "passive": true,
+          "required_level": 5,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Counterspell",
+          "description": "As a reaction, attempt to negate an enemy spell. Uses your PRE modifier for the check.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "warlock",
+          "cost": 3
+        },
+        {
+          "name": "Eldritch Blast II",
+          "description": "Eldritch Blast now fires 2 beams. Each beam deals 1d10 + PRE modifier force damage.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Dark One's Own Luck",
+          "description": "Once per rest, add 1d10 to an ability check or saving throw.",
+          "passive": false,
+          "required_level": 6,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Fiendish Resilience",
+          "description": "After a rest, choose one damage type. You have resistance to it until your next rest.",
+          "passive": true,
+          "required_level": 7,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Shadow of Moil",
+          "description": "Become wreathed in shadowy flames. You are heavily obscured and deal 2d8 necrotic to attackers.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "warlock",
+          "cost": 4
+        },
+        {
+          "name": "Lifedrinker",
+          "description": "Your pact weapon deals extra necrotic damage equal to your PRE modifier on every hit.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Banishment",
+          "description": "Banish a creature to a harmless demiplane on a failed PRE save. Lasts 1 minute if native to this plane.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "warlock",
+          "cost": 4
+        },
+        {
+          "name": "Hurl Through Hell",
+          "description": "On a hit, send the target through the lower planes. They return at end of your next turn taking 10d10 psychic damage.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "warlock",
+          "cost": 5
+        },
+        {
+          "name": "Whispers of the Grave",
+          "description": "You can cast Speak with Dead at will without spending spell points.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Eldritch Blast III",
+          "description": "Eldritch Blast now fires 3 beams.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Mystic Arcanum I",
+          "description": "Learn one 6th-level spell. Cast it once per long rest without spending spell points.",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Eldritch Armor",
+          "description": "As an action, touch a suit of armor to bond with it. You gain proficiency and it cannot be removed against your will.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Bewitching Whispers",
+          "description": "Once per rest, cast Compulsion without spending SP. Targets must move in a direction you choose on failed INS save.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Mystic Arcanum II",
+          "description": "Learn one 7th-level spell. Cast it once per long rest without spending spell points.",
+          "passive": false,
+          "required_level": 12,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Chains of Carceri",
+          "description": "Once per rest, cast Hold Monster on a celestial, fiend, or elemental without spending SP.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Witch Sight",
+          "description": "See the true form of any shapechanger or creature concealed by illusion or transmutation magic within 30 feet.",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Mystic Arcanum III",
+          "description": "Learn one 8th-level spell. Cast it once per long rest without spending spell points.",
+          "passive": false,
+          "required_level": 14,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Master of Myriad Forms",
+          "description": "Cast Alter Self at will without spending SP.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Eldritch Blast IV",
+          "description": "Eldritch Blast now fires 4 beams. Each beam can target different creatures.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Mystic Arcanum IV",
+          "description": "Learn one 9th-level spell. Cast it once per long rest without spending spell points.",
+          "passive": false,
+          "required_level": 16,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Eldritch Resilience",
+          "description": "Gain +2 to all saving throws. Your patron shields your mind from intrusion.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Eldritch Master",
+          "description": "Once per long rest, spend 1 minute to regain all expended spell points.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Shroud of Shadow",
+          "description": "Cast Invisibility at will without spending SP. Lasts until you attack or cast a spell.",
+          "passive": true,
+          "required_level": 17,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Patron's Embrace",
+          "description": "When you drop to 0 HP, your patron intervenes. Regain half max HP and deal 4d10 necrotic to all enemies within 10 feet. Once per rest.",
+          "passive": false,
+          "required_level": 18,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Visions of Distant Realms",
+          "description": "Cast Arcane Eye at will without spending SP. You can see through the eye up to 1 mile.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Dread Lord",
+          "description": "For 1 minute, creatures of your choice within 30 feet take 4d10 psychic damage at start of their turn.",
+          "passive": false,
+          "required_level": 19,
+          "class_name": "warlock",
+          "cost": 7
+        },
+        {
+          "name": "Eldritch Sovereign",
+          "description": "Gain +4 to PRE and MND permanently. Max for these stats is now 24. All pact spells cost half SP.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "warlock",
+          "cost": 0
+        },
+        {
+          "name": "Patron's Wrath",
+          "description": "Once per long rest, call your patron's full power. Deal 12d10 damage of a type matching your patron in a 60-foot radius.",
+          "passive": false,
+          "required_level": 20,
+          "class_name": "warlock",
+          "cost": 10
+        }
+      ],
+      "sorcerer": [
+        {
+          "name": "Bloodline Arcana",
+          "description": "Your innate magic grants +1 to spell save DC for spells matching your bloodline element.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Chaos Bolt",
+          "description": "Hurl an orb of chaotic energy dealing 2d8+1d6 damage of a random type. On doubles, it jumps to another target.",
+          "passive": false,
+          "required_level": 1,
+          "class_name": "sorcerer",
+          "cost": 1
+        },
+        {
+          "name": "Font of Magic",
+          "description": "Convert SP into sorcery points or vice versa. 1 SP = 1 sorcery point. Sorcery points fuel metamagic.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Draconic Resilience",
+          "description": "Your HP max increases by 1 per level. When not wearing armor, your AC equals 13 + AGI modifier.",
+          "passive": true,
+          "required_level": 2,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Metamagic: Twinned",
+          "description": "Spend sorcery points equal to the spell's level to target a second creature with a single-target spell.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Metamagic: Subtle",
+          "description": "Spend 1 sorcery point to cast a spell without verbal or somatic components. Cannot be counterspelled.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "sorcerer",
+          "cost": 1
+        },
+        {
+          "name": "Elemental Affinity",
+          "description": "When casting a spell matching your bloodline element, add PRE modifier to one damage roll.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Metamagic: Quickened",
+          "description": "Spend 2 sorcery points to cast a spell with a casting time of 1 action as a bonus action.",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "sorcerer",
+          "cost": 2
+        },
+        {
+          "name": "Elemental Resistance",
+          "description": "Spend 1 sorcery point to gain resistance to your bloodline damage type for 1 hour.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "sorcerer",
+          "cost": 1
+        },
+        {
+          "name": "Empowered Spell",
+          "description": "Spend 1 sorcery point to reroll up to PRE modifier damage dice on a spell. Must use new rolls.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "sorcerer",
+          "cost": 1
+        },
+        {
+          "name": "Metamagic: Heightened",
+          "description": "Spend 3 sorcery points to give one target disadvantage on their saving throw against your spell.",
+          "passive": false,
+          "required_level": 6,
+          "class_name": "sorcerer",
+          "cost": 3
+        },
+        {
+          "name": "Bloodline Power",
+          "description": "Gain a special ability based on your bloodline: draconic wings (30 ft fly), shadow walk, or storm aura.",
+          "passive": true,
+          "required_level": 6,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Metamagic: Careful",
+          "description": "Spend 1 sorcery point to let PRE modifier creatures auto-succeed on saves against your area spell.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "sorcerer",
+          "cost": 1
+        },
+        {
+          "name": "Bend Luck",
+          "description": "Spend 2 sorcery points as a reaction to add or subtract 1d4 from a creature's attack, check, or save.",
+          "passive": false,
+          "required_level": 7,
+          "class_name": "sorcerer",
+          "cost": 2
+        },
+        {
+          "name": "Metamagic: Distant",
+          "description": "Spend 1 sorcery point to double the range of a spell. Touch spells become 30 feet.",
+          "passive": false,
+          "required_level": 8,
+          "class_name": "sorcerer",
+          "cost": 1
+        },
+        {
+          "name": "Elemental Affinity II",
+          "description": "When casting bloodline spells, add PRE modifier to damage AND gain temp HP equal to PRE modifier.",
+          "passive": true,
+          "required_level": 8,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Sorcerous Versatility",
+          "description": "When you finish a long rest, replace one metamagic option with another you could learn.",
+          "passive": true,
+          "required_level": 9,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Arcane Eruption",
+          "description": "Unleash raw sorcerous power in a 30-foot radius dealing 6d8 damage of your bloodline type.",
+          "passive": false,
+          "required_level": 9,
+          "class_name": "sorcerer",
+          "cost": 5
+        },
+        {
+          "name": "Metamagic: Extended",
+          "description": "Spend 1 sorcery point to double the duration of a spell (max 24 hours).",
+          "passive": false,
+          "required_level": 10,
+          "class_name": "sorcerer",
+          "cost": 1
+        },
+        {
+          "name": "Spell Bombardment",
+          "description": "When you roll maximum on a spell damage die, roll it again and add the result.",
+          "passive": true,
+          "required_level": 10,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Wild Surge",
+          "description": "Once per turn, after casting a sorcerer spell, roll on the wild magic table for a random additional effect.",
+          "passive": true,
+          "required_level": 11,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Metamagic: Seeking",
+          "description": "Spend 2 sorcery points to reroll a spell attack that misses. Must use the new roll.",
+          "passive": false,
+          "required_level": 11,
+          "class_name": "sorcerer",
+          "cost": 2
+        },
+        {
+          "name": "Innate Sorcery",
+          "description": "Your spell attacks gain +2 to hit and your spell save DC increases by 1.",
+          "passive": true,
+          "required_level": 12,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Bloodline Resilience",
+          "description": "Gain resistance to two damage types associated with your bloodline permanently.",
+          "passive": true,
+          "required_level": 13,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Reality Break",
+          "description": "Tear at reality around one creature. For 1 minute, at start of each turn they suffer a random debilitating effect.",
+          "passive": false,
+          "required_level": 13,
+          "class_name": "sorcerer",
+          "cost": 6
+        },
+        {
+          "name": "Metamagic Adept",
+          "description": "You can apply two metamagic options to the same spell instead of one.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Wild Magic Shield",
+          "description": "When a Wild Surge would harm you, negate it and gain 2d10 temp HP instead.",
+          "passive": true,
+          "required_level": 14,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Sorcerous Restoration",
+          "description": "Regain 4 sorcery points on a short rest.",
+          "passive": true,
+          "required_level": 15,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Metamagic: Overcharged",
+          "description": "Spend 5 sorcery points to cast a spell at one level higher than its maximum without additional SP cost.",
+          "passive": false,
+          "required_level": 15,
+          "class_name": "sorcerer",
+          "cost": 5
+        },
+        {
+          "name": "Bloodline Immunity",
+          "description": "Gain immunity to your bloodline damage type. You absorb that damage type, healing for half the amount.",
+          "passive": true,
+          "required_level": 16,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Arcane Apotheosis",
+          "description": "For 1 minute, all your spells cost 1 fewer SP (minimum 0) and your spell attacks auto-crit on 19-20.",
+          "passive": false,
+          "required_level": 17,
+          "class_name": "sorcerer",
+          "cost": 7
+        },
+        {
+          "name": "Font of Magic II",
+          "description": "Sorcery point maximum doubles. Converting SP to sorcery points now yields 2 per SP.",
+          "passive": true,
+          "required_level": 17,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Draconic Presence",
+          "description": "Spend 5 sorcery points to exude an aura of awe or fear in 60 feet. All creatures must save or be charmed/frightened.",
+          "passive": false,
+          "required_level": 18,
+          "class_name": "sorcerer",
+          "cost": 5
+        },
+        {
+          "name": "Metamagic Master",
+          "description": "All metamagic costs are reduced by 1 sorcery point (minimum 0).",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Sorcerous Rejuvenation",
+          "description": "At the start of each turn, if below half SP, regain SP equal to your PRE modifier.",
+          "passive": true,
+          "required_level": 19,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Bloodline Ascendant",
+          "description": "Gain +4 to PRE permanently. Max PRE is now 24. All bloodline spells deal maximum damage.",
+          "passive": true,
+          "required_level": 20,
+          "class_name": "sorcerer",
+          "cost": 0
+        },
+        {
+          "name": "Sorcerous Cataclysm",
+          "description": "Once per long rest, release all remaining SP in a devastating explosion dealing 2d6 per SP spent in a 120-foot radius.",
+          "passive": false,
+          "required_level": 20,
+          "class_name": "sorcerer",
+          "cost": 0
         }
       ]
     },
