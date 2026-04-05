@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from main import app
@@ -61,3 +62,46 @@ def test_campaign_command_preserves_godot_payload_shape():
     assert payload["campaign"]["world_state"]["active_region_id"] == payload["campaign"]["world"]["active_region_id"]
     assert payload["campaign"]["game_state"]["current_area_id"] == payload["campaign"]["world"]["active_region_id"]
     assert payload["campaign"]["systems"]["temperature_state"]["ambient_band"]
+
+
+def test_campaign_combat_payload_shape_is_present_for_godot_consumers():
+    create = client.post(
+        "/game/campaigns",
+        json={
+            "player_name": "GodotCombatProbe",
+            "player_class": "warrior",
+            "adapter_id": "fantasy_ember",
+            "profile_id": "standard",
+            "seed": 101,
+        },
+    ).json()
+    campaign_id = create["campaign_id"]
+
+    npcs = [
+        actor for actor in create["campaign"]["actors"]
+        if actor["identity"]["actor_id"] != "player"
+        and actor["identity"].get("actor_type") == "npc"
+        and actor.get("alive", True)
+    ]
+    if not npcs:
+        pytest.skip("No NPCs in fresh campaign to attack")
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={"input": f"attack {npcs[0]['identity']['display_name']}"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    combat = payload["campaign"]["combat"]
+
+    assert isinstance(combat["phase"], str)
+    assert isinstance(combat["round"], int)
+    assert isinstance(combat["turn_actor_id"], str)
+    assert isinstance(combat["available_actions"], list)
+    assert "cast" not in combat["available_actions"]
+    assert "use_item" not in combat["available_actions"]
+    assert isinstance(combat["combatants"], list)
+    assert isinstance(combat["targets"], list)
+    assert isinstance(combat["move_options"], list)
+    assert any(entry["is_player"] for entry in combat["combatants"])
+    assert all(isinstance(entry["position"], list) and len(entry["position"]) == 2 for entry in combat["combatants"])

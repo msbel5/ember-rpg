@@ -9,7 +9,8 @@ import pytest
 
 from engine.api.campaign.runtime import CampaignRuntime
 import engine.api.combat_bridge as combat_bridge
-from engine.api.combat_bridge import maybe_handle_combat_command
+from engine.api.campaign.state_sync import sync_player_position
+from engine.api.combat_bridge import build_combat_payload, maybe_handle_combat_command
 from engine.kernel.actor_records import create_monster_actor, create_player_actor
 
 
@@ -146,6 +147,59 @@ class TestAttackCommand:
         assert result is not None
         assert "already dead" in result[0]
 
+    def test_attack_called_shot_passes_zone_from_raw_command(self, monkeypatch: pytest.MonkeyPatch):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        recorded_called_shots: list[str | None] = []
+        original_run_attack = combat_bridge.run_attack
+
+        def _recording_run_attack(*args, **kwargs):
+            recorded_called_shots.append(kwargs.get("called_shot"))
+            return original_run_attack(*args, **kwargs)
+
+        monkeypatch.setattr(combat_bridge, "run_attack", _recording_run_attack)
+
+        result = maybe_handle_combat_command(ctx, f"attack {enemy.name} at head")
+
+        assert result is not None
+        assert result[1] == "combat"
+        assert "head" in recorded_called_shots
+
+    def test_structured_attack_uses_exact_target_id_and_called_shot(self, monkeypatch: pytest.MonkeyPatch):
+        rt, ctx = _make_campaign()
+        alpha = _inject_enemy(ctx, base_id="target_alpha", name="Same Name", hp=30)
+        _inject_enemy(ctx, base_id="target_beta", name="Same Name", hp=30)
+        recorded_called_shots: list[str | None] = []
+        original_run_attack = combat_bridge.run_attack
+
+        def _recording_run_attack(*args, **kwargs):
+            recorded_called_shots.append(kwargs.get("called_shot"))
+            return original_run_attack(*args, **kwargs)
+
+        monkeypatch.setattr(combat_bridge, "run_attack", _recording_run_attack)
+
+        result = rt.run_command(
+            ctx.campaign_id,
+            "",
+            shortcut="combat",
+            args={"action_id": "attack", "target_id": alpha.identity.actor_id, "called_shot": "head"},
+        )
+
+        assert result["command_type"] == "combat"
+        assert "head" in recorded_called_shots
+
+    def test_invalid_called_shot_lists_valid_zones(self):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=30)
+
+        result = maybe_handle_combat_command(ctx, f"attack {enemy.name} at antenna")
+
+        assert result is not None
+        assert result[1] == "combat"
+        assert "Invalid called shot 'antenna'" in result[0]
+        assert "Valid zones:" in result[0]
+        assert "head" in result[0]
+
 
 # ---------------------------------------------------------------------------
 # Defend tests
@@ -269,6 +323,165 @@ class TestFleeCommand:
         assert second is not None
         assert len(recorded_seeds) >= 2
         assert len(set(recorded_seeds)) >= 2
+
+
+class TestCombatMovementAndPayload:
+    def test_move_updates_position_without_ending_turn(self):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        start = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert start is not None
+        payload = build_combat_payload(ctx)
+        assert payload is not None
+        option = next((item for item in payload["move_options"] if item["available"]), None)
+        assert option is not None, "Expected at least one available move option"
+        player = ctx.kernel_runtime["actors"]["player"]
+        before_position = (int(player.position.x), int(player.position.y))
+        before_movement = next(
+            item["turn_resources"]["movement_remaining"]
+            for item in payload["combatants"]
+            if item["actor_id"] == "player"
+        )
+
+        result = maybe_handle_combat_command(ctx, f"move {option['direction']}")
+
+        assert result is not None
+        assert result[1] == "combat"
+        updated = build_combat_payload(ctx)
+        assert updated is not None
+        after_position = tuple(
+            next(item["position"] for item in updated["combatants"] if item["actor_id"] == "player")
+        )
+        after_movement = next(
+            item["turn_resources"]["movement_remaining"]
+            for item in updated["combatants"]
+            if item["actor_id"] == "player"
+        )
+        assert after_position != before_position
+        assert updated["turn_actor_id"] == "player"
+        assert after_movement == before_movement - 1
+
+    def test_blocked_move_fails_cleanly_and_does_not_change_position(self):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        sync_player_position(ctx, 0, 0, center_viewport=False)
+        ctx.kernel_runtime["actors"][enemy.identity.actor_id].position.x = 2
+        ctx.kernel_runtime["actors"][enemy.identity.actor_id].position.y = 0
+
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+        player = ctx.kernel_runtime["actors"]["player"]
+        before_position = (int(player.position.x), int(player.position.y))
+
+        result = maybe_handle_combat_command(ctx, "move west")
+
+        assert result is not None
+        assert result[1] == "combat"
+        assert "edge of the map" in result[0].lower()
+        assert (int(player.position.x), int(player.position.y)) == before_position
+
+    def test_wait_alias_routes_to_end_turn(self, monkeypatch: pytest.MonkeyPatch):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+        monkeypatch.setattr(combat_bridge, "_resolve_non_player_turns", lambda *_args, **_kwargs: [])
+
+        result = maybe_handle_combat_command(ctx, "wait")
+
+        assert result is not None
+        assert result[1] == "combat"
+        payload = build_combat_payload(ctx)
+        assert payload is not None
+        assert payload["turn_actor_id"] != "player"
+
+    def test_end_turn_routes_cleanly(self, monkeypatch: pytest.MonkeyPatch):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+        monkeypatch.setattr(combat_bridge, "_resolve_non_player_turns", lambda *_args, **_kwargs: [])
+
+        result = maybe_handle_combat_command(ctx, "end turn")
+
+        assert result is not None
+        assert result[1] == "combat"
+        payload = build_combat_payload(ctx)
+        assert payload is not None
+        assert payload["turn_actor_id"] != "player"
+
+    def test_combat_payload_is_truthful(self):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+
+        payload = build_combat_payload(ctx)
+
+        assert payload is not None
+        assert payload["available_actions"] == ["attack", "defend", "flee", "move", "end_turn"]
+        assert "move_options" in payload
+        assert payload["move_options"]
+        player_entry = next(item for item in payload["combatants"] if item["actor_id"] == "player")
+        assert len(player_entry["position"]) == 2
+        target_entry = next(item for item in payload["targets"] if item["actor_id"] == enemy.identity.actor_id)
+        assert "called_shot_zones" in target_entry
+        assert "head" in target_entry["called_shot_zones"]
+
+    def test_cast_is_advertised_only_when_player_can_cast(self):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+
+        baseline = build_combat_payload(ctx)
+        assert baseline is not None
+        assert "cast" not in baseline["available_actions"]
+
+        player = ctx.kernel_runtime["actors"]["player"]
+        player.spell_points = 4
+        player.raw_payload["max_spell_points"] = 4
+        updated = build_combat_payload(ctx)
+
+        assert updated is not None
+        assert "cast" in updated["available_actions"]
+
+    def test_cast_works_in_combat_and_ends_turn(self, monkeypatch: pytest.MonkeyPatch):
+        rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        player = ctx.kernel_runtime["actors"]["player"]
+        player.spell_points = 10
+        player.raw_payload["max_spell_points"] = 10
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+        monkeypatch.setattr(combat_bridge, "_resolve_non_player_turns", lambda *_args, **_kwargs: [])
+
+        cast = rt.run_command(ctx.campaign_id, "cast magic missile")
+        use_item = rt.run_command(ctx.campaign_id, "use field tonic")
+
+        assert cast["command_type"] == "spell"
+        assert "magic missile" in cast["narrative"].lower()
+        assert player.spell_points == 8
+        assert cast["campaign"]["combat"]["turn_actor_id"] != "player"
+        assert use_item["command_type"] == "combat"
+        assert "not available in combat yet" in use_item["narrative"].lower()
+
+    def test_invalid_combat_cast_fails_cleanly_without_ending_turn(self):
+        rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+
+        cast = rt.run_command(
+            ctx.campaign_id,
+            "",
+            shortcut="spell",
+            args={"action_id": "cast", "spell_id": "magic_missile"},
+        )
+
+        assert cast["command_type"] == "spell"
+        assert "not enough spell points" in cast["narrative"].lower()
+        assert cast["campaign"]["combat"]["turn_actor_id"] == "player"
 
 
 # ---------------------------------------------------------------------------

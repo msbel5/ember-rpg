@@ -9,7 +9,8 @@ from typing import Any
 from engine.data_loader import load_json_path, load_registry_map_from_path
 
 
-_BASE_DIR = Path(__file__).resolve().parents[2] / "data" / "world"
+_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+_BASE_DIR = _DATA_DIR / "world"
 
 
 def _normalized_map(filename: str, key: str) -> dict[str, dict[str, Any]]:
@@ -52,6 +53,39 @@ def load_npc_templates() -> dict[str, dict[str, Any]]:
 
 
 @lru_cache(maxsize=None)
+def load_authored_npcs() -> dict[str, dict[str, Any]]:
+    return load_registry_map_from_path(_DATA_DIR / "npcs" / "npcs.json", collection_key="npcs", id_field="id")
+
+
+@lru_cache(maxsize=None)
+def load_authored_npc_location_index() -> dict[str, dict[str, tuple[dict[str, Any], ...]]]:
+    indexed: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    for npc in load_authored_npcs().values():
+        role = str(npc.get("role", "")).strip().lower()
+        if not role:
+            continue
+        locations = {
+            str(entry.get("location", "")).strip().lower()
+            for entry in list(npc.get("schedule", []))
+            if isinstance(entry, dict) and str(entry.get("location", "")).strip()
+        }
+        for location_id in sorted(locations):
+            indexed.setdefault(location_id, {}).setdefault(role, []).append(dict(npc))
+    return {
+        location_id: {
+            role: tuple(sorted(records, key=lambda item: str(item.get("id", ""))))
+            for role, records in sorted(role_map.items())
+        }
+        for location_id, role_map in sorted(indexed.items())
+    }
+
+
+@lru_cache(maxsize=None)
+def load_named_npc_records() -> dict[str, dict[str, Any]]:
+    return load_registry_map_from_path(_BASE_DIR.parent / "npcs" / "npcs.json", collection_key="npcs", id_field="id")
+
+
+@lru_cache(maxsize=None)
 def load_quest_templates() -> dict[str, dict[str, Any]]:
     return _normalized_map("quest_templates.json", "quest_templates")
 
@@ -78,6 +112,7 @@ def validate_world_registries() -> None:
     buildings = load_building_templates()
     furniture = load_furniture_templates()
     npc_templates = load_npc_templates()
+    named_npcs = load_named_npc_records()
     quest_templates = load_quest_templates()
     if "standard" not in profiles:
         raise ValueError("Missing required standard world profile")
@@ -112,6 +147,18 @@ def validate_world_registries() -> None:
         for item in template.get("inventory", []):
             if not isinstance(item, str):
                 raise ValueError(f"NPC template {role_id} has invalid inventory entry {item!r}")
+
+    for npc_id, record in named_npcs.items():
+        if not record.get("name") or not record.get("role"):
+            raise ValueError(f"Named NPC {npc_id} is missing name or role")
+        schedule = record.get("schedule")
+        if not isinstance(schedule, list) or not schedule:
+            raise ValueError(f"Named NPC {npc_id} is missing schedule")
+        for block in schedule:
+            if not isinstance(block, dict):
+                raise ValueError(f"Named NPC {npc_id} has invalid schedule block {block!r}")
+            if "location" not in block:
+                raise ValueError(f"Named NPC {npc_id} has schedule block without location")
 
     for quest_id, template in quest_templates.items():
         if "title" not in template or "description" not in template:

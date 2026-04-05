@@ -6,6 +6,7 @@ from collections import defaultdict
 from typing import Any
 
 from engine.api.campaign.context import CampaignContext
+from engine.kernel.dialog import compute_npc_reaction
 from engine.kernel.game_state import FORMATIONS, normalize_party_state, party_tactic_mode
 from engine.kernel.scene_types import SceneType
 from engine.map import MapData, Room, TileType
@@ -417,6 +418,152 @@ def persist_projected_npc_state(context: CampaignContext) -> None:
             live_entry["activity"] = activity
 
 
+def _active_combat_payload(context: CampaignContext) -> dict[str, Any] | None:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    raw_payload = getattr(game_state, "raw_payload", {}) if game_state is not None else {}
+    combat = raw_payload.get("combat")
+    if not isinstance(combat, dict) or not combat.get("combatants"):
+        return None
+    if str(combat.get("phase", "active")).lower().strip() == "resolved":
+        return None
+    return combat
+
+
+def _active_combat_actor_ids(context: CampaignContext) -> set[str]:
+    combat = _active_combat_payload(context)
+    if combat is None:
+        return set()
+    return {
+        str(entry.get("actor_id", "")).strip()
+        for entry in list(combat.get("combatants", []))
+        if isinstance(entry, dict) and str(entry.get("actor_id", "")).strip()
+    }
+
+
+def _combat_position_for_actor(context: CampaignContext, actor: Any, actor_id: str) -> tuple[int, int]:
+    if actor_id == "player":
+        player_entity = getattr(context, "player_entity", None)
+        player_position = getattr(player_entity, "position", None)
+        if isinstance(player_position, (list, tuple)) and len(player_position) >= 2:
+            return _clamp_party_position(context, int(player_position[0]), int(player_position[1]))
+        context_position = getattr(context, "position", None)
+        if isinstance(context_position, (list, tuple)) and len(context_position) >= 2:
+            return _clamp_party_position(context, int(context_position[0]), int(context_position[1]))
+    actor_position = getattr(actor, "position", None)
+    if actor_position is not None:
+        return _clamp_party_position(context, int(actor_position.x), int(actor_position.y))
+    record = context.entities.get(actor_id)
+    if isinstance(record, dict):
+        position = record.get("position")
+        if isinstance(position, (list, tuple)) and len(position) >= 2:
+            return _clamp_party_position(context, int(position[0]), int(position[1]))
+    return _clamp_party_position(context, int(context.position[0]), int(context.position[1]))
+
+
+def _ensure_projected_combat_entity(
+    context: CampaignContext,
+    actor_id: str,
+    actor: Any,
+    *,
+    is_player_side: bool,
+) -> dict[str, Any]:
+    existing = context.entities.get(actor_id)
+    if isinstance(existing, dict):
+        return existing
+    if is_player_side and _is_party_capable_actor(actor):
+        party_record = _ensure_projected_party_entity(context, actor_id)
+        if party_record is not None:
+            return party_record
+    position = _combat_position_for_actor(context, actor, actor_id)
+    disposition = "ally" if is_player_side else "hostile"
+    role = str(getattr(actor, "raw_payload", {}).get("role", "combatant"))
+    entity = Entity(
+        id=actor_id,
+        entity_type=EntityType.NPC,
+        name=actor.identity.display_name,
+        position=position,
+        glyph="A" if is_player_side else "!",
+        color="light_blue" if is_player_side else "red",
+        blocking=True,
+        hp=int(actor.stats.get("hp", 1)),
+        max_hp=int(actor.stats.get("max_hp", actor.stats.get("hp", 1))),
+        disposition=disposition,
+        attitude=disposition,
+        faction=getattr(actor.identity, "faction_id", None),
+        job=role,
+    )
+    if context.spatial_index.get_position(actor_id) is None:
+        context.spatial_index.add(entity)
+    record = {
+        "name": actor.identity.display_name,
+        "type": "npc",
+        "position": [int(position[0]), int(position[1])],
+        "faction": getattr(actor.identity, "faction_id", None),
+        "role": role,
+        "attitude": disposition,
+        "disposition": disposition,
+        "template": str(getattr(actor, "raw_payload", {}).get("template", role)),
+        "context_actions": ["examine"] if is_player_side else ["attack", "examine"],
+        "blocking": True,
+        "entity_ref": entity,
+    }
+    context.entities[actor_id] = record
+    return record
+
+
+def sync_combat_projection(context: CampaignContext) -> None:
+    combat = _active_combat_payload(context)
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors") or {}
+    if combat is None or getattr(context, "spatial_index", None) is None:
+        return
+    if context.player_entity is not None and context.spatial_index.get_position("player") is None:
+        context.spatial_index.add(context.player_entity)
+    for entry in list(combat.get("combatants", [])):
+        if not isinstance(entry, dict):
+            continue
+        actor_id = str(entry.get("actor_id", "")).strip()
+        if not actor_id:
+            continue
+        actor = actors.get(actor_id)
+        if actor is None:
+            continue
+        position = _combat_position_for_actor(context, actor, actor_id)
+        if actor_id == "player":
+            context.position = [int(position[0]), int(position[1])]
+            if context.player_entity is not None:
+                context.player_entity.position = (int(position[0]), int(position[1]))
+                if context.spatial_index.get_position("player") is None:
+                    context.spatial_index.add(context.player_entity)
+                else:
+                    context.spatial_index.move(context.player_entity, int(position[0]), int(position[1]))
+            continue
+        is_player_side = bool(entry.get("is_player", False))
+        record = _ensure_projected_combat_entity(context, actor_id, actor, is_player_side=is_player_side)
+        entity_ref = record.get("entity_ref")
+        if entity_ref is not None:
+            entity_ref.position = (int(position[0]), int(position[1]))
+            entity_ref.blocking = True
+            entity_ref.attitude = "ally" if is_player_side else "hostile"
+            entity_ref.disposition = entity_ref.attitude
+            if context.spatial_index.get_position(actor_id) is None:
+                context.spatial_index.add(entity_ref)
+            else:
+                context.spatial_index.move(entity_ref, int(position[0]), int(position[1]))
+        record["position"] = [int(position[0]), int(position[1])]
+        record["blocking"] = True
+        record["attitude"] = "ally" if is_player_side else "hostile"
+        record["disposition"] = record["attitude"]
+        record["context_actions"] = ["examine"] if is_player_side else ["attack", "examine"]
+        live_entry = _live_region_npc_entry(context, actor_id)
+        if live_entry is not None:
+            live_entry["x"] = int(position[0])
+            live_entry["y"] = int(position[1])
+        if is_player_side:
+            _set_live_party_projection_state(context, actor_id, active=True)
+
+
 def sync_schedule_projection(context: CampaignContext, *, current_hour: int | None = None) -> None:
     runtime = context.kernel_runtime or {}
     game_state = runtime.get("game_state")
@@ -424,6 +571,7 @@ def sync_schedule_projection(context: CampaignContext, *, current_hour: int | No
         return
     normalize_party_state(game_state) if game_state is not None else None
     active_party_ids = set(getattr(game_state, "party", [])) if game_state is not None else {"player"}
+    combat_actor_ids = _active_combat_actor_ids(context)
     hour = int(current_hour if current_hour is not None else getattr(getattr(context, "game_time", None), "hour", 0)) % 24
     actor_map = runtime.get("actors") or {}
     npc_state = {
@@ -433,7 +581,7 @@ def sync_schedule_projection(context: CampaignContext, *, current_hour: int | No
     }
 
     for entity_id, record in list(context.entities.items()):
-        if not isinstance(record, dict) or entity_id == "player" or entity_id in active_party_ids:
+        if not isinstance(record, dict) or entity_id == "player" or entity_id in active_party_ids or entity_id in combat_actor_ids:
             continue
         if str(record.get("type", "")) != "npc":
             continue
@@ -487,6 +635,7 @@ def sync_party_projection(context: CampaignContext) -> None:
     formation_offsets = list(FORMATIONS.get(str(getattr(game_state, "formation", "wedge")), FORMATIONS["wedge"]))
     player_x, player_y = int(context.position[0]), int(context.position[1])
     actors = runtime.get("actors") or {}
+    combat_actor_ids = _active_combat_actor_ids(context)
     active_ids = [
         actor_id
         for actor_id in list(getattr(game_state, "party", []))
@@ -507,8 +656,11 @@ def sync_party_projection(context: CampaignContext) -> None:
         if record is None:
             continue
         tactic_mode = party_tactic_mode(game_state, actor_id)
-        dx, dy = formation_offsets[index] if index < len(formation_offsets) else formation_offsets[-1]
-        slot_position = _clamp_party_position(context, player_x + int(dx), player_y + int(dy))
+        if actor_id in combat_actor_ids and actors.get(actor_id) is not None:
+            slot_position = _combat_position_for_actor(context, actors.get(actor_id), actor_id)
+        else:
+            dx, dy = formation_offsets[index] if index < len(formation_offsets) else formation_offsets[-1]
+            slot_position = _clamp_party_position(context, player_x + int(dx), player_y + int(dy))
         entity_ref = record.get("entity_ref")
         if entity_ref is not None:
             if context.spatial_index.get_position(actor_id) is not None:
@@ -627,6 +779,7 @@ def apply_region_to_context(
         context,
         current_hour=int(getattr(getattr(world, "simulation_snapshot", None), "current_hour", 0)),
     )
+    sync_combat_projection(context)
     context.campaign_state.setdefault("active_quests", [])
     context.campaign_state.setdefault("completed_quests", [])
     context.campaign_state.setdefault("failed_quests", [])
@@ -806,8 +959,131 @@ def _augment_world_entities(
         payload["available_interactions"] = descriptors
         payload["primary_interaction_id"] = _primary_interaction_id(descriptors, normalized_context_actions)
         payload["target_kind"] = target_kind
+        payload.update(
+            _social_projection_fields(
+                payload,
+                context=context,
+                interaction_target_type=interaction_target_type,
+                target_kind=target_kind,
+            )
+        )
         augmented.append(payload)
     return augmented
+
+
+def _social_projection_fields(
+    payload: dict[str, Any],
+    *,
+    context: CampaignContext | None,
+    interaction_target_type: str | None,
+    target_kind: str,
+) -> dict[str, Any]:
+    if context is None or target_kind != "npc" or interaction_target_type != "npc_friendly":
+        return {}
+    runtime = context.kernel_runtime or {}
+    actor_id = str(payload.get("id", "")).strip()
+    actor = (runtime.get("actors") or {}).get(actor_id)
+    if actor is None or str(getattr(getattr(actor, "identity", None), "actor_type", "")).lower().strip() != "npc":
+        return {}
+    raw_payload = getattr(actor, "raw_payload", {})
+    named_npc_id_raw = raw_payload.get("named_npc_id")
+    named_npc_id = str(named_npc_id_raw).strip() if named_npc_id_raw is not None else ""
+    named_npc_id = named_npc_id or None
+    identity_source = str(raw_payload.get("identity_source", "")).strip().lower() or ("authored" if named_npc_id else "generated")
+    memory_id = str(raw_payload.get("memory_id", "")).strip() or named_npc_id or actor_id
+    relationship_score = max(-100, min(100, int(raw_payload.get("relationship_score", 0) or 0)))
+    memory = _memory_entry_for_actor(context, actor_id=actor_id, memory_id=memory_id)
+    relationship_label = _relationship_label_from_memory(memory, relationship_score)
+    last_interaction = _normalized_optional_text(getattr(memory, "last_interaction", None))
+    recent_conversation_count = len(list(getattr(memory, "conversations", []) or [])) if memory is not None else 0
+    known_facts_count = len(list(getattr(memory, "known_facts", []) or [])) if memory is not None else 0
+    has_met_player = any(
+        (
+            last_interaction,
+            recent_conversation_count > 0,
+            known_facts_count > 0,
+            _normalized_optional_text(getattr(memory, "long_term_memory", None)),
+        )
+    )
+    reaction_score = _reaction_score(context, actor)
+    return {
+        "identity_source": identity_source,
+        "named_npc_id": named_npc_id,
+        "memory_id": memory_id,
+        "recruitable_companion": bool(raw_payload.get("recruitable_companion", False)),
+        "relationship_score": relationship_score,
+        "relationship_label": relationship_label,
+        "reaction_score": reaction_score,
+        "has_met_player": has_met_player,
+        "last_interaction": last_interaction,
+        "recent_conversation_count": recent_conversation_count,
+        "known_facts_count": known_facts_count,
+        "memory_summary": _memory_summary(memory),
+    }
+
+
+def sync_combat_projection_state(context: CampaignContext) -> None:
+    """Mirror live combat actor positions into projected entities and spatial truth."""
+    sync_combat_projection(context)
+
+
+def _memory_entry_for_actor(context: CampaignContext, *, actor_id: str, memory_id: str):
+    manager = getattr(context, "npc_memory", None)
+    if manager is None:
+        return None
+    memories = getattr(manager, "memories", {})
+    if memory_id in memories:
+        return memories[memory_id]
+    if actor_id in memories:
+        return memories[actor_id]
+    return None
+
+
+def _relationship_label_from_memory(memory: Any, relationship_score: int) -> str:
+    label = _normalized_optional_text(getattr(memory, "relationship_label", None)) if memory is not None else None
+    if label:
+        return label
+    if relationship_score >= 60:
+        return "ally"
+    if relationship_score >= 30:
+        return "friend"
+    if relationship_score >= 10:
+        return "acquaintance"
+    if relationship_score > -20:
+        return "stranger"
+    if relationship_score > -50:
+        return "unfriendly"
+    return "enemy"
+
+
+def _memory_summary(memory: Any) -> str | None:
+    if memory is None:
+        return None
+    long_term = _normalized_optional_text(getattr(memory, "long_term_memory", None))
+    if long_term:
+        return long_term
+    conversations = list(getattr(memory, "conversations", []) or [])
+    if conversations:
+        last_summary = _normalized_optional_text(conversations[-1].get("summary")) if isinstance(conversations[-1], dict) else None
+        if last_summary:
+            return last_summary
+    return None
+
+
+def _normalized_optional_text(value: Any) -> str | None:
+    text = str(value or "").strip()
+    return text or None
+
+
+def _reaction_score(context: CampaignContext, npc_actor: Any) -> int | None:
+    runtime = context.kernel_runtime or {}
+    player = (runtime.get("actors") or {}).get("player") or context.player
+    if player is None or npc_actor is None:
+        return None
+    game_state = runtime.get("game_state")
+    global_variables = getattr(game_state, "global_variables", {}) if game_state is not None else {}
+    reputation = int(global_variables.get("reputation", 0) or 0) if isinstance(global_variables, dict) else 0
+    return int(compute_npc_reaction(player, npc_actor, reputation))
 
 
 def _record_flag(record: dict[str, Any], key: str) -> bool | None:
@@ -1059,6 +1335,9 @@ def seed_region_entities(
             "attitude": "friendly",
             "template": str(spawn.get("template", role)),
             "context_actions": list(spawn.get("context_actions", ["talk", "examine"])),
+            "named_npc_id": spawn.get("named_npc_id"),
+            "identity_source": str(spawn.get("identity_source", "generated")),
+            "memory_id": spawn.get("memory_id"),
             "entity_ref": entity,
         }
     for furniture in region_snapshot.layout.furniture:
@@ -1163,6 +1442,7 @@ __all__ = [
     "furniture_template",
     "persist_projected_npc_state",
     "seed_region_entities",
+    "sync_combat_projection",
     "sync_schedule_projection",
     "sync_party_projection",
 ]

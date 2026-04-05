@@ -8,7 +8,7 @@ from typing import Any
 from engine.kernel.actor_records import ActorRecord
 from engine.kernel.actor_items import ItemStack, item_stack_from_legacy_payload
 from engine.kernel.effects import EffectDef, tick_effects
-from engine.kernel.spells import SpellDef, Spellbook, begin_casting, resolve_cast
+from engine.kernel.spells import SpellDef, SpellSlot, Spellbook, begin_casting, resolve_cast, tick_casting
 from engine.world.entity import Entity, EntityType
 
 
@@ -303,28 +303,133 @@ def apply_rest(actor: ActorRecord, *, long_rest: bool, current_tick: int) -> dic
     return {"hours": 1, "healed": heal_amount, "spell_points_restored": restored_sp}
 
 
+_PREPARED_SPELL_TYPES = {"mage", "priest"}
+_DEFAULT_POINT_CASTER_CLASSES = {"bard", "paladin"}
+
+
+def actor_can_cast_registry_spells(actor: ActorRecord, *, current_tick: int | None = None) -> bool:
+    spell_type = _actor_spellcasting_mode(actor)
+    if current_tick is not None and int(current_tick) - int(actor.raw_payload.get("last_cast_tick", -999)) < 6:
+        return False
+    if spell_type in _PREPARED_SPELL_TYPES:
+        spellbooks_raw = actor.raw_payload.get("spellbooks", {})
+        if isinstance(spellbooks_raw, dict):
+            for key in spellbooks_raw.keys():
+                spellbook = _load_runtime_spellbook(actor, spell_type, spellbook_id=str(key), create_if_missing=False)
+                if _spellbook_has_cast_capacity(actor, spellbook):
+                    return True
+        return _default_max_slots_for_level(actor, spell_type, 1) > 0
+    return int(actor.spell_points) > 0
+
+
+def memorize_registry_spell(
+    actor: ActorRecord,
+    *,
+    spell_id: str,
+    spell_data: dict[str, Any],
+    spellbook_id: str | None = None,
+) -> dict[str, Any]:
+    spell_type = _actor_spellcasting_mode(actor, preferred=spell_data.get("spell_type"))
+    spell_label = str(spell_data.get("name", spell_id.replace("_", " ").title()))
+    if spell_type not in _PREPARED_SPELL_TYPES:
+        return {
+            "success": False,
+            "reason": "memorize_not_supported",
+            "spell_label": spell_label,
+            "spell_type": spell_type,
+            "spellbook_id": str(spellbook_id or ""),
+        }
+    spell_def = _spell_def_from_registry_data(
+        spell_id,
+        spell_data,
+        target=None,
+        target_position=None,
+        spell_type=spell_type,
+    )
+    spellbook = _load_runtime_spellbook(actor, spell_type, spellbook_id=spellbook_id, create_if_missing=True)
+    book_key = _spellbook_storage_key(spell_type, spellbook_id)
+    _ensure_spellbook_capacity(actor, spellbook, spell_def)
+    if _has_ready_spell_slot(spellbook, spell_def.spell_id, spell_def.level):
+        _persist_runtime_spellbook(actor, book_key, spellbook)
+        actor.raw_payload["spellcasting_mode"] = spell_type
+        return {
+            "success": True,
+            "reason": "already_memorized",
+            "spell_label": spell_label,
+            "spell_type": spell_type,
+            "spellbook_id": book_key,
+            "available_slots": spellbook.available_slots(spell_def.level),
+        }
+    if not spellbook.memorize(spell_def.spell_id, spell_def.level):
+        _persist_runtime_spellbook(actor, book_key, spellbook)
+        actor.raw_payload["spellcasting_mode"] = spell_type
+        return {
+            "success": False,
+            "reason": "no_available_slot",
+            "spell_label": spell_label,
+            "spell_type": spell_type,
+            "spellbook_id": book_key,
+            "available_slots": spellbook.available_slots(spell_def.level),
+        }
+    _persist_runtime_spellbook(actor, book_key, spellbook)
+    actor.raw_payload["spellcasting_mode"] = spell_type
+    return {
+        "success": True,
+        "reason": "",
+        "spell_label": spell_label,
+        "spell_type": spell_type,
+        "spellbook_id": book_key,
+        "available_slots": spellbook.available_slots(spell_def.level),
+    }
+
+
 def cast_registry_spell(
     actor: ActorRecord,
     *,
     spell_id: str,
     spell_data: dict[str, Any],
     target: ActorRecord | None,
+    target_position: tuple[int, int] | None = None,
     current_tick: int,
+    spellbook_id: str | None = None,
 ) -> dict[str, Any]:
     cost = int(spell_data.get("cost", 0))
     spell_label = str(spell_data.get("name", spell_id.replace("_", " ").title()))
-    if cost > actor.spell_points:
+    spell_type = _actor_spellcasting_mode(actor, preferred=spell_data.get("spell_type"))
+    if spell_type not in _PREPARED_SPELL_TYPES and cost > actor.spell_points:
         return {
             "success": False,
             "reason": "insufficient_spell_points",
             "cost": cost,
             "spell_label": spell_label,
             "applied": [],
+            "attempt_started": False,
         }
-    spell_def = _spell_def_from_registry_data(spell_id, spell_data, target)
-    spellbook = Spellbook(actor_id=actor.identity.actor_id, spell_type=spell_def.spell_type)
+    spell_def = _spell_def_from_registry_data(
+        spell_id,
+        spell_data,
+        target,
+        target_position,
+        spell_type=spell_type,
+    )
+    spellbook = _load_runtime_spellbook(
+        actor,
+        spell_def.spell_type,
+        spellbook_id=spellbook_id,
+        create_if_missing=spell_def.spell_type in _PREPARED_SPELL_TYPES,
+    )
+    book_key = _spellbook_storage_key(spell_def.spell_type, spellbook_id)
+    if spell_def.spell_type in _PREPARED_SPELL_TYPES:
+        _ensure_spellbook_capacity(actor, spellbook, spell_def)
+        if not _has_ready_spell_slot(spellbook, spell_def.spell_id, spell_def.level):
+            _auto_memorize_spell(spellbook, spell_def.spell_id, spell_def.level)
+        _persist_runtime_spellbook(actor, book_key, spellbook)
+        actor.raw_payload["spellcasting_mode"] = spell_def.spell_type
+    resolved_target_position = target_position
+    if resolved_target_position is None and target is not None and spell_def.target_type in {"point", "area"}:
+        resolved_target_position = (int(target.position.x), int(target.position.y))
     target_id = target.identity.actor_id if spell_def.target_type == "creature" and target is not None else None
-    ok, attempt, reason = begin_casting(actor, spellbook, spell_def, target_id, None, int(current_tick))
+    ok, attempt, reason = begin_casting(actor, spellbook, spell_def, target_id, resolved_target_position, int(current_tick))
     if not ok or attempt is None:
         return {
             "success": False,
@@ -332,17 +437,53 @@ def cast_registry_spell(
             "cost": cost,
             "spell_label": spell_label,
             "applied": [],
+            "attempt_started": False,
+        }
+    actor.raw_payload["active_casting"] = attempt.to_dict()
+    status = "ready" if int(attempt.ticks_remaining) <= 0 else "casting"
+    if status == "ready":
+        attempt.completed = True
+    while status == "casting":
+        status, attempt = tick_casting(
+            attempt,
+            damage_taken=0,
+            d20_roll=20,
+            d100_roll=100,
+            caster=actor,
+        )
+        actor.raw_payload["active_casting"] = attempt.to_dict()
+    if status in {"failed", "interrupted"}:
+        actor.raw_payload.pop("active_casting", None)
+        actor.raw_payload["last_cast_result"] = {
+            "spell_id": spell_def.spell_id,
+            "spell_type": spell_def.spell_type,
+            "status": status,
+            "reason": attempt.failure_reason or status,
+        }
+        return {
+            "success": False,
+            "reason": attempt.failure_reason or status,
+            "cost": cost,
+            "spell_label": spell_label,
+            "applied": [],
+            "attempt_started": True,
         }
     previous_registry = dict(actor.raw_payload.get("effect_registry", {}))
     registry_patch = _build_spell_effect_registry(spell_def.spell_id, spell_data)
     actor.raw_payload["effect_registry"] = {**previous_registry, **registry_patch}
     try:
-        actor.spell_points = actor.spell_points - cost
+        if spell_def.spell_type not in _PREPARED_SPELL_TYPES:
+            actor.spell_points = actor.spell_points - cost
         resolution = resolve_cast(attempt, actor, target, d100_roll=100, current_tick=int(current_tick))
+        if spell_def.spell_type in _PREPARED_SPELL_TYPES and bool(resolution.get("slot_expended", False)):
+            spellbook.expend_slot(spell_def.spell_id, spell_def.level)
         recipient = target or actor
         effect_events = tick_effects(recipient, int(current_tick))
     finally:
         actor.raw_payload["effect_registry"] = previous_registry
+        actor.raw_payload.pop("active_casting", None)
+    if spell_def.spell_type in _PREPARED_SPELL_TYPES:
+        _persist_runtime_spellbook(actor, book_key, spellbook)
     applied = _build_applied_spell_effects(
         spell_def=spell_def,
         spell_data=spell_data,
@@ -350,6 +491,12 @@ def cast_registry_spell(
         resolution=resolution,
         effect_events=effect_events,
     )
+    actor.raw_payload["last_cast_result"] = {
+        "spell_id": spell_def.spell_id,
+        "spell_type": spell_def.spell_type,
+        "status": "resisted" if bool(resolution.get("resisted", False)) else "resolved",
+        "reason": "resisted" if bool(resolution.get("resisted", False)) else "",
+    }
     return {
         "success": not bool(resolution.get("resisted", False)),
         "reason": "resisted" if resolution.get("resisted", False) else "",
@@ -357,7 +504,136 @@ def cast_registry_spell(
         "spell_label": spell_label,
         "applied": applied,
         "effects_applied": list(resolution.get("effects_applied", [])),
+        "attempt_started": True,
+        "spell_type": spell_def.spell_type,
+        "spellbook_id": book_key if spell_def.spell_type in _PREPARED_SPELL_TYPES else "",
     }
+
+
+def _normalize_spell_type(raw_spell_type: Any) -> str:
+    return str(raw_spell_type or "").strip().lower()
+
+
+def _actor_spellcasting_mode(actor: ActorRecord, *, preferred: Any = None) -> str:
+    preferred_type = _normalize_spell_type(preferred)
+    if preferred_type in _PREPARED_SPELL_TYPES | {"channeler"}:
+        return preferred_type
+    explicit = _normalize_spell_type(actor.raw_payload.get("spellcasting_mode") or actor.raw_payload.get("spell_type"))
+    if explicit in _PREPARED_SPELL_TYPES | {"channeler"}:
+        return explicit
+    class_name = str(actor.raw_payload.get("class_name", "")).strip().lower()
+    if class_name == "mage":
+        return "mage"
+    if class_name == "priest":
+        return "priest"
+    if class_name in _DEFAULT_POINT_CASTER_CLASSES:
+        return "channeler"
+    if int(actor.max_spell_points) > 0 or int(actor.spell_points) > 0:
+        return "channeler"
+    spellbooks = actor.raw_payload.get("spellbooks", {})
+    if isinstance(spellbooks, dict):
+        for book_key, book_data in spellbooks.items():
+            if isinstance(book_data, dict):
+                normalized = _normalize_spell_type(book_data.get("spell_type") or book_key)
+                if normalized in _PREPARED_SPELL_TYPES | {"channeler"}:
+                    return normalized
+    return "channeler"
+
+
+def _spellbook_storage_key(spell_type: str, spellbook_id: str | None = None) -> str:
+    return str(spellbook_id or spell_type).strip().lower() or str(spell_type).strip().lower() or "spellbook"
+
+
+def _load_runtime_spellbook(
+    actor: ActorRecord,
+    spell_type: str,
+    *,
+    spellbook_id: str | None = None,
+    create_if_missing: bool,
+) -> Spellbook:
+    spellbooks = actor.raw_payload.setdefault("spellbooks", {})
+    if not isinstance(spellbooks, dict):
+        spellbooks = {}
+        actor.raw_payload["spellbooks"] = spellbooks
+    book_key = _spellbook_storage_key(spell_type, spellbook_id)
+    raw_book = spellbooks.get(book_key)
+    if isinstance(raw_book, Spellbook):
+        return raw_book
+    if isinstance(raw_book, dict):
+        return Spellbook.from_dict(raw_book)
+    for existing_key, existing_book in spellbooks.items():
+        if not isinstance(existing_book, dict):
+            continue
+        if _normalize_spell_type(existing_book.get("spell_type") or existing_key) == spell_type:
+            return Spellbook.from_dict(existing_book)
+    return Spellbook(actor_id=actor.identity.actor_id, spell_type=spell_type)
+
+
+def _persist_runtime_spellbook(actor: ActorRecord, book_key: str, spellbook: Spellbook) -> None:
+    spellbooks = actor.raw_payload.setdefault("spellbooks", {})
+    if not isinstance(spellbooks, dict):
+        spellbooks = {}
+        actor.raw_payload["spellbooks"] = spellbooks
+    spellbooks[str(book_key)] = spellbook.to_dict()
+
+
+def _ensure_spellbook_capacity(actor: ActorRecord, spellbook: Spellbook, spell_def: SpellDef) -> None:
+    spellbook.known_spells.setdefault(spell_def.level, [])
+    if spell_def.spell_id not in spellbook.known_spells[spell_def.level]:
+        spellbook.known_spells[spell_def.level].append(spell_def.spell_id)
+    default_max = _default_max_slots_for_level(actor, spell_def.spell_type, spell_def.level)
+    current_max = int(spellbook.max_slots.get(spell_def.level, 0))
+    if default_max > current_max:
+        spellbook.max_slots[spell_def.level] = default_max
+    spellbook.slots.setdefault(spell_def.level, [])
+    max_slots = int(spellbook.max_slots.get(spell_def.level, 0))
+    while len(spellbook.slots[spell_def.level]) < max_slots:
+        spellbook.slots[spell_def.level].append(SpellSlot(spell_level=spell_def.level))
+
+
+def _default_max_slots_for_level(actor: ActorRecord, spell_type: str, spell_level: int) -> int:
+    if spell_type not in _PREPARED_SPELL_TYPES:
+        return 0
+    level = max(1, int(actor.raw_payload.get("level", 1) or 1))
+    spell_level = max(1, int(spell_level))
+    if spell_type == "mage":
+        max_spell_level = max(1, (level + 1) // 2)
+    else:
+        max_spell_level = max(1, (level + 2) // 2)
+    if spell_level > max_spell_level:
+        return 0
+    return max(1, max_spell_level - spell_level + 1)
+
+
+def _spellbook_has_cast_capacity(actor: ActorRecord, spellbook: Spellbook) -> bool:
+    for spell_level, max_count in spellbook.max_slots.items():
+        slots = spellbook.slots.get(int(spell_level), [])
+        if spellbook.available_slots(int(spell_level)) > 0:
+            return True
+        if len(slots) < int(max_count):
+            return True
+        if any(slot.spell_id is None for slot in slots):
+            return True
+    return _default_max_slots_for_level(actor, spellbook.spell_type, 1) > 0 and not spellbook.max_slots
+
+
+def _has_ready_spell_slot(spellbook: Spellbook, spell_id: str, spell_level: int) -> bool:
+    return any(
+        slot.spell_id == spell_id and slot.memorized and not slot.expended
+        for slot in spellbook.slots.get(spell_level, [])
+    )
+
+
+def _auto_memorize_spell(spellbook: Spellbook, spell_id: str, spell_level: int) -> bool:
+    if _has_ready_spell_slot(spellbook, spell_id, spell_level):
+        return True
+    for slot in spellbook.slots.get(spell_level, []):
+        if slot.spell_id is None:
+            slot.spell_id = spell_id
+            slot.memorized = True
+            slot.expended = False
+            return True
+    return False
 
 
 def _resolve_effect_amount(raw_amount: Any) -> int:
@@ -391,12 +667,15 @@ def _spell_def_from_registry_data(
     spell_id: str,
     spell_data: dict[str, Any],
     target: ActorRecord | None,
+    target_position: tuple[int, int] | None = None,
+    *,
+    spell_type: str | None = None,
 ) -> SpellDef:
-    target_type = _spell_target_type(str(spell_data.get("target_type", "single")), target)
+    target_type = _spell_target_type(str(spell_data.get("target_type", "single")), target, target_position)
     return SpellDef(
         spell_id=spell_id,
         label=str(spell_data.get("name", spell_id.replace("_", " ").title())),
-        spell_type=str(spell_data.get("spell_type", "channeler")),
+        spell_type=str(spell_type or spell_data.get("spell_type", "channeler")),
         school=str(spell_data.get("school", "evocation")),
         level=int(spell_data.get("level", 1)),
         casting_time=int(spell_data.get("casting_time", 0)),
@@ -503,13 +782,19 @@ def _build_applied_spell_effects(
     return applied
 
 
-def _spell_target_type(raw_target_type: str, target: ActorRecord | None) -> str:
+def _spell_target_type(
+    raw_target_type: str,
+    target: ActorRecord | None,
+    target_position: tuple[int, int] | None,
+) -> str:
     normalized = raw_target_type.strip().lower()
     if normalized == "self":
         return "self"
-    if target is not None:
+    if normalized in {"single", "creature"} and target is not None:
         return "creature"
-    return "self"
+    if normalized in {"area", "cone", "point"} and (target_position is not None or target is not None):
+        return "area"
+    return "creature" if normalized in {"single", "creature"} else "self"
 
 
 def _normalize_spell_stat(stat_name: str) -> str:
@@ -572,11 +857,13 @@ def _count_actor_inventory_item(actor: ActorRecord, item_def_id: str) -> int:
 
 __all__ = [
     "add_inventory_item",
+    "actor_can_cast_registry_spells",
     "apply_rest",
     "cast_registry_spell",
     "craft_recipe",
     "drop_inventory_item",
     "equip_inventory_item",
+    "memorize_registry_spell",
     "persist_ground_item_entities",
     "pickup_ground_item",
     "remove_inventory_item",

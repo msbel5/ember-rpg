@@ -26,19 +26,28 @@
       "warrior": 10,
       "rogue": 8,
       "priest": 8,
-      "mage": 6
+      "mage": 6,
+      "ranger": 8,
+      "paladin": 10,
+      "bard": 8
     },
     "sp_per_level": {
       "mage": 4,
       "priest": 3,
       "warrior": 0,
-      "rogue": 0
+      "rogue": 0,
+      "ranger": 0,
+      "paladin": 2,
+      "bard": 3
     },
     "stat_bonus_by_class": {
       "warrior": "MIG",
       "rogue": "AGI",
       "mage": "MND",
       "priest": "INS",
+      "ranger": "AGI",
+      "paladin": "PRE",
+      "bard": "PRE",
       "null": "MIG"
     },
     "xp_rewards": {
@@ -215,6 +224,132 @@
           "required_level": 5,
           "class_name": "priest",
           "cost": 4
+        }
+      ],
+      "ranger": [
+        {
+          "name": "Keen Eye",
+          "description": "+2 to INS skill checks for tracking, spotting traps, and detecting hidden creatures.",
+          "passive": true,
+          "required_level": 1,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Marked Shot",
+          "description": "Once per turn, mark a target. Your next ranged attack against it deals +1d6 damage.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "ranger",
+          "cost": 1
+        },
+        {
+          "name": "Fieldcraft",
+          "description": "Natural terrain no longer costs extra AP to traverse. Ignore movement penalties from undergrowth, mud, and shallow water.",
+          "passive": true,
+          "required_level": 3,
+          "class_name": "ranger",
+          "cost": 0
+        },
+        {
+          "name": "Volley",
+          "description": "Fire a spread of arrows hitting up to 3 enemies in a cone. Each target takes normal weapon damage.",
+          "passive": false,
+          "required_level": 4,
+          "class_name": "ranger",
+          "cost": 2
+        },
+        {
+          "name": "Vanish",
+          "description": "Once per rest, become hidden as a free action even while observed. Lasts until you attack or end of your next turn.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "ranger",
+          "cost": 1
+        }
+      ],
+      "paladin": [
+        {
+          "name": "Lay on Hands",
+          "description": "Once per rest, restore HP equal to paladin level x 3 to one ally by touch.",
+          "passive": false,
+          "required_level": 1,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Divine Smite",
+          "description": "On a melee hit, spend 2 spell points to deal +2d8 radiant damage. Extra 1d8 against undead or fiends.",
+          "passive": false,
+          "required_level": 2,
+          "class_name": "paladin",
+          "cost": 2
+        },
+        {
+          "name": "Aura of Courage",
+          "description": "You and allies within 10 feet are immune to fear effects.",
+          "passive": true,
+          "required_level": 3,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Sacred Oath",
+          "description": "+1 to all saving throws for you and allies within 10 feet permanently.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "paladin",
+          "cost": 0
+        },
+        {
+          "name": "Cleansing Strike",
+          "description": "Once per rest, make a melee attack that deals normal damage and removes one disease, poison, or curse from the target.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "paladin",
+          "cost": 2
+        }
+      ],
+      "bard": [
+        {
+          "name": "Bardic Inspiration",
+          "description": "Once per rest, grant one ally a +1d6 bonus to their next ability check, attack roll, or saving throw.",
+          "passive": false,
+          "required_level": 1,
+          "class_name": "bard",
+          "cost": 1
+        },
+        {
+          "name": "Jack of All Trades",
+          "description": "+1 to all skill checks you are not proficient in.",
+          "passive": true,
+          "required_level": 2,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Cutting Words",
+          "description": "As a reaction, spend 1 spell point to reduce an enemy's attack roll by 1d6.",
+          "passive": false,
+          "required_level": 3,
+          "class_name": "bard",
+          "cost": 1
+        },
+        {
+          "name": "Song of Rest",
+          "description": "During a rest, allies regain additional 1d6 HP. Stacks with normal rest recovery.",
+          "passive": true,
+          "required_level": 4,
+          "class_name": "bard",
+          "cost": 0
+        },
+        {
+          "name": "Countercharm",
+          "description": "Once per rest, all allies within 30 feet gain advantage on saving throws against charm and fear for 1 minute.",
+          "passive": false,
+          "required_level": 5,
+          "class_name": "bard",
+          "cost": 2
         }
       ]
     },

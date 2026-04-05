@@ -17327,6 +17327,3398 @@
           "location": "frontier_post"
         }
       ]
+    },
+    {
+      "id": "river_port_guard_01",
+      "name": "Sera Tidewatch",
+      "race": "human",
+      "role": "guard",
+      "faction_alignment": "harbor_guard",
+      "personality": {
+        "traits": [
+          "alert",
+          "duty-bound",
+          "dry-humored"
+        ],
+        "motivations": [
+          "keeping the docks safe",
+          "spotting smugglers before sunset",
+          "making sure no child goes missing near the water"
+        ],
+        "fears": [
+          "smugglers slipping past watch",
+          "fog-bound raids",
+          "failing a family that trusts the gate"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Keep your hands visible. River Port's quietest days still turn bloody if people get careless.",
+          "If you're here to trade, fine. If you're here to start trouble, save us both the time.",
+          "You smell like travel. That means you owe me a story or a warning."
+        ],
+        "farewells": [
+          "Move along, and don't make me write your name twice.",
+          "If you see anything strange on the docks, report it before dark.",
+          "Stay out of the shallows unless you know how to swim in boots."
+        ],
+        "idle": [
+          "River Port looks calm because somebody already argued with the trouble and won.",
+          "The quiet ones are usually the ones I watch twice.",
+          "Smugglers think the tide hides them. It only makes their tracks easier to read."
+        ],
+        "quest_related": [
+          "A crate went missing from the quay last night. If you spot it, bring it back before the quartermaster notices.",
+          "We've had lanterns go out along the waterline. I need someone steady, not someone loud.",
+          "If you hear a whistle after midnight, that's not a game. Follow it to the pier and you'll find a problem."
+        ]
+      },
+      "relationship_modifiers": {
+        "defended_settlement": 25,
+        "reported_smuggler": 30,
+        "kept_word": 15,
+        "helped_on_patrol": 18,
+        "threatened_dockworkers": -20,
+        "bribed": -25
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "sleep",
+          "location": "river_port"
+        },
+        {
+          "hour": 6,
+          "activity": "inspect_docks",
+          "location": "river_port"
+        },
+        {
+          "hour": 9,
+          "activity": "gate_watch",
+          "location": "river_port"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "river_port"
+        },
+        {
+          "hour": 15,
+          "activity": "patrol_quays",
+          "location": "river_port"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "river_port"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "river_port"
+        }
+      ]
+    },
+    {
+      "id": "river_port_priest_01",
+      "name": "Ilya Saltbloom",
+      "race": "human",
+      "role": "priest",
+      "faction_alignment": "temple_order",
+      "personality": {
+        "traits": [
+          "gentle",
+          "resolute",
+          "attentive"
+        ],
+        "motivations": [
+          "offering comfort to dockworkers",
+          "keeping faith through storms",
+          "making amends for lives lost at sea"
+        ],
+        "fears": [
+          "burial without rite",
+          "the chapel standing empty",
+          "being unable to help the grieving"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "The tide takes and returns. Sit, and breathe for a moment.",
+          "If you're bleeding, speak up. If you're grieving, sit down either way.",
+          "River Port carries a lot of sorrow under the salt."
+        ],
+        "farewells": [
+          "May the water carry your troubles away, if only briefly.",
+          "Go in peace, and come back if the night weighs on you.",
+          "If you find a name that needs saying, bring it to the chapel."
+        ],
+        "idle": [
+          "Every harbor remembers the people it has kept and taken.",
+          "A prayer is just a promise made out loud.",
+          "The loudest storms leave the quietest wounds."
+        ],
+        "quest_related": [
+          "A fisherman's widow asked for a blessing at dusk, but I cannot leave the chapel unattended. Could you help her?",
+          "The memorial candles need replacing after the last storm. Bring wax, and I'll see them lit again.",
+          "A row of names on the wall is missing one. If you learn it, I'll add it properly."
+        ]
+      },
+      "relationship_modifiers": {
+        "prayed_here": 20,
+        "donated_supplies": 15,
+        "comforted_mourner": 25,
+        "blasphemed": -30,
+        "stole_tithes": -35,
+        "completed_quest": 30
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "sleep",
+          "location": "river_port"
+        },
+        {
+          "hour": 6,
+          "activity": "morning_prayers",
+          "location": "river_port"
+        },
+        {
+          "hour": 9,
+          "activity": "blessing",
+          "location": "river_port"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "river_port"
+        },
+        {
+          "hour": 15,
+          "activity": "hear_confessions",
+          "location": "river_port"
+        },
+        {
+          "hour": 19,
+          "activity": "candle_service",
+          "location": "river_port"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "river_port"
+        }
+      ]
+    },
+    {
+      "id": "river_port_healer_01",
+      "name": "Merek Brinewell",
+      "race": "human",
+      "role": "healer",
+      "faction_alignment": "circle_of_herbs",
+      "personality": {
+        "traits": [
+          "steady",
+          "practical",
+          "patient"
+        ],
+        "motivations": [
+          "keeping dockworkers on their feet",
+          "brewing remedies from scarce stock",
+          "learning what river fever looks like in every season"
+        ],
+        "fears": [
+          "running out of tinctures",
+          "infection spreading through the wharves",
+          "a patient dying for lack of time"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Sit. If it's serious, I'll say so. If it's not, I'll still tell you to sit.",
+          "River work leaves a mark on everyone. The trick is keeping it from becoming permanent.",
+          "Bring me clean water and honest symptoms. That's all I ask."
+        ],
+        "farewells": [
+          "Drink the bitter stuff anyway. It works better when you stop complaining.",
+          "If the wound worsens, come back before you try to pretend otherwise.",
+          "Rest. That's not a suggestion when I'm the one bandaging you."
+        ],
+        "idle": [
+          "Fresh bandages cost less than funerals.",
+          "The sea doesn't care how brave you were yesterday.",
+          "I can tell who works the docks by the smell of their hands."
+        ],
+        "quest_related": [
+          "I need more clean linen and boiled alcohol before the next fever wave arrives.",
+          "A crew from the eastern pier is hiding an infection because they don't want to miss pay. That's how outbreaks start.",
+          "If you can fetch river mint from the market gardens, I can stretch the last of my salves."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_supplies": 20,
+        "helped_patient": 25,
+        "kept_quiet": 10,
+        "insulted_patients": -20,
+        "sabotaged_stock": -35,
+        "completed_quest": 30
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "sleep",
+          "location": "river_port"
+        },
+        {
+          "hour": 6,
+          "activity": "inventory_medicines",
+          "location": "river_port"
+        },
+        {
+          "hour": 9,
+          "activity": "treat_patients",
+          "location": "river_port"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "river_port"
+        },
+        {
+          "hour": 15,
+          "activity": "bandage_wounds",
+          "location": "river_port"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "river_port"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "river_port"
+        }
+      ]
+    },
+    {
+      "id": "river_port_alchemist_01",
+      "name": "Orven Glasswell",
+      "race": "human",
+      "role": "alchemist",
+      "faction_alignment": "arcane_circle",
+      "personality": {
+        "traits": [
+          "curious",
+          "methodical",
+          "absent-minded"
+        ],
+        "motivations": [
+          "refining river reagents",
+          "turning brine into useful tinctures",
+          "proving river herbs can replace costly imports"
+        ],
+        "fears": [
+          "explosions in a crowded district",
+          "having notes stolen",
+          "being ignored by practical people"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Please don't touch that flask unless you want to learn about chemistry the hard way.",
+          "Salt, ash, and patience. That's the whole business, if you ask the impatient ones.",
+          "Yes, I know I smell odd. So does progress."
+        ],
+        "farewells": [
+          "Careful with the stoppered bottle. If it starts hissing, set it down and walk away.",
+          "I have three experiments waiting and no time for distractions.",
+          "Bring me better notes than last time and I'll forgive the broken beaker."
+        ],
+        "idle": [
+          "A river carries more than water if you know how to look.",
+          "The correct ratio matters. It always matters.",
+          "People think alchemy is art. It's mostly measuring things twice."
+        ],
+        "quest_related": [
+          "I need brine crystals from the lower docks. The cheap stuff keeps clogging my stills.",
+          "There's a solvent recipe in a ruined ledger somewhere upstream. Find it and I'll owe you a proper vial.",
+          "I can make the tonic if someone stops the apprentice from mixing the labels again."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_reagents": 15,
+        "returned_notes": 20,
+        "respected_lab": 10,
+        "broke_equipment": -25,
+        "mocked_research": -20,
+        "completed_quest": 30
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "sleep",
+          "location": "river_port"
+        },
+        {
+          "hour": 6,
+          "activity": "sort_reagents",
+          "location": "river_port"
+        },
+        {
+          "hour": 9,
+          "activity": "distill_tonics",
+          "location": "river_port"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "river_port"
+        },
+        {
+          "hour": 15,
+          "activity": "test_reagents",
+          "location": "river_port"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "river_port"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "river_port"
+        }
+      ]
+    },
+    {
+      "id": "river_port_innkeeper_01",
+      "name": "Tamsin Wharf",
+      "race": "halfling",
+      "role": "innkeeper",
+      "faction_alignment": "innkeepers_league",
+      "personality": {
+        "traits": [
+          "warm",
+          "shrewd",
+          "organized"
+        ],
+        "motivations": [
+          "keeping the rooms full",
+          "hearing every rumor once",
+          "making travelers feel safe enough to spend"
+        ],
+        "fears": [
+          "empty tables",
+          "a brawl scaring away trade",
+          "the tide flooding the cellar"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Welcome to the Wharf Lantern. Sit down before the weather changes its mind.",
+          "If you've got coin, I've got stew. If you've got stories, I might make that two stews.",
+          "No mud on the benches, no knives on the table, and we'll get along fine."
+        ],
+        "farewells": [
+          "Rooms at the top, complaints at the desk.",
+          "Come back hungry. It's cheaper for both of us.",
+          "If you hear singing after midnight, that's just the sailors. Usually."
+        ],
+        "idle": [
+          "A good innkeeper hears what the guards miss and what the merchants lie about.",
+          "The sea takes enough. I won't let it take my customers too.",
+          "Every guest leaves with either coin missing or a story worth the trouble."
+        ],
+        "quest_related": [
+          "The cellar's flooded again. If you can stop the seep, I'll comp your room and meal.",
+          "A regular vanished without settling her tab. I need someone who can ask questions without starting a fight.",
+          "The lantern oil shipment was delayed. Find a supplier and I'll make it worth your while."
+        ]
+      },
+      "relationship_modifiers": {
+        "paid_for_room": 10,
+        "bought_drinks": 10,
+        "shared_gossip": 15,
+        "checked_on_regular": 20,
+        "started_bar_fight": -40,
+        "completed_quest": 30
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "close_taproom",
+          "location": "river_port"
+        },
+        {
+          "hour": 6,
+          "activity": "prepare_breakfast",
+          "location": "river_port"
+        },
+        {
+          "hour": 9,
+          "activity": "serve_meals",
+          "location": "river_port"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "river_port"
+        },
+        {
+          "hour": 15,
+          "activity": "clean_tables",
+          "location": "river_port"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "river_port"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "river_port"
+        }
+      ]
+    },
+    {
+      "id": "hill_town_merchant_01",
+      "name": "Joren Valebrook",
+      "race": "human",
+      "role": "merchant",
+      "faction_alignment": "merchant_guild",
+      "personality": {
+        "traits": [
+          "polished",
+          "careful",
+          "talkative"
+        ],
+        "motivations": [
+          "finding the best price for honest goods",
+          "keeping Hill Town supplied",
+          "earning a route that's worth the climb"
+        ],
+        "fears": [
+          "bandits on the ridge road",
+          "spoiled stock",
+          "being cheated in a bad market"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Hill Town pays better than it looks if you know which stories to believe.",
+          "Need supplies? Need directions? Need to pretend you don't need either? I'm your person.",
+          "Everything up here costs a little more. The view is included."
+        ],
+        "farewells": [
+          "Come back with coin, or at least with customers.",
+          "If the road's bad, I want to hear it before I send a cart through.",
+          "A good bargain is just two people agreeing to lie politely."
+        ],
+        "idle": [
+          "Markets are all weather, all the time.",
+          "The hill wind makes liars shiver first.",
+          "I trust ledgers more than I trust promises."
+        ],
+        "quest_related": [
+          "A shipment of lamp oil is stuck at the pass. Clear the route and I'll pay in useful stock.",
+          "I need someone to verify a supplier's claim about premium grain before I buy the whole lot.",
+          "There are counterfeit seals showing up in the market. Find the source and I'll owe you."
+        ]
+      },
+      "relationship_modifiers": {
+        "bought_goods": 15,
+        "delivered_provisions": 20,
+        "helped_caravan": 25,
+        "spread_bad_rumor": -20,
+        "cheated_him": -30,
+        "completed_quest": 30
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "sleep",
+          "location": "hill_town"
+        },
+        {
+          "hour": 6,
+          "activity": "open_stall",
+          "location": "hill_town"
+        },
+        {
+          "hour": 9,
+          "activity": "haggle",
+          "location": "hill_town"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "hill_town"
+        },
+        {
+          "hour": 15,
+          "activity": "inventory",
+          "location": "hill_town"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "hill_town"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "hill_town"
+        }
+      ]
+    },
+    {
+      "id": "hill_town_innkeeper_01",
+      "name": "Mina Hearthwell",
+      "race": "human",
+      "role": "innkeeper",
+      "faction_alignment": "innkeepers_league",
+      "personality": {
+        "traits": [
+          "motherly",
+          "sharp-eyed",
+          "no-nonsense"
+        ],
+        "motivations": [
+          "keeping travelers fed",
+          "hearing the road gossip first",
+          "making sure Hill Town has a warm lamp after dusk"
+        ],
+        "fears": [
+          "roof leaks in winter",
+          "fights breaking the peace",
+          "no one paying their tab"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Come in, wipe your boots, and don't argue with the soup.",
+          "Room, meal, news, or all three? I charge less if you smile.",
+          "Hill Town doesn't keep many secrets once they've passed my counter."
+        ],
+        "farewells": [
+          "Don't stay out on the ridge after dark.",
+          "If you're coming back tomorrow, mind the weather and the invoices.",
+          "I keep a clean house. Try not to make me regret it."
+        ],
+        "idle": [
+          "A full inn makes a town feel bigger.",
+          "If the road is quiet, that's usually because someone dangerous is choosing when not to be.",
+          "The trick is feeding everyone before they start deciding they're important."
+        ],
+        "quest_related": [
+          "My cook has gone to fetch herbs and should have been back hours ago. Find them, and I'll treat you like family.",
+          "A room booking got doubled by mistake. I need someone calm to settle it before the arguments start.",
+          "The stove draw is failing. If you know a mason, I need the introduction more than the labor."
+        ]
+      },
+      "relationship_modifiers": {
+        "paid_for_room": 10,
+        "bought_meal": 8,
+        "shared_gossip": 12,
+        "helped_staff": 20,
+        "started_fight": -35,
+        "completed_quest": 30
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "close_house",
+          "location": "hill_town"
+        },
+        {
+          "hour": 6,
+          "activity": "prepare_breakfast",
+          "location": "hill_town"
+        },
+        {
+          "hour": 9,
+          "activity": "serve_meals",
+          "location": "hill_town"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "hill_town"
+        },
+        {
+          "hour": 15,
+          "activity": "clean_rooms",
+          "location": "hill_town"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "hill_town"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "hill_town"
+        }
+      ]
+    },
+    {
+      "id": "merchant_camp_guard_01",
+      "name": "Bren Dunewatch",
+      "race": "human",
+      "role": "guard",
+      "faction_alignment": "merchants_guild",
+      "personality": {
+        "traits": [
+          "watchful",
+          "stern",
+          "professional"
+        ],
+        "motivations": [
+          "keeping the camp's ledger and wagons safe",
+          "seeing every crate counted",
+          "making sure merchants sleep without their purse in hand"
+        ],
+        "fears": [
+          "raiders in the dark",
+          "an unpaid debt turning violent",
+          "being outmaneuvered by smugglers"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Merchant Camp has enough mouths already. State your business.",
+          "If you work for the camp, I'd know your face by now. So start explaining.",
+          "Wagons move when I say they move and not a minute earlier."
+        ],
+        "farewells": [
+          "Keep to the marked paths.",
+          "I don't tolerate thieves, liars, or people who assume they can be both at once.",
+          "If the camp's secure, it's because somebody stayed awake longer than you."
+        ],
+        "idle": [
+          "A quiet camp is a profitable camp.",
+          "Cargo doesn't guard itself.",
+          "The honest merchants complain less than the ones with bad cargo."
+        ],
+        "quest_related": [
+          "A wagon seal was broken overnight. I need someone who can check the line without causing a panic.",
+          "One of the drivers swears they saw a shadow at the supply tent. I need confirmation, not rumor.",
+          "The camp ledger and the crate count disagree. Find out why before the quartermaster does."
+        ]
+      },
+      "relationship_modifiers": {
+        "reported_intruder": 25,
+        "protected_wagons": 30,
+        "kept_order": 15,
+        "insulted_camp": -20,
+        "stole_supplies": -35,
+        "completed_quest": 30
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "sleep",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 6,
+          "activity": "dawn_patrol",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 9,
+          "activity": "inspect_wagons",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 15,
+          "activity": "escort_caravan",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "merchant_camp"
+        }
+      ]
+    },
+    {
+      "id": "merchant_camp_commoner_01",
+      "name": "Pella Cartwright",
+      "race": "human",
+      "role": "commoner",
+      "faction_alignment": "commoners",
+      "personality": {
+        "traits": [
+          "hardworking",
+          "social",
+          "practical"
+        ],
+        "motivations": [
+          "keeping the wagons mended",
+          "earning a quiet seat by the fire",
+          "making sure the horses get fed before the merchants do"
+        ],
+        "fears": [
+          "losing work to bad weather",
+          "a horse going lame",
+          "the camp moving on without them"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "If you're looking for someone important, keep looking. If you're looking for something fixed, I'm here.",
+          "I know the camp better than most of the people who run it.",
+          "The horses know me. That says more than the merchants do."
+        ],
+        "farewells": [
+          "Tell the camp cook I said the stew needs more salt.",
+          "If you see a bent wheel spoke, don't ignore it.",
+          "Come back before sundown if you want the good fire."
+        ],
+        "idle": [
+          "There's always work if you know where the broken strap lives.",
+          "A steady hand is worth more than a loud voice in a camp like this.",
+          "The merchants think they own the roads. The roads own the wagons."
+        ],
+        "quest_related": [
+          "A horse threw a shoe near the east ridge. I need someone patient, not someone heroic.",
+          "The tack room lock sticks, and if I force it I'll just make the boss angry. Can you take a look?",
+          "One of the lead mules is skittish. If you calm it down, I'll owe you a favor."
+        ]
+      },
+      "relationship_modifiers": {
+        "mended_harness": 15,
+        "fed_the_horses": 20,
+        "shared_food": 10,
+        "treated_with_kindness": 18,
+        "looked_down_on_them": -15,
+        "completed_quest": 25
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "sleep",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 6,
+          "activity": "muck_stables",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 9,
+          "activity": "water_horses",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 15,
+          "activity": "mend_harness",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "merchant_camp"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "merchant_camp"
+        }
+      ]
+    },
+    {
+      "id": "coastal_cliffs_scout_01",
+      "name": "Arin Windcliff",
+      "race": "human",
+      "role": "scout",
+      "faction_alignment": "freefolk",
+      "personality": {
+        "traits": [
+          "nimble",
+          "observant",
+          "restless"
+        ],
+        "motivations": [
+          "mapping safe cliff paths",
+          "spotting weather before it hits the harbor",
+          "keeping smugglers off the goat trails"
+        ],
+        "fears": [
+          "fog swallowing the cliffs",
+          "falling to a bad step",
+          "letting a route go unmarked"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Watch your footing. The cliffs punish people who stare at the view too long.",
+          "If you hear gulls screaming inland, the weather's already ahead of you.",
+          "I know these paths better than most maps, and I trust them about the same."
+        ],
+        "farewells": [
+          "Stay off the loose stones.",
+          "If the mist comes in hard, wait for the wind to turn.",
+          "I mark the safe routes so others can pretend they found them."
+        ],
+        "idle": [
+          "The sea changes the coast every season. The smart ones keep notes.",
+          "Smugglers hate heights until they need them.",
+          "A good scout learns the sound of rain before the rain arrives."
+        ],
+        "quest_related": [
+          "A goat trail collapsed east of the cove. I need someone steady enough to confirm the path is still usable.",
+          "There's a lantern code flashing from the sea caves. Find out who's using it.",
+          "I lost a marker stone in the gale. Bring it back and I'll show you the hidden steps."
+        ]
+      },
+      "relationship_modifiers": {
+        "marked_safe_path": 20,
+        "warned_of_storm": 15,
+        "rescued_on_cliff": 30,
+        "ignored_warning": -15,
+        "mocked_his_notes": -20,
+        "completed_quest": 30
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "sleep",
+          "location": "coastal_cliffs"
+        },
+        {
+          "hour": 6,
+          "activity": "dawn_scout",
+          "location": "coastal_cliffs"
+        },
+        {
+          "hour": 9,
+          "activity": "report_weather",
+          "location": "coastal_cliffs"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "coastal_cliffs"
+        },
+        {
+          "hour": 15,
+          "activity": "track_paths",
+          "location": "coastal_cliffs"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "coastal_cliffs"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "coastal_cliffs"
+        }
+      ]
+    },
+    {
+      "id": "border_fort_ranger_01",
+      "name": "Thamior Alderbrook",
+      "race": "half-elf",
+      "role": "ranger",
+      "faction_alignment": "iron_legion",
+      "personality": {
+        "traits": [
+          "patient",
+          "alert",
+          "self-reliant"
+        ],
+        "motivations": [
+          "keeping the border trails mapped",
+          "bringing back reports before they turn into rumors",
+          "training younger scouts to survive"
+        ],
+        "fears": [
+          "missing a raider column",
+          "losing the forest line in rain",
+          "being penned behind walls too long"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Fort life makes people soft. The border does the opposite.",
+          "If you're carrying news, speak clearly. If you're carrying trouble, keep your distance.",
+          "I know the tree line, the tracks, and the places where either of those lie to you."
+        ],
+        "farewells": [
+          "The border never sleeps. Neither should the people guarding it.",
+          "Don't take the south trail after dusk unless you enjoy bad decisions.",
+          "A map is only as good as the ranger who kept it honest."
+        ],
+        "idle": [
+          "Riders move faster than stories. That's why the stories are often wrong.",
+          "A line on paper is nothing until you walk it in the rain.",
+          "You can tell a lot about a patrol by the marks they leave behind."
+        ],
+        "quest_related": [
+          "A raider's camp was seen beyond the pines. I need confirmation before the fort sounds the alarm.",
+          "One of my markers vanished from the ridge. Bring it back and I'll share the route.",
+          "The younger scouts are brave and stupid in equal measure. Keep them from wandering off and I'll owe you."
+        ]
+      },
+      "relationship_modifiers": {
+        "shared_rations": 10,
+        "brought_reports": 20,
+        "helped_with_patrol": 25,
+        "ignored_warning": -15,
+        "burned_his_map": -35,
+        "completed_quest": 30
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "sleep",
+          "location": "border_fort"
+        },
+        {
+          "hour": 6,
+          "activity": "patrol_line",
+          "location": "border_fort"
+        },
+        {
+          "hour": 9,
+          "activity": "track_signs",
+          "location": "border_fort"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "border_fort"
+        },
+        {
+          "hour": 15,
+          "activity": "survey_border",
+          "location": "border_fort"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "border_fort"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "border_fort"
+        }
+      ]
+    },
+    {
+      "id": "forest_haven_blacksmith_01",
+      "name": "Nera Ironbough",
+      "race": "dwarf",
+      "role": "blacksmith",
+      "faction_alignment": "craftsmen_union",
+      "personality": {
+        "traits": [
+          "focused",
+          "stubborn",
+          "inventive"
+        ],
+        "motivations": [
+          "forging tools that respect the forest",
+          "repairing broken hinges and axes",
+          "proving the haven doesn't need imports to stand strong"
+        ],
+        "fears": [
+          "bad ore",
+          "fire spreading into the grove",
+          "a blade failing when needed most"
+        ]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "If you've come to complain about the noise, stand farther from the forge.",
+          "Forest Haven needs tools that last. Luck is not a material I work in.",
+          "Wood, iron, and patience. The rest is just smoke."
+        ],
+        "farewells": [
+          "Come back when the metal's cool and your excuses are too.",
+          "Don't leave hot tongs on my bench.",
+          "If you bring decent ore, I'll make something worth carrying."
+        ],
+        "idle": [
+          "Trees and steel both need room to breathe.",
+          "A blade should be strong without being cruel.",
+          "The good work is always hiding under the scale and soot."
+        ],
+        "quest_related": [
+          "A hinge on the gate has cracked again. Find me the right ore and I'll repair it properly.",
+          "A batch of charcoal came in wet. Replace it, or my whole day turns into a lecture.",
+          "The wardens need new spearheads. I can make them if someone brings clean metal."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_ore": 20,
+        "repaired_gate": 25,
+        "respected_the_forge": 10,
+        "burned_wood_near_forge": -20,
+        "mocked_her_craft": -30,
+        "completed_quest": 30
+      },
+      "schedule": [
+        {
+          "hour": 0,
+          "activity": "sleep",
+          "location": "forest_haven"
+        },
+        {
+          "hour": 6,
+          "activity": "prepare_forge",
+          "location": "forest_haven"
+        },
+        {
+          "hour": 9,
+          "activity": "work_forge",
+          "location": "forest_haven"
+        },
+        {
+          "hour": 12,
+          "activity": "meal",
+          "location": "forest_haven"
+        },
+        {
+          "hour": 15,
+          "activity": "sharpen_tools",
+          "location": "forest_haven"
+        },
+        {
+          "hour": 19,
+          "activity": "socialize",
+          "location": "forest_haven"
+        },
+        {
+          "hour": 22,
+          "activity": "rest",
+          "location": "forest_haven"
+        }
+      ]
+    },
+    {
+      "id": "scout_harbor_town_wren",
+      "name": "Wren Calloway",
+      "race": "human",
+      "role": "scout",
+      "faction_alignment": "rangers_guild",
+      "personality": {
+        "traits": ["watchful", "quiet", "resourceful"],
+        "motivations": ["mapping safe routes", "earning the guild's respect", "protecting the harbor approach"],
+        "fears": ["ambush from the sea", "losing her way in fog", "betrayal by informants"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Keep your voice down. Sound carries on the water.",
+          "You're not from the docks. What do you need?",
+          "I just got back from a sweep. Make it quick."
+        ],
+        "farewells": [
+          "Stay off the north bluff after dark.",
+          "I'll be out again at dawn. Don't follow me.",
+          "Watch your back out there."
+        ],
+        "idle": [
+          "There are fresh tracks along the eastern shore. Not human.",
+          "The tide's been bringing in strange debris lately.",
+          "I spotted campfire smoke past the reef. Someone's out there."
+        ],
+        "quest_related": [
+          "I need someone to check the old lighthouse. I can't be in two places.",
+          "There's a smuggler's cache in the cove. Bring proof and I'll pay.",
+          "Something spooked the gulls off the north cliff. Go look."
+        ]
+      },
+      "relationship_modifiers": {
+        "shared_intel": 15,
+        "blew_cover": -30,
+        "helped_patrol": 20,
+        "lied_about_location": -20
+      },
+      "schedule": [
+        {"hour": 5, "activity": "patrol", "location": "harbor_town"},
+        {"hour": 11, "activity": "eat", "location": "harbor_town"},
+        {"hour": 13, "activity": "patrol", "location": "harbor_town"},
+        {"hour": 20, "activity": "rest", "location": "harbor_town"}
+      ]
+    },
+    {
+      "id": "stablehand_harbor_town_ollie",
+      "name": "Ollie Marsh",
+      "race": "halfling",
+      "role": "stablehand",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["cheerful", "hardworking", "chatty"],
+        "motivations": ["saving up for his own horse", "keeping the animals healthy", "hearing travelers' stories"],
+        "fears": ["horse thieves", "disease in the stables", "being stuck here forever"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Need a stall for your mount? I've got two open.",
+          "Hey there! Careful stepping, I just mucked out.",
+          "Welcome! Your horse looks like she could use a brushing."
+        ],
+        "farewells": [
+          "Your mount will be fed and watered. Don't worry.",
+          "Come back before sundown if you want her saddled.",
+          "Safe travels! She'll be ready when you are."
+        ],
+        "idle": [
+          "The bay mare kicked again this morning. Something's got her spooked.",
+          "A merchant left his horse here three weeks ago. Never came back.",
+          "I heard the farrier's raising prices again. Typical."
+        ],
+        "quest_related": [
+          "Someone tried to steal the captain's warhorse last night. I need help watching the barn.",
+          "There's a sick horse in stall four. The healer won't come this far down. Can you fetch medicine?",
+          "A rider came through fast last night, dropped something. I kept it. Interested?"
+        ]
+      },
+      "relationship_modifiers": {
+        "tipped_well": 10,
+        "mistreated_horse": -35,
+        "helped_with_chores": 15,
+        "brought_medicine": 25
+      },
+      "schedule": [
+        {"hour": 5, "activity": "feed_animals", "location": "harbor_town"},
+        {"hour": 12, "activity": "eat", "location": "harbor_town"},
+        {"hour": 13, "activity": "groom_horses", "location": "harbor_town"},
+        {"hour": 20, "activity": "rest", "location": "harbor_town"}
+      ]
+    },
+    {
+      "id": "healer_mountain_hold_brenna",
+      "name": "Brenna Ironleaf",
+      "race": "dwarf",
+      "role": "healer",
+      "faction_alignment": "temple_order",
+      "personality": {
+        "traits": ["stern", "competent", "unsentimental"],
+        "motivations": ["curing the lung sickness in the mines", "proving herbal medicine works", "training an apprentice"],
+        "fears": ["plague spreading underground", "running out of supplies", "losing a patient to stubbornness"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Sit down. Let me see the wound.",
+          "If you're here to waste my time, the door's behind you.",
+          "Another one from the mines? Roll up your sleeve."
+        ],
+        "farewells": [
+          "Change that dressing twice a day. No excuses.",
+          "Come back if the swelling doesn't go down.",
+          "Don't pick at it."
+        ],
+        "idle": [
+          "The miners keep breathing in that dust. They won't listen.",
+          "I'm running low on wound-seal moss. The surface traders charge triple.",
+          "Had three broken bones this week. The new shaft is dangerous."
+        ],
+        "quest_related": [
+          "I need moonpetal from the high slopes. It only grows above the snowline.",
+          "A miner went missing with my last batch of antivenom. Find him.",
+          "Something in the deep tunnels is making people sick. Bring me a sample of the water."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_herbs": 20,
+        "ignored_medical_advice": -15,
+        "helped_sick_miners": 25,
+        "wasted_supplies": -25
+      },
+      "schedule": [
+        {"hour": 6, "activity": "prepare_remedies", "location": "mountain_hold"},
+        {"hour": 12, "activity": "eat", "location": "mountain_hold"},
+        {"hour": 13, "activity": "treat_patients", "location": "mountain_hold"},
+        {"hour": 21, "activity": "rest", "location": "mountain_hold"}
+      ]
+    },
+    {
+      "id": "scout_mountain_hold_torvald",
+      "name": "Torvald Shalefoot",
+      "race": "dwarf",
+      "role": "scout",
+      "faction_alignment": "rangers_guild",
+      "personality": {
+        "traits": ["gruff", "tireless", "observant"],
+        "motivations": ["keeping the mountain passes safe", "tracking orc movements", "earning a warm meal"],
+        "fears": ["avalanches", "tunnel collapses", "being forgotten on a patrol"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Just came down from the ridge. What is it?",
+          "You look lost. The pass is north.",
+          "Speak up. The wind deafened me hours ago."
+        ],
+        "farewells": [
+          "Keep to the marked path or don't bother walking.",
+          "I'll be on the east ridge if anyone needs me.",
+          "Stay warm out there."
+        ],
+        "idle": [
+          "Saw wolf tracks near the upper pass. Big pack.",
+          "The snow came early this year. Not a good sign.",
+          "There's a rockslide blocking the merchant trail. Needs clearing."
+        ],
+        "quest_related": [
+          "I found a camp up near the glacier. Not ours. Check it out.",
+          "The signal fires on peak three went dark. Someone needs to relight them.",
+          "A supply caravan hasn't arrived. Follow the route and report back."
+        ]
+      },
+      "relationship_modifiers": {
+        "cleared_the_pass": 20,
+        "ignored_warnings": -25,
+        "shared_rations": 15,
+        "helped_with_signal_fires": 20
+      },
+      "schedule": [
+        {"hour": 5, "activity": "patrol", "location": "mountain_hold"},
+        {"hour": 11, "activity": "eat", "location": "mountain_hold"},
+        {"hour": 13, "activity": "patrol", "location": "mountain_hold"},
+        {"hour": 20, "activity": "rest", "location": "mountain_hold"}
+      ]
+    },
+    {
+      "id": "stablehand_mountain_hold_durnik",
+      "name": "Durnik Coppershine",
+      "race": "dwarf",
+      "role": "stablehand",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["dependable", "slow-spoken", "gentle with animals"],
+        "motivations": ["keeping the mules fit for mine work", "saving for a plot of land", "quiet routine"],
+        "fears": ["rockfall near the stables", "losing the pack mules", "being forced into the mines"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "The mules are fed. Your beast can share the trough.",
+          "Careful near the grey one. She bites.",
+          "You need a mount? I've only got mules. They'll do."
+        ],
+        "farewells": [
+          "Pick her up before dawn or she stays another night.",
+          "I'll keep an eye on her. Go on.",
+          "Mind the path down. It's icy."
+        ],
+        "idle": [
+          "Mules are smarter than horses. They just don't show off.",
+          "The foreman wants me to stable his new pony. Thing's half wild.",
+          "Feed costs keep going up. The merchants know we've got no choice."
+        ],
+        "quest_related": [
+          "One of the mules came back without its rider. The mine trail, eastern branch.",
+          "Something's been getting into the feed stores at night. Not rats. Bigger.",
+          "I need iron shoes from the smith but he won't deal with me. Could you talk to him?"
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_with_animals": 15,
+        "spooked_the_mules": -20,
+        "brought_feed": 20,
+        "resolved_smith_dispute": 25
+      },
+      "schedule": [
+        {"hour": 5, "activity": "feed_animals", "location": "mountain_hold"},
+        {"hour": 12, "activity": "eat", "location": "mountain_hold"},
+        {"hour": 13, "activity": "groom_mules", "location": "mountain_hold"},
+        {"hour": 20, "activity": "rest", "location": "mountain_hold"}
+      ]
+    },
+    {
+      "id": "commoner_mountain_hold_hilde",
+      "name": "Hilde Graniteborn",
+      "race": "dwarf",
+      "role": "commoner",
+      "faction_alignment": "farmers_collective",
+      "personality": {
+        "traits": ["stubborn", "practical", "talkative"],
+        "motivations": ["feeding her family", "getting a fair price for mushrooms", "community gossip"],
+        "fears": ["mine collapse trapping her husband", "food shortage", "outsiders raising prices"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "You buying or just blocking the path?",
+          "Another stranger. What do you want?",
+          "Morning. The mushroom stew's fresh if you've got coin."
+        ],
+        "farewells": [
+          "Tell your friends the mushrooms are good.",
+          "Don't cause trouble and you're welcome back.",
+          "Off with you then. I've got work."
+        ],
+        "idle": [
+          "My husband says they hit a new vein. Means more dust in everything.",
+          "The well water tastes off lately. Nobody's doing anything about it.",
+          "Prices at the market are robbery. Three coppers for an onion."
+        ],
+        "quest_related": [
+          "My boy went to the lower tunnels two days ago and hasn't come back. Please look for him.",
+          "Someone's been stealing from the communal stores. Catch them.",
+          "The water source upstream might be fouled. I need someone to check."
+        ]
+      },
+      "relationship_modifiers": {
+        "found_her_son": 30,
+        "bought_mushrooms": 10,
+        "insulted_community": -20,
+        "fixed_water_supply": 25
+      },
+      "schedule": [
+        {"hour": 6, "activity": "cook", "location": "mountain_hold"},
+        {"hour": 12, "activity": "sell_goods", "location": "mountain_hold"},
+        {"hour": 15, "activity": "forage", "location": "mountain_hold"},
+        {"hour": 20, "activity": "rest", "location": "mountain_hold"}
+      ]
+    },
+    {
+      "id": "guard_forest_haven_wren",
+      "name": "Wren Thistlewood",
+      "race": "elf",
+      "role": "guard",
+      "faction_alignment": "town_militia",
+      "personality": {
+        "traits": ["alert", "disciplined", "soft-spoken"],
+        "motivations": ["protecting the haven from poachers", "upholding the forest laws", "earning a promotion"],
+        "fears": ["wildfire", "corruption in the guard", "failing to spot a threat"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "State your business. The haven doesn't welcome trouble.",
+          "You're on protected ground. Keep your weapons sheathed.",
+          "Welcome, traveler. Stay on the marked paths."
+        ],
+        "farewells": [
+          "Move along. And don't stray off the trail.",
+          "Safe passage to you.",
+          "The forest watches. Remember that."
+        ],
+        "idle": [
+          "Poachers hit the eastern grove again last night.",
+          "The elder wants more patrols. We're already stretched thin.",
+          "I found trap wire near the old oak. Someone's hunting illegally."
+        ],
+        "quest_related": [
+          "We've had reports of armed strangers near the river bend. Investigate.",
+          "A guard went missing on night patrol. Find any trace of her.",
+          "The poachers have a camp somewhere in the ravine. Locate it."
+        ]
+      },
+      "relationship_modifiers": {
+        "reported_poachers": 20,
+        "broke_forest_law": -30,
+        "helped_patrol": 15,
+        "found_missing_guard": 25
+      },
+      "schedule": [
+        {"hour": 6, "activity": "patrol", "location": "forest_haven"},
+        {"hour": 12, "activity": "eat", "location": "forest_haven"},
+        {"hour": 14, "activity": "patrol", "location": "forest_haven"},
+        {"hour": 21, "activity": "rest", "location": "forest_haven"}
+      ]
+    },
+    {
+      "id": "innkeeper_forest_haven_lira",
+      "name": "Lira Fernhollow",
+      "race": "elf",
+      "role": "innkeeper",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["gracious", "perceptive", "reserved"],
+        "motivations": ["running a peaceful inn", "preserving elven hospitality traditions", "learning news from travelers"],
+        "fears": ["fire in the treehouse inn", "rowdy outsiders", "losing the seasonal trade"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Welcome to the Green Canopy. Rooms are upstairs, meals below.",
+          "You look road-weary. Sit. I'll bring tea.",
+          "A new face. What brings you to the haven?"
+        ],
+        "farewells": [
+          "Rest well. The forest is quiet tonight.",
+          "Your room will be ready when you return.",
+          "Travel safely. The paths can twist after dark."
+        ],
+        "idle": [
+          "A bard came through last week with a song I'd never heard. Unsettling.",
+          "The herb garden out back keeps the kitchen stocked, barely.",
+          "Fewer travelers this season. The roads must be worse than I thought."
+        ],
+        "quest_related": [
+          "A guest left a locked chest behind. It hums at night. Take it, please.",
+          "Someone's been poisoning my herb garden. Find out who.",
+          "I overheard two hooded figures planning something. Thought you should know."
+        ]
+      },
+      "relationship_modifiers": {
+        "paid_for_room": 10,
+        "caused_disturbance": -25,
+        "brought_rare_tea": 20,
+        "investigated_garden": 15
+      },
+      "schedule": [
+        {"hour": 6, "activity": "prepare_inn", "location": "forest_haven"},
+        {"hour": 12, "activity": "serve_meals", "location": "forest_haven"},
+        {"hour": 14, "activity": "host_guests", "location": "forest_haven"},
+        {"hour": 22, "activity": "rest", "location": "forest_haven"}
+      ]
+    },
+    {
+      "id": "blacksmith_forest_haven_aric",
+      "name": "Aric Mossforge",
+      "race": "half_orc",
+      "role": "blacksmith",
+      "faction_alignment": "artisans_guild",
+      "personality": {
+        "traits": ["meticulous", "quiet", "proud"],
+        "motivations": ["crafting with living wood and steel", "proving half-orcs can create beauty", "mastering elven smithing techniques"],
+        "fears": ["his forge being shut down", "prejudice from purists", "running out of ironwood"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "I work in ironwood and steel. What do you need?",
+          "Don't touch the display pieces. They're not for sale yet.",
+          "You want elven-style or practical? I do both."
+        ],
+        "farewells": [
+          "Come back in three days. Good work takes time.",
+          "Keep that blade oiled. The forest air rusts everything.",
+          "I'll have your order ready."
+        ],
+        "idle": [
+          "Ironwood only grows in one grove. If that goes, so does my trade.",
+          "The elves didn't trust me at first. My work changed their minds.",
+          "I need charcoal but the elders limit how much wood I can burn."
+        ],
+        "quest_related": [
+          "The ironwood grove is dying. Something's poisoning the roots. Investigate.",
+          "A rival smith stole my design. Get proof from his workshop in the next town.",
+          "I need firestones from the volcanic ridge. The path is dangerous."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_ironwood": 20,
+        "disrespected_craft": -25,
+        "found_proof_of_theft": 30,
+        "commissioned_work": 10
+      },
+      "schedule": [
+        {"hour": 6, "activity": "work_forge", "location": "forest_haven"},
+        {"hour": 12, "activity": "eat", "location": "forest_haven"},
+        {"hour": 14, "activity": "work_forge", "location": "forest_haven"},
+        {"hour": 21, "activity": "rest", "location": "forest_haven"}
+      ]
+    },
+    {
+      "id": "scout_forest_haven_fenris",
+      "name": "Fenris Duskwalker",
+      "race": "elf",
+      "role": "scout",
+      "faction_alignment": "rangers_guild",
+      "personality": {
+        "traits": ["silent", "patient", "intense"],
+        "motivations": ["tracking threats before they reach the haven", "understanding the deep forest", "solitude"],
+        "fears": ["the forest changing beyond recognition", "being recalled to settlement life", "something older waking in the woods"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "You shouldn't be this deep in the woods.",
+          "I heard you coming a mile away. Work on that.",
+          "What do you want? I don't have time for small talk."
+        ],
+        "farewells": [
+          "Stay on the paths. I mean it.",
+          "I'll be watching. Don't give me a reason.",
+          "The forest will show you out. Follow the moss."
+        ],
+        "idle": [
+          "The wolves moved south. Something pushed them.",
+          "There are claw marks on the old sentinel tree. Fresh.",
+          "The stream changed course after the last rain. Beavers, maybe. Maybe not."
+        ],
+        "quest_related": [
+          "I tracked something large to a cave mouth. I need backup to go in.",
+          "The northern marker stones have been moved. Someone's tampering with our borders.",
+          "There's a blighted area spreading near the east brook. Bring samples to the sage."
+        ]
+      },
+      "relationship_modifiers": {
+        "respected_the_forest": 15,
+        "trampled_vegetation": -20,
+        "helped_investigate_cave": 25,
+        "proved_tracking_skill": 10
+      },
+      "schedule": [
+        {"hour": 5, "activity": "patrol", "location": "forest_haven"},
+        {"hour": 11, "activity": "eat", "location": "forest_haven"},
+        {"hour": 13, "activity": "patrol", "location": "forest_haven"},
+        {"hour": 20, "activity": "rest", "location": "forest_haven"}
+      ]
+    },
+    {
+      "id": "stablehand_forest_haven_pip",
+      "name": "Pip Willowroot",
+      "race": "gnome",
+      "role": "stablehand",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["energetic", "talkative", "animal-loving"],
+        "motivations": ["caring for the elk and ponies", "befriending every animal in the haven", "inventing better feeders"],
+        "fears": ["predators in the paddock", "animals getting sick", "being considered too small for the job"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Oh, hello! Your mount can go in the third pen. Plenty of clover!",
+          "Welcome! Don't mind the elk, she's friendly once she sniffs you.",
+          "Hey there! Need stabling or just passing through?"
+        ],
+        "farewells": [
+          "She'll be happy here. I'll give her extra oats!",
+          "Come back anytime! The animals like company.",
+          "Safe ride! Watch for low branches on the west trail."
+        ],
+        "idle": [
+          "I'm building a better trough. The old one leaks something terrible.",
+          "The elk gave birth last week. Little wobbly thing, but strong.",
+          "A fox has been eyeing the chicken run. I'm setting up a bell trap."
+        ],
+        "quest_related": [
+          "The lead pony won't eat. Something's wrong. Can you ask the healer?",
+          "A wolf pack denned near the paddock. Could you scare them off without hurting them?",
+          "I lost my best harness in the river crossing yesterday. It was my grandfather's."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_with_animals": 15,
+        "scared_the_elk": -20,
+        "retrieved_harness": 25,
+        "brought_treats_for_animals": 10
+      },
+      "schedule": [
+        {"hour": 5, "activity": "feed_animals", "location": "forest_haven"},
+        {"hour": 12, "activity": "eat", "location": "forest_haven"},
+        {"hour": 13, "activity": "groom_animals", "location": "forest_haven"},
+        {"hour": 20, "activity": "rest", "location": "forest_haven"}
+      ]
+    },
+    {
+      "id": "commoner_forest_haven_rowan",
+      "name": "Rowan Birchsong",
+      "race": "elf",
+      "role": "commoner",
+      "faction_alignment": "farmers_collective",
+      "personality": {
+        "traits": ["calm", "thoughtful", "traditional"],
+        "motivations": ["tending the communal garden", "preserving old elven ways", "feeding the settlement"],
+        "fears": ["blight on the crops", "outsiders cutting the old trees", "losing the young to the cities"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "The garden's open to visitors, if you mind the rows.",
+          "Good day. Are you looking for herbs or just shade?",
+          "Careful where you step. The seedlings are fragile."
+        ],
+        "farewells": [
+          "May the roots hold fast for you.",
+          "Come back in harvest. The fruit will be ready.",
+          "Walk gently out there."
+        ],
+        "idle": [
+          "The old silverleaf tree hasn't fruited in three years. Worries me.",
+          "Young folk want to leave for the cities. Can't blame them, but it hurts.",
+          "The soil here has been good to us. I hope it stays that way."
+        ],
+        "quest_related": [
+          "Something's burrowing under the root garden. Not moles. It's too deep. Take a look?",
+          "The seed vault key went missing. I think someone in the settlement took it.",
+          "We need fertilizer from the river delta, but the path is flooded."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_in_garden": 15,
+        "damaged_crops": -25,
+        "found_vault_key": 20,
+        "respected_traditions": 10
+      },
+      "schedule": [
+        {"hour": 6, "activity": "tend_garden", "location": "forest_haven"},
+        {"hour": 12, "activity": "eat", "location": "forest_haven"},
+        {"hour": 14, "activity": "tend_garden", "location": "forest_haven"},
+        {"hour": 20, "activity": "rest", "location": "forest_haven"}
+      ]
+    },
+    {
+      "id": "blacksmith_desert_outpost_zara",
+      "name": "Zara Duneforge",
+      "race": "human",
+      "role": "blacksmith",
+      "faction_alignment": "artisans_guild",
+      "personality": {
+        "traits": ["blunt", "skilled", "impatient"],
+        "motivations": ["perfecting desert steel techniques", "keeping the outpost armed", "earning enough to retire"],
+        "fears": ["sand in the bellows", "supply caravans not arriving", "her eyesight failing"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Don't stand near the forge unless you want burns. What do you need?",
+          "Steel or repair? Those are your options.",
+          "Make it quick. The metal's at temperature."
+        ],
+        "farewells": [
+          "It'll be done when it's done.",
+          "Oil that blade or the sand will eat it.",
+          "Come back tomorrow. I'm busy."
+        ],
+        "idle": [
+          "Desert steel holds an edge like nothing else, if you know the trick.",
+          "The last shipment of coal was half sand. I'm not paying for that.",
+          "My apprentice quit. Couldn't handle the heat. Literally."
+        ],
+        "quest_related": [
+          "I need black iron from the canyon mine. The route's infested with scorpions.",
+          "Someone's been sabotaging my water supply. The forge needs water to work.",
+          "A merchant owes me for three swords. Collect and I'll give you a discount."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_materials": 20,
+        "wasted_her_time": -15,
+        "collected_debt": 25,
+        "commissioned_work": 10
+      },
+      "schedule": [
+        {"hour": 5, "activity": "work_forge", "location": "desert_outpost"},
+        {"hour": 11, "activity": "eat", "location": "desert_outpost"},
+        {"hour": 13, "activity": "work_forge", "location": "desert_outpost"},
+        {"hour": 20, "activity": "rest", "location": "desert_outpost"}
+      ]
+    },
+    {
+      "id": "healer_desert_outpost_naima",
+      "name": "Naima Sandbloom",
+      "race": "human",
+      "role": "healer",
+      "faction_alignment": "temple_order",
+      "personality": {
+        "traits": ["patient", "knowledgeable", "weary"],
+        "motivations": ["treating heatstroke and dehydration", "cataloguing desert herbs", "finding a cure for sandlung"],
+        "fears": ["running out of clean water", "a plague she can't treat", "the temple withdrawing support"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Drink this first. Then talk.",
+          "Sunstroke again? Sit in the shade.",
+          "You look dehydrated. When did you last drink water?"
+        ],
+        "farewells": [
+          "Stay out of the midday sun or I'll see you again.",
+          "Keep drinking water. More than you think you need.",
+          "Rest. Your body needs it more than your pride."
+        ],
+        "idle": [
+          "Sandlung is getting worse every season. I can't keep up.",
+          "There's a cactus three miles east that has healing sap. I need more of it.",
+          "The well water has grit in it again. People are getting stomach sickness."
+        ],
+        "quest_related": [
+          "I need aloe roots from the deep desert. Too dangerous for me alone.",
+          "A caravan driver is delirious with fever. I need a specific herb from the oasis.",
+          "The old healer's journal is in a ruined tower south of here. It has formulas I need."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_herbs": 20,
+        "ignored_medical_advice": -15,
+        "fetched_journal": 30,
+        "helped_patients": 15
+      },
+      "schedule": [
+        {"hour": 6, "activity": "treat_patients", "location": "desert_outpost"},
+        {"hour": 12, "activity": "eat", "location": "desert_outpost"},
+        {"hour": 14, "activity": "prepare_remedies", "location": "desert_outpost"},
+        {"hour": 21, "activity": "rest", "location": "desert_outpost"}
+      ]
+    },
+    {
+      "id": "sage_desert_outpost_idris",
+      "name": "Idris Mirage",
+      "race": "human",
+      "role": "sage",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["cryptic", "well-read", "reclusive"],
+        "motivations": ["studying the desert ruins", "decoding ancient inscriptions", "avoiding politics"],
+        "fears": ["sandstorms destroying the ruins", "tomb robbers", "his research being stolen"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "If you're here about the ruins, sit. Otherwise, leave.",
+          "Another visitor. I suppose you want answers.",
+          "Close the door. Sand gets on the manuscripts."
+        ],
+        "farewells": [
+          "Don't repeat what I told you. Most wouldn't understand.",
+          "Come back when you've found something interesting.",
+          "Shut the door on your way out."
+        ],
+        "idle": [
+          "The glyphs on the eastern ruin don't match any known language.",
+          "A sandstorm uncovered a new chamber last month. I haven't had time to explore it.",
+          "The traders don't care about history. They just want to loot."
+        ],
+        "quest_related": [
+          "There's a sealed chamber beneath the old plaza. I need someone strong to move the stone.",
+          "A rival scholar claims my translation is wrong. Bring me the tablet from the north ruin to prove it.",
+          "Tomb robbers are selling artifacts in the market. Track them to their source."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_artifacts": 20,
+        "damaged_ruins": -35,
+        "stopped_tomb_robbers": 25,
+        "showed_intellectual_curiosity": 10
+      },
+      "schedule": [
+        {"hour": 7, "activity": "study", "location": "desert_outpost"},
+        {"hour": 12, "activity": "eat", "location": "desert_outpost"},
+        {"hour": 14, "activity": "study", "location": "desert_outpost"},
+        {"hour": 22, "activity": "rest", "location": "desert_outpost"}
+      ]
+    },
+    {
+      "id": "stablehand_desert_outpost_tariq",
+      "name": "Tariq Dunecrest",
+      "race": "human",
+      "role": "stablehand",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["easygoing", "sunburnt", "reliable"],
+        "motivations": ["keeping the camels healthy", "earning enough for water rations", "a quiet life"],
+        "fears": ["sandstorms scattering the herd", "water shortage", "raiders stealing mounts"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Need a camel? I've got three rested ones.",
+          "Welcome to the dustiest stable in the world. How can I help?",
+          "Water your mount first, then we talk."
+        ],
+        "farewells": [
+          "Don't push her in the midday heat. She'll quit on you.",
+          "Bring her back in one piece and there's no extra charge.",
+          "Safe crossing out there."
+        ],
+        "idle": [
+          "Camels are stubborn, but they'll outlast any horse in this heat.",
+          "A trader's camel bit me yesterday. Still got the mark.",
+          "The water trough needs fixing again. Third time this month."
+        ],
+        "quest_related": [
+          "One of my best camels wandered off toward the canyon. She's worth a lot.",
+          "Someone's been stealing water from the animal troughs at night. Catch them.",
+          "A merchant wants camels for a long crossing but won't say where. Seems suspicious."
+        ]
+      },
+      "relationship_modifiers": {
+        "returned_lost_camel": 25,
+        "mistreated_animals": -30,
+        "caught_water_thief": 20,
+        "tipped_well": 10
+      },
+      "schedule": [
+        {"hour": 5, "activity": "feed_animals", "location": "desert_outpost"},
+        {"hour": 11, "activity": "eat", "location": "desert_outpost"},
+        {"hour": 13, "activity": "groom_camels", "location": "desert_outpost"},
+        {"hour": 20, "activity": "rest", "location": "desert_outpost"}
+      ]
+    },
+    {
+      "id": "guard_swamp_village_bogdan",
+      "name": "Bogdan Reedhook",
+      "race": "human",
+      "role": "guard",
+      "faction_alignment": "town_militia",
+      "personality": {
+        "traits": ["grizzled", "suspicious", "loyal"],
+        "motivations": ["keeping the village safe from swamp creatures", "maintaining order", "protecting the causeway"],
+        "fears": ["the swamp rising", "something large in the deep water", "disease from the bog"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Stay on the boardwalks. Wander off and we won't find you.",
+          "State your business or keep moving.",
+          "You armed? Good. You'll need to be."
+        ],
+        "farewells": [
+          "Don't go south after dark. I'm serious.",
+          "Keep to the lit paths.",
+          "Watch your footing out there."
+        ],
+        "idle": [
+          "Something took a goat last night. No tracks, just gone.",
+          "The boardwalk at the south end is rotting. Nobody's fixing it.",
+          "Had to pull a merchant out of the mud yesterday. Fool wandered off the path."
+        ],
+        "quest_related": [
+          "The south watchtower's lamp went out. Something broke it. Go check.",
+          "We've had reports of will-o-wisps luring people off the path. Investigate.",
+          "A villager claims she saw something huge in the deep bog. I need proof."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_patrol": 15,
+        "caused_trouble": -25,
+        "repaired_boardwalk": 20,
+        "investigated_threat": 20
+      },
+      "schedule": [
+        {"hour": 6, "activity": "patrol", "location": "swamp_village"},
+        {"hour": 12, "activity": "eat", "location": "swamp_village"},
+        {"hour": 14, "activity": "patrol", "location": "swamp_village"},
+        {"hour": 21, "activity": "rest", "location": "swamp_village"}
+      ]
+    },
+    {
+      "id": "innkeeper_swamp_village_mira",
+      "name": "Mira Fenwater",
+      "race": "human",
+      "role": "innkeeper",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["resourceful", "dry-humored", "tough"],
+        "motivations": ["running the only dry shelter for miles", "keeping the ale flowing", "not losing the building to damp"],
+        "fears": ["flooding", "the inn sinking", "running out of supplies"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Welcome to the Sunken Stag. Mind the step, the floor warps.",
+          "Dry bed, warm food, and something strong. That's what I've got.",
+          "New face. Sit before you fall. You look half-drowned."
+        ],
+        "farewells": [
+          "Sleep light. The walls creak, but that's just the building settling. Probably.",
+          "Come back when you need a roof. We're always here.",
+          "Don't drink the swamp water. That's what the ale is for."
+        ],
+        "idle": [
+          "The cellar flooded again. Lost a barrel of pickled eel.",
+          "Nobody visits the swamp for fun. Everyone here's running from something.",
+          "I've been patching this roof for ten years. It still leaks."
+        ],
+        "quest_related": [
+          "A guest disappeared from his room last night. Door was still locked. Look into it.",
+          "Something's been scratching under the floorboards. Too big for rats.",
+          "I need bog-oak for repairs but the lumber camp's gone silent. Find out why."
+        ]
+      },
+      "relationship_modifiers": {
+        "paid_for_room": 10,
+        "damaged_inn": -25,
+        "investigated_disappearance": 20,
+        "brought_lumber": 15
+      },
+      "schedule": [
+        {"hour": 6, "activity": "prepare_inn", "location": "swamp_village"},
+        {"hour": 12, "activity": "serve_meals", "location": "swamp_village"},
+        {"hour": 14, "activity": "host_guests", "location": "swamp_village"},
+        {"hour": 22, "activity": "rest", "location": "swamp_village"}
+      ]
+    },
+    {
+      "id": "blacksmith_swamp_village_grint",
+      "name": "Grint Mudshaw",
+      "race": "half_orc",
+      "role": "blacksmith",
+      "faction_alignment": "artisans_guild",
+      "personality": {
+        "traits": ["strong", "practical", "resigned"],
+        "motivations": ["keeping tools sharp for the village", "preventing rust", "saving enough to leave"],
+        "fears": ["his forge flooding", "total isolation", "being the last tradesman in the village"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Everything rusts here. Bring it in, I'll fix it.",
+          "What do you need? I work in iron, not miracles.",
+          "Watch the puddle by the anvil."
+        ],
+        "farewells": [
+          "Keep that blade dry or bring it back in a week.",
+          "Oil everything. Twice. I mean it.",
+          "Come back when it breaks. It will."
+        ],
+        "idle": [
+          "Humidity kills steel faster than any battle.",
+          "The bog iron's decent but takes forever to smelt properly.",
+          "I had a customer complain about rust. Told him to move somewhere dry."
+        ],
+        "quest_related": [
+          "I need peat coal from the north bog. The path's been blocked by something.",
+          "My tools got stolen. I suspect the scavengers downriver. Get them back.",
+          "There's a deposit of good ore past the deadwood. Escort me there."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_materials": 15,
+        "insulted_his_work": -20,
+        "recovered_tools": 25,
+        "commissioned_work": 10
+      },
+      "schedule": [
+        {"hour": 6, "activity": "work_forge", "location": "swamp_village"},
+        {"hour": 12, "activity": "eat", "location": "swamp_village"},
+        {"hour": 14, "activity": "work_forge", "location": "swamp_village"},
+        {"hour": 21, "activity": "rest", "location": "swamp_village"}
+      ]
+    },
+    {
+      "id": "merchant_swamp_village_dalia",
+      "name": "Dalia Bogtrader",
+      "race": "halfling",
+      "role": "merchant",
+      "faction_alignment": "merchants_guild",
+      "personality": {
+        "traits": ["shrewd", "cheerful despite everything", "well-connected"],
+        "motivations": ["trading rare swamp goods", "expanding her network", "getting rich enough to leave"],
+        "fears": ["supply routes being cut", "swamp creatures attacking her boats", "being swindled"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Looking to buy or sell? I deal in both.",
+          "You won't find better prices this side of the bog.",
+          "Welcome! I've got herbs, pelts, and things you won't find elsewhere."
+        ],
+        "farewells": [
+          "Pleasure doing business. Tell your friends.",
+          "Come back with coin and I'll have something special.",
+          "Safe crossing. The paths shift after rain."
+        ],
+        "idle": [
+          "Swamp mushrooms fetch triple in the city. If you can keep them fresh.",
+          "My last shipment was late because the boat sank. Third one this year.",
+          "There's good money in leech harvesting, if you've got the stomach."
+        ],
+        "quest_related": [
+          "A shipment went missing on the north channel. Find it and I'll cut you in.",
+          "I need someone to scout a new trade route through the eastern marsh.",
+          "A competitor is undercutting me with stolen goods. Prove it."
+        ]
+      },
+      "relationship_modifiers": {
+        "found_shipment": 20,
+        "haggled_too_hard": -10,
+        "exposed_competitor": 25,
+        "scouted_trade_route": 20
+      },
+      "schedule": [
+        {"hour": 7, "activity": "open_shop", "location": "swamp_village"},
+        {"hour": 12, "activity": "eat", "location": "swamp_village"},
+        {"hour": 14, "activity": "trade", "location": "swamp_village"},
+        {"hour": 20, "activity": "rest", "location": "swamp_village"}
+      ]
+    },
+    {
+      "id": "sage_swamp_village_moss",
+      "name": "Moss Fenwarden",
+      "race": "gnome",
+      "role": "sage",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["eccentric", "brilliant", "muddy"],
+        "motivations": ["cataloguing swamp flora and fauna", "understanding the bog's magic", "publishing his findings"],
+        "fears": ["his notes getting waterlogged", "the swamp drying up", "being dismissed as a crank"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Don't step there! That's a rare moss colony! Come around this way.",
+          "Ah, a visitor! Do you know anything about bioluminescent fungi?",
+          "Hold on, I'm counting tadpoles. Almost done."
+        ],
+        "farewells": [
+          "If you find anything unusual, bring it to me. I'll catalog it.",
+          "Watch for the glowing patches at night. Don't touch them.",
+          "Off you go. Mind the quicksand past the dead cypress."
+        ],
+        "idle": [
+          "I've identified forty-seven unique moss species here. Forty-seven!",
+          "The will-o-wisps aren't supernatural. It's swamp gas. Mostly.",
+          "The water level's dropping. That shouldn't be happening."
+        ],
+        "quest_related": [
+          "I need samples from the deep bog. It's too dangerous for me alone.",
+          "Something is killing the luminous eels. Find the source of the contamination.",
+          "My field journal fell into the sunken temple. I need it back."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_samples": 20,
+        "destroyed_specimens": -30,
+        "retrieved_journal": 25,
+        "showed_interest_in_research": 10
+      },
+      "schedule": [
+        {"hour": 6, "activity": "study", "location": "swamp_village"},
+        {"hour": 12, "activity": "eat", "location": "swamp_village"},
+        {"hour": 14, "activity": "field_research", "location": "swamp_village"},
+        {"hour": 21, "activity": "rest", "location": "swamp_village"}
+      ]
+    },
+    {
+      "id": "scout_swamp_village_ketch",
+      "name": "Ketch Murkvane",
+      "race": "human",
+      "role": "scout",
+      "faction_alignment": "rangers_guild",
+      "personality": {
+        "traits": ["wiry", "cautious", "superstitious"],
+        "motivations": ["mapping safe paths through the swamp", "earning ranger pay", "keeping villagers from drowning"],
+        "fears": ["quicksand", "the deep fog", "swamp lights leading him astray"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "New here? Stick to the boardwalks. I'm not fishing you out.",
+          "I just finished my sweep. The south path is clear. For now.",
+          "You look like you're about to do something stupid. Need a guide?"
+        ],
+        "farewells": [
+          "Stay dry. As dry as you can, anyway.",
+          "If the fog rolls in, stop moving. Wait it out.",
+          "Don't follow any lights that aren't mine."
+        ],
+        "idle": [
+          "Found a sinkhole on the west trail. Had to reroute the markers.",
+          "The fog was thick last night. Heard things moving in it.",
+          "Somebody set a fire on the hummock. Poachers or worse."
+        ],
+        "quest_related": [
+          "The east causeway collapsed. I need help building a temporary crossing.",
+          "There's a hermit deep in the bog who might have information. I can't get close alone.",
+          "Something's been leaving dead fish in a pattern. Not natural. Go look."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_rebuild_causeway": 20,
+        "ignored_path_markers": -20,
+        "investigated_bog_hermit": 15,
+        "shared_supplies": 10
+      },
+      "schedule": [
+        {"hour": 5, "activity": "patrol", "location": "swamp_village"},
+        {"hour": 11, "activity": "eat", "location": "swamp_village"},
+        {"hour": 13, "activity": "patrol", "location": "swamp_village"},
+        {"hour": 20, "activity": "rest", "location": "swamp_village"}
+      ]
+    },
+    {
+      "id": "stablehand_swamp_village_pudge",
+      "name": "Pudge Mudfoot",
+      "race": "halfling",
+      "role": "stablehand",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["good-natured", "perpetually muddy", "stubborn"],
+        "motivations": ["keeping the draft lizards healthy", "proving swamp mounts are underrated", "a dry pair of boots"],
+        "fears": ["swamp rot in the stables", "losing an animal to a croc", "the village being abandoned"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Need a mount? I've got lizards and a mule. The lizards are better here.",
+          "Welcome to the muddiest stable you'll ever see. Don't worry, the animals like it.",
+          "Hey! Your horse won't do well in the bog. Want to trade for a lizard?"
+        ],
+        "farewells": [
+          "She knows the safe paths. Let her lead.",
+          "Bring her back fed and I won't charge extra.",
+          "Don't let her swim. She'll decide she's free."
+        ],
+        "idle": [
+          "Draft lizards handle the mud better than any horse. People don't believe me.",
+          "Had to pull a croc out of the stable last week. Wasn't happy about it.",
+          "Feed costs more when everything has to be shipped in by boat."
+        ],
+        "quest_related": [
+          "My best lizard escaped into the deep marsh. She's valuable. Help me find her.",
+          "Something's been poisoning the feed bin. I need you to watch the stable tonight.",
+          "The mule driver wants more money. Negotiate for me and I'll owe you."
+        ]
+      },
+      "relationship_modifiers": {
+        "found_lost_lizard": 25,
+        "caught_feed_poisoner": 20,
+        "mistreated_animals": -30,
+        "negotiated_deal": 15
+      },
+      "schedule": [
+        {"hour": 5, "activity": "feed_animals", "location": "swamp_village"},
+        {"hour": 12, "activity": "eat", "location": "swamp_village"},
+        {"hour": 13, "activity": "clean_stables", "location": "swamp_village"},
+        {"hour": 20, "activity": "rest", "location": "swamp_village"}
+      ]
+    },
+    {
+      "id": "blacksmith_plains_crossing_torben",
+      "name": "Torben Hammerfield",
+      "race": "human",
+      "role": "blacksmith",
+      "faction_alignment": "artisans_guild",
+      "personality": {
+        "traits": ["steady", "no-nonsense", "generous"],
+        "motivations": ["outfitting the caravans", "making honest tools", "training his daughter"],
+        "fears": ["bandits targeting the forge", "iron shortages", "his daughter leaving the trade"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Wagon wheel, horseshoe, or blade? Pick one.",
+          "You've come to the right place. Best work between the rivers.",
+          "Step in. What needs fixing?"
+        ],
+        "farewells": [
+          "Give it a test swing before you leave.",
+          "Come back if it breaks. It won't, but come back anyway.",
+          "Safe crossing out there."
+        ],
+        "idle": [
+          "Every caravan that passes needs something fixed. Keeps me busy.",
+          "My daughter made that hook on the wall. She's getting better.",
+          "Iron prices are up again. The mines are slow this season."
+        ],
+        "quest_related": [
+          "Bandits stole a shipment of iron ingots meant for me. Recover them.",
+          "I promised a caravan master fifty arrowheads by dawn. I need help at the bellows.",
+          "A competitor's been spreading lies about my work. Find out who and I'll reward you."
+        ]
+      },
+      "relationship_modifiers": {
+        "recovered_iron": 25,
+        "helped_at_forge": 15,
+        "spread_rumors": -20,
+        "commissioned_work": 10
+      },
+      "schedule": [
+        {"hour": 6, "activity": "work_forge", "location": "plains_crossing"},
+        {"hour": 12, "activity": "eat", "location": "plains_crossing"},
+        {"hour": 14, "activity": "work_forge", "location": "plains_crossing"},
+        {"hour": 21, "activity": "rest", "location": "plains_crossing"}
+      ]
+    },
+    {
+      "id": "priest_plains_crossing_elara",
+      "name": "Elara Dustpilgrim",
+      "race": "human",
+      "role": "priest",
+      "faction_alignment": "temple_order",
+      "personality": {
+        "traits": ["serene", "firm", "compassionate"],
+        "motivations": ["blessing the caravans", "tending to the wayside shrine", "converting travelers"],
+        "fears": ["the shrine being desecrated", "losing her faith", "being reassigned"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "May the road treat you kindly. How can I help?",
+          "The shrine is open to all. Enter in peace.",
+          "You look troubled. Sit with me a moment."
+        ],
+        "farewells": [
+          "Go with the blessing of the road.",
+          "The light follows those who seek it.",
+          "Return if you need counsel."
+        ],
+        "idle": [
+          "Every caravan that stops here, I offer a prayer. Most accept.",
+          "The shrine's candles burn through quickly with all this wind.",
+          "A family came through yesterday with nothing. I gave them what I could."
+        ],
+        "quest_related": [
+          "Someone stole the shrine's silver icon. It's sacred to us. Recover it.",
+          "A traveler died on the road. His family needs to be notified in the next town.",
+          "Dark symbols were carved into the shrine wall. I need them cleansed properly."
+        ]
+      },
+      "relationship_modifiers": {
+        "recovered_icon": 30,
+        "desecrated_shrine": -35,
+        "donated_to_shrine": 15,
+        "delivered_message": 20
+      },
+      "schedule": [
+        {"hour": 6, "activity": "morning_prayer", "location": "plains_crossing"},
+        {"hour": 12, "activity": "eat", "location": "plains_crossing"},
+        {"hour": 14, "activity": "tend_shrine", "location": "plains_crossing"},
+        {"hour": 21, "activity": "rest", "location": "plains_crossing"}
+      ]
+    },
+    {
+      "id": "healer_plains_crossing_dren",
+      "name": "Dren Wayward",
+      "race": "halfling",
+      "role": "healer",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["practical", "warm", "overworked"],
+        "motivations": ["treating road injuries", "building a medicine stockpile", "helping those who can't pay"],
+        "fears": ["outbreak with no supplies", "being overwhelmed by casualties", "bandits targeting the clinic"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Injury or illness? Either way, sit down.",
+          "You're the third one today. What happened out there?",
+          "Let me see. I've dealt with worse."
+        ],
+        "farewells": [
+          "Keep the wound clean. Change the wrapping at sunset.",
+          "Take it easy for a few days. I know you won't, but try.",
+          "Come back if the fever returns."
+        ],
+        "idle": [
+          "Caravan season means broken bones and fever. Every year.",
+          "I'm running low on bandages. The merchant wants three times the usual.",
+          "Had a farmer with a snake bite this morning. Got to him just in time."
+        ],
+        "quest_related": [
+          "I need fever-root from the marsh to the south. I can't leave my patients.",
+          "Bandits hit a caravan east of here. There may be wounded survivors.",
+          "A traveling herbalist was supposed to resupply me. She never arrived."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_supplies": 20,
+        "wasted_medicine": -20,
+        "rescued_survivors": 25,
+        "found_herbalist": 15
+      },
+      "schedule": [
+        {"hour": 6, "activity": "treat_patients", "location": "plains_crossing"},
+        {"hour": 12, "activity": "eat", "location": "plains_crossing"},
+        {"hour": 14, "activity": "prepare_remedies", "location": "plains_crossing"},
+        {"hour": 21, "activity": "rest", "location": "plains_crossing"}
+      ]
+    },
+    {
+      "id": "sage_plains_crossing_maren",
+      "name": "Maren Windscribe",
+      "race": "human",
+      "role": "sage",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["curious", "scattered", "well-traveled"],
+        "motivations": ["recording trade routes and customs", "interviewing travelers", "writing a definitive atlas"],
+        "fears": ["her notes being lost", "becoming irrelevant", "war closing the roads"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Ah, a traveler! Where have you come from? I'm collecting accounts.",
+          "One moment, let me finish this entry. There. How can I help?",
+          "You've got the look of someone with a story. Sit."
+        ],
+        "farewells": [
+          "Safe travels. And if you remember any details, come back.",
+          "May the roads stay open for both of us.",
+          "Thank you for your account. It helps more than you know."
+        ],
+        "idle": [
+          "The eastern trade route has shifted three times in ten years.",
+          "A merchant told me about ruins nobody's mapped yet. Fascinating.",
+          "My ink keeps drying out in this wind. I go through bottles."
+        ],
+        "quest_related": [
+          "A caravan master's journal was lost in a bandit raid. It has route data I need.",
+          "I've heard of a standing stone at the crossroads that predates any settlement. Find it and sketch it.",
+          "My colleague in the next town hasn't written in months. Check on her."
+        ]
+      },
+      "relationship_modifiers": {
+        "shared_travel_stories": 15,
+        "lied_about_origins": -15,
+        "recovered_journal": 25,
+        "found_standing_stone": 20
+      },
+      "schedule": [
+        {"hour": 7, "activity": "study", "location": "plains_crossing"},
+        {"hour": 12, "activity": "eat", "location": "plains_crossing"},
+        {"hour": 14, "activity": "interview_travelers", "location": "plains_crossing"},
+        {"hour": 22, "activity": "rest", "location": "plains_crossing"}
+      ]
+    },
+    {
+      "id": "stablehand_plains_crossing_nessa",
+      "name": "Nessa Fieldrun",
+      "race": "human",
+      "role": "stablehand",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["strong", "dependable", "plain-spoken"],
+        "motivations": ["keeping the relay station running", "saving for her own herd", "honest work"],
+        "fears": ["horse plague", "the crossing being bypassed", "bandits in the night"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Stable's open. Two silvers a night, feed included.",
+          "That mare's been ridden hard. Let me take her.",
+          "You here for a fresh horse or just stabling?"
+        ],
+        "farewells": [
+          "She'll be rested by morning.",
+          "Come get her early if you're riding south. The road's busy.",
+          "Take care out there. Heard there's trouble east."
+        ],
+        "idle": [
+          "We're the last stable before the badlands. Everyone stops here.",
+          "Had to shoe six horses yesterday. My arms still ache.",
+          "A caravan left a lame horse. I'm nursing her back."
+        ],
+        "quest_related": [
+          "Horse thieves hit the paddock last week. Track them and I'll pay.",
+          "The well water's making the horses sick. Something upstream. Investigate.",
+          "A courier's horse collapsed. She needs a mount fast. Help me calm the new one."
+        ]
+      },
+      "relationship_modifiers": {
+        "tracked_thieves": 25,
+        "fixed_water_problem": 20,
+        "mistreated_horse": -30,
+        "helped_with_stables": 10
+      },
+      "schedule": [
+        {"hour": 5, "activity": "feed_horses", "location": "plains_crossing"},
+        {"hour": 12, "activity": "eat", "location": "plains_crossing"},
+        {"hour": 13, "activity": "groom_horses", "location": "plains_crossing"},
+        {"hour": 20, "activity": "rest", "location": "plains_crossing"}
+      ]
+    },
+    {
+      "id": "commoner_plains_crossing_jeb",
+      "name": "Jeb Cartwright",
+      "race": "human",
+      "role": "commoner",
+      "faction_alignment": "farmers_collective",
+      "personality": {
+        "traits": ["grounded", "friendly", "cautious with outsiders"],
+        "motivations": ["growing enough grain for the settlement", "keeping his land", "providing for his family"],
+        "fears": ["drought", "bandits burning the fields", "tax collectors"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Morning. You passing through or staying?",
+          "The fields are mine. If you're here to buy grain, talk to the merchant.",
+          "Hello there. Don't mind the dog, she's harmless."
+        ],
+        "farewells": [
+          "Good luck on the road. Watch for dust storms.",
+          "Come back at harvest. There'll be plenty.",
+          "Stay on the road. The tall grass hides sinkholes."
+        ],
+        "idle": [
+          "Rain's late this year. If it doesn't come soon, we're in trouble.",
+          "The caravans buy most of what I grow. Not much left after that.",
+          "Saw riders on the ridge last night. Not traders."
+        ],
+        "quest_related": [
+          "Something's been trampling my fields at night. Not animals. Find out what.",
+          "The irrigation ditch is blocked upstream. I can't leave the farm to fix it.",
+          "Tax collector says I owe double this year. That can't be right. Help me sort it out."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_with_farm": 15,
+        "trampled_crops": -25,
+        "fixed_irrigation": 20,
+        "resolved_tax_dispute": 25
+      },
+      "schedule": [
+        {"hour": 5, "activity": "work_fields", "location": "plains_crossing"},
+        {"hour": 12, "activity": "eat", "location": "plains_crossing"},
+        {"hour": 14, "activity": "work_fields", "location": "plains_crossing"},
+        {"hour": 20, "activity": "rest", "location": "plains_crossing"}
+      ]
+    },
+    {
+      "id": "innkeeper_coastal_fort_bertram",
+      "name": "Bertram Seawall",
+      "race": "human",
+      "role": "innkeeper",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["loud", "jovial", "shrewd"],
+        "motivations": ["keeping the soldiers fed and drinking", "expanding the taproom", "collecting stories"],
+        "fears": ["the fort being attacked", "supply ships not arriving", "a bar brawl going too far"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Welcome to the Salt Barrel! Ale's cheap, food's hot. Sit down!",
+          "Another thirsty soul! What'll it be?",
+          "You look like you've been at sea. Perfect. I've got just the thing."
+        ],
+        "farewells": [
+          "Come back tonight. There's music!",
+          "Don't fall off the seawall on the way out.",
+          "Your tab's open if you need it."
+        ],
+        "idle": [
+          "The garrison drinks half my stock. Good for business, bad for storage.",
+          "A sailor told me about a sea serpent. I believe about half of it.",
+          "The supply ship is three days late. I'm rationing the good ale."
+        ],
+        "quest_related": [
+          "A sailor left his chest behind. It's locked and it rattles. Figure it out.",
+          "Someone's been watering down my ale barrels at night. Catch them.",
+          "The supply route by sea is getting raided. Find out who's behind it."
+        ]
+      },
+      "relationship_modifiers": {
+        "caught_ale_thief": 20,
+        "started_bar_fight": -25,
+        "bought_rounds": 15,
+        "investigated_supply_raids": 25
+      },
+      "schedule": [
+        {"hour": 7, "activity": "prepare_inn", "location": "coastal_fort"},
+        {"hour": 12, "activity": "serve_meals", "location": "coastal_fort"},
+        {"hour": 14, "activity": "host_guests", "location": "coastal_fort"},
+        {"hour": 23, "activity": "rest", "location": "coastal_fort"}
+      ]
+    },
+    {
+      "id": "merchant_coastal_fort_ysmara",
+      "name": "Ysmara Tidecoin",
+      "race": "elf",
+      "role": "merchant",
+      "faction_alignment": "merchants_guild",
+      "personality": {
+        "traits": ["calculating", "polite", "patient"],
+        "motivations": ["controlling the port trade", "expanding to inland markets", "building wealth"],
+        "fears": ["pirates", "trade sanctions", "a rival guild gaining influence"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Good day. I deal in maritime goods. What interests you?",
+          "Looking to buy or sell? I offer fair rates.",
+          "Ah, a customer. Let me show you today's stock."
+        ],
+        "farewells": [
+          "Pleasure. Come back when the next ship docks.",
+          "Fair winds and fair trade to you.",
+          "I'll hold that item for one day. No longer."
+        ],
+        "idle": [
+          "The shipping lanes have been quiet. Too quiet for my liking.",
+          "I'm expecting a cargo of spices from the south. Should double my investment.",
+          "The fort commander wants a tariff increase. Bad for everyone."
+        ],
+        "quest_related": [
+          "A shipment of mine was seized by the garrison. It's legitimate. Help me prove it.",
+          "I need a rare coral from the reef. Divers won't go. Will you?",
+          "A competing merchant is bribing dock workers. Get evidence."
+        ]
+      },
+      "relationship_modifiers": {
+        "cleared_shipment": 20,
+        "retrieved_coral": 25,
+        "stole_from_shop": -35,
+        "exposed_competitor": 20
+      },
+      "schedule": [
+        {"hour": 7, "activity": "open_shop", "location": "coastal_fort"},
+        {"hour": 12, "activity": "eat", "location": "coastal_fort"},
+        {"hour": 14, "activity": "trade", "location": "coastal_fort"},
+        {"hour": 20, "activity": "rest", "location": "coastal_fort"}
+      ]
+    },
+    {
+      "id": "sage_coastal_fort_orwen",
+      "name": "Orwen Driftwood",
+      "race": "human",
+      "role": "sage",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["weathered", "precise", "solitary"],
+        "motivations": ["charting coastal currents", "predicting storms", "preserving nautical records"],
+        "fears": ["a great storm he can't predict", "his charts being wrong", "losing his observatory"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "If it's about the weather, I can help. Anything else, try someone else.",
+          "The tide charts are on the table. Don't touch the instruments.",
+          "You're here about the storm warnings? Sit."
+        ],
+        "farewells": [
+          "Watch the sky tonight. Red at sunset means wind.",
+          "I'll update the charts by morning.",
+          "Don't sail east for three days. Trust me."
+        ],
+        "idle": [
+          "The currents have shifted. Something's different about the seabed.",
+          "Last month's storm didn't match any pattern I've recorded.",
+          "The lighthouse keeper says he saw lights under the water. I believe him."
+        ],
+        "quest_related": [
+          "My weather instruments were stolen from the tower. Without them I'm guessing.",
+          "There's a wrecked ship on the north reef with navigational charts I need.",
+          "The underwater lights need investigating. Take a boat and a lantern."
+        ]
+      },
+      "relationship_modifiers": {
+        "recovered_instruments": 30,
+        "retrieved_charts": 25,
+        "damaged_equipment": -25,
+        "reported_unusual_weather": 10
+      },
+      "schedule": [
+        {"hour": 6, "activity": "observe_weather", "location": "coastal_fort"},
+        {"hour": 12, "activity": "eat", "location": "coastal_fort"},
+        {"hour": 14, "activity": "study", "location": "coastal_fort"},
+        {"hour": 22, "activity": "rest", "location": "coastal_fort"}
+      ]
+    },
+    {
+      "id": "scout_coastal_fort_seren",
+      "name": "Seren Reefwatch",
+      "race": "human",
+      "role": "scout",
+      "faction_alignment": "rangers_guild",
+      "personality": {
+        "traits": ["sharp-eyed", "fearless", "independent"],
+        "motivations": ["watching for raiders from the sea", "exploring the coast", "keeping the garrison informed"],
+        "fears": ["invasion fleet on the horizon", "being posted inland", "losing her boat"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "I just came in from the clifftop watch. What do you need?",
+          "Keep your voice down near the walls. Sound carries.",
+          "You're not garrison. Who sent you?"
+        ],
+        "farewells": [
+          "I'll be on the east bluff until sundown.",
+          "Eyes open out there. The coast isn't safe.",
+          "Don't signal with fire unless it's an emergency."
+        ],
+        "idle": [
+          "Saw three ships on the horizon yesterday. They didn't stop. Concerning.",
+          "The old watchtower on the point needs repairs. Nobody's authorized it.",
+          "There are caves in the cliffs that haven't been searched in years."
+        ],
+        "quest_related": [
+          "I spotted a hidden cove with signs of use. Smugglers. Check it out.",
+          "The north watchtower's been dark for two nights. Go see why.",
+          "I need someone to row out to the rock island and check for a signal marker."
+        ]
+      },
+      "relationship_modifiers": {
+        "investigated_cove": 20,
+        "checked_watchtower": 20,
+        "compromised_position": -25,
+        "shared_coastal_intel": 15
+      },
+      "schedule": [
+        {"hour": 5, "activity": "patrol", "location": "coastal_fort"},
+        {"hour": 11, "activity": "eat", "location": "coastal_fort"},
+        {"hour": 13, "activity": "patrol", "location": "coastal_fort"},
+        {"hour": 20, "activity": "rest", "location": "coastal_fort"}
+      ]
+    },
+    {
+      "id": "stablehand_coastal_fort_pol",
+      "name": "Pol Anchorson",
+      "race": "human",
+      "role": "stablehand",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["sturdy", "quiet", "loyal"],
+        "motivations": ["keeping the garrison horses ready", "earning his keep", "learning to ride properly"],
+        "fears": ["the horses panicking in a siege", "salt rot in the hay", "being drafted as a soldier"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Garrison stables. If you're not military, it's extra.",
+          "Your horse needs rest. I can see it from here.",
+          "Stable's almost full. I can squeeze one more in."
+        ],
+        "farewells": [
+          "I'll have her brushed and ready.",
+          "Pick her up before the morning drill or she'll get moved.",
+          "Ride safe. The coastal path is slippery."
+        ],
+        "idle": [
+          "Salt air's rough on the tack. I oil everything twice.",
+          "The captain's warhorse threw a shoe again. Third time.",
+          "We got a new shipment of oats. Finally something that isn't mouldy."
+        ],
+        "quest_related": [
+          "The captain's horse went missing from the paddock. Help me find it before he notices.",
+          "Something's spooking the horses at night. I hear it but can't see it.",
+          "I need saddle oil from the merchant, but she won't sell to enlisted. Can you buy it?"
+        ]
+      },
+      "relationship_modifiers": {
+        "found_captains_horse": 25,
+        "investigated_noises": 15,
+        "helped_with_horses": 10,
+        "mistreated_animals": -30
+      },
+      "schedule": [
+        {"hour": 5, "activity": "feed_horses", "location": "coastal_fort"},
+        {"hour": 12, "activity": "eat", "location": "coastal_fort"},
+        {"hour": 13, "activity": "groom_horses", "location": "coastal_fort"},
+        {"hour": 20, "activity": "rest", "location": "coastal_fort"}
+      ]
+    },
+    {
+      "id": "commoner_coastal_fort_nettie",
+      "name": "Nettie Saltwick",
+      "race": "human",
+      "role": "commoner",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["resilient", "outspoken", "hard-working"],
+        "motivations": ["mending nets and selling fish", "raising her children", "keeping the village fed"],
+        "fears": ["storms taking the boats", "the garrison conscripting her son", "fish stocks depleting"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Fresh fish, if you want some. Caught this morning.",
+          "You're not from the fort. What brings you to the docks?",
+          "Morning. Mind the nets, they're drying."
+        ],
+        "farewells": [
+          "Come back at low tide. The catch is better.",
+          "Take care. The rocks are slippery after rain.",
+          "Tell your friends the fish is good and cheap."
+        ],
+        "idle": [
+          "The catch has been thin this season. Something's driving the fish away.",
+          "My boy wants to join the garrison. I'd rather he fished.",
+          "The dock tax went up again. They'll bleed us dry."
+        ],
+        "quest_related": [
+          "Something big tore my nets last night. Not a fish. Find out what's in the water.",
+          "The dock master is charging us double. Prove he's skimming.",
+          "My husband's boat hasn't come back. It's been two days. Please look."
+        ]
+      },
+      "relationship_modifiers": {
+        "found_husband": 30,
+        "bought_fish": 10,
+        "exposed_dock_master": 25,
+        "damaged_nets": -20
+      },
+      "schedule": [
+        {"hour": 5, "activity": "fish", "location": "coastal_fort"},
+        {"hour": 12, "activity": "eat", "location": "coastal_fort"},
+        {"hour": 14, "activity": "mend_nets", "location": "coastal_fort"},
+        {"hour": 20, "activity": "rest", "location": "coastal_fort"}
+      ]
+    },
+    {
+      "id": "priest_mining_camp_brother_giles",
+      "name": "Brother Giles",
+      "race": "human",
+      "role": "priest",
+      "faction_alignment": "temple_order",
+      "personality": {
+        "traits": ["solemn", "dedicated", "weary"],
+        "motivations": ["comforting the miners", "performing rites for the dead", "maintaining the small chapel"],
+        "fears": ["cave-in with no survivors", "the camp losing faith", "being unable to help"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "The chapel's open. Come in if you need peace.",
+          "You look burdened. I'll listen, if you want.",
+          "Welcome. We don't get many visitors down here."
+        ],
+        "farewells": [
+          "Go safely into the dark. The light goes with you.",
+          "I'll keep a candle lit for your return.",
+          "May the stone hold above you."
+        ],
+        "idle": [
+          "We lost two miners last month. I said the rites. It never gets easier.",
+          "The chapel roof leaks dust. I sweep it every morning.",
+          "The foreman says prayer time slows production. I say it keeps them sane."
+        ],
+        "quest_related": [
+          "A miner claims he heard chanting from a sealed tunnel. Investigate before panic spreads.",
+          "I need blessed water from the mountain spring. The path is treacherous.",
+          "Someone's been stealing offerings from the chapel. Catch them."
+        ]
+      },
+      "relationship_modifiers": {
+        "donated_to_chapel": 15,
+        "stole_offerings": -30,
+        "investigated_tunnel": 20,
+        "fetched_blessed_water": 25
+      },
+      "schedule": [
+        {"hour": 6, "activity": "morning_prayer", "location": "mining_camp"},
+        {"hour": 12, "activity": "eat", "location": "mining_camp"},
+        {"hour": 14, "activity": "tend_chapel", "location": "mining_camp"},
+        {"hour": 21, "activity": "rest", "location": "mining_camp"}
+      ]
+    },
+    {
+      "id": "sage_mining_camp_telsa",
+      "name": "Telsa Rockwise",
+      "race": "gnome",
+      "role": "sage",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["analytical", "restless", "curious"],
+        "motivations": ["studying mineral formations", "mapping the deep tunnels", "discovering new ore veins"],
+        "fears": ["cave-ins destroying her research", "her maps being wrong", "toxic gases"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Careful with that lamp! I have volatile samples here.",
+          "Oh good, someone who can carry things. I mean, welcome.",
+          "You're here about the tunnels? Finally someone takes interest."
+        ],
+        "farewells": [
+          "Don't go past the red markers in the tunnels. That's unmapped.",
+          "Bring any unusual stones you find. I'll identify them.",
+          "Mind the gas pockets near shaft seven."
+        ],
+        "idle": [
+          "There's a crystal formation in shaft twelve that doesn't match any known mineral.",
+          "The miners dug too deep on the south face. I warned them.",
+          "My gas detector keeps triggering near the old works. Something's venting."
+        ],
+        "quest_related": [
+          "I dropped my surveying tools down a crevice in shaft nine. I can't fit. You might.",
+          "The unknown crystal needs to be compared with samples from the surface. Bring me one from the cliff face.",
+          "There's a blocked passage that my readings say opens into a larger chamber. Help me clear it."
+        ]
+      },
+      "relationship_modifiers": {
+        "retrieved_tools": 20,
+        "brought_samples": 15,
+        "helped_clear_passage": 25,
+        "damaged_equipment": -25
+      },
+      "schedule": [
+        {"hour": 7, "activity": "study", "location": "mining_camp"},
+        {"hour": 12, "activity": "eat", "location": "mining_camp"},
+        {"hour": 14, "activity": "survey_tunnels", "location": "mining_camp"},
+        {"hour": 21, "activity": "rest", "location": "mining_camp"}
+      ]
+    },
+    {
+      "id": "scout_mining_camp_flint",
+      "name": "Flint Ridgeback",
+      "race": "dwarf",
+      "role": "scout",
+      "faction_alignment": "rangers_guild",
+      "personality": {
+        "traits": ["tough", "alert", "taciturn"],
+        "motivations": ["guarding the supply road", "tracking predators near the camp", "keeping busy"],
+        "fears": ["an organized attack on the camp", "being trapped underground", "wolves in winter"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "The road's clear for now. What do you want?",
+          "You're not a miner. State your business.",
+          "Just came back from the ridge. Make it brief."
+        ],
+        "farewells": [
+          "Don't wander after dark. The wolves are bold this year.",
+          "Stay on the supply road. The shortcuts aren't worth it.",
+          "I'll be on the overlook if trouble comes."
+        ],
+        "idle": [
+          "Bear tracks near the refuse pile. Big one.",
+          "The supply wagon was late again. Might be road trouble.",
+          "Someone's been cutting through the fence at the north perimeter."
+        ],
+        "quest_related": [
+          "The bear near camp needs to be driven off before it kills someone.",
+          "I found bootprints that aren't ours near the supply cache. Investigate.",
+          "The north fence keeps getting cut. Set up a watch with me tonight."
+        ]
+      },
+      "relationship_modifiers": {
+        "drove_off_bear": 25,
+        "tracked_intruders": 20,
+        "helped_night_watch": 15,
+        "ignored_warnings": -20
+      },
+      "schedule": [
+        {"hour": 5, "activity": "patrol", "location": "mining_camp"},
+        {"hour": 11, "activity": "eat", "location": "mining_camp"},
+        {"hour": 13, "activity": "patrol", "location": "mining_camp"},
+        {"hour": 20, "activity": "rest", "location": "mining_camp"}
+      ]
+    },
+    {
+      "id": "stablehand_mining_camp_gretta",
+      "name": "Gretta Ironmule",
+      "race": "dwarf",
+      "role": "stablehand",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["sturdy", "no-nonsense", "caring"],
+        "motivations": ["keeping the pack mules working", "saving for a better stable", "earning respect"],
+        "fears": ["mule sickness", "being replaced by machines", "winter feed shortage"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "The mules are working. Your beast can rest in pen two.",
+          "Don't startle them. They've been hauling ore all day.",
+          "Need something? I'm busy but go ahead."
+        ],
+        "farewells": [
+          "She'll be fed. Come back at dawn.",
+          "Don't rush her on the downhill. Loaded mules need patience.",
+          "Mind the mud outside. It's knee-deep."
+        ],
+        "idle": [
+          "These mules haul more weight than any horse could. They deserve better.",
+          "The foreman wants me to work them double shifts. I said no.",
+          "Feed prices are criminal. The merchant knows we can't go elsewhere."
+        ],
+        "quest_related": [
+          "A mule went lame on the mountain path. I need splint wood and salve.",
+          "The feed shipment was short again. Someone's skimming. Prove it.",
+          "There's a wild stallion in the valley that could strengthen our stock. Help me catch it."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_supplies": 15,
+        "overworked_animals": -25,
+        "caught_feed_thief": 25,
+        "helped_catch_stallion": 20
+      },
+      "schedule": [
+        {"hour": 5, "activity": "feed_mules", "location": "mining_camp"},
+        {"hour": 12, "activity": "eat", "location": "mining_camp"},
+        {"hour": 13, "activity": "tend_animals", "location": "mining_camp"},
+        {"hour": 20, "activity": "rest", "location": "mining_camp"}
+      ]
+    },
+    {
+      "id": "commoner_mining_camp_horace",
+      "name": "Horace Pitman",
+      "race": "human",
+      "role": "commoner",
+      "faction_alignment": "farmers_collective",
+      "personality": {
+        "traits": ["tired", "honest", "resigned"],
+        "motivations": ["earning enough to feed his family", "surviving another season", "getting his daughter educated"],
+        "fears": ["mine collapse", "wage cuts", "his daughter having to work the mines too"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "You new? The foreman's tent is that way.",
+          "Morning. Don't mind the cough. Everyone's got it here.",
+          "If you're looking for work, there's always room in the pit."
+        ],
+        "farewells": [
+          "Watch your head in the tunnels.",
+          "Stay safe down there. Nobody else will keep you safe.",
+          "Good luck. We all need it."
+        ],
+        "idle": [
+          "Twelve hours underground for three coppers. That's the deal.",
+          "My back's not what it used to be. The mine takes everything.",
+          "The company store charges double what the town does. We've got no choice."
+        ],
+        "quest_related": [
+          "The foreman's been cutting shifts short but docking full pay. Get proof.",
+          "My mate went into the old shaft and didn't come out. The foreman won't send anyone.",
+          "There's talk of a strike. We need someone the bosses will listen to."
+        ]
+      },
+      "relationship_modifiers": {
+        "exposed_foreman": 25,
+        "found_missing_miner": 30,
+        "sided_with_bosses": -25,
+        "shared_food": 10
+      },
+      "schedule": [
+        {"hour": 5, "activity": "mine_work", "location": "mining_camp"},
+        {"hour": 12, "activity": "eat", "location": "mining_camp"},
+        {"hour": 14, "activity": "mine_work", "location": "mining_camp"},
+        {"hour": 20, "activity": "rest", "location": "mining_camp"}
+      ]
+    },
+    {
+      "id": "innkeeper_temple_sanctuary_ada",
+      "name": "Ada Hearthwell",
+      "race": "human",
+      "role": "innkeeper",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["motherly", "devout", "practical"],
+        "motivations": ["running the pilgrim house", "offering comfort to the faithful", "keeping costs down"],
+        "fears": ["the temple withdrawing patronage", "a violent guest", "the kitchen fire spreading"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Welcome, pilgrim. The house is open. Meals at six and noon.",
+          "Come in from the cold. There's soup on.",
+          "Room for one more. Always is."
+        ],
+        "farewells": [
+          "May your journey bring you what you seek.",
+          "The door's always open when you return.",
+          "Travel with grace."
+        ],
+        "idle": [
+          "The pilgrims this season are quieter than usual. Something weighs on them.",
+          "I go through ten loaves a day during festival. Twenty if the weather's bad.",
+          "The temple donates what they can, but it's never quite enough."
+        ],
+        "quest_related": [
+          "A pilgrim left a sealed letter for someone who hasn't arrived. Deliver it.",
+          "My pantry was raided last night. I can't afford the loss. Catch the thief.",
+          "There's a sick traveler upstairs who needs medicine I don't have."
+        ]
+      },
+      "relationship_modifiers": {
+        "donated_food": 15,
+        "caught_thief": 20,
+        "delivered_letter": 15,
+        "disrespected_pilgrims": -20
+      },
+      "schedule": [
+        {"hour": 5, "activity": "prepare_meals", "location": "temple_sanctuary"},
+        {"hour": 12, "activity": "serve_meals", "location": "temple_sanctuary"},
+        {"hour": 14, "activity": "host_pilgrims", "location": "temple_sanctuary"},
+        {"hour": 21, "activity": "rest", "location": "temple_sanctuary"}
+      ]
+    },
+    {
+      "id": "blacksmith_temple_sanctuary_silas",
+      "name": "Silas Anvil",
+      "race": "human",
+      "role": "blacksmith",
+      "faction_alignment": "artisans_guild",
+      "personality": {
+        "traits": ["devout", "meticulous", "soft-spoken"],
+        "motivations": ["forging ceremonial items for the temple", "perfecting sacred metalwork", "honoring the craft"],
+        "fears": ["producing flawed sacred items", "the temple losing influence", "his hands failing him"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "I forge for the temple, but I take outside work too. What do you need?",
+          "Welcome. Mind the candles near the forge. They're for the blessing.",
+          "If it's a rush job, I'll pass. Sacred work takes time."
+        ],
+        "farewells": [
+          "Go in peace. The work will be ready when it's ready.",
+          "May your blade serve a good cause.",
+          "I'll pray over the piece before you collect it."
+        ],
+        "idle": [
+          "Every piece I forge gets a blessing. Superstition or not, it matters to me.",
+          "The high priest commissioned a new censer. Silver and iron. Tricky combination.",
+          "Pilgrims buy amulets. Simple work, but it pays the bills."
+        ],
+        "quest_related": [
+          "I need silver ore of a specific purity for a temple commission. The usual supplier failed.",
+          "Someone stole a sacred hammer from my workshop. It has ceremonial value.",
+          "An old blade was brought to me for restoration. It has markings I can't read. Take it to the sage."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_silver": 20,
+        "recovered_hammer": 25,
+        "disrespected_temple": -25,
+        "commissioned_work": 10
+      },
+      "schedule": [
+        {"hour": 6, "activity": "work_forge", "location": "temple_sanctuary"},
+        {"hour": 12, "activity": "eat", "location": "temple_sanctuary"},
+        {"hour": 14, "activity": "work_forge", "location": "temple_sanctuary"},
+        {"hour": 21, "activity": "rest", "location": "temple_sanctuary"}
+      ]
+    },
+    {
+      "id": "merchant_temple_sanctuary_lyris",
+      "name": "Lyris Candelwick",
+      "race": "halfling",
+      "role": "merchant",
+      "faction_alignment": "merchants_guild",
+      "personality": {
+        "traits": ["cheerful", "observant", "diplomatic"],
+        "motivations": ["selling devotional goods to pilgrims", "building relationships with the temple", "steady profit"],
+        "fears": ["pilgrimage routes closing", "counterfeit goods damaging her reputation", "the temple banning commerce"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Candles, incense, prayer beads! What does the pilgrim need?",
+          "Welcome! Everything here is temple-blessed. Mostly.",
+          "Looking for a souvenir of your journey? I've got just the thing."
+        ],
+        "farewells": [
+          "May your purchase bring you peace.",
+          "Come back during the festival. I'll have special stock.",
+          "Safe travels, friend."
+        ],
+        "idle": [
+          "Festival season doubles my sales. The rest of the year is lean.",
+          "A priest told me my incense was too cheap to be real. It's real. I just bargain well.",
+          "Pilgrims from the north want different things than those from the south. You learn."
+        ],
+        "quest_related": [
+          "Someone is selling fake blessed items near my stall. It hurts all of us. Find them.",
+          "I'm expecting a delivery of rare incense but the courier vanished.",
+          "The temple is considering banning merchants from the grounds. I need someone to speak on our behalf."
+        ]
+      },
+      "relationship_modifiers": {
+        "exposed_counterfeiter": 25,
+        "found_courier": 20,
+        "advocated_for_merchants": 20,
+        "shoplifted": -30
+      },
+      "schedule": [
+        {"hour": 7, "activity": "open_shop", "location": "temple_sanctuary"},
+        {"hour": 12, "activity": "eat", "location": "temple_sanctuary"},
+        {"hour": 14, "activity": "trade", "location": "temple_sanctuary"},
+        {"hour": 20, "activity": "rest", "location": "temple_sanctuary"}
+      ]
+    },
+    {
+      "id": "scout_temple_sanctuary_callum",
+      "name": "Callum Pilgrimspath",
+      "race": "human",
+      "role": "scout",
+      "faction_alignment": "rangers_guild",
+      "personality": {
+        "traits": ["devout", "vigilant", "humble"],
+        "motivations": ["keeping the pilgrimage roads safe", "serving the temple", "personal redemption"],
+        "fears": ["pilgrims being ambushed", "failing his oath", "the old temptations returning"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "The roads are watched. You're safe here.",
+          "I patrol the pilgrim paths. Report any trouble to me.",
+          "Welcome to the sanctuary. I keep the peace outside the walls."
+        ],
+        "farewells": [
+          "Walk the marked path. It's marked for a reason.",
+          "I'll be out before dawn. Travel safely.",
+          "The light guides those who follow."
+        ],
+        "idle": [
+          "Bandits know pilgrims carry coin. That's why I'm here.",
+          "The north road had a rockslide last week. It's cleared now.",
+          "A pilgrim thanked me yesterday. That's enough for me."
+        ],
+        "quest_related": [
+          "Bandits have set up on the eastern approach. Help me clear them.",
+          "A group of pilgrims is overdue from the mountain pass. Search for them.",
+          "Someone's been leaving threatening symbols on the path markers. Find who."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_clear_bandits": 25,
+        "found_pilgrims": 30,
+        "threatened_pilgrims": -35,
+        "shared_patrol_duty": 15
+      },
+      "schedule": [
+        {"hour": 5, "activity": "patrol", "location": "temple_sanctuary"},
+        {"hour": 11, "activity": "eat", "location": "temple_sanctuary"},
+        {"hour": 13, "activity": "patrol", "location": "temple_sanctuary"},
+        {"hour": 20, "activity": "rest", "location": "temple_sanctuary"}
+      ]
+    },
+    {
+      "id": "stablehand_temple_sanctuary_brin",
+      "name": "Brin Halterfield",
+      "race": "human",
+      "role": "stablehand",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["gentle", "devout", "simple"],
+        "motivations": ["caring for the pilgrims' mounts", "serving the temple through honest labor", "peace and routine"],
+        "fears": ["animals being neglected", "being sent away from the temple", "loud noises"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "I'll take your horse. She'll have water and hay within the hour.",
+          "Welcome, traveler. The stable is behind the east wall.",
+          "Your mount looks tired. I'll make sure she rests well."
+        ],
+        "farewells": [
+          "She'll be well cared for. I promise.",
+          "Come for her when you're ready. No rush.",
+          "Blessings on your journey."
+        ],
+        "idle": [
+          "The temple donkeys are old but they still make the climb. Tough creatures.",
+          "A pilgrim's horse kicked down a fence post. I'll fix it after lunch.",
+          "I talk to the animals. They listen better than most people."
+        ],
+        "quest_related": [
+          "A horse arrived with no rider. Bloodstains on the saddle. Someone needs help out there.",
+          "The hay loft has rats. Big ones. I've tried everything.",
+          "A pilgrim says someone stole his donkey from the stable. Help me track it."
+        ]
+      },
+      "relationship_modifiers": {
+        "helped_find_rider": 25,
+        "cleared_rats": 15,
+        "tracked_donkey": 20,
+        "mistreated_animals": -30
+      },
+      "schedule": [
+        {"hour": 5, "activity": "feed_animals", "location": "temple_sanctuary"},
+        {"hour": 12, "activity": "eat", "location": "temple_sanctuary"},
+        {"hour": 13, "activity": "groom_animals", "location": "temple_sanctuary"},
+        {"hour": 20, "activity": "rest", "location": "temple_sanctuary"}
+      ]
+    },
+    {
+      "id": "commoner_temple_sanctuary_ruth",
+      "name": "Ruth Ashpenny",
+      "race": "human",
+      "role": "commoner",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["pious", "tired", "kind"],
+        "motivations": ["scrubbing the temple floors", "earning enough for her family", "staying close to the sacred"],
+        "fears": ["losing her position", "the temple closing to commoners", "her children going hungry"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Mind the wet floor. I just mopped.",
+          "Hello. I'm just the cleaner, but I know every corner of this place.",
+          "Can I help? I know where everything is."
+        ],
+        "farewells": [
+          "Blessings to you. Watch your step on the stairs.",
+          "Come back during the evening service. It's beautiful.",
+          "Take care now."
+        ],
+        "idle": [
+          "I've cleaned these halls for twenty years. The stones talk if you listen.",
+          "The priests don't notice me. That means I notice everything.",
+          "Festival time means twice the mess and half the thanks."
+        ],
+        "quest_related": [
+          "I saw someone sneaking into the lower crypt last night. The priests don't believe me.",
+          "A gold candlestick went missing from the high altar. I know I didn't take it.",
+          "There are scratching sounds behind the north wall. Something's back there."
+        ]
+      },
+      "relationship_modifiers": {
+        "believed_her_story": 15,
+        "found_candlestick": 25,
+        "investigated_crypt": 20,
+        "accused_her_of_theft": -30
+      },
+      "schedule": [
+        {"hour": 5, "activity": "clean_temple", "location": "temple_sanctuary"},
+        {"hour": 12, "activity": "eat", "location": "temple_sanctuary"},
+        {"hour": 14, "activity": "clean_temple", "location": "temple_sanctuary"},
+        {"hour": 20, "activity": "rest", "location": "temple_sanctuary"}
+      ]
+    },
+    {
+      "id": "healer_frontier_post_voss",
+      "name": "Voss Splitbark",
+      "race": "half_orc",
+      "role": "healer",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["gruff", "capable", "understated"],
+        "motivations": ["patching up frontier injuries", "proving herbalism works as well as magic", "earning trust"],
+        "fears": ["a wound he can't treat", "being run out of town", "supply routes being cut"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Wound or sickness? Sit. Don't bleed on the table.",
+          "You look rough. Let me see.",
+          "I'm the closest thing to a doctor out here. Lucky you."
+        ],
+        "farewells": [
+          "Don't get into another fight for at least a week.",
+          "Change the poultice at dawn. No exceptions.",
+          "You'll live. Barely."
+        ],
+        "idle": [
+          "Frontier life breaks people faster than any war.",
+          "I need willow bark and I'm almost out. The traders want gold for weeds.",
+          "Had to set a bone yesterday. The screaming woke the whole post."
+        ],
+        "quest_related": [
+          "There's a fever going through the garrison. I need bloodmoss from the northern bog.",
+          "A ranger was brought in with a wound I've never seen. Bring me the creature that did it.",
+          "My medicine chest was raided. Track the thief."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_herbs": 20,
+        "identified_creature": 25,
+        "caught_thief": 20,
+        "wasted_medicine": -20
+      },
+      "schedule": [
+        {"hour": 6, "activity": "treat_patients", "location": "frontier_post"},
+        {"hour": 12, "activity": "eat", "location": "frontier_post"},
+        {"hour": 14, "activity": "prepare_remedies", "location": "frontier_post"},
+        {"hour": 21, "activity": "rest", "location": "frontier_post"}
+      ]
+    },
+    {
+      "id": "sage_frontier_post_mila",
+      "name": "Mila Farscope",
+      "race": "human",
+      "role": "sage",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["inquisitive", "tough", "methodical"],
+        "motivations": ["mapping the frontier", "cataloguing unknown species", "writing a field guide"],
+        "fears": ["her research being destroyed", "something unknown beyond the frontier", "never finishing the guide"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "If you've come from beyond the frontier, I want to hear about it.",
+          "Don't touch the samples. Some of them bite.",
+          "New data? Excellent. Tell me everything."
+        ],
+        "farewells": [
+          "Keep notes of anything unusual out there. Bring them to me.",
+          "The frontier doesn't care about plans. Stay flexible.",
+          "I'll be here. I'm always here."
+        ],
+        "idle": [
+          "The terrain changes past the ridge. Nobody's mapped what's beyond.",
+          "I catalogued a plant yesterday that shouldn't exist this far north.",
+          "The rangers bring me things they find. Half of it I can't identify."
+        ],
+        "quest_related": [
+          "There's a ruin past the frontier marker. I need sketches of the carvings.",
+          "A strange animal carcass was found near camp. Bring me a specimen from the same area.",
+          "My mapping assistant went beyond the ridge and didn't return. Find her."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_sketches": 20,
+        "brought_specimens": 15,
+        "found_assistant": 30,
+        "destroyed_samples": -25
+      },
+      "schedule": [
+        {"hour": 7, "activity": "study", "location": "frontier_post"},
+        {"hour": 12, "activity": "eat", "location": "frontier_post"},
+        {"hour": 14, "activity": "field_research", "location": "frontier_post"},
+        {"hour": 22, "activity": "rest", "location": "frontier_post"}
+      ]
+    },
+    {
+      "id": "stablehand_frontier_post_dak",
+      "name": "Dak Trailmender",
+      "race": "human",
+      "role": "stablehand",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["rough", "loyal", "practical"],
+        "motivations": ["keeping the frontier mounts battle-ready", "earning the rangers' respect", "a warm meal"],
+        "fears": ["losing horses to predators", "the post being overrun", "winter without enough feed"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Stable's around back. Your horse can rest if there's room.",
+          "She's been ridden hard. I'll water her.",
+          "Ranger or civilian? Rates are different."
+        ],
+        "farewells": [
+          "She'll be fed. Pick her up rested or don't bother.",
+          "The trail east is rough. Check your saddle before you go.",
+          "Good luck out there."
+        ],
+        "idle": [
+          "A mountain cat got one of the horses last month. I built a better fence since.",
+          "The rangers ride their mounts into the ground. I put them back together.",
+          "Feed shipments are unreliable this far out. I've started growing oats."
+        ],
+        "quest_related": [
+          "A horse came back without its rider from the eastern patrol. Something happened out there.",
+          "Predators are getting bolder near the paddock. Help me set up deterrents.",
+          "I need lumber for a new stable wall. The woodcutter won't sell to the post."
+        ]
+      },
+      "relationship_modifiers": {
+        "investigated_missing_rider": 25,
+        "helped_with_deterrents": 15,
+        "negotiated_lumber": 20,
+        "mistreated_horse": -30
+      },
+      "schedule": [
+        {"hour": 5, "activity": "feed_horses", "location": "frontier_post"},
+        {"hour": 12, "activity": "eat", "location": "frontier_post"},
+        {"hour": 13, "activity": "groom_horses", "location": "frontier_post"},
+        {"hour": 20, "activity": "rest", "location": "frontier_post"}
+      ]
+    },
+    {
+      "id": "commoner_frontier_post_bessa",
+      "name": "Bessa Ironpatch",
+      "race": "human",
+      "role": "commoner",
+      "faction_alignment": "neutral",
+      "personality": {
+        "traits": ["tough", "resourceful", "blunt"],
+        "motivations": ["surviving on the frontier", "mending clothes and gear for coin", "keeping her head down"],
+        "fears": ["the post being attacked", "being left behind in an evacuation", "another hard winter"]
+      },
+      "dialogue_snippets": {
+        "greetings": [
+          "Need something mended? Clothes, leather, packs. I do it all.",
+          "You're new. Don't expect luxury out here.",
+          "Morning. The fire's going if you need warmth."
+        ],
+        "farewells": [
+          "Keep your gear in order. Nobody else will.",
+          "Come back if it tears. I guarantee my stitches.",
+          "Stay sharp out there."
+        ],
+        "idle": [
+          "Everything wears out faster on the frontier. Boots, clothes, people.",
+          "The supply wagon hasn't come in two weeks. We're making do.",
+          "I mend more sword cuts than seams these days."
+        ],
+        "quest_related": [
+          "The garrison's cloaks are falling apart. I need treated wool from the trader at the crossing.",
+          "Someone stole my sewing kit. Sounds small but it's my livelihood. Find it.",
+          "A soldier brought me a torn banner from something he fought. The markings are strange."
+        ]
+      },
+      "relationship_modifiers": {
+        "brought_wool": 20,
+        "found_sewing_kit": 20,
+        "identified_banner_markings": 15,
+        "looked_down_on_her": -15
+      },
+      "schedule": [
+        {"hour": 6, "activity": "mend_gear", "location": "frontier_post"},
+        {"hour": 12, "activity": "eat", "location": "frontier_post"},
+        {"hour": 14, "activity": "mend_gear", "location": "frontier_post"},
+        {"hour": 20, "activity": "rest", "location": "frontier_post"}
+      ]
     }
   ]
 }

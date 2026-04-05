@@ -6,8 +6,20 @@ from typing import Any, Dict, List
 from engine.data._shared import classes_registry, creation_registry
 
 
+def _normalize_class_id(class_id: Any) -> str:
+    return str(class_id or "").strip().lower()
+
+
+def _normalize_class_keyed_list_map(raw: Dict[str, Any]) -> Dict[str, List[str]]:
+    return {_normalize_class_id(key): list(value) for key, value in raw.items()}
+
+
+def _normalize_class_keyed_int_map(raw: Dict[str, Any]) -> Dict[str, int]:
+    return {_normalize_class_id(key): int(value) for key, value in raw.items()}
+
+
 def get_class(class_id: str) -> Dict[str, Any]:
-    return dict(classes_registry().get(str(class_id or "").lower(), {}))
+    return dict(classes_registry().get(_normalize_class_id(class_id), {}))
 
 
 def _default_class_data() -> Dict[str, Any]:
@@ -96,7 +108,7 @@ def get_class_default_spell_points(class_id: str) -> int:
 
 
 def get_creation_default_class() -> str:
-    return str(creation_registry().get("default_class", "warrior"))
+    return _normalize_class_id(creation_registry().get("default_class", "warrior"))
 
 
 def get_creation_default_adapter() -> str:
@@ -140,7 +152,10 @@ def get_creation_genesis_templates() -> Dict[str, str]:
 
 
 def get_creation_unknown_class_fallback() -> Dict[str, Any]:
-    return dict(creation_registry().get("unknown_class_fallback", {}))
+    fallback = dict(creation_registry().get("unknown_class_fallback", {}))
+    if "class_id" in fallback:
+        fallback["class_id"] = _normalize_class_id(fallback.get("class_id"))
+    return fallback
 
 
 def get_creation_ability_order() -> List[str]:
@@ -155,19 +170,19 @@ def get_skill_stat_map() -> Dict[str, str]:
 
 
 def get_creation_class_skill_options() -> Dict[str, List[str]]:
-    return {key: list(value) for key, value in creation_registry().get("class_skill_options", {}).items()}
+    return _normalize_class_keyed_list_map(creation_registry().get("class_skill_options", {}))
 
 
 def get_creation_class_skill_counts() -> Dict[str, int]:
-    return {str(key): int(value) for key, value in creation_registry().get("class_skill_counts", {}).items()}
+    return _normalize_class_keyed_int_map(creation_registry().get("class_skill_counts", {}))
 
 
 def get_creation_class_default_skills() -> Dict[str, List[str]]:
-    return {key: list(value) for key, value in creation_registry().get("class_default_skills", {}).items()}
+    return _normalize_class_keyed_list_map(creation_registry().get("class_default_skills", {}))
 
 
 def get_creation_class_stat_priorities() -> Dict[str, List[str]]:
-    return {key: list(value) for key, value in creation_registry().get("class_stat_priorities", {}).items()}
+    return _normalize_class_keyed_list_map(creation_registry().get("class_stat_priorities", {}))
 
 
 def get_creation_questions() -> List[Dict[str, Any]]:

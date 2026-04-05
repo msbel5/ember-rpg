@@ -352,6 +352,7 @@ class CampaignRuntime:
             adapter_id=context.adapter_id,
             profile_id=context.profile_id,
             seed=context.seed,
+            preserve_position=True,
         )
         restore_quest_state(context, preserved_quest_state, preserve_offers=True)
         sync_context_clock(context)

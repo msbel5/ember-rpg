@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from engine.api.campaign.runtime import CampaignRuntime
+from engine.data.classes import get_class_default_stats
 from main import app
 
 
@@ -110,3 +112,33 @@ def test_character_sheet_progression_exposes_runtime_class_ability_metadata():
     assert second_wind["runtime_status"] == "expended_until_long_rest"
     assert battle_hardened["implemented"] is False
     assert "resource_cost" in second_wind
+
+
+@pytest.mark.parametrize(
+    ("requested_class", "canonical_class", "expected_label"),
+    [
+        ("ranger", "ranger", "Ranger"),
+        ("Paladin", "paladin", "Paladin"),
+        ("BARD", "bard", "Bard"),
+    ],
+)
+def test_character_sheet_supports_extended_classes_without_silent_fallback(
+    requested_class: str,
+    canonical_class: str,
+    expected_label: str,
+):
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign(player_name="SheetProbe", player_class=requested_class, seed=131)
+    payload = runtime.snapshot(context.campaign_id)
+
+    player = context.kernel_runtime["actors"]["player"]
+    sheet = payload["campaign"]["character_sheet"]
+    stats = {entry["id"]: int(entry["value"]) for entry in sheet["stats"]}
+    class_abilities = sheet["progression"]["class_abilities"]
+
+    assert str(player.raw_payload.get("class_name")) == canonical_class
+    assert sheet["class_name"] == expected_label
+    assert stats == get_class_default_stats(canonical_class)
+    assert len(class_abilities) == 5
+    assert all(entry["class_name"] == canonical_class for entry in class_abilities)
+    assert class_abilities[0]["unlocked"] is True

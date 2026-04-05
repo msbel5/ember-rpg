@@ -10,7 +10,7 @@ import logging
 from typing import Any
 
 from engine.api.campaign.context import CampaignContext
-from engine.api.campaign.live_kernel import build_medical_payload
+from engine.api.campaign.live_kernel import build_actor_spell_payload, build_medical_payload
 from engine.api.gameplay_bridge import inventory_item_row, progression_class_abilities
 from engine.data.classes import get_creation_ability_order
 from engine.kernel.progression import ProgressionState
@@ -194,6 +194,7 @@ def build_character_sheet(context: CampaignContext, settlement_state: dict[str, 
         "turn": current_player_turn_resources(context),
     }
     creation_profile = dict(player.creation_profile or {})
+    spellcasting = build_actor_spell_payload(player)
     creation_summary = {
         "recommended_class": str(creation_profile.get("recommended_class", dominant_class)),
         "recommended_alignment": str(creation_profile.get("recommended_alignment", player.alignment)),
@@ -222,6 +223,7 @@ def build_character_sheet(context: CampaignContext, settlement_state: dict[str, 
         "skills": skills,
         "skilldex": build_skilldex_entries(player, _INTERACTION_RULES),
         "resources": resources,
+        "spellcasting": spellcasting,
         "armor_class": player.ac,
         "initiative_bonus": player.initiative_bonus,
         "gold": player.gold,

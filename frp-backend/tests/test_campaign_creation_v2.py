@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from main import app
@@ -37,8 +38,11 @@ def test_creation_catalog_endpoint_returns_backend_authority():
     assert payload["default_adapter_id"] == "fantasy_ember"
     assert payload["default_profile_id"] == "standard"
     assert payload["ability_order"] == ABILITY_ORDER
-    assert len(payload["class_catalog"]) >= 4
+    assert len(payload["class_catalog"]) >= 7
     assert any(entry["id"] == "mage" for entry in payload["class_catalog"])
+    assert any(entry["id"] == "ranger" for entry in payload["class_catalog"])
+    assert any(entry["id"] == "paladin" for entry in payload["class_catalog"])
+    assert any(entry["id"] == "bard" for entry in payload["class_catalog"])
     assert any(entry["id"] == "scifi_frontier" for entry in payload["adapter_catalog"])
     assert payload["settlement_labels"]["border_keep"] == "border keep"
     assert payload["faction_labels"]["research_conclave"] == "research conclave"
@@ -268,3 +272,34 @@ def test_creation_answers_change_world_selection_with_same_seed():
     )
 
     assert first_signature != second_signature
+
+
+@pytest.mark.parametrize(
+    ("player_class", "expected_label"),
+    [
+        ("ranger", "Ranger"),
+        ("Paladin", "Paladin"),
+        ("BARD", "Bard"),
+    ],
+)
+def test_creation_finalize_accepts_extended_classes_without_fallback(player_class: str, expected_label: str):
+    started = _start_creation("fantasy_ember", seed=313)
+    assigned_stats = {
+        ability: int(started["current_roll"][index])
+        for index, ability in enumerate(ABILITY_ORDER)
+    }
+
+    finalized = client.post(
+        f"/game/campaigns/creation/{started['creation_id']}/finalize",
+        json={
+            "player_class": player_class,
+            "alignment": "TN",
+            "skill_proficiencies": [],
+            "assigned_stats": assigned_stats,
+        },
+    )
+
+    assert finalized.status_code == 200
+    payload = finalized.json()
+    assert payload["campaign"]["character_sheet"]["class_name"] == expected_label
+    assert payload["campaign"]["character_sheet"]["progression"]["class_abilities"]

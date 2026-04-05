@@ -95,8 +95,20 @@ def load_registry_list_from_path(path_like: str | Path, collection_key: Optional
     return _normalize_list(load_json_path(path_like), collection_key=collection_key)
 
 
+def _normalize_lowercase_ids(registry: Dict[str, Dict[str, Any]], *, id_field: str = "id") -> Dict[str, Dict[str, Any]]:
+    normalized: Dict[str, Dict[str, Any]] = {}
+    for key, value in registry.items():
+        item = dict(value)
+        item_id = str(item.get(id_field, key) or "").strip().lower()
+        if not item_id:
+            continue
+        item[id_field] = item_id
+        normalized[item_id] = item
+    return normalized
+
+
 def classes_registry() -> Dict[str, Dict[str, Any]]:
-    return load_registry_map("classes.json", "classes", id_field="id")
+    return _normalize_lowercase_ids(load_registry_map("classes.json", "classes", id_field="id"), id_field="id")
 
 
 def items_registry() -> Dict[str, Dict[str, Any]]:

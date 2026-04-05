@@ -116,9 +116,18 @@ def _dispatch(
 ) -> tuple[str, str, int]:
     """Route command text to the correct handler. Returns (narrative, type, hours)."""
     lower = issued.lower().strip()
-    from engine.api.combat_bridge import maybe_handle_combat_command  # noqa: E402
+    from engine.api.combat_bridge import maybe_handle_combat_command, maybe_handle_structured_combat_command  # noqa: E402
+    from engine.api.gameplay_bridge import maybe_handle_structured_spell_command  # noqa: E402
 
     if context.in_combat():
+        if shortcut == "combat":
+            structured_combat = maybe_handle_structured_combat_command(context, command_args)
+            if structured_combat is not None:
+                return structured_combat
+        if shortcut == "spell":
+            structured_spell = maybe_handle_structured_spell_command(context, command_args, allow_combat=True)
+            if structured_spell is not None:
+                return structured_spell
         if shortcut == "interact" and str(command_args.get("verb_id", "")).strip().lower() == "attack":
             structured = maybe_handle_structured_interaction(context, command_args)
             if structured is not None:
@@ -126,7 +135,7 @@ def _dispatch(
         combat = maybe_handle_combat_command(context, issued)
         if combat is not None:
             return combat
-        return ("You are in combat. Use attack, defend, or flee before doing anything else.", "combat", 0)
+        return ("You are in combat. Use attack, cast, move, defend, flee, or end turn before doing anything else.", "combat", 0)
 
     dialog = maybe_handle_dialog_command(context, issued)
     if dialog is not None:
@@ -142,6 +151,14 @@ def _dispatch(
         structured = maybe_handle_structured_interaction(context, command_args)
         if structured is not None:
             return structured
+    if shortcut == "combat":
+        structured_combat = maybe_handle_structured_combat_command(context, command_args)
+        if structured_combat is not None:
+            return structured_combat
+    if shortcut == "spell":
+        structured_spell = maybe_handle_structured_spell_command(context, command_args)
+        if structured_spell is not None:
+            return structured_spell
 
     talk = maybe_handle_talk_command(context, issued)
     if talk is not None:

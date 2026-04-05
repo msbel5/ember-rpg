@@ -27,12 +27,13 @@ from engine.kernel import (
     worksite_records_from_settlement,
 )
 from engine.worldgen import snapshot_world
+from engine.map import TileType
 
 from engine.api.combat_bridge import build_combat_payload
 
-from .region_projection import build_world_entities
+from .region_projection import build_world_entities, sync_combat_projection
 from .settlement import build_character_sheet, current_player_turn_resources
-from .live_kernel import ensure_kernel_runtime, serialize_kernel_runtime
+from .live_kernel import build_actor_spell_payload, ensure_kernel_runtime, serialize_kernel_runtime
 from .party_bridge import party_member_ids
 from .quest_bridge import current_quest_offers
 from .world import (
@@ -50,10 +51,12 @@ if TYPE_CHECKING:
 
 
 def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
+    ensure_kernel_runtime(context)
+    sync_combat_projection(context)
     context_data = context.to_dict()
     runtime_state = runtime_region_state(context.world, context.region_snapshot.region_id)
+    combat_state = _enrich_combat_payload(context, build_combat_payload(context))
     kernel_payload = build_kernel_payload(context)
-    combat_state = build_combat_payload(context)
     fog_payload = build_fog_payload(context)
     normalized_party = party_member_ids(context)
     context.campaign_state["party"] = list(normalized_party)
@@ -77,6 +80,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
             if normalized_stats:
                 player_payload["stats"] = normalized_stats
     player_payload["turn_resources"] = current_player_turn_resources(context)
+    player_payload["spellcasting"] = build_actor_spell_payload(context.player)
     return {
         "world": {
             "seed": context.world.seed,
@@ -117,6 +121,8 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
 
 
 def persist_campaign_state(context: "CampaignContext") -> None:
+    ensure_kernel_runtime(context)
+    sync_combat_projection(context)
     kernel_payload = build_kernel_payload(context)
     fog_payload = build_fog_payload(context)
     context.campaign_state["party"] = party_member_ids(context)
@@ -150,6 +156,7 @@ def persist_campaign_state(context: "CampaignContext") -> None:
 
 
 def build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:
+    sync_combat_projection(context)
     if context.kernel_runtime:
         return serialize_kernel_runtime(context)
     active_site_id = _active_site_id(context)
@@ -195,6 +202,113 @@ def build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:
         },
         "stores": [store.to_dict() for store in ensure_kernel_runtime(context).get("stores", [])],
     }
+
+
+def _enrich_combat_payload(context: "CampaignContext", combat_state: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(combat_state, dict) or not combat_state.get("combatants"):
+        return combat_state
+    enriched = copy.deepcopy(combat_state)
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors") or {}
+    combatants = [entry for entry in enriched.get("combatants", []) if isinstance(entry, dict)]
+    by_actor_id = {str(entry.get("actor_id", "")): entry for entry in combatants if str(entry.get("actor_id", "")).strip()}
+    for entry in combatants:
+        actor_id = str(entry.get("actor_id", "")).strip()
+        actor = actors.get(actor_id)
+        if actor is None:
+            continue
+        record = context.entities.get(actor_id) if isinstance(getattr(context, "entities", None), dict) else None
+        position = getattr(actor, "position", None)
+        if position is not None:
+            entry["position"] = [int(getattr(position, "x", 0)), int(getattr(position, "y", 0))]
+            entry["projected_position"] = list(entry["position"])
+        if isinstance(record, dict):
+            blocking = record.get("blocking")
+            if blocking is None:
+                entity_ref = record.get("entity_ref")
+                blocking = getattr(entity_ref, "blocking", None)
+            if blocking is not None:
+                entry["blocking"] = bool(blocking)
+        turn_resources = entry.get("turn_resources")
+        if not isinstance(turn_resources, dict):
+            entry["turn_resources"] = {}
+        target = by_actor_id.get(actor_id)
+        if target is not None and actor_id == enriched.get("turn_actor_id"):
+            target["position"] = entry.get("position", target.get("position"))
+    for target in [item for item in enriched.get("targets", []) if isinstance(item, dict)]:
+        actor_id = str(target.get("actor_id", "")).strip()
+        actor = actors.get(actor_id)
+        if actor is None:
+            continue
+        position = getattr(actor, "position", None)
+        if position is not None:
+            target["position"] = [int(getattr(position, "x", 0)), int(getattr(position, "y", 0))]
+        zones = _called_shot_zones(actor)
+        if zones:
+            target["called_shot_zones"] = zones
+    active_actor = actors.get(str(enriched.get("turn_actor_id", "")).strip())
+    if active_actor is not None:
+        enriched["move_options"] = _combat_move_options(context, active_actor)
+    return enriched
+
+
+def _combat_move_options(context: "CampaignContext", actor: Any) -> list[dict[str, Any]]:
+    spatial_index = getattr(context, "spatial_index", None)
+    map_data = getattr(context, "map_data", None)
+    if actor is None or spatial_index is None:
+        return []
+    position = getattr(actor, "position", None)
+    if position is None:
+        return []
+    current_x = int(getattr(position, "x", 0))
+    current_y = int(getattr(position, "y", 0))
+    directions = {
+        "north": (0, -1),
+        "south": (0, 1),
+        "west": (-1, 0),
+        "east": (1, 0),
+    }
+    options: list[dict[str, Any]] = []
+    for direction, (dx, dy) in directions.items():
+        x = current_x + dx
+        y = current_y + dy
+        available = True
+        blocked_reason: str | None = None
+        if map_data is not None:
+            width = int(getattr(map_data, "width", 0))
+            height = int(getattr(map_data, "height", 0))
+            if x < 0 or y < 0 or x >= width or y >= height:
+                available = False
+                blocked_reason = "out_of_bounds"
+            else:
+                tile = map_data.tiles[y][x]
+                if tile in {TileType.WALL, TileType.WATER, TileType.TREE}:
+                    available = False
+                    blocked_reason = "blocked_terrain"
+        if available and spatial_index.blocking_at(x, y):
+            available = False
+            blocked_reason = "occupied"
+        options.append(
+            {
+                "direction": direction,
+                "x": x,
+                "y": y,
+                "position": [x, y],
+                "available": available,
+                "blocked_reason": blocked_reason,
+            }
+        )
+    return options
+
+
+def _called_shot_zones(actor: Any) -> list[str]:
+    body_state = getattr(actor, "body_state", None)
+    if body_state is None:
+        return []
+    parts = getattr(body_state, "parts", {}) or {}
+    if not isinstance(parts, dict):
+        return []
+    return [str(part_id) for part_id in sorted(parts) if str(part_id).strip()]
 
 
 def _active_site_id(context: "CampaignContext") -> str:

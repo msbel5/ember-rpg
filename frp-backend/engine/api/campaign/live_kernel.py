@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from typing import TYPE_CHECKING, Any
 
 from engine.api.campaign_kernel import (
@@ -24,10 +25,12 @@ from engine.kernel import (
     production_ledger_from_settlement,
     spread_contagion,
 )
+from engine.npc.npc_memory import NPCMemoryManager
 
 from .runtime_common import active_site_id, saved_list_or, saved_or, stable_seed
 from .runtime_effects import effect_events
 from .runtime_macro_society import load_stores, macro_society_events
+from .world import runtime_region_state
 from .runtime_settlement import (
     job_and_farm_events,
     merge_projection_changes_from_settlement,
@@ -35,6 +38,7 @@ from .runtime_settlement import (
     refresh_runtime_views,
 )
 from .runtime_systems import load_systems, systems_events
+from .region_projection import sync_combat_projection_state
 from engine.kernel.game_state import normalize_party_state
 
 if TYPE_CHECKING:
@@ -50,8 +54,33 @@ _RUNTIME_MEDICAL_KEYS = (
 _RUNTIME_SOCIAL_KEYS = (
     "recruitable_companion",
     "relationship_score",
+    "named_npc_id",
+    "identity_source",
+    "memory_id",
+    "authored_role",
+    "authored_location_id",
+    "faction_alignment",
+    "personality",
+    "dialogue_snippets",
+    "relationship_modifiers",
+)
+_RUNTIME_SPELL_KEYS = (
+    "spellbooks",
+    "spellbook",
+    "known_spells",
+    "spellcasting_mode",
+    "casting_mode",
+    "active_cast",
+    "active_casting",
+    "casting_attempt",
+    "concentration",
+    "concentration_state",
+    "spell_points",
+    "max_spell_points",
+    "last_cast_tick",
 )
 _PARTY_CAPABLE_ACTOR_TYPES = {"npc", "creature"}
+_SOCIAL_ACTOR_TYPES = {"npc"}
 _NON_PARTY_ROLE_HINTS = {"cabinet", "cauldron", "table", "oven", "bench", "chair", "bed", "pew", "sack"}
 
 
@@ -79,10 +108,402 @@ def _is_party_capable_actor(actor: ActorRecord | None) -> bool:
     return str(actor.raw_payload.get("source", "")).lower().strip() != "campaign_entity"
 
 
+def _is_social_actor(actor: ActorRecord | None) -> bool:
+    if actor is None:
+        return False
+    actor_id = str(getattr(getattr(actor, "identity", None), "actor_id", "")).strip()
+    if not actor_id or actor_id == "player":
+        return False
+    actor_type = str(getattr(getattr(actor, "identity", None), "actor_type", "")).lower().strip()
+    if actor_type not in _SOCIAL_ACTOR_TYPES:
+        return False
+    role_hint = str(actor.raw_payload.get("role", actor.raw_payload.get("template", actor.raw_payload.get("legacy_job", "")))).lower().strip()
+    if role_hint in _NON_PARTY_ROLE_HINTS:
+        return False
+    return str(actor.raw_payload.get("legacy_disposition", actor.raw_payload.get("disposition", "friendly"))).lower().strip() != "hostile"
+
+
+def _relationship_label_from_score(score: int) -> str:
+    if score >= 60:
+        return "ally"
+    if score >= 30:
+        return "friend"
+    if score >= 10:
+        return "acquaintance"
+    if score > -20:
+        return "stranger"
+    if score > -50:
+        return "unfriendly"
+    return "enemy"
+
+
+def _optional_identity(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or text.lower() == "none":
+        return None
+    return text
+
+
+def _normalize_spellbooks_payload(raw_spellbooks: Any) -> dict[str, dict[str, Any]]:
+    from engine.kernel.spells import Spellbook
+
+    if not isinstance(raw_spellbooks, dict):
+        return {}
+    normalized: dict[str, dict[str, Any]] = {}
+    for book_key, book_value in sorted(raw_spellbooks.items(), key=lambda item: str(item[0])):
+        key = str(book_key).strip()
+        if not key:
+            continue
+        if isinstance(book_value, Spellbook):
+            normalized[key] = book_value.to_dict()
+            continue
+        if isinstance(book_value, dict):
+            try:
+                normalized[key] = Spellbook.from_dict(book_value).to_dict()
+            except Exception:
+                normalized[key] = copy.deepcopy(book_value)
+    return normalized
+
+
+def _normalize_casting_attempt_payload(raw_attempt: Any) -> dict[str, Any] | None:
+    from engine.kernel.spells import CastingAttempt
+
+    if isinstance(raw_attempt, CastingAttempt):
+        return raw_attempt.to_dict()
+    if isinstance(raw_attempt, dict):
+        try:
+            return CastingAttempt.from_dict(raw_attempt).to_dict()
+        except Exception:
+            return copy.deepcopy(raw_attempt)
+    return None
+
+
+def _active_spellbook_payload(raw_payload: dict[str, Any]) -> tuple[str | None, dict[str, Any] | None]:
+    spellbooks = _normalize_spellbooks_payload(raw_payload.get("spellbooks", {}))
+    if spellbooks:
+        preferred_key = str(
+            raw_payload.get("spellcasting_mode")
+            or raw_payload.get("casting_mode")
+            or next(iter(spellbooks))
+        ).strip()
+        if preferred_key in spellbooks:
+            return preferred_key, spellbooks[preferred_key]
+        first_key = next(iter(spellbooks))
+        return first_key, spellbooks[first_key]
+    spellbook = raw_payload.get("spellbook")
+    if isinstance(spellbook, dict):
+        normalized = _normalize_spellbooks_payload({"primary": spellbook})
+        if normalized:
+            return "primary", normalized["primary"]
+    return None, None
+
+
+def build_actor_spell_payload(actor: ActorRecord | None) -> dict[str, Any]:
+    if actor is None:
+        return {
+            "spellcasting_mode": "none",
+            "spellbooks": {},
+            "known_spells": {},
+            "slot_state": {"by_level": {}, "books": {}},
+            "spell_points": {"current": 0, "max": 0},
+            "active_cast": None,
+            "concentration": None,
+        }
+    raw_payload = actor.raw_payload if isinstance(actor.raw_payload, dict) else {}
+    spellbooks = _normalize_spellbooks_payload(raw_payload.get("spellbooks", {}))
+    active_book_key, active_book = _active_spellbook_payload(raw_payload)
+    if active_book_key and active_book is not None:
+        spellbooks.setdefault(active_book_key, copy.deepcopy(active_book))
+    known_spells: dict[str, list[str]] = {}
+    slot_levels: set[int] = set()
+    books_payload: dict[str, Any] = {}
+    for book_key, book in spellbooks.items():
+        known = {
+            str(level): sorted({str(spell_id) for spell_id in spell_ids if str(spell_id).strip()})
+            for level, spell_ids in sorted(dict(book.get("known_spells", {})).items(), key=lambda item: int(item[0]))
+        }
+        slots_payload: dict[str, list[dict[str, Any]]] = {}
+        slot_summary: dict[str, dict[str, int]] = {}
+        max_slots_raw = dict(book.get("max_slots", {}))
+        for level, slots in sorted(dict(book.get("slots", {})).items(), key=lambda item: int(item[0])):
+            level_key = str(level)
+            level_int = int(level)
+            slot_levels.add(level_int)
+            normalized_slots: list[dict[str, Any]] = []
+            memorized_count = 0
+            expended_count = 0
+            available_count = 0
+            for slot in list(slots or []):
+                slot_dict = dict(slot) if isinstance(slot, dict) else None
+                if slot_dict is None:
+                    continue
+                normalized_slot = {
+                    "spell_level": int(slot_dict.get("spell_level", level_int) or level_int),
+                    "spell_id": str(slot_dict.get("spell_id")) if slot_dict.get("spell_id") is not None else None,
+                    "memorized": bool(slot_dict.get("memorized", False)),
+                    "expended": bool(slot_dict.get("expended", False)),
+                }
+                if normalized_slot["memorized"]:
+                    memorized_count += 1
+                if normalized_slot["expended"]:
+                    expended_count += 1
+                if normalized_slot["memorized"] and not normalized_slot["expended"]:
+                    available_count += 1
+                normalized_slots.append(normalized_slot)
+            slots_payload[level_key] = normalized_slots
+            slot_summary[level_key] = {
+                "total": len(normalized_slots),
+                "memorized": memorized_count,
+                "expended": expended_count,
+                "available": available_count,
+                "max": int(max_slots_raw.get(level_int, max_slots_raw.get(level_key, len(normalized_slots))) or 0),
+            }
+        books_payload[book_key] = {
+            "actor_id": str(book.get("actor_id", actor.identity.actor_id)),
+            "spell_type": str(book.get("spell_type", book_key)),
+            "known_spells": known,
+            "slots": slots_payload,
+            "max_slots": {str(level): int(count) for level, count in sorted(max_slots_raw.items(), key=lambda item: int(item[0]))},
+            "slot_state": slot_summary,
+        }
+        for level_key, spells in known.items():
+            bucket = known_spells.setdefault(level_key, [])
+            for spell_id in spells:
+                if spell_id not in bucket:
+                    bucket.append(spell_id)
+    aggregate_slot_state: dict[str, dict[str, int]] = {}
+    for level in sorted(slot_levels):
+        level_key = str(level)
+        total = memorized = expended = available = max_slots = 0
+        for book in books_payload.values():
+            summary = dict(book.get("slot_state", {})).get(level_key, {})
+            total += int(summary.get("total", 0))
+            memorized += int(summary.get("memorized", 0))
+            expended += int(summary.get("expended", 0))
+            available += int(summary.get("available", 0))
+            max_slots += int(summary.get("max", 0))
+        aggregate_slot_state[level_key] = {
+            "total": total,
+            "memorized": memorized,
+            "expended": expended,
+            "available": available,
+            "max": max_slots,
+        }
+    active_cast = _normalize_casting_attempt_payload(
+        raw_payload.get("active_cast")
+        or raw_payload.get("active_casting")
+        or raw_payload.get("casting_attempt")
+    )
+    concentration = raw_payload.get("concentration")
+    if concentration is None:
+        concentration = raw_payload.get("concentration_state")
+    concentration_payload = copy.deepcopy(concentration) if isinstance(concentration, dict) else concentration
+    spellcasting_mode = str(
+        raw_payload.get("spellcasting_mode")
+        or raw_payload.get("casting_mode")
+        or active_book_key
+        or ("spell_points" if int(getattr(actor, "max_spell_points", 0) or 0) > 0 else "none")
+    )
+    return {
+        "spellcasting_mode": spellcasting_mode,
+        "active_spellbook": active_book_key,
+        "spellbooks": books_payload,
+        "known_spells": known_spells,
+        "slot_state": {
+            "by_level": aggregate_slot_state,
+            "books": {key: copy.deepcopy(value.get("slot_state", {})) for key, value in books_payload.items()},
+        },
+        "spell_points": {
+            "current": int(getattr(actor, "spell_points", 0) or 0),
+            "max": int(getattr(actor, "max_spell_points", 0) or 0),
+        },
+        "active_cast": active_cast,
+        "concentration": concentration_payload,
+        "last_cast_tick": int(raw_payload.get("last_cast_tick", -1) or -1),
+    }
+
+
+def _normalize_actor_spell_state(actor: ActorRecord) -> None:
+    spellbooks = _normalize_spellbooks_payload(actor.raw_payload.get("spellbooks", {}))
+    if spellbooks:
+        actor.raw_payload["spellbooks"] = spellbooks
+    active_cast = _normalize_casting_attempt_payload(
+        actor.raw_payload.get("active_cast")
+        or actor.raw_payload.get("active_casting")
+        or actor.raw_payload.get("casting_attempt")
+    )
+    if active_cast is not None:
+        if "active_cast" in actor.raw_payload or "active_casting" not in actor.raw_payload:
+            actor.raw_payload["active_cast"] = active_cast
+        if "active_casting" in actor.raw_payload:
+            actor.raw_payload["active_casting"] = active_cast
+        if "casting_attempt" in actor.raw_payload:
+            actor.raw_payload["casting_attempt"] = active_cast
+    actor.raw_payload["spell_points"] = int(actor.raw_payload.get("spell_points", getattr(actor, "spell_points", 0)) or 0)
+    actor.raw_payload["max_spell_points"] = int(actor.raw_payload.get("max_spell_points", getattr(actor, "max_spell_points", 0)) or 0)
+
+
+def _active_combat_payload(runtime: dict[str, Any]) -> dict[str, Any] | None:
+    game_state = runtime.get("game_state")
+    raw_payload = getattr(game_state, "raw_payload", {}) if game_state is not None else {}
+    combat = raw_payload.get("combat")
+    if not isinstance(combat, dict) or not combat.get("combatants"):
+        return None
+    if str(combat.get("phase", "active")).lower().strip() == "resolved":
+        return None
+    return combat
+
+
+def _coerce_combat_turn_resources(payload: Any) -> dict[str, int | bool]:
+    if not isinstance(payload, dict):
+        return {
+            "action": True,
+            "bonus_action": True,
+            "reaction": True,
+            "movement": 0,
+            "max_movement": 0,
+        }
+    return {
+        "action": bool(payload.get("action", True)),
+        "bonus_action": bool(payload.get("bonus_action", True)),
+        "reaction": bool(payload.get("reaction", True)),
+        "movement": int(payload.get("movement", 0) or 0),
+        "max_movement": int(payload.get("max_movement", payload.get("movement", 0)) or 0),
+    }
+
+
+def _sync_combat_runtime_state(context: "CampaignContext", runtime: dict[str, Any]) -> None:
+    combat = _active_combat_payload(runtime)
+    if combat is None:
+        return
+    if context.dm_context is not None:
+        context.dm_context.scene_type_name = "combat"
+    actors = runtime.get("actors") or {}
+    for entry in combat.get("combatants", []):
+        actor_id = str(entry.get("actor_id", "")).strip()
+        if not actor_id:
+            continue
+        actor = actors.get(actor_id)
+        if actor is None:
+            continue
+        actor.turn_resources = _coerce_combat_turn_resources(entry.get("turn_resources", {}))
+    _annotate_live_combat_payload(context, runtime)
+
+
+def _combat_blocking_state(context: "CampaignContext", actor_id: str) -> bool | None:
+    record = context.entities.get(actor_id) if isinstance(getattr(context, "entities", None), dict) else None
+    if not isinstance(record, dict):
+        return None
+    blocking = record.get("blocking")
+    if blocking is not None:
+        return bool(blocking)
+    entity_ref = record.get("entity_ref")
+    if entity_ref is None:
+        return None
+    return bool(getattr(entity_ref, "blocking", True))
+
+
+def _combat_move_options(context: "CampaignContext", actor: ActorRecord | None) -> list[dict[str, Any]]:
+    from engine.map import TileType
+
+    spatial_index = getattr(context, "spatial_index", None)
+    map_data = getattr(context, "map_data", None)
+    if actor is None or spatial_index is None:
+        return []
+    position = getattr(actor, "position", None)
+    if position is None:
+        return []
+    current_x = int(getattr(position, "x", 0))
+    current_y = int(getattr(position, "y", 0))
+    directions = {
+        "north": (0, -1),
+        "south": (0, 1),
+        "west": (-1, 0),
+        "east": (1, 0),
+    }
+    options: list[dict[str, Any]] = []
+    for direction, (dx, dy) in directions.items():
+        x = current_x + dx
+        y = current_y + dy
+        available = True
+        blocked_reason: str | None = None
+        if map_data is not None:
+            width = int(getattr(map_data, "width", 0))
+            height = int(getattr(map_data, "height", 0))
+            if x < 0 or y < 0 or x >= width or y >= height:
+                available = False
+                blocked_reason = "out_of_bounds"
+            else:
+                tile = map_data.tiles[y][x]
+                if tile in {TileType.WALL, TileType.WATER, TileType.TREE}:
+                    available = False
+                    blocked_reason = "blocked_terrain"
+        if available and spatial_index.blocking_at(x, y):
+            occupant = spatial_index.at(x, y)
+            occupant_ids = {str(getattr(item, "id", "")).strip() for item in list(occupant or [])}
+            if actor.identity.actor_id not in occupant_ids:
+                available = False
+                blocked_reason = "occupied"
+        options.append(
+            {
+                "direction": direction,
+                "x": x,
+                "y": y,
+                "position": [x, y],
+                "available": available,
+                "blocked_reason": blocked_reason,
+            }
+        )
+    return options
+
+
+def _annotate_live_combat_payload(context: "CampaignContext", runtime: dict[str, Any]) -> None:
+    combat = _active_combat_payload(runtime)
+    if combat is None:
+        return
+    actors = runtime.get("actors") or {}
+    combatants = [entry for entry in list(combat.get("combatants", [])) if isinstance(entry, dict)]
+    current_turn_index = int(combat.get("current_turn_index", 0) or 0)
+    if combatants and 0 <= current_turn_index < len(combatants):
+        combat["turn_actor_id"] = str(combatants[current_turn_index].get("actor_id", "")).strip()
+    targets: list[dict[str, Any]] = []
+    for entry in combatants:
+        actor_id = str(entry.get("actor_id", "")).strip()
+        actor = actors.get(actor_id)
+        if actor is None:
+            continue
+        position = getattr(actor, "position", None)
+        if position is not None:
+            entry["position"] = [int(getattr(position, "x", 0)), int(getattr(position, "y", 0))]
+            entry["projected_position"] = list(entry["position"])
+        blocking = _combat_blocking_state(context, actor_id)
+        if blocking is not None:
+            entry["blocking"] = blocking
+        if not bool(entry.get("is_player", False)):
+            target_payload = {
+                "actor_id": actor_id,
+                "name": actor.name,
+                "alive": bool(actor.alive),
+                "hp": int(actor.stats.get("hp", 0)),
+                "max_hp": int(actor.stats.get("max_hp", 1)),
+            }
+            if "position" in entry:
+                target_payload["position"] = list(entry["position"])
+            targets.append(target_payload)
+    combat["combatants"] = combatants
+    combat["targets"] = targets
+    active_actor_id = str(combat.get("turn_actor_id", "")).strip()
+    combat["move_options"] = _combat_move_options(context, actors.get(active_actor_id)) if active_actor_id else []
+
+
 def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: bool = False) -> dict[str, Any]:
     if context.kernel_runtime and not rebuild_projection:
         _sync_runtime_from_context(context, context.kernel_runtime)
         context.player = context.kernel_runtime.get("actors", {}).get("player", context.player)
+        _sync_social_identity(context, context.kernel_runtime)
+        sync_combat_projection_state(context)
         return context.kernel_runtime
     meta = dict(context.campaign_state.get("campaign") or {})
     runtime = {
@@ -136,8 +557,11 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
     }
     context.kernel_runtime = runtime
     rebase_projection_slices(context, runtime, force=True)
+    _sync_combat_runtime_state(context, runtime)
     _sync_runtime_from_context(context, runtime)
     context.player = runtime.get("actors", {}).get("player", context.player)
+    _sync_social_identity(context, runtime)
+    sync_combat_projection_state(context)
     return runtime
 
 
@@ -363,6 +787,7 @@ def _load_actors(saved_payload: Any, context: "CampaignContext") -> dict[str, Ac
     if isinstance(saved_payload, list):
         actors = {actor.identity.actor_id: actor for actor in [ActorRecord.from_dict(dict(item)) for item in saved_payload]}
         for actor in actors.values():
+            _normalize_actor_spell_state(actor)
             normalize_actor_social_state(actor)
             normalize_actor_medical_state(actor, sync_derived=True)
         return actors
@@ -375,12 +800,19 @@ def _load_actors(saved_payload: Any, context: "CampaignContext") -> dict[str, Ac
         )
     }
     for actor in actors.values():
+        _normalize_actor_spell_state(actor)
         normalize_actor_social_state(actor)
         normalize_actor_medical_state(actor, sync_derived=True)
     return actors
 
 
 def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, Any]) -> None:
+    combat_payload = _active_combat_payload(runtime)
+    combat_turn_resources = {
+        str(entry.get("actor_id", "")).strip(): _coerce_combat_turn_resources(entry.get("turn_resources", {}))
+        for entry in list(combat_payload.get("combatants", []))
+        if isinstance(entry, dict) and str(entry.get("actor_id", "")).strip()
+    } if combat_payload is not None else {}
     fresh_actors = {
         actor.identity.actor_id: actor
         for actor in build_canonical_actor_records(
@@ -398,18 +830,24 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
     for actor_id, fresh_actor in fresh_actors.items():
         existing = merged.get(actor_id)
         if existing is None:
+            _normalize_actor_spell_state(fresh_actor)
             normalize_actor_social_state(fresh_actor)
+            normalize_actor_medical_state(fresh_actor, sync_derived=True)
             merged[actor_id] = fresh_actor
             continue
-        _merge_actor(existing, fresh_actor)
+        _merge_actor(existing, fresh_actor, combat_turn_resources=combat_turn_resources.get(actor_id))
+        _normalize_actor_spell_state(existing)
         normalize_actor_social_state(existing)
         normalize_actor_medical_state(existing, sync_derived=True)
         merged[actor_id] = existing
     for actor_id, actor in merged.items():
         if actor_id not in fresh_actors:
+            _normalize_actor_spell_state(actor)
             normalize_actor_social_state(actor)
             normalize_actor_medical_state(actor, sync_derived=True)
     runtime["actors"] = merged
+    _sync_social_identity(context, runtime)
+    _sync_combat_runtime_state(context, runtime)
     runtime["game_state"].actors = dict(merged)
     normalize_party_state(runtime["game_state"])
     existing_party = [str(actor_id) for actor_id in list(getattr(runtime["game_state"], "party", [])) if str(actor_id)]
@@ -488,17 +926,29 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
                 or preserve_roster_flag
             )
         if eligible and (is_active or is_reserve or preserve_roster_flag):
-            actor.raw_payload["party_tactic_mode"] = str(getattr(runtime["game_state"], "party_tactics", {}).get(actor_id, "balanced"))
+            actor.raw_payload["party_tactic_mode"] = str(
+                getattr(runtime["game_state"], "party_tactics", {}).get(actor_id, "balanced")
+            )
         elif actor_id != "player":
             actor.raw_payload.pop("party_tactic_mode", None)
         normalize_actor_social_state(actor)
     context.player = merged.get("player", context.player)
+    sync_combat_projection_state(context)
 
 
-def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
+def _merge_actor(
+    target: ActorRecord,
+    fresh: ActorRecord,
+    *,
+    combat_turn_resources: dict[str, int | bool] | None = None,
+) -> None:
     target.action_points = fresh.action_points
     target.max_action_points = fresh.max_action_points
-    target.turn_resources = dict(fresh.turn_resources)
+    target.turn_resources = (
+        dict(combat_turn_resources)
+        if combat_turn_resources is not None
+        else dict(fresh.turn_resources)
+    )
     # Runtime actors own their live coordinates. Region projection can rebuild
     # fresh shells each tick, but we must not snap actors back to authored spawn
     # points here or hazards/traps/combat movement will silently desync.
@@ -517,6 +967,14 @@ def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
     preserved_level = target.raw_payload.get("level")
     preserved_recruitable = target.raw_payload.get("recruitable_companion") if "recruitable_companion" in target.raw_payload else None
     preserved_relationship = target.raw_payload.get("relationship_score") if "relationship_score" in target.raw_payload else None
+    preserved_named_npc_id = target.raw_payload.get("named_npc_id") if "named_npc_id" in target.raw_payload else None
+    preserved_identity_source = target.raw_payload.get("identity_source") if "identity_source" in target.raw_payload else None
+    preserved_memory_id = target.raw_payload.get("memory_id") if "memory_id" in target.raw_payload else None
+    preserved_spell = {
+        key: copy.deepcopy(target.raw_payload.get(key))
+        for key in _RUNTIME_SPELL_KEYS
+        if key in target.raw_payload
+    }
     preserved_medical = {
         key: target.raw_payload.get(key)
         for key in _RUNTIME_MEDICAL_KEYS
@@ -536,10 +994,19 @@ def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
         target.raw_payload["recruitable_companion"] = bool(preserved_recruitable)
     if preserved_relationship is not None:
         target.raw_payload["relationship_score"] = _clamp_relationship_score(preserved_relationship)
+    if preserved_named_npc_id is not None:
+        target.raw_payload["named_npc_id"] = preserved_named_npc_id
+    if preserved_identity_source is not None:
+        target.raw_payload["identity_source"] = preserved_identity_source
+    if preserved_memory_id is not None:
+        target.raw_payload["memory_id"] = preserved_memory_id
+    for key, value in preserved_spell.items():
+        target.raw_payload[key] = copy.deepcopy(value)
     for key, value in preserved_medical.items():
         target.raw_payload[key] = value
     for key, value in preserved_social.items():
         target.raw_payload[key] = value
+    _normalize_actor_spell_state(target)
     if target.body_state is None:
         target.body_state = fresh.body_state
     elif target.body_state is not None and fresh.body_state is not None:
@@ -558,6 +1025,70 @@ def normalize_actor_social_state(actor: ActorRecord) -> None:
     actor.raw_payload["recruitable_companion"] = bool(actor.raw_payload.get("recruitable_companion", False))
     relationship_score = int(actor.raw_payload.get("relationship_score", 0) or 0)
     actor.raw_payload["relationship_score"] = max(-100, min(100, relationship_score))
+
+
+def _sync_social_identity(context: "CampaignContext", runtime: dict[str, Any]) -> None:
+    manager = context.npc_memory
+    if manager is None:
+        manager = NPCMemoryManager(session_id=context.campaign_id)
+        context.npc_memory = manager
+
+    region_state = runtime_region_state(context.world, context.region_snapshot.region_id)
+    runtime_npcs = {
+        str(entry.get("id", "")): dict(entry)
+        for entry in list(region_state.get("npcs", []))
+        if isinstance(entry, dict) and str(entry.get("id", "")).strip()
+    }
+    used_authored_ids = {
+        str(_optional_identity(entry.get("named_npc_id")))
+        for entry in runtime_npcs.values()
+        if str(entry.get("identity_source", "")).lower().strip() == "authored" and _optional_identity(entry.get("named_npc_id"))
+    }
+    for actor_id, actor in sorted(runtime.get("actors", {}).items(), key=lambda item: item[0]):
+        if not _is_social_actor(actor):
+            continue
+        actor_id = str(actor_id)
+        runtime_npc = runtime_npcs.get(actor_id, {})
+        metadata_keys = (
+            "authored_role",
+            "authored_location_id",
+            "faction_alignment",
+            "personality",
+            "dialogue_snippets",
+            "relationship_modifiers",
+        )
+        for key in metadata_keys:
+            if key in runtime_npc:
+                actor.raw_payload[key] = copy.deepcopy(runtime_npc[key])
+
+        named_npc_id = _optional_identity(runtime_npc.get("named_npc_id", actor.raw_payload.get("named_npc_id")))
+        identity_source = _optional_identity(runtime_npc.get("identity_source", actor.raw_payload.get("identity_source")))
+        identity_source = str(identity_source).lower() if identity_source is not None else None
+        memory_id = _optional_identity(runtime_npc.get("memory_id", actor.raw_payload.get("memory_id")))
+
+        if identity_source is None:
+            identity_source = "generated"
+        if memory_id is None:
+            memory_id = named_npc_id or actor_id
+
+        if identity_source == "authored" and named_npc_id:
+            used_authored_ids.add(named_npc_id)
+
+        actor.raw_payload["named_npc_id"] = named_npc_id
+        actor.raw_payload["identity_source"] = identity_source
+        actor.raw_payload["memory_id"] = memory_id
+
+        score = _clamp_relationship_score(actor.raw_payload.get("relationship_score", 0))
+        actor.raw_payload["relationship_score"] = score
+        actor.raw_payload["recruitable_companion"] = bool(actor.raw_payload.get("recruitable_companion", False))
+
+        if memory_id != actor_id and actor_id in manager.memories and memory_id not in manager.memories:
+            manager.memories[memory_id] = manager.memories.pop(actor_id)
+            manager.memories[memory_id].npc_id = memory_id
+        memory = manager.get_memory(memory_id, npc_name=str(getattr(getattr(actor, "identity", None), "display_name", memory_id)))
+        memory.name = str(getattr(getattr(actor, "identity", None), "display_name", memory_id))
+        memory.relationship_score = score
+        memory.relationship_label = _relationship_label_from_score(score)
 
 
 def normalize_actor_medical_state(actor: ActorRecord, *, sync_derived: bool = False) -> None:

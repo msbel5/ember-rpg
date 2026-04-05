@@ -311,7 +311,7 @@
       "default_hp": 16,
       "default_spell_points": 12
     },
-    "Ranger": {
+    "ranger": {
       "name": "Ranger",
       "description": "A versatile hunter skilled in archery, tracking, and survival in the wilds.",
       "hit_die": "d8",
@@ -392,7 +392,7 @@
       "default_hp": 16,
       "default_spell_points": 0
     },
-    "Paladin": {
+    "paladin": {
       "name": "Paladin",
       "description": "A holy knight who combines martial prowess with divine blessings.",
       "hit_die": "d10",
@@ -468,7 +468,7 @@
       "default_hp": 20,
       "default_spell_points": 6
     },
-    "Bard": {
+    "bard": {
       "name": "Bard",
       "description": "A charismatic performer who inspires allies and manipulates magic through music.",
       "hit_die": "d8",

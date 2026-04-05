@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from engine.api.kernel_adapter import advance_turn, begin_turn, check_combat_end, run_attack, start_fight
 from engine.api.campaign.actor_query import resolve_live_actor_query
 from engine.kernel.combat_engine import CombatState
+from engine.kernel.gameplay import actor_can_cast_registry_spells
 from engine.kernel.combat_math import ability_modifier
 from engine.kernel.game_state import FORMATIONS, party_tactic_for_actor
 from engine.map import TileType
@@ -19,10 +20,22 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_ATTACK_RE = re.compile(r"^attack\s+(.+)$", re.IGNORECASE)
+_ATTACK_RE = re.compile(r"^attack\s+(.+?)(?:\s+at\s+([a-z0-9_\-\s]+))?$", re.IGNORECASE)
 _DEFEND_RE = re.compile(r"^defend$", re.IGNORECASE)
 _FLEE_RE = re.compile(r"^flee$", re.IGNORECASE)
+_MOVE_RE = re.compile(r"^move\s+([a-z]+)$", re.IGNORECASE)
+_WAIT_RE = re.compile(r"^wait$", re.IGNORECASE)
+_END_TURN_RE = re.compile(r"^end\s+turn$", re.IGNORECASE)
+_CAST_RE = re.compile(r"^cast\b", re.IGNORECASE)
+_USE_RE = re.compile(r"^use\b", re.IGNORECASE)
 _VALID_TARGET_TYPES = {"npc", "creature", "monster", "animal"}
+_SUPPORTED_ACTIONS = ["attack", "defend", "flee", "move", "end_turn"]
+_DIRECTION_DELTAS: dict[str, tuple[int, int]] = {
+    "north": (0, -1),
+    "south": (0, 1),
+    "east": (1, 0),
+    "west": (-1, 0),
+}
 
 
 def maybe_handle_combat_command(context: "CampaignContext", command_text: str) -> Optional[tuple[str, str, int]]:
@@ -34,24 +47,85 @@ def maybe_handle_combat_command(context: "CampaignContext", command_text: str) -
         return None
     match = _ATTACK_RE.match(text)
     if match:
-        return _handle_attack(context, actors, player, match.group(1).strip())
+        called_shot = _normalize_called_shot(match.group(2))
+        return _handle_attack(context, actors, player, match.group(1).strip(), called_shot=called_shot)
     if _DEFEND_RE.match(text):
         return None if not context.in_combat() else _handle_defend(context, actors, player)
     if _FLEE_RE.match(text):
         return None if not context.in_combat() else _handle_flee(context, actors, player)
+    move = _MOVE_RE.match(text)
+    if move:
+        return None if not context.in_combat() else _handle_move(context, actors, player, move.group(1).strip().lower())
+    if _WAIT_RE.match(text):
+        return None if not context.in_combat() else _handle_end_turn(context, actors, player, alias="wait")
+    if _END_TURN_RE.match(text):
+        return None if not context.in_combat() else _handle_end_turn(context, actors, player, alias="end turn")
+    if _CAST_RE.match(text):
+        if not context.in_combat():
+            return None
+        from engine.api.gameplay_bridge import maybe_handle_spell_command
+
+        return maybe_handle_spell_command(context, text, allow_combat=True)
+    if _USE_RE.match(text):
+        return None if not context.in_combat() else ("Using items or abilities is not available in combat yet.", "combat", 0)
     return None
 
 
 def handle_attack_target_id(
     context: "CampaignContext",
     target_actor_id: str,
+    *,
+    called_shot: str | None = None,
 ) -> tuple[str, str, int]:
     runtime = context.kernel_runtime or {}
     actors: dict[str, Any] = runtime.get("actors", {})
     player: Optional[ActorRecord] = actors.get("player")
     if player is None:
         return ("No combatant is ready to act.", "combat", 0)
-    return _handle_attack(context, actors, player, str(target_actor_id).strip())
+    return _handle_attack_target_id(
+        context,
+        actors,
+        player,
+        str(target_actor_id).strip(),
+        called_shot=_normalize_called_shot(called_shot),
+    )
+
+
+def maybe_handle_structured_combat_command(
+    context: "CampaignContext",
+    args: dict[str, Any],
+) -> Optional[tuple[str, str, int]]:
+    action_id = str(args.get("action_id", "")).strip().lower()
+    if not action_id:
+        return None
+    if action_id not in set(_SUPPORTED_ACTIONS):
+        return (f"Unsupported combat action '{action_id}'.", "combat", 0)
+    runtime = context.kernel_runtime or {}
+    actors: dict[str, Any] = runtime.get("actors", {})
+    player: Optional[ActorRecord] = actors.get("player")
+    if player is None:
+        return ("No combatant is ready to act.", "combat", 0)
+    if action_id == "attack":
+        target_id = str(args.get("target_id", "")).strip()
+        if not target_id:
+            return ("Attack requires a target_id.", "combat", 0)
+        return _handle_attack_target_id(
+            context,
+            actors,
+            player,
+            target_id,
+            called_shot=_normalize_called_shot(args.get("called_shot")),
+        )
+    if action_id == "move":
+        direction = str(args.get("direction", "")).strip().lower()
+        if not direction:
+            return ("Move requires a direction.", "combat", 0)
+        return _handle_move(context, actors, player, direction)
+    if action_id == "defend":
+        return _handle_defend(context, actors, player)
+    if action_id == "flee":
+        return _handle_flee(context, actors, player)
+    return _handle_end_turn(context, actors, player, alias="end_turn")
 
 
 def _handle_attack(
@@ -59,6 +133,8 @@ def _handle_attack(
     actors: dict[str, Any],
     player: "ActorRecord",
     target_name: str,
+    *,
+    called_shot: str | None = None,
 ) -> tuple[str, str, int]:
     resolved = resolve_live_actor_query(actors, target_name, include_player=False, actor_types=_VALID_TARGET_TYPES)
     if resolved.error:
@@ -66,6 +142,37 @@ def _handle_attack(
     target = resolved.actor
     if target is None:
         return (f"No target '{target_name}' found to attack.", "combat", 0)
+    zone_error = _validate_called_shot(target, called_shot)
+    if zone_error is not None:
+        return (zone_error, "combat", 0)
+    return _execute_attack(context, actors, player, target, called_shot=called_shot)
+
+
+def _handle_attack_target_id(
+    context: "CampaignContext",
+    actors: dict[str, Any],
+    player: "ActorRecord",
+    target_actor_id: str,
+    *,
+    called_shot: str | None = None,
+) -> tuple[str, str, int]:
+    target = actors.get(target_actor_id)
+    if target is None:
+        return (f"Target '{target_actor_id}' is no longer present.", "combat", 0)
+    zone_error = _validate_called_shot(target, called_shot)
+    if zone_error is not None:
+        return (zone_error, "combat", 0)
+    return _execute_attack(context, actors, player, target, called_shot=called_shot)
+
+
+def _execute_attack(
+    context: "CampaignContext",
+    actors: dict[str, Any],
+    player: "ActorRecord",
+    target: "ActorRecord",
+    *,
+    called_shot: str | None = None,
+) -> tuple[str, str, int]:
     if not getattr(target, "alive", True):
         return (f"{target.identity.display_name} is already dead.", "combat", 0)
     combat_state = _ensure_combat_state(context, actors, player, target, _combat_seed(context, offset=1))
@@ -81,6 +188,7 @@ def _handle_attack(
         target.identity.actor_id,
         weapon=_get_equipped_weapon(player),
         seed=_combat_seed(context, combat_state, offset=11),
+        called_shot=called_shot,
     )
     narrative = _apply_attack_result(actors, attack_result)
     follow_up = _end_player_turn_and_resolve(context, combat_state, actors, seed_offset=17)
@@ -109,6 +217,37 @@ def _handle_defend(
     if follow_up:
         narrative = f"{narrative} {follow_up}".strip()
     return (narrative, "combat", 0)
+
+
+def _handle_move(
+    context: "CampaignContext",
+    actors: dict[str, Any],
+    player: "ActorRecord",
+    direction: str,
+) -> tuple[str, str, int]:
+    combat_state = _combat_state(context)
+    if combat_state is None:
+        return ("No active combat.", "combat", 0)
+    state_ready = _ensure_player_turn(context, combat_state, actors)
+    if state_ready["resolved"]:
+        return (state_ready["summary"] or "Combat is already over.", "combat", 0)
+    if state_ready["blocked"]:
+        return (state_ready["summary"], "combat", 0)
+    active = combat_state.active_combatant
+    if direction not in _DIRECTION_DELTAS:
+        return (f"Unknown movement direction '{direction}'.", "combat", 0)
+    if int(active.turn_resources.movement) <= 0:
+        return ("You have no movement remaining this turn.", "combat", 0)
+    current = (int(player.position.x), int(player.position.y))
+    dx, dy = _DIRECTION_DELTAS[direction]
+    next_x, next_y = current[0] + dx, current[1] + dy
+    blocked_reason = _movement_block_reason(context, active.actor_id, next_x, next_y, movement_remaining=int(active.turn_resources.movement))
+    if blocked_reason is not None:
+        return (_movement_failure_message(direction, blocked_reason), "combat", 0)
+    _move_actor_projection(context, active.actor_id, next_x, next_y, actors)
+    active.turn_resources.movement = max(0, int(active.turn_resources.movement) - 1)
+    _store_combat_state(context, combat_state)
+    return (f"{player.name} moves {direction}.", "combat", 0)
 
 
 def _handle_flee(
@@ -140,6 +279,32 @@ def _handle_flee(
     combat_state.active_combatant.turn_resources.action = False
     narrative = f"{player.name} attempts to flee (d20={d20} + AGI {agi_mod:+d} = {total} vs DC {dc}) but fails to escape!"
     follow_up = _end_player_turn_and_resolve(context, combat_state, actors, seed_offset=41)
+    if follow_up:
+        narrative = f"{narrative} {follow_up}".strip()
+    return (narrative, "combat", 0)
+
+
+def _handle_end_turn(
+    context: "CampaignContext",
+    actors: dict[str, Any],
+    player: "ActorRecord",
+    *,
+    alias: str,
+) -> tuple[str, str, int]:
+    combat_state = _combat_state(context)
+    if combat_state is None:
+        return ("No active combat.", "combat", 0)
+    state_ready = _ensure_player_turn(context, combat_state, actors)
+    if state_ready["resolved"]:
+        return (state_ready["summary"] or "Combat is already over.", "combat", 0)
+    if state_ready["blocked"]:
+        return (state_ready["summary"], "combat", 0)
+    active = combat_state.active_combatant
+    active.turn_resources.action = False
+    active.turn_resources.bonus_action = False
+    active.turn_resources.movement = 0
+    narrative = f"{player.name} ends the turn." if alias != "wait" else f"{player.name} waits and ends the turn."
+    follow_up = _end_player_turn_and_resolve(context, combat_state, actors, seed_offset=53)
     if follow_up:
         narrative = f"{narrative} {follow_up}".strip()
     return (narrative, "combat", 0)
@@ -525,9 +690,52 @@ def _passable_tile(context: "CampaignContext", x: int, y: int) -> bool:
     return tile not in {TileType.WALL, TileType.WATER, TileType.TREE}
 
 
+def _movement_block_reason(
+    context: "CampaignContext",
+    actor_id: str,
+    x: int,
+    y: int,
+    *,
+    movement_remaining: int,
+) -> str | None:
+    if movement_remaining <= 0:
+        return "no_movement_remaining"
+    map_data = getattr(context, "map_data", None)
+    if map_data is not None:
+        width = int(getattr(map_data, "width", 0))
+        height = int(getattr(map_data, "height", 0))
+        if x < 0 or y < 0 or x >= width or y >= height:
+            return "edge_of_map"
+        if not _passable_tile(context, x, y):
+            return "blocked_terrain"
+    spatial_index = getattr(context, "spatial_index", None)
+    if spatial_index is not None:
+        for entity in spatial_index.at(int(x), int(y)):
+            if entity.id == actor_id or not bool(getattr(entity, "blocking", False)):
+                continue
+            return "occupied"
+    return None
+
+
+def _movement_failure_message(direction: str, blocked_reason: str) -> str:
+    if blocked_reason == "no_movement_remaining":
+        return "You have no movement remaining this turn."
+    if blocked_reason == "edge_of_map":
+        return f"You can't move {direction} — edge of the map."
+    if blocked_reason == "blocked_terrain":
+        return f"You can't move {direction} — blocked by terrain."
+    if blocked_reason == "occupied":
+        return f"You can't move {direction} — the tile is occupied."
+    return f"You can't move {direction} right now."
+
+
 def _move_actor_projection(context: "CampaignContext", actor_id: str, x: int, y: int, actors: dict[str, Any]) -> None:
     actor = actors.get(actor_id)
-    if actor is not None:
+    if actor_id == "player":
+        from engine.api.campaign.state_sync import sync_player_position
+
+        sync_player_position(context, int(x), int(y), center_viewport=False)
+    elif actor is not None:
         actor.position.x = int(x)
         actor.position.y = int(y)
     record = context.entities.get(actor_id)
@@ -537,6 +745,8 @@ def _move_actor_projection(context: "CampaignContext", actor_id: str, x: int, y:
     entity_ref = record.get("entity_ref")
     spatial_index = getattr(context, "spatial_index", None)
     if entity_ref is not None and spatial_index is not None:
+        if actor_id == "player" and entity_ref is getattr(context, "player_entity", None):
+            return
         if spatial_index.get_position(actor_id) is None:
             entity_ref.position = (int(x), int(y))
             spatial_index.add(entity_ref)
@@ -643,6 +853,77 @@ def _apply_attack_result(actors: dict[str, Any], attack_result: Any) -> str:
     return ". ".join(parts) + "."
 
 
+def _normalize_called_shot(value: Any) -> str | None:
+    text = str(value or "").strip().lower().replace(" ", "_")
+    return text or None
+
+
+def _called_shot_zones(actor: Any) -> list[str]:
+    body_state = getattr(actor, "body_state", None)
+    if body_state is None:
+        return []
+    plan = getattr(body_state, "plan", None)
+    zones: list[str] = []
+    for part in list(getattr(plan, "parts", []) or []):
+        part_id = str(getattr(part, "part_id", "")).strip()
+        if part_id and part_id not in zones:
+            zones.append(part_id)
+    if zones:
+        return zones
+    for part_id in list(getattr(body_state, "parts", {}).keys()):
+        normalized = str(part_id).strip()
+        if normalized and normalized not in zones:
+            zones.append(normalized)
+    return zones
+
+
+def _validate_called_shot(target: Any, called_shot: str | None) -> str | None:
+    if not called_shot:
+        return None
+    valid_zones = _called_shot_zones(target)
+    if not valid_zones:
+        return f"{target.identity.display_name} does not expose called shot zones."
+    if called_shot in valid_zones:
+        return None
+    return f"Invalid called shot '{called_shot}'. Valid zones: {', '.join(valid_zones)}."
+
+
+def _build_move_options(
+    context: "CampaignContext",
+    combat_state: CombatState,
+    actors: dict[str, Any],
+) -> list[dict[str, Any]]:
+    if not combat_state.combatants:
+        return []
+    active = combat_state.active_combatant
+    if active.actor_id != "player":
+        return []
+    actor = actors.get(active.actor_id)
+    if actor is None or not getattr(actor, "alive", True):
+        return []
+    current = (int(actor.position.x), int(actor.position.y))
+    movement_remaining = int(active.turn_resources.movement)
+    options: list[dict[str, Any]] = []
+    for direction, (dx, dy) in _DIRECTION_DELTAS.items():
+        next_x, next_y = current[0] + dx, current[1] + dy
+        blocked_reason = _movement_block_reason(
+            context,
+            active.actor_id,
+            next_x,
+            next_y,
+            movement_remaining=movement_remaining,
+        )
+        options.append(
+            {
+                "direction": direction,
+                "position": [int(next_x), int(next_y)],
+                "available": blocked_reason is None,
+                "blocked_reason": blocked_reason,
+            }
+        )
+    return options
+
+
 def build_combat_payload(context: "CampaignContext") -> Optional[dict[str, Any]]:
     combat_state = _combat_state(context)
     if combat_state is None or combat_state.phase == "resolved":
@@ -663,6 +944,7 @@ def build_combat_payload(context: "CampaignContext") -> Optional[dict[str, Any]]
             "alive": bool(actor.alive),
             "hp": int(actor.stats.get("hp", 0)),
             "max_hp": int(actor.stats.get("max_hp", 1)),
+            "position": [int(actor.position.x), int(actor.position.y)],
             "turn_resources": {
                 "action_available": bool(entry.turn_resources.action),
                 "bonus_action_available": bool(entry.turn_resources.bonus_action),
@@ -679,13 +961,24 @@ def build_combat_payload(context: "CampaignContext") -> Optional[dict[str, Any]]
                 "alive": bool(actor.alive),
                 "hp": int(actor.stats.get("hp", 0)),
                 "max_hp": int(actor.stats.get("max_hp", 1)),
+                "position": [int(actor.position.x), int(actor.position.y)],
+                "called_shot_zones": _called_shot_zones(actor),
             })
+    available_actions = list(_SUPPORTED_ACTIONS) if active_actor_id == "player" else []
+    if active_actor_id == "player":
+        active_actor = actors.get("player")
+        if active_actor is not None and actor_can_cast_registry_spells(
+            active_actor,
+            current_tick=_combat_spell_tick(context, combat_state),
+        ):
+            available_actions.append("cast")
     return {
         "phase": combat_state.phase,
         "round": int(combat_state.round_number),
         "turn_actor_id": active_actor_id,
         "combatants": combatants,
-        "available_actions": ["attack", "defend", "flee", "cast", "use_item"],
+        "available_actions": available_actions,
+        "move_options": _build_move_options(context, combat_state, actors),
         "targets": targets,
     }
 
@@ -701,4 +994,17 @@ def _get_equipped_weapon(actor: "ActorRecord") -> Optional["ItemStack"]:
     return None
 
 
-__all__ = ["build_combat_payload", "handle_attack_target_id", "maybe_handle_combat_command"]
+def _combat_spell_tick(context: "CampaignContext", combat_state: CombatState) -> int:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    world_time = getattr(game_state, "world_time", None)
+    base_tick = int(getattr(world_time, "game_tick", 0))
+    return base_tick + (int(combat_state.round_number) * 10) + int(combat_state.current_turn_index)
+
+
+__all__ = [
+    "build_combat_payload",
+    "handle_attack_target_id",
+    "maybe_handle_combat_command",
+    "maybe_handle_structured_combat_command",
+]

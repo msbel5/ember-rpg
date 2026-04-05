@@ -57,6 +57,34 @@ def resolve_command_text(*, input_text: str, shortcut: Optional[str], args: dict
         if target_hint:
             parts.append(target_hint)
         return " ".join(parts)
+    if shortcut_value == "combat":
+        action_id = str(args.get("action_id", "attack")).strip().lower() or "attack"
+        if action_id == "attack":
+            target_hint = str(args.get("target_id", "")).strip()
+            called_shot = str(args.get("called_shot", "")).strip().lower()
+            parts = ["attack"]
+            if target_hint:
+                parts.append(target_hint)
+            if called_shot:
+                parts.extend(["at", called_shot])
+            return " ".join(parts).strip()
+        if action_id == "move":
+            direction = str(args.get("direction", "")).strip().lower() or "north"
+            return f"move {direction}"
+        if action_id == "end_turn":
+            return "end turn"
+        if action_id in {"defend", "flee"}:
+            return action_id
+        return f"combat {action_id}".strip()
+    if shortcut_value == "spell":
+        action_id = str(args.get("action_id", "cast")).strip().lower() or "cast"
+        spell_id = str(args.get("spell_id", "")).strip()
+        if action_id == "memorize":
+            return f"memorize {spell_id}".strip()
+        target_hint = str(args.get("target_id", "")).strip()
+        if target_hint:
+            return f"cast {spell_id} at {target_hint}".strip()
+        return f"cast {spell_id}".strip()
     if shortcut_value == "assign":
         return "assign %s to %s" % (args.get("resident", "resident"), args.get("job", "duty"))
     if shortcut_value == "travel":

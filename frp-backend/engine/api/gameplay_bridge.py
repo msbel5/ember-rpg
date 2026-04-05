@@ -21,6 +21,7 @@ from engine.kernel.gameplay import (
     craft_recipe,
     drop_inventory_item,
     equip_inventory_item,
+    memorize_registry_spell,
     pickup_ground_item,
     resolve_rest,
     unequip_actor_slot,
@@ -1059,110 +1060,429 @@ def maybe_handle_rest_command(
 
 
 # ---------------------------------------------------------------------------
-# Handler 7: Spell (non-combat casting)
+# Handler 7: Spell (casting / memorization)
 # ---------------------------------------------------------------------------
 
 _CAST_RE = re.compile(r"^cast\s+(.+?)(?:\s+at\s+(.+))?$", re.IGNORECASE)
+_MEMORIZE_RE = re.compile(r"^memorize\s+(.+)$", re.IGNORECASE)
+_PREPARE_RE = re.compile(r"^prepare\s+(.+)$", re.IGNORECASE)
+
+
+def maybe_handle_structured_spell_command(
+    context: "CampaignContext",
+    args: dict[str, Any],
+    *,
+    allow_combat: bool = False,
+) -> Optional[tuple[str, str, int]]:
+    player = _player(context)
+    if player is None:
+        return None
+    action_id = str(args.get("action_id", "")).strip().lower()
+    if not action_id:
+        return None
+    if action_id not in {"cast", "memorize"}:
+        return (f"Unsupported spell action '{action_id}'.", "spell", 0)
+    spell_id = str(args.get("spell_id", "")).strip().lower()
+    if not spell_id:
+        return (f"{action_id.title()} requires a spell_id.", "spell", 0)
+    resolved_spell = _resolve_spell_registry_entry(spell_id, exact=True)
+    if resolved_spell is None:
+        return (f"Unknown spell '{spell_id}'.", "spell", 0)
+    canonical_spell_id, spell_raw = resolved_spell
+    spellbook_id = str(args.get("spellbook_id", "")).strip() or None
+    if action_id == "memorize":
+        if allow_combat and context.in_combat():
+            return ("You cannot memorize spells during combat.", "spell", 0)
+        result = _memorize_spell_action(
+            context,
+            player,
+            spell_id=canonical_spell_id,
+            spell_raw=spell_raw,
+            spellbook_id=spellbook_id,
+        )
+        return (result["narrative"], "spell", int(result["hours_advanced"]))
+    target_id = str(args.get("target_id", "")).strip() or None
+    raw_position = args.get("target_position")
+    target_position = (
+        (int(raw_position[0]), int(raw_position[1]))
+        if isinstance(raw_position, (list, tuple)) and len(raw_position) >= 2
+        else None
+    )
+    target_actor, resolved_position, target_error = _resolve_structured_spell_target(
+        context,
+        target_id=target_id,
+        target_position=target_position,
+        spell_raw=spell_raw,
+    )
+    if target_error:
+        return (target_error, "spell", 0)
+    if allow_combat and context.in_combat():
+        return _run_combat_spell_action(
+            context,
+            lambda: _cast_spell_action(
+                context,
+                player,
+                spell_id=canonical_spell_id,
+                spell_raw=spell_raw,
+                target_actor=target_actor,
+                target_position=resolved_position,
+                spellbook_id=spellbook_id,
+                allow_combat=True,
+            ),
+        )
+    result = _cast_spell_action(
+        context,
+        player,
+        spell_id=canonical_spell_id,
+        spell_raw=spell_raw,
+        target_actor=target_actor,
+        target_position=resolved_position,
+        spellbook_id=spellbook_id,
+        allow_combat=False,
+    )
+    return (result["narrative"], "spell", int(result["hours_advanced"]))
 
 
 def maybe_handle_spell_command(
     context: "CampaignContext",
     command_text: str,
+    *,
+    allow_combat: bool = False,
 ) -> Optional[tuple[str, str, int]]:
     player = _player(context)
     if player is None:
         return None
-
-    match = _CAST_RE.match(command_text.strip())
+    text = command_text.strip()
+    memorize_match = _MEMORIZE_RE.match(text) or _PREPARE_RE.match(text)
+    if memorize_match:
+        if allow_combat and context.in_combat():
+            return ("You cannot memorize spells during combat.", "spell", 0)
+        spell_name = memorize_match.group(1).strip()
+        resolved_spell = _resolve_spell_registry_entry(spell_name, exact=False)
+        if resolved_spell is None:
+            return (f"Unknown spell '{spell_name}'.", "spell", 0)
+        spell_id, spell_raw = resolved_spell
+        result = _memorize_spell_action(
+            context,
+            player,
+            spell_id=spell_id,
+            spell_raw=spell_raw,
+            spellbook_id=None,
+        )
+        return (result["narrative"], "spell", int(result["hours_advanced"]))
+    match = _CAST_RE.match(text)
     if not match:
         return None
-
     spell_name = match.group(1).strip()
     target_name = match.group(2).strip() if match.group(2) else None
-
-    # Look up spell in registry (may be a map or need list-based fallback).
-    registry = spells_registry()
-    found = _fuzzy_match(spell_name, registry) if registry else None
-    if found is None:
-        # Fallback: load raw spell list (entries may lack id fields).
-        spell_list = load_registry_list("spells.json", "spells")
-        spell_raw = _fuzzy_match_list(spell_name, spell_list)
-        if spell_raw is None:
-            return (f"Unknown spell '{spell_name}'.", "spell", 0)
-        spell_id = str(spell_raw.get("name", spell_name)).lower().replace(" ", "_")
-    else:
-        spell_id, spell_raw = found
-
-    # Resolve target actor.
-    target_actor, target_error = _resolve_spell_target(context, target_name, spell_raw)
+    resolved_spell = _resolve_spell_registry_entry(spell_name, exact=False)
+    if resolved_spell is None:
+        return (f"Unknown spell '{spell_name}'.", "spell", 0)
+    spell_id, spell_raw = resolved_spell
+    target_actor, target_position, target_error = _resolve_spell_target(context, target_name, spell_raw)
     if target_error:
         return (target_error, "spell", 0)
+    if allow_combat and context.in_combat():
+        return _run_combat_spell_action(
+            context,
+            lambda: _cast_spell_action(
+                context,
+                player,
+                spell_id=spell_id,
+                spell_raw=spell_raw,
+                target_actor=target_actor,
+                target_position=target_position,
+                spellbook_id=None,
+                allow_combat=True,
+            ),
+        )
+    result = _cast_spell_action(
+        context,
+        player,
+        spell_id=spell_id,
+        spell_raw=spell_raw,
+        target_actor=target_actor,
+        target_position=target_position,
+        spellbook_id=None,
+        allow_combat=False,
+    )
+    return (result["narrative"], "spell", int(result["hours_advanced"]))
 
+
+def _cast_spell_action(
+    context: "CampaignContext",
+    player: "ActorRecord",
+    *,
+    spell_id: str,
+    spell_raw: dict[str, Any],
+    target_actor: "ActorRecord" | None,
+    target_position: tuple[int, int] | None,
+    spellbook_id: str | None,
+    allow_combat: bool,
+) -> dict[str, Any]:
+    current_tick = _spell_current_tick(context, player, allow_combat=allow_combat)
     cast_result = cast_registry_spell(
         player,
         spell_id=spell_id,
         spell_data=spell_raw,
         target=target_actor,
-        current_tick=int(player.raw_payload.get("game_tick", 0)),
+        target_position=target_position,
+        current_tick=current_tick,
+        spellbook_id=spellbook_id,
     )
-    cost = int(cast_result.get("cost", spell_raw.get("cost", 0)))
-    current_sp = player.spell_points
+    spell_label = str(cast_result.get("spell_label", spell_raw.get("name", spell_id)))
     if not cast_result.get("success", False) and cast_result.get("reason") == "insufficient_spell_points":
-        return (
-            f"Not enough spell points to cast {cast_result.get('spell_label', spell_raw.get('name', spell_id))} "
-            f"(need {cost}, have {current_sp}).",
-            "spell", 0,
-        )
-    if not cast_result.get("success", False) and cast_result.get("reason"):
-        return (f"Cannot cast {cast_result.get('spell_label', spell_raw.get('name', spell_id))}: {cast_result['reason']}.", "spell", 0)
-    effects = list(cast_result["applied"])
-    effect_parts = []
+        return {
+            "success": False,
+            "attempt_started": False,
+            "hours_advanced": 0,
+            "narrative": (
+                f"Not enough spell points to cast {spell_label} "
+                f"(need {int(cast_result.get('cost', spell_raw.get('cost', 0)))}, have {int(player.spell_points)})."
+            ),
+        }
+    if not cast_result.get("success", False) and cast_result.get("reason") == "no_available_slot":
+        return {
+            "success": False,
+            "attempt_started": False,
+            "hours_advanced": 0,
+            "narrative": f"No prepared slot is available for {spell_label}.",
+        }
+    if not cast_result.get("success", False) and cast_result.get("reason") == "aura cooldown":
+        return {
+            "success": False,
+            "attempt_started": False,
+            "hours_advanced": 0,
+            "narrative": f"You cannot cast {spell_label} again yet. Your aura has not recovered.",
+        }
+    if not cast_result.get("success", False) and cast_result.get("reason") == "invalid target":
+        return {
+            "success": False,
+            "attempt_started": False,
+            "hours_advanced": 0,
+            "narrative": f"{spell_label} does not have a valid target.",
+        }
+    if not cast_result.get("success", False) and cast_result.get("reason") and not cast_result.get("attempt_started", False):
+        return {
+            "success": False,
+            "attempt_started": False,
+            "hours_advanced": 0,
+            "narrative": f"Cannot cast {spell_label}: {cast_result['reason']}.",
+        }
+    if not cast_result.get("success", False) and cast_result.get("reason") == "resisted":
+        target_label = _spell_recipient_label(target_actor, spell_raw)
+        return {
+            "success": False,
+            "attempt_started": bool(cast_result.get("attempt_started", False)),
+            "hours_advanced": 0 if allow_combat else 1,
+            "narrative": f"{player.name} casts {spell_label}, but {target_label} resists the magic.",
+        }
+    effects = list(cast_result.get("applied", []))
+    effect_parts: list[str] = []
     for effect in effects:
-        etype = str(effect.get("type", ""))
-        if etype == "damage":
-            recipient = effect.get("target", target_name or "the target")
-            effect_parts.append(f"deals {effect.get('amount', '?')} damage to {recipient}")
-        elif etype == "heal":
+        effect_type = str(effect.get("type", ""))
+        if effect_type == "damage":
+            effect_parts.append(f"deals {effect.get('amount', '?')} damage to {effect.get('target', 'the target')}")
+        elif effect_type == "heal":
             effect_parts.append(f"heals {effect.get('target', 'the target')} for {effect.get('amount', '?')}")
-        elif etype == "buff":
+        elif effect_type == "buff":
             effect_parts.append(f"empowers {effect.get('target', 'the target')}")
-        elif etype == "status":
+        elif effect_type == "status":
             effect_parts.append(f"affects {effect.get('target', 'the target')} with a status effect")
         else:
-            effect_parts.append(f"applies {etype}")
-
-    spell_label = str(spell_raw.get("name", spell_id))
+            effect_parts.append(f"applies {effect_type}")
     effect_summary = "; ".join(effect_parts) if effect_parts else "magical energy swirls"
-    narrative = f"{player.name} casts {spell_label}. {effect_summary}."
+    logger.info("Cast: %s cast %s", player.name, spell_label)
+    return {
+        "success": True,
+        "attempt_started": bool(cast_result.get("attempt_started", False)),
+        "hours_advanced": 0 if allow_combat else 1,
+        "narrative": f"{player.name} casts {spell_label}. {effect_summary}.",
+    }
 
-    logger.info("Cast: %s cast %s (cost %d SP)", player.name, spell_label, cost)
-    return (narrative, "spell", 1)
+
+def _memorize_spell_action(
+    context: "CampaignContext",
+    player: "ActorRecord",
+    *,
+    spell_id: str,
+    spell_raw: dict[str, Any],
+    spellbook_id: str | None,
+) -> dict[str, Any]:
+    del context
+    result = memorize_registry_spell(
+        player,
+        spell_id=spell_id,
+        spell_data=spell_raw,
+        spellbook_id=spellbook_id,
+    )
+    spell_label = str(result.get("spell_label", spell_raw.get("name", spell_id)))
+    if result.get("success", False) and result.get("reason") == "already_memorized":
+        return {"narrative": f"{spell_label} is already prepared.", "hours_advanced": 0}
+    if result.get("success", False):
+        return {"narrative": f"Prepared {spell_label}.", "hours_advanced": 0}
+    if result.get("reason") == "memorize_not_supported":
+        return {
+            "narrative": f"{player.name} uses spell points and cannot memorize {spell_label}.",
+            "hours_advanced": 0,
+        }
+    if result.get("reason") == "no_available_slot":
+        return {"narrative": f"No prepared slot is available for {spell_label}.", "hours_advanced": 0}
+    return {"narrative": f"Cannot prepare {spell_label}.", "hours_advanced": 0}
+
+
+def _resolve_spell_registry_entry(query: str, *, exact: bool) -> tuple[str, dict[str, Any]] | None:
+    registry = spells_registry()
+    normalized_query = str(query).strip().lower().replace(" ", "_")
+    if exact:
+        if normalized_query in registry:
+            return normalized_query, dict(registry[normalized_query])
+        for entry in load_registry_list("spells.json", "spells"):
+            if not isinstance(entry, dict):
+                continue
+            entry_id = str(entry.get("id") or entry.get("name", "")).strip().lower().replace(" ", "_")
+            if entry_id == normalized_query:
+                return entry_id, dict(entry)
+        return None
+    found = _fuzzy_match(query, registry) if registry else None
+    if found is not None:
+        return found[0], dict(found[1])
+    spell_list = load_registry_list("spells.json", "spells")
+    spell_raw = _fuzzy_match_list(query, spell_list)
+    if spell_raw is None:
+        return None
+    spell_id = str(spell_raw.get("id") or spell_raw.get("name", query)).lower().replace(" ", "_")
+    return spell_id, dict(spell_raw)
 
 
 def _resolve_spell_target(
     context: "CampaignContext",
     target_name: str | None,
     spell_raw: dict[str, Any],
-):
+) -> tuple["ActorRecord" | None, tuple[int, int] | None, str | None]:
     runtime = context.kernel_runtime or {}
     actors = runtime.get("actors", {})
     normalized_target = str(target_name or "").strip().lower()
+    raw_target_type = str(spell_raw.get("target_type", "single")).lower()
+    if raw_target_type == "self":
+        return _player(context), None, None
     if normalized_target in {"self", "me", "myself", context.player.name.lower()}:
-        return _player(context), None
+        return _player(context), None, None
     if normalized_target:
         resolved = resolve_live_actor_query(actors, normalized_target, include_player=True)
         if resolved.error:
-            return None, resolved.error
+            return None, None, resolved.error
         if resolved.actor is not None:
-            return resolved.actor, None
-    hostile = str(spell_raw.get("target_type", "single")).lower() != "self"
+            point = None
+            if raw_target_type in {"area", "cone", "point"}:
+                point = (int(resolved.actor.position.x), int(resolved.actor.position.y))
+            return resolved.actor, point, None
+    hostile = raw_target_type != "self"
     if hostile:
         for actor_id, actor in actors.items():
             if actor_id == "player":
                 continue
             if getattr(actor, "alive", True):
-                return actor, None
-    return (_player(context), None) if str(spell_raw.get("target_type", "single")).lower() == "self" else (None, None)
+                point = None
+                if raw_target_type in {"area", "cone", "point"}:
+                    point = (int(actor.position.x), int(actor.position.y))
+                return actor, point, None
+    default_target = _player(context) if raw_target_type == "self" else None
+    return default_target, None, None
+
+
+def _resolve_structured_spell_target(
+    context: "CampaignContext",
+    *,
+    target_id: str | None,
+    target_position: tuple[int, int] | None,
+    spell_raw: dict[str, Any],
+) -> tuple["ActorRecord" | None, tuple[int, int] | None, str | None]:
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    raw_target_type = str(spell_raw.get("target_type", "single")).lower()
+    if raw_target_type == "self":
+        return _player(context), None, None
+    if target_id:
+        target_actor = actors.get(target_id)
+        if target_actor is None:
+            return None, None, f"Target '{target_id}' is no longer present."
+        resolved_position = target_position
+        if resolved_position is None and raw_target_type in {"area", "cone", "point"}:
+            resolved_position = (int(target_actor.position.x), int(target_actor.position.y))
+        return target_actor, resolved_position, None
+    if target_position is not None:
+        for actor_id, actor in actors.items():
+            if actor_id == "player" or not getattr(actor, "alive", True):
+                continue
+            if (int(actor.position.x), int(actor.position.y)) == target_position:
+                return actor, target_position, None
+        if raw_target_type in {"area", "cone", "point"}:
+            return None, None, f"No spell target found at ({int(target_position[0])},{int(target_position[1])})."
+    return _resolve_spell_target(context, None, spell_raw)
+
+
+def _spell_current_tick(
+    context: "CampaignContext",
+    player: "ActorRecord",
+    *,
+    allow_combat: bool,
+) -> int:
+    base_tick = int(player.raw_payload.get("game_tick", 0))
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    world_time = getattr(game_state, "world_time", None)
+    world_tick = int(getattr(world_time, "game_tick", base_tick))
+    if allow_combat and context.in_combat():
+        from engine.api import combat_bridge
+
+        combat_state = combat_bridge._combat_state(context)
+        if combat_state is not None:
+            return world_tick + (int(combat_state.round_number) * 10) + int(combat_state.current_turn_index)
+    return max(base_tick, world_tick)
+
+
+def _run_combat_spell_action(
+    context: "CampaignContext",
+    resolver,
+) -> tuple[str, str, int]:
+    from engine.api import combat_bridge
+
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    player = actors.get("player")
+    if player is None:
+        return ("No combatant is ready to act.", "spell", 0)
+    combat_state = combat_bridge._combat_state(context)
+    if combat_state is None:
+        result = resolver()
+        return (result["narrative"], "spell", int(result["hours_advanced"]))
+    state_ready = combat_bridge._ensure_player_turn(context, combat_state, actors)
+    if state_ready["resolved"]:
+        return (state_ready["summary"] or "Combat is already over.", "combat", 0)
+    if state_ready["blocked"]:
+        return (state_ready["summary"], "combat", 0)
+    result = resolver()
+    if not bool(result.get("attempt_started", False)):
+        return (result["narrative"], "spell", 0)
+    follow_up = combat_bridge._end_player_turn_and_resolve(
+        context,
+        combat_state,
+        actors,
+        seed_offset=71,
+    )
+    narrative = str(result["narrative"]).strip()
+    if follow_up:
+        narrative = f"{narrative} {follow_up}".strip()
+    return (narrative, "spell", 0)
+
+
+def _spell_recipient_label(target_actor: "ActorRecord" | None, spell_raw: dict[str, Any]) -> str:
+    if target_actor is not None:
+        return target_actor.name
+    if str(spell_raw.get("target_type", "single")).lower() == "self":
+        return "the caster"
+    return "the target"
 
 
 def _inventory_add_failure_message(context: "CampaignContext", item_name: str) -> str:

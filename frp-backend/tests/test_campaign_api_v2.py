@@ -41,7 +41,7 @@ def _inventory_quantity(context, item_def_id: str) -> int:
     return total
 
 
-def _create_campaign(adapter_id: str = "fantasy_ember") -> dict:
+def _create_campaign(adapter_id: str = "fantasy_ember", *, seed: int = 42) -> dict:
     response = client.post(
         "/game/campaigns",
         json={
@@ -49,7 +49,7 @@ def _create_campaign(adapter_id: str = "fantasy_ember") -> dict:
             "player_class": "warrior",
             "adapter_id": adapter_id,
             "profile_id": "standard",
-            "seed": 42,
+            "seed": seed,
         },
     )
     assert response.status_code == 200
@@ -196,6 +196,36 @@ def test_campaign_attack_command_marks_scene_as_combat_when_combat_payload_exist
     assert "turn_actor_id" in body["campaign"]["combat"]
     assert "available_actions" in body["campaign"]["combat"]
     assert "targets" in body["campaign"]["combat"]
+
+
+def test_campaign_command_accepts_shortcut_combat_request_shape():
+    payload = _create_campaign(seed=50)
+    campaign_id = payload["campaign_id"]
+
+    npcs = [
+        actor for actor in payload["campaign"]["actors"]
+        if actor["identity"]["actor_id"] != "player"
+        and actor["identity"].get("actor_type") == "npc"
+        and actor.get("alive", True)
+    ]
+    if not npcs:
+        pytest.skip("No NPCs in fresh campaign to attack")
+    target_actor_id = npcs[0]["identity"]["actor_id"]
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "combat",
+            "args": {"action_id": "attack", "target_id": target_actor_id, "called_shot": "head"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["command_type"] == "combat"
+    assert body["campaign"]["combat"]
+    assert isinstance(body["campaign"]["combat"]["available_actions"], list)
+    assert "cast" not in body["campaign"]["combat"]["available_actions"]
 
 
 def test_campaign_save_and_load_round_trip():

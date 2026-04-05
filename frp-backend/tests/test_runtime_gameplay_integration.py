@@ -4,8 +4,11 @@ import engine.api.gameplay_bridge as gameplay_bridge
 
 from engine.api.campaign.runtime import CampaignRuntime
 from engine.api.campaign.dialog import clear_dialog_state
+from engine.api.campaign.live_kernel import ensure_kernel_runtime
 from engine.api.campaign_commands import maybe_handle_dialog_command, maybe_handle_talk_command
 from engine.api.combat_bridge import _choose_aggressive_target_id, _choose_guard_target_id, _resolve_companion_turn
+from engine.api.campaign.state_sync import sync_player_position
+from engine.api.campaign.region_projection import sync_combat_projection_state
 from engine.kernel.actor import WoundRecord
 from engine.api.campaign.party_bridge import maybe_handle_party_command
 from engine.api.campaign.dialog import store_dialog_state
@@ -15,6 +18,7 @@ from engine.kernel.dialog import DialogAction, DialogDef, DialogStateNode, Dialo
 from engine.kernel.gameplay import spawn_ground_item_entity
 from engine.kernel.game_state import FORMATIONS, party_tactic_for_actor
 from engine.kernel.progression import ProgressionState
+from engine.kernel.spells import CastingAttempt, SpellDef, SpellSlot, Spellbook
 from engine.world.entity import Entity, EntityType
 
 
@@ -273,6 +277,83 @@ def _tile_points(payload: list[list[int]]) -> set[tuple[int, int]]:
     }
 
 
+def _move_projected_entity(context, actor_id: str, position: tuple[int, int]) -> None:
+    record = context.entities.get(actor_id)
+    if not isinstance(record, dict):
+        raise AssertionError(f"Expected projected record for {actor_id}")
+    entity_ref = record.get("entity_ref")
+    if entity_ref is None:
+        raise AssertionError(f"Expected entity_ref for {actor_id}")
+    x, y = int(position[0]), int(position[1])
+    record["position"] = [x, y]
+    if context.spatial_index.get_position(actor_id) is None:
+        entity_ref.position = (x, y)
+        context.spatial_index.add(entity_ref)
+    else:
+        context.spatial_index.move(entity_ref, x, y)
+
+
+def _set_player_projection_position(context, position: tuple[int, int]) -> None:
+    x, y = int(position[0]), int(position[1])
+    context.position = [x, y]
+    if context.player_entity is None:
+        raise AssertionError("Expected projected player entity")
+    if context.spatial_index.get_position("player") is None:
+        context.player_entity.position = (x, y)
+        context.spatial_index.add(context.player_entity)
+    else:
+        context.spatial_index.move(context.player_entity, x, y)
+
+
+def _install_combat_state(context, combat_state: CombatState) -> None:
+    context.kernel_runtime["game_state"].raw_payload["combat"] = combat_state.to_dict()
+    if context.dm_context is not None:
+        context.dm_context.scene_type_name = "combat"
+
+
+def _install_player_spell_state(context) -> None:
+    player = context.kernel_runtime["actors"]["player"]
+    player.raw_payload["spellcasting_mode"] = "mage"
+    player.raw_payload["spellbooks"] = {
+        "mage": Spellbook(
+            actor_id=player.identity.actor_id,
+            spell_type="mage",
+            known_spells={1: ["magic_missile", "shield"], 2: ["mirror_image"]},
+            slots={
+                1: [
+                    SpellSlot(1, "magic_missile", memorized=True, expended=False),
+                    SpellSlot(1, "shield", memorized=True, expended=True),
+                ],
+                2: [SpellSlot(2, "mirror_image", memorized=True, expended=False)],
+            },
+            max_slots={1: 2, 2: 1},
+        )
+    }
+    player.raw_payload["active_cast"] = CastingAttempt(
+        caster_id=player.identity.actor_id,
+        spell_def=SpellDef(
+            spell_id="magic_missile",
+            label="Magic Missile",
+            spell_type="mage",
+            school="evocation",
+            level=1,
+            casting_time=2,
+            range=60,
+            target_type="creature",
+        ),
+        target_id="practice_dummy",
+        tick_started=12,
+        ticks_remaining=1,
+    )
+    player.raw_payload["concentration"] = {
+        "spell_id": "shield",
+        "source": "spell",
+        "active": True,
+    }
+    player.raw_payload["max_spell_points"] = 6
+    player.spell_points = 3
+
+
 def test_run_command_pickup_uses_ground_item_authority() -> None:
     runtime, context = _make_campaign()
     spawn_ground_item_entity(
@@ -318,6 +399,75 @@ def test_run_command_spell_uses_kernel_spell_flow() -> None:
     assert "magic missile" in result["narrative"].lower()
     assert player.spell_points == 8
     assert int(player.raw_payload.get("last_cast_tick", -1)) >= 0
+
+
+def test_spell_save_load_preserves_spellbooks_slots_and_active_cast_state() -> None:
+    runtime, context = _make_campaign()
+    _install_player_spell_state(context)
+
+    runtime.save_campaign(context.campaign_id, "spell_runtime_sync_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("spell_runtime_sync_slot")
+    loaded_player = loaded.kernel_runtime["actors"]["player"]
+    loaded_book = Spellbook.from_dict(loaded_player.raw_payload["spellbooks"]["mage"])
+    loaded_cast = CastingAttempt.from_dict(loaded_player.raw_payload["active_cast"])
+    payload = runtime.snapshot(loaded.campaign_id, narrative="spell-sync")
+    spellcasting = payload["campaign"]["player"]["spellcasting"]
+
+    assert loaded_book.known_spells[1] == ["magic_missile", "shield"]
+    assert loaded_book.known_spells[2] == ["mirror_image"]
+    assert loaded_book.slots[1][0].memorized is True
+    assert loaded_book.slots[1][0].expended is False
+    assert loaded_book.slots[1][1].memorized is True
+    assert loaded_book.slots[1][1].expended is True
+    assert loaded_player.spell_points == 3
+    assert loaded_player.max_spell_points == 6
+    assert loaded_cast.spell_def.spell_id == "magic_missile"
+    assert loaded_cast.target_id == "practice_dummy"
+    assert loaded_player.raw_payload["concentration"]["spell_id"] == "shield"
+    assert spellcasting["spellcasting_mode"] == "mage"
+    assert spellcasting["known_spells"]["1"] == ["magic_missile", "shield"]
+    assert spellcasting["slot_state"]["by_level"]["1"]["memorized"] == 2
+    assert spellcasting["slot_state"]["by_level"]["1"]["expended"] == 1
+    assert spellcasting["spell_points"] == {"current": 3, "max": 6}
+    assert spellcasting["active_cast"]["spell_def"]["spell_id"] == "magic_missile"
+    assert spellcasting["concentration"]["spell_id"] == "shield"
+
+
+def test_long_rest_spell_refresh_persists_through_save_load() -> None:
+    runtime, context = _make_campaign()
+    _install_player_spell_state(context)
+    player = context.kernel_runtime["actors"]["player"]
+    player.spell_points = 1
+
+    rested = runtime.run_command(context.campaign_id, "long rest")
+    runtime.save_campaign(context.campaign_id, "spell_long_rest_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("spell_long_rest_slot")
+    loaded_player = loaded.kernel_runtime["actors"]["player"]
+    loaded_book = Spellbook.from_dict(loaded_player.raw_payload["spellbooks"]["mage"])
+    payload = runtime.snapshot(loaded.campaign_id, narrative="spell-long-rest")
+    spellcasting = payload["campaign"]["character_sheet"]["spellcasting"]
+
+    assert rested["command_type"] == "rest"
+    assert all(slot.expended is False for slot in loaded_book.slots[1])
+    assert all(slot.expended is False for slot in loaded_book.slots[2])
+    assert loaded_player.spell_points == 6
+    assert loaded_player.max_spell_points == 6
+    assert spellcasting["slot_state"]["by_level"]["1"]["expended"] == 0
+    assert spellcasting["slot_state"]["by_level"]["2"]["expended"] == 0
+    assert spellcasting["spell_points"] == {"current": 6, "max": 6}
+
+
+def test_snapshot_payload_exposes_spell_state_deterministically() -> None:
+    runtime, context = _make_campaign()
+    _install_player_spell_state(context)
+
+    first = runtime.snapshot(context.campaign_id, narrative="spell-state-1")["campaign"]
+    second = runtime.snapshot(context.campaign_id, narrative="spell-state-2")["campaign"]
+
+    assert first["player"]["spellcasting"] == second["player"]["spellcasting"]
+    assert first["character_sheet"]["spellcasting"] == second["character_sheet"]["spellcasting"]
+    assert first["player"]["spellcasting"]["known_spells"]["1"] == ["magic_missile", "shield"]
+    assert first["character_sheet"]["spellcasting"]["slot_state"]["by_level"]["1"]["available"] == 1
 
 
 def test_diagnose_populates_character_sheet_medical() -> None:
@@ -1654,6 +1804,236 @@ def test_save_load_preserves_schedule_backed_projected_state() -> None:
     assert projected.get("position") == list(expected.get("position", projected.get("position", [])))
     assert loaded_record.get("position") == projected.get("position")
     assert loaded_record.get("assignment") == projected.get("assignment")
+
+
+def test_mid_combat_save_load_preserves_positions_turn_resources_and_scene() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="combat_sync_ally", name="Shield Taren", role="guard")
+    hostile = _inject_companion(context, base_id="combat_sync_enemy", name="Ash Gnoll", role="raider", hostile=True)
+
+    assert runtime.run_command(context.campaign_id, "recruit Shield Taren")["command_type"] == "party"
+    _project_actor_entity(context, hostile, position=(int(context.position[0]) + 2, int(context.position[1]) + 1), attitude="hostile")
+
+    player_position = (int(context.position[0]) + 4, int(context.position[1]) + 3)
+    companion_position = (player_position[0] + 1, player_position[1])
+    hostile_position = (player_position[0] + 3, player_position[1])
+
+    _set_player_projection_position(context, player_position)
+    _move_projected_entity(context, companion.identity.actor_id, companion_position)
+    _move_projected_entity(context, hostile.identity.actor_id, hostile_position)
+    player = context.kernel_runtime["actors"]["player"]
+    player.position.x = player_position[0]
+    player.position.y = player_position[1]
+    companion.position.x = companion_position[0]
+    companion.position.y = companion_position[1]
+    hostile.position.x = hostile_position[0]
+    hostile.position.y = hostile_position[1]
+
+    combat_state = CombatState(
+        combatants=[
+            CombatantEntry(actor_id="player", initiative=21, is_player=True),
+            CombatantEntry(actor_id=companion.identity.actor_id, initiative=18, is_player=True),
+            CombatantEntry(actor_id=hostile.identity.actor_id, initiative=11, is_player=False),
+        ],
+        current_turn_index=1,
+    )
+    combat_state.combatants[1].turn_resources.action = False
+    combat_state.combatants[1].turn_resources.bonus_action = False
+    combat_state.combatants[1].turn_resources.reaction = True
+    combat_state.combatants[1].turn_resources.movement = 2
+    combat_state.combatants[1].turn_resources.max_movement = 7
+    _install_combat_state(context, combat_state)
+
+    runtime.save_campaign(context.campaign_id, "combat_runtime_sync_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("combat_runtime_sync_slot")
+    snapshot = runtime.snapshot(loaded.campaign_id, narrative="combat-load")["campaign"]
+
+    loaded_companion = loaded.kernel_runtime["actors"][companion.identity.actor_id]
+    loaded_hostile = loaded.kernel_runtime["actors"][hostile.identity.actor_id]
+    companion_payload = next(
+        entry
+        for entry in snapshot["combat"]["combatants"]
+        if entry["actor_id"] == companion.identity.actor_id
+    )
+
+    assert snapshot["scene"] == "combat"
+    assert snapshot["combat"]["phase"] == "active"
+    assert snapshot["combat"]["turn_actor_id"] == companion.identity.actor_id
+    assert tuple(loaded.position) == player_position
+    assert (int(loaded_companion.position.x), int(loaded_companion.position.y)) == companion_position
+    assert (int(loaded_hostile.position.x), int(loaded_hostile.position.y)) == hostile_position
+    assert loaded.entities[companion.identity.actor_id]["position"] == list(companion_position)
+    assert loaded.entities[hostile.identity.actor_id]["position"] == list(hostile_position)
+    assert loaded.spatial_index.get_position("player") == player_position
+    assert loaded.spatial_index.get_position(companion.identity.actor_id) == companion_position
+    assert loaded.spatial_index.get_position(hostile.identity.actor_id) == hostile_position
+    assert companion_payload["position"] == list(companion_position)
+    assert companion_payload["projected_position"] == list(companion_position)
+    assert companion_payload["turn_resources"]["action_available"] is False
+    assert companion_payload["turn_resources"]["bonus_action_available"] is False
+    assert companion_payload["turn_resources"]["reaction_available"] is True
+    assert companion_payload["turn_resources"]["movement_remaining"] == 2
+    assert companion_payload["turn_resources"]["speed"] == 7
+
+
+def test_mid_combat_projection_payload_stays_aligned_with_kernel_positions() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="combat_projection_ally", name="Vera Pike", role="guard")
+    hostile = _inject_companion(context, base_id="combat_projection_enemy", name="Mud Raker", role="raider", hostile=True)
+
+    assert runtime.run_command(context.campaign_id, "recruit Vera Pike")["command_type"] == "party"
+    _project_actor_entity(context, hostile, position=(int(context.position[0]) + 2, int(context.position[1])), attitude="hostile")
+
+    player_position = (int(context.position[0]) + 5, int(context.position[1]) + 1)
+    companion_position = (player_position[0] + 1, player_position[1] + 1)
+    hostile_position = (player_position[0] + 3, player_position[1] + 1)
+
+    _set_player_projection_position(context, player_position)
+    _move_projected_entity(context, companion.identity.actor_id, companion_position)
+    _move_projected_entity(context, hostile.identity.actor_id, hostile_position)
+    player = context.kernel_runtime["actors"]["player"]
+    player.position.x = player_position[0]
+    player.position.y = player_position[1]
+    companion.position.x = companion_position[0]
+    companion.position.y = companion_position[1]
+    hostile.position.x = hostile_position[0]
+    hostile.position.y = hostile_position[1]
+
+    combat_state = CombatState(
+        combatants=[
+            CombatantEntry(actor_id="player", initiative=19, is_player=True),
+            CombatantEntry(actor_id=companion.identity.actor_id, initiative=17, is_player=True),
+            CombatantEntry(actor_id=hostile.identity.actor_id, initiative=12, is_player=False),
+        ]
+    )
+    combat_state.combatants[0].turn_resources.movement = 4
+    _install_combat_state(context, combat_state)
+
+    snapshot = runtime.snapshot(context.campaign_id, narrative="combat-projection")["campaign"]
+    hostile_world_entity = next(entity for entity in snapshot["world_entities"] if entity["id"] == hostile.identity.actor_id)
+    companion_payload = next(
+        entry
+        for entry in snapshot["combat"]["combatants"]
+        if entry["actor_id"] == companion.identity.actor_id
+    )
+
+    assert snapshot["scene"] == "combat"
+    assert tuple(context.position) == player_position
+    assert snapshot["combat"]["turn_actor_id"] == "player"
+    assert companion_payload["position"] == list(companion_position)
+    assert hostile_world_entity["position"] == list(hostile_position)
+    assert context.entities[companion.identity.actor_id]["position"] == list(companion_position)
+    assert context.entities[hostile.identity.actor_id]["position"] == list(hostile_position)
+    assert context.spatial_index.get_position(companion.identity.actor_id) == companion_position
+    assert context.spatial_index.get_position(hostile.identity.actor_id) == hostile_position
+
+
+def test_authored_named_npc_identity_survives_runtime_save_load() -> None:
+    runtime, context = _make_campaign()
+    authored_actor = next(
+        actor
+        for actor_id, actor in context.kernel_runtime["actors"].items()
+        if actor_id != "player" and actor.raw_payload.get("identity_source") == "authored"
+    )
+
+    actor_id = authored_actor.identity.actor_id
+    named_npc_id = authored_actor.raw_payload.get("named_npc_id")
+
+    runtime.run_command(context.campaign_id, "look around")
+    runtime.save_campaign(context.campaign_id, "authored_named_npc_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("authored_named_npc_slot")
+    loaded_actor = loaded.kernel_runtime["actors"][actor_id]
+
+    assert named_npc_id
+    assert loaded_actor.raw_payload.get("identity_source") == "authored"
+    assert loaded_actor.raw_payload.get("named_npc_id") == named_npc_id
+
+
+def test_combat_projection_positions_stay_synced_through_save_load() -> None:
+    runtime, context = _make_campaign()
+    enemy = _inject_companion(
+        context,
+        base_id="combat_sync_enemy",
+        name="Road Fang",
+        role="raider",
+        hostile=True,
+        recruitable=False,
+    )
+    start_x, start_y = int(context.position[0]), int(context.position[1])
+    _project_actor_entity(
+        context,
+        enemy,
+        position=(start_x + 1, start_y),
+        attitude="hostile",
+        disposition="hostile",
+        context_actions=["attack", "examine"],
+    )
+    enemy.stats["hp"] = 32
+    enemy.stats["max_hp"] = 32
+
+    combat_state = CombatState(
+        combatants=[
+            CombatantEntry(actor_id="player", initiative=20, is_player=True),
+            CombatantEntry(actor_id=enemy.identity.actor_id, initiative=10, is_player=False),
+        ],
+        round_number=1,
+        current_turn_index=0,
+        phase="active",
+    )
+    combat_state.combatants[0].turn_resources.max_movement = 4
+    combat_state.combatants[0].turn_resources.movement = 4
+    combat_state.combatants[1].turn_resources.max_movement = 6
+    combat_state.combatants[1].turn_resources.movement = 6
+    context.kernel_runtime["game_state"].raw_payload["combat"] = combat_state.to_dict()
+    context.kernel_runtime["game_state"].raw_payload["combat"]["turn_actor_id"] = "player"
+
+    player = context.kernel_runtime["actors"]["player"]
+    player.position.x = start_x
+    player.position.y = start_y + 1
+    enemy.position.x = start_x + 2
+    enemy.position.y = start_y
+    sync_player_position(context, start_x, start_y + 1, center_viewport=False)
+    active_combatant = context.kernel_runtime["game_state"].raw_payload["combat"]["combatants"][0]
+    active_combatant["turn_resources"]["movement"] = 3
+
+    ensure_kernel_runtime(context)
+    sync_combat_projection_state(context)
+    snapshot = runtime.snapshot(context.campaign_id)["campaign"]
+    combat = snapshot["combat"]
+    world_entities = {entity["id"]: entity for entity in snapshot["world_entities"]}
+
+    assert tuple(context.position) == (start_x, start_y + 1)
+    assert context.spatial_index.get_position("player") == (start_x, start_y + 1)
+    assert context.entities[enemy.identity.actor_id]["position"] == [start_x + 2, start_y]
+    assert context.spatial_index.get_position(enemy.identity.actor_id) == (start_x + 2, start_y)
+    assert combat["combatants"][0]["position"] == [start_x, start_y + 1]
+    assert combat["combatants"][1]["position"] == [start_x + 2, start_y]
+    assert combat["targets"][0]["position"] == [start_x + 2, start_y]
+    assert combat["move_options"]
+    assert world_entities[enemy.identity.actor_id]["position"] == [start_x + 2, start_y]
+
+    runtime.save_campaign(context.campaign_id, "combat_sync_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("combat_sync_slot")
+    loaded_combat = loaded.kernel_runtime["game_state"].raw_payload["combat"]
+    loaded_player = loaded.kernel_runtime["actors"]["player"]
+    loaded_enemy = loaded.kernel_runtime["actors"][enemy.identity.actor_id]
+    loaded_active = next(entry for entry in loaded_combat["combatants"] if entry["actor_id"] == "player")
+    loaded_enemy_record = loaded.entities[enemy.identity.actor_id]
+
+    assert loaded.in_combat()
+    assert loaded_combat["turn_actor_id"] == "player"
+    assert loaded_combat["combatants"][0]["position"] == [start_x, start_y + 1]
+    assert loaded_combat["combatants"][1]["position"] == [start_x + 2, start_y]
+    assert loaded_combat["targets"][0]["position"] == [start_x + 2, start_y]
+    assert loaded_combat["move_options"]
+    assert loaded_player.position.x == start_x
+    assert loaded_player.position.y == start_y + 1
+    assert loaded_enemy.position.x == start_x + 2
+    assert loaded_enemy.position.y == start_y
+    assert loaded_active["turn_resources"]["movement"] == 3
+    assert loaded_active["turn_resources"]["action"] is True
+    assert loaded_enemy_record["position"] == [start_x + 2, start_y]
+    assert loaded.spatial_index.get_position(enemy.identity.actor_id) == (start_x + 2, start_y)
 
 
 def test_missing_schedule_positions_remain_non_crashing_and_non_destructive() -> None:

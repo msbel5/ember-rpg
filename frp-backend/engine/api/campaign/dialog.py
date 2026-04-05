@@ -64,6 +64,8 @@ def build_dialog_payload(context: "CampaignContext", narrative: str) -> dict[str
         logger.debug("Dialog skipped: kernel actors unavailable for %s", npc_id)
         return {}
 
+    _refresh_npc_memory(context, npc_actor)
+
     dialog_def = _resolve_dialog_def(context, npc_id, npc_name, npc_actor)
     if dialog_def is None:
         logger.debug("Dialog skipped: no authored dialog for %s", npc_id or npc_name)
@@ -305,6 +307,65 @@ def _global_variables(context: "CampaignContext") -> dict[str, Any]:
     if game_state is not None:
         return dict(getattr(game_state, "global_variables", {}))
     return {}
+
+
+def _refresh_npc_memory(context: "CampaignContext", npc_actor: "ActorRecord") -> None:
+    from engine.npc.npc_memory import NPCMemoryManager
+
+    manager = context.npc_memory
+    if manager is None:
+        manager = NPCMemoryManager(session_id=context.campaign_id)
+        context.npc_memory = manager
+
+    actor_id = str(getattr(npc_actor.identity, "actor_id", "")).strip()
+    display_name = str(getattr(npc_actor.identity, "display_name", actor_id)).strip() or actor_id
+    raw_payload = getattr(npc_actor, "raw_payload", {})
+    named_npc_id = str(raw_payload.get("named_npc_id", "")).strip() or None
+    memory_id = str(raw_payload.get("memory_id", "")).strip() or named_npc_id or actor_id
+    raw_payload["memory_id"] = memory_id
+
+    memories = manager.memories
+    if memory_id != actor_id and actor_id in memories and memory_id not in memories:
+        memories[memory_id] = memories.pop(actor_id)
+        memories[memory_id].npc_id = memory_id
+
+    memory = manager.get_memory(memory_id, display_name)
+    memory.name = display_name
+    relationship_score = _clamp_relationship_score(raw_payload.get("relationship_score", 0))
+    memory.relationship_score = relationship_score
+    memory.relationship_label = _relationship_label_from_score(relationship_score)
+    memory.last_interaction = _current_time_string(context)
+
+
+def _current_time_string(context: "CampaignContext") -> str:
+    game_time = getattr(context, "game_time", None)
+    if game_time is not None and hasattr(game_time, "to_string"):
+        return str(game_time.to_string())
+    world = getattr(context, "world", None)
+    snapshot = getattr(world, "simulation_snapshot", None)
+    if snapshot is not None:
+        day = int(getattr(snapshot, "current_day", 1) or 1)
+        hour = int(getattr(snapshot, "current_hour", 0) or 0)
+        return f"Day {day}, {hour:02d}:00"
+    return "Day 1, 08:00"
+
+
+def _clamp_relationship_score(value: Any) -> int:
+    return max(-100, min(100, int(value or 0)))
+
+
+def _relationship_label_from_score(score: int) -> str:
+    if score >= 60:
+        return "ally"
+    if score >= 30:
+        return "friend"
+    if score >= 10:
+        return "acquaintance"
+    if score > -20:
+        return "stranger"
+    if score > -50:
+        return "unfriendly"
+    return "enemy"
 
 
 def store_dialog_state(

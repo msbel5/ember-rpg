@@ -600,6 +600,76 @@ class TestSpellCommand:
         assert "not enough" in third[0].lower()
         assert player.spell_points == 0
 
+    def test_structured_spell_shortcut_casts_by_exact_spell_id(self):
+        runtime, context = _make_campaign()
+        player = _player_actor(context)
+        player.spell_points = 10
+        player.raw_payload["max_spell_points"] = 10
+
+        result = runtime.run_command(
+            context.campaign_id,
+            "",
+            shortcut="spell",
+            args={"action_id": "cast", "spell_id": "magic_missile"},
+        )
+
+        assert result["command_type"] == "spell"
+        assert "magic missile" in result["narrative"].lower()
+        assert player.spell_points == 8
+
+    def test_memorize_and_prepare_use_spellbook_slots_for_prepared_casters(self):
+        runtime, context = _make_campaign()
+        player = _player_actor(context)
+        player.raw_payload["class_name"] = "mage"
+        player.raw_payload["level"] = 1
+        player.spell_points = 12
+        player.raw_payload["max_spell_points"] = 12
+
+        memorize = maybe_handle_spell_command(context, "memorize magic missile")
+        prepared = maybe_handle_spell_command(context, "prepare magic missile")
+        cast = runtime.run_command(
+            context.campaign_id,
+            "",
+            shortcut="spell",
+            args={"action_id": "cast", "spell_id": "magic_missile"},
+        )
+
+        from engine.kernel.spells import Spellbook
+
+        spellbook = Spellbook.from_dict(player.raw_payload["spellbooks"]["mage"])
+
+        assert memorize is not None
+        assert "prepared magic missile" in memorize[0].lower()
+        assert prepared is not None
+        assert "already prepared" in prepared[0].lower()
+        assert cast["command_type"] == "spell"
+        assert "magic missile" in cast["narrative"].lower()
+        assert player.spell_points == 12
+        assert spellbook.available_slots(1) == 0
+
+    def test_long_rest_refreshes_expended_prepared_slots(self):
+        runtime, context = _make_campaign()
+        player = _player_actor(context)
+        player.raw_payload["class_name"] = "mage"
+        player.raw_payload["level"] = 1
+
+        assert maybe_handle_spell_command(context, "memorize magic missile") is not None
+        cast = runtime.run_command(
+            context.campaign_id,
+            "",
+            shortcut="spell",
+            args={"action_id": "cast", "spell_id": "magic_missile"},
+        )
+        rest = maybe_handle_rest_command(context, "long rest")
+
+        from engine.kernel.spells import Spellbook
+
+        spellbook = Spellbook.from_dict(player.raw_payload["spellbooks"]["mage"])
+
+        assert cast["command_type"] == "spell"
+        assert rest is not None
+        assert spellbook.available_slots(1) == 1
+
 
 # ---------------------------------------------------------------------------
 # Non-gameplay commands return None

@@ -73,11 +73,12 @@ def run_attack(
     defender_id: str,
     weapon: ItemStack | None = None,
     seed: int | None = None,
+    called_shot: str | None = None,
 ) -> AttackResult:
     """Execute an attack action in combat."""
     return execute_attack(
         state, actors, attacker_id, defender_id,
-        weapon=weapon, seed=seed,
+        weapon=weapon, seed=seed, called_shot=called_shot,
     )
 
 

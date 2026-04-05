@@ -13,24 +13,41 @@ from engine.data._shared import (
 )
 
 
+def _normalize_class_key(class_id: Any) -> str:
+    return str(class_id or "").strip().lower()
+
+
+def _normalize_class_value_map(raw: Dict[str, Any], caster) -> Dict[str, Any]:
+    return {_normalize_class_key(key): caster(value) for key, value in raw.items()}
+
+
 def get_xp_thresholds() -> List[int]:
     return list(progression_registry().get("xp_thresholds", []))
 
 
 def get_hp_per_level() -> Dict[str, int]:
-    return {key: int(value) for key, value in progression_registry().get("hp_per_level", {}).items()}
+    return _normalize_class_value_map(progression_registry().get("hp_per_level", {}), int)
 
 
 def get_sp_per_level() -> Dict[str, int]:
-    return {key: int(value) for key, value in progression_registry().get("sp_per_level", {}).items()}
+    return _normalize_class_value_map(progression_registry().get("sp_per_level", {}), int)
 
 
 def get_stat_bonus_by_class() -> Dict[str, str]:
-    return {str(key): str(value) for key, value in progression_registry().get("stat_bonus_by_class", {}).items()}
+    return _normalize_class_value_map(progression_registry().get("stat_bonus_by_class", {}), str)
 
 
 def get_class_abilities() -> Dict[str, List[Dict[str, Any]]]:
-    return {key: [dict(value) for value in values] for key, values in progression_registry().get("class_abilities", {}).items()}
+    abilities: Dict[str, List[Dict[str, Any]]] = {}
+    for key, values in progression_registry().get("class_abilities", {}).items():
+        class_id = _normalize_class_key(key)
+        abilities[class_id] = []
+        for value in values:
+            entry = dict(value)
+            if "class_name" in entry:
+                entry["class_name"] = _normalize_class_key(entry.get("class_name"))
+            abilities[class_id].append(entry)
+    return abilities
 
 
 def get_xp_rewards() -> Dict[int, int]:
