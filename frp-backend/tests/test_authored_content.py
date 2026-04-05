@@ -218,3 +218,166 @@ class TestQuestConfig:
     def test_emergent_shortages_exist(self, quest_config):
         shortages = quest_config["quest_config"]["emergent_shortages"]
         assert len(shortages) >= 1
+
+
+# ---------------------------------------------------------------------------
+# Arcane Crafting Content
+# ---------------------------------------------------------------------------
+
+ARCANE_REAGENT_IDS = {
+    "arcane_crystal", "moonstone_dust", "elemental_dust", "fire_essence",
+    "water_essence", "storm_essence", "tidal_crystal", "blazing_crystal",
+    "storm_crystal", "phase_crystal", "ethereal_essence", "necrotic_essence",
+    "dragon_blood", "phoenix_ash", "mystic_ink", "enchanted_thread",
+    "bone_staff_fragment", "troll_heart", "venom_sac", "bat_guano",
+    "dragon_scale", "spider_silk",
+}
+
+ARCANE_DIALOG_IDS = {
+    "sage_arcane_crafter", "witch_reagent_broker", "priest_arcane_blessing",
+    "healer_potion_master", "blacksmith_enchanter", "merchant_arcane_goods",
+    "sage_scroll_scribe", "witch_essence_distiller",
+}
+
+NEW_ARCANE_RECIPE_IDS = {
+    "arcane_oil", "enchanted_dagger", "scroll_of_healing_word_recipe",
+    "enchanted_longsword_basic", "enchanted_chain_shirt_recipe",
+    "ring_of_warding_recipe", "flametongue_blade_recipe",
+    "frostbrand_sword_recipe", "wand_of_firebolt_recipe",
+    "potion_of_greater_healing_recipe", "scroll_of_fireball_recipe",
+    "fire_ward_shield_recipe", "elixir_of_the_warrior_recipe",
+    "thunderstrike_mace_recipe", "staff_of_frost_recipe",
+    "staff_of_lightning_recipe", "ring_of_the_arcane_recipe",
+    "potion_of_superior_healing_recipe",
+}
+
+
+@pytest.fixture(scope="module")
+def recipes():
+    raw = json.loads((DATA_DIR / "recipes.json").read_text(encoding="utf-8"))
+    return {r["id"]: r for r in raw["recipes"]}
+
+
+@pytest.fixture(scope="module")
+def items():
+    raw = json.loads((DATA_DIR / "items.json").read_text(encoding="utf-8"))
+    return {i["id"]: i for i in raw["items"]}
+
+
+@pytest.fixture(scope="module")
+def economy():
+    return json.loads((DATA_DIR / "economy_config.json").read_text(encoding="utf-8"))["economy_config"]
+
+
+@pytest.fixture(scope="module")
+def side_quest_campaign():
+    return json.loads((CAMPAIGN_DIR / "side_quest_campaign.json").read_text(encoding="utf-8"))
+
+
+def _arcane_recipes(recipes: dict) -> dict:
+    """Return recipes that use at least one arcane reagent as an ingredient."""
+    return {
+        rid: r for rid, r in recipes.items()
+        if any(
+            ing["item_id"] in ARCANE_REAGENT_IDS
+            for ing in r["ingredients"]
+        )
+    }
+
+
+class TestArcaneCraftingContent:
+    def test_arcane_recipe_minimum_count(self, recipes):
+        arcane = _arcane_recipes(recipes)
+        assert len(arcane) >= 15, f"Only {len(arcane)} arcane recipes, need at least 15"
+
+    def test_arcane_recipes_valid_skills(self, recipes):
+        for rid, r in _arcane_recipes(recipes).items():
+            assert r["skill"] in {"smithing", "alchemy"}, (
+                f"Arcane recipe {rid} uses unsupported skill {r['skill']!r}"
+            )
+
+    def test_arcane_recipes_valid_workstations(self, recipes):
+        allowed = {"forge", "alchemy_bench", "workbench"}
+        for rid, r in _arcane_recipes(recipes).items():
+            assert r["workstation"] in allowed, (
+                f"Arcane recipe {rid} uses unsupported workstation {r['workstation']!r}"
+            )
+
+    def test_arcane_recipe_products_exist_in_items(self, recipes, items):
+        for rid in NEW_ARCANE_RECIPE_IDS:
+            assert rid in recipes, f"New arcane recipe {rid!r} missing from recipes.json"
+            for product in recipes[rid]["products"]:
+                assert product["item_id"] in items, (
+                    f"Arcane recipe {rid} produces {product['item_id']!r} which is absent from items.json"
+                )
+
+    def test_arcane_recipe_dc_spread(self, recipes):
+        dcs = [r["skill_dc"] for r in _arcane_recipes(recipes).values()]
+        low = sum(1 for dc in dcs if dc <= 14)
+        mid = sum(1 for dc in dcs if 15 <= dc <= 18)
+        high = sum(1 for dc in dcs if dc >= 19)
+        assert low >= 3, f"Only {low} low-DC arcane recipes (DC <= 14), need at least 3"
+        assert mid >= 4, f"Only {mid} mid-DC arcane recipes (DC 15-18), need at least 4"
+        assert high >= 3, f"Only {high} high-DC arcane recipes (DC >= 19), need at least 3"
+
+    def test_arcane_reagents_in_economy(self, economy):
+        trade = set(economy["trade_items"])
+        tracking = set(economy["price_tracking_items"])
+        assert "arcane_crystal" in trade, "arcane_crystal missing from trade_items"
+        assert "moonstone_dust" in trade, "moonstone_dust missing from trade_items"
+        assert "elemental_dust" in trade, "elemental_dust missing from trade_items"
+        assert "arcane_crystal" in tracking, "arcane_crystal missing from price_tracking_items"
+
+    def test_arcane_dialog_trees_minimum(self, dialog_defs):
+        found = ARCANE_DIALOG_IDS & set(dialog_defs.keys())
+        assert len(found) >= 8, f"Only {len(found)} arcane dialog trees, need at least 8"
+
+    def test_arcane_dialogs_structural_integrity(self, dialog_defs):
+        for dialog_id in ARCANE_DIALOG_IDS:
+            assert dialog_id in dialog_defs, f"Missing arcane dialog {dialog_id}"
+            dialog = dialog_defs[dialog_id]
+            state_ids = {s["state_id"] for s in dialog["states"]}
+            assert "greeting" in state_ids, f"{dialog_id} missing greeting state"
+
+            has_info = any(
+                not t.get("terminates") and t.get("next_state_id")
+                for s in dialog["states"] for t in s.get("transitions", [])
+            )
+            assert has_info, f"{dialog_id} missing information branch"
+
+            has_action = any(
+                t.get("actions")
+                for s in dialog["states"] for t in s.get("transitions", [])
+            )
+            assert has_action, f"{dialog_id} missing actionable branch"
+
+            has_terminate = any(
+                t.get("terminates")
+                for s in dialog["states"] for t in s.get("transitions", [])
+            )
+            assert has_terminate, f"{dialog_id} has no terminate path"
+
+    def test_side_quest_arcane_act(self, side_quest_campaign):
+        acts = side_quest_campaign["acts"]
+        assert len(acts) >= 5, f"Side quest campaign has only {len(acts)} acts, need at least 5"
+        arcane_acts = [
+            a for a in acts
+            if "arcane" in a.get("name", "").lower() or "forge" in a.get("name", "").lower()
+        ]
+        assert len(arcane_acts) >= 1, "No arcane-themed act found in side_quest_campaign"
+
+    def test_arcane_crafting_loop_ingredients_available(self, recipes, economy):
+        store_items = {entry["item_def_id"] for entry in economy["default_store_inventory"]}
+        commodity_items = {c["item_id"] for c in economy["commodities"]}
+        available = store_items | commodity_items
+
+        arcane = _arcane_recipes(recipes)
+        recipes_with_available_inputs = sum(
+            1
+            for r in arcane.values()
+            if any(ing["item_id"] in available for ing in r["ingredients"])
+        )
+        assert recipes_with_available_inputs >= 5, (
+            f"Only {recipes_with_available_inputs} arcane recipes have ingredients traceable "
+            f"to store inventory or commodities, need at least 5"
+        )

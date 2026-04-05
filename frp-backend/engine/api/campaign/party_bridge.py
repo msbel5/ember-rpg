@@ -128,12 +128,16 @@ def _recruit(context: "CampaignContext", query: str) -> tuple[str, str, int]:
 
 def _mark_party_membership(context: "CampaignContext", actor: "ActorRecord", *, is_party_member: bool) -> None:
     actor.raw_payload["party_member"] = bool(is_party_member)
+    actor.raw_payload["active_party_member"] = bool(is_party_member)
+    actor.raw_payload["reserve_party_member"] = not bool(is_party_member)
+    actor.raw_payload["companion_roster"] = True
     actor.raw_payload["legacy_attitude"] = "ally" if is_party_member else "friendly"
     actor.raw_payload["legacy_disposition"] = "ally" if is_party_member else "friendly"
     record = context.entities.get(actor.identity.actor_id)
     if isinstance(record, dict):
         record["attitude"] = "ally" if is_party_member else "friendly"
         record["disposition"] = "ally" if is_party_member else "friendly"
+        record["context_actions"] = ["examine"] if is_party_member else list(record.get("context_actions", ["talk", "examine"]))
         entity_ref = record.get("entity_ref")
         if entity_ref is not None:
             entity_ref.attitude = record["attitude"]
@@ -164,7 +168,7 @@ def _mark_party_membership(context: "CampaignContext", actor: "ActorRecord", *, 
             "attitude": "ally" if is_party_member else "friendly",
             "disposition": "ally" if is_party_member else "friendly",
             "template": str(actor.raw_payload.get("template", actor.raw_payload.get("role", "companion"))),
-            "context_actions": ["examine"],
+            "context_actions": ["examine"] if is_party_member else ["talk", "examine"],
             "entity_ref": live_entity,
         }
         if getattr(context, "spatial_index", None) is not None and context.spatial_index.get_position(actor.identity.actor_id) is None:
@@ -232,6 +236,15 @@ def _set_formation(context: "CampaignContext", formation_name: str) -> tuple[str
 
 def _sync_party_runtime(context: "CampaignContext") -> None:
     context.campaign_state["party"] = party_member_ids(context)
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if game_state is not None:
+        normalize_party_state(game_state)
+        context.campaign_state["reserve_party_members"] = [
+            str(actor_id)
+            for actor_id in list(getattr(game_state, "inactive_npcs", []))
+            if str(actor_id)
+        ]
     sync_party_projection(context)
 
 

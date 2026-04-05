@@ -7719,6 +7719,846 @@
           ]
         }
       ]
+    },
+    {
+      "dialog_id": "sage_arcane_crafter",
+      "npc_id": "sage_arcane_crafter",
+      "role": "sage",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A sage surrounded by glowing crystals and half-finished enchantments looks up from a worktable covered in arcane dust. \"You seek to imbue the mundane with the arcane? That takes knowledge and rare materials.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_arcane_info",
+              "text": "Tell me about arcane crafting.",
+              "next_state_id": "arcane_crafting_info",
+              "actions": []
+            },
+            {
+              "transition_id": "offer_crystal_lesson",
+              "text": "I have an arcane crystal. Can you teach me enchanting?",
+              "next_state_id": "enchanting_lesson",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "MND",
+                  "operator": ">=",
+                  "value": 12
+                }
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "arcane_crystal", "quantity": 1}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 25}
+                }
+              ]
+            },
+            {
+              "transition_id": "identify_enchanted",
+              "text": "I need to identify an enchanted weapon.",
+              "next_state_id": "identify_result",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {"amount": 30}
+                }
+              ]
+            },
+            {
+              "transition_id": "sage_arcane_farewell",
+              "text": "Farewell.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "arcane_crafting_info",
+          "text": "\"To enchant a weapon, you need a base blade from a skilled smith, arcane crystals from deep caverns, and elemental essences drawn from the planes. The forge and the alchemy bench are your two workstations. Start simple — a dagger or longsword — before attempting elemental blades.\"",
+          "transitions": [
+            {
+              "transition_id": "arcane_info_back",
+              "text": "What else can you tell me?",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "arcane_info_done",
+              "text": "Good to know. I will prepare.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The arcane sage explained the basics of enchanting: base weapons, arcane crystals, and elemental essences are the key components."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "enchanting_lesson",
+          "text": "\"The crystal resonates with your intent. Remember: moonstone dust stabilizes the enchantment on blades. Fire and water essences shape elemental properties. Storm crystals are the rarest — save them for maces and staves.\"",
+          "transitions": [
+            {
+              "transition_id": "lesson_done",
+              "text": "I will remember.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The arcane sage taught me the fundamentals of weapon enchanting. Moonstone dust stabilizes enchantments, elemental essences shape them."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "identify_result",
+          "text": "\"This blade carries a binding ward from the old order. The enchantment strengthens when the wielder focuses their will. It will serve you well.\"",
+          "transitions": [
+            {
+              "transition_id": "identify_done",
+              "text": "Thank you, sage.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "witch_reagent_broker",
+      "npc_id": "witch_reagent_broker",
+      "role": "witch",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A witch tends a garden of luminous herbs behind her cottage, crystalline vials arranged on shelves. \"I trade in essences. Bring me what the wilds provide, and I will give you what the forge demands.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_reagent_list",
+              "text": "What reagents do you trade?",
+              "next_state_id": "reagent_list",
+              "actions": []
+            },
+            {
+              "transition_id": "offer_troll_heart",
+              "text": "I have a troll heart to trade.",
+              "next_state_id": "troll_trade",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "troll_heart"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "troll_heart", "quantity": 1}
+                },
+                {
+                  "action_type": "give_item",
+                  "params": {"item_def_id": "earth_essence", "quantity": 2}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 15}
+                }
+              ]
+            },
+            {
+              "transition_id": "offer_dragon_blood",
+              "text": "I have dragon blood to trade.",
+              "next_state_id": "dragon_trade",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "dragon_blood"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "dragon_blood", "quantity": 1}
+                },
+                {
+                  "action_type": "give_item",
+                  "params": {"item_def_id": "fire_essence", "quantity": 3}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 20}
+                }
+              ]
+            },
+            {
+              "transition_id": "witch_broker_farewell",
+              "text": "I will be back.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "reagent_list",
+          "text": "\"Troll hearts yield earth essence. Dragon blood distills into fire essence. Venom sacs produce necrotic essence. Phoenix ash is too precious to trade — keep what you find for your own alchemy.\"",
+          "transitions": [
+            {
+              "transition_id": "reagent_list_back",
+              "text": "Let me check what I have.",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "reagent_list_done",
+              "text": "I will gather what I can.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "troll_trade",
+          "text": "\"The heart pulses with raw elemental force. Here — two vials of earth essence, refined and ready for the forge.\"",
+          "transitions": [
+            {
+              "transition_id": "troll_trade_done",
+              "text": "A fair trade.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "dragon_trade",
+          "text": "\"Dragon blood burns even in glass. Three vials of fire essence. Use them wisely — flametongue blades drink this like water.\"",
+          "transitions": [
+            {
+              "transition_id": "dragon_trade_done",
+              "text": "I will put them to use.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "priest_arcane_blessing",
+      "npc_id": "priest_arcane_blessing",
+      "role": "priest",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A priest kneels before a radiant altar, candlelight reflecting off polished silver vessels. \"The light can strengthen what mortal hands forge. Do you carry something in need of blessing?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_blessing_info",
+              "text": "Can you bless my equipment?",
+              "next_state_id": "blessing_info",
+              "actions": []
+            },
+            {
+              "transition_id": "purify_necrotic",
+              "text": "I need help purifying a necrotic essence.",
+              "next_state_id": "purify_result",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "necrotic_essence"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "necrotic_essence", "quantity": 1}
+                },
+                {
+                  "action_type": "give_item",
+                  "params": {"item_def_id": "ethereal_essence", "quantity": 1}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 20}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_ward_info",
+              "text": "Tell me about warding enchantments.",
+              "next_state_id": "ward_info",
+              "actions": []
+            },
+            {
+              "transition_id": "priest_blessing_farewell",
+              "text": "I must go.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "blessing_info",
+          "text": "\"Moonstone dust, when consecrated, becomes a powerful stabilizer for enchantments. Bring your reagents before crafting, and I will ask the light to strengthen them. The forge responds to blessed materials with greater potency.\"",
+          "transitions": [
+            {
+              "transition_id": "blessing_info_back",
+              "text": "What about purification?",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "blessing_info_done",
+              "text": "I will return when I have materials.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "purify_result",
+          "text": "\"The darkness in this essence resists, but the light prevails. Here — an ethereal essence, cleansed and ready for noble craft. Use it to forge rings or imbue staves with otherworldly power.\"",
+          "transitions": [
+            {
+              "transition_id": "purify_done",
+              "text": "Thank you, priest.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The priest purified a necrotic essence into ethereal essence. Ethereal essence is used in high-tier enchantments like the Ring of the Arcane."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "ward_info",
+          "text": "\"Warding rings and enchanted shields draw their power from protective glyphs. Silver is the ideal metal — it channels moonstone dust better than iron. A ring of warding is the simplest ward to forge, requiring only silver ore, moonstone dust, and an arcane crystal.\"",
+          "transitions": [
+            {
+              "transition_id": "ward_info_back",
+              "text": "Tell me about blessings.",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "ward_info_done",
+              "text": "I will try forging one.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "healer_potion_master",
+      "npc_id": "healer_potion_master",
+      "role": "healer",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "An experienced healer examines rows of labeled vials, comparing the color of two liquids against candlelight. \"Most healers brew what they need. I study what is possible. Are you here to learn?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_potion_lore",
+              "text": "Teach me about advanced potions.",
+              "next_state_id": "potion_lore",
+              "actions": []
+            },
+            {
+              "transition_id": "offer_phoenix_ash",
+              "text": "I found phoenix ash in the mountains.",
+              "next_state_id": "phoenix_ash_reward",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "phoenix_ash"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "phoenix_ash", "quantity": 1}
+                },
+                {
+                  "action_type": "give_item",
+                  "params": {"item_def_id": "potion_of_greater_healing", "quantity": 2}
+                },
+                {
+                  "action_type": "give_gold",
+                  "params": {"amount": 50}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 30}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_reagent_locations",
+              "text": "Do you know where to find rare reagents?",
+              "next_state_id": "reagent_locations",
+              "actions": []
+            },
+            {
+              "transition_id": "healer_potion_farewell",
+              "text": "I feel fine.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "potion_lore",
+          "text": "\"Greater healing potions require phoenix ash — the rebirth residue is what makes them restore so much vitality. Superior potions add dragon blood for sustained regeneration. Both demand an alembic as well as a mortar. The alchemy bench is essential.\"",
+          "transitions": [
+            {
+              "transition_id": "potion_lore_back",
+              "text": "Where can I find these ingredients?",
+              "next_state_id": "reagent_locations",
+              "actions": []
+            },
+            {
+              "transition_id": "potion_lore_done",
+              "text": "I will start gathering.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "phoenix_ash_reward",
+          "text": "\"Phoenix ash! This is extraordinarily rare. I can brew two greater healing potions from this single pinch. Take them — you earned them, and here is gold for your trouble.\"",
+          "transitions": [
+            {
+              "transition_id": "phoenix_reward_done",
+              "text": "Use it well.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "reagent_locations",
+          "text": "\"Phoenix ash falls from the nests in the high peaks. Dragon blood pools in the lairs east of the marshlands. Arcane crystals grow deep in the old mines. The elemental wards in the dwarven hold are the richest source of elemental essences I know of.\"",
+          "transitions": [
+            {
+              "transition_id": "reagent_loc_back",
+              "text": "Tell me about potions.",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "reagent_loc_done",
+              "text": "I will search those places.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The healer revealed reagent locations: phoenix ash in the high peaks, dragon blood in eastern lairs, arcane crystals in old mines, elemental essences in the dwarven hold."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "blacksmith_enchanter",
+      "npc_id": "blacksmith_enchanter",
+      "role": "blacksmith",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A blacksmith works at a forge whose flames burn an unnatural blue. Runes glow on the anvil. \"I forge what others cannot. Bring me the right materials and I will make the extraordinary.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_enchanted_catalog",
+              "text": "What can you forge?",
+              "next_state_id": "enchanted_catalog",
+              "actions": []
+            },
+            {
+              "transition_id": "commission_flametongue",
+              "text": "I want a flametongue blade. I have the materials.",
+              "next_state_id": "flametongue_commission",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "fire_essence"}
+              },
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "enchant_forge_unlocked", "value": true}
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The enchanter blacksmith confirmed he can forge elemental weapons if I bring the right materials."}
+                }
+              ]
+            },
+            {
+              "transition_id": "storm_crystal_quest",
+              "text": "I need storm crystals for a thunderstrike mace.",
+              "next_state_id": "storm_crystal_quest_info",
+              "actions": [
+                {
+                  "action_type": "start_quest",
+                  "params": {"quest_id": "side_arcane_forgemaster", "stage": "accepted"}
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The enchanter smith needs storm crystals from the elemental ward chambers for a thunderstrike mace. I should seek out the crystal caverns and the essence wellspring."}
+                }
+              ]
+            },
+            {
+              "transition_id": "blacksmith_enchanter_farewell",
+              "text": "Just looking.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "enchanted_catalog",
+          "text": "\"Flametongue blades need fire essence and blazing crystals. Frostbrand swords need water essence and tidal crystals. The thunderstrike mace requires storm crystals, storm essence, and mithral. All start with a base weapon you have already forged. Bring me the components and I will show you how.\"",
+          "transitions": [
+            {
+              "transition_id": "catalog_back",
+              "text": "How do I find these materials?",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "catalog_done",
+              "text": "I will gather what I need.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "flametongue_commission",
+          "text": "\"Fire essence, good. You will also need a blazing crystal and a finished steel sword. Forge the base blade yourself or buy one, then bring everything to an enchanting forge. The runes on the anvil will guide the essence into the steel.\"",
+          "transitions": [
+            {
+              "transition_id": "flametongue_done",
+              "text": "I will return with everything.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "storm_crystal_quest_info",
+          "text": "\"Storm crystals form only where elemental air and water clash. The dwarven hold's elemental wards — the place they call the Dual Ward Chamber — is your best chance. The crystal caverns beyond the peaks also hold untapped veins.\"",
+          "transitions": [
+            {
+              "transition_id": "storm_quest_done",
+              "text": "I will find them.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "merchant_arcane_goods",
+      "npc_id": "merchant_arcane_goods",
+      "role": "merchant",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A merchant displays wares on a cloth embroidered with arcane sigils. Crystal vials, essence bottles, and enchanted threads catch the light. \"Magic has its price. What do you need?\"",
+          "transitions": [
+            {
+              "transition_id": "show_arcane_wares",
+              "text": "Show me your arcane inventory.",
+              "next_state_id": "arcane_wares",
+              "actions": []
+            },
+            {
+              "transition_id": "negotiate_discount",
+              "text": "I am a regular buyer. Can we negotiate a discount?",
+              "next_state_id": "bulk_discount",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "PRE",
+                  "operator": ">=",
+                  "value": 14
+                }
+              },
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "arcane_discount", "value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "sell_enchanted",
+              "text": "I want to sell enchanted items.",
+              "next_state_id": "sell_result",
+              "actions": [
+                {
+                  "action_type": "give_gold",
+                  "params": {"amount": 75}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "merchant_arcane_farewell",
+              "text": "Nothing for now.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "arcane_wares",
+          "text": "\"I stock arcane crystals, moonstone dust, elemental dust, mystic ink, parchment, and glass vials. For rarer essences — fire, water, storm — you will need to gather those yourself or trade with the witches in the wilds.\"",
+          "transitions": [
+            {
+              "transition_id": "wares_back",
+              "text": "What about selling?",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "wares_done",
+              "text": "I will take some supplies.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "bulk_discount",
+          "text": "\"A savvy buyer. Very well — ten percent off reagents for the rest of the day. I know a fellow crafter when I see one.\"",
+          "transitions": [
+            {
+              "transition_id": "discount_done",
+              "text": "That is fair.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "sell_result",
+          "text": "\"Enchanted goods always find buyers among the caravan masters and noble houses. Here is a fair price for what you have brought.\"",
+          "transitions": [
+            {
+              "transition_id": "sell_done",
+              "text": "Pleasure doing business.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "sage_scroll_scribe",
+      "npc_id": "sage_scroll_scribe",
+      "role": "sage",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A sage carefully inscribes glowing runes onto parchment, tongue between teeth. \"Silence, please. One wrong stroke and this scroll becomes a fireball in my lap.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_scroll_info",
+              "text": "Tell me how scrolls are made.",
+              "next_state_id": "scroll_crafting_info",
+              "actions": []
+            },
+            {
+              "transition_id": "offer_ink",
+              "text": "I have mystic ink for your research.",
+              "next_state_id": "ink_turnin",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "mystic_ink"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "mystic_ink", "quantity": 2}
+                },
+                {
+                  "action_type": "give_item",
+                  "params": {"item_def_id": "scroll_of_fireball", "quantity": 1}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 25}
+                }
+              ]
+            },
+            {
+              "transition_id": "commission_scroll",
+              "text": "Can you write a scroll for me?",
+              "next_state_id": "commission_result",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {"amount": 100}
+                },
+                {
+                  "action_type": "give_item",
+                  "params": {"item_def_id": "scroll_of_lightning_bolt", "quantity": 1}
+                }
+              ]
+            },
+            {
+              "transition_id": "sage_scribe_farewell",
+              "text": "I will let you concentrate.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "scroll_crafting_info",
+          "text": "\"Scroll writing is alchemy with ink. You need parchment, mystic ink, and a component matching the spell — bat guano and sulfur for fireball, storm essence for lightning. A workbench is sufficient. Precision matters more than strength.\"",
+          "transitions": [
+            {
+              "transition_id": "scroll_info_back",
+              "text": "Can I buy a scroll from you?",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "scroll_info_done",
+              "text": "I will try writing one myself.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The sage explained scroll crafting: parchment, mystic ink, and spell components at a workbench. Bat guano and sulfur for fireball scrolls."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "ink_turnin",
+          "text": "\"Two bottles of mystic ink. Excellent. Take this fireball scroll — consider it payment for your contribution to my research. The formulas I am developing will require far more.\"",
+          "transitions": [
+            {
+              "transition_id": "ink_turnin_done",
+              "text": "Good luck with your research.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "commission_result",
+          "text": "\"One hundred gold and I will inscribe a lightning bolt scroll. Fair warning — this one packs a real punch. Do not unroll it near anything flammable.\"",
+          "transitions": [
+            {
+              "transition_id": "commission_done",
+              "text": "I will be careful.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "witch_essence_distiller",
+      "npc_id": "witch_essence_distiller",
+      "role": "witch",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A witch works over a copper still, channeling colored vapors into glass vessels. \"The trick is knowing which things want to become other things. Bring me the raw, I give you the refined.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_distillation_info",
+              "text": "What can you distill?",
+              "next_state_id": "distillation_info",
+              "actions": []
+            },
+            {
+              "transition_id": "offer_venom_sacs",
+              "text": "I have venom sacs to trade.",
+              "next_state_id": "venom_trade",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "venom_sac"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "venom_sac", "quantity": 2}
+                },
+                {
+                  "action_type": "give_item",
+                  "params": {"item_def_id": "necrotic_essence", "quantity": 1}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 15}
+                }
+              ]
+            },
+            {
+              "transition_id": "offer_spider_silk",
+              "text": "I have spider silk for enchanted thread.",
+              "next_state_id": "silk_trade",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "spider_silk"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "spider_silk", "quantity": 2}
+                },
+                {
+                  "action_type": "give_item",
+                  "params": {"item_def_id": "enchanted_thread", "quantity": 1}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 15}
+                }
+              ]
+            },
+            {
+              "transition_id": "witch_distiller_farewell",
+              "text": "Not today.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "distillation_info",
+          "text": "\"Two venom sacs yield one necrotic essence. Spider silk, when treated with moonstone dust, becomes enchanted thread — essential for enchanted armor. Ectoplasm refines into ethereal essence, but that requires a full moon and more patience than most possess.\"",
+          "transitions": [
+            {
+              "transition_id": "distill_info_back",
+              "text": "Let me check what I have.",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "distill_info_done",
+              "text": "I will gather materials.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "venom_trade",
+          "text": "\"Potent. One vial of necrotic essence, distilled and sealed. The priests can purify this into ethereal essence if you need it for warding enchantments.\"",
+          "transitions": [
+            {
+              "transition_id": "venom_trade_done",
+              "text": "Good to know.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "silk_trade",
+          "text": "\"Spider silk holds enchantment better than any mortal thread. One spool of enchanted thread, ready for the forge. Use it to weave arcane protection into chain or plate armor.\"",
+          "transitions": [
+            {
+              "transition_id": "silk_trade_done",
+              "text": "I will use it well.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }

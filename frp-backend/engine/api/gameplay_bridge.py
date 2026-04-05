@@ -1,4 +1,4 @@
-"""Gameplay command handlers: equipment, inventory, crafting, progression, rest, and spells.
+"""Gameplay command handlers: equipment, inventory, item use, crafting, progression, rest, and spells.
 
 Each handler follows the maybe_handle pattern — returns
 (narrative, command_type, hours_advanced) or None when the
@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from engine.data.classes import get_skill_stat_map
 from engine.data._shared import items_registry, load_registry_list, recipes_registry, spells_registry
 from engine.data.runtime import get_class_abilities
+from engine.kernel.effects import EffectDef
 from engine.kernel.gameplay import (
     cast_registry_spell,
     craft_recipe,
@@ -22,6 +23,7 @@ from engine.kernel.gameplay import (
     resolve_rest,
     unequip_actor_slot,
 )
+from engine.kernel.items import ItemDef as KernelItemDef, ItemInstance, use_item
 from engine.kernel.progression import ProgressionState
 from engine.world.crafting import CraftingSystem
 
@@ -82,7 +84,13 @@ def _find_inventory_item_by_name(player: "ActorRecord", name: str) -> Optional[A
     name_lower = name.lower().strip().replace(" ", "_")
     for item in player.inventory:
         def_id = getattr(item, "item_def_id", "")
-        if def_id == name_lower or name_lower in def_id.lower():
+        display_name = str(getattr(item, "payload", {}).get("name", def_id)).lower().replace(" ", "_")
+        if (
+            def_id == name_lower
+            or name_lower in def_id.lower()
+            or display_name == name_lower
+            or name_lower in display_name
+        ):
             return item
     return None
 
@@ -107,6 +115,275 @@ def _slot_for_item_type(item_type: str) -> str:
         "cloak": "cloak",
     }
     return mapping.get(item_type.lower(), "quick_item_1")
+
+
+def _resolve_effect_amount(raw_amount: Any) -> int:
+    if isinstance(raw_amount, (int, float)):
+        return max(0, int(raw_amount))
+    text = str(raw_amount).strip().lower()
+    match = re.fullmatch(r"(\d+)d(\d+)([+-]\d+)?", text)
+    if match is None:
+        try:
+            return max(0, int(text))
+        except ValueError:
+            return 0
+    dice_count = int(match.group(1))
+    dice_sides = int(match.group(2))
+    modifier = int(match.group(3) or 0)
+    average = dice_count * (dice_sides + 1) // 2
+    return max(0, average + modifier)
+
+
+def _runtime_item_source(item: Any) -> dict[str, Any]:
+    payload = dict(getattr(item, "payload", {}) or {})
+    source = dict(_item_def_from_registry(getattr(item, "item_def_id", "")) or {})
+    return {**source, **payload}
+
+
+def _runtime_item_label(item: Any, source: dict[str, Any] | None = None) -> str:
+    entry = source or _runtime_item_source(item)
+    label = str(entry.get("name", getattr(item, "item_def_id", "item"))).strip()
+    return label or str(getattr(item, "item_def_id", "item")).replace("_", " ").title()
+
+
+def _runtime_item_type(item: Any, source: dict[str, Any] | None = None) -> str:
+    entry = source or _runtime_item_source(item)
+    raw_type = str(entry.get("type", "misc")).strip().lower()
+    item_id = str(getattr(item, "item_def_id", entry.get("id", ""))).lower()
+    label = _runtime_item_label(item, entry).lower()
+    if "wand" in item_id or "wand" in label:
+        return "wand"
+    if "scroll" in item_id or "scroll" in label:
+        return "scroll"
+    if raw_type == "consumable":
+        return "potion"
+    if raw_type == "food":
+        return "potion"
+    return raw_type or "misc"
+
+
+def _runtime_item_enchantment(item: Any, source: dict[str, Any] | None = None) -> int:
+    entry = source or _runtime_item_source(item)
+    if entry.get("enchantment") is not None:
+        return int(entry.get("enchantment", 0) or 0)
+    name = _runtime_item_label(item, entry).lower()
+    match = re.search(r"\+(\d+)", name)
+    if match is not None:
+        return int(match.group(1))
+    bonus_fields = (
+        entry.get("attack_bonus"),
+        entry.get("armor_bonus"),
+        entry.get("damage_bonus"),
+    )
+    for value in bonus_fields:
+        if value not in (None, ""):
+            return max(0, int(value))
+    return 0
+
+
+def _runtime_item_magical(item: Any, source: dict[str, Any] | None = None) -> bool:
+    entry = source or _runtime_item_source(item)
+    item_id = str(getattr(item, "item_def_id", entry.get("id", ""))).lower()
+    label = _runtime_item_label(item, entry).lower()
+    if bool(entry.get("magical")):
+        return True
+    if _runtime_item_enchantment(item, entry) > 0:
+        return True
+    if entry.get("effects"):
+        return True
+    if any(keyword in item_id or keyword in label for keyword in ("wand", "amulet", "ring", "cloak")):
+        return True
+    return False
+
+
+def _runtime_item_identified(item: Any, source: dict[str, Any] | None = None) -> bool:
+    entry = source or _runtime_item_source(item)
+    if "identified" in entry:
+        return bool(entry.get("identified"))
+    lore_to_identify = int(entry.get("lore_to_identify", 0) or 0)
+    return lore_to_identify <= 0
+
+
+def _runtime_item_charges(item: Any, source: dict[str, Any] | None = None) -> int | None:
+    entry = source or _runtime_item_source(item)
+    if entry.get("charges") is not None:
+        return int(entry.get("charges", -1))
+    if entry.get("uses") is not None:
+        return int(entry.get("uses", -1))
+    item_type = _runtime_item_type(item, entry)
+    if item_type in {"potion", "scroll"}:
+        return 1
+    if item_type == "wand":
+        return 7
+    return None
+
+
+def inventory_item_row(item: Any) -> dict[str, Any]:
+    source = _runtime_item_source(item)
+    charges = _runtime_item_charges(item, source)
+    quantity = max(1, int(getattr(item, "quantity", source.get("quantity", source.get("qty", 1)) or 1)))
+    return {
+        "id": str(getattr(item, "item_def_id", source.get("id", ""))),
+        "name": _runtime_item_label(item, source),
+        "type": _runtime_item_type(item, source),
+        "quantity": quantity,
+        "qty": quantity,
+        "identified": _runtime_item_identified(item, source),
+        "charges": charges,
+        "enchantment": _runtime_item_enchantment(item, source),
+        "magical": _runtime_item_magical(item, source),
+    }
+
+
+def _is_usable_runtime_item(item: Any, source: dict[str, Any] | None = None) -> bool:
+    item_type = _runtime_item_type(item, source)
+    return item_type in {"potion", "scroll", "wand"}
+
+
+def _item_effect_id(item_def_id: str, index: int, effect: dict[str, Any]) -> str:
+    suffix = str(effect.get("id") or effect.get("type") or f"effect_{index}").strip().lower().replace(" ", "_")
+    return f"{item_def_id}_{index}_{suffix}"
+
+
+def _effect_def_from_item_effect(effect_id: str, effect: dict[str, Any]) -> EffectDef | None:
+    effect_type = str(effect.get("type", "")).strip().lower()
+    amount = _resolve_effect_amount(effect.get("amount", effect.get("bonus", 0)))
+    if effect_type == "heal":
+        return EffectDef(
+            effect_def_id=effect_id,
+            label="Healing",
+            category="healing",
+            healing_per_tick=amount,
+            timing_mode="instant",
+            base_duration_ticks=0,
+        )
+    if effect_type == "damage":
+        return EffectDef(
+            effect_def_id=effect_id,
+            label=str(effect.get("damage_type", "damage")).title(),
+            category="dot",
+            damage_per_tick=amount,
+            damage_type=str(effect.get("damage_type", "arcane")),
+            timing_mode="duration",
+            base_duration_ticks=1,
+        )
+    if effect_type == "buff":
+        duration = int(effect.get("duration", 3) or 3)
+        return EffectDef(
+            effect_def_id=effect_id,
+            label=str(effect.get("stat", "buff")).upper(),
+            category="stat_mod",
+            target_stat=str(effect.get("stat", "")).upper(),
+            modifier_type="flat",
+            modifier_value=float(effect.get("bonus", effect.get("amount", 0)) or 0),
+            timing_mode="duration",
+            base_duration_ticks=max(1, duration),
+        )
+    return None
+
+
+def _build_item_effect_registry(item: Any, source: dict[str, Any]) -> dict[str, EffectDef]:
+    if not _is_usable_runtime_item(item, source):
+        return {}
+    effects: list[dict[str, Any]] = []
+    for effect in source.get("effects", []):
+        if isinstance(effect, dict):
+            effects.append(dict(effect))
+    if not effects and source.get("heal") is not None:
+        effects.append({"type": "heal", "amount": int(source.get("heal", 0) or 0)})
+    registry: dict[str, EffectDef] = {}
+    item_def_id = str(getattr(item, "item_def_id", source.get("id", "item")))
+    for index, effect in enumerate(effects):
+        effect_def = _effect_def_from_item_effect(_item_effect_id(item_def_id, index, effect), effect)
+        if effect_def is not None:
+            registry[effect_def.effect_def_id] = effect_def
+    return registry
+
+
+def _kernel_item_def(item: Any) -> tuple[KernelItemDef, dict[str, EffectDef]]:
+    source = _runtime_item_source(item)
+    effect_registry = _build_item_effect_registry(item, source)
+    flags = [str(flag) for flag in source.get("flags", [])]
+    if _runtime_item_magical(item, source) and "magical" not in {flag.lower() for flag in flags}:
+        flags.append("magical")
+    item_def = KernelItemDef(
+        item_def_id=str(getattr(item, "item_def_id", source.get("id", "item"))),
+        label=_runtime_item_label(item, source),
+        item_type=_runtime_item_type(item, source),
+        item_category=str(source.get("type", _runtime_item_type(item, source))),
+        weight=int(float(source.get("weight", 0) or 0)),
+        base_price=int(source.get("value", 0) or 0),
+        enchantment=_runtime_item_enchantment(item, source),
+        use_effect_ids=list(effect_registry.keys()),
+        lore_to_identify=int(source.get("lore_to_identify", 0) or 0),
+        flags=flags,
+        description=str(source.get("description", "")),
+        identified_description=str(source.get("identified_description", source.get("description", ""))),
+    )
+    return item_def, effect_registry
+
+
+def _kernel_item_instance(item: Any, item_def: KernelItemDef) -> ItemInstance:
+    source = _runtime_item_source(item)
+    charges = _runtime_item_charges(item, source)
+    return ItemInstance(
+        instance_id=str(getattr(item, "instance_id", getattr(item, "item_def_id", "item"))),
+        item_def_id=str(getattr(item, "item_def_id", item_def.item_def_id)),
+        material_id=str(getattr(item, "material_id", "iron") or "iron"),
+        quality=int(getattr(item, "quality", 0) or 0),
+        wear=int(getattr(item, "wear", 0) or 0),
+        max_wear=100,
+        identified=_runtime_item_identified(item, source),
+        charges=int(charges) if charges is not None else -1,
+        stack_count=max(1, int(getattr(item, "quantity", 1) or 1)),
+        equipped_slot=str(getattr(item, "payload", {}).get("equipped_slot", "") or "") or None,
+    )
+
+
+def _resolve_item_target(context: "CampaignContext", target_name: str | None) -> Any:
+    player = _player(context)
+    if not str(target_name or "").strip():
+        return player
+    normalized_target = str(target_name).strip().lower()
+    if player is not None and normalized_target in {"self", "me", "myself", player.name.lower()}:
+        return player
+    runtime = context.kernel_runtime or {}
+    for actor in runtime.get("actors", {}).values():
+        identity = getattr(actor, "identity", None)
+        if identity is None:
+            continue
+        actor_id = str(identity.actor_id).lower()
+        display_name = str(identity.display_name).lower()
+        if normalized_target == actor_id or normalized_target in display_name:
+            return actor
+    return None
+
+
+def _sync_runtime_item_after_use(player: "ActorRecord", item: Any, item_def: KernelItemDef, item_state: ItemInstance, *, destroyed: bool) -> None:
+    payload = dict(getattr(item, "payload", {}) or {})
+    payload["identified"] = bool(item_state.identified)
+    payload["enchantment"] = int(item_def.enchantment)
+    payload["magical"] = _runtime_item_magical(item, payload)
+    if destroyed:
+        current_quantity = max(1, int(getattr(item, "quantity", 1) or 1))
+        if current_quantity <= 1:
+            if item in player.inventory:
+                player.inventory.remove(item)
+            return
+        item.quantity = current_quantity - 1
+        payload["quantity"] = int(item.quantity)
+        payload["qty"] = int(item.quantity)
+        remaining_charges = _runtime_item_charges(item, payload)
+        if remaining_charges is not None:
+            payload["charges"] = int(remaining_charges)
+    else:
+        if item_state.charges >= 0:
+            payload["charges"] = int(item_state.charges)
+        elif "charges" in payload:
+            payload.pop("charges", None)
+        payload["quantity"] = max(1, int(getattr(item, "quantity", 1) or 1))
+        payload["qty"] = payload["quantity"]
+    item.payload = payload
 
 
 def _summarize_events(events: list[dict]) -> str:
@@ -305,7 +582,73 @@ def maybe_handle_inventory_command(
 
 
 # ---------------------------------------------------------------------------
-# Handler 3: Crafting
+# Handler 3: Item use
+# ---------------------------------------------------------------------------
+
+_USE_ITEM_RE = re.compile(r"^use\s+(.+?)(?:\s+on\s+(.+))?$", re.IGNORECASE)
+
+
+def maybe_handle_item_use_command(
+    context: "CampaignContext",
+    command_text: str,
+) -> Optional[tuple[str, str, int]]:
+    player = _player(context)
+    if player is None:
+        return None
+
+    match = _USE_ITEM_RE.match(command_text.strip())
+    if not match:
+        return None
+
+    item_name = match.group(1).strip()
+    target_name = match.group(2).strip() if match.group(2) else None
+    item = _find_inventory_item_by_name(player, item_name)
+    if item is None:
+        known = _fuzzy_match(item_name, items_registry())
+        if known is not None:
+            return (f"You don't have '{item_name}' in your inventory.", "inventory", 0)
+        return (f"Unknown item '{item_name}'.", "inventory", 0)
+
+    item_def, effect_registry = _kernel_item_def(item)
+    if not item_def.use_effect_ids:
+        return (f"{item_def.label} cannot be used this way.", "inventory", 0)
+
+    target = _resolve_item_target(context, target_name)
+    if target is None:
+        return (f"No valid target found for '{target_name}'.", "inventory", 0)
+
+    item_state = _kernel_item_instance(item, item_def)
+    if item_state.charges == 0:
+        return (f"{item_def.label} has no charges remaining.", "inventory", 0)
+
+    previous_registry = dict(player.raw_payload.get("effect_registry", {}))
+    player.raw_payload["effect_registry"] = {**previous_registry, **effect_registry}
+    try:
+        result = use_item(player, item_state, item_def, target)
+    except ValueError as exc:
+        return (f"Cannot use {item_def.label}: {exc}.", "inventory", 0)
+    finally:
+        player.raw_payload["effect_registry"] = previous_registry
+
+    _sync_runtime_item_after_use(player, item, item_def, item_state, destroyed=bool(result.get("destroyed", False)))
+    effect_text = ", ".join(str(effect_id).replace("_", " ") for effect_id in result.get("effects", []))
+    if not effect_text:
+        effect_text = "arcane energy pulses through it"
+    target_label = "yourself" if target is player else str(getattr(getattr(target, "identity", None), "display_name", "the target"))
+    if bool(result.get("destroyed", False)):
+        return (f"Used {item_def.label} on {target_label}. {effect_text}. It is consumed.", "inventory", 0)
+    if int(result.get("charges_remaining", -1)) >= 0:
+        return (
+            f"Used {item_def.label} on {target_label}. {effect_text}. "
+            f"{int(result.get('charges_remaining', 0))} charges remain.",
+            "inventory",
+            0,
+        )
+    return (f"Used {item_def.label} on {target_label}. {effect_text}.", "inventory", 0)
+
+
+# ---------------------------------------------------------------------------
+# Handler 4: Crafting
 # ---------------------------------------------------------------------------
 
 _CRAFT_RE = re.compile(r"^craft\s+(.+)$", re.IGNORECASE)
@@ -369,7 +712,7 @@ def maybe_handle_craft_command(
 
 
 # ---------------------------------------------------------------------------
-# Handler 4: Progression spending
+# Handler 5: Progression spending
 # ---------------------------------------------------------------------------
 
 _PROGRESSION_RE = re.compile(r"^(?:progression|character\s+progression)$", re.IGNORECASE)
@@ -471,7 +814,7 @@ def maybe_handle_progression_command(
 
 
 # ---------------------------------------------------------------------------
-# Handler 5: Rest (short rest / long rest)
+# Handler 6: Rest (short rest / long rest)
 # ---------------------------------------------------------------------------
 
 _REST_RE = re.compile(
@@ -519,7 +862,7 @@ def maybe_handle_rest_command(
 
 
 # ---------------------------------------------------------------------------
-# Handler 6: Spell (non-combat casting)
+# Handler 7: Spell (non-combat casting)
 # ---------------------------------------------------------------------------
 
 _CAST_RE = re.compile(r"^cast\s+(.+?)(?:\s+at\s+(.+))?$", re.IGNORECASE)

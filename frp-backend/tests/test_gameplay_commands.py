@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from engine.api.campaign.runtime import CampaignRuntime
 from engine.api.gameplay_bridge import (
+    _find_inventory_item_by_name,
     maybe_handle_craft_command,
     maybe_handle_equipment_command,
     maybe_handle_inventory_command,
+    maybe_handle_item_use_command,
     maybe_handle_rest_command,
     maybe_handle_spell_command,
 )
@@ -30,6 +32,27 @@ def _count_actor_item_quantity(actor, item_def_id: str) -> int:
         for item in actor.inventory
         if getattr(item, "item_def_id", "") == item_def_id
     )
+
+
+def _add_inventory_item(actor, item_def_id: str, *, quantity: int = 1, payload: dict | None = None):
+    from engine.kernel.actor_items import ItemStack
+
+    item_payload = {
+        "id": item_def_id,
+        "item_def_id": item_def_id,
+        "name": item_def_id.replace("_", " ").title(),
+        "quantity": quantity,
+        "qty": quantity,
+        **dict(payload or {}),
+    }
+    stack = ItemStack(
+        instance_id=f"{item_def_id}_{len(actor.inventory)}",
+        item_def_id=item_def_id,
+        quantity=quantity,
+        payload=item_payload,
+    )
+    actor.inventory.append(stack)
+    return stack
 
 
 def _add_workstation(ctx, *, workstation_id: str, name: str, offset: tuple[int, int] = (1, 0)) -> None:
@@ -214,6 +237,128 @@ class TestDropCommand:
         assert third is not None and "don't have" in third[0].lower()
         assert ctx.find_inventory_item("iron_ore") is None
         assert len(ctx.campaign_state.get("ground_items", [])) == 2
+
+
+# ---------------------------------------------------------------------------
+# Item use handler
+# ---------------------------------------------------------------------------
+
+
+class TestUseItemCommand:
+
+    def test_use_healing_consumable_on_self(self):
+        _rt, ctx = _make_campaign()
+        player = _player_actor(ctx)
+        player.stats["hp"] = max(1, int(player.stats.get("max_hp", 20)) - 8)
+        _add_inventory_item(
+            player,
+            "field_tonic",
+            payload={"name": "Field Tonic", "type": "consumable", "heal": 8},
+        )
+
+        result = maybe_handle_item_use_command(ctx, "use field tonic")
+
+        assert result is not None
+        narrative, cmd_type, hours = result
+        assert cmd_type == "inventory"
+        assert hours == 0
+        assert "used field tonic" in narrative.lower()
+        assert int(player.stats["hp"]) > max(1, int(player.stats.get("max_hp", 20)) - 8)
+        assert _find_inventory_item_by_name(player, "field_tonic") is None
+
+    def test_use_wand_decrements_charges_without_destroying_until_empty(self):
+        _rt, ctx = _make_campaign()
+        player = _player_actor(ctx)
+        player.stats["hp"] = max(1, int(player.stats.get("max_hp", 20)) - 6)
+        wand = _add_inventory_item(
+            player,
+            "wand_of_healing",
+            payload={"name": "Wand of Healing", "charges": 2, "identified": True},
+        )
+
+        first = maybe_handle_item_use_command(ctx, "use wand of healing")
+        second = maybe_handle_item_use_command(ctx, "use wand of healing")
+        third = maybe_handle_item_use_command(ctx, "use wand of healing")
+
+        assert first is not None and "1 charges remain" in first[0].lower()
+        assert second is not None and "0 charges remain" in second[0].lower()
+        assert third is not None and "no charges" in third[0].lower()
+        assert wand in player.inventory
+        assert int(wand.payload.get("charges", -1)) == 0
+
+    def test_use_non_usable_equipment_fails_without_mutation(self):
+        _rt, ctx = _make_campaign()
+        player = _player_actor(ctx)
+        ring = _add_inventory_item(
+            player,
+            "ring_of_protection",
+            payload={"name": "Ring of Protection", "identified": False},
+        )
+        quantity_before = int(ring.quantity)
+
+        result = maybe_handle_item_use_command(ctx, "use ring of protection")
+
+        assert result is not None
+        assert "cannot be used this way" in result[0].lower()
+        assert ring in player.inventory
+        assert int(ring.quantity) == quantity_before
+        assert bool(ring.payload.get("identified", False)) is False
+
+    def test_use_item_on_named_target(self):
+        _rt, ctx = _make_campaign()
+        player = _player_actor(ctx)
+        target = next(
+            actor
+            for actor_id, actor in ctx.kernel_runtime["actors"].items()
+            if actor_id != "player"
+        )
+        target.stats["hp"] = max(1, int(target.stats.get("max_hp", 10)) - 5)
+        _add_inventory_item(
+            player,
+            "field_tonic",
+            payload={"name": "Field Tonic", "type": "consumable", "heal": 6},
+        )
+
+        result = maybe_handle_item_use_command(ctx, f"use field tonic on {target.name}")
+
+        assert result is not None
+        assert result[1] == "inventory"
+        assert int(target.stats["hp"]) > max(1, int(target.stats.get("max_hp", 10)) - 5)
+        assert target.name.lower() in result[0].lower()
+
+    def test_runtime_dispatch_supports_use_item_command(self):
+        runtime, context = _make_campaign()
+        player = _player_actor(context)
+        player.stats["hp"] = max(1, int(player.stats.get("max_hp", 20)) - 4)
+        _add_inventory_item(
+            player,
+            "field_tonic",
+            payload={"name": "Field Tonic", "type": "consumable", "heal": 4},
+        )
+
+        response = runtime.run_command(context.campaign_id, "use field tonic")
+
+        assert response["command_type"] == "inventory"
+        assert "used field tonic" in response["narrative"].lower()
+        assert int(response["campaign"]["player"]["hp"]) >= int(player.stats["hp"])
+
+    def test_use_item_state_survives_save_load(self):
+        runtime, context = _make_campaign()
+        player = _player_actor(context)
+        _add_inventory_item(
+            player,
+            "wand_of_healing",
+            payload={"name": "Wand of Healing", "charges": 3, "identified": False},
+        )
+
+        runtime.save_campaign(context.campaign_id, "magic_item_slot", "RuntimeTester")
+        loaded = runtime.load_campaign("magic_item_slot")
+        loaded_player = loaded.kernel_runtime["actors"]["player"]
+        wand = _find_inventory_item_by_name(loaded_player, "wand_of_healing")
+
+        assert wand is not None
+        assert bool(wand.payload.get("identified", True)) is False
+        assert int(wand.payload.get("charges", -1)) == 3
 
 
 # ---------------------------------------------------------------------------
@@ -422,6 +567,7 @@ class TestNonGameplayReturnsNone:
         _rt, ctx = _make_campaign()
         assert maybe_handle_equipment_command(ctx, "look around") is None
         assert maybe_handle_inventory_command(ctx, "look around") is None
+        assert maybe_handle_item_use_command(ctx, "look around") is None
         assert maybe_handle_craft_command(ctx, "look around") is None
         assert maybe_handle_rest_command(ctx, "look around") is None
         assert maybe_handle_spell_command(ctx, "look around") is None
@@ -430,6 +576,7 @@ class TestNonGameplayReturnsNone:
         _rt, ctx = _make_campaign()
         assert maybe_handle_equipment_command(ctx, "") is None
         assert maybe_handle_inventory_command(ctx, "") is None
+        assert maybe_handle_item_use_command(ctx, "") is None
         assert maybe_handle_craft_command(ctx, "") is None
         assert maybe_handle_rest_command(ctx, "") is None
         assert maybe_handle_spell_command(ctx, "") is None

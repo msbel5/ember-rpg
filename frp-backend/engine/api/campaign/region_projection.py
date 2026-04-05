@@ -252,7 +252,42 @@ def _live_region_npcs(context: CampaignContext) -> list[dict[str, Any]]:
     return npcs if isinstance(npcs, list) else []
 
 
+def _live_region_npc_entry(context: CampaignContext, actor_id: str) -> dict[str, Any] | None:
+    for entry in _live_region_npcs(context):
+        if isinstance(entry, dict) and str(entry.get("id", "")) == actor_id:
+            return entry
+    return None
+
+
+def _ambient_npc_position(context: CampaignContext, actor_id: str, fallback: tuple[int, int]) -> tuple[int, int]:
+    entry = _live_region_npc_entry(context, actor_id)
+    if entry is None:
+        return fallback
+    try:
+        return _clamp_party_position(context, int(entry.get("x", fallback[0])), int(entry.get("y", fallback[1])))
+    except Exception:
+        return fallback
+
+
+def _set_live_party_projection_state(context: CampaignContext, actor_id: str, *, active: bool) -> None:
+    entry = _live_region_npc_entry(context, actor_id)
+    if entry is None:
+        return
+    if active:
+        entry["party_member_active"] = True
+        entry["disposition"] = "ally"
+        entry["context_actions"] = ["examine"]
+        return
+    entry.pop("party_member_active", None)
+    entry["disposition"] = str(entry.get("disposition", "friendly") or "friendly")
+    entry["context_actions"] = list(entry.get("context_actions", ["talk", "examine"])) or ["talk", "examine"]
+
+
 def persist_projected_npc_state(context: CampaignContext) -> None:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    normalize_party_state(game_state) if game_state is not None else None
+    active_party_ids = {str(actor_id) for actor_id in list(getattr(game_state, "party", [])) if str(actor_id) and str(actor_id) != "player"}
     npc_state = {
         str(entry.get("id", "")): entry
         for entry in _live_region_npcs(context)
@@ -260,6 +295,8 @@ def persist_projected_npc_state(context: CampaignContext) -> None:
     }
     for entity_id, record in list(context.entities.items()):
         if not isinstance(record, dict) or str(record.get("type", "")) != "npc":
+            continue
+        if entity_id in active_party_ids:
             continue
         live_entry = npc_state.get(entity_id)
         if live_entry is None:
@@ -368,15 +405,40 @@ def sync_party_projection(context: CampaignContext) -> None:
         record["position"] = [slot_position[0], slot_position[1]]
         record["attitude"] = "ally"
         record["disposition"] = "ally"
+        record["context_actions"] = ["examine"]
+        actor = actors.get(actor_id)
+        if actor is not None:
+            actor.position.x = slot_position[0]
+            actor.position.y = slot_position[1]
+            actor.raw_payload["party_member"] = True
+            actor.raw_payload["active_party_member"] = True
+            actor.raw_payload["reserve_party_member"] = False
+            actor.raw_payload["companion_roster"] = True
+        _set_live_party_projection_state(context, actor_id, active=True)
 
     for actor_id in reserve_ids:
         record = context.entities.get(actor_id)
+        actor = actors.get(actor_id)
+        live_entry = _live_region_npc_entry(context, actor_id)
+        if actor is not None:
+            actor.raw_payload["party_member"] = False
+            actor.raw_payload["active_party_member"] = False
+            actor.raw_payload["reserve_party_member"] = True
+            actor.raw_payload["companion_roster"] = True
+        _set_live_party_projection_state(context, actor_id, active=False)
+        if live_entry is None and isinstance(record, dict):
+            entity_ref = record.get("entity_ref")
+            if entity_ref is not None and context.spatial_index.get_position(actor_id) is not None:
+                context.spatial_index.remove(entity_ref)
+            context.entities.pop(actor_id, None)
+            continue
         if not isinstance(record, dict):
             continue
-        actor = actors.get(actor_id)
         reserve_position = tuple(record.get("position", list(context.position)))
         if actor is not None:
-            reserve_position = _clamp_party_position(context, int(actor.position.x), int(actor.position.y))
+            reserve_position = _ambient_npc_position(context, actor_id, (int(actor.position.x), int(actor.position.y)))
+            actor.position.x = reserve_position[0]
+            actor.position.y = reserve_position[1]
         entity_ref = record.get("entity_ref")
         if entity_ref is not None:
             if context.spatial_index.get_position(actor_id) is not None:
@@ -389,6 +451,7 @@ def sync_party_projection(context: CampaignContext) -> None:
         record["position"] = [int(reserve_position[0]), int(reserve_position[1])]
         record["attitude"] = "friendly"
         record["disposition"] = "friendly"
+        record["context_actions"] = list(record.get("context_actions", ["talk", "examine"])) or ["talk", "examine"]
 
 
 def apply_region_to_context(
@@ -497,10 +560,15 @@ def build_world_entities(world: WorldBlueprint, region_snapshot: RegionSnapshot,
     del adapter_id
     runtime_state = runtime_region_state(world, region_snapshot.region_id)
     entities: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
     for npc in runtime_state.get("npcs", region_snapshot.layout.npc_spawns):
+        npc_id = str(npc["id"])
+        if npc_id in seen_ids or bool(npc.get("party_member_active")):
+            continue
+        seen_ids.add(npc_id)
         entities.append(
             {
-                "id": str(npc["id"]),
+                "id": npc_id,
                 "entity_type": "npc",
                 "name": str(npc.get("name", str(npc.get("role", "Resident")).replace("_", " ").title())),
                 "position": [int(npc["x"]), int(npc["y"])],

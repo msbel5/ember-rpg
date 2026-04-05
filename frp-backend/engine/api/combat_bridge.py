@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from engine.api.kernel_adapter import advance_turn, begin_turn, check_combat_end, run_attack, start_fight
 from engine.kernel.combat_engine import CombatState
 from engine.kernel.combat_math import ability_modifier
+from engine.map import TileType
 
 if TYPE_CHECKING:
     from engine.api.campaign.context import CampaignContext
@@ -189,25 +190,28 @@ def _resolve_non_player_turns(
             continue
         if active.actor_id == "player":
             break
-        target_id = _choose_ai_target_id(combat_state, actors, active)
+        target_id = _choose_ai_target_id(combat_state, actors, active, context=context)
         if not target_id:
             combat_state.phase = "resolved"
             break
-        try:
-            attack_result = run_attack(
-                combat_state,
-                actors,
-                active.actor_id,
-                target_id,
-                weapon=_get_equipped_weapon(actor),
-                seed=seed + step,
-            )
-        except ValueError as exc:
-            logger.debug("Combat auto-turn skipped for %s: %s", active.actor_id, exc)
-            active.turn_resources.action = False
-            attack_result = None
-        if attack_result is not None:
-            messages.append(_apply_attack_result(actors, attack_result))
+        if active.is_player:
+            messages.append(_resolve_companion_turn(context, combat_state, actors, active, target_id, seed=seed + step))
+        else:
+            try:
+                attack_result = run_attack(
+                    combat_state,
+                    actors,
+                    active.actor_id,
+                    target_id,
+                    weapon=_get_equipped_weapon(actor),
+                    seed=seed + step,
+                )
+            except ValueError as exc:
+                logger.debug("Combat auto-turn skipped for %s: %s", active.actor_id, exc)
+                active.turn_resources.action = False
+                attack_result = None
+            if attack_result is not None:
+                messages.append(_apply_attack_result(actors, attack_result))
         if check_combat_end(combat_state, actors):
             combat_state.phase = "resolved"
             break
@@ -280,7 +284,7 @@ def _ensure_combat_state(
             return combat_state
     from engine.api.campaign.party_bridge import party_member_ids
 
-    party_ids = [actor_id for actor_id in party_member_ids(context) if actor_id in actors]
+    party_ids = _projected_party_combatant_ids(context, actors)
     combatants: list[ActorRecord] = []
     seen: set[str] = set()
     for actor_id in party_ids + [target.identity.actor_id]:
@@ -304,14 +308,148 @@ def _set_active_turn(combat_state: CombatState, actor_id: str) -> None:
             return
 
 
-def _choose_ai_target_id(combat_state: CombatState, actors: dict[str, Any], active_entry: Any) -> str:
+def _choose_ai_target_id(combat_state: CombatState, actors: dict[str, Any], active_entry: Any, *, context: "CampaignContext") -> str:
+    del context
+    active_actor = actors.get(active_entry.actor_id)
+    if active_actor is None:
+        return ""
+    candidates: list[tuple[int, str]] = []
     for entry in combat_state.combatants:
         if entry.actor_id == active_entry.actor_id or entry.is_player == active_entry.is_player:
             continue
         actor = actors.get(entry.actor_id)
-        if actor is not None and getattr(actor, "alive", True):
-            return entry.actor_id
-    return ""
+        if actor is None or not getattr(actor, "alive", True):
+            continue
+        candidates.append((_distance_between(active_actor, actor), entry.actor_id))
+    if not candidates:
+        return ""
+    candidates.sort(key=lambda item: (item[0], item[1]))
+    return candidates[0][1]
+
+
+def _projected_party_combatant_ids(context: "CampaignContext", actors: dict[str, Any]) -> list[str]:
+    from engine.api.campaign.party_bridge import party_member_ids
+
+    projected: list[str] = []
+    for actor_id in party_member_ids(context):
+        if actor_id not in actors:
+            continue
+        if actor_id == "player":
+            projected.append(actor_id)
+            continue
+        record = context.entities.get(actor_id)
+        if not isinstance(record, dict):
+            continue
+        if str(record.get("attitude", "")) != "ally":
+            continue
+        projected.append(actor_id)
+    return projected
+
+
+def _distance_between(left: Any, right: Any) -> int:
+    return abs(int(left.position.x) - int(right.position.x)) + abs(int(left.position.y) - int(right.position.y))
+
+
+def _adjacent(left: Any, right: Any) -> bool:
+    return _distance_between(left, right) == 1
+
+
+def _passable_tile(context: "CampaignContext", x: int, y: int) -> bool:
+    map_data = getattr(context, "map_data", None)
+    if map_data is None:
+        return True
+    width = int(getattr(map_data, "width", 0))
+    height = int(getattr(map_data, "height", 0))
+    if x < 0 or y < 0 or x >= width or y >= height:
+        return False
+    tile = map_data.tiles[y][x]
+    return tile not in {TileType.WALL, TileType.WATER, TileType.TREE}
+
+
+def _move_actor_projection(context: "CampaignContext", actor_id: str, x: int, y: int, actors: dict[str, Any]) -> None:
+    actor = actors.get(actor_id)
+    if actor is not None:
+        actor.position.x = int(x)
+        actor.position.y = int(y)
+    record = context.entities.get(actor_id)
+    if not isinstance(record, dict):
+        return
+    record["position"] = [int(x), int(y)]
+    entity_ref = record.get("entity_ref")
+    spatial_index = getattr(context, "spatial_index", None)
+    if entity_ref is not None and spatial_index is not None:
+        if spatial_index.get_position(actor_id) is None:
+            entity_ref.position = (int(x), int(y))
+            spatial_index.add(entity_ref)
+        else:
+            spatial_index.move(entity_ref, int(x), int(y))
+
+
+def _companion_step_toward(context: "CampaignContext", actor: Any, target: Any) -> tuple[int, int] | None:
+    current = (int(actor.position.x), int(actor.position.y))
+    goal = (int(target.position.x), int(target.position.y))
+    candidates = [
+        (current[0] + 1, current[1]),
+        (current[0] - 1, current[1]),
+        (current[0], current[1] + 1),
+        (current[0], current[1] - 1),
+    ]
+    valid: list[tuple[int, int, int, int]] = []
+    spatial_index = getattr(context, "spatial_index", None)
+    for x, y in candidates:
+        if not _passable_tile(context, x, y):
+            continue
+        if spatial_index is not None and spatial_index.blocking_at(x, y) and (x, y) != current:
+            continue
+        distance = abs(goal[0] - x) + abs(goal[1] - y)
+        current_distance = abs(goal[0] - current[0]) + abs(goal[1] - current[1])
+        if distance >= current_distance:
+            continue
+        valid.append((distance, y, x, 0))
+    if not valid:
+        return None
+    valid.sort()
+    _, y, x, _ = valid[0]
+    return (x, y)
+
+
+def _resolve_companion_turn(
+    context: "CampaignContext",
+    combat_state: CombatState,
+    actors: dict[str, Any],
+    active_entry: Any,
+    target_id: str,
+    *,
+    seed: int,
+) -> str:
+    actor = actors.get(active_entry.actor_id)
+    target = actors.get(target_id)
+    if actor is None or target is None:
+        active_entry.turn_resources.action = False
+        return ""
+    if _adjacent(actor, target):
+        try:
+            attack_result = run_attack(
+                combat_state,
+                actors,
+                active_entry.actor_id,
+                target_id,
+                weapon=_get_equipped_weapon(actor),
+                seed=seed,
+            )
+        except ValueError as exc:
+            logger.debug("Companion attack fallback for %s: %s", active_entry.actor_id, exc)
+        else:
+            return _apply_attack_result(actors, attack_result)
+    next_step = _companion_step_toward(context, actor, target)
+    if next_step is not None:
+        _move_actor_projection(context, active_entry.actor_id, next_step[0], next_step[1], actors)
+        active_entry.turn_resources.movement = max(0, int(active_entry.turn_resources.movement) - 1)
+        active_entry.turn_resources.action = False
+        return f"{actor.name} advances toward {target.name}."
+    active_entry.turn_resources.action = False
+    actor.raw_payload["defensive_stance"] = True
+    return f"{actor.name} takes a defensive stance."
 
 
 def _apply_attack_result(actors: dict[str, Any], attack_result: Any) -> str:

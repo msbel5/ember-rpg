@@ -35,6 +35,7 @@ from .runtime_settlement import (
     refresh_runtime_views,
 )
 from .runtime_systems import load_systems, systems_events
+from engine.kernel.game_state import normalize_party_state
 
 if TYPE_CHECKING:
     from .context import CampaignContext
@@ -357,6 +358,7 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
         merged[actor_id] = existing
     runtime["actors"] = merged
     runtime["game_state"].actors = dict(merged)
+    normalize_party_state(runtime["game_state"])
     existing_party = [str(actor_id) for actor_id in list(getattr(runtime["game_state"], "party", [])) if str(actor_id)]
     requested_party = [str(actor_id) for actor_id in list(context.campaign_state.get("party", [])) if str(actor_id)]
     party: list[str] = []
@@ -366,8 +368,36 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
     if "player" in merged and "player" not in party:
         party.insert(0, "player")
     runtime["game_state"].party = party
-    runtime["game_state"].inactive_npcs = [actor_id for actor_id in merged if actor_id not in party]
+    existing_reserves = [
+        str(actor_id)
+        for actor_id in list(getattr(runtime["game_state"], "inactive_npcs", []))
+        if str(actor_id) and str(actor_id) in merged and str(actor_id) not in party
+    ]
+    requested_reserves = [
+        str(actor_id)
+        for actor_id in list(context.campaign_state.get("reserve_party_members", []))
+        if str(actor_id) and str(actor_id) in merged and str(actor_id) not in party
+    ]
+    roster_reserves = [
+        actor_id
+        for actor_id, actor in merged.items()
+        if actor_id not in party and actor_id != "player" and bool(actor.raw_payload.get("companion_roster"))
+    ]
+    inactive: list[str] = []
+    for actor_id in existing_reserves + requested_reserves + roster_reserves:
+        if actor_id not in inactive:
+            inactive.append(actor_id)
+    runtime["game_state"].inactive_npcs = inactive
     context.campaign_state["party"] = list(party)
+    context.campaign_state["reserve_party_members"] = list(inactive)
+    for actor_id, actor in merged.items():
+        is_active = actor_id in party and actor_id != "player"
+        is_reserve = actor_id in inactive
+        if is_active or is_reserve or bool(actor.raw_payload.get("companion_roster")):
+            actor.raw_payload["companion_roster"] = True
+            actor.raw_payload["party_member"] = is_active
+            actor.raw_payload["active_party_member"] = is_active
+            actor.raw_payload["reserve_party_member"] = is_reserve
     context.player = merged.get("player", context.player)
 
 

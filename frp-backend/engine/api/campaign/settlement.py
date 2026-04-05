@@ -10,6 +10,7 @@ import logging
 from typing import Any
 
 from engine.api.campaign.context import CampaignContext
+from engine.api.gameplay_bridge import inventory_item_row
 from engine.data.classes import get_creation_ability_order
 from engine.data.runtime import get_class_abilities
 from engine.kernel.progression import ProgressionState
@@ -229,6 +230,7 @@ def build_character_sheet(context: CampaignContext, settlement_state: dict[str, 
         "gold": player.gold,
         "equipment": player.equipment.to_dict(),
         "inventory_count": len(player.inventory),
+        "inventory": [inventory_item_row(item) for item in player.inventory],
         "passives": copy.deepcopy(player.passives),
         "progression": _build_progression_summary(player),
         "settlement_role": str((settlement_state or {}).get("player_role", "commander")),

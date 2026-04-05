@@ -148,6 +148,7 @@ def _dispatch(
         maybe_handle_craft_command,
         maybe_handle_equipment_command,
         maybe_handle_inventory_command,
+        maybe_handle_item_use_command,
         maybe_handle_progression_command,
         maybe_handle_rest_command,
         maybe_handle_spell_command,
@@ -162,6 +163,9 @@ def _dispatch(
     inventory = maybe_handle_inventory_command(context, issued)
     if inventory is not None:
         return inventory
+    item_use = maybe_handle_item_use_command(context, issued)
+    if item_use is not None:
+        return item_use
     craft = maybe_handle_craft_command(context, issued)
     if craft is not None:
         return craft
@@ -196,7 +200,7 @@ def _dispatch(
 
     logger.warning("Unknown command rejected: %s", issued[:80])
     return (
-        f"Unknown command: '{issued}'. Try: attack, cast, equip, craft, rest, "
+        f"Unknown command: '{issued}'. Try: attack, cast, use, equip, craft, rest, "
         f"travel, train, proficiency, raise, buy, sell, diagnose, dialog, recruit, quests, or world interaction controls.",
         "unknown",
         0,

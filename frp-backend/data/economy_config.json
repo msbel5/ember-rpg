@@ -6,14 +6,16 @@
       "silver_ore", "gold_ore", "healing_herb", "nightshade", "wolfsbane",
       "linen", "silk", "wool", "gemstone", "pearl",
       "iron_ingot", "steel_ingot", "iron_plate", "leather_strips",
-      "sulfur", "quicksilver", "rope", "lantern_oil", "candle", "parchment"
+      "sulfur", "quicksilver", "rope", "lantern_oil", "candle", "parchment",
+      "arcane_crystal", "moonstone_dust", "elemental_dust", "fire_essence", "water_essence", "mystic_ink"
     ],
     "price_tracking_items": [
       "wheat_flour", "rye_bread", "dried_meat", "fresh_fish", "ale",
       "red_wine", "iron_ore", "copper_ore", "silver_ore", "gold_ore",
       "healing_herb", "linen", "silk", "gemstone", "iron_ingot",
       "steel_ingot", "sulfur", "rope", "lantern_oil", "salt",
-      "honey", "leather_hide", "pearl", "coal", "candle"
+      "honey", "leather_hide", "pearl", "coal", "candle",
+      "arcane_crystal", "moonstone_dust", "elemental_dust", "phoenix_ash"
     ],
     "default_store_inventory": [
       {"item_def_id": "wheat_flour", "quantity": 15},
@@ -31,7 +33,10 @@
       {"item_def_id": "leather_strips", "quantity": 6},
       {"item_def_id": "whetstone", "quantity": 3},
       {"item_def_id": "salt", "quantity": 10},
-      {"item_def_id": "linen", "quantity": 8}
+      {"item_def_id": "linen", "quantity": 8},
+      {"item_def_id": "arcane_crystal", "quantity": 2},
+      {"item_def_id": "moonstone_dust", "quantity": 3},
+      {"item_def_id": "glass_vial", "quantity": 8}
     ],
     "default_store_services": [
       {"service_id": "rest", "service_type": "room", "label": "Room for the night", "price": 5, "room_quality": 1.0},
@@ -165,7 +170,12 @@
       {"item_id": "glass_vial", "name": "Glass Vial", "category": "trade_good", "base_price": 2, "volatility": 0.1, "weight": 0.1, "description": "A small corked glass bottle for potions and alchemical samples."},
       {"item_id": "chalk", "name": "Chalk", "category": "trade_good", "base_price": 1, "volatility": 0.1, "weight": 0.1, "description": "A stick of white chalk for marking dungeon passages."},
       {"item_id": "sewing_kit", "name": "Sewing Kit", "category": "trade_good", "base_price": 3, "volatility": 0.1, "weight": 0.2, "description": "Needles, thread, and thimble for mending clothes and leather."},
-      {"item_id": "iron_spikes", "name": "Iron Spikes", "category": "trade_good", "base_price": 2, "volatility": 0.1, "weight": 1.0, "description": "A set of ten iron pitons for climbing or wedging doors."}
+      {"item_id": "iron_spikes", "name": "Iron Spikes", "category": "trade_good", "base_price": 2, "volatility": 0.1, "weight": 1.0, "description": "A set of ten iron pitons for climbing or wedging doors."},
+      {"item_id": "fire_essence", "name": "Fire Essence", "category": "reagent", "base_price": 50, "volatility": 0.35, "weight": 0.1, "description": "Distilled elemental fire energy, critical for forging flametongue weapons."},
+      {"item_id": "water_essence", "name": "Water Essence", "category": "reagent", "base_price": 50, "volatility": 0.35, "weight": 0.1, "description": "Distilled elemental water energy, used in frostbrand enchantments."},
+      {"item_id": "storm_essence", "name": "Storm Essence", "category": "reagent", "base_price": 75, "volatility": 0.4, "weight": 0.1, "description": "Volatile elemental storm energy, essential for thunderstrike enchantments."},
+      {"item_id": "mystic_ink", "name": "Mystic Ink", "category": "reagent", "base_price": 40, "volatility": 0.3, "weight": 0.2, "description": "Magically infused ink for inscribing spell scrolls."},
+      {"item_id": "enchanted_thread", "name": "Enchanted Thread", "category": "reagent", "base_price": 55, "volatility": 0.3, "weight": 0.1, "description": "Silk thread treated with moonstone dust, used to weave enchantments into armor."}
     ]
   }
 }

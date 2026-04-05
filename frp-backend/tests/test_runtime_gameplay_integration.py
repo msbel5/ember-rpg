@@ -45,6 +45,48 @@ def _inject_companion(
     return companion
 
 
+def _project_actor_entity(
+    context,
+    actor,
+    *,
+    position: tuple[int, int],
+    attitude: str = "hostile",
+    disposition: str = "hostile",
+    context_actions: list[str] | None = None,
+):
+    entity = Entity(
+        id=actor.identity.actor_id,
+        entity_type=EntityType.NPC,
+        name=actor.identity.display_name,
+        position=(int(position[0]), int(position[1])),
+        glyph="!" if attitude == "hostile" else "A",
+        color="red" if attitude == "hostile" else "light_blue",
+        blocking=True,
+        hp=int(actor.stats.get("hp", 1)),
+        max_hp=int(actor.stats.get("max_hp", actor.stats.get("hp", 1))),
+        disposition=disposition,
+        attitude=attitude,
+        faction=getattr(actor.identity, "faction_id", None),
+        job=str(actor.raw_payload.get("role", "companion")),
+    )
+    actor.position.x = int(position[0])
+    actor.position.y = int(position[1])
+    if context.spatial_index.get_position(actor.identity.actor_id) is None:
+        context.spatial_index.add(entity)
+    context.entities[actor.identity.actor_id] = {
+        "name": actor.identity.display_name,
+        "type": "npc",
+        "position": [int(position[0]), int(position[1])],
+        "faction": getattr(actor.identity, "faction_id", None),
+        "role": str(actor.raw_payload.get("role", "companion")),
+        "attitude": attitude,
+        "disposition": disposition,
+        "template": str(actor.raw_payload.get("template", actor.raw_payload.get("role", "companion"))),
+        "context_actions": list(context_actions or (["attack", "examine"] if attitude == "hostile" else ["examine"])),
+        "entity_ref": entity,
+    }
+
+
 def _add_workstation(context, *, workstation_id: str, name: str, offset: tuple[int, int] = (1, 0)) -> None:
     x = int(context.position[0]) + int(offset[0])
     y = int(context.position[1]) + int(offset[1])
@@ -620,6 +662,95 @@ def test_region_projection_uses_active_formation_slots_only() -> None:
     assert refreshed["command_type"] == "exploration"
 
 
+def test_active_companions_follow_player_after_move_refresh() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="companion_follow", name="Follow Tess", role="guard")
+
+    assert runtime.run_command(context.campaign_id, "recruit Follow Tess")["command_type"] == "party"
+    moved = runtime.run_command(context.campaign_id, "move east")
+
+    offsets = FORMATIONS[context.kernel_runtime["game_state"].formation]
+    player_x, player_y = int(context.position[0]), int(context.position[1])
+    record = context.entities.get(companion.identity.actor_id)
+
+    assert moved["command_type"] == "exploration"
+    assert record is not None
+    assert record.get("position") == [player_x + offsets[1][0], player_y + offsets[1][1]]
+    assert record.get("attitude") == "ally"
+
+
+def test_inactive_companions_do_not_occupy_active_ally_slots() -> None:
+    runtime, context = _make_campaign()
+    active = _inject_companion(context, base_id="companion_front", name="Front Line", role="guard")
+    reserve = _inject_companion(context, base_id="companion_back", name="Back Line", role="scout")
+
+    assert runtime.run_command(context.campaign_id, "recruit Front Line")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "recruit Back Line")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "dismiss Back Line")["command_type"] == "party"
+    runtime.run_command(context.campaign_id, "move south")
+
+    offsets = FORMATIONS[context.kernel_runtime["game_state"].formation]
+    player_x, player_y = int(context.position[0]), int(context.position[1])
+    active_record = context.entities.get(active.identity.actor_id)
+    reserve_record = context.entities.get(reserve.identity.actor_id)
+
+    assert active_record is not None
+    assert active_record.get("position") == [player_x + offsets[1][0], player_y + offsets[1][1]]
+    assert reserve_record is None or reserve_record.get("attitude") != "ally"
+
+
+def test_active_companions_join_combat_as_allies() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="companion_ally", name="Ally Joren", role="guard")
+    hostile = _inject_companion(context, base_id="companion_hostile", name="Hostile Brute", role="raider", hostile=True)
+    _project_actor_entity(context, hostile, position=(int(context.position[0]) + 2, int(context.position[1])), attitude="hostile")
+
+    assert runtime.run_command(context.campaign_id, "recruit Ally Joren")["command_type"] == "party"
+    result = runtime.run_command(context.campaign_id, "attack Hostile Brute")
+    combatants = result["campaign"]["combat"]["combatants"]
+    ally_entries = [entry for entry in combatants if entry["actor_id"] == companion.identity.actor_id]
+
+    assert result["command_type"] == "combat"
+    assert len(ally_entries) == 1
+    assert ally_entries[0]["is_player"] is True
+
+
+def test_companion_auto_turn_resolves_deterministically() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="companion_auto", name="Auto Kest", role="guard")
+    hostile = _inject_companion(context, base_id="companion_target", name="Target Gnoll", role="raider", hostile=True)
+
+    assert runtime.run_command(context.campaign_id, "recruit Auto Kest")["command_type"] == "party"
+    companion_record = context.entities.get(companion.identity.actor_id)
+    assert companion_record is not None
+    companion_pos = tuple(companion_record.get("position", [int(context.position[0]), int(context.position[1])]))
+    _project_actor_entity(context, hostile, position=(int(companion_pos[0]) + 1, int(companion_pos[1])), attitude="hostile")
+    runtime.run_command(context.campaign_id, "attack Target Gnoll")
+
+    result = runtime.run_command(context.campaign_id, "defend")
+
+    assert result["command_type"] == "combat"
+    assert "Auto Kest" in result["narrative"]
+    assert result["campaign"]["combat"]["turn_actor_id"] != companion.identity.actor_id
+
+
+def test_dismissed_companion_stops_appearing_and_acting_as_active_ally() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="companion_dismissed", name="Dismissed Vale", role="scout")
+    hostile = _inject_companion(context, base_id="companion_enemy", name="Enemy Fang", role="raider", hostile=True)
+    _project_actor_entity(context, hostile, position=(int(context.position[0]) + 2, int(context.position[1])), attitude="hostile")
+
+    assert runtime.run_command(context.campaign_id, "recruit Dismissed Vale")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "dismiss Dismissed Vale")["command_type"] == "party"
+
+    record = context.entities.get(companion.identity.actor_id)
+    combat = runtime.run_command(context.campaign_id, "attack Enemy Fang")
+    combatant_ids = [entry["actor_id"] for entry in combat["campaign"]["combat"]["combatants"]]
+
+    assert record is None or record.get("attitude") != "ally"
+    assert companion.identity.actor_id not in combatant_ids
+
+
 def test_formation_changes_remain_stable_through_save_load() -> None:
     runtime, context = _make_campaign()
     companion = _inject_companion(context, base_id="companion_save", name="Save Piper", role="scout")
@@ -638,6 +769,33 @@ def test_formation_changes_remain_stable_through_save_load() -> None:
     assert record is not None
     assert record.get("position") == [player_x + offsets[1][0], player_y + offsets[1][1]]
     assert companion.identity.actor_id in refreshed["campaign"]["party"]
+
+
+def test_save_load_preserves_active_and_reserve_behavior_state() -> None:
+    runtime, context = _make_campaign()
+    active = _inject_companion(context, base_id="companion_save_active", name="Active Rowan", role="guard")
+    reserve = _inject_companion(context, base_id="companion_save_reserve", name="Reserve Quinn", role="scout")
+
+    assert runtime.run_command(context.campaign_id, "recruit Active Rowan")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "recruit Reserve Quinn")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "dismiss Reserve Quinn")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "formation scatter")["command_type"] == "party"
+
+    runtime.save_campaign(context.campaign_id, "party_stage2_behavior_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("party_stage2_behavior_slot")
+    refreshed = runtime.run_command(loaded.campaign_id, "move north")
+    offsets = FORMATIONS["scatter"]
+    player_x, player_y = int(loaded.position[0]), int(loaded.position[1])
+    active_record = loaded.entities.get(active.identity.actor_id)
+    reserve_record = loaded.entities.get(reserve.identity.actor_id)
+
+    assert refreshed["command_type"] == "exploration"
+    assert loaded.kernel_runtime["game_state"].formation == "scatter"
+    assert reserve.identity.actor_id in loaded.kernel_runtime["game_state"].inactive_npcs
+    assert active.identity.actor_id in loaded.kernel_runtime["game_state"].party
+    assert active_record is not None
+    assert active_record.get("position") == [player_x + offsets[1][0], player_y + offsets[1][1]]
+    assert reserve_record is None or reserve_record.get("attitude") != "ally"
 
 
 def test_swap_and_projection_do_not_create_duplicate_or_overlapping_active_party_state() -> None:

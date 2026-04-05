@@ -1939,6 +1939,353 @@
       ],
       "failure_result": "scrap_leather",
       "xp_reward": 13
+    },
+    {
+      "id": "arcane_oil",
+      "name": "Arcane Oil",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 10,
+      "ap_cost": 4,
+      "ingredients": [
+        {"item_id": "elemental_dust", "quantity": 1, "material_class": null},
+        {"item_id": "glass_vial", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "alchemist_s_fire", "quantity": 2, "inherit_material": false}
+      ],
+      "tools": ["mortar"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 10
+    },
+    {
+      "id": "enchanted_dagger",
+      "name": "Enchanted Dagger",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 12,
+      "ap_cost": 10,
+      "ingredients": [
+        {"item_id": "steel_dagger", "quantity": 1, "material_class": null},
+        {"item_id": "arcane_crystal", "quantity": 1, "material_class": null},
+        {"item_id": "moonstone_dust", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "enchanted_dagger_1", "quantity": 1, "inherit_material": true}
+      ],
+      "tools": ["hammer", "tongs"],
+      "failure_result": "ruined_blade",
+      "xp_reward": 18
+    },
+    {
+      "id": "scroll_of_healing_word_recipe",
+      "name": "Scroll of Healing Word",
+      "workstation": "workbench",
+      "skill": "alchemy",
+      "skill_dc": 12,
+      "ap_cost": 6,
+      "ingredients": [
+        {"item_id": "parchment", "quantity": 1, "material_class": null},
+        {"item_id": "mystic_ink", "quantity": 1, "material_class": null},
+        {"item_id": "healing_herb", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "scroll_of_healing_word", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": [],
+      "failure_result": "failed_mixture",
+      "xp_reward": 14
+    },
+    {
+      "id": "enchanted_longsword_basic",
+      "name": "Enchanted Longsword",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 14,
+      "ap_cost": 12,
+      "ingredients": [
+        {"item_id": "steel_sword", "quantity": 1, "material_class": null},
+        {"item_id": "arcane_crystal", "quantity": 1, "material_class": null},
+        {"item_id": "elemental_dust", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "enchanted_longsword_1", "quantity": 1, "inherit_material": true}
+      ],
+      "tools": ["hammer", "tongs"],
+      "failure_result": "ruined_blade",
+      "xp_reward": 22
+    },
+    {
+      "id": "enchanted_chain_shirt_recipe",
+      "name": "Enchanted Chain Shirt",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 14,
+      "ap_cost": 15,
+      "ingredients": [
+        {"item_id": "chain_mail", "quantity": 1, "material_class": null},
+        {"item_id": "arcane_crystal", "quantity": 1, "material_class": null},
+        {"item_id": "enchanted_thread", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "enchanted_chain_shirt", "quantity": 1, "inherit_material": true}
+      ],
+      "tools": ["hammer", "tongs"],
+      "failure_result": "scrap_metal",
+      "xp_reward": 25
+    },
+    {
+      "id": "ring_of_warding_recipe",
+      "name": "Ring of Warding",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 14,
+      "ap_cost": 10,
+      "ingredients": [
+        {"item_id": "silver_ore", "quantity": 2, "material_class": null},
+        {"item_id": "moonstone_dust", "quantity": 1, "material_class": null},
+        {"item_id": "arcane_crystal", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "ring_of_warding", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["hammer"],
+      "failure_result": "slag",
+      "xp_reward": 20
+    },
+    {
+      "id": "flametongue_blade_recipe",
+      "name": "Flametongue Blade",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 16,
+      "ap_cost": 18,
+      "ingredients": [
+        {"item_id": "steel_sword", "quantity": 1, "material_class": null},
+        {"item_id": "fire_essence", "quantity": 2, "material_class": null},
+        {"item_id": "blazing_crystal", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "flametongue_blade", "quantity": 1, "inherit_material": true}
+      ],
+      "tools": ["hammer", "tongs"],
+      "failure_result": "ruined_blade",
+      "xp_reward": 35
+    },
+    {
+      "id": "frostbrand_sword_recipe",
+      "name": "Frostbrand Sword",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 16,
+      "ap_cost": 18,
+      "ingredients": [
+        {"item_id": "steel_sword", "quantity": 1, "material_class": null},
+        {"item_id": "water_essence", "quantity": 2, "material_class": null},
+        {"item_id": "tidal_crystal", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "frostbrand_sword", "quantity": 1, "inherit_material": true}
+      ],
+      "tools": ["hammer", "tongs"],
+      "failure_result": "ruined_blade",
+      "xp_reward": 35
+    },
+    {
+      "id": "wand_of_firebolt_recipe",
+      "name": "Wand of Firebolt",
+      "workstation": "workbench",
+      "skill": "alchemy",
+      "skill_dc": 16,
+      "ap_cost": 12,
+      "ingredients": [
+        {"item_id": "bone_staff_fragment", "quantity": 1, "material_class": null},
+        {"item_id": "fire_essence", "quantity": 2, "material_class": null},
+        {"item_id": "arcane_crystal", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "wand_of_firebolt", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["mortar"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 30
+    },
+    {
+      "id": "potion_of_greater_healing_recipe",
+      "name": "Potion of Greater Healing",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 17,
+      "ap_cost": 8,
+      "ingredients": [
+        {"item_id": "healing_herb", "quantity": 2, "material_class": null},
+        {"item_id": "phoenix_ash", "quantity": 1, "material_class": null},
+        {"item_id": "glass_vial", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "potion_of_greater_healing", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["mortar", "alembic"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 28
+    },
+    {
+      "id": "scroll_of_fireball_recipe",
+      "name": "Scroll of Fireball",
+      "workstation": "workbench",
+      "skill": "alchemy",
+      "skill_dc": 17,
+      "ap_cost": 10,
+      "ingredients": [
+        {"item_id": "parchment", "quantity": 1, "material_class": null},
+        {"item_id": "mystic_ink", "quantity": 1, "material_class": null},
+        {"item_id": "bat_guano", "quantity": 1, "material_class": null},
+        {"item_id": "sulfur", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "scroll_of_fireball", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": [],
+      "failure_result": "failed_mixture",
+      "xp_reward": 30
+    },
+    {
+      "id": "fire_ward_shield_recipe",
+      "name": "Fire Ward Shield",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 17,
+      "ap_cost": 16,
+      "ingredients": [
+        {"item_id": "iron_shield", "quantity": 1, "material_class": null},
+        {"item_id": "fire_essence", "quantity": 2, "material_class": null},
+        {"item_id": "dragon_scale", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "fire_ward_shield", "quantity": 1, "inherit_material": true}
+      ],
+      "tools": ["hammer", "tongs"],
+      "failure_result": "scrap_metal",
+      "xp_reward": 35
+    },
+    {
+      "id": "elixir_of_the_warrior_recipe",
+      "name": "Elixir of the Warrior",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 18,
+      "ap_cost": 10,
+      "ingredients": [
+        {"item_id": "troll_heart", "quantity": 1, "material_class": null},
+        {"item_id": "dragon_blood", "quantity": 1, "material_class": null},
+        {"item_id": "glass_vial", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "elixir_of_the_warrior", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["mortar", "alembic"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 35
+    },
+    {
+      "id": "thunderstrike_mace_recipe",
+      "name": "Thunderstrike Mace",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 19,
+      "ap_cost": 20,
+      "ingredients": [
+        {"item_id": "mace", "quantity": 1, "material_class": null},
+        {"item_id": "storm_essence", "quantity": 2, "material_class": null},
+        {"item_id": "storm_crystal", "quantity": 1, "material_class": null},
+        {"item_id": "mithral_ingot", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "thunderstrike_mace", "quantity": 1, "inherit_material": true}
+      ],
+      "tools": ["hammer", "tongs"],
+      "failure_result": "ruined_blade",
+      "xp_reward": 45
+    },
+    {
+      "id": "staff_of_frost_recipe",
+      "name": "Staff of Frost",
+      "workstation": "workbench",
+      "skill": "alchemy",
+      "skill_dc": 20,
+      "ap_cost": 18,
+      "ingredients": [
+        {"item_id": "bone_staff_fragment", "quantity": 1, "material_class": null},
+        {"item_id": "water_essence", "quantity": 3, "material_class": null},
+        {"item_id": "tidal_crystal", "quantity": 1, "material_class": null},
+        {"item_id": "phase_crystal", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "staff_of_frost", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["mortar", "alembic"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 50
+    },
+    {
+      "id": "staff_of_lightning_recipe",
+      "name": "Staff of Lightning",
+      "workstation": "workbench",
+      "skill": "alchemy",
+      "skill_dc": 20,
+      "ap_cost": 18,
+      "ingredients": [
+        {"item_id": "bone_staff_fragment", "quantity": 1, "material_class": null},
+        {"item_id": "storm_essence", "quantity": 3, "material_class": null},
+        {"item_id": "storm_crystal", "quantity": 1, "material_class": null},
+        {"item_id": "arcane_crystal", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "staff_of_lightning", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["mortar", "alembic"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 50
+    },
+    {
+      "id": "ring_of_the_arcane_recipe",
+      "name": "Ring of the Arcane",
+      "workstation": "forge",
+      "skill": "smithing",
+      "skill_dc": 20,
+      "ap_cost": 15,
+      "ingredients": [
+        {"item_id": "mithral_ingot", "quantity": 1, "material_class": null},
+        {"item_id": "arcane_crystal", "quantity": 2, "material_class": null},
+        {"item_id": "ethereal_essence", "quantity": 1, "material_class": null},
+        {"item_id": "phase_crystal", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "ring_of_the_arcane", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["hammer", "tongs"],
+      "failure_result": "slag",
+      "xp_reward": 50
+    },
+    {
+      "id": "potion_of_superior_healing_recipe",
+      "name": "Potion of Superior Healing",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 22,
+      "ap_cost": 12,
+      "ingredients": [
+        {"item_id": "healing_herb", "quantity": 3, "material_class": null},
+        {"item_id": "phoenix_ash", "quantity": 1, "material_class": null},
+        {"item_id": "dragon_blood", "quantity": 1, "material_class": null},
+        {"item_id": "glass_vial", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "potion_of_superior_healing", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["mortar", "alembic"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 55
     }
   ]
 }

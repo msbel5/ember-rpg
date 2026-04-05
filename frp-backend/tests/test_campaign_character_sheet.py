@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from engine.api.campaign.runtime import CampaignRuntime
 from main import app
 
 
@@ -53,3 +54,38 @@ def test_campaign_command_preserves_character_sheet_shape():
     assert sheet["class_name"] == "Priest"
     assert sheet["resources"]["ap"]["max"] >= sheet["resources"]["ap"]["current"]
     assert isinstance(sheet["skills"], list)
+
+
+def test_character_sheet_inventory_exposes_magical_item_metadata():
+    from engine.kernel.actor_items import ItemStack
+
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign(player_name="SheetMage", player_class="mage", seed=99)
+    player = context.kernel_runtime["actors"]["player"]
+    player.inventory.append(
+        ItemStack(
+            instance_id="wand_sheet_1",
+            item_def_id="wand_of_healing",
+            quantity=1,
+            payload={"name": "Wand of Healing", "charges": 4, "identified": False},
+        )
+    )
+    player.inventory.append(
+        ItemStack(
+            instance_id="ring_sheet_1",
+            item_def_id="ring_of_protection",
+            quantity=1,
+            payload={"name": "Ring of Protection"},
+        )
+    )
+
+    payload = runtime.snapshot(context.campaign_id)
+    sheet = payload["campaign"]["character_sheet"]
+    wand = next(item for item in sheet["inventory"] if item["id"] == "wand_of_healing")
+    ring = next(item for item in sheet["inventory"] if item["id"] == "ring_of_protection")
+
+    assert wand["magical"] is True
+    assert wand["identified"] is False
+    assert wand["charges"] == 4
+    assert ring["magical"] is True
+    assert "inventory" in sheet

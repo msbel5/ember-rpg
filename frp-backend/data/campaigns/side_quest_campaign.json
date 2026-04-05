@@ -400,6 +400,109 @@
         }
       ],
       "quest_id": "side_cursed_marshlands"
+    },
+    {
+      "id": "act_5",
+      "name": "The Arcane Forgemaster",
+      "description": "Word has spread of a reclusive enchanter in the mountains who can teach the secret of binding elemental power into forged steel. The journey requires arcane crystals, elemental essences, and the courage to face the forge guardian. Those who succeed will craft weapons of legendary power.",
+      "encounters": [
+        {
+          "id": "enc_5_1",
+          "name": "Crystal Cavern Sentinels",
+          "description": "Arcane constructs guard the crystal caverns where raw arcane crystals grow. They attack anything that disturbs the formations.",
+          "monsters": [
+            "arcane_golem",
+            "arcane_golem"
+          ],
+          "difficulty": "hard",
+          "exploration_note": "The crystals on the east wall are the purest. Harvest carefully — broken crystals lose their power."
+        },
+        {
+          "id": "enc_5_2",
+          "name": "The Essence Wellspring",
+          "description": "A natural convergence of elemental energies creates a wellspring where essences can be harvested, but elemental creatures swarm around it protectively.",
+          "monsters": [
+            "fire_elemental",
+            "water_elemental"
+          ],
+          "difficulty": "very_hard",
+          "exploration_note": "Glass vials can be filled directly from the wellspring. Each essence pool is marked by its elemental color."
+        },
+        {
+          "id": "enc_5_3",
+          "name": "The Forge Guardian",
+          "description": "A massive enchanted construct guards the entrance to the ancient forge. It must be defeated or deactivated using the correct sequence of elemental essences.",
+          "monsters": [
+            "forge_guardian"
+          ],
+          "difficulty": "boss",
+          "puzzle_hint": "Insert fire, then water, then storm essence into the three slots on the guardian's chest. The correct order weakens it before combat."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_5_harvest_arcane_crystals",
+          "description": "Harvest arcane crystals from the crystal caverns",
+          "type": "collect",
+          "target": "arcane_crystal",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_5_gather_elemental_essences",
+          "description": "Gather elemental essences from the wellspring",
+          "type": "collect",
+          "target": "fire_essence",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_5_defeat_forge_guardian",
+          "description": "Defeat or deactivate the forge guardian",
+          "type": "kill",
+          "target": "forge_guardian",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_5_reach_ancient_forge",
+          "description": "Reach the ancient enchanting forge beyond the guardian",
+          "type": "visit",
+          "target": "ancient_forge",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_5_speak_with_forgemaster_spirit",
+          "description": "Speak with the spirit of the ancient forgemaster",
+          "type": "talk",
+          "target": "forgemaster_spirit",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {
+          "item_id": "arcane_crystal",
+          "quantity": 5
+        },
+        {
+          "item_id": "fire_essence",
+          "quantity": 3
+        },
+        {
+          "item_id": "storm_crystal",
+          "quantity": 2
+        },
+        {
+          "item_id": "blazing_crystal",
+          "quantity": 1
+        },
+        {
+          "item_id": "enchanted_thread",
+          "quantity": 2
+        },
+        {
+          "item_id": "gold_coin",
+          "quantity": 300
+        }
+      ],
+      "quest_id": "side_arcane_forgemaster"
     }
   ]
 }

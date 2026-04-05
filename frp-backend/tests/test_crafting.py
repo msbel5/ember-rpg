@@ -135,9 +135,9 @@ class TestSmithingRecipes:
         r = ALL_RECIPES["plate_armor"]
         assert r.skill_dc >= 18
 
-    def test_smithing_has_15_recipes(self):
+    def test_smithing_has_at_least_15_recipes(self):
         smithing = recipes_by_discipline("smithing")
-        assert len(smithing) == 15
+        assert len(smithing) >= 15
 
 
 class TestAlchemyRecipes:
@@ -153,9 +153,9 @@ class TestAlchemyRecipes:
         r = ALL_RECIPES["invisibility_potion"]
         assert r.skill_dc == 20
 
-    def test_alchemy_has_12_recipes(self):
+    def test_alchemy_has_at_least_12_recipes(self):
         alchemy = recipes_by_discipline("alchemy")
-        assert len(alchemy) == 12
+        assert len(alchemy) >= 12
 
 
 class TestCookingRecipes:
