@@ -630,6 +630,21 @@ MENTOR_ROLE_FAMILIES = {
     "divine": {"priest_mentor", "healer", "shrine_mentor"},
 }
 
+SERVICE_DIALOG_IDS = {
+    "stablehand_dusty_harness",
+    "stablehand_trail_feed",
+    "quartermaster_pack_ledger",
+    "quartermaster_escort_manifest",
+    "baker_road_rations",
+    "jailer_night_keys",
+}
+
+SERVICE_ROLE_EXPECTATIONS = {
+    "stableyard": {"stablehand"},
+    "supply": {"quartermaster", "baker"},
+    "watch": {"jailer"},
+}
+
 
 class TestMentorTrainerContent:
     def test_mentor_dialog_trees_minimum(self, dialog_defs):
@@ -694,3 +709,109 @@ class TestMentorTrainerContent:
             if "proving" in a.get("name", "").lower() or "drill" in a.get("name", "").lower()
         ]
         assert len(proving_acts) >= 1, "No proving/drill act found in side_quest_campaign"
+
+
+class TestServiceDialogCoverage:
+    def test_service_dialog_trees_minimum(self, dialog_defs):
+        found = SERVICE_DIALOG_IDS & set(dialog_defs.keys())
+        assert len(found) >= 6, f"Only {len(found)} service dialog trees, need at least 6"
+
+    def test_service_role_families_are_covered(self, dialog_defs):
+        present_roles = {dialog_defs[dialog_id]["role"] for dialog_id in SERVICE_DIALOG_IDS}
+        for family_name, family_roles in SERVICE_ROLE_EXPECTATIONS.items():
+            covered = family_roles & present_roles
+            assert covered, (
+                f"Service role family {family_name!r} has no dialog coverage. "
+                f"Expected at least one of {sorted(family_roles)}"
+            )
+
+    def test_service_dialogs_have_required_structure(self, dialog_defs):
+        for dialog_id in SERVICE_DIALOG_IDS:
+            dialog = dialog_defs[dialog_id]
+            state_ids = {state["state_id"] for state in dialog["states"]}
+            assert "greeting" in state_ids, f"{dialog_id} missing greeting state"
+            has_info_branch = any(
+                not transition.get("terminates") and transition.get("next_state_id")
+                for state in dialog["states"]
+                for transition in state.get("transitions", [])
+            )
+            assert has_info_branch, f"{dialog_id} missing information branch"
+            has_actionable_branch = any(
+                transition.get("actions")
+                for state in dialog["states"]
+                for transition in state.get("transitions", [])
+            )
+            assert has_actionable_branch, f"{dialog_id} missing actionable branch"
+            has_terminate = any(
+                transition.get("terminates")
+                for state in dialog["states"]
+                for transition in state.get("transitions", [])
+            )
+            assert has_terminate, f"{dialog_id} has no terminate path"
+
+
+# ---------------------------------------------------------------------------
+# Civilian / Service Dialog Coverage
+# ---------------------------------------------------------------------------
+
+CIVILIAN_SERVICE_DIALOG_IDS = {
+    "stablehand_main_stable", "stable_master_garrison",
+    "farrier_crossroads", "courier_dispatch_office",
+    "caravan_broker_plaza", "cook_garrison_kitchen",
+    "laborer_dock_worker", "stablehand_roadside_inn",
+}
+
+CIVILIAN_ROLE_FAMILIES = {
+    "stablehand": {"stablehand", "stable_master", "farrier"},
+    "courier": {"courier", "caravan_broker"},
+    "service": {"cook", "laborer"},
+}
+
+
+class TestCivilianServiceDialogs:
+    def test_civilian_dialog_trees_minimum(self, dialog_defs):
+        found = CIVILIAN_SERVICE_DIALOG_IDS & set(dialog_defs.keys())
+        assert len(found) >= 6, f"Only {len(found)} civilian/service dialog trees, need at least 6"
+
+    def test_stablehand_family_covered(self, dialog_defs):
+        present_roles = {d["role"] for d in dialog_defs.values()}
+        stable_roles = CIVILIAN_ROLE_FAMILIES["stablehand"] & present_roles
+        assert len(stable_roles) >= 2, (
+            f"Stablehand family has only {len(stable_roles)} roles covered "
+            f"({stable_roles}), need at least 2"
+        )
+
+    def test_civilian_role_families_covered(self, dialog_defs):
+        present_roles = {d["role"] for d in dialog_defs.values()}
+        for family_name, family_roles in CIVILIAN_ROLE_FAMILIES.items():
+            covered = family_roles & present_roles
+            assert len(covered) >= 1, (
+                f"Civilian role family {family_name!r} has no dialog coverage. "
+                f"Expected at least one of {family_roles}"
+            )
+
+    def test_civilian_dialogs_structural_integrity(self, dialog_defs):
+        for dialog_id in CIVILIAN_SERVICE_DIALOG_IDS:
+            if dialog_id not in dialog_defs:
+                continue
+            dialog = dialog_defs[dialog_id]
+            state_ids = {s["state_id"] for s in dialog["states"]}
+            assert "greeting" in state_ids, f"{dialog_id} missing greeting state"
+
+            has_info = any(
+                not t.get("terminates") and t.get("next_state_id")
+                for s in dialog["states"] for t in s.get("transitions", [])
+            )
+            assert has_info, f"{dialog_id} missing information branch"
+
+            has_action = any(
+                t.get("actions")
+                for s in dialog["states"] for t in s.get("transitions", [])
+            )
+            assert has_action, f"{dialog_id} missing actionable branch"
+
+            has_terminate = any(
+                t.get("terminates")
+                for s in dialog["states"] for t in s.get("transitions", [])
+            )
+            assert has_terminate, f"{dialog_id} has no terminate path"

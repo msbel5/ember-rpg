@@ -8,6 +8,7 @@ from __future__ import annotations
 import pytest
 
 from engine.api.campaign.runtime import CampaignRuntime
+import engine.api.combat_bridge as combat_bridge
 from engine.api.combat_bridge import maybe_handle_combat_command
 from engine.kernel.actor_records import create_monster_actor, create_player_actor
 
@@ -39,6 +40,10 @@ def _inject_enemy(context, *, name="Goblin", hp=10, mig=8, agi=8):
     actors = context.kernel_runtime.setdefault("actors", {})
     actors[enemy.identity.actor_id] = enemy
     return enemy
+
+
+def _set_runtime_tick(context, tick: int) -> None:
+    context.kernel_runtime["game_state"].world_time.game_tick = int(tick)
 
 
 # ---------------------------------------------------------------------------
@@ -84,8 +89,7 @@ class TestAttackCommand:
         # Run attack multiple times with different seeds to ensure at least one hit.
         wound_found = False
         for seed_offset in range(20):
-            # Vary the tick to get different RNG seeds.
-            ctx.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
+            _set_runtime_tick(ctx, seed_offset)
             result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
             if result and "hits" in result[0]:
                 wounds = enemy.raw_payload.get("wounds", [])
@@ -103,7 +107,7 @@ class TestAttackCommand:
         # Try multiple seeds until we get a hit.
         killed = False
         for seed_offset in range(30):
-            ctx.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
+            _set_runtime_tick(ctx, seed_offset)
             result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
             if result and "hits" in result[0]:
                 killed = True
@@ -174,7 +178,7 @@ class TestFleeCommand:
         for seed_offset in range(30):
             # Reset flag each attempt.
             player.raw_payload.pop("fled_combat", None)
-            ctx.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
+            _set_runtime_tick(ctx, seed_offset)
             result = maybe_handle_combat_command(ctx, "flee")
             assert result is not None
             if "escapes successfully" in result[0]:
@@ -194,7 +198,7 @@ class TestFleeCommand:
             attack_result = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
             assert attack_result is not None
             player.raw_payload.pop("fled_combat", None)
-            ctx.campaign_state.setdefault("campaign", {})["tick"] = seed_offset
+            _set_runtime_tick(ctx, seed_offset)
             result = maybe_handle_combat_command(ctx, "flee")
             assert result is not None
             if "fails to escape" in result[0]:
@@ -235,6 +239,26 @@ class TestFleeCommand:
 
         assert "combat" not in ctx.kernel_runtime["game_state"].raw_payload
         assert "combat_state" not in ctx.campaign_state
+
+    def test_combat_uses_distinct_seeds_across_turn_progression(self, monkeypatch):
+        _rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        recorded_seeds: list[int] = []
+        original_run_attack = combat_bridge.run_attack
+
+        def _recording_run_attack(*args, **kwargs):
+            recorded_seeds.append(int(kwargs.get("seed", -1)))
+            return original_run_attack(*args, **kwargs)
+
+        monkeypatch.setattr(combat_bridge, "run_attack", _recording_run_attack)
+
+        first = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        second = maybe_handle_combat_command(ctx, "defend")
+
+        assert first is not None
+        assert second is not None
+        assert len(recorded_seeds) >= 2
+        assert len(set(recorded_seeds)) >= 2
 
 
 # ---------------------------------------------------------------------------

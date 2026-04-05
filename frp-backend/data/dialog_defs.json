@@ -10114,6 +10114,1020 @@
           ]
         }
       ]
+    },
+    {
+      "dialog_id": "stablehand_main_stable",
+      "npc_id": "stablehand_main_stable",
+      "role": "stablehand",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A young stablehand leans on a pitchfork, straw clinging to her sleeves. Horses stamp and snort in the stalls behind her. \"If you are looking for a mount, you have come to the right place. If you are looking for advice on the roads, I hear more from the riders than anyone in town.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_mount_info",
+              "text": "Tell me about the mounts you have.",
+              "next_state_id": "mount_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_road_conditions",
+              "text": "What have riders been saying about the roads?",
+              "next_state_id": "road_info",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The stablehand shared road conditions: the northern pass is clear, the eastern marsh road is dangerous after rain, and the southern trade road sees heavy bandit activity at night."}
+                }
+              ]
+            },
+            {
+              "transition_id": "tip_stablehand",
+              "text": "Here is something for your trouble.",
+              "next_state_id": "tip_received",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {"amount": 5}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 5}
+                }
+              ]
+            },
+            {
+              "transition_id": "stablehand_farewell",
+              "text": "I will look around.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "mount_info",
+          "text": "\"We have draft horses for cargo, riding horses for speed, and a couple of warhorses the garrison left behind. Draft horses are slow but sure-footed — good for mountain roads. Riding horses are fast on open ground but spook at wolves. The warhorses do not spook at anything, but they eat twice as much.\"",
+          "transitions": [
+            {
+              "transition_id": "mount_back",
+              "text": "What about the roads?",
+              "next_state_id": "road_info",
+              "actions": []
+            },
+            {
+              "transition_id": "mount_done",
+              "text": "Good to know. Thank you.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "road_info",
+          "text": "\"The northern pass is clear this time of year. The eastern marsh road floods after heavy rain — riders have been turning back or losing shoes in the mud. The southern trade road is fine by day, but the caravans are reporting bandits working the stretch between the bridge and the crossroads after dark.\"",
+          "transitions": [
+            {
+              "transition_id": "road_back",
+              "text": "Tell me about the mounts.",
+              "next_state_id": "mount_info",
+              "actions": []
+            },
+            {
+              "transition_id": "road_done",
+              "text": "I will plan my route carefully.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "tip_received",
+          "text": "\"Much appreciated. If you are headed east, tell the farrier at the crossroads I sent you — he will check your mount's shoes for half price. And water your horse before you leave. The next well is a long ride.\"",
+          "transitions": [
+            {
+              "transition_id": "tip_done",
+              "text": "I will remember.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "stable_master_garrison",
+      "npc_id": "stable_master_garrison",
+      "role": "stable_master",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A broad-shouldered stable master inspects a horse's leg with practiced hands, barely glancing up. \"I manage every mount in this garrison. Sixty head, all fed, shod, and fit for duty. State your business — I do not have time for idle chat.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_garrison_mounts",
+              "text": "What can you tell me about the garrison's mounts?",
+              "next_state_id": "garrison_mount_info",
+              "actions": []
+            },
+            {
+              "transition_id": "request_mount_assessment",
+              "text": "Can you assess my mount's condition?",
+              "next_state_id": "assessment_result",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {"amount": 10}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_travel_readiness",
+              "text": "How should I prepare a mount for long travel?",
+              "next_state_id": "travel_prep_info",
+              "actions": []
+            },
+            {
+              "transition_id": "stable_master_farewell",
+              "text": "I will not take more of your time.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "garrison_mount_info",
+          "text": "\"We keep warhorses for the cavalry, draft horses for the supply wagons, and a handful of fast couriers for dispatch riders. Every animal is inspected weekly. A lame horse in the field means a dead soldier. I do not tolerate sloppy care.\"",
+          "transitions": [
+            {
+              "transition_id": "garrison_back",
+              "text": "Can you assess my mount?",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "garrison_done",
+              "text": "Impressive operation.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "assessment_result",
+          "text": "\"Hooves are worn — needs reshoeing before any mountain terrain. The coat is dull, which means the feed has been poor. Switch to oats with a handful of salt and the condition will improve within a week. Otherwise, sound legs and good wind. Ten gold for the assessment.\"",
+          "transitions": [
+            {
+              "transition_id": "assessment_done",
+              "text": "I will get the shoes done.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The stable master assessed my mount: needs reshoeing before mountain travel, and better feed (oats with salt) to improve coat condition."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "travel_prep_info",
+          "text": "\"Shoe the horse fresh before any long ride. Carry extra feed — you cannot count on grazing in the wilds. Water at every stream. And check the hooves morning and evening for stones. A stone bruise will lame a horse faster than a sword cut.\"",
+          "transitions": [
+            {
+              "transition_id": "travel_back",
+              "text": "What about the garrison mounts?",
+              "next_state_id": "garrison_mount_info",
+              "actions": []
+            },
+            {
+              "transition_id": "travel_done",
+              "text": "Practical advice. Thank you.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "farrier_crossroads",
+      "npc_id": "farrier_crossroads",
+      "role": "farrier",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A farrier hammers a glowing horseshoe on an anvil set beside the road, sparks flying with each strike. A patient mare stands tethered nearby. \"Need shoes? A trim? Or just directions? I shoe every horse that passes this crossroads, so I know where they all come from and where they are going.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_shoeing_info",
+              "text": "Tell me about horseshoeing.",
+              "next_state_id": "shoeing_info",
+              "actions": []
+            },
+            {
+              "transition_id": "request_shoe_service",
+              "text": "Shoe my mount, please.",
+              "next_state_id": "shoe_result",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {"amount": 8}
+                },
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "mount_freshly_shod", "value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_crossroads_news",
+              "text": "What news from the crossroads?",
+              "next_state_id": "crossroads_news",
+              "actions": []
+            },
+            {
+              "transition_id": "farrier_farewell",
+              "text": "Safe travels to you.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "shoeing_info",
+          "text": "\"A good shoe lasts two months on packed roads, less on stone. Mountain terrain chews through iron fast — if you are headed for the peaks, get the shoes checked at every stop. I use a slightly wider shoe for mountain work. Costs the same, lasts longer on uneven ground.\"",
+          "transitions": [
+            {
+              "transition_id": "shoeing_back",
+              "text": "What is happening at the crossroads?",
+              "next_state_id": "crossroads_news",
+              "actions": []
+            },
+            {
+              "transition_id": "shoeing_done",
+              "text": "Wider shoes for mountains. Noted.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "shoe_result",
+          "text": "\"Done. Fresh shoes all around. That will hold for a good two months unless you are climbing scree. Eight gold. Check them every few days — if you hear a click on stone, one is coming loose.\"",
+          "transitions": [
+            {
+              "transition_id": "shoe_done",
+              "text": "I will listen for the click.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "crossroads_news",
+          "text": "\"Caravans from the south are running late — the bridge toll doubled last week and half the merchants are taking the long way around. A courier came through this morning looking rattled, said something about wolves denning near the eastern ford. And the garrison sent a patrol north, but they have not come back yet.\"",
+          "transitions": [
+            {
+              "transition_id": "news_back",
+              "text": "Tell me about horseshoeing.",
+              "next_state_id": "shoeing_info",
+              "actions": []
+            },
+            {
+              "transition_id": "news_done",
+              "text": "I will keep my eyes open.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The farrier at the crossroads reported: caravans delayed by doubled bridge tolls, wolves denning near the eastern ford, and a garrison patrol overdue from the north."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "courier_dispatch_office",
+      "npc_id": "courier_dispatch_office",
+      "role": "courier",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A dusty courier drops a leather satchel on the counter, pulling a water flask from her belt. \"Just rode in from the eastern settlements. If you need a message delivered or want to know what is happening beyond the walls, I am your fastest source of information.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_news",
+              "text": "What news from the east?",
+              "next_state_id": "eastern_news",
+              "actions": []
+            },
+            {
+              "transition_id": "send_message",
+              "text": "I need a message delivered.",
+              "next_state_id": "message_sent",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {"amount": 15}
+                },
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "courier_message_sent", "value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_routes",
+              "text": "Which routes are safe right now?",
+              "next_state_id": "route_info",
+              "actions": []
+            },
+            {
+              "transition_id": "courier_farewell",
+              "text": "Ride safe.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "eastern_news",
+          "text": "\"The mining camps are dealing with sickness — some kind of plague in the water. The herbalists are overwhelmed. The mountain hold sent word that the elemental wards are holding but they need fresh crystal supplies. And the frontier post reported goblin raiding parties moving west along the ridge.\"",
+          "transitions": [
+            {
+              "transition_id": "news_back",
+              "text": "Which routes are safe?",
+              "next_state_id": "route_info",
+              "actions": []
+            },
+            {
+              "transition_id": "news_done",
+              "text": "Troubling news. Thank you.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "Courier report: plague in the mining camps, elemental wards holding but low on crystals at the mountain hold, goblin raiders moving west from the frontier."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "message_sent",
+          "text": "\"Fifteen gold for standard dispatch. I will have it there within three days — faster if the weather holds. I ride the northern pass to the mountain hold, then south through the forest haven. No detours, no delays.\"",
+          "transitions": [
+            {
+              "transition_id": "message_done",
+              "text": "Three days is fine.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "route_info",
+          "text": "\"The northern pass is clear and well-patrolled. The eastern marsh road is treacherous — flooded sections and the locals are reporting undead at night. The southern trade road is safe by day but bandits work the bridge after dark. If you must go east, take the ridge trail above the marsh. Longer, but you keep your boots dry and your throat uncut.\"",
+          "transitions": [
+            {
+              "transition_id": "route_back",
+              "text": "What news from the east?",
+              "next_state_id": "eastern_news",
+              "actions": []
+            },
+            {
+              "transition_id": "route_done",
+              "text": "The ridge trail. I will remember.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "caravan_broker_plaza",
+      "npc_id": "caravan_broker_plaza",
+      "role": "caravan_broker",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A caravan broker sits beneath a faded awning, ledger open, quill in hand. Crates and barrels are stacked around the plaza. \"I arrange transport, negotiate routes, and match cargo with caravans. If you need goods moved or want to ride with a convoy for safety, I am the one to talk to.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_caravan_info",
+              "text": "When is the next caravan departing?",
+              "next_state_id": "caravan_schedule",
+              "actions": []
+            },
+            {
+              "transition_id": "request_escort",
+              "text": "I need an escort along the trade road.",
+              "next_state_id": "escort_arranged",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {"amount": 20}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_trade_routes",
+              "text": "Which trade routes are most profitable right now?",
+              "next_state_id": "trade_route_info",
+              "actions": []
+            },
+            {
+              "transition_id": "broker_farewell",
+              "text": "I will manage on my own.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "caravan_schedule",
+          "text": "\"A supply caravan heads to the mountain hold in two days — heavy guard, slow pace, safe as it gets. A fast merchant convoy leaves tomorrow for the coastal fort, but they only take paying passengers. And a herbalist wagon is looking for an armed escort to the forest haven. That one pays you instead of the other way around.\"",
+          "transitions": [
+            {
+              "transition_id": "schedule_back",
+              "text": "Which routes are profitable?",
+              "next_state_id": "trade_route_info",
+              "actions": []
+            },
+            {
+              "transition_id": "schedule_done",
+              "text": "I will consider my options.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "escort_arranged",
+          "text": "\"Twenty gold for a seat on the next guarded convoy along the southern trade road. You ride in the middle, stay alert, and help with the watches. If there is trouble, you fight. If there is not, you arrive in one piece. Fair terms.\"",
+          "transitions": [
+            {
+              "transition_id": "escort_done",
+              "text": "Fair terms.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "trade_route_info",
+          "text": "\"The mountain hold is buying iron and selling gemstones — good margin if you can haul ore uphill. The coastal fort pays well for dried meat and grain — the fishing boats do not feed the whole garrison. And the desert outpost will take water and cloth at triple the plains price. Risk and profit go hand in hand.\"",
+          "transitions": [
+            {
+              "transition_id": "trade_back",
+              "text": "When is the next caravan?",
+              "next_state_id": "caravan_schedule",
+              "actions": []
+            },
+            {
+              "transition_id": "trade_done",
+              "text": "Risk and profit. I understand.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The caravan broker shared trade intelligence: iron to the mountain hold for gemstones, grain to the coastal fort, water and cloth to the desert outpost at triple prices."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "cook_garrison_kitchen",
+      "npc_id": "cook_garrison_kitchen",
+      "role": "cook",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A garrison cook stirs an enormous pot of stew, sweat beading on her forehead. The kitchen smells of onions, roast meat, and woodsmoke. \"I feed three hundred mouths a day. If you want a meal, get in line. If you want to talk, make it quick — the bread is about to burn.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_meal_info",
+              "text": "What is on the menu today?",
+              "next_state_id": "meal_info",
+              "actions": []
+            },
+            {
+              "transition_id": "offer_provisions",
+              "text": "I brought provisions from my travels.",
+              "next_state_id": "provisions_received",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "dried_meat"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "dried_meat", "quantity": 2}
+                },
+                {
+                  "action_type": "give_gold",
+                  "params": {"amount": 15}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_supply_status",
+              "text": "How are the garrison food supplies holding up?",
+              "next_state_id": "supply_info",
+              "actions": []
+            },
+            {
+              "transition_id": "cook_farewell",
+              "text": "I will get out of your kitchen.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "meal_info",
+          "text": "\"Stew. Same as yesterday, same as tomorrow. Onions, root vegetables, and whatever meat the hunters bring in. On a good day there is bread. On a bad day there is hardtack. The officers get cheese and dried fruit, but do not tell the soldiers that.\"",
+          "transitions": [
+            {
+              "transition_id": "meal_back",
+              "text": "How are supplies?",
+              "next_state_id": "supply_info",
+              "actions": []
+            },
+            {
+              "transition_id": "meal_done",
+              "text": "Stew sounds fine.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "provisions_received",
+          "text": "\"Dried meat! That stretches the stew for two more days. Here — fifteen gold from the quartermaster's fund. If you come across salt or grain on the road, I will pay even better for those.\"",
+          "transitions": [
+            {
+              "transition_id": "provisions_done",
+              "text": "I will keep an eye out.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "supply_info",
+          "text": "\"We have grain for a month, meat for two weeks, and salt for three days. Salt is the real crisis — without it the meat spoils and the stew tastes like dishwater. The last supply caravan was delayed, and the foragers say the game is thinning. If someone does not fix the supply line soon, morale drops before the rations do.\"",
+          "transitions": [
+            {
+              "transition_id": "supply_back",
+              "text": "What is on the menu?",
+              "next_state_id": "meal_info",
+              "actions": []
+            },
+            {
+              "transition_id": "supply_done",
+              "text": "Salt shortage. That is serious.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The garrison cook reported critical salt shortage — three days of supply left. The supply caravan is late and game is thinning. Morale will follow the rations."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "laborer_dock_worker",
+      "npc_id": "laborer_dock_worker",
+      "role": "laborer",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A dock worker sets down a heavy crate and stretches his back, hands on hips. \"You are not from the docks. The harbor master is up the stairs, the warehouse is that way, and if you want passage on a ship, talk to the captain at the third berth. Unless you just want gossip — I have plenty of that.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_dock_gossip",
+              "text": "What gossip from the docks?",
+              "next_state_id": "dock_gossip",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_directions",
+              "text": "I need directions around the harbor.",
+              "next_state_id": "harbor_directions",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The dock worker gave directions: harbor master upstairs, warehouse to the east, ship passage at the third berth. The tavern closest to the docks is the Salt Barrel."}
+                }
+              ]
+            },
+            {
+              "transition_id": "offer_help_unloading",
+              "text": "Need a hand with those crates?",
+              "next_state_id": "help_accepted",
+              "actions": [
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                },
+                {
+                  "action_type": "give_gold",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "laborer_farewell",
+              "text": "I will find my own way.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "dock_gossip",
+          "text": "\"A ship came in last night flying no flag — the harbor master is pretending he did not notice. Three crates marked for the garrison went missing from the warehouse — the guard is investigating but everyone knows it was the smugglers from the south pier. And the fishermen are saying the catches are smaller every week. Something in the deep water is driving the schools away.\"",
+          "transitions": [
+            {
+              "transition_id": "gossip_back",
+              "text": "Can you point me around the harbor?",
+              "next_state_id": "harbor_directions",
+              "actions": []
+            },
+            {
+              "transition_id": "gossip_done",
+              "text": "Interesting. I will keep that quiet.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "harbor_directions",
+          "text": "\"The harbor master's office is up the stone stairs to the left. The main warehouse is the big building east of the second pier. For ship passage, the third berth usually has a merchant vessel taking passengers. And if you want a drink and a dry seat, the Salt Barrel tavern is right there at the foot of the dock road.\"",
+          "transitions": [
+            {
+              "transition_id": "directions_back",
+              "text": "Any gossip from the docks?",
+              "next_state_id": "dock_gossip",
+              "actions": []
+            },
+            {
+              "transition_id": "directions_done",
+              "text": "That helps. Thank you.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "help_accepted",
+          "text": "\"You are stronger than you look. That saved me an hour. Here — the foreman keeps a few coins for hired help. Ten gold for the work. And if you need dock work again, we always need hands before the morning tide.\"",
+          "transitions": [
+            {
+              "transition_id": "help_done",
+              "text": "Honest work.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "stablehand_roadside_inn",
+      "npc_id": "stablehand_roadside_inn",
+      "role": "stablehand",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A weathered stablehand brushes down a horse in the yard of a roadside inn, humming a tune. \"Travelers' horses always tell me what the road was like. Muddy hooves mean the eastern trail. Dusty means the southern stretch. Bloody means you had a rough night. Which is it?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_stable_services",
+              "text": "What services do you offer?",
+              "next_state_id": "services_info",
+              "actions": []
+            },
+            {
+              "transition_id": "board_mount",
+              "text": "Board my mount for the night.",
+              "next_state_id": "mount_boarded",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {"amount": 3}
+                },
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "mount_boarded", "value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_trail_reports",
+              "text": "What are the trail reports?",
+              "next_state_id": "trail_reports",
+              "actions": []
+            },
+            {
+              "transition_id": "inn_stablehand_farewell",
+              "text": "Just passing through.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "services_info",
+          "text": "\"Three gold for overnight boarding — feed, water, and a rubdown. I check hooves and look for injuries. If the horse needs shoeing, the farrier at the crossroads is half a day's ride east. For long stays, we do a full grooming. Keeps the flies off and the coat healthy.\"",
+          "transitions": [
+            {
+              "transition_id": "services_back",
+              "text": "What about trail reports?",
+              "next_state_id": "trail_reports",
+              "actions": []
+            },
+            {
+              "transition_id": "services_done",
+              "text": "Three gold is fair.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "mount_boarded",
+          "text": "\"Stall seven, fresh hay and oats. I will have her brushed and checked by morning. If you are leaving early, knock on the stable door twice — I am a light sleeper. Three gold, paid.\"",
+          "transitions": [
+            {
+              "transition_id": "board_done",
+              "text": "Early start. I will knock twice.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "trail_reports",
+          "text": "\"A merchant came in with a lathered horse — said he was chased by wolves on the eastern approach. Two soldiers rode through heading north in a hurry, would not say why. And a herbalist passed through this morning asking about plague symptoms in the mining camps. The roads are busy and not in a good way.\"",
+          "transitions": [
+            {
+              "transition_id": "trails_back",
+              "text": "What services do you offer?",
+              "next_state_id": "services_info",
+              "actions": []
+            },
+            {
+              "transition_id": "trails_done",
+              "text": "Busy roads. I will stay alert.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The roadside stablehand reported: wolves on the eastern approach, soldiers heading north in haste, and a herbalist investigating plague reports from the mining camps."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "stablehand_dusty_harness",
+      "npc_id": "stablehand_dusty_harness",
+      "role": "stablehand",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A stablehand rubs a saddle strap with lamp oil. \"If you ride far, care for the tack before you brag about the road. Need a quick lesson?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_harness_care",
+              "text": "Teach me harness care.",
+              "next_state_id": "harness_care",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The stablehand warned me that a neglected harness fails long before the road does."}
+                }
+              ]
+            },
+            {
+              "transition_id": "stablehand_harness_leave",
+              "text": "I can manage my own tack.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "harness_care",
+          "text": "\"Dry the straps, brush the grit out, and never leave a wet saddle blanket bundled overnight. Lose the harness and you lose the ride, no matter how brave you feel.\"",
+          "transitions": [
+            {
+              "transition_id": "harness_care_done",
+              "text": "That is useful.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "stablehand_trail_feed",
+      "npc_id": "stablehand_trail_feed",
+      "role": "stablehand",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A stablehand checks a feed bucket and glances at your boots. \"Road dust on the heels, hungry eyes on the mount. Want to hear how not to ruin an animal in two days?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_trail_feed",
+              "text": "Tell me how to keep a mount fit.",
+              "next_state_id": "trail_feed",
+              "actions": [
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 5}
+                }
+              ]
+            },
+            {
+              "transition_id": "stablehand_trail_leave",
+              "text": "I only travel on foot.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "trail_feed",
+          "text": "\"Water first, feed second, rest whenever you can steal it. A tired beast will carry you into danger and die there, which is bad for both of you.\"",
+          "transitions": [
+            {
+              "transition_id": "trail_feed_done",
+              "text": "I will remember that.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "quartermaster_pack_ledger",
+      "npc_id": "quartermaster_pack_ledger",
+      "role": "quartermaster",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A quartermaster runs a thumb down a dented ledger. \"Most expeditions fail before the first arrow. They fail because nobody counted rope, food, or dry socks. Need the short version?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_pack_ledger",
+              "text": "Give me the short version.",
+              "next_state_id": "pack_ledger",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The quartermaster says expeditions fail from neglected supplies long before they fail from heroics."}
+                }
+              ]
+            },
+            {
+              "transition_id": "quartermaster_pack_leave",
+              "text": "I travel light.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "pack_ledger",
+          "text": "\"Track what keeps you moving: food, bandages, lamp oil, spare cord, and one tool you hope not to need. If you do not count it before dawn, you will miss it by dusk.\"",
+          "transitions": [
+            {
+              "transition_id": "pack_ledger_done",
+              "text": "I will count better.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "quartermaster_escort_manifest",
+      "npc_id": "quartermaster_escort_manifest",
+      "role": "quartermaster",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A quartermaster taps a sealed manifest tube against an armored crate. \"Escort work is half marching and half remembering what must arrive intact. Want the quartermaster's rule?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_manifest_rule",
+              "text": "What is the rule?",
+              "next_state_id": "manifest_rule",
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "heard_manifest_rule", "value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "quartermaster_manifest_leave",
+              "text": "I have heard enough of manifests.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "manifest_rule",
+          "text": "\"Count the cargo at sunrise, count it again after every halt, and never let panic scatter the carriers. People forget crates in a rout; quartermasters do not.\"",
+          "transitions": [
+            {
+              "transition_id": "manifest_rule_done",
+              "text": "I will keep the line tight.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "baker_road_rations",
+      "npc_id": "baker_road_rations",
+      "role": "baker",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A baker pulls hard biscuits from a cooling rack. \"Fresh bread is for home. Road bread is for surviving until home exists again. Want to know the difference?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_road_rations",
+              "text": "Teach me road rations.",
+              "next_state_id": "road_rations",
+              "actions": [
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 5}
+                }
+              ]
+            },
+            {
+              "transition_id": "baker_rations_leave",
+              "text": "I prefer tavern meals.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "road_rations",
+          "text": "\"Dry bread, salted fat, and something to cut the bitterness. Pack food that forgives neglect. Hungry travelers romanticize feasts, but survivors learn to love plain rations.\"",
+          "transitions": [
+            {
+              "transition_id": "road_rations_done",
+              "text": "Plain food beats empty packs.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "jailer_night_keys",
+      "npc_id": "jailer_night_keys",
+      "role": "jailer",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A jailer weighs a ring of keys with one tired hand. \"Night watch is not glory. It is routine, caution, and checking the same lock until dawn. Want the lesson?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_night_keys",
+              "text": "Tell me the lesson.",
+              "next_state_id": "night_keys",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The jailer says routine and repeated checks keep small mistakes from becoming disasters."}
+                }
+              ]
+            },
+            {
+              "transition_id": "jailer_keys_leave",
+              "text": "I will leave you to the locks.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "night_keys",
+          "text": "\"Check the hinge, check the latch, check the corridor, and then check your own memory. Trouble loves the place where a tired guard assumes the last look was enough.\"",
+          "transitions": [
+            {
+              "transition_id": "night_keys_done",
+              "text": "A cautious habit, then.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }

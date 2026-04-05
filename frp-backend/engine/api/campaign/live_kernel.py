@@ -47,6 +47,28 @@ _RUNTIME_MEDICAL_KEYS = (
     "medical_recoveries",
     "permanent_consequences",
 )
+_PARTY_CAPABLE_ACTOR_TYPES = {"npc", "creature"}
+_NON_PARTY_ROLE_HINTS = {"cabinet", "cauldron", "table", "oven", "bench", "chair", "bed", "pew", "sack"}
+
+
+def _is_party_capable_actor(actor: ActorRecord | None) -> bool:
+    if actor is None:
+        return False
+    actor_id = str(getattr(getattr(actor, "identity", None), "actor_id", "")).strip()
+    if not actor_id or actor_id == "player":
+        return False
+    actor_type = str(getattr(getattr(actor, "identity", None), "actor_type", "")).lower().strip()
+    if actor_type not in _PARTY_CAPABLE_ACTOR_TYPES:
+        return False
+    role_hint = str(actor.raw_payload.get("role", actor.raw_payload.get("template", ""))).lower().strip()
+    if role_hint in _NON_PARTY_ROLE_HINTS:
+        return False
+    if any(
+        bool(actor.raw_payload.get(key))
+        for key in ("companion_roster", "party_member", "active_party_member", "reserve_party_member")
+    ):
+        return True
+    return str(actor.raw_payload.get("source", "")).lower().strip() != "campaign_entity"
 
 
 def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: bool = False) -> dict[str, Any]:
@@ -381,7 +403,11 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
     requested_party = [str(actor_id) for actor_id in list(context.campaign_state.get("party", [])) if str(actor_id)]
     party: list[str] = []
     for actor_id in existing_party + requested_party:
-        if actor_id in merged and actor_id not in party:
+        if actor_id == "player":
+            if actor_id in merged and actor_id not in party:
+                party.append(actor_id)
+            continue
+        if actor_id in merged and _is_party_capable_actor(merged.get(actor_id)) and actor_id not in party:
             party.append(actor_id)
     if "player" in merged and "player" not in party:
         party.insert(0, "player")
@@ -389,35 +415,50 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
     existing_reserves = [
         str(actor_id)
         for actor_id in list(getattr(runtime["game_state"], "inactive_npcs", []))
-        if str(actor_id) and str(actor_id) in merged and str(actor_id) not in party
+        if str(actor_id)
+        and str(actor_id) in merged
+        and str(actor_id) not in party
+        and _is_party_capable_actor(merged.get(str(actor_id)))
     ]
     requested_reserves = [
         str(actor_id)
         for actor_id in list(context.campaign_state.get("reserve_party_members", []))
-        if str(actor_id) and str(actor_id) in merged and str(actor_id) not in party
+        if str(actor_id)
+        and str(actor_id) in merged
+        and str(actor_id) not in party
+        and _is_party_capable_actor(merged.get(str(actor_id)))
     ]
     roster_reserves = [
         actor_id
         for actor_id, actor in merged.items()
-        if actor_id not in party and actor_id != "player" and bool(actor.raw_payload.get("companion_roster"))
+        if actor_id not in party
+        and actor_id != "player"
+        and _is_party_capable_actor(actor)
+        and bool(actor.raw_payload.get("companion_roster"))
     ]
     inactive: list[str] = []
     for actor_id in existing_reserves + requested_reserves + roster_reserves:
         if actor_id not in inactive:
             inactive.append(actor_id)
     runtime["game_state"].inactive_npcs = inactive
+    normalize_party_state(runtime["game_state"])
     context.campaign_state["party_tactics"] = dict(getattr(runtime["game_state"], "party_tactics", {}))
-    context.campaign_state["party"] = list(party)
-    context.campaign_state["reserve_party_members"] = list(inactive)
+    context.campaign_state["party"] = list(getattr(runtime["game_state"], "party", []))
+    context.campaign_state["reserve_party_members"] = list(getattr(runtime["game_state"], "inactive_npcs", []))
     for actor_id, actor in merged.items():
-        is_active = actor_id in party and actor_id != "player"
-        is_reserve = actor_id in inactive
-        if is_active or is_reserve or bool(actor.raw_payload.get("companion_roster")):
-            actor.raw_payload["companion_roster"] = True
+        eligible = _is_party_capable_actor(actor)
+        preserve_roster_flag = bool(actor.raw_payload.get("companion_roster")) and eligible
+        is_active = eligible and actor_id in context.campaign_state["party"] and actor_id != "player"
+        is_reserve = eligible and actor_id in context.campaign_state["reserve_party_members"]
+        if actor_id != "player":
+            actor.raw_payload["companion_roster"] = bool(is_active or is_reserve or preserve_roster_flag)
             actor.raw_payload["party_member"] = is_active
             actor.raw_payload["active_party_member"] = is_active
             actor.raw_payload["reserve_party_member"] = is_reserve
+        if eligible and (is_active or is_reserve or preserve_roster_flag):
             actor.raw_payload["party_tactic_mode"] = str(getattr(runtime["game_state"], "party_tactics", {}).get(actor_id, "balanced"))
+        elif actor_id != "player":
+            actor.raw_payload.pop("party_tactic_mode", None)
     context.player = merged.get("player", context.player)
 
 

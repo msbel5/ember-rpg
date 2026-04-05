@@ -52,9 +52,8 @@ def _handle_attack(
         return (f"No target '{target_name}' found to attack.", "combat", 0)
     if not getattr(target, "alive", True):
         return (f"{target.identity.display_name} is already dead.", "combat", 0)
-    tick = int(context.campaign_state.get("campaign", {}).get("tick", 0))
-    combat_state = _ensure_combat_state(context, actors, player, target, tick)
-    state_ready = _ensure_player_turn(context, combat_state, actors, seed=tick)
+    combat_state = _ensure_combat_state(context, actors, player, target, _combat_seed(context, offset=1))
+    state_ready = _ensure_player_turn(context, combat_state, actors)
     if state_ready["resolved"]:
         return (state_ready["summary"] or "Combat is already over.", "combat", 0)
     if state_ready["blocked"]:
@@ -65,10 +64,10 @@ def _handle_attack(
         player.identity.actor_id,
         target.identity.actor_id,
         weapon=_get_equipped_weapon(player),
-        seed=tick,
+        seed=_combat_seed(context, combat_state, offset=11),
     )
     narrative = _apply_attack_result(actors, attack_result)
-    follow_up = _end_player_turn_and_resolve(context, combat_state, actors, seed=tick + 1)
+    follow_up = _end_player_turn_and_resolve(context, combat_state, actors, seed_offset=17)
     if follow_up:
         narrative = f"{narrative} {follow_up}".strip()
     return (narrative, "combat", 0)
@@ -82,7 +81,7 @@ def _handle_defend(
     combat_state = _combat_state(context)
     if combat_state is None:
         return ("No active combat.", "combat", 0)
-    state_ready = _ensure_player_turn(context, combat_state, actors, seed=int(context.seed))
+    state_ready = _ensure_player_turn(context, combat_state, actors)
     if state_ready["resolved"]:
         return (state_ready["summary"] or "Combat is already over.", "combat", 0)
     if state_ready["blocked"]:
@@ -90,7 +89,7 @@ def _handle_defend(
     combat_state.active_combatant.turn_resources.action = False
     player.raw_payload["defensive_stance"] = True
     narrative = f"{player.name} takes a defensive stance."
-    follow_up = _end_player_turn_and_resolve(context, combat_state, actors, seed=int(context.seed) + 17)
+    follow_up = _end_player_turn_and_resolve(context, combat_state, actors, seed_offset=29)
     if follow_up:
         narrative = f"{narrative} {follow_up}".strip()
     return (narrative, "combat", 0)
@@ -104,13 +103,13 @@ def _handle_flee(
     combat_state = _combat_state(context)
     if combat_state is None:
         return ("No active combat.", "combat", 0)
-    tick = int(context.campaign_state.get("campaign", {}).get("tick", 0))
-    state_ready = _ensure_player_turn(context, combat_state, actors, seed=tick)
+    state_ready = _ensure_player_turn(context, combat_state, actors)
     if state_ready["resolved"]:
         return (state_ready["summary"] or "Combat is already over.", "combat", 0)
     if state_ready["blocked"]:
         return (state_ready["summary"], "combat", 0)
-    d20 = Random(tick).randint(1, 20)
+    flee_seed = _combat_seed(context, combat_state, offset=23)
+    d20 = Random(flee_seed).randint(1, 20)
     agi_mod = ability_modifier(int(player.stats.get("AGI", 10)))
     total = d20 + agi_mod
     dc = 10
@@ -124,7 +123,7 @@ def _handle_flee(
         )
     combat_state.active_combatant.turn_resources.action = False
     narrative = f"{player.name} attempts to flee (d20={d20} + AGI {agi_mod:+d} = {total} vs DC {dc}) but fails to escape!"
-    follow_up = _end_player_turn_and_resolve(context, combat_state, actors, seed=tick + 31)
+    follow_up = _end_player_turn_and_resolve(context, combat_state, actors, seed_offset=41)
     if follow_up:
         narrative = f"{narrative} {follow_up}".strip()
     return (narrative, "combat", 0)
@@ -135,7 +134,7 @@ def _end_player_turn_and_resolve(
     combat_state: CombatState,
     actors: dict[str, Any],
     *,
-    seed: int,
+    seed_offset: int,
 ) -> str:
     if check_combat_end(combat_state, actors):
         combat_state.phase = "resolved"
@@ -143,7 +142,7 @@ def _end_player_turn_and_resolve(
         return "Combat ends."
     advance_turn(combat_state)
     begin_turn(combat_state, actors)
-    events = _resolve_non_player_turns(context, combat_state, actors, seed=seed)
+    events = _resolve_non_player_turns(context, combat_state, actors, seed_offset=seed_offset)
     _store_combat_state(context, combat_state)
     return " ".join(event for event in events if event).strip()
 
@@ -152,10 +151,8 @@ def _ensure_player_turn(
     context: "CampaignContext",
     combat_state: CombatState,
     actors: dict[str, Any],
-    *,
-    seed: int,
 ) -> dict[str, Any]:
-    messages = _resolve_non_player_turns(context, combat_state, actors, seed=seed)
+    messages = _resolve_non_player_turns(context, combat_state, actors, seed_offset=0)
     _store_combat_state(context, combat_state)
     active = combat_state.active_combatant if combat_state.combatants else None
     if combat_state.phase == "resolved" or check_combat_end(combat_state, actors):
@@ -175,7 +172,7 @@ def _resolve_non_player_turns(
     combat_state: CombatState,
     actors: dict[str, Any],
     *,
-    seed: int,
+    seed_offset: int,
 ) -> list[str]:
     messages: list[str] = []
     max_steps = max(1, len(combat_state.combatants) * 4)
@@ -202,7 +199,7 @@ def _resolve_non_player_turns(
                         actors,
                         active,
                         "",
-                        seed=seed + step,
+                        seed=_combat_seed(context, combat_state, offset=seed_offset + (step * 37) + 3),
                         tactic_mode=tactic_mode,
                     )
                 )
@@ -223,7 +220,7 @@ def _resolve_non_player_turns(
                     actors,
                     active,
                     target_id,
-                    seed=seed + step,
+                    seed=_combat_seed(context, combat_state, offset=seed_offset + (step * 37) + 7),
                     tactic_mode=tactic_mode,
                 )
             )
@@ -235,7 +232,7 @@ def _resolve_non_player_turns(
                     active.actor_id,
                     target_id,
                     weapon=_get_equipped_weapon(actor),
-                    seed=seed + step,
+                    seed=_combat_seed(context, combat_state, offset=seed_offset + (step * 37) + 11),
                 )
             except ValueError as exc:
                 logger.debug("Combat auto-turn skipped for %s: %s", active.actor_id, exc)
@@ -299,6 +296,27 @@ def _combat_state(context: "CampaignContext") -> Optional[CombatState]:
     if not isinstance(combat_payload, dict) or not combat_payload.get("combatants"):
         return None
     return CombatState.from_dict(dict(combat_payload))
+
+
+def _combat_seed(
+    context: "CampaignContext",
+    combat_state: CombatState | None = None,
+    *,
+    offset: int = 0,
+) -> int:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    world_time = getattr(game_state, "world_time", None)
+    base_tick = int(getattr(world_time, "game_tick", 0))
+    round_number = int(getattr(combat_state, "round_number", 0) or 0)
+    turn_index = int(getattr(combat_state, "current_turn_index", 0) or 0)
+    return (
+        (int(context.seed) * 1_000_003)
+        + (base_tick * 1_009)
+        + (round_number * 131)
+        + (turn_index * 17)
+        + int(offset)
+    )
 
 
 def _ensure_combat_state(

@@ -74,6 +74,28 @@ _ROLE_COLORS: dict[str, str] = {
     "warden": "orange",
     "researcher": "purple",
 }
+_PARTY_CAPABLE_ACTOR_TYPES = {"npc", "creature"}
+_NON_PARTY_ROLE_HINTS = {"cabinet", "cauldron", "table", "oven", "bench", "chair", "bed", "pew", "sack"}
+
+
+def _is_party_capable_actor(actor: Any) -> bool:
+    if actor is None:
+        return False
+    actor_id = str(getattr(getattr(actor, "identity", None), "actor_id", "")).strip()
+    if not actor_id or actor_id == "player":
+        return False
+    actor_type = str(getattr(getattr(actor, "identity", None), "actor_type", "")).lower().strip()
+    if actor_type not in _PARTY_CAPABLE_ACTOR_TYPES:
+        return False
+    role_hint = str(getattr(actor, "raw_payload", {}).get("role", getattr(actor, "raw_payload", {}).get("template", ""))).lower().strip()
+    if role_hint in _NON_PARTY_ROLE_HINTS:
+        return False
+    if any(
+        bool(getattr(actor, "raw_payload", {}).get(key))
+        for key in ("companion_roster", "party_member", "active_party_member", "reserve_party_member")
+    ):
+        return True
+    return str(getattr(actor, "raw_payload", {}).get("source", "")).lower().strip() != "campaign_entity"
 
 
 def _preserved_party_entities(context: CampaignContext) -> dict[str, dict[str, Any]]:
@@ -142,7 +164,7 @@ def _ensure_projected_party_entity(context: CampaignContext, actor_id: str) -> d
         return record
     runtime = context.kernel_runtime or {}
     actor = (runtime.get("actors") or {}).get(actor_id)
-    if actor is None:
+    if not _is_party_capable_actor(actor):
         return None
     entity = Entity(
         id=actor_id,
@@ -381,10 +403,22 @@ def sync_party_projection(context: CampaignContext) -> None:
         return
     normalize_party_state(game_state)
     formation_offsets = list(FORMATIONS.get(str(getattr(game_state, "formation", "wedge")), FORMATIONS["wedge"]))
-    active_ids = [actor_id for actor_id in list(getattr(game_state, "party", [])) if actor_id and actor_id != "player"]
-    reserve_ids = [actor_id for actor_id in list(getattr(game_state, "inactive_npcs", [])) if actor_id]
     player_x, player_y = int(context.position[0]), int(context.position[1])
     actors = runtime.get("actors") or {}
+    active_ids = [
+        actor_id
+        for actor_id in list(getattr(game_state, "party", []))
+        if actor_id and actor_id != "player" and _is_party_capable_actor(actors.get(actor_id))
+    ]
+    reserve_ids = [
+        actor_id
+        for actor_id in list(getattr(game_state, "inactive_npcs", []))
+        if actor_id and _is_party_capable_actor(actors.get(actor_id))
+    ]
+    if list(getattr(game_state, "party", [])) != (["player"] if "player" in getattr(game_state, "party", []) else []) + active_ids:
+        game_state.party = (["player"] if "player" in getattr(game_state, "party", []) else []) + active_ids
+    if list(getattr(game_state, "inactive_npcs", [])) != reserve_ids:
+        game_state.inactive_npcs = reserve_ids
 
     for index, actor_id in enumerate(active_ids, start=1):
         record = _ensure_projected_party_entity(context, actor_id)

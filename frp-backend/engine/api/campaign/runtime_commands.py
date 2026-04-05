@@ -119,6 +119,12 @@ def _dispatch(
     dialog = maybe_handle_dialog_command(context, issued)
     if dialog is not None:
         return dialog
+    if _dialog_is_active(context):
+        return (
+            "You are in a conversation. Choose a dialog option before doing anything else.",
+            "dialog",
+            0,
+        )
 
     talk = maybe_handle_talk_command(context, issued)
     if talk is not None:
@@ -205,6 +211,12 @@ def _dispatch(
         "unknown",
         0,
     )
+
+
+def _dialog_is_active(context: CampaignContext) -> bool:
+    runtime = context.kernel_runtime or {}
+    dialog_state = runtime.get("dialog_state")
+    return bool(getattr(dialog_state, "active", False))
 
 
 def _advance_world(
