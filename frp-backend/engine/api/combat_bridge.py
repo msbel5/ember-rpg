@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from engine.api.kernel_adapter import advance_turn, begin_turn, check_combat_end, run_attack, start_fight
 from engine.kernel.combat_engine import CombatState
 from engine.kernel.combat_math import ability_modifier
+from engine.kernel.game_state import FORMATIONS, party_tactic_for_actor
 from engine.map import TileType
 
 if TYPE_CHECKING:
@@ -190,12 +191,42 @@ def _resolve_non_player_turns(
             continue
         if active.actor_id == "player":
             break
-        target_id = _choose_ai_target_id(combat_state, actors, active, context=context)
+        target_id = _choose_companion_target_id(context, combat_state, actors, active)
         if not target_id:
+            if active.is_player:
+                tactic_mode = _companion_tactic_mode(context, active.actor_id)
+                messages.append(
+                    _resolve_companion_turn(
+                        context,
+                        combat_state,
+                        actors,
+                        active,
+                        "",
+                        seed=seed + step,
+                        tactic_mode=tactic_mode,
+                    )
+                )
+                if check_combat_end(combat_state, actors):
+                    combat_state.phase = "resolved"
+                    break
+                advance_turn(combat_state)
+                begin_turn(combat_state, actors)
+                continue
             combat_state.phase = "resolved"
             break
         if active.is_player:
-            messages.append(_resolve_companion_turn(context, combat_state, actors, active, target_id, seed=seed + step))
+            tactic_mode = _companion_tactic_mode(context, active.actor_id)
+            messages.append(
+                _resolve_companion_turn(
+                    context,
+                    combat_state,
+                    actors,
+                    active,
+                    target_id,
+                    seed=seed + step,
+                    tactic_mode=tactic_mode,
+                )
+            )
         else:
             try:
                 attack_result = run_attack(
@@ -327,6 +358,117 @@ def _choose_ai_target_id(combat_state: CombatState, actors: dict[str, Any], acti
     return candidates[0][1]
 
 
+def _choose_companion_target_id(
+    context: "CampaignContext",
+    combat_state: CombatState,
+    actors: dict[str, Any],
+    active_entry: Any,
+) -> str:
+    tactic_mode = _companion_tactic_mode(context, active_entry.actor_id)
+    if tactic_mode == "aggressive":
+        return _choose_aggressive_target_id(combat_state, actors, active_entry)
+    if tactic_mode == "guard":
+        return _choose_guard_target_id(context, combat_state, actors, active_entry)
+    return _choose_ai_target_id(combat_state, actors, active_entry, context=context)
+
+
+def _choose_aggressive_target_id(combat_state: CombatState, actors: dict[str, Any], active_entry: Any) -> str:
+    active_actor = actors.get(active_entry.actor_id)
+    if active_actor is None:
+        return ""
+    candidates: list[tuple[int, int, str]] = []
+    for entry in combat_state.combatants:
+        if entry.actor_id in {active_entry.actor_id, "player"} or entry.is_player == active_entry.is_player:
+            continue
+        actor = actors.get(entry.actor_id)
+        if actor is None or not getattr(actor, "alive", True):
+            continue
+        distance = _distance_between(active_actor, actor)
+        hp = int(getattr(actor, "hp", actor.stats.get("hp", 0)))
+        candidates.append((distance, hp, entry.actor_id))
+    if not candidates:
+        return ""
+    candidates.sort(key=lambda item: (item[0], item[1], item[2]))
+    return candidates[0][2]
+
+
+def _choose_guard_target_id(
+    context: "CampaignContext",
+    combat_state: CombatState,
+    actors: dict[str, Any],
+    active_entry: Any,
+) -> str:
+    player = actors.get("player")
+    if player is None:
+        return ""
+    candidates: list[tuple[int, int, str]] = []
+    for entry in combat_state.combatants:
+        if entry.actor_id == "player" or entry.is_player:
+            continue
+        actor = actors.get(entry.actor_id)
+        if actor is None or not getattr(actor, "alive", True):
+            continue
+        distance = _distance_between(player, actor)
+        if distance > 2:
+            continue
+        hp = int(getattr(actor, "hp", actor.stats.get("hp", 0)))
+        candidates.append((distance, hp, entry.actor_id))
+    if not candidates:
+        return ""
+    candidates.sort(key=lambda item: (item[0], item[1], item[2]))
+    return candidates[0][2]
+
+
+def _companion_tactic_mode(context: "CampaignContext", actor_id: str) -> str:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if game_state is None:
+        return "balanced"
+    return party_tactic_for_actor(game_state, actor_id)
+
+
+def _formation_anchor_position(context: "CampaignContext", actor_id: str) -> tuple[int, int]:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if game_state is None:
+        return (int(context.position[0]), int(context.position[1]))
+    party_ids = [str(item) for item in list(getattr(game_state, "party", [])) if str(item)]
+    offsets = list(FORMATIONS.get(str(getattr(game_state, "formation", "wedge")), FORMATIONS["wedge"]))
+    try:
+        index = party_ids.index(actor_id)
+    except ValueError:
+        index = 0
+    dx, dy = offsets[min(index, len(offsets) - 1)]
+    return (int(context.position[0]) + int(dx), int(context.position[1]) + int(dy))
+
+
+def _step_toward_position(context: "CampaignContext", actor: Any, goal: tuple[int, int]) -> tuple[int, int] | None:
+    current = (int(actor.position.x), int(actor.position.y))
+    candidates = [
+        (current[0] + 1, current[1]),
+        (current[0] - 1, current[1]),
+        (current[0], current[1] + 1),
+        (current[0], current[1] - 1),
+    ]
+    valid: list[tuple[int, int, int]] = []
+    spatial_index = getattr(context, "spatial_index", None)
+    current_distance = abs(goal[0] - current[0]) + abs(goal[1] - current[1])
+    for x, y in candidates:
+        if not _passable_tile(context, x, y):
+            continue
+        if spatial_index is not None and spatial_index.blocking_at(x, y) and (x, y) != current:
+            continue
+        distance = abs(goal[0] - x) + abs(goal[1] - y)
+        if distance >= current_distance:
+            continue
+        valid.append((distance, y, x))
+    if not valid:
+        return None
+    valid.sort()
+    _, y, x = valid[0]
+    return (x, y)
+
+
 def _projected_party_combatant_ids(context: "CampaignContext", actors: dict[str, Any]) -> list[str]:
     from engine.api.campaign.party_bridge import party_member_ids
 
@@ -386,31 +528,7 @@ def _move_actor_projection(context: "CampaignContext", actor_id: str, x: int, y:
 
 
 def _companion_step_toward(context: "CampaignContext", actor: Any, target: Any) -> tuple[int, int] | None:
-    current = (int(actor.position.x), int(actor.position.y))
-    goal = (int(target.position.x), int(target.position.y))
-    candidates = [
-        (current[0] + 1, current[1]),
-        (current[0] - 1, current[1]),
-        (current[0], current[1] + 1),
-        (current[0], current[1] - 1),
-    ]
-    valid: list[tuple[int, int, int, int]] = []
-    spatial_index = getattr(context, "spatial_index", None)
-    for x, y in candidates:
-        if not _passable_tile(context, x, y):
-            continue
-        if spatial_index is not None and spatial_index.blocking_at(x, y) and (x, y) != current:
-            continue
-        distance = abs(goal[0] - x) + abs(goal[1] - y)
-        current_distance = abs(goal[0] - current[0]) + abs(goal[1] - current[1])
-        if distance >= current_distance:
-            continue
-        valid.append((distance, y, x, 0))
-    if not valid:
-        return None
-    valid.sort()
-    _, y, x, _ = valid[0]
-    return (x, y)
+    return _step_toward_position(context, actor, (int(target.position.x), int(target.position.y)))
 
 
 def _resolve_companion_turn(
@@ -421,12 +539,25 @@ def _resolve_companion_turn(
     target_id: str,
     *,
     seed: int,
+    tactic_mode: str = "balanced",
 ) -> str:
     actor = actors.get(active_entry.actor_id)
     target = actors.get(target_id)
-    if actor is None or target is None:
+    if actor is None:
         active_entry.turn_resources.action = False
         return ""
+    if target is None:
+        if str(tactic_mode).lower() == "guard":
+            anchor_position = _formation_anchor_position(context, active_entry.actor_id)
+            next_step = _step_toward_position(context, actor, anchor_position)
+            if next_step is not None:
+                _move_actor_projection(context, active_entry.actor_id, next_step[0], next_step[1], actors)
+                active_entry.turn_resources.movement = max(0, int(active_entry.turn_resources.movement) - 1)
+                active_entry.turn_resources.action = False
+                return f"{actor.name} falls back to guard the party."
+        active_entry.turn_resources.action = False
+        actor.raw_payload["defensive_stance"] = True
+        return f"{actor.name} takes a defensive stance."
     if _adjacent(actor, target):
         try:
             attack_result = run_attack(
@@ -441,6 +572,19 @@ def _resolve_companion_turn(
             logger.debug("Companion attack fallback for %s: %s", active_entry.actor_id, exc)
         else:
             return _apply_attack_result(actors, attack_result)
+    if str(tactic_mode).lower() == "guard":
+        player = actors.get("player")
+        if player is not None and _distance_between(player, target) > 2:
+            anchor_position = _formation_anchor_position(context, active_entry.actor_id)
+            next_step = _step_toward_position(context, actor, anchor_position)
+            if next_step is not None:
+                _move_actor_projection(context, active_entry.actor_id, next_step[0], next_step[1], actors)
+                active_entry.turn_resources.movement = max(0, int(active_entry.turn_resources.movement) - 1)
+                active_entry.turn_resources.action = False
+                return f"{actor.name} falls back to guard the party."
+            active_entry.turn_resources.action = False
+            actor.raw_payload["defensive_stance"] = True
+            return f"{actor.name} holds position near the party."
     next_step = _companion_step_toward(context, actor, target)
     if next_step is not None:
         _move_actor_projection(context, active_entry.actor_id, next_step[0], next_step[1], actors)

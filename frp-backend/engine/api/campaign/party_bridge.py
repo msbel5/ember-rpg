@@ -5,7 +5,18 @@ import logging
 import re
 from typing import TYPE_CHECKING, Optional
 
-from engine.kernel.game_state import FORMATIONS, add_to_party, normalize_party_state, remove_from_party, set_party_formation, swap_party_member
+from engine.kernel.game_state import (
+    FORMATIONS,
+    add_to_party,
+    clear_party_tactic,
+    normalize_party_state,
+    party_tactic_for_actor,
+    remove_from_party,
+    set_party_formation,
+    set_party_tactic,
+    set_party_tactics_for_party,
+    swap_party_member,
+)
 from engine.world.entity import Entity, EntityType
 
 from .region_projection import sync_party_projection
@@ -21,6 +32,7 @@ _RECRUIT_RE = re.compile(r"^(?:recruit|invite)\s+(.+)$", re.IGNORECASE)
 _DISMISS_RE = re.compile(r"^(?:dismiss|remove\s+from\s+party)\s+(.+)$", re.IGNORECASE)
 _SWAP_RE = re.compile(r"^swap\s+(.+?)\s+(?:with|for)\s+(.+)$", re.IGNORECASE)
 _FORMATION_RE = re.compile(r"^(?:formation|party\s+formation)\s+(.+)$", re.IGNORECASE)
+_TACTIC_MODES = {"balanced", "aggressive", "guard"}
 
 
 def maybe_handle_party_command(
@@ -31,6 +43,11 @@ def maybe_handle_party_command(
     text = command_text.strip()
     if _PARTY_RE.match(text):
         return (party_summary(context), "party", 0)
+    if text.lower().startswith("party "):
+        text = text[6:].strip()
+    tactic = _handle_tactics(context, text)
+    if tactic is not None:
+        return tactic
 
     match = _RECRUIT_RE.match(text)
     if match:
@@ -81,7 +98,11 @@ def party_summary(context: "CampaignContext") -> str:
         if actor is None:
             continue
         status = "player" if actor_id == "player" else str(getattr(actor.identity, "actor_type", "ally"))
-        members.append(f"- {actor.identity.display_name} ({status}) HP {int(actor.stats.get('hp', 0))}/{int(actor.stats.get('max_hp', 1))}")
+        tactic = party_tactic_for_actor(game_state, actor_id) if game_state is not None else "balanced"
+        tactic_text = "" if actor_id == "player" else f" tactic={tactic}"
+        members.append(
+            f"- {actor.identity.display_name} ({status}) HP {int(actor.stats.get('hp', 0))}/{int(actor.stats.get('max_hp', 1))}{tactic_text}"
+        )
     if not members:
         return "Party is empty."
     formation = str(getattr(game_state, "formation", "wedge")) if game_state is not None else "wedge"
@@ -192,6 +213,7 @@ def _dismiss(context: "CampaignContext", query: str) -> tuple[str, str, int]:
     remove_from_party(game_state, actor_id)
     if actors.get(actor_id) is not None:
         _mark_party_membership(context, actors[actor_id], is_party_member=False)
+    clear_party_tactic(game_state, actor_id)
     _sync_party_runtime(context)
     logger.info("Dismissed %s from party", actor_id)
     return (f"{actor.identity.display_name} leaves the party.", "party", 0)
@@ -245,7 +267,48 @@ def _sync_party_runtime(context: "CampaignContext") -> None:
             for actor_id in list(getattr(game_state, "inactive_npcs", []))
             if str(actor_id)
         ]
+        context.campaign_state["party_tactics"] = dict(getattr(game_state, "party_tactics", {}))
     sync_party_projection(context)
+
+
+def _handle_tactics(context: "CampaignContext", command_text: str) -> Optional[tuple[str, str, int]]:
+    text = command_text.strip()
+    if not text.lower().startswith("tactics"):
+        return None
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if game_state is None:
+        return ("Party state is unavailable.", "party", 0)
+    parts = text.split()
+    if len(parts) == 1:
+        return (party_summary(context), "party", 0)
+    if len(parts) == 2:
+        mode = parts[1].lower()
+        if mode not in _TACTIC_MODES:
+            return (f"Unknown tactic '{parts[1]}'. Supported tactics: balanced, aggressive, guard.", "party", 0)
+        success, normalized = set_party_tactics_for_party(game_state, mode, [actor_id for actor_id in party_member_ids(context) if actor_id != "player"])
+        if not success:
+            return ("Could not update party tactics.", "party", 0)
+        _sync_party_runtime(context)
+        return (f"Active companions now use the {normalized} tactic.", "party", 0)
+    if len(parts) >= 3:
+        mode = parts[-1].lower()
+        if mode not in _TACTIC_MODES:
+            return (f"Unknown tactic '{parts[-1]}'. Supported tactics: balanced, aggressive, guard.", "party", 0)
+        companion_query = " ".join(parts[1:-1]).strip()
+        actor = _find_actor_by_query(context, companion_query)
+        if actor is None:
+            return (f"No party member matched '{companion_query}'.", "party", 0)
+        if actor.identity.actor_id == "player":
+            return ("The player does not use companion tactics.", "party", 0)
+        if actor.identity.actor_id not in allied_actor_ids(context) and actor.identity.actor_id not in list(getattr(game_state, "inactive_npcs", [])):
+            return (f"{actor.identity.display_name} is not in the party.", "party", 0)
+        success, normalized = set_party_tactic(game_state, actor.identity.actor_id, mode)
+        if not success:
+            return (f"Could not update tactics for {actor.identity.display_name}.", "party", 0)
+        _sync_party_runtime(context)
+        return (f"{actor.identity.display_name} now uses the {normalized} tactic.", "party", 0)
+    return (party_summary(context), "party", 0)
 
 
 def _find_actor_by_query(context: "CampaignContext", query: str) -> "ActorRecord | None":

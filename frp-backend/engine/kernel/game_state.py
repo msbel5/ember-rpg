@@ -89,6 +89,9 @@ FORMATIONS = {
     "circle": [(0, 0), (1, 0), (0, 1), (-1, 0), (0, -1), (1, 1)],
     "scatter": [(0, 0), (2, 1), (-2, 1), (1, -2), (-1, 2), (3, 0)],
 }
+PARTY_TACTIC_MODES = {"balanced", "aggressive", "guard"}
+
+PARTY_TACTIC_MODES = {"balanced", "aggressive", "guard"}
 
 
 def _normalized_formation_name(formation: str) -> str:
@@ -122,10 +125,49 @@ def _normalized_inactive_npc_ids(inactive_ids: list[str], party_ids: list[str]) 
     return normalized
 
 
+def _normalized_party_tactic_mode(mode: str) -> str:
+    normalized = str(mode or "balanced").lower().strip()
+    return normalized if normalized in PARTY_TACTIC_MODES else "balanced"
+
+
+def _is_valid_party_tactic_mode(mode: str) -> bool:
+    return str(mode or "").lower().strip() in PARTY_TACTIC_MODES
+
+
+def _normalized_party_tactics(
+    tactics: dict[str, str],
+    *,
+    known_actor_ids: set[str],
+) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    seen: set[str] = set()
+    for actor_id, mode in dict(tactics or {}).items():
+        normalized_actor_id = str(actor_id).strip()
+        if not normalized_actor_id or normalized_actor_id == "player":
+            continue
+        if normalized_actor_id not in known_actor_ids or normalized_actor_id in seen:
+            continue
+        raw_mode = str(mode or "").lower().strip()
+        if raw_mode not in PARTY_TACTIC_MODES:
+            continue
+        normalized_mode = raw_mode
+        normalized[normalized_actor_id] = normalized_mode
+        seen.add(normalized_actor_id)
+    return normalized
+
+
 def normalize_party_state(state: "GameState") -> "GameState":
     state.party = _normalized_party_ids(state.party)
     state.inactive_npcs = _normalized_inactive_npc_ids(state.inactive_npcs, state.party)
     state.formation = _normalized_formation_name(getattr(state, "formation", "wedge"))
+    known_actor_ids = {str(actor_id) for actor_id in getattr(state, "actors", {}).keys() if str(actor_id)}
+    known_actor_ids.update(state.party)
+    known_actor_ids.update(state.inactive_npcs)
+    if hasattr(state, "party_tactics"):
+        state.party_tactics = _normalized_party_tactics(
+            getattr(state, "party_tactics", {}),
+            known_actor_ids=known_actor_ids,
+        )
     return state
 
 
@@ -135,6 +177,7 @@ class GameState:
     seed: int
     party: list[str] = field(default_factory=list)
     inactive_npcs: list[str] = field(default_factory=list)
+    party_tactics: dict[str, str] = field(default_factory=dict)
     current_area_id: str = ""
     loaded_area_ids: list[str] = field(default_factory=list)
     loaded_areas: dict[str, AreaState] = field(default_factory=dict)
@@ -171,6 +214,8 @@ class GameState:
             "reputation": int(self.reputation),
             "difficulty": self.difficulty.to_dict(),
             "formation": self.formation,
+                "party_tactics": dict(self.party_tactics),
+                "party_tactics": dict(self.party_tactics),
             "play_time_ticks": int(self.play_time_ticks),
             "creation_date": self.creation_date,
             "raw_payload": serialize_value(self.raw_payload),
@@ -194,6 +239,10 @@ class GameState:
             reputation=int(data.get("reputation", 10)),
             difficulty=DifficultySettings.from_dict(data.get("difficulty", {})),
             formation=str(data.get("formation", "wedge")),
+                party_tactics={
+                    str(key): _normalized_party_tactic_mode(value)
+                    for key, value in dict(data.get("party_tactics", {})).items()
+                },
             play_time_ticks=int(data.get("play_time_ticks", 0)),
             creation_date=str(data.get("creation_date", "")),
             raw_payload=dict(data.get("raw_payload", {})),
@@ -235,6 +284,7 @@ def remove_from_party(state: GameState, actor_id: str) -> None:
         return
     if actor_id in state.party:
         state.party.remove(actor_id)
+    state.party_tactics.pop(actor_id, None)
     if actor_id and actor_id not in state.party and actor_id not in state.inactive_npcs:
         state.inactive_npcs.append(actor_id)
     normalize_party_state(state)
@@ -264,6 +314,50 @@ def set_party_formation(state: GameState, formation: str) -> tuple[bool, str]:
     state.formation = normalized
     normalize_party_state(state)
     return True, normalized
+
+
+def set_party_tactic(state: GameState, actor_id: str, tactic: str) -> tuple[bool, str]:
+    normalize_party_state(state)
+    actor_id = str(actor_id)
+    if not actor_id or actor_id == "player":
+        return False, "invalid tactic"
+    normalized = str(tactic or "").lower().strip()
+    if not _is_valid_party_tactic_mode(normalized):
+        return False, "invalid tactic"
+    state.party_tactics[actor_id] = normalized
+    normalize_party_state(state)
+    return True, normalized
+
+
+def set_party_tactics_for_party(state: GameState, tactic: str, actor_ids: list[str] | None = None) -> tuple[bool, str]:
+    normalize_party_state(state)
+    normalized = str(tactic or "").lower().strip()
+    if not _is_valid_party_tactic_mode(normalized):
+        return False, "invalid tactic"
+    targets = [str(actor_id) for actor_id in (actor_ids if actor_ids is not None else state.party) if str(actor_id) and str(actor_id) != "player"]
+    for actor_id in targets:
+        state.party_tactics[actor_id] = normalized
+    normalize_party_state(state)
+    return True, normalized
+
+
+def clear_party_tactic(state: GameState, actor_id: str) -> None:
+    normalize_party_state(state)
+    state.party_tactics.pop(str(actor_id), None)
+    normalize_party_state(state)
+
+
+def party_tactic_mode(state: GameState, actor_id: str) -> str:
+    normalize_party_state(state)
+    return _normalized_party_tactic_mode(state.party_tactics.get(str(actor_id), "balanced"))
+
+
+    def party_tactic_for_actor(state: GameState, actor_id: str) -> str:
+        return party_tactic_mode(state, actor_id)
+
+
+def party_tactic_for_actor(state: GameState, actor_id: str) -> str:
+    return party_tactic_mode(state, actor_id)
 
 
 def transition_to_area(state: GameState, area_id: str, position: tuple[int, int] | None = None) -> dict:

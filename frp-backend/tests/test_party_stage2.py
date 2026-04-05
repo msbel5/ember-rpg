@@ -1,6 +1,16 @@
 from __future__ import annotations
 
-from engine.kernel.game_state import GameState, normalize_party_state, set_party_formation, swap_party_member
+from engine.kernel.game_state import (
+    GameState,
+    clear_party_tactic,
+    normalize_party_state,
+    party_tactic_for_actor,
+    remove_from_party,
+    set_party_formation,
+    set_party_tactic,
+    set_party_tactics_for_party,
+    swap_party_member,
+)
 
 
 def test_normalize_party_state_deduplicates_party_and_inactive_overlap() -> None:
@@ -65,3 +75,30 @@ def test_set_party_formation_rejects_unknown_values() -> None:
     assert success is False
     assert message == "invalid formation"
     assert state.formation == "wedge"
+
+
+def test_party_tactics_validate_modes_and_clear_on_party_changes() -> None:
+    state = GameState(
+        campaign_id="camp",
+        seed=42,
+        party=["player", "companion_a"],
+        inactive_npcs=["companion_b"],
+        party_tactics={"companion_a": "aggressive", "companion_b": "guard", "ghost": "guard"},
+    )
+
+    normalize_party_state(state)
+
+    assert party_tactic_for_actor(state, "companion_a") == "aggressive"
+    assert party_tactic_for_actor(state, "companion_b") == "guard"
+    assert "ghost" not in state.party_tactics
+
+    assert set_party_tactic(state, "companion_a", "reckless") == (False, "invalid tactic")
+    assert set_party_tactics_for_party(state, "reckless") == (False, "invalid tactic")
+    assert state.party_tactics["companion_a"] == "aggressive"
+
+    clear_party_tactic(state, "companion_a")
+    assert party_tactic_for_actor(state, "companion_a") == "balanced"
+
+    remove_from_party(state, "companion_b")
+    assert "companion_b" not in state.party
+    assert "companion_b" not in state.party_tactics

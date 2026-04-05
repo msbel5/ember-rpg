@@ -40,6 +40,14 @@ from engine.kernel.game_state import normalize_party_state
 if TYPE_CHECKING:
     from .context import CampaignContext
 
+_RUNTIME_MEDICAL_KEYS = (
+    "wounds",
+    "treatment_records",
+    "medical_infections",
+    "medical_recoveries",
+    "permanent_consequences",
+)
+
 
 def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: bool = False) -> dict[str, Any]:
     if context.kernel_runtime and not rebuild_projection:
@@ -323,8 +331,11 @@ def _apply_progression_state(player: ActorRecord, progression_state: Any, hp_gai
 
 def _load_actors(saved_payload: Any, context: "CampaignContext") -> dict[str, ActorRecord]:
     if isinstance(saved_payload, list):
-        return {actor.identity.actor_id: actor for actor in [ActorRecord.from_dict(dict(item)) for item in saved_payload]}
-    return {
+        actors = {actor.identity.actor_id: actor for actor in [ActorRecord.from_dict(dict(item)) for item in saved_payload]}
+        for actor in actors.values():
+            normalize_actor_medical_state(actor, sync_derived=True)
+        return actors
+    actors = {
         actor.identity.actor_id: actor
         for actor in build_canonical_actor_records(
             context,
@@ -332,6 +343,9 @@ def _load_actors(saved_payload: Any, context: "CampaignContext") -> dict[str, Ac
             active_site_id=active_site_id(context),
         )
     }
+    for actor in actors.values():
+        normalize_actor_medical_state(actor, sync_derived=True)
+    return actors
 
 
 def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, Any]) -> None:
@@ -355,7 +369,11 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
             merged[actor_id] = fresh_actor
             continue
         _merge_actor(existing, fresh_actor)
+        normalize_actor_medical_state(existing, sync_derived=True)
         merged[actor_id] = existing
+    for actor_id, actor in merged.items():
+        if actor_id not in fresh_actors:
+            normalize_actor_medical_state(actor, sync_derived=True)
     runtime["actors"] = merged
     runtime["game_state"].actors = dict(merged)
     normalize_party_state(runtime["game_state"])
@@ -388,6 +406,7 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
         if actor_id not in inactive:
             inactive.append(actor_id)
     runtime["game_state"].inactive_npcs = inactive
+    context.campaign_state["party_tactics"] = dict(getattr(runtime["game_state"], "party_tactics", {}))
     context.campaign_state["party"] = list(party)
     context.campaign_state["reserve_party_members"] = list(inactive)
     for actor_id, actor in merged.items():
@@ -398,6 +417,7 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
             actor.raw_payload["party_member"] = is_active
             actor.raw_payload["active_party_member"] = is_active
             actor.raw_payload["reserve_party_member"] = is_reserve
+            actor.raw_payload["party_tactic_mode"] = str(getattr(runtime["game_state"], "party_tactics", {}).get(actor_id, "balanced"))
     context.player = merged.get("player", context.player)
 
 
@@ -421,11 +441,18 @@ def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
     # Preserve progression fields (xp, level) that the kernel owns.
     preserved_xp = target.raw_payload.get("xp")
     preserved_level = target.raw_payload.get("level")
+    preserved_medical = {
+        key: target.raw_payload.get(key)
+        for key in _RUNTIME_MEDICAL_KEYS
+        if key in target.raw_payload
+    }
     target.raw_payload.update(fresh.raw_payload)
     if preserved_xp is not None:
         target.raw_payload["xp"] = max(int(preserved_xp), int(target.raw_payload.get("xp", 0)))
     if preserved_level is not None:
         target.raw_payload["level"] = max(int(preserved_level), int(target.raw_payload.get("level", 1)))
+    for key, value in preserved_medical.items():
+        target.raw_payload[key] = value
     if target.body_state is None:
         target.body_state = fresh.body_state
     elif target.body_state is not None and fresh.body_state is not None:
@@ -440,15 +467,362 @@ def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
         target.schedule = fresh.schedule
 
 
+def normalize_actor_medical_state(actor: ActorRecord, *, sync_derived: bool = False) -> None:
+    """Normalize an actor's medical raw payload into typed kernel objects."""
+    from engine.kernel.medical import InfectionState, PermanentConsequence, RecoveryState, TreatmentRecord
+
+    body_wounds = list(getattr(getattr(actor, "body_state", None), "wounds", []) or [])
+    raw_wounds = actor.raw_payload.get("wounds", [])
+    wounds = _merge_wounds(raw_wounds, body_wounds)
+    actor.raw_payload["wounds"] = wounds
+    if actor.body_state is not None:
+        actor.body_state.wounds = wounds
+
+    actor.raw_payload["treatment_records"] = _normalize_records(
+        actor.raw_payload.get("treatment_records", []),
+        TreatmentRecord,
+    )
+    actor.raw_payload["medical_infections"] = _normalize_records(
+        actor.raw_payload.get("medical_infections", []),
+        InfectionState,
+    )
+    actor.raw_payload["medical_recoveries"] = _normalize_records(
+        actor.raw_payload.get("medical_recoveries", []),
+        RecoveryState,
+    )
+    actor.raw_payload["permanent_consequences"] = _normalize_records(
+        actor.raw_payload.get("permanent_consequences", []),
+        PermanentConsequence,
+    )
+
+    if sync_derived:
+        sync_actor_medical_runtime_state(actor)
+
+
+def sync_actor_medical_runtime_state(actor: ActorRecord) -> None:
+    """Refresh treatment, infection, and recovery state for an actor."""
+    from engine.kernel.medical import InfectionState, RecoveryState
+
+    normalize_actor_medical_state(actor, sync_derived=False)
+    wounds: list = list(actor.raw_payload.get("wounds", []))
+    current_tick = int(actor.raw_payload.get("game_tick", 0))
+    record_map = {record.wound_id: record for record in actor.raw_payload.get("treatment_records", [])}
+    refreshed_records = []
+    for wound in wounds:
+        record = record_map.get(wound.wound_id)
+        if record is None:
+            continue
+        refreshed_records.append(_refresh_treatment_record(record, wound, current_tick))
+    actor.raw_payload["treatment_records"] = refreshed_records
+
+    existing_infections = {
+        state.wound_id: state
+        for state in actor.raw_payload.get("medical_infections", [])
+        if isinstance(state, InfectionState)
+    }
+    infections = []
+    wound_ids = {wound.wound_id for wound in wounds}
+    for wound in wounds:
+        record = next((item for item in refreshed_records if item.wound_id == wound.wound_id), None)
+        state = _sync_infection_state(wound, record, existing_infections.get(wound.wound_id))
+        if state is not None:
+            infections.append(state)
+    for wound_id, state in existing_infections.items():
+        if wound_id not in wound_ids:
+            infections.append(state)
+    actor.raw_payload["medical_infections"] = infections
+
+    existing_recoveries = {
+        state.body_part_id: state
+        for state in actor.raw_payload.get("medical_recoveries", [])
+        if isinstance(state, RecoveryState)
+    }
+    recoveries = []
+    body_state = getattr(actor, "body_state", None)
+    if body_state is not None:
+        treatment_by_part: dict[str, float] = {}
+        for wound in wounds:
+            record = next((item for item in refreshed_records if item.wound_id == wound.wound_id), None)
+            if record is None:
+                continue
+            treatment_by_part[wound.body_part_id] = max(
+                float(treatment_by_part.get(wound.body_part_id, 0.0)),
+                float(record.treatment_quality),
+            )
+        for part_id, part in body_state.parts.items():
+            existing = existing_recoveries.get(part_id)
+            if int(part.current_hp) >= int(part.max_hp) and existing is None:
+                continue
+            recovery = existing or RecoveryState(
+                body_part_id=part_id,
+                current_hp=int(part.current_hp),
+                max_hp=int(part.max_hp),
+            )
+            recovery.current_hp = int(part.current_hp)
+            recovery.max_hp = int(part.max_hp)
+            recovery.recuperation_bonus = max(float(recovery.recuperation_bonus), _recuperation_bonus(actor))
+            recovery.treatment_quality = max(
+                float(recovery.treatment_quality),
+                float(treatment_by_part.get(part_id, 0.5)),
+            )
+            if int(recovery.current_hp) < int(recovery.max_hp):
+                recoveries.append(recovery)
+        for part_id, recovery in existing_recoveries.items():
+            if part_id not in body_state.parts:
+                recoveries.append(recovery)
+    actor.raw_payload["medical_recoveries"] = recoveries
+
+
+def build_medical_payload(actor: ActorRecord) -> dict[str, Any]:
+    """Project structured medical state for campaign payloads."""
+    from engine.kernel.medical import InfectionState, PermanentConsequence, RecoveryState, TreatmentRecord
+
+    normalize_actor_medical_state(actor, sync_derived=True)
+    wounds: list = list(actor.raw_payload.get("wounds", []))
+    records: list[TreatmentRecord] = list(actor.raw_payload.get("treatment_records", []))
+    infections: list[InfectionState] = list(actor.raw_payload.get("medical_infections", []))
+    recoveries: list[RecoveryState] = list(actor.raw_payload.get("medical_recoveries", []))
+    consequences: list[PermanentConsequence] = list(actor.raw_payload.get("permanent_consequences", []))
+
+    from engine.kernel.medical import check_lethal_conditions
+
+    lethal, reason = check_lethal_conditions(actor)
+    active_infections = [
+        state
+        for state in infections
+        if float(state.infection_level) > 0.0 or state.fever or state.organ_damage or state.lethal
+    ]
+    recovering_parts = [state.body_part_id for state in recoveries if int(state.current_hp) < int(state.max_hp)]
+    aftercare: list[str] = []
+    for state in recoveries:
+        if int(state.current_hp) < int(state.max_hp):
+            aftercare.append(f"{state.body_part_id} recovering ({int(state.current_hp)}/{int(state.max_hp)} hp).")
+    for infection in active_infections:
+        aftercare.append(
+            f"Monitor {infection.body_part_id} for infection ({float(infection.infection_level):.2f}).",
+        )
+    if consequences:
+        aftercare.extend(f"{entry.body_part_id}: {entry.description}" for entry in consequences)
+
+    if lethal:
+        status = f"critical:{reason}"
+    elif active_infections:
+        status = "infected"
+    elif wounds or records or recoveries:
+        status = "recovering"
+    else:
+        status = "stable"
+
+    return {
+        "summary": {
+            "status": status,
+            "active_wound_count": len(wounds),
+            "pending_treatment_steps": sum(len(record.steps_remaining) for record in records),
+            "infection_count": len(active_infections),
+            "recovering_parts": recovering_parts,
+            "aftercare": aftercare,
+        },
+        "wounds": [
+            {
+                "wound_id": wound.wound_id,
+                "body_part_id": wound.body_part_id,
+                "damage_type": wound.damage_type,
+                "damage_amount": int(wound.damage_amount),
+                "bleeding": int(wound.bleeding),
+                "pain": int(wound.pain),
+                "open_wound": bool(wound.open_wound),
+                "fracture": bool(wound.fracture),
+                "infected": bool(getattr(wound, "infected", False)),
+                "untreated": bool(wound.untreated),
+                "destroyed": bool(wound.destroyed),
+                "crippled": bool(wound.crippled),
+                "infection_risk": float(getattr(wound, "infection_risk", 0.0)),
+            }
+            for wound in wounds
+        ],
+        "treatment_records": [
+            {
+                "wound_id": record.wound_id,
+                "patient_id": record.patient_id,
+                "doctor_id": record.doctor_id,
+                "diagnosed": bool(record.diagnosed),
+                "steps_completed": [step.name.lower() for step in record.steps_completed],
+                "steps_remaining": [step.name.lower() for step in record.steps_remaining],
+                "infection_level": float(record.infection_level),
+                "infection_rate": float(record.infection_rate),
+                "treatment_quality": float(record.treatment_quality),
+                "tick_started": int(record.tick_started),
+                "tick_completed": record.tick_completed,
+            }
+            for record in records
+        ],
+        "infections": [
+            {
+                "wound_id": infection.wound_id,
+                "body_part_id": infection.body_part_id,
+                "infection_level": float(infection.infection_level),
+                "cleaned": bool(infection.cleaned),
+                "fever": bool(infection.fever),
+                "organ_damage": bool(infection.organ_damage),
+                "lethal": bool(infection.lethal),
+            }
+            for infection in infections
+        ],
+        "recoveries": [
+            {
+                "body_part_id": recovery.body_part_id,
+                "current_hp": int(recovery.current_hp),
+                "max_hp": int(recovery.max_hp),
+                "treatment_quality": float(recovery.treatment_quality),
+                "recuperation_bonus": float(recovery.recuperation_bonus),
+                "ticks_since_last_heal": int(recovery.ticks_since_last_heal),
+            }
+            for recovery in recoveries
+        ],
+        "permanent_consequences": [
+            {
+                "consequence_id": consequence.consequence_id,
+                "kind": consequence.kind,
+                "body_part_id": consequence.body_part_id,
+                "description": consequence.description,
+                "mobility_penalty": int(consequence.mobility_penalty),
+                "stress_per_tick": float(consequence.stress_per_tick),
+                "stat_modifiers": dict(consequence.stat_modifiers),
+            }
+            for consequence in consequences
+        ],
+    }
+
+
+def _merge_wounds(raw_entries: list[Any], body_entries: list[Any]) -> list[Any]:
+    from engine.kernel.medical import WoundRecord
+
+    merged: list[Any] = []
+    seen: set[str] = set()
+    for entry in list(raw_entries or []) + list(body_entries or []):
+        wound = entry if isinstance(entry, WoundRecord) else WoundRecord.from_dict(dict(entry)) if isinstance(entry, dict) else None
+        if wound is None or wound.wound_id in seen:
+            continue
+        seen.add(wound.wound_id)
+        merged.append(wound)
+    return merged
+
+
+def _normalize_records(entries: list[Any], cls: type) -> list[Any]:
+    key_name = "body_part_id" if cls.__name__ == "RecoveryState" else "consequence_id" if cls.__name__ == "PermanentConsequence" else "wound_id"
+    normalized: list[Any] = []
+    seen: set[str] = set()
+    for entry in entries or []:
+        item = entry if isinstance(entry, cls) else cls.from_dict(dict(entry)) if isinstance(entry, dict) else None
+        if item is None:
+            continue
+        key = str(getattr(item, key_name, ""))
+        if not key or key in seen:
+            continue
+        if cls.__name__ == "TreatmentRecord":
+            item.steps_completed = _dedupe_steps(item.steps_completed)
+            item.steps_remaining = _dedupe_steps(
+                [step for step in item.steps_remaining if step not in item.steps_completed],
+            )
+        if cls.__name__ == "InfectionState":
+            from engine.kernel.medical import tick_infection
+
+            tick_infection(item, 0)
+        seen.add(key)
+        normalized.append(item)
+    return normalized
+
+
+def _dedupe_steps(steps: list[Any]) -> list[Any]:
+    deduped: list[Any] = []
+    seen: set[Any] = set()
+    for step in steps:
+        if step in seen:
+            continue
+        seen.add(step)
+        deduped.append(step)
+    return deduped
+
+
+def _refresh_treatment_record(record: Any, wound: Any, current_tick: int) -> Any:
+    from engine.kernel.medical import TreatmentStep, determine_treatment_plan
+
+    plan = determine_treatment_plan(wound)
+    diagnosed = bool(record.diagnosed or getattr(wound, "diagnosed", False))
+    completed = _dedupe_steps(record.steps_completed)
+    if diagnosed and TreatmentStep.DIAGNOSIS not in completed:
+        completed.insert(0, TreatmentStep.DIAGNOSIS)
+    remaining = [step for step in plan if step not in completed]
+
+    record.diagnosed = diagnosed
+    record.steps_completed = completed
+    record.steps_remaining = remaining
+    record.infection_level = max(float(record.infection_level), float(getattr(wound, "infection_level", 0.0)))
+    record.infection_rate = float(getattr(wound, "infection_risk", record.infection_rate))
+    record.treatment_quality = max(float(record.treatment_quality), 0.5)
+    if int(record.tick_started) <= 0:
+        record.tick_started = int(current_tick)
+    record.tick_completed = int(current_tick) if not remaining else None
+
+    setattr(wound, "diagnosed", record.diagnosed)
+    setattr(wound, "infection_risk", record.infection_rate)
+    setattr(wound, "infection_level", record.infection_level)
+    return record
+
+
+def _sync_infection_state(wound: Any, record: Any, existing: Any) -> Any:
+    from engine.kernel.medical import InfectionState, TreatmentStep, tick_infection
+
+    infection_level = float(getattr(wound, "infection_level", 0.0))
+    infection_risk = float(getattr(wound, "infection_risk", 0.0))
+    if record is not None:
+        infection_level = max(infection_level, float(record.infection_level))
+        infection_risk = max(infection_risk, float(record.infection_rate))
+    should_track = bool(existing) or bool(wound.open_wound) or bool(wound.infected) or infection_level > 0.0 or infection_risk > 0.0
+    if not should_track:
+        return None
+    state = existing or InfectionState(wound_id=wound.wound_id, body_part_id=wound.body_part_id)
+    state.body_part_id = wound.body_part_id
+    state.infection_level = max(float(state.infection_level), infection_level)
+    cleaned = bool(state.cleaned)
+    if record is not None and TreatmentStep.CLEAN in record.steps_completed:
+        cleaned = True
+    if infection_risk <= 0.1 and infection_risk > 0.0:
+        cleaned = True
+    state.cleaned = cleaned
+    tick_infection(state, 0)
+    wound.infected = state.infection_level > 0.0 or state.fever or state.organ_damage or state.lethal
+    setattr(wound, "infection_level", state.infection_level)
+    setattr(wound, "infection_risk", infection_risk)
+    if record is not None:
+        record.infection_level = max(float(record.infection_level), float(state.infection_level))
+        record.infection_rate = infection_risk
+    return state
+
+
+def _recuperation_bonus(actor: ActorRecord) -> float:
+    return max(0.0, float(actor.stats.get("recuperation", 0)) / 100.0)
+
+
 def _medical_tick_events(actors: list, current_tick: int) -> list[dict[str, Any]]:
     """Advance infection and recovery states for all actors."""
     from engine.kernel.medical import InfectionState, RecoveryState, tick_infection, tick_recovery
+
     events: list[dict[str, Any]] = []
     for actor in actors:
+        normalize_actor_medical_state(actor, sync_derived=True)
+        wounds_by_id = {
+            wound.wound_id: wound
+            for wound in actor.raw_payload.get("wounds", [])
+        }
         for infection in actor.raw_payload.get("medical_infections", []):
             if isinstance(infection, InfectionState):
                 prev = infection.infection_level
                 tick_infection(infection, 1)
+                wound = wounds_by_id.get(infection.wound_id)
+                if wound is not None:
+                    wound.infected = infection.infection_level > 0.0 or infection.fever or infection.organ_damage or infection.lethal
+                    setattr(wound, "infection_level", infection.infection_level)
                 if infection.infection_level > prev:
                     events.append({
                         "event_type": "infection_progress",
@@ -458,6 +832,15 @@ def _medical_tick_events(actors: list, current_tick: int) -> list[dict[str, Any]
         for recovery in actor.raw_payload.get("medical_recoveries", []):
             if isinstance(recovery, RecoveryState):
                 healed = tick_recovery(recovery, 1)
+                if actor.body_state is not None and recovery.body_part_id in actor.body_state.parts:
+                    part = actor.body_state.parts[recovery.body_part_id]
+                    part.current_hp = min(int(part.max_hp), int(part.current_hp) + int(healed))
+                    recovery.current_hp = int(part.current_hp)
+                if healed > 0:
+                    actor.stats["hp"] = min(
+                        int(actor.stats.get("max_hp", actor.stats.get("hp", 0))),
+                        int(actor.stats.get("hp", 0)) + int(healed),
+                    )
                 if healed > 0:
                     events.append({
                         "event_type": "medical_recovery",

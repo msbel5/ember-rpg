@@ -3,10 +3,13 @@ from __future__ import annotations
 import engine.api.gameplay_bridge as gameplay_bridge
 
 from engine.api.campaign.runtime import CampaignRuntime
+from engine.api.combat_bridge import _choose_aggressive_target_id, _choose_guard_target_id, _resolve_companion_turn
+from engine.kernel.actor import WoundRecord
 from engine.api.campaign.party_bridge import maybe_handle_party_command
 from engine.api.campaign.state_sync import sync_context_clock
+from engine.kernel.combat_engine import CombatState, CombatantEntry
 from engine.kernel.gameplay import spawn_ground_item_entity
-from engine.kernel.game_state import FORMATIONS
+from engine.kernel.game_state import FORMATIONS, party_tactic_for_actor
 from engine.kernel.progression import ProgressionState
 from engine.world.entity import Entity, EntityType
 
@@ -163,6 +166,31 @@ def _set_progression_state(
     player.raw_payload["progression"] = progression.to_dict()
 
 
+def _injure_active_player(context, *, body_part_id: str = "left_leg", embedded: bool = False):
+    player = context.kernel_runtime["actors"]["player"]
+    if player.body_state is None:
+        raise AssertionError("Expected player body_state for medical runtime test")
+    wound = WoundRecord(
+        wound_id=f"runtime_wound_{len(player.body_state.wounds) + 1}",
+        body_part_id=body_part_id,
+        damage_type="slash",
+        damage_amount=6,
+        bleeding=2,
+        pain=4,
+        open_wound=True,
+        fracture=body_part_id.endswith("leg"),
+        tags=["embedded_object"] if embedded else [],
+    )
+    wound.infection_risk = 1.0
+    wound.infection_level = 0.0
+    wound.diagnosed = False
+    player.body_state.apply_wound(wound)
+    player.raw_payload["wounds"] = list(player.body_state.wounds)
+    player.raw_payload["zone"] = "hospital"
+    player.stats["hp"] = max(1, int(player.stats.get("hp", 10)) - int(wound.damage_amount))
+    return player, wound
+
+
 def _schedule_entries(record: dict) -> list[dict]:
     entity_ref = record.get("entity_ref")
     schedule = getattr(entity_ref, "schedule", None)
@@ -182,6 +210,14 @@ def _expected_schedule_entry(entries: list[dict], hour: int) -> dict:
     ordered = sorted(entries, key=lambda item: int(item.get("hour", 0)))
     eligible = [item for item in ordered if int(item.get("hour", 0)) <= int(hour) % 24]
     return dict(eligible[-1] if eligible else ordered[-1])
+
+
+def _tile_points(payload: list[list[int]]) -> set[tuple[int, int]]:
+    return {
+        (int(item[0]), int(item[1]))
+        for item in payload
+        if isinstance(item, (list, tuple)) and len(item) >= 2
+    }
 
 
 def test_run_command_pickup_uses_ground_item_authority() -> None:
@@ -229,6 +265,98 @@ def test_run_command_spell_uses_kernel_spell_flow() -> None:
     assert "magic missile" in result["narrative"].lower()
     assert player.spell_points == 8
     assert int(player.raw_payload.get("last_cast_tick", -1)) >= 0
+
+
+def test_diagnose_populates_character_sheet_medical() -> None:
+    runtime, context = _make_campaign()
+    _injure_active_player(context)
+
+    result = runtime.run_command(context.campaign_id, "diagnose self")
+    medical = result["campaign"]["character_sheet"]["medical"]
+
+    assert result["command_type"] == "medical"
+    assert medical["summary"]["active_wound_count"] >= 1
+    assert medical["treatment_records"]
+    assert medical["wounds"][0]["wound_id"].startswith("runtime_wound_")
+
+
+def test_movement_expands_explored_tiles() -> None:
+    runtime, context = _make_campaign()
+
+    baseline = runtime.snapshot(context.campaign_id, narrative="baseline")["campaign"]["fog"]
+    moved = runtime.run_command(context.campaign_id, "move east")
+    updated = moved["campaign"]["fog"]
+
+    assert moved["command_type"] == "exploration"
+    assert updated["explored_count"] >= baseline["explored_count"]
+    assert _tile_points(baseline["explored_tiles"]).issubset(_tile_points(updated["explored_tiles"]))
+
+
+def test_visible_tiles_update_when_position_changes() -> None:
+    runtime, context = _make_campaign()
+
+    start_payload = runtime.snapshot(context.campaign_id, narrative="start")["campaign"]["fog"]
+    moved = runtime.run_command(context.campaign_id, "move south")
+    moved_payload = moved["campaign"]["fog"]
+    start_visible = _tile_points(start_payload["visible_tiles"])
+    moved_visible = _tile_points(moved_payload["visible_tiles"])
+
+    assert moved["command_type"] == "exploration"
+    assert tuple(context.position) in moved_visible
+    assert moved_visible != start_visible
+
+
+def test_travel_preserves_region_scoped_exploration_truth() -> None:
+    runtime, context = _make_campaign()
+
+    origin_region = str(context.region_snapshot.region_id)
+    runtime.run_command(context.campaign_id, "move east")
+    origin_snapshot = runtime.snapshot(context.campaign_id, narrative="origin")["campaign"]
+    origin_fog = origin_snapshot["fog"]
+    destination = next(option for option in origin_snapshot["travel_options"] if not option["is_current"])
+
+    travel = runtime.run_command(context.campaign_id, f"travel {destination['destination_region_id']}")
+    destination_fog = travel["campaign"]["fog"]
+    destination_region = str(travel["campaign"]["region"]["region_id"])
+    destination_regions = {entry["region_id"]: entry for entry in destination_fog["regions"]}
+
+    assert travel["command_type"] == "travel"
+    assert destination_region != origin_region
+    assert destination_fog["region_id"] == destination_region
+    assert destination_regions[origin_region]["explored_count"] == origin_fog["explored_count"]
+    assert destination_regions[destination_region]["explored_count"] == destination_fog["explored_count"]
+
+
+def test_save_load_preserves_explored_state() -> None:
+    runtime, context = _make_campaign()
+
+    runtime.run_command(context.campaign_id, "move east")
+    runtime.run_command(context.campaign_id, "move south")
+    before = runtime.snapshot(context.campaign_id, narrative="before-save")["campaign"]["fog"]
+
+    runtime.save_campaign(context.campaign_id, "fog_state_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("fog_state_slot")
+    after = runtime.snapshot(loaded.campaign_id, narrative="after-load")["campaign"]["fog"]
+
+    assert after["region_id"] == before["region_id"]
+    assert _tile_points(after["explored_tiles"]) == _tile_points(before["explored_tiles"])
+    assert tuple(loaded.position) in _tile_points(after["visible_tiles"])
+
+
+def test_campaign_payload_exposes_fog_shape() -> None:
+    runtime, context = _make_campaign()
+
+    payload = runtime.snapshot(context.campaign_id, narrative="fog")["campaign"]
+    fog = payload["fog"]
+
+    assert isinstance(fog, dict)
+    assert fog["region_id"] == payload["region"]["region_id"]
+    assert isinstance(fog["visible_tiles"], list)
+    assert isinstance(fog["explored_tiles"], list)
+    assert isinstance(fog["frontier_tiles"], list)
+    assert isinstance(fog["regions"], list)
+    assert fog["visible_count"] == len(fog["visible_tiles"])
+    assert fog["explored_count"] == len(fog["explored_tiles"])
 
 
 def test_run_command_repeated_pickup_then_missing() -> None:
@@ -492,6 +620,104 @@ def test_progression_failures_are_non_mutating() -> None:
     assert "no ability increases available" in raise_stat["narrative"].lower()
     assert player.skills["survival"] == 1
     assert int(player.stats.get("MIG", 10)) == baseline_mig
+
+
+def test_abilities_command_reports_unlocked_runtime_abilities() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.raw_payload["class_name"] = "warrior"
+    player.raw_payload["level"] = 2
+
+    result = runtime.run_command(context.campaign_id, "abilities")
+
+    assert result["command_type"] == "progression"
+    assert "second wind" in result["narrative"].lower()
+    abilities = result["campaign"]["character_sheet"]["progression"]["class_abilities"]
+    second_wind = next(item for item in abilities if item["id"] == "second_wind")
+    assert second_wind["implemented"] is True
+    assert second_wind["runtime_status"] == "ready"
+
+
+def test_arcane_recovery_resets_only_on_long_rest() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.raw_payload["class_name"] = "mage"
+    player.raw_payload["level"] = 2
+    player.raw_payload["max_spell_points"] = 4
+    player.spell_points = 0
+
+    first = runtime.run_command(context.campaign_id, "use ability arcane recovery")
+    second = runtime.run_command(context.campaign_id, "use ability arcane recovery")
+    short_rest = runtime.run_command(context.campaign_id, "short rest")
+    third = runtime.run_command(context.campaign_id, "use ability arcane recovery")
+    long_rest = runtime.run_command(context.campaign_id, "long rest")
+    player.spell_points = 0
+    fourth = runtime.run_command(context.campaign_id, "use ability arcane recovery")
+
+    assert first["command_type"] == "progression"
+    assert "restores" in first["narrative"].lower()
+    assert "already been used" in second["narrative"].lower()
+    assert short_rest["command_type"] == "rest"
+    assert "already been used" in third["narrative"].lower()
+    assert long_rest["command_type"] == "rest"
+    assert "arcane recovery" in fourth["narrative"].lower()
+
+
+def test_channel_divinity_heals_active_allied_party_members() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.raw_payload["class_name"] = "priest"
+    player.raw_payload["level"] = 3
+    companion = _inject_companion(context, base_id="companion_sunward", name="Sunward Kira", role="guard")
+    maybe_handle_party_command(context, "recruit Sunward Kira")
+    companion.stats["hp"] = max(1, int(companion.stats.get("max_hp", 12)) - 6)
+
+    result = runtime.run_command(context.campaign_id, "use ability channel divinity")
+
+    assert result["command_type"] == "progression"
+    assert "channel divinity" in result["narrative"].lower()
+    assert int(companion.stats["hp"]) > max(1, int(companion.stats.get("max_hp", 12)) - 6)
+
+
+def test_greater_heal_requires_valid_target_and_spell_points() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.raw_payload["class_name"] = "priest"
+    player.raw_payload["level"] = 5
+    player.raw_payload["max_spell_points"] = 6
+    player.spell_points = 4
+    target = _inject_companion(context, base_id="companion_relic", name="Relic Thorn", role="scout")
+    target.stats["hp"] = max(1, int(target.stats.get("max_hp", 12)) - 7)
+
+    missing_target = runtime.run_command(context.campaign_id, "use ability greater heal")
+    success = runtime.run_command(context.campaign_id, "use ability greater heal on Relic Thorn")
+    insufficient = runtime.run_command(context.campaign_id, "use ability greater heal on Relic Thorn")
+
+    assert "requires a valid target" in missing_target["narrative"].lower()
+    assert success["command_type"] == "progression"
+    assert "greater heal" in success["narrative"].lower()
+    assert int(target.stats["hp"]) > max(1, int(target.stats.get("max_hp", 12)) - 7)
+    assert int(player.spell_points) == 0
+    assert "not enough spell points" in insufficient["narrative"].lower()
+
+
+def test_class_ability_state_survives_save_load() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.raw_payload["class_name"] = "warrior"
+    player.raw_payload["level"] = 2
+    player.stats["hp"] = max(1, int(player.stats.get("max_hp", 20)) - 4)
+
+    used = runtime.run_command(context.campaign_id, "use ability second wind")
+    runtime.save_campaign(context.campaign_id, "class_ability_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("class_ability_slot")
+    loaded_payload = runtime.snapshot(loaded.campaign_id, narrative="loaded")
+    loaded_progression = loaded_payload["campaign"]["character_sheet"]["progression"]["class_abilities"]
+    second_wind = next(item for item in loaded_progression if item["id"] == "second_wind")
+
+    assert used["command_type"] == "progression"
+    assert second_wind["uses_remaining"] == 0
+    assert second_wind["runtime_status"] == "expended_until_long_rest"
 
 
 def test_recruit_companion_save_load_preserves_party_membership() -> None:
@@ -820,6 +1046,96 @@ def test_swap_and_projection_do_not_create_duplicate_or_overlapping_active_party
     assert party == ["player", reserve.identity.actor_id]
     assert len(active_positions) == len(set(active_positions))
     assert active.identity.actor_id not in party
+
+
+def test_tactics_command_sets_default_and_per_companion_modes() -> None:
+    runtime, context = _make_campaign()
+    active = _inject_companion(context, base_id="companion_tactics_active", name="Active Tova", role="guard")
+    reserve = _inject_companion(context, base_id="companion_tactics_reserve", name="Reserve Lio", role="scout")
+
+    assert runtime.run_command(context.campaign_id, "recruit Active Tova")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "recruit Reserve Lio")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "dismiss Reserve Lio")["command_type"] == "party"
+
+    result = runtime.run_command(context.campaign_id, "tactics aggressive")
+    assert result["command_type"] == "party"
+    assert "aggressive" in result["narrative"].lower()
+    assert party_tactic_for_actor(context.kernel_runtime["game_state"], active.identity.actor_id) == "aggressive"
+    assert party_tactic_for_actor(context.kernel_runtime["game_state"], reserve.identity.actor_id) == "balanced"
+
+    override = runtime.run_command(context.campaign_id, "tactics Reserve Lio guard")
+    assert override["command_type"] == "party"
+    assert "guard" in override["narrative"].lower()
+    assert party_tactic_for_actor(context.kernel_runtime["game_state"], reserve.identity.actor_id) == "guard"
+
+
+def test_tactics_command_rejects_invalid_mode_without_mutation() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="companion_tactics_invalid", name="Invalid Mode Vale", role="guard")
+
+    assert runtime.run_command(context.campaign_id, "recruit Invalid Mode Vale")["command_type"] == "party"
+    before = dict(context.kernel_runtime["game_state"].party_tactics)
+
+    result = runtime.run_command(context.campaign_id, "tactics reckless")
+
+    assert result["command_type"] == "party"
+    assert "unknown tactic" in result["narrative"].lower()
+    assert context.kernel_runtime["game_state"].party_tactics == before
+    assert party_tactic_for_actor(context.kernel_runtime["game_state"], companion.identity.actor_id) == "balanced"
+
+
+def test_aggressive_and_guard_tactics_choose_expected_targets() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="companion_tactics_combat", name="Blade Sera", role="guard")
+    low = _inject_companion(context, base_id="companion_tactics_low", name="Low Threat", role="raider", hostile=True)
+    high = _inject_companion(context, base_id="companion_tactics_high", name="High Threat", role="raider", hostile=True)
+    player = context.kernel_runtime["actors"]["player"]
+
+    companion.position.x = 10
+    companion.position.y = 10
+    low.position.x = 11
+    low.position.y = 10
+    high.position.x = 11
+    high.position.y = 11
+    player.position.x = 10
+    player.position.y = 9
+    low.stats["hp"] = 3
+    high.stats["hp"] = 11
+
+    combat_state = CombatState(
+        combatants=[
+            CombatantEntry(actor_id="player", initiative=20, is_player=True),
+            CombatantEntry(actor_id=companion.identity.actor_id, initiative=18, is_player=True),
+            CombatantEntry(actor_id=low.identity.actor_id, initiative=16, is_player=False),
+            CombatantEntry(actor_id=high.identity.actor_id, initiative=14, is_player=False),
+        ]
+    )
+    active_entry = combat_state.combatants[1]
+
+    context.kernel_runtime["game_state"].party_tactics[companion.identity.actor_id] = "aggressive"
+    assert _choose_aggressive_target_id(combat_state, context.kernel_runtime["actors"], active_entry) == low.identity.actor_id
+
+    context.kernel_runtime["game_state"].party_tactics[companion.identity.actor_id] = "guard"
+    assert _choose_guard_target_id(context, combat_state, context.kernel_runtime["actors"], active_entry) == low.identity.actor_id
+
+    player.position.x = 0
+    player.position.y = 0
+    companion.position.x = 10
+    companion.position.y = 10
+    high.position.x = 13
+    high.position.y = 10
+    turn_text = _resolve_companion_turn(
+        context,
+        combat_state,
+        context.kernel_runtime["actors"],
+        active_entry,
+        high.identity.actor_id,
+        seed=123,
+        tactic_mode="guard",
+    )
+
+    assert "falls back to guard the party" in turn_text.lower()
+    assert active_entry.turn_resources.action is False
 
 
 def test_time_advancement_changes_scheduled_npc_projected_position_and_activity() -> None:
