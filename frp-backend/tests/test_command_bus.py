@@ -36,8 +36,11 @@ def test_assign_build_and_travel_commands_update_campaign_state():
         },
     )
     assert traveled["command_type"] == "travel"
-    assert traveled["campaign"]["world"]["active_region_id"] != previous_region_id
-    assert traveled["campaign"]["local_map_state"]["region_id"] == traveled["campaign"]["world"]["active_region_id"]
+    assert traveled["campaign"]["scene"] == "travel"
+    assert traveled["campaign"]["travel_state"] is not None
+    assert traveled["campaign"]["world"]["active_region_id"] == previous_region_id
+    assert traveled["campaign"]["path_authority"]["active_region_id"] == previous_region_id
+    assert traveled["campaign"]["local_map_state"]["region_id"] == previous_region_id
 
 
 def test_defend_and_stockpile_commands_change_settlement_controls():

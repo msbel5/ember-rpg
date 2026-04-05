@@ -7,7 +7,7 @@ from main import app
 client = TestClient(app)
 
 
-def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
+def _create_campaign(*, seed: int = 42) -> dict:
     response = client.post(
         "/game/campaigns",
         json={
@@ -15,11 +15,22 @@ def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
             "player_class": "warrior",
             "adapter_id": "fantasy_ember",
             "profile_id": "standard",
-            "seed": 42,
+            "seed": seed,
         },
     )
     assert response.status_code == 200
-    payload = response.json()
+    return response.json()
+
+
+def _first_travel_destination(payload: dict) -> dict:
+    travel_options = list(payload["campaign"]["travel_options"])
+    destination = next(option for option in travel_options if not option.get("is_current"))
+    assert destination["route_id"]
+    return destination
+
+
+def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
+    payload = _create_campaign(seed=42)
     campaign = payload["campaign"]
 
     assert campaign["world_state"]["seed"] == 42
@@ -34,6 +45,9 @@ def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
     assert campaign["world_entities"]
     assert campaign["settlement"]["residents"]
     assert campaign["recent_event_log"]
+    assert all("danger_level" in entry for entry in campaign["travel_options"])
+    assert all("known" in entry for entry in campaign["travel_options"])
+    assert all("visited" in entry for entry in campaign["travel_options"])
 
 
 def test_campaign_command_preserves_godot_payload_shape():
@@ -105,3 +119,38 @@ def test_campaign_combat_payload_shape_is_present_for_godot_consumers():
     assert isinstance(combat["move_options"], list)
     assert any(entry["is_player"] for entry in combat["combatants"])
     assert all(isinstance(entry["position"], list) and len(entry["position"]) == 2 for entry in combat["combatants"])
+
+
+def test_campaign_travel_payload_shape_is_present_for_godot_consumers():
+    create = _create_campaign(seed=202)
+    campaign_id = create["campaign_id"]
+    destination = _first_travel_destination(create)
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "travel",
+            "args": {
+                "action_id": "start",
+                "route_id": destination["route_id"],
+                "destination_region_id": destination["destination_region_id"],
+                "destination_settlement_id": destination["destination_settlement_id"],
+            },
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    campaign = payload["campaign"]
+    travel_state = campaign["travel_state"]
+
+    assert campaign["scene"] == "travel"
+    assert isinstance(travel_state, dict)
+    assert travel_state["route_id"] == destination["route_id"]
+    assert travel_state["origin_region_id"] == create["campaign"]["world"]["active_region_id"]
+    assert travel_state["destination_region_id"] == destination["destination_region_id"]
+    assert travel_state["destination_settlement_id"] == destination["destination_settlement_id"]
+    assert isinstance(campaign["travel_options"], list)
+    assert all("danger_level" in entry for entry in campaign["travel_options"])
+    assert all("known" in entry for entry in campaign["travel_options"])
+    assert all("visited" in entry for entry in campaign["travel_options"])

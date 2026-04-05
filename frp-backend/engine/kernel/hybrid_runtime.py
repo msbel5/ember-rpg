@@ -97,6 +97,17 @@ def tick_travel(travel: TravelState, seed: int) -> TravelState:
     return updated
 
 
+def resolve_travel_encounter(travel: TravelState) -> TravelState:
+    updated = TravelState.from_dict(travel.to_dict())
+    if not updated.encounter_triggered:
+        return updated
+    updated.paused_for_encounter = False
+    updated.encounter_resolved = True
+    if updated.status == "preparing":
+        updated.status = "traveling"
+    return updated
+
+
 def complete_travel(travel: TravelState, world_state: WorldState) -> PathAuthorityState:
     if travel.status not in {"arriving", "arrived"}:
         raise ValueError("Travel must be arriving or arrived before completion.")
@@ -340,6 +351,7 @@ __all__ = [
     "macro_state_from_world",
     "military_state_from_settlement",
     "path_authority_from_world",
+    "resolve_travel_encounter",
     "tick_travel",
     "travel_options_for_region",
 ]

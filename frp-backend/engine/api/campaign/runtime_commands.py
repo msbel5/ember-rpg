@@ -47,6 +47,8 @@ from .context import CampaignContext
 
 logger = logging.getLogger(__name__)
 
+_RAW_TRAVEL_COMMANDS = {"continue travel", "resume travel", "resolve travel encounter"}
+
 
 def run_command(
     context: CampaignContext,
@@ -118,6 +120,19 @@ def _dispatch(
     lower = issued.lower().strip()
     from engine.api.combat_bridge import maybe_handle_combat_command, maybe_handle_structured_combat_command  # noqa: E402
     from engine.api.gameplay_bridge import maybe_handle_structured_spell_command  # noqa: E402
+
+    active_travel = _travel_scene_active(context)
+    if active_travel:
+        travel_result = _maybe_handle_travel_command(context, issued, command_args, shortcut=shortcut)
+        if travel_result is not None:
+            return travel_result
+        if lower.startswith("rest"):
+            return ("You cannot rest while actively traveling.", "travel", 0)
+        return (
+            "You are already traveling. Use continue travel, resolve travel encounter, or wait for arrival.",
+            "travel",
+            0,
+        )
 
     if context.in_combat():
         if shortcut == "combat":
@@ -233,10 +248,9 @@ def _dispatch(
     if handled is not None:
         return handled
 
-    if lower.startswith("travel"):
-        narrative = handle_travel(context, issued, command_args)
-        hours = int(context.campaign_state.get("last_travel_hours", 4))
-        return narrative, "travel", hours
+    travel_result = _maybe_handle_travel_command(context, issued, command_args, shortcut=shortcut)
+    if travel_result is not None:
+        return travel_result
 
     logger.warning("Unknown command rejected: %s", issued[:80])
     return (
@@ -251,6 +265,32 @@ def _dialog_is_active(context: CampaignContext) -> bool:
     runtime = context.kernel_runtime or {}
     dialog_state = runtime.get("dialog_state")
     return bool(getattr(dialog_state, "active", False))
+
+
+def _travel_scene_active(context: CampaignContext) -> bool:
+    runtime = context.kernel_runtime or {}
+    travel_state = runtime.get("travel_state")
+    status = ""
+    if hasattr(travel_state, "status"):
+        status = str(getattr(travel_state, "status", "")).strip().lower()
+    elif isinstance(travel_state, dict):
+        status = str(travel_state.get("status", "")).strip().lower()
+    return status not in {"", "idle", "arrived"}
+
+
+def _maybe_handle_travel_command(
+    context: CampaignContext,
+    issued: str,
+    command_args: dict[str, Any],
+    *,
+    shortcut: str,
+) -> tuple[str, str, int] | None:
+    lower = issued.lower().strip()
+    if shortcut != "travel" and not lower.startswith("travel") and lower not in _RAW_TRAVEL_COMMANDS:
+        return None
+    narrative = handle_travel(context, issued, command_args)
+    hours = int(context.campaign_state.get("last_travel_hours", 0) or 0)
+    return narrative, "travel", hours
 
 
 def _advance_world(

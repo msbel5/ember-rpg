@@ -175,11 +175,38 @@ def build_world_graph(world: WorldBlueprint) -> dict[str, Any]:
     }
 
 
-def build_travel_options(world: WorldBlueprint) -> list[dict[str, Any]]:
-    active_region_id = world.simulation_snapshot.active_region_id if world.simulation_snapshot else None
+def _known_or_visited_region_ids(context: "CampaignContext" | None) -> tuple[set[str], set[str]]:
+    if context is None:
+        return set(), set()
+    known: set[str] = set()
+    visited: set[str] = set()
+    region_id = str(getattr(getattr(context, "region_snapshot", None), "region_id", "")).strip()
+    if region_id:
+        known.add(region_id)
+        visited.add(region_id)
+    fog_by_region = context.campaign_state.get("fog_by_region", {})
+    if isinstance(fog_by_region, dict):
+        for candidate_region_id, payload in fog_by_region.items():
+            rid = str(candidate_region_id).strip()
+            if not rid:
+                continue
+            known.add(rid)
+            explored_count = 0
+            if isinstance(payload, dict):
+                explored_count = int(payload.get("explored_count", 0) or 0)
+            if explored_count > 0:
+                visited.add(rid)
+    return known, visited
+
+
+def build_travel_options(world: WorldBlueprint, context: "CampaignContext" | None = None) -> list[dict[str, Any]]:
+    active_region_id = str(getattr(getattr(context, "region_snapshot", None), "region_id", "") or "")
+    if not active_region_id:
+        active_region_id = str(world.simulation_snapshot.active_region_id) if world.simulation_snapshot else ""
     active_node = next((item for item in world.settlement_nodes if item["region_id"] == active_region_id), None)
     if active_node is None:
         return []
+    known_regions, visited_regions = _known_or_visited_region_ids(context)
     options: list[dict[str, Any]] = []
     seen: set[tuple[str, str, int]] = set()
     for edge in world.travel_edges:
@@ -208,13 +235,26 @@ def build_travel_options(world: WorldBlueprint) -> list[dict[str, Any]]:
                 "destination_region_id": destination_region_id,
                 "destination_name": destination_node["name"],
                 "travel_hours": int(edge.get("travel_hours", 4)),
+                "danger_level": _travel_danger_level(world, edge, destination_region_id),
                 "biome_id": destination_node.get("biome_id", ""),
                 "reachable": True,
                 "is_current": False,
+                "known": destination_region_id in known_regions,
+                "visited": destination_region_id in visited_regions,
             }
         )
     options.sort(key=lambda item: (item["travel_hours"], item["destination_name"]))
     return options
+
+
+def _travel_danger_level(world: WorldBlueprint, edge: dict[str, Any], destination_region_id: str) -> int:
+    explicit = int(edge.get("danger_level", 0) or 0)
+    if explicit > 0:
+        return explicit
+    travel_hours = max(0, int(edge.get("travel_hours", 0) or 0))
+    runtime_state = runtime_region_state(world, str(destination_region_id))
+    alerts = len(list(runtime_state.get("alerts", [])))
+    return max(alerts, min(3, max(0, (travel_hours - 1) // 4)))
 
 
 def build_current_region_summary(world: WorldBlueprint, region_snapshot: RegionSnapshot) -> dict[str, Any]:

@@ -27,7 +27,7 @@ def test_world_graph_is_deterministic_and_connected():
     assert len(world_a.travel_edges) >= len(world_a.settlement_nodes) - 1
 
 
-def test_campaign_travel_uses_region_ids_and_swaps_active_region():
+def test_campaign_travel_uses_region_ids_and_starts_active_travel_without_switching_region():
     runtime = CampaignRuntime()
     context = runtime.create_campaign("GraphTester", adapter_id="fantasy_ember", seed=42)
     snapshot = runtime.snapshot(context.campaign_id)
@@ -48,9 +48,12 @@ def test_campaign_travel_uses_region_ids_and_swaps_active_region():
     )
 
     assert traveled["command_type"] == "travel"
-    assert traveled["campaign"]["world"]["active_region_id"] == chosen["destination_region_id"]
-    assert traveled["campaign"]["region"]["region_id"] == chosen["destination_region_id"]
-    assert traveled["campaign"]["world"]["active_region_id"] != previous_region_id
+    assert traveled["campaign"]["scene"] == "travel"
+    assert traveled["campaign"]["travel_state"] is not None
+    assert traveled["campaign"]["travel_state"]["destination_region_id"] == chosen["destination_region_id"]
+    assert traveled["campaign"]["world"]["active_region_id"] == previous_region_id
+    assert traveled["campaign"]["path_authority"]["active_region_id"] == previous_region_id
+    assert traveled["campaign"]["region"]["region_id"] == previous_region_id
 
 
 def test_world_snapshot_round_trip_preserves_world_graph():

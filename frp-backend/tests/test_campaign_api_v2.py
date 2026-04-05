@@ -56,6 +56,14 @@ def _create_campaign(adapter_id: str = "fantasy_ember", *, seed: int = 42) -> di
     return response.json()
 
 
+def _first_travel_destination(payload: dict) -> dict:
+    travel_options = list(payload["campaign"]["travel_options"])
+    destination = next(option for option in travel_options if not option.get("is_current"))
+    assert destination["route_id"]
+    assert destination["destination_region_id"]
+    return destination
+
+
 def test_create_campaign_returns_campaign_snapshot():
     payload = _create_campaign()
     assert payload["adapter_id"] == "fantasy_ember"
@@ -129,6 +137,49 @@ def test_campaign_command_and_region_endpoints_work():
     settlement = client.get(f"/game/campaigns/{campaign_id}/settlement/current")
     assert settlement.status_code == 200
     assert settlement.json()["rooms"]
+
+
+def test_campaign_travel_shortcut_starts_active_travel_without_immediate_region_switch():
+    payload = _create_campaign(seed=123)
+    campaign_id = payload["campaign_id"]
+    origin_region_id = payload["campaign"]["world"]["active_region_id"]
+    origin_path_region_id = payload["campaign"]["path_authority"]["active_region_id"]
+    destination = _first_travel_destination(payload)
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "travel",
+            "args": {
+                "action_id": "start",
+                "route_id": destination["route_id"],
+                "destination_region_id": destination["destination_region_id"],
+                "destination_settlement_id": destination["destination_settlement_id"],
+            },
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    campaign = body["campaign"]
+
+    assert body["command_type"] == "travel"
+    assert campaign["scene"] == "travel"
+    assert campaign["world"]["active_region_id"] == origin_region_id
+    assert campaign["path_authority"]["active_region_id"] == origin_path_region_id
+    assert isinstance(campaign["travel_state"], dict)
+    assert campaign["travel_state"]["route_id"] == destination["route_id"]
+    assert campaign["travel_state"]["origin_region_id"] == origin_region_id
+    assert campaign["travel_state"]["destination_region_id"] == destination["destination_region_id"]
+    assert campaign["travel_state"]["destination_settlement_id"] == destination["destination_settlement_id"]
+    assert campaign["travel_state"]["destination_name"] == destination["destination_name"]
+    assert campaign["travel_state"]["travel_hours_total"] >= campaign["travel_state"]["travel_hours_remaining"] >= 0
+    assert "danger_level" in campaign["travel_state"]
+    assert "encounter_triggered" in campaign["travel_state"]
+    assert "paused_for_encounter" in campaign["travel_state"]
+    assert "encounter_resolved" in campaign["travel_state"]
+    assert "can_advance" in campaign["travel_state"]
+    assert "requires_resolution" in campaign["travel_state"]
 
 
 def test_campaign_talk_command_returns_dialog_payload_when_conversation_is_active():

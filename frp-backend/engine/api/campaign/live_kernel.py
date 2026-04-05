@@ -12,13 +12,17 @@ from engine.kernel import (
     ActorRecord,
     GameState,
     JobRecord,
+    LocalMapState,
     MilitaryState,
     PathAuthorityState,
     ProductionLedger,
     ReactionDef,
+    TravelState,
     WorksiteRecord,
     WorldState,
     colony_pressure_from_settlement,
+    complete_travel,
+    hydrate_local_map,
     local_map_state_from_region,
     military_state_from_settlement,
     path_authority_from_world,
@@ -26,6 +30,7 @@ from engine.kernel import (
     spread_contagion,
 )
 from engine.npc.npc_memory import NPCMemoryManager
+from engine.kernel.scene_types import SceneContext, SceneType
 
 from .runtime_common import active_site_id, saved_list_or, saved_or, stable_seed
 from .runtime_effects import effect_events
@@ -40,6 +45,216 @@ from .runtime_settlement import (
 from .runtime_systems import load_systems, systems_events
 from .region_projection import sync_combat_projection_state
 from engine.kernel.game_state import normalize_party_state
+
+
+_TRAVEL_STATE_KEYS = {
+    "status",
+    "origin_region_id",
+    "destination_region_id",
+    "travel_hours_remaining",
+    "travel_hours_total",
+    "encounter_roll",
+    "encounter_triggered",
+    "edge_id",
+    "danger_level",
+    "encounter_checked",
+    "paused_for_encounter",
+    "encounter_resolved",
+}
+
+
+def _normalize_runtime_scene_name(value: Any) -> str:
+    normalized = str(value or "").strip().lower()
+    if normalized == "travel":
+        return SceneType.TRANSITION.value
+    return normalized or SceneType.EXPLORATION.value
+
+
+if not getattr(SceneContext, "_travel_scene_alias_installed", False):
+    _scene_type_name = SceneContext.scene_type_name
+
+    def _scene_type_name_setter(self: SceneContext, value: str) -> None:
+        self.scene_type = SceneType(_normalize_runtime_scene_name(value))
+
+    SceneContext.scene_type_name = property(_scene_type_name.fget, _scene_type_name_setter)
+    SceneContext._travel_scene_alias_installed = True
+
+
+def _normalize_travel_state_payload(raw_state: Any) -> dict[str, Any] | None:
+    if isinstance(raw_state, TravelState):
+        return raw_state.to_dict()
+    if not isinstance(raw_state, dict):
+        return None
+    payload = dict(raw_state)
+    if "route_id" in payload and "edge_id" not in payload:
+        payload["edge_id"] = payload.get("route_id")
+    normalized = {key: payload[key] for key in _TRAVEL_STATE_KEYS if key in payload}
+    try:
+        return TravelState.from_dict(normalized).to_dict()
+    except Exception:
+        return None
+
+
+def _travel_state(runtime: dict[str, Any]) -> TravelState | None:
+    runtime_state = _normalize_travel_state_payload(runtime.get("travel_state"))
+    game_state = runtime.get("game_state")
+    raw_payload = getattr(game_state, "raw_payload", {}) if game_state is not None else {}
+    raw_state = raw_payload.get("travel_state", raw_payload.get("travel"))
+    normalized = _normalize_travel_state_payload(raw_state)
+    runtime_status = str((runtime_state or {}).get("status", "")).lower().strip() if runtime_state is not None else ""
+    if runtime_state is not None and (normalized is None or runtime_status not in {"", "idle", "cancelled"}):
+        return TravelState.from_dict(runtime_state)
+    if normalized is None:
+        return None
+    return TravelState.from_dict(normalized)
+
+
+def _persist_travel_state(runtime: dict[str, Any], travel: TravelState | None) -> None:
+    game_state = runtime.get("game_state")
+    if game_state is None:
+        return
+    raw_payload = getattr(game_state, "raw_payload", None)
+    if not isinstance(raw_payload, dict):
+        raw_payload = {}
+        game_state.raw_payload = raw_payload
+    raw_payload.pop("travel", None)
+    status = str(getattr(travel, "status", "") or "").lower().strip() if travel is not None else ""
+    if travel is None or status in {"", "idle", "cancelled"}:
+        raw_payload.pop("travel_state", None)
+        runtime["travel_state"] = TravelState(status="idle")
+        return
+    raw_payload["travel_state"] = travel.to_dict()
+    runtime["travel_state"] = travel
+
+
+def _travel_is_active(travel: TravelState | None) -> bool:
+    if travel is None:
+        return False
+    status = str(travel.status or "").lower().strip()
+    if status in {"", "idle", "arrived", "completed", "resolved", "cancelled"}:
+        return False
+    return True
+
+
+def _travel_projection_region_id(travel: TravelState | None, fallback_region_id: str) -> str:
+    if travel is None:
+        return str(fallback_region_id)
+    status = str(travel.status or "").lower().strip()
+    if status in {"arrived", "completed", "resolved"} and str(travel.destination_region_id).strip():
+        return str(travel.destination_region_id)
+    if str(travel.origin_region_id).strip():
+        return str(travel.origin_region_id)
+    return str(fallback_region_id)
+
+
+def _travel_site_id_for_region(world_state: WorldState, region_id: str) -> str:
+    for site in world_state.sites.values():
+        if str(site.region_id) == str(region_id):
+            return str(site.site_id)
+    for settlement in world_state.settlements.values():
+        if str(settlement.region_id) == str(region_id):
+            return str(settlement.settlement_id)
+    return str(region_id)
+
+
+def build_runtime_travel_payload(runtime: dict[str, Any]) -> dict[str, Any] | None:
+    travel = _travel_state(runtime)
+    if travel is None:
+        return None
+    if str(travel.status or "").lower().strip() in {"", "idle", "cancelled"}:
+        return None
+    world_state = runtime.get("world_state")
+    route_id = str(getattr(travel, "edge_id", "") or "").strip()
+    destination_settlement_id = ""
+    destination_name = ""
+    if isinstance(world_state, WorldState):
+        for edge in world_state.travel_edges:
+            if route_id and str(edge.edge_id) != route_id:
+                continue
+            if not route_id and {
+                str(edge.source_region_id),
+                str(edge.destination_region_id),
+            } != {str(travel.origin_region_id), str(travel.destination_region_id)}:
+                continue
+            route_id = str(edge.edge_id)
+            if str(edge.destination_region_id) == str(travel.destination_region_id):
+                destination_settlement_id = str(edge.destination_settlement_id or "")
+            elif str(edge.source_region_id) == str(travel.destination_region_id):
+                destination_settlement_id = str(edge.source_settlement_id or "")
+            break
+        if destination_settlement_id:
+            settlement = world_state.settlements.get(destination_settlement_id)
+            if settlement is not None:
+                destination_name = str(settlement.name)
+    requires_resolution = bool(travel.paused_for_encounter and not travel.encounter_resolved)
+    can_advance = bool(_travel_is_active(travel) and not requires_resolution)
+    return {
+        "status": str(travel.status),
+        "route_id": route_id,
+        "origin_region_id": str(travel.origin_region_id),
+        "destination_region_id": str(travel.destination_region_id),
+        "destination_settlement_id": destination_settlement_id,
+        "destination_name": destination_name,
+        "travel_hours_total": int(travel.travel_hours_total),
+        "travel_hours_remaining": int(travel.travel_hours_remaining),
+        "danger_level": int(travel.danger_level),
+        "encounter_triggered": bool(travel.encounter_triggered),
+        "paused_for_encounter": bool(travel.paused_for_encounter),
+        "encounter_resolved": bool(travel.encounter_resolved),
+        "can_advance": can_advance,
+        "requires_resolution": requires_resolution,
+    }
+
+
+def _sync_travel_runtime_state(context: "CampaignContext", runtime: dict[str, Any]) -> None:
+    travel = _travel_state(runtime)
+    _persist_travel_state(runtime, travel)
+    if travel is None:
+        return
+    status = str(travel.status or "").lower().strip()
+    if status in {"", "idle", "cancelled"}:
+        return
+    world_state = runtime.get("world_state")
+    if not isinstance(world_state, WorldState):
+        return
+    projection_region_id = _travel_projection_region_id(travel, str(context.region_snapshot.region_id))
+    if projection_region_id:
+        world_state.active_region_id = projection_region_id
+    if status in {"arrived", "completed", "resolved"}:
+        try:
+            runtime["path_authority"] = complete_travel(travel, world_state)
+        except Exception:
+            runtime["path_authority"] = PathAuthorityState(
+                active_region_id=projection_region_id,
+                active_site_id=_travel_site_id_for_region(world_state, projection_region_id),
+                local_map_id=f"region::{projection_region_id}",
+                hydrated_from_region=projection_region_id in world_state.regions,
+                travel_edge_count=sum(
+                    1
+                    for edge in world_state.travel_edges
+                    if str(edge.source_region_id) == projection_region_id or str(edge.destination_region_id) == projection_region_id
+                ),
+                reindex_required=False,
+                local_map_loaded=projection_region_id in world_state.regions,
+                spawn_point=list(getattr(runtime.get("path_authority"), "spawn_point", [10, 7])),
+            )
+    else:
+        runtime["path_authority"] = PathAuthorityState(
+            active_region_id=projection_region_id,
+            active_site_id=_travel_site_id_for_region(world_state, projection_region_id),
+            local_map_id=f"region::{projection_region_id}",
+            hydrated_from_region=projection_region_id in world_state.regions,
+            travel_edge_count=sum(
+                1
+                for edge in world_state.travel_edges
+                if str(edge.source_region_id) == projection_region_id or str(edge.destination_region_id) == projection_region_id
+            ),
+            reindex_required=False,
+            local_map_loaded=projection_region_id in world_state.regions,
+            spawn_point=list(getattr(runtime.get("path_authority"), "spawn_point", [10, 7])),
+        )
+    hydrated_map = hydrate_local_map(world_state, projection_region_id)
+    runtime["local_map_state"] = LocalMapState.from_dict(hydrated_map.to_dict())
 
 if TYPE_CHECKING:
     from .context import CampaignContext
@@ -325,6 +540,75 @@ def build_actor_spell_payload(actor: ActorRecord | None) -> dict[str, Any]:
     }
 
 
+def build_travel_state_payload(
+    travel_state: TravelState | dict[str, Any] | None,
+    *,
+    world: Any = None,
+) -> dict[str, Any] | None:
+    if isinstance(travel_state, TravelState):
+        payload = travel_state.to_dict()
+    elif isinstance(travel_state, dict):
+        payload = dict(travel_state)
+    else:
+        return None
+
+    destination_region_id = str(payload.get("destination_region_id", "")).strip()
+    destination_settlement_id = str(payload.get("destination_settlement_id", "")).strip()
+    destination_name = ""
+    route_id = str(payload.get("edge_id", payload.get("route_id", ""))).strip()
+    if world is not None:
+        settlement_nodes = list(getattr(world, "settlement_nodes", []) or [])
+        if destination_settlement_id:
+            node = next((item for item in settlement_nodes if str(item.get("id", "")) == destination_settlement_id), None)
+            if node is not None:
+                destination_name = str(node.get("name", "")).strip()
+                destination_region_id = destination_region_id or str(node.get("region_id", "")).strip()
+        if not destination_name and destination_region_id:
+            node = next((item for item in settlement_nodes if str(item.get("region_id", "")) == destination_region_id), None)
+            if node is not None:
+                destination_name = str(node.get("name", "")).strip()
+                destination_settlement_id = destination_settlement_id or str(node.get("id", "")).strip()
+        if not route_id:
+            edges = list(getattr(world, "travel_edges", []) or [])
+            edge = next(
+                (
+                    item
+                    for item in edges
+                    if (
+                        str(item.get("from_region_id", "")) == str(payload.get("origin_region_id", ""))
+                        and str(item.get("to_region_id", "")) == destination_region_id
+                    )
+                    or (
+                        str(item.get("to_region_id", "")) == str(payload.get("origin_region_id", ""))
+                        and str(item.get("from_region_id", "")) == destination_region_id
+                    )
+                ),
+                None,
+            )
+            if edge is not None:
+                route_id = str(edge.get("id", "")).strip()
+
+    paused = bool(payload.get("paused_for_encounter", False))
+    resolved = bool(payload.get("encounter_resolved", False))
+    remaining = int(payload.get("travel_hours_remaining", 0) or 0)
+    return {
+        "status": str(payload.get("status", "idle")),
+        "route_id": route_id,
+        "origin_region_id": str(payload.get("origin_region_id", "")).strip(),
+        "destination_region_id": destination_region_id,
+        "destination_settlement_id": destination_settlement_id,
+        "destination_name": destination_name,
+        "travel_hours_total": int(payload.get("travel_hours_total", 0) or 0),
+        "travel_hours_remaining": remaining,
+        "danger_level": int(payload.get("danger_level", 0) or 0),
+        "encounter_triggered": bool(payload.get("encounter_triggered", False)),
+        "paused_for_encounter": paused,
+        "encounter_resolved": resolved,
+        "can_advance": remaining > 0 and (not paused or resolved),
+        "requires_resolution": paused and not resolved,
+    }
+
+
 def _normalize_actor_spell_state(actor: ActorRecord) -> None:
     spellbooks = _normalize_spellbooks_payload(actor.raw_payload.get("spellbooks", {}))
     if spellbooks:
@@ -506,6 +790,33 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
         sync_combat_projection_state(context)
         return context.kernel_runtime
     meta = dict(context.campaign_state.get("campaign") or {})
+    existing_runtime = context.kernel_runtime or {}
+    if rebuild_projection and existing_runtime:
+        existing_runtime_travel_payload = _normalize_travel_state_payload(existing_runtime.get("travel_state"))
+        existing_travel = (
+            TravelState.from_dict(existing_runtime_travel_payload)
+            if existing_runtime_travel_payload is not None
+            else _travel_state(existing_runtime)
+        )
+        existing_game_state = existing_runtime.get("game_state")
+        game_state_meta = dict(meta.get("game_state") or {})
+        raw_payload_meta = dict(game_state_meta.get("raw_payload") or {})
+        if existing_travel is not None:
+            status = str(existing_travel.status or "").lower().strip()
+            if status in {"", "idle", "cancelled"}:
+                raw_payload_meta.pop("travel_state", None)
+            else:
+                raw_payload_meta["travel_state"] = existing_travel.to_dict()
+            meta["travel_state"] = existing_travel.to_dict()
+        elif existing_game_state is not None and isinstance(getattr(existing_game_state, "raw_payload", None), dict):
+            raw_payload_meta.update(copy.deepcopy(existing_game_state.raw_payload))
+        if raw_payload_meta:
+            game_state_meta["raw_payload"] = raw_payload_meta
+            meta["game_state"] = game_state_meta
+        for key in ("world_state", "path_authority", "local_map_state"):
+            value = existing_runtime.get(key)
+            if value is not None and hasattr(value, "to_dict"):
+                meta[key] = value.to_dict()
     runtime = {
         "world_state": saved_or(
             meta.get("world_state"),
@@ -547,6 +858,11 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
             type(local_map_state_from_region(context.region_snapshot)),
             lambda: local_map_state_from_region(context.region_snapshot),
         ),
+        "travel_state": saved_or(
+            meta.get("travel_state"),
+            TravelState,
+            lambda: TravelState(status="idle"),
+        ),
         "military": saved_or(
             meta.get("military"),
             MilitaryState,
@@ -557,6 +873,7 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
     }
     context.kernel_runtime = runtime
     rebase_projection_slices(context, runtime, force=True)
+    _sync_travel_runtime_state(context, runtime)
     _sync_combat_runtime_state(context, runtime)
     _sync_runtime_from_context(context, runtime)
     context.player = runtime.get("actors", {}).get("player", context.player)
@@ -578,6 +895,7 @@ def serialize_kernel_runtime(context: "CampaignContext") -> dict[str, Any]:
         "production_ledger": runtime["production_ledger"].to_dict(),
         "path_authority": runtime["path_authority"].to_dict(),
         "local_map_state": runtime["local_map_state"].to_dict(),
+        "travel_state": runtime["travel_state"].to_dict(),
         "military": runtime["military"].to_dict(),
         "systems": {
             "syndrome_registry": [item.to_dict() for item in runtime["systems"]["syndrome_registry"]],
@@ -847,6 +1165,7 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
             normalize_actor_medical_state(actor, sync_derived=True)
     runtime["actors"] = merged
     _sync_social_identity(context, runtime)
+    _sync_travel_runtime_state(context, runtime)
     _sync_combat_runtime_state(context, runtime)
     runtime["game_state"].actors = dict(merged)
     normalize_party_state(runtime["game_state"])
@@ -1474,4 +1793,11 @@ def _medical_tick_events(actors: list, current_tick: int) -> list[dict[str, Any]
     return events
 
 
-__all__ = ["advance_kernel_runtime", "ensure_kernel_runtime", "serialize_kernel_runtime", "_check_level_up"]
+__all__ = [
+    "_check_level_up",
+    "advance_kernel_runtime",
+    "build_actor_spell_payload",
+    "build_travel_state_payload",
+    "ensure_kernel_runtime",
+    "serialize_kernel_runtime",
+]

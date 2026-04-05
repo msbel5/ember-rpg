@@ -19,6 +19,7 @@ from engine.kernel.gameplay import spawn_ground_item_entity
 from engine.kernel.game_state import FORMATIONS, party_tactic_for_actor
 from engine.kernel.progression import ProgressionState
 from engine.kernel.spells import CastingAttempt, SpellDef, SpellSlot, Spellbook
+from engine.kernel.hybrid_types import TravelState
 from engine.world.entity import Entity, EntityType
 
 
@@ -311,6 +312,46 @@ def _install_combat_state(context, combat_state: CombatState) -> None:
         context.dm_context.scene_type_name = "combat"
 
 
+def _install_travel_state(
+    context,
+    *,
+    status: str = "traveling",
+    travel_hours_remaining: int | None = None,
+    travel_hours_total: int | None = None,
+    danger_level: int = 2,
+    encounter_triggered: bool = False,
+    paused_for_encounter: bool = False,
+    encounter_resolved: bool = False,
+):
+    origin_region_id = str(context.region_snapshot.region_id)
+    edge = next(
+        item
+        for item in context.world.travel_edges
+        if str(item.get("from_region_id", "")) == origin_region_id or str(item.get("to_region_id", "")) == origin_region_id
+    )
+    if str(edge.get("from_region_id", "")) == origin_region_id:
+        destination_region_id = str(edge.get("to_region_id", ""))
+    else:
+        destination_region_id = str(edge.get("from_region_id", ""))
+    total_hours = int(travel_hours_total if travel_hours_total is not None else edge.get("travel_hours", 4))
+    remaining_hours = int(travel_hours_remaining if travel_hours_remaining is not None else max(0, total_hours - 1))
+    travel_state = TravelState(
+        status=status,
+        origin_region_id=origin_region_id,
+        destination_region_id=destination_region_id,
+        travel_hours_remaining=remaining_hours,
+        travel_hours_total=total_hours,
+        edge_id=str(edge.get("id", f"{origin_region_id}->{destination_region_id}")),
+        danger_level=int(danger_level),
+        encounter_triggered=bool(encounter_triggered),
+        paused_for_encounter=bool(paused_for_encounter),
+        encounter_resolved=bool(encounter_resolved),
+        encounter_checked=bool(encounter_triggered),
+    )
+    context.kernel_runtime["game_state"].raw_payload["travel_state"] = travel_state.to_dict()
+    return travel_state
+
+
 def _install_player_spell_state(context) -> None:
     player = context.kernel_runtime["actors"]["player"]
     player.raw_payload["spellcasting_mode"] = "mage"
@@ -516,18 +557,144 @@ def test_travel_preserves_region_scoped_exploration_truth() -> None:
     runtime.run_command(context.campaign_id, "move east")
     origin_snapshot = runtime.snapshot(context.campaign_id, narrative="origin")["campaign"]
     origin_fog = origin_snapshot["fog"]
-    destination = next(option for option in origin_snapshot["travel_options"] if not option["is_current"])
+    travel_state = _install_travel_state(context, status="traveling", travel_hours_remaining=2, travel_hours_total=4)
+    destination_region = str(travel_state.destination_region_id)
+    context.campaign_state.setdefault("fog_by_region", {})[destination_region] = {
+        "explored_tiles": [[0, 0], [1, 0]],
+        "explored_count": 2,
+        "last_position": [1, 0],
+    }
 
-    travel = runtime.run_command(context.campaign_id, f"travel {destination['destination_region_id']}")
-    destination_fog = travel["campaign"]["fog"]
-    destination_region = str(travel["campaign"]["region"]["region_id"])
+    travel_snapshot = runtime.snapshot(context.campaign_id, narrative="travel-origin")
+    destination_fog = travel_snapshot["campaign"]["fog"]
     destination_regions = {entry["region_id"]: entry for entry in destination_fog["regions"]}
 
-    assert travel["command_type"] == "travel"
+    assert travel_snapshot["campaign"]["scene"] == "travel"
     assert destination_region != origin_region
-    assert destination_fog["region_id"] == destination_region
+    assert destination_fog["region_id"] == origin_region
     assert destination_regions[origin_region]["explored_count"] == origin_fog["explored_count"]
-    assert destination_regions[destination_region]["explored_count"] == destination_fog["explored_count"]
+    assert destination_regions[destination_region]["explored_count"] == 2
+
+
+def test_mid_travel_save_load_preserves_travel_state_and_origin_projection() -> None:
+    runtime, context = _make_campaign()
+    _install_travel_state(
+        context,
+        status="traveling",
+        travel_hours_remaining=2,
+        travel_hours_total=4,
+        danger_level=3,
+        encounter_triggered=True,
+        paused_for_encounter=False,
+        encounter_resolved=True,
+    )
+
+    before = runtime.snapshot(context.campaign_id, narrative="mid-travel")
+    origin_region = str(context.region_snapshot.region_id)
+
+    runtime.save_campaign(context.campaign_id, "travel_mid_route_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("travel_mid_route_slot")
+    after = runtime.snapshot(loaded.campaign_id, narrative="mid-travel-loaded")
+
+    assert before["campaign"]["travel_state"] == after["campaign"]["travel_state"]
+    assert after["campaign"]["scene"] == "travel"
+    assert after["campaign"]["region"]["region_id"] == origin_region
+    assert after["campaign"]["path_authority"]["active_region_id"] == origin_region
+    assert after["campaign"]["local_map_state"]["region_id"] == origin_region
+
+
+def test_arrival_switches_path_authority_and_local_map_to_destination() -> None:
+    runtime, context = _make_campaign()
+    travel_state = _install_travel_state(
+        context,
+        status="arrived",
+        travel_hours_remaining=0,
+        travel_hours_total=4,
+        danger_level=2,
+        encounter_triggered=True,
+        paused_for_encounter=False,
+        encounter_resolved=True,
+    )
+
+    payload = runtime.snapshot(context.campaign_id, narrative="travel-arrived")["campaign"]
+
+    assert payload["travel_state"]["destination_region_id"] == travel_state.destination_region_id
+    assert payload["path_authority"]["active_region_id"] == travel_state.destination_region_id
+    assert payload["local_map_state"]["region_id"] == travel_state.destination_region_id
+
+
+def test_travel_options_expose_deterministic_danger_known_and_visited() -> None:
+    runtime, context = _make_campaign()
+
+    first = runtime.snapshot(context.campaign_id, narrative="travel-options-a")["campaign"]["travel_options"]
+    second = runtime.snapshot(context.campaign_id, narrative="travel-options-b")["campaign"]["travel_options"]
+    first_option = first[0]
+    destination_region_id = str(first_option["destination_region_id"])
+
+    assert first == second
+    assert {"danger_level", "known", "visited"}.issubset(first_option)
+    assert isinstance(first_option["danger_level"], int)
+    assert isinstance(first_option["known"], bool)
+    assert isinstance(first_option["visited"], bool)
+    assert first_option["visited"] is False
+
+    context.campaign_state.setdefault("fog_by_region", {})[destination_region_id] = {
+        "explored_tiles": [[0, 0]],
+        "explored_count": 1,
+        "last_position": [0, 0],
+    }
+    post_travel_options = runtime.snapshot(context.campaign_id, narrative="travel-options-after")["campaign"]["travel_options"]
+    destination_option = next(
+        option for option in post_travel_options if str(option["destination_region_id"]) == destination_region_id
+    )
+
+    assert destination_option["known"] is True
+    assert destination_option["visited"] is True
+
+
+def test_snapshot_exposes_active_travel_state_and_scene() -> None:
+    runtime, context = _make_campaign()
+    origin_region = str(context.region_snapshot.region_id)
+    destination = next(
+        option
+        for option in runtime.snapshot(context.campaign_id, narrative="travel-start")["campaign"]["travel_options"]
+        if not option["is_current"]
+    )
+    travel_state = TravelState(
+        status="traveling",
+        origin_region_id=origin_region,
+        destination_region_id=str(destination["destination_region_id"]),
+        travel_hours_total=int(destination["travel_hours"]),
+        travel_hours_remaining=max(1, int(destination["travel_hours"]) - 1),
+        edge_id=str(destination["route_id"]),
+        danger_level=int(destination.get("danger_level", 0)),
+        encounter_triggered=True,
+        paused_for_encounter=True,
+        encounter_resolved=False,
+    )
+    context.kernel_runtime["game_state"].raw_payload["travel_state"] = travel_state.to_dict()
+
+    snapshot = runtime.snapshot(context.campaign_id, narrative="travel-payload")["campaign"]
+    payload = snapshot["travel_state"]
+
+    assert snapshot["scene"] == "travel"
+    assert payload is not None
+    assert payload["status"] == "traveling"
+    assert payload["route_id"] == str(destination["route_id"])
+    assert payload["origin_region_id"] == origin_region
+    assert payload["destination_region_id"] == str(destination["destination_region_id"])
+    assert payload["travel_hours_total"] == int(destination["travel_hours"])
+    assert payload["travel_hours_remaining"] == max(1, int(destination["travel_hours"]) - 1)
+    assert payload["danger_level"] == int(destination.get("danger_level", 0))
+    assert payload["paused_for_encounter"] is True
+    assert payload["encounter_resolved"] is False
+    assert payload["requires_resolution"] is True
+    assert payload["can_advance"] is False
+
+    option = next(item for item in snapshot["travel_options"] if item["route_id"] == destination["route_id"])
+    assert isinstance(option["danger_level"], int)
+    assert isinstance(option["known"], bool)
+    assert isinstance(option["visited"], bool)
 
 
 def test_save_load_preserves_explored_state() -> None:

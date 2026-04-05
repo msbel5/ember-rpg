@@ -33,7 +33,12 @@ from engine.api.combat_bridge import build_combat_payload
 
 from .region_projection import build_world_entities, sync_combat_projection
 from .settlement import build_character_sheet, current_player_turn_resources
-from .live_kernel import build_actor_spell_payload, ensure_kernel_runtime, serialize_kernel_runtime
+from .live_kernel import (
+    build_actor_spell_payload,
+    build_runtime_travel_payload,
+    ensure_kernel_runtime,
+    serialize_kernel_runtime,
+)
 from .party_bridge import party_member_ids
 from .quest_bridge import current_quest_offers
 from .world import (
@@ -57,10 +62,13 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     runtime_state = runtime_region_state(context.world, context.region_snapshot.region_id)
     combat_state = _enrich_combat_payload(context, build_combat_payload(context))
     kernel_payload = build_kernel_payload(context)
+    travel_payload = build_runtime_travel_payload(context.kernel_runtime or {})
     fog_payload = build_fog_payload(context)
     normalized_party = party_member_ids(context)
     context.campaign_state["party"] = list(normalized_party)
     payload_scene = str(context_data.get("scene", "exploration"))
+    if isinstance(travel_payload, dict) and str(travel_payload.get("status", "")).lower() not in {"", "idle", "arrived", "completed", "resolved", "cancelled"}:
+        payload_scene = "travel"
     if isinstance(combat_state, dict) and combat_state and combat_state.get("phase") != "resolved":
         payload_scene = "combat"
     player_payload = copy.deepcopy(context_data["player"])
@@ -86,7 +94,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
             "seed": context.world.seed,
             "profile_id": context.world.profile_id,
             "adapter_id": context.adapter_id,
-            "active_region_id": context.world.simulation_snapshot.active_region_id,
+            "active_region_id": _payload_active_region_id(kernel_payload, context),
             "faction_count": len(context.world.factions),
             "settlement_count": len(context.world.settlements),
             "history_end_year": context.world.history_end_year,
@@ -97,7 +105,8 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         },
         **kernel_payload,
         "world_graph": build_world_graph(context.world),
-        "travel_options": build_travel_options(context.world),
+        "travel_options": build_travel_options(context.world, context=context),
+        "travel_state": travel_payload,
         "current_region_summary": build_current_region_summary(context.world, context.region_snapshot),
         "player": player_payload,
         "scene": payload_scene,
@@ -132,7 +141,7 @@ def persist_campaign_state(context: "CampaignContext") -> None:
         "adapter_id": context.adapter_id,
         "profile_id": context.profile_id,
         "seed": context.seed,
-        "active_region_id": context.region_snapshot.region_id,
+        "active_region_id": _payload_active_region_id(kernel_payload, context),
         "world_snapshot": snapshot_world(context.world),
         "world_state": kernel_payload["world_state"],
         "game_state": kernel_payload["game_state"],
@@ -317,6 +326,11 @@ def _active_site_id(context: "CampaignContext") -> str:
         or context.region_snapshot.metadata.get("settlement_id")
         or context.region_snapshot.region_id
     )
+
+
+def _payload_active_region_id(kernel_payload: dict[str, Any], context: "CampaignContext") -> str:
+    path_authority = dict(kernel_payload.get("path_authority", {}))
+    return str(path_authority.get("active_region_id") or context.region_snapshot.region_id)
 
 
 __all__ = ["build_kernel_payload", "campaign_payload", "persist_campaign_state"]
