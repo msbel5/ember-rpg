@@ -89,3 +89,24 @@ def test_character_sheet_inventory_exposes_magical_item_metadata():
     assert wand["charges"] == 4
     assert ring["magical"] is True
     assert "inventory" in sheet
+
+
+def test_character_sheet_progression_exposes_runtime_class_ability_metadata():
+    runtime = CampaignRuntime()
+    context = runtime.create_campaign(player_name="SheetWarrior", player_class="warrior", seed=101)
+    player = context.kernel_runtime["actors"]["player"]
+    player.raw_payload["level"] = 2
+    player.raw_payload["class_ability_state"] = {"second_wind": {"used": True}}
+
+    payload = runtime.snapshot(context.campaign_id)
+    progression = payload["campaign"]["character_sheet"]["progression"]
+    second_wind = next(item for item in progression["class_abilities"] if item["id"] == "second_wind")
+    battle_hardened = next(item for item in progression["class_abilities"] if item["id"] == "battle_hardened")
+
+    assert second_wind["unlocked"] is True
+    assert second_wind["active"] is True
+    assert second_wind["implemented"] is True
+    assert second_wind["uses_remaining"] == 0
+    assert second_wind["runtime_status"] == "expended_until_long_rest"
+    assert battle_hardened["implemented"] is False
+    assert "resource_cost" in second_wind

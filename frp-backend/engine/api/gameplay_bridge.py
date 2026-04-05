@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
+from random import Random
 from typing import TYPE_CHECKING, Any, Optional
 
 from engine.data.classes import get_skill_stat_map
@@ -438,17 +439,201 @@ def _store_progression_state(player: "ActorRecord", state: ProgressionState) -> 
     player.raw_payload["progression"] = state.to_dict()
 
 
+_IMPLEMENTED_ACTIVE_CLASS_ABILITIES = {
+    "second_wind",
+    "arcane_recovery",
+    "channel_divinity",
+    "greater_heal",
+}
+_LONG_REST_RESET_ABILITIES = {
+    "second_wind",
+    "arcane_recovery",
+    "channel_divinity",
+}
+
+
+def _class_ability_id(ability: dict[str, Any]) -> str:
+    return str(ability.get("name", "")).strip().lower().replace(" ", "_")
+
+
+def _class_ability_state(player: "ActorRecord") -> dict[str, dict[str, Any]]:
+    raw = player.raw_payload.get("class_ability_state", {})
+    if not isinstance(raw, dict):
+        return {}
+    state: dict[str, dict[str, Any]] = {}
+    for ability_id, entry in raw.items():
+        if isinstance(entry, dict):
+            state[str(ability_id)] = dict(entry)
+    return state
+
+
+def _store_class_ability_state(player: "ActorRecord", state: dict[str, dict[str, Any]]) -> None:
+    player.raw_payload["class_ability_state"] = {str(key): dict(value) for key, value in state.items() if isinstance(value, dict)}
+
+
+def _ability_restore_on_long_rest(player: "ActorRecord") -> None:
+    state = _class_ability_state(player)
+    for ability_id in _LONG_REST_RESET_ABILITIES:
+        state.pop(ability_id, None)
+    if state:
+        _store_class_ability_state(player, state)
+    else:
+        player.raw_payload.pop("class_ability_state", None)
+
+
 def _class_ability_summary(player: "ActorRecord") -> list[dict[str, Any]]:
     class_id = str(player.raw_payload.get("class_name", "warrior")).lower()
     level = int(player.raw_payload.get("level", 1))
+    state = _class_ability_state(player)
     abilities = []
     for ability in get_class_abilities().get(class_id, []):
         entry = dict(ability)
-        entry["id"] = str(entry.get("name", "")).strip().lower().replace(" ", "_")
+        ability_id = _class_ability_id(entry)
+        entry["id"] = ability_id
         entry["required_level"] = int(entry.get("required_level", 1) or 1)
         entry["unlocked"] = level >= entry["required_level"]
+        entry["active"] = not bool(entry.get("passive", False))
+        entry["implemented"] = ability_id in _IMPLEMENTED_ACTIVE_CLASS_ABILITIES
+        entry["resource_cost"] = int(entry.get("cost", 0) or 0)
+        if ability_id in _LONG_REST_RESET_ABILITIES:
+            entry["uses_remaining"] = 0 if bool(state.get(ability_id, {}).get("used")) else 1
+        else:
+            entry["uses_remaining"] = None
+        if not entry["unlocked"]:
+            entry["runtime_status"] = "locked"
+        elif not entry["active"]:
+            entry["runtime_status"] = "passive_not_implemented"
+        elif not entry["implemented"]:
+            entry["runtime_status"] = "not_yet_implemented"
+        elif ability_id in _LONG_REST_RESET_ABILITIES and entry["uses_remaining"] == 0:
+            entry["runtime_status"] = "expended_until_long_rest"
+        elif ability_id == "greater_heal" and int(player.spell_points) < entry["resource_cost"]:
+            entry["runtime_status"] = "insufficient_spell_points"
+        else:
+            entry["runtime_status"] = "ready"
         abilities.append(entry)
     return abilities
+
+
+def progression_class_abilities(player: "ActorRecord") -> list[dict[str, Any]]:
+    return _class_ability_summary(player)
+
+
+def _resolve_class_ability(player: "ActorRecord", query: str) -> dict[str, Any] | None:
+    normalized = str(query).strip().lower().replace(" ", "_")
+    if not normalized:
+        return None
+    for ability in _class_ability_summary(player):
+        ability_id = str(ability.get("id", ""))
+        ability_name = str(ability.get("name", "")).lower()
+        if normalized == ability_id or normalized == ability_name.replace(" ", "_"):
+            return ability
+    for ability in _class_ability_summary(player):
+        ability_id = str(ability.get("id", ""))
+        ability_name = str(ability.get("name", "")).lower()
+        if normalized in ability_id or normalized in ability_name:
+            return ability
+    return None
+
+
+def _roll_dice(seed: int, count: int, sides: int, modifier: int = 0) -> int:
+    rng = Random(int(seed))
+    total = int(modifier)
+    for _ in range(max(0, int(count))):
+        total += rng.randint(1, max(1, int(sides)))
+    return max(0, total)
+
+
+def _heal_actor(actor: "ActorRecord", amount: int) -> int:
+    before = int(actor.hp)
+    actor.hp = min(int(actor.max_hp), int(actor.hp) + max(0, int(amount)))
+    return max(0, int(actor.hp) - before)
+
+
+def _active_party_targets(context: "CampaignContext") -> list["ActorRecord"]:
+    from engine.api.campaign.party_bridge import party_member_ids
+
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    targets: list["ActorRecord"] = []
+    for actor_id in party_member_ids(context):
+        actor = actors.get(actor_id)
+        if actor is not None and getattr(actor, "alive", True):
+            targets.append(actor)
+    return targets
+
+
+def _abilities_summary(player: "ActorRecord") -> str:
+    unlocked = [ability for ability in _class_ability_summary(player) if ability.get("unlocked")]
+    if not unlocked:
+        return "No class abilities are unlocked yet."
+    parts: list[str] = []
+    for ability in unlocked:
+        status = str(ability.get("runtime_status", "unknown")).replace("_", " ")
+        parts.append(f"{ability['name']} ({status})")
+    return "Unlocked abilities: " + "; ".join(parts) + "."
+
+
+def _use_class_ability(
+    context: "CampaignContext",
+    player: "ActorRecord",
+    ability: dict[str, Any],
+    target_name: str | None,
+) -> tuple[str, str, int]:
+    ability_id = str(ability.get("id", ""))
+    ability_name = str(ability.get("name", "That ability"))
+    if not bool(ability.get("unlocked")):
+        return (f"{ability_name} is not unlocked yet.", "progression", 0)
+    if not bool(ability.get("active")):
+        return (f"{ability_name} is passive and not directly usable.", "progression", 0)
+    if not bool(ability.get("implemented")):
+        return (f"{ability_name} is not yet implemented in runtime.", "progression", 0)
+
+    state = _class_ability_state(player)
+    if ability_id in _LONG_REST_RESET_ABILITIES and bool(state.get(ability_id, {}).get("used")):
+        return (f"{ability_name} has already been used since your last long rest.", "progression", 0)
+
+    seed = int(player.raw_payload.get("game_tick", 0)) + int(player.level)
+    target = _resolve_item_target(context, target_name)
+
+    if ability_id == "second_wind":
+        healed = _heal_actor(player, _roll_dice(seed, 1, 10, int(player.level)))
+        state[ability_id] = {"used": True}
+        _store_class_ability_state(player, state)
+        return (f"{player.name} uses Second Wind and regains {healed} HP.", "progression", 0)
+
+    if ability_id == "arcane_recovery":
+        restored = max(1, int(player.level) // 2)
+        before = int(player.spell_points)
+        player.spell_points = min(int(player.max_spell_points), int(player.spell_points) + restored)
+        gained = max(0, int(player.spell_points) - before)
+        state[ability_id] = {"used": True}
+        _store_class_ability_state(player, state)
+        return (f"{player.name} uses Arcane Recovery and restores {gained} spell points.", "progression", 0)
+
+    if ability_id == "channel_divinity":
+        allies = _active_party_targets(context)
+        if not allies:
+            return ("No active allies are available for Channel Divinity.", "progression", 0)
+        amount = _roll_dice(seed, 2, 6)
+        healed_parts: list[str] = []
+        for ally in allies:
+            healed_parts.append(f"{ally.name} +{_heal_actor(ally, amount)} HP")
+        state[ability_id] = {"used": True}
+        _store_class_ability_state(player, state)
+        return (f"{player.name} invokes Channel Divinity. " + ", ".join(healed_parts) + ".", "progression", 0)
+
+    if ability_id == "greater_heal":
+        if target_name is None or target is None:
+            return ("Greater Heal requires a valid target.", "progression", 0)
+        cost = int(ability.get("resource_cost", 0) or 0)
+        if int(player.spell_points) < cost:
+            return (f"Not enough spell points for Greater Heal (need {cost}, have {int(player.spell_points)}).", "progression", 0)
+        healed = _heal_actor(target, _roll_dice(seed, 4, 8, 5))
+        player.spell_points = int(player.spell_points) - cost
+        return (f"{player.name} uses Greater Heal on {target.name} and restores {healed} HP.", "progression", 0)
+
+    return (f"{ability_name} is not yet implemented in runtime.", "progression", 0)
 
 
 def _resolve_skill_id(player: "ActorRecord", query: str) -> str | None:
@@ -716,6 +901,8 @@ def maybe_handle_craft_command(
 # ---------------------------------------------------------------------------
 
 _PROGRESSION_RE = re.compile(r"^(?:progression|character\s+progression)$", re.IGNORECASE)
+_ABILITIES_RE = re.compile(r"^abilities$", re.IGNORECASE)
+_USE_ABILITY_RE = re.compile(r"^use\s+ability\s+(.+?)(?:\s+on\s+(.+))?$", re.IGNORECASE)
 _TRAIN_RE = re.compile(r"^train\s+(.+)$", re.IGNORECASE)
 _PROFICIENCY_RE = re.compile(r"^proficiency\s+(.+)$", re.IGNORECASE)
 _EXPERTISE_RE = re.compile(r"^expertise\s+(.+)$", re.IGNORECASE)
@@ -733,6 +920,17 @@ def maybe_handle_progression_command(
     text = command_text.strip()
     if _PROGRESSION_RE.match(text):
         return (_progression_summary(player), "progression", 0)
+
+    if _ABILITIES_RE.match(text):
+        return (_abilities_summary(player), "progression", 0)
+
+    match = _USE_ABILITY_RE.match(text)
+    if match:
+        ability = _resolve_class_ability(player, match.group(1))
+        if ability is None:
+            return (f"Unknown class ability '{match.group(1).strip()}'.", "progression", 0)
+        target_name = match.group(2).strip() if match.group(2) else None
+        return _use_class_ability(context, player, ability, target_name)
 
     state = _progression_state(player)
 
@@ -847,6 +1045,7 @@ def maybe_handle_rest_command(
         )
 
     if is_long:
+        _ability_restore_on_long_rest(player)
         logger.info("Long rest: %s fully restored", player.name)
         return (
             f"{player.name} takes a long rest. HP fully restored. Spell slots refreshed.",

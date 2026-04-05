@@ -1,16 +1,17 @@
-"""Medical command bridge: kernel medical authority for diagnose/treat/surgery.
-
-Wires the full kernel treatment pipeline: diagnosis creates treatment records,
-treat iterates plan steps with material/skill checks, surgery uses failure chance.
-Tick integration advances infection and recovery.
-"""
+"""Medical command bridge: kernel medical authority for diagnose/treat/surgery."""
 from __future__ import annotations
 
 import logging
 import random
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
+from engine.api.campaign.live_kernel import (
+    _refresh_treatment_record,
+    normalize_actor_medical_state,
+    sync_actor_medical_runtime_state,
+)
 from engine.kernel.medical import (
+    TreatmentRecord,
     TreatmentStep,
     WoundRecord,
     can_perform_step,
@@ -22,8 +23,8 @@ from engine.kernel.medical import (
 )
 
 if TYPE_CHECKING:
-    from engine.kernel.actor import ActorRecord
     from engine.api.campaign.context import CampaignContext
+    from engine.kernel.actor import ActorRecord
 
 logger = logging.getLogger(__name__)
 
@@ -40,59 +41,67 @@ def maybe_handle_medical_command(
     if player is None:
         return None
     if lower.startswith("diagnose"):
-        target_name = command_text[8:].strip() or "self"
-        return _handle_diagnose(actors, player, target_name)
+        return _handle_diagnose(actors, player, command_text[8:].strip() or "self")
     if lower.startswith("surgery "):
-        target_name = command_text[8:].strip() or "self"
-        return _handle_surgery(actors, player, target_name)
+        return _handle_surgery(actors, player, command_text[8:].strip() or "self")
     if lower.startswith("treat "):
-        target_name = command_text[6:].strip() or "self"
-        return _handle_treat(actors, player, target_name)
+        return _handle_treat(actors, player, command_text[6:].strip() or "self")
     return None
 
 
 def _handle_diagnose(
-    actors: dict, doctor: "ActorRecord", target_name: str,
+    actors: dict,
+    doctor: "ActorRecord",
+    target_name: str,
 ) -> tuple[str, str, int]:
-    """Full diagnosis: create treatment records, show wound details and plan."""
     target = _resolve_medical_target(actors, target_name, doctor)
     if target is None:
-        return (f"No target '{target_name}' found to diagnose.", "medical", 1)
+        return (f"No target '{target_name}' found to diagnose.", "medical", 0)
     if target.body_state is None:
-        return (f"{target.identity.display_name} has no injuries to diagnose.", "medical", 1)
-    wounds = target.raw_payload.get("wounds", [])
+        return (f"{target.identity.display_name} has no injuries to diagnose.", "medical", 0)
+
+    normalize_actor_medical_state(target, sync_derived=False)
+    wounds = list(target.raw_payload.get("wounds", []))
     tick = int(target.raw_payload.get("game_tick", 0))
     patient_id = target.identity.actor_id
-    # Build wound summaries and treatment records.
+    existing_records = {
+        record.wound_id: record
+        for record in target.raw_payload.get("treatment_records", [])
+        if isinstance(record, TreatmentRecord)
+    }
     summaries: list[str] = []
-    treatment_records = []
+    treatment_records: list[TreatmentRecord] = []
+
     for wound in wounds:
         if not isinstance(wound, WoundRecord):
             continue
-        record = create_treatment_record(wound, patient_id, tick)
+        record = _refresh_treatment_record(
+            existing_records.get(wound.wound_id) or create_treatment_record(wound, patient_id, tick),
+            wound,
+            tick,
+        )
+        record.diagnosed = True
+        setattr(wound, "diagnosed", True)
+        if TreatmentStep.DIAGNOSIS not in record.steps_completed:
+            record.steps_completed.insert(0, TreatmentStep.DIAGNOSIS)
+        record.steps_completed = _dedupe_steps(record.steps_completed)
+        record.steps_remaining = [
+            step for step in determine_treatment_plan(wound)
+            if step not in record.steps_completed
+        ]
+        if not record.steps_remaining and record.tick_completed is None:
+            record.tick_completed = tick
         treatment_records.append(record)
-        plan_names = [step.name for step in record.steps_remaining]
-        wound_info = f"{wound.body_part_id}: {wound.damage_type} ({wound.damage_amount} dmg)"
-        if wound.bleeding > 0:
-            wound_info += f", bleeding={wound.bleeding}"
-        if wound.open_wound:
-            wound_info += ", open"
-        if wound.fracture:
-            wound_info += ", fracture"
-        if "embedded_object" in wound.tags:
-            wound_info += ", embedded object"
-        infection = float(getattr(wound, "infection_risk", 0.0))
-        if infection > 0:
-            wound_info += f", infection risk={infection:.0%}"
-        wound_info += f" → plan: {', '.join(plan_names)}"
-        summaries.append(wound_info)
-    # Also check body part HP.
+        summaries.append(_wound_summary(wound, record))
+
     for part_id, part in target.body_state.parts.items():
         if part.current_hp < part.max_hp:
-            already_covered = any(w.body_part_id == part_id for w in wounds if isinstance(w, WoundRecord))
-            if not already_covered:
+            covered = any(w.body_part_id == part_id for w in wounds if isinstance(w, WoundRecord))
+            if not covered:
                 summaries.append(f"{part_id}: {part.current_hp}/{part.max_hp} hp")
+
     target.raw_payload["treatment_records"] = treatment_records
+    sync_actor_medical_runtime_state(target)
     lethal, reason = check_lethal_conditions(target)
     status = f"CRITICAL ({reason})" if lethal else "stable"
     summary = "; ".join(summaries[:5]) if summaries else "no visible wounds"
@@ -101,18 +110,23 @@ def _handle_diagnose(
 
 
 def _handle_treat(
-    actors: dict, doctor: "ActorRecord", target_name: str,
+    actors: dict,
+    doctor: "ActorRecord",
+    target_name: str,
 ) -> tuple[str, str, int]:
-    """Iterate treatment plan steps with material/skill checks."""
     target = _resolve_medical_target(actors, target_name, doctor)
     if target is None:
-        return (f"No target '{target_name}' found to treat.", "medical", 2)
+        return (f"No target '{target_name}' found to treat.", "medical", 0)
+
+    normalize_actor_medical_state(target, sync_derived=False)
     records = target.raw_payload.get("treatment_records", [])
     if not records:
-        return ("No treatment records. Diagnose the patient first.", "medical", 1)
-    wounds = target.raw_payload.get("wounds", [])
+        return ("No treatment records. Diagnose the patient first.", "medical", 0)
+
+    wounds = list(target.raw_payload.get("wounds", []))
     materials = _available_medical_materials(doctor)
     results: list[str] = []
+    mutated = False
     for record in records:
         if not record.steps_remaining:
             continue
@@ -125,34 +139,49 @@ def _handle_treat(
                 results.append(f"{step.name}: missing {', '.join(missing)}")
                 break
             ok, msg = perform_treatment_step(
-                doctor, target, wound, record, step, materials, random.random(),
+                doctor,
+                target,
+                wound,
+                record,
+                step,
+                materials,
+                random.random(),
             )
-            record.steps_remaining = [s for s in record.steps_remaining if s != step]
-            record.steps_completed.append(step)
+            mutated = True
             results.append(f"{step.name}: {msg}")
             if not ok:
                 break
     if not results:
-        return (f"No treatable wounds on {target.identity.display_name}.", "medical", 2)
+        return (f"No treatable wounds on {target.identity.display_name}.", "medical", 0)
+
+    sync_actor_medical_runtime_state(target)
     logger.info("Treat %s: %s", target.identity.display_name, "; ".join(results))
-    return (f"Treatment for {target.identity.display_name}: {'; '.join(results)}.", "medical", 2)
+    return (
+        f"Treatment for {target.identity.display_name}: {'; '.join(results)}.",
+        "medical",
+        2 if mutated else 0,
+    )
 
 
 def _handle_surgery(
-    actors: dict, doctor: "ActorRecord", target_name: str,
+    actors: dict,
+    doctor: "ActorRecord",
+    target_name: str,
 ) -> tuple[str, str, int]:
-    """Perform surgery step using kernel failure chance."""
     target = _resolve_medical_target(actors, target_name, doctor)
     if target is None:
-        return (f"No target '{target_name}' found for surgery.", "medical", 2)
+        return (f"No target '{target_name}' found for surgery.", "medical", 0)
+
+    normalize_actor_medical_state(target, sync_derived=False)
     records = target.raw_payload.get("treatment_records", [])
     if not records:
-        return ("No treatment records. Diagnose the patient first.", "medical", 1)
-    wounds = target.raw_payload.get("wounds", [])
+        return ("No treatment records. Diagnose the patient first.", "medical", 0)
+
+    wounds = list(target.raw_payload.get("wounds", []))
     materials = _available_medical_materials(doctor)
-    surgery_skill = int(doctor.skills.get("surgery", doctor.skills.get("surgery_skill", 0)))
-    failure = surgery_failure_chance(surgery_skill)
+    failure = surgery_failure_chance(int(doctor.skills.get("surgery", doctor.skills.get("surgery_skill", 0))))
     results: list[str] = []
+    attempted = False
     for record in records:
         if TreatmentStep.SURGERY not in record.steps_remaining:
             continue
@@ -163,25 +192,33 @@ def _handle_surgery(
         if not can_do:
             results.append(f"Surgery blocked: missing {', '.join(missing)}")
             continue
-        rng_value = random.random()
+        attempted = True
         ok, msg = perform_treatment_step(
-            doctor, target, wound, record, TreatmentStep.SURGERY, materials, rng_value,
+            doctor,
+            target,
+            wound,
+            record,
+            TreatmentStep.SURGERY,
+            materials,
+            random.random(),
         )
-        record.steps_remaining = [s for s in record.steps_remaining if s != TreatmentStep.SURGERY]
-        record.steps_completed.append(TreatmentStep.SURGERY)
         results.append(f"Surgery ({failure:.0%} failure chance): {msg}")
+        if not ok:
+            break
     if not results:
-        return ("No wounds requiring surgery.", "medical", 2)
+        return ("No wounds requiring surgery.", "medical", 0)
+
+    sync_actor_medical_runtime_state(target)
     logger.info("Surgery on %s: %s", target.identity.display_name, "; ".join(results))
-    return (f"Surgery on {target.identity.display_name}: {'; '.join(results)}.", "medical", 2)
+    return (
+        f"Surgery on {target.identity.display_name}: {'; '.join(results)}.",
+        "medical",
+        2 if attempted else 0,
+    )
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _resolve_medical_target(actors: dict, name: str, player: "ActorRecord") -> Optional["ActorRecord"]:
-    if name.lower() in ("self", "me", "player"):
+    if name.lower() in {"self", "me", "player"}:
         return player
     for actor in actors.values():
         if hasattr(actor, "identity") and name.lower() in actor.identity.display_name.lower():
@@ -190,32 +227,65 @@ def _resolve_medical_target(actors: dict, name: str, player: "ActorRecord") -> O
 
 
 def _available_medical_materials(doctor: "ActorRecord") -> dict[str, int]:
-    """Scan doctor's inventory for medical supplies."""
     materials: dict[str, int] = {}
     for item in doctor.inventory:
-        def_id = getattr(item, "item_def_id", "")
+        def_id = str(getattr(item, "item_def_id", ""))
         qty = int(getattr(item, "quantity", 1))
         tags = list(getattr(item, "tags", []))
-        # Map common medical items to material keys.
         if "bandage" in def_id or "cloth" in def_id:
             materials["bandage"] = materials.get("bandage", 0) + qty
-        if "soap" in def_id or "water" in def_id:
+            materials["cloth"] = materials.get("cloth", 0) + qty
+        if "soap" in def_id:
             materials["soap"] = materials.get("soap", 0) + qty
+        if "water" in def_id:
+            materials["water"] = materials.get("water", 0) + qty
             materials["clean_water"] = materials.get("clean_water", 0) + qty
         if "thread" in def_id or "suture" in def_id:
+            materials["thread"] = materials.get("thread", 0) + qty
             materials["suture_thread"] = materials.get("suture_thread", 0) + qty
         if "knife" in def_id or "scalpel" in def_id or "blade" in def_id:
             materials["edged_tool"] = materials.get("edged_tool", 0) + qty
         if "splint" in def_id:
             materials["splint"] = materials.get("splint", 0) + qty
         for tag in tags:
-            materials[tag] = materials.get(tag, 0) + qty
+            materials[str(tag)] = materials.get(str(tag), 0) + qty
     return materials
 
 
 def _find_wound(wounds: list, wound_id: str) -> Optional[WoundRecord]:
-    """Find a wound by its wound_id."""
     for wound in wounds:
         if isinstance(wound, WoundRecord) and wound.wound_id == wound_id:
             return wound
     return None
+
+
+def _dedupe_steps(steps: list[TreatmentStep]) -> list[TreatmentStep]:
+    deduped: list[TreatmentStep] = []
+    seen: set[TreatmentStep] = set()
+    for step in steps:
+        if step in seen:
+            continue
+        seen.add(step)
+        deduped.append(step)
+    return deduped
+
+
+def _wound_summary(wound: WoundRecord, record: TreatmentRecord) -> str:
+    plan_names = [step.name for step in record.steps_remaining]
+    wound_info = f"{wound.body_part_id}: {wound.damage_type} ({wound.damage_amount} dmg)"
+    if wound.bleeding > 0:
+        wound_info += f", bleeding={wound.bleeding}"
+    if wound.open_wound:
+        wound_info += ", open"
+    if wound.fracture:
+        wound_info += ", fracture"
+    if "embedded_object" in wound.tags:
+        wound_info += ", embedded object"
+    infection = float(getattr(wound, "infection_risk", 0.0))
+    if infection > 0:
+        wound_info += f", infection risk={infection:.0%}"
+    wound_info += f" -> plan: {', '.join(plan_names)}"
+    return wound_info
+
+
+__all__ = ["maybe_handle_medical_command"]

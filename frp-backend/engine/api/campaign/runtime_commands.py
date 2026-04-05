@@ -200,7 +200,7 @@ def _dispatch(
 
     logger.warning("Unknown command rejected: %s", issued[:80])
     return (
-        f"Unknown command: '{issued}'. Try: attack, cast, use, equip, craft, rest, "
+        f"Unknown command: '{issued}'. Try: attack, cast, use, use ability, abilities, equip, craft, rest, "
         f"travel, train, proficiency, raise, buy, sell, diagnose, dialog, recruit, quests, or world interaction controls.",
         "unknown",
         0,

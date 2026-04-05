@@ -254,6 +254,21 @@ def map_payload_from_region(region_snapshot: RegionSnapshot) -> dict[str, Any]:
     }
 
 
+def build_fog_payload(context: "CampaignContext") -> dict[str, Any]:
+    if hasattr(context, "refresh_fog_state"):
+        return copy.deepcopy(context.refresh_fog_state())
+    return {
+        "region_id": str(getattr(getattr(context, "region_snapshot", None), "region_id", "")),
+        "visible_tiles": [],
+        "explored_tiles": [],
+        "frontier_tiles": [],
+        "visible_count": 0,
+        "explored_count": 0,
+        "frontier_count": 0,
+        "regions": [],
+    }
+
+
 def alerts_from_events(events: list[dict[str, Any]]) -> list[str]:
     alerts = []
     for event in events:
@@ -293,6 +308,7 @@ def _region_grid_position(region: dict[str, Any]) -> list[int]:
 __all__ = [
     "alerts_from_events",
     "build_current_region_summary",
+    "build_fog_payload",
     "build_travel_options",
     "build_world",
     "build_world_graph",

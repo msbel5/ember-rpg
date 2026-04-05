@@ -5,7 +5,7 @@ import copy
 from typing import Any
 
 from engine.api.campaign.context import CampaignContext
-from engine.kernel.game_state import FORMATIONS, normalize_party_state
+from engine.kernel.game_state import FORMATIONS, normalize_party_state, party_tactic_mode
 from engine.kernel.scene_types import SceneType
 from engine.map import MapData, Room, TileType
 from engine.world.entity import Entity, EntityType
@@ -390,6 +390,7 @@ def sync_party_projection(context: CampaignContext) -> None:
         record = _ensure_projected_party_entity(context, actor_id)
         if record is None:
             continue
+        tactic_mode = party_tactic_mode(game_state, actor_id)
         dx, dy = formation_offsets[index] if index < len(formation_offsets) else formation_offsets[-1]
         slot_position = _clamp_party_position(context, player_x + int(dx), player_y + int(dy))
         entity_ref = record.get("entity_ref")
@@ -406,6 +407,7 @@ def sync_party_projection(context: CampaignContext) -> None:
         record["attitude"] = "ally"
         record["disposition"] = "ally"
         record["context_actions"] = ["examine"]
+        record["tactic_mode"] = tactic_mode
         actor = actors.get(actor_id)
         if actor is not None:
             actor.position.x = slot_position[0]
@@ -414,6 +416,7 @@ def sync_party_projection(context: CampaignContext) -> None:
             actor.raw_payload["active_party_member"] = True
             actor.raw_payload["reserve_party_member"] = False
             actor.raw_payload["companion_roster"] = True
+            actor.raw_payload["party_tactic_mode"] = tactic_mode
         _set_live_party_projection_state(context, actor_id, active=True)
 
     for actor_id in reserve_ids:
@@ -425,6 +428,7 @@ def sync_party_projection(context: CampaignContext) -> None:
             actor.raw_payload["active_party_member"] = False
             actor.raw_payload["reserve_party_member"] = True
             actor.raw_payload["companion_roster"] = True
+            actor.raw_payload["party_tactic_mode"] = party_tactic_mode(game_state, actor_id)
         _set_live_party_projection_state(context, actor_id, active=False)
         if live_entry is None and isinstance(record, dict):
             entity_ref = record.get("entity_ref")
@@ -452,6 +456,7 @@ def sync_party_projection(context: CampaignContext) -> None:
         record["attitude"] = "friendly"
         record["disposition"] = "friendly"
         record["context_actions"] = list(record.get("context_actions", ["talk", "examine"])) or ["talk", "examine"]
+        record["tactic_mode"] = party_tactic_mode(game_state, actor_id)
 
 
 def apply_region_to_context(

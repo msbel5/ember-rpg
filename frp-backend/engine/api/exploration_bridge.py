@@ -124,6 +124,8 @@ def maybe_handle_look_command(
         return None
     if _player(context) is None:
         return ("You look around but cannot make sense of your surroundings.", "exploration", 0)
+    if hasattr(context, "refresh_fog_state"):
+        context.refresh_fog_state()
     ss = context.settlement_state
     name = ss.get("name", "this settlement")
     weather = ss.get("weather", {}).get("description", "")
@@ -188,6 +190,8 @@ def maybe_handle_move_command(
         old_x, old_y = player.position.x, player.position.y
         new_x, new_y = int(m.group(1)), int(m.group(2))
         sync_player_position(context, new_x, new_y)
+        if hasattr(context, "refresh_fog_state"):
+            context.refresh_fog_state()
         return (f"You move from ({old_x},{old_y}) to ({new_x},{new_y}).",
                 "exploration", 0)
     # "move <direction>"
@@ -201,6 +205,8 @@ def maybe_handle_move_command(
         new_x = int(player.position.x) + dx
         new_y = int(player.position.y) + dy
         sync_player_position(context, new_x, new_y)
+        if hasattr(context, "refresh_fog_state"):
+            context.refresh_fog_state()
         return (f"You move {d} to ({new_x},{new_y}).", "exploration", 0)
     # "go to <location>"
     m = _MOVE_TO_PLACE_RE.match(text)
@@ -210,6 +216,8 @@ def maybe_handle_move_command(
             return no_player
         room = _find_room(context, loc)
         label = room.get("label", room.get("kind", "building")) if room else loc
+        if hasattr(context, "refresh_fog_state"):
+            context.refresh_fog_state()
         return (f"You head towards {label}.", "exploration", 0)
     return None
 

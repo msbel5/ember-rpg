@@ -10,9 +10,9 @@ import logging
 from typing import Any
 
 from engine.api.campaign.context import CampaignContext
-from engine.api.gameplay_bridge import inventory_item_row
+from engine.api.campaign.live_kernel import build_medical_payload
+from engine.api.gameplay_bridge import inventory_item_row, progression_class_abilities
 from engine.data.classes import get_creation_ability_order
-from engine.data.runtime import get_class_abilities
 from engine.kernel.progression import ProgressionState
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
@@ -38,18 +38,11 @@ def _build_progression_summary(player) -> dict[str, Any]:
             bab=int(player.raw_payload.get("bab", 0)),
             saves={str(key): int(value) for key, value in dict(player.raw_payload.get("saves", {})).items()},
         )
-    class_id = str(player.dominant_class or "adventurer").lower()
-    class_abilities = []
-    for ability in get_class_abilities().get(class_id, []):
-        entry = dict(ability)
-        entry["required_level"] = int(entry.get("required_level", 1) or 1)
-        entry["unlocked"] = player.level >= entry["required_level"]
-        class_abilities.append(entry)
     return {
         "proficiency_points_available": int(state.proficiency_points_available),
         "skill_points_available": int(state.skill_points_available),
         "ability_increases_available": int(state.ability_increases_available),
-        "class_abilities": class_abilities,
+        "class_abilities": progression_class_abilities(player),
     }
 
 
@@ -232,6 +225,7 @@ def build_character_sheet(context: CampaignContext, settlement_state: dict[str, 
         "inventory_count": len(player.inventory),
         "inventory": [inventory_item_row(item) for item in player.inventory],
         "passives": copy.deepcopy(player.passives),
+        "medical": build_medical_payload(player),
         "progression": _build_progression_summary(player),
         "settlement_role": str((settlement_state or {}).get("player_role", "commander")),
         "creation_summary": creation_summary,

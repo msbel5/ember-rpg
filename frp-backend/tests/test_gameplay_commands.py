@@ -9,6 +9,7 @@ from engine.api.gameplay_bridge import (
     maybe_handle_equipment_command,
     maybe_handle_inventory_command,
     maybe_handle_item_use_command,
+    maybe_handle_progression_command,
     maybe_handle_rest_command,
     maybe_handle_spell_command,
 )
@@ -359,6 +360,49 @@ class TestUseItemCommand:
         assert wand is not None
         assert bool(wand.payload.get("identified", True)) is False
         assert int(wand.payload.get("charges", -1)) == 3
+
+
+class TestClassAbilityCommand:
+
+    def test_second_wind_heals_and_resets_on_long_rest(self):
+        _rt, ctx = _make_campaign()
+        player = _player_actor(ctx)
+        player.raw_payload["class_name"] = "warrior"
+        player.raw_payload["level"] = 2
+        player.stats["hp"] = max(1, int(player.stats.get("max_hp", 20)) - 8)
+
+        first = maybe_handle_progression_command(ctx, "use ability second wind")
+        second = maybe_handle_progression_command(ctx, "use ability second wind")
+
+        assert first is not None
+        assert first[1] == "progression"
+        assert "second wind" in first[0].lower()
+        assert int(player.stats["hp"]) > max(1, int(player.stats.get("max_hp", 20)) - 8)
+        assert second is not None
+        assert "already been used" in second[0].lower()
+
+        rest = maybe_handle_rest_command(ctx, "long rest")
+        assert rest is not None
+        player.stats["hp"] = max(1, int(player.stats.get("max_hp", 20)) - 5)
+        third = maybe_handle_progression_command(ctx, "use ability second wind")
+
+        assert third is not None
+        assert "second wind" in third[0].lower()
+
+    def test_unimplemented_active_ability_fails_non_mutating(self):
+        _rt, ctx = _make_campaign()
+        player = _player_actor(ctx)
+        player.raw_payload["class_name"] = "warrior"
+        player.raw_payload["level"] = 5
+        baseline_hp = int(player.stats.get("hp", 0))
+        baseline_state = dict(player.raw_payload.get("class_ability_state", {}))
+
+        result = maybe_handle_progression_command(ctx, "use ability mighty blow")
+
+        assert result is not None
+        assert "not yet implemented" in result[0].lower()
+        assert int(player.stats.get("hp", 0)) == baseline_hp
+        assert dict(player.raw_payload.get("class_ability_state", {})) == baseline_state
 
 
 # ---------------------------------------------------------------------------

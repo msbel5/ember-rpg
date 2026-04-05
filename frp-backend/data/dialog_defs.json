@@ -8559,6 +8559,1561 @@
           ]
         }
       ]
+    },
+    {
+      "dialog_id": "healer_wound_dresser",
+      "npc_id": "healer_wound_dresser",
+      "role": "healer",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A healer with bloodstained sleeves looks up from a workbench covered in rolled bandages and jars of salve. \"Wounds do not wait for manners. Show me what hurts or tell me what you need.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_wound_care",
+              "text": "Tell me about wound care.",
+              "next_state_id": "wound_care_info",
+              "actions": []
+            },
+            {
+              "transition_id": "offer_torn_cloth",
+              "text": "I brought torn cloth for bandages.",
+              "next_state_id": "cloth_received",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "torn_cloth"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "torn_cloth", "quantity": 3}
+                },
+                {
+                  "action_type": "give_item",
+                  "params": {"item_def_id": "potion_of_healing", "quantity": 1}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 15}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_salve_recipe",
+              "text": "How do you make healing salve?",
+              "next_state_id": "salve_recipe_info",
+              "actions": []
+            },
+            {
+              "transition_id": "wound_dresser_farewell",
+              "text": "I am fine for now.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "wound_care_info",
+          "text": "\"Clean the wound first — spring water or antiseptic tincture. Pack it with healing salve to stop infection. Then wrap it tight with bandages. Field bandages work in a pinch, but proper linen dressings hold better. Change them twice a day.\"",
+          "transitions": [
+            {
+              "transition_id": "wound_info_back",
+              "text": "What about deep wounds?",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "wound_info_done",
+              "text": "I will remember that.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The healer taught wound care basics: clean with antiseptic, apply healing salve, wrap with field bandages. Change dressings twice daily."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "cloth_received",
+          "text": "\"Cloth is always in short supply. Three lengths will make a dozen bandages — enough for the evening rush. Take this healing potion as thanks. We look after those who look after us.\"",
+          "transitions": [
+            {
+              "transition_id": "cloth_done",
+              "text": "Glad to help.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "salve_recipe_info",
+          "text": "\"Healing salve is the simplest medicine worth making. Crush healing herbs with a mortar, mix in honey for binding, and spread it on torn cloth strips. Any alchemy bench will do. Even a novice can manage it at difficulty ten.\"",
+          "transitions": [
+            {
+              "transition_id": "salve_info_back",
+              "text": "What else should I know?",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "salve_info_done",
+              "text": "I will try making some.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "healer_field_medic",
+      "npc_id": "healer_field_medic",
+      "role": "healer",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A field medic crouches beside an open kit of tinctures and splints, hands still dusted with dried blood. \"Triage is about order. You treat the dying first, the broken second, and the bruised when there is time. What do you need?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_triage_info",
+              "text": "Teach me about battlefield triage.",
+              "next_state_id": "triage_info",
+              "actions": []
+            },
+            {
+              "transition_id": "offer_healing_herb",
+              "text": "I have healing herbs for the wounded.",
+              "next_state_id": "herb_received",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "healing_herb"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "healing_herb", "quantity": 2}
+                },
+                {
+                  "action_type": "give_gold",
+                  "params": {"amount": 30}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 20}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_surgery_prep",
+              "text": "What does surgery require?",
+              "next_state_id": "surgery_prep_info",
+              "actions": []
+            },
+            {
+              "transition_id": "field_medic_farewell",
+              "text": "Stay safe out there.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "triage_info",
+          "text": "\"Bleeding comes first — field bandages or bloodclot poultice. Broken bones need splint braces before the patient can be moved. Infections need antiseptic tincture within the hour or the wound turns septic. Pain suppressors help, but use them sparingly — ghostcap numbs the mind as well as the body.\"",
+          "transitions": [
+            {
+              "transition_id": "triage_back",
+              "text": "What about surgery?",
+              "next_state_id": "surgery_prep_info",
+              "actions": []
+            },
+            {
+              "transition_id": "triage_done",
+              "text": "I will prepare supplies.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The field medic explained triage priorities: bleeding first (bandages, poultice), broken bones (splint braces), infection (antiseptic tincture), and pain management (pain suppressor)."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "herb_received",
+          "text": "\"Two bundles of healing herbs. That will keep the worst cases stable until proper medicine arrives. Here — the camp fund can spare this much for your generosity.\"",
+          "transitions": [
+            {
+              "transition_id": "herb_done",
+              "text": "Use them well.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "surgery_prep_info",
+          "text": "\"Surgery demands a surgical kit — clean blades, needles, thread, vials for drainage. You can assemble one at a workbench from leather, iron nails, torn cloth, and glass vials. It is leatherworking, not alchemy, but the precision required is just as demanding.\"",
+          "transitions": [
+            {
+              "transition_id": "surgery_back",
+              "text": "Tell me about triage again.",
+              "next_state_id": "triage_info",
+              "actions": []
+            },
+            {
+              "transition_id": "surgery_done",
+              "text": "I will gather the materials.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "priest_plague_ward",
+      "npc_id": "priest_plague_ward",
+      "role": "priest",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A priest stands over a row of cots in a makeshift ward, incense burning against the stench of fever. \"The plague does not care about prayers alone. We need medicine, clean water, and hands willing to help. Are you here to serve?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_plague_info",
+              "text": "Tell me about the plague.",
+              "next_state_id": "plague_info",
+              "actions": []
+            },
+            {
+              "transition_id": "offer_mandrake",
+              "text": "I brought mandrake root for the antidote.",
+              "next_state_id": "mandrake_received",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "mandrake_root"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "mandrake_root", "quantity": 1}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 25}
+                },
+                {
+                  "action_type": "set_reputation",
+                  "params": {"delta": 2}
+                }
+              ]
+            },
+            {
+              "transition_id": "plague_quest_start",
+              "text": "I will find the source of this plague.",
+              "next_state_id": "plague_quest_accepted",
+              "actions": [
+                {
+                  "action_type": "start_quest",
+                  "params": {"quest_id": "side_plague_ward", "stage": "accepted"}
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The priest in the plague ward asked me to find the source of the infection. The mining camp's water supply may be poisoned."}
+                }
+              ]
+            },
+            {
+              "transition_id": "priest_plague_farewell",
+              "text": "I will pray for them.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "plague_info",
+          "text": "\"It began three weeks ago in the mining camp. Fever, then sores, then the lungs fill. Mandrake root and moonpetal brewed together at an alchemy bench make the antidote — but the roots are scarce and the miners cannot leave their cots to gather them. Someone poisoned the well. I am certain of it.\"",
+          "transitions": [
+            {
+              "transition_id": "plague_info_back",
+              "text": "How can I help?",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "plague_info_done",
+              "text": "I will search for the source.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "mandrake_received",
+          "text": "\"Mandrake root — the gods have answered. This single root can save three lives if brewed correctly. The people of this ward will remember your name. You have earned their respect and mine.\"",
+          "transitions": [
+            {
+              "transition_id": "mandrake_done",
+              "text": "Save who you can.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "plague_quest_accepted",
+          "text": "\"The poisoned wellspring lies beneath the mining tunnels. Plague rats guard the approach. Be careful — the water itself is toxic. Bring plague samples back to any alchemist and they can confirm the source. Then purify the well.\"",
+          "transitions": [
+            {
+              "transition_id": "plague_quest_done",
+              "text": "I will cleanse it.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "priest_recovery_blessing",
+      "npc_id": "priest_recovery_blessing",
+      "role": "priest",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A priest sits in a quiet chapel adjoining the infirmary, sacred oils and blessed cloths arranged on a small altar. \"Recovery is more than mending flesh. The spirit needs rest as much as the body needs bandages. How may I help you heal?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_recovery_info",
+              "text": "Tell me about recovery and rest.",
+              "next_state_id": "recovery_info",
+              "actions": []
+            },
+            {
+              "transition_id": "request_blessing",
+              "text": "Bless me for the road ahead.",
+              "next_state_id": "blessing_given",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {"amount": 15}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_infection_cure",
+              "text": "How do you treat infections?",
+              "next_state_id": "infection_info",
+              "actions": []
+            },
+            {
+              "transition_id": "priest_recovery_farewell",
+              "text": "Thank you, I feel better already.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "recovery_info",
+          "text": "\"Rest is the foundation. A clean bed, warm broth, and time. Medicinal broth speeds the body's natural recovery — herb heal simmered with salt at a campfire. Ironbark tonic fortifies endurance for those who cannot afford to rest. But nothing replaces sleep and stillness.\"",
+          "transitions": [
+            {
+              "transition_id": "recovery_back",
+              "text": "What about infections?",
+              "next_state_id": "infection_info",
+              "actions": []
+            },
+            {
+              "transition_id": "recovery_done",
+              "text": "Rest it is, then.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "blessing_given",
+          "text": "\"May the light mend what is broken and guard what remains whole. Go with renewed strength. This blessing will ease your recovery should you fall in battle.\"",
+          "transitions": [
+            {
+              "transition_id": "blessing_done",
+              "text": "I am grateful.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "infection_info",
+          "text": "\"Infection is the silent killer after every battle. Antiseptic tincture — wolfsbane distilled with spring water — must be applied within the hour. After that, bloodclot poultice to seal the wound and healing salve to draw out any remaining poison. The alchemist's bench is your best friend against infection.\"",
+          "transitions": [
+            {
+              "transition_id": "infection_back",
+              "text": "Tell me about rest and recovery.",
+              "next_state_id": "recovery_info",
+              "actions": []
+            },
+            {
+              "transition_id": "infection_done",
+              "text": "I will keep antiseptic close.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The priest explained infection treatment: antiseptic tincture within the hour, bloodclot poultice to seal, healing salve to draw out poison. All crafted at an alchemy bench."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "sage_medical_scholar",
+      "npc_id": "sage_medical_scholar",
+      "role": "sage",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A sage pores over anatomical diagrams and herbal texts, a human skeleton hanging from a stand beside the desk. \"Medicine is a science, not a prayer. Understanding the body's structure is the first step to mending it. What brings you to my study?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_anatomy",
+              "text": "Teach me about surgical preparation.",
+              "next_state_id": "anatomy_info",
+              "actions": []
+            },
+            {
+              "transition_id": "offer_plague_sample",
+              "text": "I have plague essence for your research.",
+              "next_state_id": "plague_sample_received",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "plague_essence"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "plague_essence", "quantity": 1}
+                },
+                {
+                  "action_type": "give_gold",
+                  "params": {"amount": 40}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 30}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_herbal_medicine",
+              "text": "What do the texts say about herbal remedies?",
+              "next_state_id": "herbal_medicine_info",
+              "actions": []
+            },
+            {
+              "transition_id": "sage_medical_farewell",
+              "text": "I will leave you to your studies.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "anatomy_info",
+          "text": "\"Surgery demands precision. A surgical kit — assembled from leather, iron nails, clean cloth, and glass vials at a workbench — contains the essential tools: scalpels, clamps, sutures. The leatherworking skill translates well to surgical assembly. Difficulty sixteen, for those skilled enough.\"",
+          "transitions": [
+            {
+              "transition_id": "anatomy_back",
+              "text": "What about herbal treatments?",
+              "next_state_id": "herbal_medicine_info",
+              "actions": []
+            },
+            {
+              "transition_id": "anatomy_done",
+              "text": "I will study the diagrams.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The medical sage described surgical kit assembly: leather, iron nails, torn cloth, and glass vials at a workbench using leatherworking skill at DC 16."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "plague_sample_received",
+          "text": "\"Plague essence — dangerous to handle, invaluable for study. I can isolate the pathogen and develop a countermeasure. Here is payment for the risk you took in collecting it. This will advance our understanding enormously.\"",
+          "transitions": [
+            {
+              "transition_id": "plague_sample_done",
+              "text": "Use it to save lives.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "herbal_medicine_info",
+          "text": "\"The ancients knew their herbs. Bloodthorn for clotting, chamomile for fever, ironwood bark for fortitude, ghostcap for pain. Mandrake root is the keystone of plague treatment — combined with moonpetal at an alchemy bench, it creates the only reliable plague antidote known. Difficulty sixteen, and worth every effort.\"",
+          "transitions": [
+            {
+              "transition_id": "herbal_back",
+              "text": "Tell me about surgery.",
+              "next_state_id": "anatomy_info",
+              "actions": []
+            },
+            {
+              "transition_id": "herbal_done",
+              "text": "I will gather these herbs.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "sage_herbalist_lore",
+      "npc_id": "sage_herbalist_lore",
+      "role": "sage",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A sage tends a small indoor garden of medicinal plants, each labeled with precise notation. \"Every herb in this garden can save a life or take one, depending on the dosage. Shall I teach you the difference?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_herb_lore",
+              "text": "Teach me about medicinal herbs.",
+              "next_state_id": "herb_lore",
+              "actions": []
+            },
+            {
+              "transition_id": "trade_moonpetal",
+              "text": "I found moonpetal in the wild. What is it worth?",
+              "next_state_id": "moonpetal_appraisal",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "moonpetal"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "moonpetal", "quantity": 1}
+                },
+                {
+                  "action_type": "give_gold",
+                  "params": {"amount": 35}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 15}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_antiseptic_lore",
+              "text": "How are antiseptics made?",
+              "next_state_id": "antiseptic_lore",
+              "actions": []
+            },
+            {
+              "transition_id": "sage_herb_farewell",
+              "text": "Fascinating. I must go.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "herb_lore",
+          "text": "\"Healing herbs are common and versatile — salves, potions, even teas. Wolfsbane is a powerful antiseptic when diluted properly, lethal if ingested raw. Nightshade numbs pain but clouds the mind. Mandrake root is the rarest — it only grows where the dead have rested, and it is the only cure for the southern plague.\"",
+          "transitions": [
+            {
+              "transition_id": "herb_lore_back",
+              "text": "How do I make antiseptics?",
+              "next_state_id": "antiseptic_lore",
+              "actions": []
+            },
+            {
+              "transition_id": "herb_lore_done",
+              "text": "I will gather what I can.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "moonpetal_appraisal",
+          "text": "\"Moonpetal — it blooms only under a full moon and wilts by dawn. Combined with mandrake root, it creates the plague antidote. Alone, it soothes fever and eases breathing. Thirty-five gold is a fair price for one this fresh.\"",
+          "transitions": [
+            {
+              "transition_id": "moonpetal_done",
+              "text": "A fair trade.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "antiseptic_lore",
+          "text": "\"Antiseptic tincture requires wolfsbane — yes, the poison — diluted with spring water and sealed in a glass vial. At an alchemy bench, difficulty twelve. The key is concentration: too strong and it burns healthy flesh, too weak and the infection persists. A mortar is essential for grinding the wolfsbane to the right consistency.\"",
+          "transitions": [
+            {
+              "transition_id": "antiseptic_back",
+              "text": "Tell me more about herbs.",
+              "next_state_id": "herb_lore",
+              "actions": []
+            },
+            {
+              "transition_id": "antiseptic_done",
+              "text": "I will brew some.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The herbalist sage explained antiseptic tincture: wolfsbane diluted with spring water in a glass vial, brewed at an alchemy bench at DC 12 using a mortar."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "merchant_medical_supplies",
+      "npc_id": "merchant_medical_supplies",
+      "role": "merchant",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A merchant stands behind crates stamped with a red cross, shelves stocked with bandage rolls, herb bundles, and glass vials. \"Medical supplies. Steady demand, slim margins, and the satisfaction of knowing your goods keep people breathing. What do you need?\"",
+          "transitions": [
+            {
+              "transition_id": "show_medical_stock",
+              "text": "Show me your medical inventory.",
+              "next_state_id": "medical_inventory",
+              "actions": []
+            },
+            {
+              "transition_id": "sell_medical_goods",
+              "text": "I have medical supplies to sell.",
+              "next_state_id": "purchase_result",
+              "actions": [
+                {
+                  "action_type": "give_gold",
+                  "params": {"amount": 45}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "negotiate_medical_bulk",
+              "text": "I need supplies for a field hospital. Can you discount?",
+              "next_state_id": "bulk_medical",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {
+                  "stat": "PRE",
+                  "operator": ">=",
+                  "value": 12
+                }
+              },
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "medical_bulk_discount", "value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "merchant_medical_farewell",
+              "text": "Nothing today.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "medical_inventory",
+          "text": "\"Healing herbs, torn cloth for bandages, mandrake root when I can get it, glass vials, wolfsbane in small doses. I also stock honey — healers swear by it for wound dressings. Moonpetal is seasonal. For plague antidote ingredients, you will need both mandrake root and moonpetal together.\"",
+          "transitions": [
+            {
+              "transition_id": "medical_inv_back",
+              "text": "Can I sell supplies here?",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "medical_inv_done",
+              "text": "I will take what I need.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "purchase_result",
+          "text": "\"Medical goods always have a buyer. The healers' guild, the military quartermasters, the temples — everyone needs bandages and salves. Here is a fair price for what you have brought.\"",
+          "transitions": [
+            {
+              "transition_id": "purchase_done",
+              "text": "Pleasure doing business.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "bulk_medical",
+          "text": "\"A field hospital? You must be headed somewhere dangerous. Very well — fifteen percent off the lot for bulk medical orders. I will set aside extra bandage cloth and healing herbs for you.\"",
+          "transitions": [
+            {
+              "transition_id": "bulk_done",
+              "text": "That will help.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "merchant_apothecary",
+      "npc_id": "merchant_apothecary",
+      "role": "merchant",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "An apothecary arranges rows of labeled tinctures and stoppered vials behind a polished counter. The air smells of chamomile and alcohol. \"Remedies, tinctures, and tonics. I stock what the healers prescribe and the soldiers demand. Name your ailment.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_remedy_list",
+              "text": "What remedies do you carry?",
+              "next_state_id": "remedy_list",
+              "actions": []
+            },
+            {
+              "transition_id": "buy_antidote",
+              "text": "I need an antidote for poison.",
+              "next_state_id": "antidote_sold",
+              "actions": [
+                {
+                  "action_type": "take_gold",
+                  "params": {"amount": 25}
+                },
+                {
+                  "action_type": "give_item",
+                  "params": {"item_def_id": "healing_herb", "quantity": 2}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_recovery_supplies",
+              "text": "What do soldiers take for recovery after battle?",
+              "next_state_id": "recovery_supplies",
+              "actions": []
+            },
+            {
+              "transition_id": "apothecary_farewell",
+              "text": "I feel healthy enough.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "remedy_list",
+          "text": "\"Healing salve for wounds, antiseptic tincture for infection, fever tea for the burning, pain suppressors for the worst of it, and ironbark tonic for those who need endurance in the field. For plague cases, only the plague antidote will do — mandrake root and moonpetal, brewed at an alchemy bench.\"",
+          "transitions": [
+            {
+              "transition_id": "remedy_back",
+              "text": "What about recovery supplies?",
+              "next_state_id": "recovery_supplies",
+              "actions": []
+            },
+            {
+              "transition_id": "remedy_done",
+              "text": "I know what I need now.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "antidote_sold",
+          "text": "\"Poison is nothing to trifle with. These healing herbs can be brewed into a proper antidote at any alchemy bench — herb cure, honey, and a glass vial. Or eat them raw for a lesser effect. Twenty-five gold for the pair.\"",
+          "transitions": [
+            {
+              "transition_id": "antidote_done",
+              "text": "That may save my life.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "recovery_supplies",
+          "text": "\"The garrison buys medicinal broth by the barrel — herb heal, salt, and water simmered at a campfire. Ironbark tonic for the officers who cannot afford a day in bed. Restorative stew for the ones strong enough to eat solid food again. Field bandages and splint braces round out any field kit.\"",
+          "transitions": [
+            {
+              "transition_id": "recovery_back",
+              "text": "Show me the remedies.",
+              "next_state_id": "remedy_list",
+              "actions": []
+            },
+            {
+              "transition_id": "recovery_done",
+              "text": "I will stock up.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The apothecary listed recovery essentials: medicinal broth (campfire), ironbark tonic and antiseptic tincture (alchemy bench), restorative stew (kitchen), field bandages and splint braces (workbench)."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "warrior_mentor_second_wind",
+      "npc_id": "warrior_mentor_second_wind",
+      "role": "warrior_mentor",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A battlefield mentor taps a practice blade against a shield boss. \"Second wind is not magic. It is breathing, footwork, and refusing to break when the line wavers. Want the drill?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_second_wind_info",
+              "text": "Teach me about second wind.",
+              "next_state_id": "second_wind_info",
+              "actions": []
+            },
+            {
+              "transition_id": "practice_second_wind",
+              "text": "Drill me for battlefield discipline.",
+              "next_state_id": "second_wind_drill",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The warrior mentor taught me that second wind comes from breath control, stance, and never surrendering the line."}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "warrior_mentor_farewell",
+              "text": "I will come back later.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "second_wind_info",
+          "text": "\"When the line breaks, do not chase glory. Plant your feet, slow your breath, and let the enemy overextend. Second Wind is for the moment when the foe thinks you are done.\"",
+          "transitions": [
+            {
+              "transition_id": "second_wind_info_back",
+              "text": "Show me the drill.",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "second_wind_info_done",
+              "text": "I understand.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "second_wind_drill",
+          "text": "\"Run the guard steps again. Breathe in on the advance, out on the brace, and never leave your flank exposed. A warrior who recovers well can rejoin the fight before the enemy notices the gap.\"",
+          "transitions": [
+            {
+              "transition_id": "second_wind_drill_done",
+              "text": "The drill is clear.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "veteran_line_discipline",
+      "npc_id": "veteran_line_discipline",
+      "role": "veteran",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A scarred veteran studies the parade yard and points at the painted lines in the dirt. \"Heroes rush. Survivors keep discipline. If your companions are going to fight like a unit, they need rules. Ready for the lesson?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_line_info",
+              "text": "Teach me line discipline.",
+              "next_state_id": "line_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_guard_vs_aggressive",
+              "text": "How do guard and aggressive tactics differ?",
+              "next_state_id": "tactic_info",
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "veteran_tactic_lesson", "value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "veteran_farewell",
+              "text": "I have the idea.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "line_info",
+          "text": "\"Hold the center. Keep the shield wall tidy. If a companion breaks formation to chase a kill, call them back. Guard mode protects the leader; aggressive mode chases openings; balanced mode keeps the line intact.\"",
+          "transitions": [
+            {
+              "transition_id": "line_info_back",
+              "text": "Explain tactics again.",
+              "next_state_id": "greeting",
+              "actions": []
+            },
+            {
+              "transition_id": "line_info_done",
+              "text": "I will keep the line intact.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The veteran taught line discipline: hold center, protect the leader, and only break formation when the plan demands it."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "tactic_info",
+          "text": "\"Balanced is the steady march. Guard keeps one eye on threats to the player and formation. Aggressive hunts the weakest enemy and closes fast. A disciplined party swaps modes without losing the shape of the line.\"",
+          "transitions": [
+            {
+              "transition_id": "tactic_info_done",
+              "text": "That is what I needed.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "guard_captain_formation",
+      "npc_id": "guard_captain_formation",
+      "role": "guard_captain",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A guard captain stands over a chalkboard of marching arrows and shield positions. \"Formation is the difference between a patrol and a panic. I teach the watch to protect the commander and never crowd the weak side.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_formation_info",
+              "text": "Teach me about formation discipline.",
+              "next_state_id": "formation_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_guard_mode",
+              "text": "How should companions behave in guard mode?",
+              "next_state_id": "guard_mode_info",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The guard captain explained that guard mode keeps allies near the leader, intercepts threats, and avoids reckless pursuit."}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "guard_captain_farewell",
+              "text": "I will drill my companions.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "formation_info",
+          "text": "\"Formation keeps movement predictable. Wedge pushes hard, line holds ground, and spread gives room to breathe. If you order aggressive behavior, you must still respect spacing or your own allies will block the advance.\"",
+          "transitions": [
+            {
+              "transition_id": "formation_info_back",
+              "text": "What about guard mode?",
+              "next_state_id": "guard_mode_info",
+              "actions": []
+            },
+            {
+              "transition_id": "formation_info_done",
+              "text": "I will keep spacing disciplined.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "guard_mode_info",
+          "text": "\"Guard mode means the nearest threat to the commander gets answered first. No sprinting past danger. No chasing a dying foe when the flank is open. Keep the shield between the party and the enemy.\"",
+          "transitions": [
+            {
+              "transition_id": "guard_mode_done",
+              "text": "A clear order.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "rogue_mentor_shadowstep",
+      "npc_id": "rogue_mentor_shadowstep",
+      "role": "rogue_mentor",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A rogue mentor leans in the alley shade, one eye on the rooftops and one on the street. \"A rogue wins by choosing when to move, not by moving first. Do you want the lesson in patience or pursuit?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_shadow_info",
+              "text": "Teach me rogue discipline.",
+              "next_state_id": "shadow_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_aggressive_flank",
+              "text": "How does aggressive tactics work for a rogue?",
+              "next_state_id": "aggressive_flank_info",
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "rogue_shadow_lesson", "value": true}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "rogue_mentor_farewell",
+              "text": "I will practice in the field.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "shadow_info",
+          "text": "\"Balanced keeps you alive, guard keeps you near the pack, and aggressive only works when the enemy is already off-balance. Strike the weak side, not the obvious one.\"",
+          "transitions": [
+            {
+              "transition_id": "shadow_info_back",
+              "text": "What about flanks?",
+              "next_state_id": "aggressive_flank_info",
+              "actions": []
+            },
+            {
+              "transition_id": "shadow_info_done",
+              "text": "I will keep my head down.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "aggressive_flank_info",
+          "text": "\"If you go aggressive, do not rush the front. Circle to a flank, hit the soft target, and leave before the enemy can pin you. A rogue that breaks formation without purpose dies alone.\"",
+          "transitions": [
+            {
+              "transition_id": "aggressive_flank_done",
+              "text": "Understood.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The rogue mentor taught me to favor flanks and never to abandon the team just to chase a kill."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "rogue_scout_flanking",
+      "npc_id": "rogue_scout_flanking",
+      "role": "scout",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A scout kneels beside a map marked with trail signs and escape routes. \"The best scouts are the ones the enemy never realizes are there. Want to learn how to keep pace without breaking discipline?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_scout_info",
+              "text": "Teach me scout discipline.",
+              "next_state_id": "scout_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_flank_drill",
+              "text": "How do I drill companion flanks?",
+              "next_state_id": "flank_drill",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The scout showed me how to keep formation discipline while using the edges of the fight to flank safely."}
+                }
+              ]
+            },
+            {
+              "transition_id": "scout_farewell",
+              "text": "I can work with that.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "scout_info",
+          "text": "\"A scout watches the field. Balanced is for moving with the team. Guard is for keeping the commander alive. Aggressive is for turning an opening into a collapse, but only when the path is clear.\"",
+          "transitions": [
+            {
+              "transition_id": "scout_info_back",
+              "text": "Show me the flank drill.",
+              "next_state_id": "flank_drill",
+              "actions": []
+            },
+            {
+              "transition_id": "scout_info_done",
+              "text": "I will keep the path clear.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "flank_drill",
+          "text": "\"The drill is simple: move only when the enemy's attention shifts, keep the line tight, and never outrun your allies. A scout who lives long enough to report back is more valuable than a scout who boasts about a kill.\"",
+          "transitions": [
+            {
+              "transition_id": "flank_drill_done",
+              "text": "I will remember that.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "fence_backroom_rules",
+      "npc_id": "fence_backroom_rules",
+      "role": "fence",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A fence flicks a coin across their knuckles and watches the door instead of your face. \"I deal in quiet favors. Discipline keeps a crew alive; careless aggression gets the watch involved. Need the backroom rules?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_fence_info",
+              "text": "Teach me the backroom rules.",
+              "next_state_id": "fence_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_combat_discipline",
+              "text": "What does a fence think of guard and aggressive tactics?",
+              "next_state_id": "combat_discipline_info",
+              "actions": [
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "fence_farewell",
+              "text": "I will keep it quiet.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "fence_info",
+          "text": "\"Guard mode is for keeping the boss alive. Aggressive is for making a scene. Balanced is what you choose when you want everyone to walk out without a story attached to the knives.\"",
+          "transitions": [
+            {
+              "transition_id": "fence_info_back",
+              "text": "And the crew discipline? ",
+              "next_state_id": "combat_discipline_info",
+              "actions": []
+            },
+            {
+              "transition_id": "fence_info_done",
+              "text": "I will keep my hands steady.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The fence reminded me that discipline matters more than swagger when the crew needs to leave without attracting trouble."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "combat_discipline_info",
+          "text": "\"A disciplined crew does not charge every fight. Let the guard hold the line, let the aggressive cut a path when it matters, and let balanced keep everyone where they can still make the escape.\"",
+          "transitions": [
+            {
+              "transition_id": "combat_discipline_done",
+              "text": "That is sensible.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "mage_mentor_arcane_recovery",
+      "npc_id": "mage_mentor_arcane_recovery",
+      "role": "mage_mentor",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A mage mentor is surrounded by chalk circles and half-burned spell notes. \"Arcane recovery is not about having more power. It is about wasting less. Do you want the lesson in spell conservation?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_arcane_recovery_info",
+              "text": "Teach me arcane recovery.",
+              "next_state_id": "arcane_recovery_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_spell_conservation",
+              "text": "How do I conserve spell points?",
+              "next_state_id": "spell_conservation_info",
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "arcane_recovery_lesson", "value": true}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 10}
+                }
+              ]
+            },
+            {
+              "transition_id": "mage_mentor_farewell",
+              "text": "I will return to the books.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "arcane_recovery_info",
+          "text": "\"Save your second tier spells for when they matter. Arcane Recovery works best after a long rest because your mind needs time to settle. The more carefully you cast, the further your spell points will carry you.\"",
+          "transitions": [
+            {
+              "transition_id": "arcane_recovery_info_back",
+              "text": "And conservation?",
+              "next_state_id": "spell_conservation_info",
+              "actions": []
+            },
+            {
+              "transition_id": "arcane_recovery_info_done",
+              "text": "I understand.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "spell_conservation_info",
+          "text": "\"Cast for purpose, not flourish. A mage who counts every spell point can survive a day that would exhaust a show-off before sunset. That is how recovery becomes a strategy instead of a desperation move.\"",
+          "transitions": [
+            {
+              "transition_id": "spell_conservation_done",
+              "text": "I will count more carefully.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The mage mentor taught me that arcane recovery rewards restraint. Save spell points, rest well, and spend magic only when it changes the fight."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "sage_spell_conservation",
+      "npc_id": "sage_spell_conservation",
+      "role": "sage",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A sage traces circles in the dust around a stack of spellbooks. \"Students think more spells mean more wisdom. I think wisdom means knowing when not to spend one. Need a lesson in conservation?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_sage_info",
+              "text": "Teach me spell conservation.",
+              "next_state_id": "sage_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_recovery_theory",
+              "text": "How does arcane recovery actually work?",
+              "next_state_id": "recovery_theory",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The sage explained that recovery is about pacing, long rests, and reserving enough spell points to answer the unexpected."}
+                }
+              ]
+            },
+            {
+              "transition_id": "sage_spell_farewell",
+              "text": "I will read more later.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "sage_info",
+          "text": "\"A wizard who empties the mind too quickly is no wizard at all. Keep one spell in reserve for the door you did not see coming, and one for the ally who needs you to stand your ground.\"",
+          "transitions": [
+            {
+              "transition_id": "sage_info_back",
+              "text": "What about recovery?",
+              "next_state_id": "recovery_theory",
+              "actions": []
+            },
+            {
+              "transition_id": "sage_info_done",
+              "text": "I will keep a reserve.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "recovery_theory",
+          "text": "\"The body needs sleep and the mind needs stillness. Arcane recovery is what happens when both agree to stop arguing for a while. Spend sparingly, rest deliberately, and the spell points return with less friction.\"",
+          "transitions": [
+            {
+              "transition_id": "recovery_theory_done",
+              "text": "That makes sense.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "priest_mentor_channel_divinity",
+      "npc_id": "priest_mentor_channel_divinity",
+      "role": "priest_mentor",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A priest mentor arranges candles around a small prayer circle. \"Divinity is not for show. Channel it when the faithful are in need, and save greater miracles for the fight that demands them. Ready for instruction?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_channel_divinity_info",
+              "text": "Teach me channel divinity.",
+              "next_state_id": "divinity_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_greater_heal_info",
+              "text": "When should I use greater heal?",
+              "next_state_id": "greater_heal_info",
+              "actions": [
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 15}
+                }
+              ]
+            },
+            {
+              "transition_id": "priest_mentor_farewell",
+              "text": "I will pray on it.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "divinity_info",
+          "text": "\"Channel divinity is for the moment when the whole line needs a blessing or a reprieve. It is not a trick to waste on a scratch. Use it when your companions are committed and the battle would turn if they held just a little longer.\"",
+          "transitions": [
+            {
+              "transition_id": "divinity_info_back",
+              "text": "And greater heal?",
+              "next_state_id": "greater_heal_info",
+              "actions": []
+            },
+            {
+              "transition_id": "divinity_info_done",
+              "text": "I will save it for the line.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "greater_heal_info",
+          "text": "\"Greater heal is a vow made useful. It asks a priest to spend real power to pull a companion back from the edge. Keep enough spell points in reserve, because miracles are expensive and the wounded rarely give warning.\"",
+          "transitions": [
+            {
+              "transition_id": "greater_heal_done",
+              "text": "I understand the cost.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The priest mentor taught me to reserve channel divinity for the decisive moment and greater heal for the ally the fight would otherwise take."}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "healer_field_aftercare",
+      "npc_id": "healer_field_aftercare",
+      "role": "healer",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A healer folds fresh linen into neat squares beside a row of broth pots. \"Aftercare keeps a victory from becoming a funeral later. Want the lesson in rest, bandages, and the long road back?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_aftercare_info",
+              "text": "Teach me aftercare.",
+              "next_state_id": "aftercare_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_recovery_blend",
+              "text": "What helps recovery the most?",
+              "next_state_id": "recovery_blend",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The healer explained that aftercare is a blend of rest, clean dressings, warm broth, and watching for infection before it spreads."}
+                }
+              ]
+            },
+            {
+              "transition_id": "healer_aftercare_farewell",
+              "text": "I will come back with supplies.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "aftercare_info",
+          "text": "\"A battle does not end when the last enemy falls. It ends when the wounds are cleaned, the fever is gone, and the body has time to mend. Recovery is a discipline too, even if it is a quieter one.\"",
+          "transitions": [
+            {
+              "transition_id": "aftercare_info_back",
+              "text": "What should I stock?",
+              "next_state_id": "recovery_blend",
+              "actions": []
+            },
+            {
+              "transition_id": "aftercare_info_done",
+              "text": "I will respect the recovery.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "recovery_blend",
+          "text": "\"Bandages, broth, and patience. If a companion is hurt badly enough to need greater heal, do not wait until they collapse. Make the call early and keep them alive long enough for the miracle to matter.\"",
+          "transitions": [
+            {
+              "transition_id": "recovery_blend_done",
+              "text": "That is good advice.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "shrine_mentor_greater_heal",
+      "npc_id": "shrine_mentor_greater_heal",
+      "role": "shrine_mentor",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A shrine mentor kneels before a stone altar lined with votive candles. \"The shrine teaches patience, and patience teaches power. Greater heal is sacred, but so is restraint. Shall I show you the rite?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_shrine_info",
+              "text": "Teach me shrine discipline.",
+              "next_state_id": "shrine_info",
+              "actions": []
+            },
+            {
+              "transition_id": "ask_greater_heal_rite",
+              "text": "How does the greater heal rite work?",
+              "next_state_id": "greater_heal_rite",
+              "actions": [
+                {
+                  "action_type": "set_variable",
+                  "params": {"name": "shrine_rite_taught", "value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "shrine_mentor_farewell",
+              "text": "I will return after I pray.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "shrine_info",
+          "text": "\"Shrine discipline means preparing before the fight begins. Keep the prayer circle ready, keep spell points in reserve, and do not spend your final blessing on a bruise. The faithful who live longest are usually the ones who planned ahead.\"",
+          "transitions": [
+            {
+              "transition_id": "shrine_info_back",
+              "text": "Tell me the rite.",
+              "next_state_id": "greater_heal_rite",
+              "actions": []
+            },
+            {
+              "transition_id": "shrine_info_done",
+              "text": "I will plan ahead.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "greater_heal_rite",
+          "text": "\"When you call greater heal, you are asking the shrine to bind the wounded back together before despair can take hold. Use it on the ally who keeps the rest alive, not on the first person to complain.\"",
+          "transitions": [
+            {
+              "transition_id": "greater_heal_rite_done",
+              "text": "I will use it wisely.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The shrine mentor taught me to prepare before battle, conserve spell points, and reserve greater heal for the ally the fight cannot afford to lose."}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 15}
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }

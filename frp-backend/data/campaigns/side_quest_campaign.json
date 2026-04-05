@@ -503,6 +503,212 @@
         }
       ],
       "quest_id": "side_arcane_forgemaster"
+    },
+    {
+      "id": "act_6",
+      "name": "The Plague Ward",
+      "description": "A plague has broken out in the mining camps south of the mountains. The camp doctor is overwhelmed and needs a skilled healer to help with triage, craft plague antidotes, and trace the source of the infection to a poisoned well. Time is running out for the miners.",
+      "encounters": [
+        {
+          "id": "enc_6_1",
+          "name": "Plague Rats",
+          "description": "The mine tunnels are infested with plague-carrying rats. They must be cleared before the source can be reached.",
+          "monsters": [
+            "plague_rat",
+            "plague_rat",
+            "plague_rat",
+            "giant_rat"
+          ],
+          "difficulty": "medium",
+          "exploration_note": "The rats nest near the underground stream. Follow the discolored water to find the nest."
+        },
+        {
+          "id": "enc_6_2",
+          "name": "The Poisoned Wellspring",
+          "description": "A corrupted water elemental has taken root in the camp wellspring, tainting the water supply with disease. Purify or destroy it.",
+          "monsters": [
+            "water_elemental"
+          ],
+          "difficulty": "hard",
+          "exploration_note": "The corruption can be weakened by pouring plague antidote into the three tributary streams before engaging."
+        },
+        {
+          "id": "enc_6_3",
+          "name": "Quarantine Triage",
+          "description": "The sick miners need immediate medical attention. Use your healing supplies to stabilize the worst cases before the antidote can be distributed.",
+          "monsters": [],
+          "difficulty": "none",
+          "exploration_note": "Healing salves for the wounds, fever tea for the burning, and plague antidote for the infection itself. Prioritize the children first."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_6_clear_plague_rats",
+          "description": "Clear the plague rats from the mine tunnels",
+          "type": "kill",
+          "target": "plague_rat",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_6_purify_wellspring",
+          "description": "Purify the corrupted wellspring by defeating the water elemental",
+          "type": "kill",
+          "target": "water_elemental",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_6_collect_plague_samples",
+          "description": "Collect plague samples from the infected mine water",
+          "type": "collect",
+          "target": "plague_essence",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_6_reach_quarantine_ward",
+          "description": "Reach the quarantine ward in the mining camp",
+          "type": "visit",
+          "target": "quarantine_ward",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_6_speak_with_camp_doctor",
+          "description": "Speak with the camp doctor about the treatment plan",
+          "type": "talk",
+          "target": "camp_doctor",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {
+          "item_id": "mandrake_root",
+          "quantity": 3
+        },
+        {
+          "item_id": "moonpetal",
+          "quantity": 3
+        },
+        {
+          "item_id": "healing_herb",
+          "quantity": 5
+        },
+        {
+          "item_id": "potion_of_healing",
+          "quantity": 4
+        },
+        {
+          "item_id": "gold_coin",
+          "quantity": 250
+        }
+      ],
+      "quest_id": "side_plague_ward"
+    },
+    {
+      "id": "act_7",
+      "name": "The Proving Grounds",
+      "description": "A retired war-captain has reopened an ancient training arena in the foothills. Warriors, rogues, mages, and priests are invited to test their discipline against enchanted constructs and prove mastery of their class abilities. Only those who complete every trial earn the captain's endorsement.",
+      "encounters": [
+        {
+          "id": "enc_7_1",
+          "name": "The Gauntlet of Steel",
+          "description": "A corridor of animated training dummies that attack in coordinated waves. Warriors must hold the line while companions take flanking positions.",
+          "monsters": [
+            "training_construct",
+            "training_construct",
+            "training_construct"
+          ],
+          "difficulty": "medium",
+          "exploration_note": "The constructs reset after each wave. Use the rest between waves to practice Second Wind recovery."
+        },
+        {
+          "id": "enc_7_2",
+          "name": "The Shrine Trial",
+          "description": "A consecrated chamber tests divine discipline. Priests must channel divinity to suppress waves of spectral undead while keeping allies alive with healing discipline.",
+          "monsters": [
+            "spectral_skeleton",
+            "spectral_skeleton",
+            "shade"
+          ],
+          "difficulty": "hard",
+          "exploration_note": "Channel Divinity's turn undead effect weakens all spectral enemies in the chamber simultaneously."
+        },
+        {
+          "id": "enc_7_3",
+          "name": "The Shadow Course",
+          "description": "A darkened obstacle course filled with pressure plates and magical sentries. Rogues must use evasion and cunning action to reach the end without alerting the arcane watchers.",
+          "monsters": [
+            "arcane_sentry"
+          ],
+          "difficulty": "hard",
+          "exploration_note": "Nimble Escape lets you disengage from sentries without spending AP. Use the shadows between pillars to reset stealth."
+        },
+        {
+          "id": "enc_7_4",
+          "name": "The Arcane Crucible",
+          "description": "A chamber that drains spell energy with each round. Mages must conserve spell points and use Arcane Recovery at the right moment to outlast the magical drain.",
+          "monsters": [
+            "mana_wraith",
+            "mana_wraith"
+          ],
+          "difficulty": "hard",
+          "exploration_note": "Arcane Recovery restores spell points once per rest. Time it after the second drain wave for maximum efficiency."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "side_act_7_complete_gauntlet",
+          "description": "Complete the Gauntlet of Steel training exercise",
+          "type": "kill",
+          "target": "training_construct",
+          "required_count": 3
+        },
+        {
+          "id": "side_act_7_pass_shrine_trial",
+          "description": "Pass the Shrine Trial using divine discipline",
+          "type": "kill",
+          "target": "spectral_skeleton",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_7_clear_shadow_course",
+          "description": "Navigate the Shadow Course without raising the alarm",
+          "type": "kill",
+          "target": "arcane_sentry",
+          "required_count": 1
+        },
+        {
+          "id": "side_act_7_survive_arcane_crucible",
+          "description": "Survive the Arcane Crucible by conserving spell energy",
+          "type": "kill",
+          "target": "mana_wraith",
+          "required_count": 2
+        },
+        {
+          "id": "side_act_7_speak_with_war_captain",
+          "description": "Report to the war-captain after completing all trials",
+          "type": "talk",
+          "target": "war_captain",
+          "required_count": 1
+        }
+      ],
+      "rewards": [
+        {
+          "item_id": "potion_of_healing",
+          "quantity": 3
+        },
+        {
+          "item_id": "potion_of_strength",
+          "quantity": 2
+        },
+        {
+          "item_id": "scroll_of_haste",
+          "quantity": 1
+        },
+        {
+          "item_id": "gold_coin",
+          "quantity": 350
+        }
+      ],
+      "quest_id": "side_proving_grounds"
     }
   ]
 }

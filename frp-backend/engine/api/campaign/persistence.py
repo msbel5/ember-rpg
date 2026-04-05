@@ -37,6 +37,7 @@ from .party_bridge import party_member_ids
 from .quest_bridge import current_quest_offers
 from .world import (
     build_current_region_summary,
+    build_fog_payload,
     build_travel_options,
     build_world_graph,
     map_payload_from_region,
@@ -53,6 +54,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     runtime_state = runtime_region_state(context.world, context.region_snapshot.region_id)
     kernel_payload = build_kernel_payload(context)
     combat_state = build_combat_payload(context)
+    fog_payload = build_fog_payload(context)
     normalized_party = party_member_ids(context)
     context.campaign_state["party"] = list(normalized_party)
     payload_scene = str(context_data.get("scene", "exploration"))
@@ -100,6 +102,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "conversation_state": context_data.get("conversation_state", {}),
         "region": region_payload(context),
         "map_data": map_payload_from_region(context.region_snapshot),
+        "fog": fog_payload,
         "world_entities": build_world_entities(context.world, context.region_snapshot, context.adapter_id),
         "ground_items": copy.deepcopy(context_data.get("ground_items", [])),
         "active_quests": copy.deepcopy(context_data.get("active_quests", [])),
@@ -115,7 +118,9 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
 
 def persist_campaign_state(context: "CampaignContext") -> None:
     kernel_payload = build_kernel_payload(context)
+    fog_payload = build_fog_payload(context)
     context.campaign_state["party"] = party_member_ids(context)
+    context.campaign_state["fog"] = copy.deepcopy(fog_payload)
     context.campaign_state["campaign"] = {
         "campaign_id": context.campaign_id,
         "adapter_id": context.adapter_id,
@@ -137,6 +142,8 @@ def persist_campaign_state(context: "CampaignContext") -> None:
         "systems": kernel_payload["systems"],
         "stores": kernel_payload["stores"],
         "settlement_state": copy.deepcopy(context.settlement_state),
+        "fog": copy.deepcopy(fog_payload),
+        "fog_by_region": copy.deepcopy(context.campaign_state.get("fog_by_region", {})),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-20:]),
     }
     context.campaign_state.pop("campaign_v2", None)

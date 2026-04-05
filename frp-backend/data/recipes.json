@@ -2286,6 +2286,235 @@
       "tools": ["mortar", "alembic"],
       "failure_result": "failed_mixture",
       "xp_reward": 55
+    },
+    {
+      "id": "field_bandage",
+      "name": "Field Bandage",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 6,
+      "ap_cost": 3,
+      "ingredients": [
+        {"item_id": "torn_cloth", "quantity": 2, "material_class": null},
+        {"item_id": "healing_herb", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "field_bandage", "quantity": 3, "inherit_material": false}
+      ],
+      "tools": ["needle"],
+      "failure_result": "scrap_leather",
+      "xp_reward": 4
+    },
+    {
+      "id": "medicinal_broth",
+      "name": "Medicinal Broth",
+      "workstation": "campfire",
+      "skill": "cooking",
+      "skill_dc": 8,
+      "ap_cost": 4,
+      "ingredients": [
+        {"item_id": "herb_heal", "quantity": 1, "material_class": null},
+        {"item_id": "salt", "quantity": 1, "material_class": null},
+        {"item_id": "water", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "medicinal_broth", "quantity": 2, "inherit_material": false}
+      ],
+      "tools": [],
+      "failure_result": "burnt_food",
+      "xp_reward": 5
+    },
+    {
+      "id": "fever_tea",
+      "name": "Fever Tea",
+      "workstation": "kitchen",
+      "skill": "cooking",
+      "skill_dc": 8,
+      "ap_cost": 3,
+      "ingredients": [
+        {"item_id": "chamomile", "quantity": 1, "material_class": null},
+        {"item_id": "honey", "quantity": 1, "material_class": null},
+        {"item_id": "water", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "fever_tea", "quantity": 2, "inherit_material": false}
+      ],
+      "tools": [],
+      "failure_result": "burnt_food",
+      "xp_reward": 5
+    },
+    {
+      "id": "healing_salve",
+      "name": "Healing Salve",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 10,
+      "ap_cost": 5,
+      "ingredients": [
+        {"item_id": "healing_herb", "quantity": 1, "material_class": null},
+        {"item_id": "honey", "quantity": 1, "material_class": null},
+        {"item_id": "torn_cloth", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "healing_salve", "quantity": 2, "inherit_material": false}
+      ],
+      "tools": ["mortar"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 8
+    },
+    {
+      "id": "splint_brace",
+      "name": "Splint Brace",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 10,
+      "ap_cost": 6,
+      "ingredients": [
+        {"item_id": "sinew", "quantity": 1, "material_class": null},
+        {"item_id": "leather", "quantity": 1, "material_class": null},
+        {"item_id": "cloth", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "splint_brace", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["needle"],
+      "failure_result": "scrap_leather",
+      "xp_reward": 8
+    },
+    {
+      "id": "antiseptic_tincture",
+      "name": "Antiseptic Tincture",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 12,
+      "ap_cost": 5,
+      "ingredients": [
+        {"item_id": "wolfsbane", "quantity": 1, "material_class": null},
+        {"item_id": "spring_water", "quantity": 1, "material_class": null},
+        {"item_id": "glass_vial", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "antiseptic_tincture", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["mortar"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 12
+    },
+    {
+      "id": "restorative_stew",
+      "name": "Restorative Stew",
+      "workstation": "kitchen",
+      "skill": "cooking",
+      "skill_dc": 12,
+      "ap_cost": 8,
+      "ingredients": [
+        {"item_id": "herb_heal", "quantity": 1, "material_class": null},
+        {"item_id": "meat", "quantity": 1, "material_class": null},
+        {"item_id": "healing_herb", "quantity": 1, "material_class": null},
+        {"item_id": "salt", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "restorative_stew", "quantity": 2, "inherit_material": false}
+      ],
+      "tools": [],
+      "failure_result": "burnt_food",
+      "xp_reward": 12
+    },
+    {
+      "id": "bloodclot_poultice",
+      "name": "Bloodclot Poultice",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 14,
+      "ap_cost": 6,
+      "ingredients": [
+        {"item_id": "bloodthorn", "quantity": 1, "material_class": null},
+        {"item_id": "torn_cloth", "quantity": 1, "material_class": null},
+        {"item_id": "honey", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "bloodclot_poultice", "quantity": 2, "inherit_material": false}
+      ],
+      "tools": ["mortar"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 16
+    },
+    {
+      "id": "ironbark_tonic",
+      "name": "Ironbark Tonic",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 14,
+      "ap_cost": 6,
+      "ingredients": [
+        {"item_id": "ironwood_bark", "quantity": 1, "material_class": null},
+        {"item_id": "spring_water", "quantity": 1, "material_class": null},
+        {"item_id": "glass_vial", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "ironbark_tonic", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["mortar", "alembic"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 15
+    },
+    {
+      "id": "pain_suppressor",
+      "name": "Pain Suppressor",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 15,
+      "ap_cost": 7,
+      "ingredients": [
+        {"item_id": "ghostcap_mushroom", "quantity": 1, "material_class": null},
+        {"item_id": "nightshade", "quantity": 1, "material_class": null},
+        {"item_id": "glass_vial", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "pain_suppressor", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["mortar", "alembic"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 18
+    },
+    {
+      "id": "plague_antidote",
+      "name": "Plague Antidote",
+      "workstation": "alchemy_bench",
+      "skill": "alchemy",
+      "skill_dc": 16,
+      "ap_cost": 8,
+      "ingredients": [
+        {"item_id": "mandrake_root", "quantity": 1, "material_class": null},
+        {"item_id": "moonpetal", "quantity": 1, "material_class": null},
+        {"item_id": "glass_vial", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "plague_antidote", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["mortar", "alembic"],
+      "failure_result": "failed_mixture",
+      "xp_reward": 22
+    },
+    {
+      "id": "surgical_kit",
+      "name": "Surgical Kit",
+      "workstation": "workbench",
+      "skill": "leatherworking",
+      "skill_dc": 16,
+      "ap_cost": 10,
+      "ingredients": [
+        {"item_id": "leather", "quantity": 1, "material_class": null},
+        {"item_id": "iron_nail", "quantity": 2, "material_class": null},
+        {"item_id": "torn_cloth", "quantity": 2, "material_class": null},
+        {"item_id": "glass_vial", "quantity": 1, "material_class": null}
+      ],
+      "products": [
+        {"item_id": "surgical_kit", "quantity": 1, "inherit_material": false}
+      ],
+      "tools": ["needle"],
+      "failure_result": "scrap_leather",
+      "xp_reward": 24
     }
   ]
 }

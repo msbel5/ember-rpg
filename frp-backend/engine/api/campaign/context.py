@@ -33,7 +33,7 @@ from engine.world.rumors import RumorNetwork
 from engine.world.schedules import GameTime as LivingGameTime
 from engine.world.spatial_index import SpatialIndex
 from engine.world.viewport import Viewport
-from engine.map import MapData
+from engine.map import MapData, TileType
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
 
@@ -122,6 +122,146 @@ class CampaignContext:
             return
         self.player.stats.setdefault("hp", self.player.stats.get("max_hp", 10))
         self.player.stats.setdefault("max_hp", self.player.stats.get("hp", 10))
+
+    @staticmethod
+    def _normalize_tile_point(value: Any) -> Optional[tuple[int, int]]:
+        if not isinstance(value, (list, tuple)) or len(value) < 2:
+            return None
+        try:
+            return (int(value[0]), int(value[1]))
+        except (TypeError, ValueError):
+            return None
+
+    @classmethod
+    def _tile_set_from_payload(cls, payload: Any) -> set[tuple[int, int]]:
+        normalized: set[tuple[int, int]] = set()
+        if not isinstance(payload, list):
+            return normalized
+        for item in payload:
+            point = cls._normalize_tile_point(item)
+            if point is not None:
+                normalized.add(point)
+        return normalized
+
+    @staticmethod
+    def _serialize_tile_set(points: set[tuple[int, int]]) -> list[list[int]]:
+        return [[int(x), int(y)] for x, y in sorted(points, key=lambda item: (item[1], item[0]))]
+
+    def _active_region_id(self) -> str:
+        if getattr(self, "region_snapshot", None) is not None:
+            return str(self.region_snapshot.region_id)
+        return str(self.campaign_state.get("active_region_id", ""))
+
+    def _ensure_fog_store(self) -> dict[str, Any]:
+        fog_store = self.campaign_state.get("fog_by_region")
+        if not isinstance(fog_store, dict):
+            fog_store = {}
+            self.campaign_state["fog_by_region"] = fog_store
+        return fog_store
+
+    def _ensure_viewport(self) -> Viewport:
+        viewport = self.viewport
+        if viewport is None:
+            viewport = Viewport()
+            self.viewport = viewport
+        return viewport
+
+    def _map_in_bounds(self, x: int, y: int) -> bool:
+        if self.map_data is None:
+            return False
+        return 0 <= int(x) < int(self.map_data.width) and 0 <= int(y) < int(self.map_data.height)
+
+    def _tile_blocks_sight(self, x: int, y: int) -> bool:
+        if not self._map_in_bounds(x, y):
+            return True
+        tile = self.map_data.tiles[int(y)][int(x)] if self.map_data is not None else TileType.WALL
+        return tile in {TileType.WALL, TileType.TREE, TileType.WATER}
+
+    def _tile_frontier_candidates(self, explored: set[tuple[int, int]]) -> set[tuple[int, int]]:
+        frontier: set[tuple[int, int]] = set()
+        for x, y in explored:
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx = int(x) + dx
+                ny = int(y) + dy
+                if not self._map_in_bounds(nx, ny):
+                    continue
+                if (nx, ny) in explored:
+                    continue
+                if self._tile_blocks_sight(nx, ny):
+                    continue
+                frontier.add((nx, ny))
+        return frontier
+
+    def refresh_fog_state(self) -> dict[str, Any]:
+        region_id = self._active_region_id()
+        if not region_id or self.map_data is None or len(self.position) < 2:
+            return {
+                "region_id": region_id,
+                "visible_tiles": [],
+                "explored_tiles": [],
+                "frontier_tiles": [],
+                "visible_count": 0,
+                "explored_count": 0,
+                "frontier_count": 0,
+                "regions": [],
+            }
+
+        fog_store = self._ensure_fog_store()
+        region_entry = fog_store.get(region_id)
+        if not isinstance(region_entry, dict):
+            region_entry = {}
+            fog_store[region_id] = region_entry
+
+        viewport = self._ensure_viewport()
+        player_x = int(self.position[0])
+        player_y = int(self.position[1])
+        viewport.center_on(player_x, player_y)
+        viewport.fog_of_war = {
+            point for point in self._tile_set_from_payload(region_entry.get("explored_tiles", []))
+            if self._map_in_bounds(point[0], point[1])
+        }
+        viewport.compute_fov_simple(self._tile_blocks_sight, player_x, player_y, radius=int(viewport.fov_radius))
+        viewport.visible = {
+            (int(x), int(y)) for x, y in viewport.visible
+            if self._map_in_bounds(int(x), int(y))
+        }
+        viewport.fog_of_war = {
+            (int(x), int(y)) for x, y in viewport.fog_of_war
+            if self._map_in_bounds(int(x), int(y))
+        }
+
+        explored = set(viewport.fog_of_war)
+        visible = set(viewport.visible)
+        frontier = self._tile_frontier_candidates(explored)
+
+        region_entry["explored_tiles"] = self._serialize_tile_set(explored)
+        region_entry["last_position"] = [player_x, player_y]
+
+        regions_summary = []
+        for known_region_id, known_entry in sorted(fog_store.items(), key=lambda item: item[0]):
+            if not isinstance(known_entry, dict):
+                continue
+            explored_tiles = self._tile_set_from_payload(known_entry.get("explored_tiles", []))
+            regions_summary.append(
+                {
+                    "region_id": str(known_region_id),
+                    "explored_count": len(explored_tiles),
+                    "has_exploration": bool(explored_tiles),
+                }
+            )
+
+        payload = {
+            "region_id": region_id,
+            "visible_tiles": self._serialize_tile_set(visible),
+            "explored_tiles": self._serialize_tile_set(explored),
+            "frontier_tiles": self._serialize_tile_set(frontier),
+            "visible_count": len(visible),
+            "explored_count": len(explored),
+            "frontier_count": len(frontier),
+            "regions": regions_summary,
+        }
+        self.campaign_state["fog"] = copy.deepcopy(payload)
+        return payload
 
     def find_inventory_item(self, query: str) -> Optional[Dict[str, Any]]:
         """Find item in player inventory by name/id substring."""
@@ -220,6 +360,7 @@ class CampaignContext:
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize context game state to dict for payload building."""
+        fog_payload = self.refresh_fog_state()
         player_dict = self.player.to_dict() if self.player and hasattr(self.player, "to_dict") else {}
         if self.player is not None:
             inventory_payload: list[dict[str, Any]] = []
@@ -265,6 +406,7 @@ class CampaignContext:
             "level": int(self.player.raw_payload.get("level", 1)) if self.player else 1,
             "armor_class": int(self.player.stats.get("ac", 10)) if self.player else 10,
             "action_points": int(getattr(self.player, "action_points", 3)) if self.player else 3,
+            "fog": fog_payload,
         }
 
 
