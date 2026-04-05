@@ -177,6 +177,166 @@ def _ensure_projected_party_entity(context: CampaignContext, actor_id: str) -> d
     return record
 
 
+def _schedule_entries_from_record(record: dict[str, Any]) -> list[dict[str, Any]]:
+    schedule = record.get("schedule")
+    if hasattr(schedule, "to_dict"):
+        schedule = schedule.to_dict()
+    if isinstance(schedule, dict):
+        entries = schedule.get("entries", [])
+        if isinstance(entries, list):
+            return [dict(item) for item in entries if isinstance(item, dict)]
+    entity_ref = record.get("entity_ref")
+    entity_schedule = getattr(entity_ref, "schedule", None)
+    if hasattr(entity_schedule, "to_dict"):
+        entity_schedule = entity_schedule.to_dict()
+    if isinstance(entity_schedule, dict):
+        entries = entity_schedule.get("entries", [])
+        if isinstance(entries, list):
+            return [dict(item) for item in entries if isinstance(item, dict)]
+    return []
+
+
+def _current_schedule_entry(entries: list[dict[str, Any]], hour: int) -> dict[str, Any] | None:
+    valid_entries = sorted(
+        [dict(item) for item in entries if isinstance(item, dict) and "hour" in item],
+        key=lambda item: int(item.get("hour", 0)),
+    )
+    if not valid_entries:
+        return None
+    current_hour = int(hour) % 24
+    eligible = [item for item in valid_entries if int(item.get("hour", 0)) <= current_hour]
+    return dict(eligible[-1] if eligible else valid_entries[-1])
+
+
+def _valid_schedule_position(context: CampaignContext, position: Any) -> tuple[int, int] | None:
+    if not isinstance(position, (list, tuple)) or len(position) < 2:
+        return None
+    x = int(position[0])
+    y = int(position[1])
+    map_data = getattr(context, "map_data", None)
+    if map_data is None:
+        return (x, y)
+    width = int(getattr(map_data, "width", 0))
+    height = int(getattr(map_data, "height", 0))
+    if x < 0 or y < 0 or x >= width or y >= height:
+        return None
+    tile = map_data.tiles[y][x]
+    if tile in {TileType.WALL, TileType.WATER, TileType.TREE}:
+        return None
+    return (x, y)
+
+
+def _write_schedule_state(record: dict[str, Any], entry: dict[str, Any], *, activity: str) -> None:
+    record["activity"] = activity
+    record["assignment"] = activity
+    record["schedule_hour"] = int(entry.get("hour", 0))
+    entity_ref = record.get("entity_ref")
+    if entity_ref is not None:
+        entity_ref.job = activity
+        schedule = getattr(entity_ref, "schedule", None)
+        if hasattr(schedule, "to_dict"):
+            record["schedule"] = schedule.to_dict()
+        elif isinstance(schedule, dict):
+            record["schedule"] = copy.deepcopy(schedule)
+
+
+def _live_region_npcs(context: CampaignContext) -> list[dict[str, Any]]:
+    snapshot = getattr(getattr(context, "world", None), "simulation_snapshot", None)
+    region_id = str(getattr(getattr(context, "region_snapshot", None), "region_id", ""))
+    if snapshot is None or not region_id:
+        return []
+    state = snapshot.region_states.get(region_id)
+    if not isinstance(state, dict):
+        return []
+    npcs = state.get("npcs", [])
+    return npcs if isinstance(npcs, list) else []
+
+
+def persist_projected_npc_state(context: CampaignContext) -> None:
+    npc_state = {
+        str(entry.get("id", "")): entry
+        for entry in _live_region_npcs(context)
+        if isinstance(entry, dict) and str(entry.get("id", ""))
+    }
+    for entity_id, record in list(context.entities.items()):
+        if not isinstance(record, dict) or str(record.get("type", "")) != "npc":
+            continue
+        live_entry = npc_state.get(entity_id)
+        if live_entry is None:
+            continue
+        entries = _schedule_entries_from_record(record)
+        if entries:
+            live_entry["schedule"] = copy.deepcopy(entries)
+        position = record.get("position")
+        if isinstance(position, (list, tuple)) and len(position) >= 2:
+            live_entry["x"] = int(position[0])
+            live_entry["y"] = int(position[1])
+        activity = str(record.get("assignment") or record.get("activity") or live_entry.get("activity", "")).strip()
+        if activity:
+            live_entry["activity"] = activity
+
+
+def sync_schedule_projection(context: CampaignContext, *, current_hour: int | None = None) -> None:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    if getattr(context, "spatial_index", None) is None:
+        return
+    normalize_party_state(game_state) if game_state is not None else None
+    active_party_ids = set(getattr(game_state, "party", [])) if game_state is not None else {"player"}
+    hour = int(current_hour if current_hour is not None else getattr(getattr(context, "game_time", None), "hour", 0)) % 24
+    actor_map = runtime.get("actors") or {}
+    npc_state = {
+        str(entry.get("id", "")): entry
+        for entry in _live_region_npcs(context)
+        if isinstance(entry, dict) and str(entry.get("id", ""))
+    }
+
+    for entity_id, record in list(context.entities.items()):
+        if not isinstance(record, dict) or entity_id == "player" or entity_id in active_party_ids:
+            continue
+        if str(record.get("type", "")) != "npc":
+            continue
+        entries = _schedule_entries_from_record(record)
+        current_entry = _current_schedule_entry(entries, hour)
+        if current_entry is None:
+            continue
+        activity = str(current_entry.get("activity") or current_entry.get("location_id") or record.get("assignment") or record.get("role", "resident"))
+        _write_schedule_state(record, current_entry, activity=activity)
+        live_entry = npc_state.get(entity_id)
+        if live_entry is not None:
+            live_entry["schedule"] = copy.deepcopy(entries)
+            live_entry["activity"] = activity
+
+        resident_list = context.settlement_state.get("residents", []) if isinstance(getattr(context, "settlement_state", None), dict) else []
+        for resident in resident_list:
+            if str(resident.get("id", "")) == entity_id:
+                resident["assignment"] = activity
+                break
+
+        actor = actor_map.get(entity_id)
+        if actor is not None:
+            actor.raw_payload["assignment"] = activity
+            actor.raw_payload["current_activity"] = activity
+
+        next_position = _valid_schedule_position(context, current_entry.get("position"))
+        if next_position is None:
+            continue
+        entity_ref = record.get("entity_ref")
+        if entity_ref is not None:
+            if context.spatial_index.get_position(entity_id) is None:
+                entity_ref.position = next_position
+                context.spatial_index.add(entity_ref)
+            else:
+                context.spatial_index.move(entity_ref, next_position[0], next_position[1])
+        record["position"] = [next_position[0], next_position[1]]
+        if live_entry is not None:
+            live_entry["x"] = next_position[0]
+            live_entry["y"] = next_position[1]
+        if actor is not None:
+            actor.position.x = next_position[0]
+            actor.position.y = next_position[1]
+
+
 def sync_party_projection(context: CampaignContext) -> None:
     runtime = context.kernel_runtime or {}
     game_state = runtime.get("game_state")
@@ -279,6 +439,10 @@ def apply_region_to_context(
     if preserved_party_entities:
         _restore_party_entities(context, preserved_party_entities)
     sync_party_projection(context)
+    sync_schedule_projection(
+        context,
+        current_hour=int(getattr(getattr(world, "simulation_snapshot", None), "current_hour", 0)),
+    )
     context.campaign_state.setdefault("active_quests", [])
     context.campaign_state.setdefault("completed_quests", [])
     context.campaign_state.setdefault("failed_quests", [])
@@ -518,6 +682,8 @@ __all__ = [
     "build_world_entities",
     "furniture_actions",
     "furniture_template",
+    "persist_projected_npc_state",
     "seed_region_entities",
+    "sync_schedule_projection",
     "sync_party_projection",
 ]

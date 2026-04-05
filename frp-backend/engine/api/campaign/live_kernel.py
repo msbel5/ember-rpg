@@ -236,15 +236,29 @@ def _progression_adapter(player: ActorRecord):
     if not thresholds:
         return None, None, None
 
-    progression_state = ProgressionState(
-        actor_id=player.identity.actor_id,
-        xp=int(player.raw_payload.get("xp", 0)),
-        level=int(player.raw_payload.get("level", 1)),
-        classes=[class_id],
-        class_levels={class_id: int(player.raw_payload.get("level", 1))},
-        bab=int(player.raw_payload.get("bab", 0)),
-        saves=dict(player.raw_payload.get("saves", {})),
-    )
+    raw_progression = player.raw_payload.get("progression")
+    if isinstance(raw_progression, dict):
+        try:
+            progression_state = ProgressionState.from_dict(raw_progression)
+        except Exception:  # pragma: no cover - malformed saves should fall back safely
+            progression_state = ProgressionState(actor_id=player.identity.actor_id)
+    else:
+        progression_state = ProgressionState(actor_id=player.identity.actor_id)
+    progression_state.actor_id = player.identity.actor_id
+    progression_state.xp = int(player.raw_payload.get("xp", progression_state.xp))
+    progression_state.level = int(player.raw_payload.get("level", progression_state.level or 1))
+    progression_state.classes = list(progression_state.classes or [class_id])
+    if class_id not in progression_state.classes:
+        progression_state.classes.append(class_id)
+    if not progression_state.class_levels:
+        progression_state.class_levels = {class_id: progression_state.level}
+    else:
+        progression_state.class_levels[class_id] = int(player.raw_payload.get("level", progression_state.class_levels.get(class_id, progression_state.level)))
+    progression_state.bab = int(player.raw_payload.get("bab", progression_state.bab))
+    progression_state.saves = {
+        str(key): int(value)
+        for key, value in dict(player.raw_payload.get("saves", progression_state.saves)).items()
+    }
     class_def = ClassDef(
         class_id=class_id,
         label=str(class_data.get("name", class_id.title())),

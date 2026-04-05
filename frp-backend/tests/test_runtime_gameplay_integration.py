@@ -4,8 +4,10 @@ import engine.api.gameplay_bridge as gameplay_bridge
 
 from engine.api.campaign.runtime import CampaignRuntime
 from engine.api.campaign.party_bridge import maybe_handle_party_command
+from engine.api.campaign.state_sync import sync_context_clock
 from engine.kernel.gameplay import spawn_ground_item_entity
 from engine.kernel.game_state import FORMATIONS
+from engine.kernel.progression import ProgressionState
 from engine.world.entity import Entity, EntityType
 
 
@@ -69,6 +71,75 @@ def _add_workstation(context, *, workstation_id: str, name: str, offset: tuple[i
         "context_actions": ["examine", "use"],
         "entity_ref": entity,
     }
+
+
+def _first_scheduled_npc(context):
+    for entity_id, record in context.entities.items():
+        if entity_id == "player" or not isinstance(record, dict):
+            continue
+        entity_ref = record.get("entity_ref")
+        schedule = getattr(entity_ref, "schedule", None)
+        entries = getattr(schedule, "entries", None)
+        if entries is None and isinstance(schedule, dict):
+            entries = schedule.get("entries")
+        if entries:
+            return entity_id, record
+    raise AssertionError("Expected at least one scheduled NPC in the region")
+
+
+def _set_npc_schedule(context, entity_id: str, entries: list[dict]) -> None:
+    record = context.entities[entity_id]
+    entity_ref = record.get("entity_ref")
+    if entity_ref is None:
+        raise AssertionError("Expected projected entity_ref for scheduled NPC")
+    payload = {"npc_id": entity_id, "npc_name": record.get("name", entity_id), "entries": entries}
+    entity_ref.schedule = payload
+    record["schedule"] = payload
+
+
+def _set_progression_state(
+    context,
+    *,
+    skill_points: int = 0,
+    proficiency_points: int = 0,
+    ability_increases: int = 0,
+) -> None:
+    player = context.kernel_runtime["actors"]["player"]
+    class_id = str(player.raw_payload.get("class_name", "warrior")).lower()
+    progression = ProgressionState(
+        actor_id="player",
+        xp=int(player.raw_payload.get("xp", 0)),
+        level=int(player.raw_payload.get("level", 1)),
+        classes=[class_id],
+        class_levels={class_id: int(player.raw_payload.get("level", 1))},
+        bab=int(player.raw_payload.get("bab", 0)),
+        saves={str(key): int(value) for key, value in dict(player.raw_payload.get("saves", {})).items()},
+        proficiency_points_available=proficiency_points,
+        skill_points_available=skill_points,
+        ability_increases_available=ability_increases,
+    )
+    player.raw_payload["progression"] = progression.to_dict()
+
+
+def _schedule_entries(record: dict) -> list[dict]:
+    entity_ref = record.get("entity_ref")
+    schedule = getattr(entity_ref, "schedule", None)
+    if isinstance(schedule, dict):
+        return [dict(item) for item in schedule.get("entries", []) if isinstance(item, dict)]
+    entries = getattr(schedule, "entries", None) or []
+    normalized = []
+    for item in entries:
+        if hasattr(item, "to_dict"):
+            normalized.append(item.to_dict())
+        elif isinstance(item, dict):
+            normalized.append(dict(item))
+    return normalized
+
+
+def _expected_schedule_entry(entries: list[dict], hour: int) -> dict:
+    ordered = sorted(entries, key=lambda item: int(item.get("hour", 0)))
+    eligible = [item for item in ordered if int(item.get("hour", 0)) <= int(hour) % 24]
+    return dict(eligible[-1] if eligible else ordered[-1])
 
 
 def test_run_command_pickup_uses_ground_item_authority() -> None:
@@ -296,6 +367,91 @@ def test_run_command_cast_repeatedly_until_insufficient_points() -> None:
     assert player.spell_points == 0
 
 
+def test_progression_command_reports_current_spend_counters() -> None:
+    runtime, context = _make_campaign()
+    _set_progression_state(context, skill_points=2, proficiency_points=1, ability_increases=1)
+
+    result = runtime.run_command(context.campaign_id, "progression")
+
+    assert result["command_type"] == "progression"
+    assert "2 skill points" in result["narrative"].lower()
+    progression = result["campaign"]["character_sheet"]["progression"]
+    assert progression["skill_points_available"] == 2
+    assert progression["proficiency_points_available"] == 1
+    assert progression["ability_increases_available"] == 1
+
+
+def test_train_skill_spends_point_and_updates_character_sheet() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.skills["athletics"] = 1
+    _set_progression_state(context, skill_points=2)
+
+    result = runtime.run_command(context.campaign_id, "train athletics")
+
+    assert result["command_type"] == "progression"
+    assert player.skills["athletics"] == 2
+    assert result["campaign"]["character_sheet"]["progression"]["skill_points_available"] == 1
+
+
+def test_proficiency_and_expertise_update_skill_flags_and_persist() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.skills["survival"] = 2
+    _set_progression_state(context, proficiency_points=2)
+
+    proficiency = runtime.run_command(context.campaign_id, "proficiency survival")
+    expertise = runtime.run_command(context.campaign_id, "expertise survival")
+
+    assert proficiency["command_type"] == "progression"
+    assert expertise["command_type"] == "progression"
+    sheet_skills = {entry["id"]: entry for entry in expertise["campaign"]["character_sheet"]["skills"]}
+    assert "survival" in player.raw_payload["skill_proficiencies"]
+    assert "survival" in player.raw_payload["expertise_skills"]
+    assert sheet_skills["survival"]["proficient"] is True
+    assert sheet_skills["survival"]["expertise"] is True
+    assert expertise["campaign"]["character_sheet"]["progression"]["proficiency_points_available"] == 0
+
+    runtime.save_campaign(context.campaign_id, "progression_skill_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("progression_skill_slot")
+    loaded_player = loaded.kernel_runtime["actors"]["player"]
+    assert "survival" in loaded_player.raw_payload["skill_proficiencies"]
+    assert "survival" in loaded_player.raw_payload["expertise_skills"]
+
+
+def test_raise_ability_spends_counter_and_updates_modifier() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    original_mig = int(player.stats.get("MIG", 10))
+    _set_progression_state(context, ability_increases=1)
+
+    result = runtime.run_command(context.campaign_id, "raise mig")
+
+    assert result["command_type"] == "progression"
+    assert int(player.stats.get("MIG", 10)) == original_mig + 1
+    mig_row = next(entry for entry in result["campaign"]["character_sheet"]["stats"] if entry["id"] == "MIG")
+    assert mig_row["value"] == original_mig + 1
+    assert result["campaign"]["character_sheet"]["progression"]["ability_increases_available"] == 0
+
+
+def test_progression_failures_are_non_mutating() -> None:
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.skills["survival"] = 1
+    baseline_mig = int(player.stats.get("MIG", 10))
+    _set_progression_state(context)
+
+    train = runtime.run_command(context.campaign_id, "train survival")
+    expertise = runtime.run_command(context.campaign_id, "expertise survival")
+    raise_stat = runtime.run_command(context.campaign_id, "raise mig")
+
+    assert "no skill points available" in train["narrative"].lower()
+    assert "need proficiency" in expertise["narrative"].lower()
+    assert "no ability increases available" in raise_stat["narrative"].lower()
+    assert player.skills["survival"] == 1
+    assert int(player.stats.get("MIG", 10)) == baseline_mig
+
+
 def test_recruit_companion_save_load_preserves_party_membership() -> None:
     runtime, context = _make_campaign()
     companion = _inject_companion(context, base_id="companion_scout", name="Scout Mira", role="scout")
@@ -506,3 +662,101 @@ def test_swap_and_projection_do_not_create_duplicate_or_overlapping_active_party
     assert party == ["player", reserve.identity.actor_id]
     assert len(active_positions) == len(set(active_positions))
     assert active.identity.actor_id not in party
+
+
+def test_time_advancement_changes_scheduled_npc_projected_position_and_activity() -> None:
+    runtime, context = _make_campaign()
+    entity_id, record = _first_scheduled_npc(context)
+    entries = _schedule_entries(record)
+    context.world.simulation_snapshot.current_hour = 7
+    context.world.simulation_snapshot.current_day = 1
+
+    result = runtime.run_command(context.campaign_id, "rest")
+    record = context.entities[entity_id]
+    expected = _expected_schedule_entry(entries, result["campaign"]["world"]["current_hour"])
+
+    assert result["command_type"] == "rest"
+    assert record.get("position") == list(expected.get("position", record.get("position", [])))
+    assert record.get("assignment") == str(expected.get("activity"))
+    assert record.get("activity") == str(expected.get("activity"))
+
+
+def test_schedule_wraparound_across_midnight_uses_last_entry_before_hour() -> None:
+    runtime, context = _make_campaign()
+    entity_id, record = _first_scheduled_npc(context)
+    entries = _schedule_entries(record)
+    context.world.simulation_snapshot.current_hour = 23
+    context.world.simulation_snapshot.current_day = 1
+
+    result = runtime.run_command(context.campaign_id, "rest")
+    record = context.entities[entity_id]
+    expected = _expected_schedule_entry(entries, result["campaign"]["world"]["current_hour"])
+
+    assert result["command_type"] == "rest"
+    assert record.get("position") == list(expected.get("position", record.get("position", [])))
+    assert record.get("assignment") == str(expected.get("activity"))
+
+
+def test_party_members_are_not_overwritten_by_schedule_motion() -> None:
+    runtime, context = _make_campaign()
+    entity_id, record = _first_scheduled_npc(context)
+    companion_name = str(record.get("name", entity_id))
+    recruited = runtime.run_command(context.campaign_id, f"recruit {companion_name}")
+    context.world.simulation_snapshot.current_hour = 7
+    result = runtime.run_command(context.campaign_id, "rest")
+    record = context.entities[entity_id]
+    player_x, player_y = int(context.position[0]), int(context.position[1])
+    offsets = FORMATIONS[context.kernel_runtime["game_state"].formation]
+
+    assert recruited["command_type"] == "party"
+    assert result["command_type"] == "rest"
+    assert record.get("position") == [player_x + offsets[1][0], player_y + offsets[1][1]]
+    assert record.get("attitude") == "ally"
+
+
+def test_save_load_preserves_schedule_backed_projected_state() -> None:
+    runtime, context = _make_campaign()
+    entity_id, record = _first_scheduled_npc(context)
+    entries = _schedule_entries(record)
+    context.world.simulation_snapshot.current_hour = 7
+    runtime.run_command(context.campaign_id, "rest")
+    projected = context.entities[entity_id]
+
+    runtime.save_campaign(context.campaign_id, "schedule_projection_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("schedule_projection_slot")
+    loaded_record = loaded.entities.get(entity_id)
+    expected = _expected_schedule_entry(entries, int(loaded.world.simulation_snapshot.current_hour))
+
+    assert loaded_record is not None
+    assert projected.get("position") == list(expected.get("position", projected.get("position", [])))
+    assert loaded_record.get("position") == projected.get("position")
+    assert loaded_record.get("assignment") == projected.get("assignment")
+
+
+def test_missing_schedule_positions_remain_non_crashing_and_non_destructive() -> None:
+    runtime, context = _make_campaign()
+    entity_id, record = _first_scheduled_npc(context)
+    baseline_position = list(record.get("position", []))
+    _set_npc_schedule(
+        context,
+        entity_id,
+        [
+            {"hour": 0, "position": [1, 1], "activity": "sleep"},
+            {"hour": 8, "activity": "idle_watch"},
+        ],
+    )
+    context.world.simulation_snapshot.current_hour = 7
+    context.world.simulation_snapshot.current_day = 1
+
+    sync_context_clock(context)
+    record = context.entities[entity_id]
+
+    assert record.get("position") == [1, 1]
+    assert record.get("assignment") == "sleep"
+
+    context.world.simulation_snapshot.current_hour = 8
+    sync_context_clock(context)
+    record = context.entities[entity_id]
+
+    assert record.get("position") == [1, 1]
+    assert record.get("assignment") == "idle_watch"

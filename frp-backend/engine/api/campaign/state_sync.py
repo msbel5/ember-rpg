@@ -43,6 +43,10 @@ def sync_context_clock(context: "CampaignContext") -> None:
         settlement["current_day"] = day
         settlement["season"] = str(getattr(snapshot, "season", settlement.get("season", "spring")))
 
+    from .region_projection import sync_schedule_projection
+
+    sync_schedule_projection(context, current_hour=hour)
+
 
 def sync_player_position(
     context: "CampaignContext",

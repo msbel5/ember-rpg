@@ -21,7 +21,7 @@ from engine.api.campaign.quest_bridge import (
 from engine.api.campaign.quest_state import restore_quest_state, snapshot_quest_state
 from engine.api.campaign.party_bridge import maybe_handle_party_command
 from engine.api.campaign.state_sync import sync_context_clock
-from engine.api.campaign.region_projection import apply_region_to_context
+from engine.api.campaign.region_projection import apply_region_to_context, persist_projected_npc_state
 from engine.api.campaign.settlement import build_settlement_state
 from engine.api.campaign.controls import merge_settlement_controls
 from engine.api.campaign.world import alerts_from_events
@@ -148,10 +148,14 @@ def _dispatch(
         maybe_handle_craft_command,
         maybe_handle_equipment_command,
         maybe_handle_inventory_command,
+        maybe_handle_progression_command,
         maybe_handle_rest_command,
         maybe_handle_spell_command,
     )
 
+    progression = maybe_handle_progression_command(context, issued)
+    if progression is not None:
+        return progression
     equipment = maybe_handle_equipment_command(context, issued)
     if equipment is not None:
         return equipment
@@ -193,7 +197,7 @@ def _dispatch(
     logger.warning("Unknown command rejected: %s", issued[:80])
     return (
         f"Unknown command: '{issued}'. Try: attack, cast, equip, craft, rest, "
-        f"travel, buy, sell, diagnose, dialog, recruit, quests, or world interaction controls.",
+        f"travel, train, proficiency, raise, buy, sell, diagnose, dialog, recruit, quests, or world interaction controls.",
         "unknown",
         0,
     )
@@ -208,6 +212,7 @@ def _advance_world(
     """Tick world, realize region, advance kernel runtime, persist state."""
     previous_settlement = copy.deepcopy(context.settlement_state)
     preserved_quest_state = snapshot_quest_state(context)
+    persist_projected_npc_state(context)
     tick_result = tick_global(context.world, hours_advanced)
     generated_events = list(tick_result.generated_events)
     active_region_id = str(context.world.simulation_snapshot.active_region_id)

@@ -1,4 +1,4 @@
-"""Gameplay command handlers: equipment, inventory, crafting, rest, and spells.
+"""Gameplay command handlers: equipment, inventory, crafting, progression, rest, and spells.
 
 Each handler follows the maybe_handle pattern — returns
 (narrative, command_type, hours_advanced) or None when the
@@ -10,7 +10,9 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, Optional
 
+from engine.data.classes import get_skill_stat_map
 from engine.data._shared import items_registry, load_registry_list, recipes_registry, spells_registry
+from engine.data.runtime import get_class_abilities
 from engine.kernel.gameplay import (
     cast_registry_spell,
     craft_recipe,
@@ -20,6 +22,7 @@ from engine.kernel.gameplay import (
     resolve_rest,
     unequip_actor_slot,
 )
+from engine.kernel.progression import ProgressionState
 from engine.world.crafting import CraftingSystem
 
 if TYPE_CHECKING:
@@ -117,6 +120,90 @@ def _summarize_events(events: list[dict]) -> str:
         elif ev_type == "equip_effect":
             parts.append(f"Applied effect {ev.get('effect_id', '')}.")
     return " ".join(parts) if parts else "Done."
+
+
+def _progression_state(player: "ActorRecord") -> ProgressionState:
+    class_id = str(player.raw_payload.get("class_name", "warrior")).lower()
+    raw_progression = player.raw_payload.get("progression")
+    state: ProgressionState | None = None
+    if isinstance(raw_progression, dict):
+        try:
+            state = ProgressionState.from_dict(raw_progression)
+        except Exception:  # pragma: no cover - corrupted save data should fall back safely
+            state = None
+    if state is None:
+        state = ProgressionState(
+            actor_id=player.identity.actor_id,
+            xp=int(player.raw_payload.get("xp", 0)),
+            level=int(player.raw_payload.get("level", 1)),
+            classes=[class_id],
+            class_levels={class_id: int(player.raw_payload.get("level", 1))},
+            bab=int(player.raw_payload.get("bab", 0)),
+            saves={str(key): int(value) for key, value in dict(player.raw_payload.get("saves", {})).items()},
+        )
+    state.actor_id = player.identity.actor_id
+    state.xp = int(player.raw_payload.get("xp", state.xp))
+    state.level = int(player.raw_payload.get("level", state.level or 1))
+    state.bab = int(player.raw_payload.get("bab", state.bab))
+    state.saves = {str(key): int(value) for key, value in dict(player.raw_payload.get("saves", state.saves)).items()}
+    if not state.classes:
+        state.classes = [class_id]
+    elif class_id not in state.classes:
+        state.classes.append(class_id)
+    if not state.class_levels:
+        state.class_levels = {class_id: state.level}
+    else:
+        state.class_levels.setdefault(class_id, state.level)
+    return state
+
+
+def _store_progression_state(player: "ActorRecord", state: ProgressionState) -> None:
+    player.raw_payload["progression"] = state.to_dict()
+
+
+def _class_ability_summary(player: "ActorRecord") -> list[dict[str, Any]]:
+    class_id = str(player.raw_payload.get("class_name", "warrior")).lower()
+    level = int(player.raw_payload.get("level", 1))
+    abilities = []
+    for ability in get_class_abilities().get(class_id, []):
+        entry = dict(ability)
+        entry["id"] = str(entry.get("name", "")).strip().lower().replace(" ", "_")
+        entry["required_level"] = int(entry.get("required_level", 1) or 1)
+        entry["unlocked"] = level >= entry["required_level"]
+        abilities.append(entry)
+    return abilities
+
+
+def _resolve_skill_id(player: "ActorRecord", query: str) -> str | None:
+    normalized = str(query).strip().lower().replace(" ", "_")
+    if not normalized:
+        return None
+    candidates = {
+        *get_skill_stat_map().keys(),
+        *player.skills.keys(),
+        *player.skill_proficiencies,
+        *player.expertise_skills,
+    }
+    if normalized in candidates:
+        return normalized
+    for skill_id in sorted(candidates):
+        label = skill_id.replace("_", " ")
+        if normalized in skill_id or normalized in label:
+            return skill_id
+    return None
+
+
+def _progression_summary(player: "ActorRecord") -> str:
+    state = _progression_state(player)
+    unlocked = [ability["name"] for ability in _class_ability_summary(player) if ability.get("unlocked")]
+    unlocked_text = ", ".join(unlocked[:3]) if unlocked else "none yet"
+    return (
+        f"Level {int(player.raw_payload.get('level', 1))} {str(player.raw_payload.get('class_name', 'warrior')).title()}. "
+        f"{state.skill_points_available} skill points, "
+        f"{state.proficiency_points_available} proficiency points, "
+        f"{state.ability_increases_available} ability increases available. "
+        f"Unlocked class abilities: {unlocked_text}."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -282,7 +369,109 @@ def maybe_handle_craft_command(
 
 
 # ---------------------------------------------------------------------------
-# Handler 4: Rest (short rest / long rest)
+# Handler 4: Progression spending
+# ---------------------------------------------------------------------------
+
+_PROGRESSION_RE = re.compile(r"^(?:progression|character\s+progression)$", re.IGNORECASE)
+_TRAIN_RE = re.compile(r"^train\s+(.+)$", re.IGNORECASE)
+_PROFICIENCY_RE = re.compile(r"^proficiency\s+(.+)$", re.IGNORECASE)
+_EXPERTISE_RE = re.compile(r"^expertise\s+(.+)$", re.IGNORECASE)
+_RAISE_RE = re.compile(r"^raise\s+(mig|agi|end|mnd|ins|pre)$", re.IGNORECASE)
+
+
+def maybe_handle_progression_command(
+    context: "CampaignContext",
+    command_text: str,
+) -> Optional[tuple[str, str, int]]:
+    player = _player(context)
+    if player is None:
+        return None
+
+    text = command_text.strip()
+    if _PROGRESSION_RE.match(text):
+        return (_progression_summary(player), "progression", 0)
+
+    state = _progression_state(player)
+
+    match = _TRAIN_RE.match(text)
+    if match:
+        skill_id = _resolve_skill_id(player, match.group(1))
+        if skill_id is None:
+            return (f"Unknown skill '{match.group(1).strip()}'.", "progression", 0)
+        if state.skill_points_available <= 0:
+            return ("No skill points available to spend.", "progression", 0)
+        player.skills[skill_id] = int(player.skills.get(skill_id, 0)) + 1
+        state.skill_points_available -= 1
+        state.skill_levels[skill_id] = int(player.skills.get(skill_id, 0))
+        _store_progression_state(player, state)
+        return (
+            f"Trained {skill_id.replace('_', ' ').title()} to {player.skills[skill_id]}. "
+            f"{state.skill_points_available} skill points remain.",
+            "progression",
+            0,
+        )
+
+    match = _PROFICIENCY_RE.match(text)
+    if match:
+        skill_id = _resolve_skill_id(player, match.group(1))
+        if skill_id is None:
+            return (f"Unknown skill '{match.group(1).strip()}'.", "progression", 0)
+        if skill_id in player.skill_proficiencies:
+            return (f"You are already proficient in {skill_id.replace('_', ' ')}.", "progression", 0)
+        if state.proficiency_points_available <= 0:
+            return ("No proficiency points available to spend.", "progression", 0)
+        player.raw_payload["skill_proficiencies"] = sorted({*player.skill_proficiencies, skill_id})
+        state.proficiency_points_available -= 1
+        _store_progression_state(player, state)
+        return (
+            f"Gained proficiency in {skill_id.replace('_', ' ').title()}. "
+            f"{state.proficiency_points_available} proficiency points remain.",
+            "progression",
+            0,
+        )
+
+    match = _EXPERTISE_RE.match(text)
+    if match:
+        skill_id = _resolve_skill_id(player, match.group(1))
+        if skill_id is None:
+            return (f"Unknown skill '{match.group(1).strip()}'.", "progression", 0)
+        if skill_id in player.expertise_skills:
+            return (f"You already have expertise in {skill_id.replace('_', ' ')}.", "progression", 0)
+        if skill_id not in player.skill_proficiencies:
+            return (f"You need proficiency in {skill_id.replace('_', ' ')} before gaining expertise.", "progression", 0)
+        if state.proficiency_points_available <= 0:
+            return ("No proficiency points available to spend.", "progression", 0)
+        player.raw_payload["expertise_skills"] = sorted({*player.expertise_skills, skill_id})
+        state.proficiency_points_available -= 1
+        _store_progression_state(player, state)
+        return (
+            f"Gained expertise in {skill_id.replace('_', ' ').title()}. "
+            f"{state.proficiency_points_available} proficiency points remain.",
+            "progression",
+            0,
+        )
+
+    match = _RAISE_RE.match(text)
+    if match:
+        ability = match.group(1).upper()
+        if state.ability_increases_available <= 0:
+            return ("No ability increases available to spend.", "progression", 0)
+        player.stats[ability] = int(player.stats.get(ability, 10)) + 1
+        state.ability_increases_available -= 1
+        _store_progression_state(player, state)
+        new_modifier = (int(player.stats.get(ability, 10)) - 10) // 2
+        return (
+            f"Raised {ability} to {int(player.stats.get(ability, 10))} "
+            f"(modifier {new_modifier:+d}). {state.ability_increases_available} ability increases remain.",
+            "progression",
+            0,
+        )
+
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Handler 5: Rest (short rest / long rest)
 # ---------------------------------------------------------------------------
 
 _REST_RE = re.compile(
@@ -330,7 +519,7 @@ def maybe_handle_rest_command(
 
 
 # ---------------------------------------------------------------------------
-# Handler 5: Spell (non-combat casting)
+# Handler 6: Spell (non-combat casting)
 # ---------------------------------------------------------------------------
 
 _CAST_RE = re.compile(r"^cast\s+(.+?)(?:\s+at\s+(.+))?$", re.IGNORECASE)

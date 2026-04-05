@@ -22,6 +22,7 @@ ALLOWED_OVERSIZE: Dict[str, str] = {
     "frp-backend/engine/api/campaign/quest_bridge.py": "Quest bridge still centralizes accept/report flow, dialog quest hooks, and runtime sync until quest runtime splits further.",
     "frp-backend/engine/api/campaign/region_projection.py": "Campaign region projection still centralizes realization, entity seeding, and party slot projection until it is split.",
     "frp-backend/engine/api/campaign_commands.py": "Campaign command dispatch centralizes all command handlers and dialog/commerce routing.",
+    "frp-backend/engine/api/gameplay_bridge.py": "Gameplay bridge still centralizes inventory, crafting, rest, spells, and progression command adapters until the runtime spend surfaces split out.",
     "frp-backend/tools/content_orchestrator.py": "Content orchestrator bundles world-building generation pipeline.",
     "godot-client/tests/automation/godot/automation_bridge.gd": "Semantic automation bridge remains centralized as a test-only control surface.",
     "godot-client/tests/run_headless_tests.gd": "Godot smoke harness intentionally centralizes lightweight client contract checks.",

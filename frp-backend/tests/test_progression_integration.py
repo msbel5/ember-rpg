@@ -17,6 +17,7 @@ from engine.api.campaign.live_kernel import (
     advance_kernel_runtime,
     ensure_kernel_runtime,
 )
+from engine.data.classes import get_class
 from engine.kernel.actor_records import ActorRecord, create_player_actor, create_monster_actor
 
 
@@ -239,3 +240,34 @@ class TestRuntimeLevelUp:
         level_events = [e for e in events if e.get("event_type") == "level_up"]
         assert level_events == []
         assert int(player.raw_payload.get("level", 1)) == 1
+
+    def test_level_up_preserves_existing_progression_counters(self):
+        _, ctx = _make_campaign()
+        player = _get_player(ctx)
+        player.raw_payload["xp"] = 3000
+        player.raw_payload["level"] = 3
+        player.raw_payload["progression"] = {
+            "actor_id": "player",
+            "xp": 3000,
+            "level": 3,
+            "classes": ["warrior"],
+            "class_levels": {"warrior": 3},
+            "bab": int(player.raw_payload.get("bab", 0)),
+            "saves": dict(player.raw_payload.get("saves", {})),
+            "proficiency_points_available": 2,
+            "skill_points_available": 1,
+            "ability_increases_available": 0,
+        }
+
+        events = advance_kernel_runtime(
+            ctx, hours_advanced=1, command_type="rest", command_text="rest",
+        )
+
+        level_events = [e for e in events if e.get("event_type") == "level_up"]
+        progression = player.raw_payload["progression"]
+        expected_skill_points = 1 + int(get_class("warrior").get("skill_pick_count", 0) or 0)
+        assert level_events
+        assert int(player.raw_payload.get("level", 1)) == 4
+        assert progression["proficiency_points_available"] == 3
+        assert progression["skill_points_available"] == expected_skill_points
+        assert progression["ability_increases_available"] == 1

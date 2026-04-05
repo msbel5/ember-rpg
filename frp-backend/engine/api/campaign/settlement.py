@@ -11,9 +11,45 @@ from typing import Any
 
 from engine.api.campaign.context import CampaignContext
 from engine.data.classes import get_creation_ability_order
+from engine.data.runtime import get_class_abilities
+from engine.kernel.progression import ProgressionState
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
 log = logging.getLogger(__name__)
+
+
+def _build_progression_summary(player) -> dict[str, Any]:
+    raw_progression = player.raw_payload.get("progression")
+    state: ProgressionState | None = None
+    if isinstance(raw_progression, dict):
+        try:
+            state = ProgressionState.from_dict(raw_progression)
+        except Exception:  # pragma: no cover - malformed legacy payloads should not break projection
+            state = None
+    if state is None:
+        class_id = str(player.dominant_class or "adventurer")
+        state = ProgressionState(
+            actor_id="player",
+            xp=player.xp,
+            level=player.level,
+            classes=[class_id],
+            class_levels={class_id: player.level},
+            bab=int(player.raw_payload.get("bab", 0)),
+            saves={str(key): int(value) for key, value in dict(player.raw_payload.get("saves", {})).items()},
+        )
+    class_id = str(player.dominant_class or "adventurer").lower()
+    class_abilities = []
+    for ability in get_class_abilities().get(class_id, []):
+        entry = dict(ability)
+        entry["required_level"] = int(entry.get("required_level", 1) or 1)
+        entry["unlocked"] = player.level >= entry["required_level"]
+        class_abilities.append(entry)
+    return {
+        "proficiency_points_available": int(state.proficiency_points_available),
+        "skill_points_available": int(state.skill_points_available),
+        "ability_increases_available": int(state.ability_increases_available),
+        "class_abilities": class_abilities,
+    }
 
 
 def build_settlement_state(
@@ -194,6 +230,7 @@ def build_character_sheet(context: CampaignContext, settlement_state: dict[str, 
         "equipment": player.equipment.to_dict(),
         "inventory_count": len(player.inventory),
         "passives": copy.deepcopy(player.passives),
+        "progression": _build_progression_summary(player),
         "settlement_role": str((settlement_state or {}).get("player_role", "commander")),
         "creation_summary": creation_summary,
     }

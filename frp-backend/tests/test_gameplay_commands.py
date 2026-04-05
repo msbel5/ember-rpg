@@ -11,6 +11,7 @@ from engine.api.gameplay_bridge import (
     maybe_handle_spell_command,
 )
 from engine.kernel.gameplay import spawn_ground_item_entity
+from engine.world.entity import Entity, EntityType
 
 
 def _make_campaign():
@@ -29,6 +30,34 @@ def _count_actor_item_quantity(actor, item_def_id: str) -> int:
         for item in actor.inventory
         if getattr(item, "item_def_id", "") == item_def_id
     )
+
+
+def _add_workstation(ctx, *, workstation_id: str, name: str, offset: tuple[int, int] = (1, 0)) -> None:
+    x = int(ctx.position[0]) + int(offset[0])
+    y = int(ctx.position[1]) + int(offset[1])
+    entity = Entity(
+        id=workstation_id,
+        entity_type=EntityType.FURNITURE,
+        name=name,
+        position=(x, y),
+        glyph="#",
+        color="orange",
+        blocking=False,
+        hp=1,
+        max_hp=1,
+        disposition="neutral",
+        job=name.lower().replace(" ", "_"),
+    )
+    ctx.spatial_index.add(entity)
+    ctx.entities[workstation_id] = {
+        "name": name,
+        "type": "furniture",
+        "position": [x, y],
+        "role": name.lower().replace(" ", "_"),
+        "template": name.lower().replace(" ", "_"),
+        "context_actions": ["examine", "use"],
+        "entity_ref": entity,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -196,6 +225,7 @@ class TestCraftCommand:
     def test_craft_command_recognized(self):
         _rt, ctx = _make_campaign()
         player = _player_actor(ctx)
+        _add_workstation(ctx, workstation_id="test_forge_recognized", name="Practice Forge")
         # Give player the ingredients for iron_bar: 2x iron_ore + 1x coal.
         from engine.kernel.actor_items import ItemStack
         player.inventory.append(ItemStack(
@@ -225,6 +255,7 @@ class TestCraftCommand:
     def test_craft_missing_ingredients(self):
         _rt, ctx = _make_campaign()
         player = _player_actor(ctx)
+        _add_workstation(ctx, workstation_id="test_forge_missing", name="Practice Forge")
         player.skills["smithing"] = 15
         result = maybe_handle_craft_command(ctx, "craft iron_bar")
         assert result is not None
@@ -233,6 +264,7 @@ class TestCraftCommand:
     def test_craft_repeatedly_transitions_inventory(self):
         _rt, ctx = _make_campaign()
         player = _player_actor(ctx)
+        _add_workstation(ctx, workstation_id="test_forge_repeated", name="Practice Forge")
         from engine.kernel.actor_items import ItemStack
 
         for index in range(4):
