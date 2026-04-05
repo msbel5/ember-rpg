@@ -11,14 +11,18 @@ import random
 import re
 from typing import TYPE_CHECKING, Optional
 
+from engine.world.interactions_catalog import load_interaction_rules
+from engine.world.interactions_runtime import interaction_target_type_for_tile
 from engine.kernel.combat_math import ability_modifier
 from engine.api.campaign.state_sync import sync_player_position
+from engine.map import TileType
 
 if TYPE_CHECKING:
     from engine.api.campaign.context import CampaignContext
     from engine.kernel.actor import ActorRecord
 
 logger = logging.getLogger(__name__)
+_INTERACTION_RULES = load_interaction_rules()
 
 _LOOK_AT_RE = re.compile(r"^look\s+at\s+(.+)$", re.IGNORECASE)
 _LOOK_RE = re.compile(r"^look(?:\s+around)?$", re.IGNORECASE)
@@ -175,6 +179,108 @@ def maybe_handle_examine_command(
     return (f"You look closely at '{target}' but find nothing remarkable.", "exploration", 0)
 
 
+def build_structured_tile_payload(
+    context: "CampaignContext",
+    *,
+    target_position: tuple[int, int] | None,
+    tile_name: str | None = None,
+    interaction_id: str | None = None,
+) -> dict[str, object] | None:
+    if target_position is None or len(target_position) < 2:
+        return None
+    x, y = int(target_position[0]), int(target_position[1])
+    map_data = getattr(context, "map_data", None)
+    if map_data is None:
+        return None
+    if x < 0 or y < 0 or x >= int(map_data.width) or y >= int(map_data.height):
+        return None
+    tile = map_data.tiles[y][x]
+    terrain = "floor"
+    flags: set[str] = set()
+    if tile == TileType.WATER:
+        terrain = "shallow_water"
+        flags.add("WATER")
+    elif tile == TileType.TREE:
+        terrain = "tree"
+        flags.add("TREE")
+    elif tile == TileType.WALL:
+        terrain = "stone_wall"
+    elif tile == TileType.ROAD:
+        terrain = "road"
+    normalized_tile_name = str(tile_name or "").strip().lower().replace(" ", "_")
+    if normalized_tile_name == "bridge":
+        terrain = "bridge"
+        flags.add("BRIDGE")
+    elif normalized_tile_name in {"ore", "ore_vein"}:
+        terrain = "ore_vein"
+        flags.add("ORE")
+    elif normalized_tile_name == "narrow_gap":
+        terrain = "narrow_gap"
+        flags.add("NARROW")
+    elif normalized_tile_name == "boulder":
+        terrain = "boulder"
+        flags.add("BOULDER")
+    preferred = None
+    if interaction_id:
+        from engine.world.interactions_runtime import parse_interaction_type
+
+        preferred = parse_interaction_type(interaction_id)
+    return {
+        "name": str(tile_name or terrain).replace("_", " ").title(),
+        "target_type": interaction_target_type_for_tile(
+            {"terrain": terrain, "flags": flags, "items": []},
+            preferred_interaction=preferred,
+            rules=_INTERACTION_RULES,
+            tile_name=tile_name,
+        ),
+        "tile": {"terrain": terrain, "flags": flags, "items": []},
+        "position": [x, y],
+    }
+
+
+def handle_structured_examine(
+    context: "CampaignContext",
+    *,
+    target_id: str | None = None,
+    target_kind: str | None = None,
+    target_position: tuple[int, int] | None = None,
+    tile_name: str | None = None,
+) -> tuple[str, str, int]:
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    if target_id:
+        actor = actors.get(str(target_id))
+        if actor is not None and str(target_kind or "").strip().lower() in {"", "npc", "enemy"}:
+            parts = [f"{actor.identity.display_name} ({getattr(actor.identity, 'actor_type', '')})"]
+            desc = actor.raw_payload.get("description", "")
+            if desc:
+                parts.append(desc)
+            if actor.max_hp:
+                parts.append(f"HP: {actor.hp}/{actor.max_hp}")
+            return ("\n".join(parts), "exploration", 0)
+        record = context.entities.get(str(target_id))
+        if isinstance(record, dict):
+            name = str(record.get("name", target_id))
+            role = str(record.get("role", record.get("template", ""))).replace("_", " ").strip()
+            position = record.get("position", list(context.position))
+            detail = f" at ({int(position[0])},{int(position[1])})" if isinstance(position, (list, tuple)) and len(position) >= 2 else ""
+            role_text = f" [{role}]" if role else ""
+            return (f"You examine {name}{role_text}{detail}.", "exploration", 0)
+        live_entity = getattr(context, "spatial_index", None).get_entity(str(target_id)) if getattr(context, "spatial_index", None) is not None else None
+        if live_entity is not None:
+            return (f"You examine {live_entity.name}.", "exploration", 0)
+    tile_payload = build_structured_tile_payload(
+        context,
+        target_position=target_position,
+        tile_name=tile_name,
+    )
+    if tile_payload is not None:
+        name = str(tile_payload.get("name", "the ground"))
+        position = list(tile_payload.get("position", list(context.position)))
+        return (f"You examine {name} at ({int(position[0])},{int(position[1])}).", "exploration", 0)
+    return ("You look closely but find nothing remarkable.", "exploration", 0)
+
+
 def maybe_handle_move_command(
     context: "CampaignContext", command_text: str,
 ) -> Optional[tuple[str, str, int]]:
@@ -271,6 +377,8 @@ _VERB_NARRATIVES: dict[str, tuple[str, str]] = {
 }
 
 __all__ = [
+    "build_structured_tile_payload",
+    "handle_structured_examine",
     "maybe_handle_examine_command",
     "maybe_handle_look_command",
     "maybe_handle_move_command",

@@ -42,6 +42,18 @@ def maybe_handle_combat_command(context: "CampaignContext", command_text: str) -
     return None
 
 
+def handle_attack_target_id(
+    context: "CampaignContext",
+    target_actor_id: str,
+) -> tuple[str, str, int]:
+    runtime = context.kernel_runtime or {}
+    actors: dict[str, Any] = runtime.get("actors", {})
+    player: Optional[ActorRecord] = actors.get("player")
+    if player is None:
+        return ("No combatant is ready to act.", "combat", 0)
+    return _handle_attack(context, actors, player, str(target_actor_id).strip())
+
+
 def _handle_attack(
     context: "CampaignContext",
     actors: dict[str, Any],
@@ -689,4 +701,4 @@ def _get_equipped_weapon(actor: "ActorRecord") -> Optional["ItemStack"]:
     return None
 
 
-__all__ = ["build_combat_payload", "maybe_handle_combat_command"]
+__all__ = ["build_combat_payload", "handle_attack_target_id", "maybe_handle_combat_command"]

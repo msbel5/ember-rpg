@@ -14,9 +14,12 @@ from engine.api.campaign.live_kernel import build_medical_payload
 from engine.api.gameplay_bridge import inventory_item_row, progression_class_abilities
 from engine.data.classes import get_creation_ability_order
 from engine.kernel.progression import ProgressionState
+from engine.world.interactions_catalog import load_interaction_rules
+from engine.world.interactions_runtime import build_skilldex_entries
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
 log = logging.getLogger(__name__)
+_INTERACTION_RULES = load_interaction_rules()
 
 
 def _build_progression_summary(player) -> dict[str, Any]:
@@ -217,6 +220,7 @@ def build_character_sheet(context: CampaignContext, settlement_state: dict[str, 
         "alignment": player.alignment,
         "stats": stats,
         "skills": skills,
+        "skilldex": build_skilldex_entries(player, _INTERACTION_RULES),
         "resources": resources,
         "armor_class": player.ac,
         "initiative_bonus": player.initiative_bonus,

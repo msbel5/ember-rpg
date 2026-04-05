@@ -39,12 +39,14 @@
   {"target_type": "tree", "interaction_type": "CLIMB", "skill": "AGI", "dc_range": [10, 16], "ap_cost": 2, "requirements": []},
   {"target_type": "ore_vein", "interaction_type": "MINE", "skill": "MIG", "dc_range": [10, 16], "ap_cost": 3, "requirements": ["pickaxe"]},
   {"target_type": "ore_vein", "interaction_type": "EXAMINE", "skill": "MND", "dc_range": [10, 14], "ap_cost": 1, "requirements": []},
+  {"target_type": "water", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
   {"target_type": "water", "interaction_type": "DRINK", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
   {"target_type": "water", "interaction_type": "FILL", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": ["waterskin"]},
   {"target_type": "water", "interaction_type": "FISH", "skill": "INS", "dc_range": [10, 14], "ap_cost": 3, "requirements": ["fishing_rod"]},
   {"target_type": "water", "interaction_type": "SWIM", "skill": "END", "dc_range": [10, 16], "ap_cost": 2, "requirements": []},
   {"target_type": "bed", "interaction_type": "REST", "skill": null, "dc_range": [0, 0], "ap_cost": 0, "requirements": []},
   {"target_type": "bed", "interaction_type": "SEARCH", "skill": "INS", "dc_range": [10, 14], "ap_cost": 1, "requirements": []},
+  {"target_type": "bed", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
   {"target_type": "corpse", "interaction_type": "LOOT", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
   {"target_type": "corpse", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
   {"target_type": "corpse", "interaction_type": "BURY", "skill": null, "dc_range": [0, 0], "ap_cost": 3, "requirements": []},
@@ -74,6 +76,7 @@
   {"target_type": "barrel", "interaction_type": "OPEN", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
   {"target_type": "barrel", "interaction_type": "SEARCH", "skill": "INS", "dc_range": [8, 12], "ap_cost": 1, "requirements": []},
   {"target_type": "barrel", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+  {"target_type": "fixture", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
   {"target_type": "bookshelf", "interaction_type": "READ", "skill": "MND", "dc_range": [8, 18], "ap_cost": 1, "requirements": []},
   {"target_type": "bookshelf", "interaction_type": "SEARCH", "skill": "INS", "dc_range": [12, 16], "ap_cost": 1, "requirements": []},
   {"target_type": "bookshelf", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
@@ -81,5 +84,46 @@
   {"target_type": "shrine", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
   {"target_type": "trap", "interaction_type": "DISARM_TRAP", "skill": "AGI", "dc_range": [12, 20], "ap_cost": 2, "requirements": []},
   {"target_type": "trap", "interaction_type": "SET_TRAP", "skill": "AGI", "dc_range": [12, 16], "ap_cost": 3, "requirements": ["trap_kit"]},
-  {"target_type": "trap", "interaction_type": "EXAMINE", "skill": "INS", "dc_range": [10, 14], "ap_cost": 1, "requirements": []}
+  {"target_type": "trap", "interaction_type": "EXAMINE", "skill": "INS", "dc_range": [10, 14], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "campfire", "interaction_type": "CRAFT", "skill": "MND", "dc_range": [6, 14], "ap_cost": 5, "requirements": ["ingredients"]},
+
+  {"target_type": "npc_hostile", "interaction_type": "TALK", "skill": "PRE", "dc_range": [14, 20], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "shrine", "interaction_type": "SEARCH", "skill": "INS", "dc_range": [12, 16], "ap_cost": 1, "requirements": []},
+  {"target_type": "shrine", "interaction_type": "USE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "well", "interaction_type": "SEARCH", "skill": "INS", "dc_range": [10, 16], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "corpse", "interaction_type": "SEARCH", "skill": "INS", "dc_range": [8, 12], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "altar", "interaction_type": "USE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "crate", "interaction_type": "OPEN", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+  {"target_type": "crate", "interaction_type": "SEARCH", "skill": "INS", "dc_range": [8, 12], "ap_cost": 1, "requirements": []},
+  {"target_type": "crate", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "ladder", "interaction_type": "CLIMB", "skill": "AGI", "dc_range": [6, 10], "ap_cost": 1, "requirements": []},
+  {"target_type": "ladder", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "grave", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+  {"target_type": "grave", "interaction_type": "PRAY", "skill": "INS", "dc_range": [8, 12], "ap_cost": 1, "requirements": []},
+  {"target_type": "grave", "interaction_type": "SEARCH", "skill": "INS", "dc_range": [14, 18], "ap_cost": 2, "requirements": []},
+
+  {"target_type": "herb_plant", "interaction_type": "PICK_UP", "skill": "INS", "dc_range": [8, 14], "ap_cost": 2, "requirements": []},
+  {"target_type": "herb_plant", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "gate", "interaction_type": "OPEN", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+  {"target_type": "gate", "interaction_type": "CLOSE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+  {"target_type": "gate", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "gate_locked", "interaction_type": "LOCK_PICK", "skill": "AGI", "dc_range": [14, 20], "ap_cost": 2, "requirements": ["lockpick"]},
+  {"target_type": "gate_locked", "interaction_type": "FORCE_OPEN", "skill": "MIG", "dc_range": [16, 22], "ap_cost": 2, "requirements": []},
+  {"target_type": "gate_locked", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "wagon", "interaction_type": "SEARCH", "skill": "INS", "dc_range": [8, 14], "ap_cost": 1, "requirements": []},
+  {"target_type": "wagon", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []},
+
+  {"target_type": "window", "interaction_type": "CLIMB", "skill": "AGI", "dc_range": [10, 16], "ap_cost": 2, "requirements": []},
+  {"target_type": "window", "interaction_type": "EXAMINE", "skill": null, "dc_range": [0, 0], "ap_cost": 1, "requirements": []}
 ]

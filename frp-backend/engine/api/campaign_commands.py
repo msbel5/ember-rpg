@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional
 
 from engine.worldgen import realize_region
@@ -16,6 +17,13 @@ from engine.api.campaign.quest_bridge import apply_dialog_events
 from engine.api.campaign.region_projection import apply_region_to_context
 from engine.api.campaign.settlement import build_settlement_state
 from engine.api.campaign.actor_query import resolve_live_actor_query
+from engine.kernel.gameplay import persist_ground_item_entities
+from engine.world.interactions import InteractionHandler, INTERACTION_RULES
+from engine.world.interactions_runtime import (
+    interaction_target_type_for_entity,
+    parse_interaction_type,
+    perform_interaction,
+)
 
 if TYPE_CHECKING:
     from engine.api.campaign.context import CampaignContext
@@ -23,11 +31,32 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class StructuredInteractionTarget:
+    target_id: str | None
+    target_kind: str
+    target_name: str
+    target_type: str | None
+    actor: Any = None
+    record: dict[str, Any] | None = None
+    tile_payload: dict[str, Any] | None = None
+
+
 def resolve_command_text(*, input_text: str, shortcut: Optional[str], args: dict[str, Any]) -> str:
     text = input_text.strip()
     if text:
         return text
     shortcut_value = str(shortcut or "").strip().lower()
+    if shortcut_value == "interact":
+        verb_id = str(args.get("verb_id", "interact")).strip().lower() or "interact"
+        interaction_id = str(args.get("interaction_id", "")).strip().lower()
+        target_hint = str(args.get("target_id") or args.get("tile_name") or "").strip()
+        parts = ["interact", verb_id]
+        if interaction_id and interaction_id != verb_id:
+            parts.append(interaction_id)
+        if target_hint:
+            parts.append(target_hint)
+        return " ".join(parts)
     if shortcut_value == "assign":
         return "assign %s to %s" % (args.get("resident", "resident"), args.get("job", "duty"))
     if shortcut_value == "travel":
@@ -39,6 +68,231 @@ def resolve_command_text(*, input_text: str, shortcut: Optional[str], args: dict
     if shortcut_value == "build":
         return "build %s" % args.get("kind", "house")
     return "look around"
+
+
+def maybe_handle_structured_interaction(
+    context: "CampaignContext",
+    args: dict[str, Any],
+) -> Optional[tuple[str, str, int]]:
+    verb_id = str(args.get("verb_id", "")).strip().lower()
+    if not verb_id:
+        return None
+    if verb_id not in {"talk", "attack", "examine", "use", "skill", "rest"}:
+        return (f"Unsupported structured interaction '{verb_id}'.", "exploration", 0)
+
+    target = _resolve_structured_target(context, args, verb_id=verb_id)
+    if isinstance(target, str):
+        return (target, "exploration", 0)
+
+    if verb_id == "talk":
+        if target is None or target.actor is None:
+            return ("Talk requires a live NPC target.", "dialog", 0)
+        return maybe_handle_talk_command(context, f"talk {target.actor.identity.actor_id}")
+
+    if verb_id == "attack":
+        if target is None or target.actor is None:
+            return ("Attack requires a live enemy target.", "combat", 0)
+        from engine.api.combat_bridge import handle_attack_target_id
+
+        return handle_attack_target_id(context, target.actor.identity.actor_id)
+
+    if verb_id == "examine":
+        from engine.api.exploration_bridge import handle_structured_examine
+
+        if target is None:
+            return ("Examine requires a target.", "exploration", 0)
+        position = None
+        if target.tile_payload is not None:
+            position = tuple(target.tile_payload.get("position", []))
+        return handle_structured_examine(
+            context,
+            target_id=target.target_id,
+            target_kind=target.target_kind,
+            target_position=position,
+            tile_name=target.target_name if target.target_kind == "tile" else None,
+        )
+
+    if verb_id == "rest":
+        if target is not None and target.target_type not in {"bed", "campfire"}:
+            return (f"{target.target_name} does not support resting.", "exploration", 0)
+        from engine.api.gameplay_bridge import maybe_handle_rest_command
+
+        return maybe_handle_rest_command(context, "rest") or ("You cannot rest here.", "rest", 0)
+
+    interaction_id = str(args.get("interaction_id", "")).strip().lower()
+    interaction_type = parse_interaction_type(interaction_id)
+    if interaction_type is None:
+        return (f"Unknown interaction '{interaction_id}'.", "exploration", 0)
+    if target is None:
+        return ("This interaction requires a target.", "exploration", 0)
+    if target.target_type is None:
+        return (f"{target.target_name} does not support {interaction_id.replace('_', ' ')}.", "exploration", 0)
+
+    runtime = context.kernel_runtime or {}
+    player = runtime.get("actors", {}).get("player") or context.player
+    if player is None:
+        return ("No active player was found.", "exploration", 0)
+    interaction_target = {
+        "target_type": target.target_type,
+        "name": target.target_name,
+        "target_kind": target.target_kind,
+    }
+    seed = (int(context.seed) * 17) + len(str(target.target_id or target.target_name)) + len(interaction_id)
+    result = perform_interaction(
+        interaction_type,
+        player,
+        interaction_target,
+        {"seed": seed},
+        INTERACTION_RULES,
+    )
+    if result.success:
+        _apply_interaction_state_changes(context, target, result.state_changes)
+    command_type = "exploration"
+    return (result.narrative_prompt, command_type, 0)
+
+
+def _resolve_structured_target(
+    context: "CampaignContext",
+    args: dict[str, Any],
+    *,
+    verb_id: str,
+) -> StructuredInteractionTarget | str | None:
+    target_id = str(args.get("target_id", "")).strip()
+    requested_kind = str(args.get("target_kind", "")).strip().lower()
+    if verb_id == "rest" and not target_id and not args.get("target_position"):
+        return None
+    if target_id:
+        runtime = context.kernel_runtime or {}
+        actor = (runtime.get("actors") or {}).get(target_id)
+        record = context.entities.get(target_id)
+        live_entity = context.spatial_index.get_entity(target_id) if getattr(context, "spatial_index", None) is not None else None
+        if actor is None and not isinstance(record, dict) and live_entity is None:
+            return f"Target '{target_id}' is no longer present."
+        target_kind = _structured_target_kind(actor=actor, record=record, live_entity=live_entity)
+        if requested_kind and requested_kind != target_kind:
+            return f"Target '{target_id}' is a {target_kind}, not a {requested_kind}."
+        target_name = ""
+        prefer_record = isinstance(record, dict) and str(record.get("type", "")).strip().lower() in {"furniture", "item"}
+        if isinstance(record, dict) and prefer_record:
+            target_name = str(record.get("name", target_id))
+            payload = {
+                "id": target_id,
+                "entity_type": str(record.get("type", "")),
+                "name": target_name,
+                "disposition": str(record.get("disposition", record.get("attitude", "friendly"))),
+                "template": str(record.get("template", record.get("role", ""))),
+                "locked": bool(record.get("locked", False)),
+                "trapped": bool(record.get("trapped", False)),
+            }
+        elif actor is not None:
+            target_name = str(actor.identity.display_name)
+            payload = {
+                "id": target_id,
+                "entity_type": str(getattr(actor.identity, "actor_type", "npc")).lower(),
+                "name": target_name,
+                "disposition": "hostile" if bool(actor.raw_payload.get("hostile")) else str(actor.raw_payload.get("disposition", "friendly")),
+                "template": str(actor.raw_payload.get("template", actor.raw_payload.get("role", ""))),
+            }
+        elif isinstance(record, dict):
+            target_name = str(record.get("name", target_id))
+            payload = {
+                "id": target_id,
+                "entity_type": str(record.get("type", "")),
+                "name": target_name,
+                "disposition": str(record.get("disposition", record.get("attitude", "friendly"))),
+                "template": str(record.get("template", record.get("role", ""))),
+                "locked": bool(record.get("locked", False)),
+                "trapped": bool(record.get("trapped", False)),
+            }
+        else:
+            target_name = str(getattr(live_entity, "name", target_id))
+            payload = {
+                "id": target_id,
+                "entity_type": str(getattr(getattr(live_entity, "entity_type", None), "value", "item")),
+                "name": target_name,
+                "disposition": str(getattr(live_entity, "disposition", "neutral")),
+            }
+        target_type = interaction_target_type_for_entity(payload)
+        return StructuredInteractionTarget(
+            target_id=target_id,
+            target_kind=target_kind,
+            target_name=target_name or target_id,
+            target_type=target_type,
+            actor=actor,
+            record=record if isinstance(record, dict) else None,
+        )
+
+    raw_position = args.get("target_position")
+    if isinstance(raw_position, (list, tuple)) and len(raw_position) >= 2:
+        from engine.api.exploration_bridge import build_structured_tile_payload
+
+        tile_name = str(args.get("tile_name", "")).strip() or "tile"
+        tile_payload = build_structured_tile_payload(
+            context,
+            target_position=(int(raw_position[0]), int(raw_position[1])),
+            tile_name=tile_name,
+            interaction_id=str(args.get("interaction_id", "")).strip().lower() or verb_id,
+        )
+        if tile_payload is None:
+            return f"Tile at ({int(raw_position[0])},{int(raw_position[1])}) is not valid."
+        if requested_kind and requested_kind != "tile":
+            return f"Target position resolves to a tile, not a {requested_kind}."
+        return StructuredInteractionTarget(
+            target_id=None,
+            target_kind="tile",
+            target_name=str(tile_payload.get("name", tile_name)),
+            target_type=str(tile_payload.get("target_type", "")).strip() or None,
+            tile_payload=tile_payload,
+        )
+
+    return "This interaction requires a valid target."
+
+
+def _structured_target_kind(*, actor: Any = None, record: dict[str, Any] | None = None, live_entity: Any = None) -> str:
+    if isinstance(record, dict):
+        entity_type = str(record.get("type", "")).strip().lower()
+        disposition = str(record.get("disposition", record.get("attitude", ""))).strip().lower()
+        if entity_type in {"npc", "creature"}:
+            return "enemy" if disposition == "hostile" else "npc"
+        if entity_type == "furniture":
+            return "furniture"
+        if entity_type == "item":
+            return "item"
+    if live_entity is not None:
+        live_type = str(getattr(getattr(live_entity, "entity_type", None), "value", "")).strip().lower()
+        if live_type == "item":
+            return "item"
+        if live_type == "furniture":
+            return "furniture"
+        if live_type in {"npc", "creature"}:
+            live_disposition = str(getattr(live_entity, "disposition", "")).strip().lower()
+            return "enemy" if live_disposition == "hostile" else "npc"
+    if actor is not None:
+        actor_type = str(getattr(actor.identity, "actor_type", "")).strip().lower()
+        if actor_type in {"npc", "creature"}:
+            if bool(actor.raw_payload.get("hostile")):
+                return "enemy"
+            disposition = str(actor.raw_payload.get("disposition", "friendly")).strip().lower()
+            return "enemy" if disposition == "hostile" else "npc"
+    return "tile"
+
+
+def _apply_interaction_state_changes(
+    context: "CampaignContext",
+    target: StructuredInteractionTarget,
+    state_changes: dict[str, Any],
+) -> None:
+    if target.record is not None:
+        for key in ("opened", "locked", "broken", "trapped"):
+            if key in state_changes:
+                target.record[key] = state_changes[key]
+    if target.target_kind == "item" and state_changes.get("picked_up") and target.target_id and getattr(context, "spatial_index", None) is not None:
+        entity = context.spatial_index.get_entity(target.target_id)
+        if entity is not None:
+            for item in list(getattr(entity, "inventory", []) or []):
+                context.add_item(dict(item), merge=True)
+            context.spatial_index.remove(entity)
+            persist_ground_item_entities(context)
 
 
 def maybe_handle_commander_command(

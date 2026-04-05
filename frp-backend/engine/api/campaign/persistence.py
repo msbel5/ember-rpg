@@ -103,7 +103,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "region": region_payload(context),
         "map_data": map_payload_from_region(context.region_snapshot),
         "fog": fog_payload,
-        "world_entities": build_world_entities(context.world, context.region_snapshot, context.adapter_id),
+        "world_entities": build_world_entities(context.world, context.region_snapshot, context.adapter_id, context=context),
         "ground_items": copy.deepcopy(context_data.get("ground_items", [])),
         "active_quests": copy.deepcopy(context_data.get("active_quests", [])),
         "completed_quest_ids": list(context.campaign_state.get("completed_quest_ids", [])),

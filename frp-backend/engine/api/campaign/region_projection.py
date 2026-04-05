@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import copy
+from collections import defaultdict
 from typing import Any
 
 from engine.api.campaign.context import CampaignContext
 from engine.kernel.game_state import FORMATIONS, normalize_party_state, party_tactic_mode
 from engine.kernel.scene_types import SceneType
 from engine.map import MapData, Room, TileType
+from engine.world.interactions_catalog import load_interaction_rules
+from engine.world.interactions_types import InteractionType
 from engine.world.entity import Entity, EntityType
 from engine.world.spatial_index import SpatialIndex
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
@@ -76,6 +79,85 @@ _ROLE_COLORS: dict[str, str] = {
 }
 _PARTY_CAPABLE_ACTOR_TYPES = {"npc", "creature"}
 _NON_PARTY_ROLE_HINTS = {"cabinet", "cauldron", "table", "oven", "bench", "chair", "bed", "pew", "sack"}
+_INTERACTION_HINT_ALIASES: dict[str, str] = {
+    "attack": "attack",
+    "bury": "bury",
+    "chop": "chop",
+    "climb": "climb",
+    "close": "close",
+    "craft": "craft",
+    "disarm": "disarm_trap",
+    "disarm_trap": "disarm_trap",
+    "drink": "drink",
+    "examine": "examine",
+    "fill": "fill",
+    "fish": "fish",
+    "flee": "flee",
+    "follow": "follow",
+    "force": "force_open",
+    "force_open": "force_open",
+    "hire": "hire",
+    "intimidate": "intimidate",
+    "kick": "kick",
+    "lock_pick": "lock_pick",
+    "loot": "loot",
+    "mine": "mine",
+    "open": "open",
+    "persuade": "persuade",
+    "pick_up": "pickup",
+    "pickup": "pickup",
+    "pray": "pray",
+    "pull": "pull",
+    "push": "push",
+    "read": "read",
+    "rest": "rest",
+    "search": "search",
+    "set_trap": "set_trap",
+    "sneak": "sneak",
+    "steal": "steal",
+    "swim": "swim",
+    "talk": "talk",
+    "trade": "trade",
+    "use": "use",
+}
+_INTERACTION_LABEL_OVERRIDES: dict[str, str] = {
+    "disarm_trap": "Disarm Trap",
+    "force_open": "Force Open",
+    "lock_pick": "Lockpick",
+    "pickup": "Pickup",
+    "set_trap": "Set Trap",
+}
+_FURNITURE_TARGET_KIND_ALIASES: dict[str, str] = {
+    "anvil": "workstation",
+    "altar": "altar",
+    "barrel": "barrel",
+    "bed": "bed",
+    "bookshelf": "bookshelf",
+    "campfire": "campfire",
+    "chest": "chest",
+    "crate": "chest",
+    "door": "door",
+    "fixture": "fixture",
+    "lever": "lever",
+    "ore_vein": "ore_vein",
+    "shrine": "shrine",
+    "sign": "sign",
+    "trap": "trap",
+    "well": "well",
+    "workstation": "workstation",
+    "bar_counter": "fixture",
+    "bench": "fixture",
+    "chair": "fixture",
+    "desk": "fixture",
+    "display_table": "fixture",
+    "map_table": "fixture",
+    "stool": "fixture",
+    "table": "fixture",
+    "trough": "fixture",
+}
+_RULES_BY_TARGET_TYPE: dict[str, list[tuple[InteractionType, dict[str, Any]]]] = defaultdict(list)
+for (_target_type, _interaction_type), _rule in load_interaction_rules().items():
+    _RULES_BY_TARGET_TYPE[_target_type].append((_interaction_type, dict(_rule)))
 
 
 def _is_party_capable_actor(actor: Any) -> bool:
@@ -595,8 +677,7 @@ def build_map_data(region_snapshot: RegionSnapshot) -> MapData:
     )
 
 
-def build_world_entities(world: WorldBlueprint, region_snapshot: RegionSnapshot, adapter_id: str) -> list[dict[str, Any]]:
-    del adapter_id
+def _build_region_world_entities(world: WorldBlueprint, region_snapshot: RegionSnapshot) -> list[dict[str, Any]]:
     runtime_state = runtime_region_state(world, region_snapshot.region_id)
     entities: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -642,6 +723,297 @@ def build_world_entities(world: WorldBlueprint, region_snapshot: RegionSnapshot,
             }
         )
     return entities
+
+
+def build_world_entities(
+    world: WorldBlueprint,
+    region_snapshot: RegionSnapshot,
+    adapter_id: str,
+    *,
+    context: CampaignContext | None = None,
+) -> list[dict[str, Any]]:
+    del adapter_id
+    if context is not None:
+        return _augment_world_entities(_build_context_world_entities(context), context=context)
+    return _augment_world_entities(_build_region_world_entities(world, region_snapshot), context=None)
+
+
+def _build_context_world_entities(context: CampaignContext) -> list[dict[str, Any]]:
+    runtime = context.kernel_runtime or {}
+    game_state = runtime.get("game_state")
+    normalize_party_state(game_state) if game_state is not None else None
+    active_party_ids = {
+        str(actor_id)
+        for actor_id in list(getattr(game_state, "party", []))
+        if str(actor_id) and str(actor_id) != "player"
+    }
+    entities: list[dict[str, Any]] = []
+    for entity_id, record in list(context.entities.items()):
+        if entity_id == "player" or entity_id in active_party_ids or not isinstance(record, dict):
+            continue
+        position = record.get("position")
+        if not isinstance(position, (list, tuple)) or len(position) < 2:
+            entity_ref = record.get("entity_ref")
+            position = list(getattr(entity_ref, "position", tuple(context.position)))
+        entity_type = str(record.get("type", "")).strip().lower() or str(
+            getattr(getattr(record.get("entity_ref"), "entity_type", None), "value", "")
+        ).strip().lower()
+        payload: dict[str, Any] = {
+            "id": str(entity_id),
+            "entity_type": entity_type or "object",
+            "name": str(record.get("name", entity_id)),
+            "position": [int(position[0]), int(position[1])],
+            "role": str(record.get("role", "")),
+            "context_actions": list(record.get("context_actions", [])),
+        }
+        if record.get("template") is not None:
+            payload["template"] = str(record.get("template", ""))
+        if record.get("faction") is not None:
+            payload["faction"] = record.get("faction")
+        disposition = str(record.get("disposition", record.get("attitude", ""))).strip().lower()
+        if disposition:
+            payload["disposition"] = disposition
+        locked = _record_flag(record, "locked")
+        trapped = _record_flag(record, "trapped")
+        if locked is not None:
+            payload["locked"] = locked
+        if trapped is not None:
+            payload["trapped"] = trapped
+        entities.append(payload)
+    return entities
+
+
+def _augment_world_entities(
+    entities: list[dict[str, Any]],
+    *,
+    context: CampaignContext | None,
+) -> list[dict[str, Any]]:
+    augmented: list[dict[str, Any]] = []
+    for entity in entities:
+        payload = dict(entity)
+        normalized_context_actions = _normalize_context_actions(payload.get("context_actions", []))
+        payload["context_actions"] = list(normalized_context_actions)
+        target_kind = _target_kind_for_payload(payload)
+        interaction_target_type = _interaction_target_type_for_payload(payload, target_kind=target_kind)
+        descriptors = _interaction_descriptors_for_payload(
+            payload,
+            interaction_target_type=interaction_target_type,
+            target_kind=target_kind,
+            context=context,
+            normalized_context_actions=normalized_context_actions,
+        )
+        payload["interaction_target_type"] = interaction_target_type
+        payload["available_interactions"] = descriptors
+        payload["primary_interaction_id"] = _primary_interaction_id(descriptors, normalized_context_actions)
+        payload["target_kind"] = target_kind
+        augmented.append(payload)
+    return augmented
+
+
+def _record_flag(record: dict[str, Any], key: str) -> bool | None:
+    if key in record:
+        return bool(record.get(key))
+    entity_ref = record.get("entity_ref")
+    if entity_ref is not None and hasattr(entity_ref, key):
+        return bool(getattr(entity_ref, key))
+    return None
+
+
+def _normalize_context_actions(raw_actions: Any) -> list[str]:
+    normalized: list[str] = []
+    for action in list(raw_actions or []):
+        canonical = _INTERACTION_HINT_ALIASES.get(str(action).strip().lower())
+        if canonical and canonical not in normalized:
+            normalized.append(canonical)
+    return normalized
+
+
+def _target_kind_for_payload(payload: dict[str, Any]) -> str:
+    entity_type = str(payload.get("entity_type", "object")).strip().lower()
+    disposition = str(payload.get("disposition", payload.get("attitude", "friendly"))).strip().lower()
+    if not bool(payload.get("alive", True)):
+        return "enemy"
+    if entity_type == "npc":
+        return "enemy" if disposition == "hostile" else "npc"
+    if entity_type == "creature":
+        return "enemy"
+    if entity_type == "furniture":
+        return "furniture"
+    if entity_type == "item":
+        return "item"
+    return "tile"
+
+
+def _canonical_furniture_target_kind(base: str, role: str) -> str:
+    for candidate in (base, role):
+        if candidate in _FURNITURE_TARGET_KIND_ALIASES:
+            return _FURNITURE_TARGET_KIND_ALIASES[candidate]
+        if any(token in candidate for token in ("forge", "anvil", "workbench", "loom", "press")):
+            return "workstation"
+        if "door" in candidate:
+            return "door"
+        if "bed" in candidate:
+            return "bed"
+        if any(token in candidate for token in ("bookshelf", "bookcase", "shelf", "cabinet")):
+            return "bookshelf"
+        if any(token in candidate for token in ("altar", "shrine", "totem", "cauldron", "oven", "lantern")):
+            return "altar"
+        if "well" in candidate:
+            return "well"
+        if any(token in candidate for token in ("barrel", "cask")):
+            return "barrel"
+        if any(token in candidate for token in ("crate", "rack", "chest", "keys")):
+            return "chest"
+        if "lever" in candidate:
+            return "lever"
+        if "trap" in candidate:
+            return "trap"
+        if "campfire" in candidate or "firepit" in candidate:
+            return "campfire"
+        if any(token in candidate for token in ("sign", "book")):
+            return "sign"
+        if any(token in candidate for token in ("bench", "chair", "table", "desk", "counter", "stool", "trough")):
+            return "fixture"
+    return "fixture" if (base or role) else "furniture"
+
+
+def _interaction_target_type_for_payload(payload: dict[str, Any], *, target_kind: str) -> str | None:
+    entity_type = str(payload.get("entity_type", "object")).strip().lower()
+    disposition = str(payload.get("disposition", payload.get("attitude", "friendly"))).strip().lower()
+    if not bool(payload.get("alive", True)) and entity_type in {"npc", "creature"}:
+        return "corpse"
+    if entity_type in {"npc", "creature"}:
+        return "npc_hostile" if disposition == "hostile" else "npc_friendly"
+    if entity_type == "furniture":
+        template = str(payload.get("template", "")).strip().lower()
+        role = str(payload.get("role", "")).strip().lower()
+        base = template or furniture_template(role) or role
+        canonical_kind = _canonical_furniture_target_kind(base, role)
+        if canonical_kind == "door":
+            return "door_locked" if bool(payload.get("locked")) else "door_unlocked"
+        if canonical_kind == "chest":
+            if bool(payload.get("trapped")):
+                return "chest_trapped"
+            if bool(payload.get("locked")):
+                return "chest_locked"
+            return "chest"
+        return canonical_kind if canonical_kind in _RULES_BY_TARGET_TYPE else None
+    if entity_type == "item":
+        return "item"
+    return target_kind if target_kind in _RULES_BY_TARGET_TYPE else None
+
+
+def _interaction_descriptors_for_payload(
+    payload: dict[str, Any],
+    *,
+    interaction_target_type: str | None,
+    target_kind: str,
+    context: CampaignContext | None,
+    normalized_context_actions: list[str],
+) -> list[dict[str, Any]]:
+    if not interaction_target_type:
+        return []
+    rules = list(_RULES_BY_TARGET_TYPE.get(interaction_target_type, []))
+    if not rules:
+        return []
+    hint_order = {action_id: index for index, action_id in enumerate(normalized_context_actions)}
+    descriptors: list[dict[str, Any]] = []
+    for rule_index, (interaction_type, rule) in enumerate(rules):
+        interaction_id = _interaction_id(interaction_type)
+        available, blocked_reason = _interaction_availability(
+            context,
+            interaction_target_type=interaction_target_type,
+            interaction_id=interaction_id,
+            requirements=list(rule.get("requirements", [])),
+        )
+        descriptors.append(
+            {
+                "id": f"{payload.get('id', target_kind)}:{interaction_id}",
+                "label": _interaction_label(interaction_id),
+                "interaction_id": interaction_id,
+                "governing_check": _governing_check_payload(rule),
+                "requirements": list(rule.get("requirements", [])),
+                "ap_cost": int(rule.get("ap_cost", 0)),
+                "available": bool(available),
+                "blocked_reason": blocked_reason,
+                "_sort_hint": hint_order.get(interaction_id, len(hint_order) + rule_index),
+                "_sort_rule": rule_index,
+            }
+        )
+    descriptors.sort(key=lambda item: (int(item.pop("_sort_hint")), int(item.pop("_sort_rule")), str(item["interaction_id"])))
+    return descriptors
+
+
+def _interaction_availability(
+    context: CampaignContext | None,
+    *,
+    interaction_target_type: str,
+    interaction_id: str,
+    requirements: list[Any],
+) -> tuple[bool, str | None]:
+    del interaction_target_type, interaction_id
+    if context is None:
+        return True, None
+    player = (context.kernel_runtime or {}).get("actors", {}).get("player") or context.player
+    if player is None:
+        return True, None
+    inventory_ids: set[str] = set()
+    for item in list(getattr(player, "inventory", []) or []):
+        item_def_id = str(getattr(item, "item_def_id", "")).strip().lower()
+        if item_def_id:
+            inventory_ids.add(item_def_id)
+    gold = int(getattr(player, "raw_payload", {}).get("gold", 0) or 0)
+    for requirement in [str(item).strip().lower() for item in requirements if str(item).strip()]:
+        if requirement == "gold" and gold <= 0:
+            return False, "Requires gold."
+        if requirement == "ingredients":
+            if not inventory_ids:
+                return False, "Requires ingredients."
+            continue
+        if requirement == "matching_key":
+            if not any("key" in item_id for item_id in inventory_ids):
+                return False, "Requires matching key."
+            continue
+        aliases = {
+            "lockpick": {"lockpick", "lockpick_set"},
+            "pickaxe": {"pickaxe", "mining_pick", "miner_pick"},
+            "axe": {"axe", "hand_axe", "wood_axe"},
+            "fishing_rod": {"fishing_rod", "fishing_hook"},
+            "waterskin": {"waterskin"},
+            "trap_kit": {"trap_kit"},
+        }.get(requirement, {requirement})
+        if inventory_ids.isdisjoint(aliases):
+            return False, f"Requires {requirement.replace('_', ' ')}."
+    return True, None
+
+
+def _governing_check_payload(rule: dict[str, Any]) -> str | None:
+    skill = rule.get("skill")
+    return str(skill) if skill is not None else None
+
+
+def _interaction_id(interaction_type: InteractionType) -> str:
+    raw = str(interaction_type.name).strip().lower()
+    return "pickup" if raw == "pick_up" else raw
+
+
+def _interaction_label(interaction_id: str) -> str:
+    if interaction_id in _INTERACTION_LABEL_OVERRIDES:
+        return _INTERACTION_LABEL_OVERRIDES[interaction_id]
+    return interaction_id.replace("_", " ").title()
+
+
+def _primary_interaction_id(descriptors: list[dict[str, Any]], normalized_context_actions: list[str]) -> str | None:
+    if not descriptors:
+        return None
+    descriptor_ids = {str(item.get("interaction_id", "")) for item in descriptors}
+    for action_id in normalized_context_actions:
+        if action_id in descriptor_ids:
+            return action_id
+    for descriptor in descriptors:
+        if bool(descriptor.get("available")):
+            return str(descriptor.get("interaction_id", "")) or None
+    return str(descriptors[0].get("interaction_id", "")) or None
 
 
 def seed_region_entities(

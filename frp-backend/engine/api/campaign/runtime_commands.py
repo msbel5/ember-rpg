@@ -31,6 +31,7 @@ from engine.api.campaign_commands import (
     maybe_handle_commerce_command,
     maybe_handle_dialog_command,
     maybe_handle_medical_command,
+    maybe_handle_structured_interaction,
     maybe_handle_talk_command,
     resolve_command_text,
 )
@@ -64,7 +65,12 @@ def run_command(
         shortcut=str(shortcut or ""),
         pre_snapshot_hash=pre_hash,
     )
-    narrative, command_type, hours_advanced = _dispatch(context, issued, command_args)
+    narrative, command_type, hours_advanced = _dispatch(
+        context,
+        issued,
+        command_args,
+        shortcut=str(shortcut or "").strip().lower(),
+    )
     pending_dialog_payload = (context.kernel_runtime or {}).pop("_pending_dialog_payload", None)
     _advance_world(context, command_type, hours_advanced, issued)
     # Dialog payload: use pre-built payload from talk handler if available, otherwise build fresh.
@@ -105,12 +111,18 @@ def _dispatch(
     context: CampaignContext,
     issued: str,
     command_args: dict[str, Any],
+    *,
+    shortcut: str = "",
 ) -> tuple[str, str, int]:
     """Route command text to the correct handler. Returns (narrative, type, hours)."""
     lower = issued.lower().strip()
     from engine.api.combat_bridge import maybe_handle_combat_command  # noqa: E402
 
     if context.in_combat():
+        if shortcut == "interact" and str(command_args.get("verb_id", "")).strip().lower() == "attack":
+            structured = maybe_handle_structured_interaction(context, command_args)
+            if structured is not None:
+                return structured
         combat = maybe_handle_combat_command(context, issued)
         if combat is not None:
             return combat
@@ -125,6 +137,11 @@ def _dispatch(
             "dialog",
             0,
         )
+
+    if shortcut == "interact":
+        structured = maybe_handle_structured_interaction(context, command_args)
+        if structured is not None:
+            return structured
 
     talk = maybe_handle_talk_command(context, issued)
     if talk is not None:

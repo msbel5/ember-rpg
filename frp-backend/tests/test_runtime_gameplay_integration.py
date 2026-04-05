@@ -133,6 +133,44 @@ def _add_workstation(context, *, workstation_id: str, name: str, offset: tuple[i
     }
 
 
+def _add_furniture_entity(
+    context,
+    *,
+    entity_id: str,
+    name: str,
+    template: str,
+    position: tuple[int, int],
+    context_actions: list[str] | None = None,
+    locked: bool = False,
+    trapped: bool = False,
+):
+    entity = Entity(
+        id=entity_id,
+        entity_type=EntityType.FURNITURE,
+        name=name,
+        position=(int(position[0]), int(position[1])),
+        glyph="#",
+        color="white",
+        blocking=True,
+        hp=1,
+        max_hp=1,
+        disposition="neutral",
+        job=template,
+    )
+    context.spatial_index.add(entity)
+    context.entities[entity_id] = {
+        "name": name,
+        "type": "furniture",
+        "position": [int(position[0]), int(position[1])],
+        "role": template,
+        "template": template,
+        "context_actions": list(context_actions or ["examine"]),
+        "locked": bool(locked),
+        "trapped": bool(trapped),
+        "entity_ref": entity,
+    }
+
+
 def _first_scheduled_npc(context):
     for entity_id, record in context.entities.items():
         if entity_id == "player" or not isinstance(record, dict):
@@ -372,6 +410,241 @@ def test_campaign_payload_exposes_fog_shape() -> None:
     assert isinstance(fog["regions"], list)
     assert fog["visible_count"] == len(fog["visible_tiles"])
     assert fog["explored_count"] == len(fog["explored_tiles"])
+
+
+def test_structured_talk_uses_exact_target_id_when_names_collide() -> None:
+    runtime, context = _make_campaign()
+    first = _inject_companion(context, base_id="briga_one", name="Briga Ward", role="guard")
+    second = _inject_companion(context, base_id="briga_two", name="Briga Ward", role="guard")
+    _project_actor_entity(context, first, position=(int(context.position[0]) + 1, int(context.position[1])), attitude="friendly", disposition="friendly", context_actions=["talk", "examine"])
+    _project_actor_entity(context, second, position=(int(context.position[0]) + 2, int(context.position[1])), attitude="friendly", disposition="friendly", context_actions=["talk", "examine"])
+
+    result = runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={
+            "verb_id": "talk",
+            "target_id": second.identity.actor_id,
+            "target_kind": "npc",
+        },
+    )
+
+    assert result["command_type"] == "dialog"
+    assert context.conversation_state["npc_id"] == second.identity.actor_id
+
+
+def test_structured_attack_uses_exact_target_id_when_names_collide() -> None:
+    runtime, context = _make_campaign()
+    first = _inject_companion(context, base_id="wolf_one", name="Ridge Wolf", role="raider", hostile=True)
+    second = _inject_companion(context, base_id="wolf_two", name="Ridge Wolf", role="raider", hostile=True)
+    _project_actor_entity(context, first, position=(int(context.position[0]) + 1, int(context.position[1])), attitude="hostile")
+    _project_actor_entity(context, second, position=(int(context.position[0]) + 2, int(context.position[1])), attitude="hostile")
+
+    result = runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={
+            "verb_id": "attack",
+            "target_id": second.identity.actor_id,
+            "target_kind": "enemy",
+        },
+    )
+    combatant_ids = [entry["actor_id"] for entry in result["campaign"]["combat"]["combatants"]]
+
+    assert result["command_type"] == "combat"
+    assert second.identity.actor_id in combatant_ids
+    assert first.identity.actor_id not in combatant_ids
+
+
+def test_structured_examine_supports_entity_and_tile_targets() -> None:
+    runtime, context = _make_campaign()
+    _add_workstation(context, workstation_id="inspect_forge", name="Inspect Forge", offset=(1, 0))
+
+    entity_result = runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={
+            "verb_id": "examine",
+            "target_id": "inspect_forge",
+            "target_kind": "furniture",
+        },
+    )
+    tile_result = runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={
+            "verb_id": "examine",
+            "target_kind": "tile",
+            "target_position": list(context.position),
+            "tile_name": "road",
+        },
+    )
+
+    assert entity_result["command_type"] == "exploration"
+    assert "Inspect Forge" in entity_result["narrative"]
+    assert tile_result["command_type"] == "exploration"
+    assert "Road" in tile_result["narrative"]
+
+
+def test_structured_skill_routes_through_interaction_rules() -> None:
+    runtime, context = _make_campaign()
+    _add_furniture_entity(
+        context,
+        entity_id="prayer_shrine",
+        name="Prayer Shrine",
+        template="altar",
+        position=(int(context.position[0]) + 1, int(context.position[1])),
+        context_actions=["examine", "pray"],
+    )
+
+    result = runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={
+            "verb_id": "skill",
+            "interaction_id": "pray",
+            "target_id": "prayer_shrine",
+            "target_kind": "furniture",
+        },
+    )
+
+    assert result["command_type"] == "exploration"
+    assert "pray" in result["narrative"].lower()
+
+
+def test_structured_interaction_failures_are_non_mutating() -> None:
+    runtime, context = _make_campaign()
+    npc = _inject_companion(context, base_id="wrong_kind_npc", name="Harbor Guard", role="guard")
+    _project_actor_entity(context, npc, position=(int(context.position[0]) + 1, int(context.position[1])), attitude="friendly", disposition="friendly", context_actions=["talk", "examine"])
+
+    wrong_kind = runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={
+            "verb_id": "talk",
+            "target_id": npc.identity.actor_id,
+            "target_kind": "furniture",
+        },
+    )
+    stale = runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={
+            "verb_id": "examine",
+            "target_id": "missing_target_404",
+            "target_kind": "furniture",
+        },
+    )
+
+    assert "not a furniture" in wrong_kind["narrative"].lower()
+    assert "no longer present" in stale["narrative"].lower()
+
+
+def test_character_sheet_exposes_skilldex_entries() -> None:
+    runtime, context = _make_campaign()
+
+    payload = runtime.snapshot(context.campaign_id, narrative="skilldex")["campaign"]["character_sheet"]
+    skilldex = payload["skilldex"]
+
+    assert isinstance(skilldex, list)
+    assert skilldex
+    first = skilldex[0]
+    assert {"id", "label", "interaction_id", "governing_check", "bonus", "requirements", "proficient", "expertise"}.issubset(first.keys())
+    assert any(entry["interaction_id"] == "search" for entry in skilldex)
+
+
+def test_world_entities_expose_canonical_interaction_descriptors() -> None:
+    runtime, context = _make_campaign()
+    _add_furniture_entity(
+        context,
+        entity_id="bench_fixture",
+        name="Lookout Bench",
+        template="bench",
+        position=(int(context.position[0]) + 1, int(context.position[1])),
+        context_actions=["examine", "sit"],
+    )
+
+    payload = runtime.snapshot(context.campaign_id, narrative="entities")["campaign"]["world_entities"]
+    bench = next(entity for entity in payload if entity["id"] == "bench_fixture")
+
+    assert "interaction_target_type" in bench
+    assert "available_interactions" in bench
+    assert "primary_interaction_id" in bench
+    assert bench["target_kind"] == "furniture"
+    assert bench["interaction_target_type"] == "fixture"
+    assert all(descriptor["interaction_id"] != "sit" for descriptor in bench["available_interactions"])
+    assert bench["primary_interaction_id"] == "examine"
+
+
+def test_structured_interactions_respect_dialog_and_combat_gating() -> None:
+    runtime, context = _make_campaign()
+    npc = _inject_companion(context, base_id="gating_npc", name="Gate Mira", role="guard")
+    hostile = _inject_companion(context, base_id="gating_hostile", name="Gate Wolf", role="raider", hostile=True)
+    _project_actor_entity(context, npc, position=(int(context.position[0]) + 1, int(context.position[1])), attitude="friendly", disposition="friendly", context_actions=["talk", "examine"])
+    _project_actor_entity(context, hostile, position=(int(context.position[0]) + 2, int(context.position[1])), attitude="hostile")
+
+    runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={"verb_id": "talk", "target_id": npc.identity.actor_id, "target_kind": "npc"},
+    )
+    dialog_block = runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={"verb_id": "examine", "target_kind": "tile", "target_position": list(context.position), "tile_name": "road"},
+    )
+    clear_dialog_state(context)
+    runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={"verb_id": "attack", "target_id": hostile.identity.actor_id, "target_kind": "enemy"},
+    )
+    combat_block = runtime.run_command(
+        context.campaign_id,
+        "",
+        shortcut="interact",
+        args={"verb_id": "rest"},
+    )
+
+    assert dialog_block["command_type"] == "dialog"
+    assert "conversation" in dialog_block["narrative"].lower()
+    assert combat_block["command_type"] == "combat"
+    assert "in combat" in combat_block["narrative"].lower()
+
+
+def test_world_entity_descriptor_payload_coexists_with_fog_party_and_combat_truth() -> None:
+    runtime, context = _make_campaign()
+    hostile = _inject_companion(context, base_id="companion_descriptor_hostile", name="Descriptor Brute", role="raider", hostile=True)
+    _add_workstation(context, workstation_id="descriptor_forge_fixture", name="Descriptor Forge")
+    _project_actor_entity(context, hostile, position=(int(context.position[0]) + 2, int(context.position[1])), attitude="hostile")
+
+    snapshot = runtime.snapshot(context.campaign_id, narrative="descriptor")
+    forge = next(item for item in snapshot["campaign"]["world_entities"] if item["id"] == "descriptor_forge_fixture")
+    result = runtime.run_command(context.campaign_id, "attack Descriptor Brute")
+    campaign = result["campaign"]
+
+    assert result["command_type"] == "combat"
+    assert snapshot["campaign"]["fog"]["region_id"] == snapshot["campaign"]["region"]["region_id"]
+    assert snapshot["campaign"]["party"] == ["player"]
+    assert campaign["fog"]["region_id"] == campaign["region"]["region_id"]
+    assert campaign["party"] == ["player"]
+    assert isinstance(campaign["combat"], dict)
+    assert campaign["combat"]["combatants"]
+    assert forge["interaction_target_type"] == "workstation"
+    assert forge["target_kind"] == "furniture"
+    assert isinstance(forge["available_interactions"], list)
+    assert any(item["interaction_id"] == "craft" for item in forge["available_interactions"])
+
 
 
 def test_run_command_repeated_pickup_then_missing() -> None:

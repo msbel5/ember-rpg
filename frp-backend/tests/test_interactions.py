@@ -15,6 +15,7 @@ from engine.world.interactions import (
     InteractionType,
     get_available_interactions,
 )
+from engine.world.interactions_runtime import interaction_target_type_for_entity
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -151,6 +152,14 @@ class TestAvailableInteractions:
         result = get_available_interactions(tile, entities, _make_player())
         assert InteractionType.REST in result
         assert InteractionType.SEARCH in result
+
+    def test_generic_fixture_still_offers_examine(self):
+        tile = _make_tile()
+        entities = [{"entity_type": "furniture", "template": "bench"}]
+        target_type = interaction_target_type_for_entity(entities[0])
+        assert target_type == "fixture"
+        result = get_available_interactions(tile, entities, _make_player())
+        assert result == []
 
 
 # ── InteractionHandler ───────────────────────────────────────────────
@@ -296,6 +305,11 @@ class TestInteractionRules:
     def test_at_least_50_rules(self):
         assert len(INTERACTION_RULES) >= 50
 
+    def test_rule_count_reflects_coverage(self):
+        assert len(INTERACTION_RULES) >= 100, (
+            f"Only {len(INTERACTION_RULES)} rules; expected >= 100 after audit"
+        )
+
     def test_all_rules_have_required_keys(self):
         for (target_type, itype), rule in INTERACTION_RULES.items():
             assert "skill" in rule, f"Missing 'skill' in ({target_type}, {itype})"
@@ -316,3 +330,140 @@ class TestInteractionRules:
         valid = {None, "MIG", "AGI", "END", "MND", "INS", "PRE"}
         for (target_type, itype), rule in INTERACTION_RULES.items():
             assert rule["skill"] in valid, f"Bad skill in ({target_type}, {itype}): {rule['skill']}"
+
+    def test_common_live_target_families_have_canonical_rule_coverage(self):
+        required_targets = {
+            "npc_friendly",
+            "npc_hostile",
+            "door_locked",
+            "door_unlocked",
+            "chest",
+            "workstation",
+            "tree",
+            "ore_vein",
+            "water",
+            "bed",
+            "corpse",
+            "well",
+            "barrel",
+            "bookshelf",
+            "shrine",
+            "trap",
+            "fixture",
+        }
+        covered_targets = {target_type for (target_type, _itype) in INTERACTION_RULES.keys()}
+        assert required_targets.issubset(covered_targets)
+
+    def test_key_deterministic_actions_remain_present(self):
+        required_pairs = {
+            ("npc_friendly", InteractionType.TALK),
+            ("npc_hostile", InteractionType.ATTACK),
+            ("door_locked", InteractionType.LOCK_PICK),
+            ("door_locked", InteractionType.FORCE_OPEN),
+            ("altar", InteractionType.PRAY),
+            ("tree", InteractionType.CLIMB),
+            ("tree", InteractionType.CHOP),
+            ("ore_vein", InteractionType.MINE),
+            ("water", InteractionType.FISH),
+            ("trap", InteractionType.DISARM_TRAP),
+            ("fixture", InteractionType.EXAMINE),
+        }
+        for target_type, interaction_type in required_pairs:
+            assert (target_type, interaction_type) in INTERACTION_RULES
+
+    def test_no_unsupported_schema_fields(self):
+        """Every rule in the JSON must use only the canonical 6-field schema."""
+        import json
+        from pathlib import Path
+        raw = json.loads(
+            (Path(__file__).resolve().parent.parent / "data" / "interaction_rules.json")
+            .read_text(encoding="utf-8")
+        )
+        allowed_keys = {"target_type", "interaction_type", "skill", "dc_range", "ap_cost", "requirements"}
+        for i, entry in enumerate(raw):
+            extra = set(entry.keys()) - allowed_keys
+            assert not extra, f"Rule {i} has unsupported fields: {extra}"
+
+    def test_requirements_are_lists_of_strings(self):
+        for (target_type, itype), rule in INTERACTION_RULES.items():
+            reqs = rule["requirements"]
+            assert isinstance(reqs, list), (
+                f"requirements in ({target_type}, {itype}) is not a list"
+            )
+            for r in reqs:
+                assert isinstance(r, str), (
+                    f"Non-string requirement {r!r} in ({target_type}, {itype})"
+                )
+
+
+# ── Target-family and deterministic-action coverage ──────────────────
+
+class TestTargetFamilyCoverage:
+    """Ensure the common world-projection target families have rules."""
+
+    REQUIRED_TARGET_FAMILIES = {
+        "npc_friendly", "npc_hostile",
+        "door_locked", "door_unlocked",
+        "chest", "chest_locked", "chest_trapped",
+        "item", "workstation",
+        "tree", "ore_vein", "water", "bed", "corpse",
+        "well", "barrel", "bookshelf", "shrine", "trap",
+        "campfire", "crate", "ladder", "grave",
+        "herb_plant", "gate", "gate_locked",
+        "wagon", "window",
+    }
+
+    def test_all_required_target_families_present(self):
+        present = {tt for (tt, _) in INTERACTION_RULES.keys()}
+        missing = self.REQUIRED_TARGET_FAMILIES - present
+        assert not missing, f"Target families missing from rules: {sorted(missing)}"
+
+    def test_every_target_has_examine(self):
+        """Every interactive target should at minimum support EXAMINE."""
+        present = {tt for (tt, _) in INTERACTION_RULES.keys()}
+        for tt in present:
+            assert (tt, InteractionType.EXAMINE) in INTERACTION_RULES, (
+                f"Target {tt!r} has no EXAMINE rule"
+            )
+
+
+class TestDeterministicActionPresence:
+    """Key gameplay actions must exist somewhere in the ruleset."""
+
+    REQUIRED_ACTIONS = [
+        ("npc_friendly", "TALK"),
+        ("npc_hostile", "ATTACK"),
+        ("npc_hostile", "TALK"),
+        ("item", "PICK_UP"),
+        ("door_unlocked", "OPEN"),
+        ("door_locked", "LOCK_PICK"),
+        ("door_locked", "FORCE_OPEN"),
+        ("chest", "SEARCH"),
+        ("chest_locked", "LOCK_PICK"),
+        ("chest_trapped", "DISARM_TRAP"),
+        ("tree", "CLIMB"),
+        ("ore_vein", "MINE"),
+        ("water", "FISH"),
+        ("water", "DRINK"),
+        ("altar", "PRAY"),
+        ("shrine", "PRAY"),
+        ("trap", "DISARM_TRAP"),
+        ("bed", "REST"),
+        ("campfire", "CRAFT"),
+        ("corpse", "LOOT"),
+        ("corpse", "SEARCH"),
+        ("crate", "OPEN"),
+        ("ladder", "CLIMB"),
+        ("gate_locked", "LOCK_PICK"),
+        ("gate_locked", "FORCE_OPEN"),
+        ("herb_plant", "PICK_UP"),
+        ("grave", "PRAY"),
+        ("window", "CLIMB"),
+    ]
+
+    @pytest.mark.parametrize("target,action", REQUIRED_ACTIONS)
+    def test_deterministic_action_present(self, target, action):
+        itype = InteractionType[action]
+        assert (target, itype) in INTERACTION_RULES, (
+            f"Missing rule: ({target}, {action})"
+        )

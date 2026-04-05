@@ -25,6 +25,7 @@ ALLOWED_OVERSIZE: Dict[str, str] = {
     "frp-backend/engine/api/campaign_commands.py": "Campaign command dispatch centralizes all command handlers and dialog/commerce routing.",
     "frp-backend/engine/api/combat_bridge.py": "Combat bridge still centralizes text commands, combat setup, and minimal ally AI until combat command surfaces split further.",
     "frp-backend/engine/api/gameplay_bridge.py": "Gameplay bridge still centralizes inventory, crafting, rest, spells, and progression command adapters until the runtime spend surfaces split out.",
+    "frp-backend/engine/world/interactions_runtime.py": "Interaction runtime now centralizes skilldex derivation, canonical interaction descriptors, and structured interaction execution until shell and projection slices settle.",
     "frp-backend/tools/content_orchestrator.py": "Content orchestrator bundles world-building generation pipeline.",
     "godot-client/tests/automation/godot/automation_bridge.gd": "Semantic automation bridge remains centralized as a test-only control surface.",
     "godot-client/tests/run_headless_tests.gd": "Godot smoke harness intentionally centralizes lightweight client contract checks.",
