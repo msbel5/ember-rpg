@@ -815,3 +815,118 @@ class TestCivilianServiceDialogs:
                 for s in dialog["states"] for t in s.get("transitions", [])
             )
             assert has_terminate, f"{dialog_id} has no terminate path"
+
+
+# ---------------------------------------------------------------------------
+# Recruit-Candidate Content
+# ---------------------------------------------------------------------------
+
+RECRUIT_CANDIDATE_DIALOG_IDS = {
+    "guard_recruit_iron_vow",
+    "guard_recruit_harbor_oath",
+    "priest_recruit_candle_ward",
+    "healer_recruit_marsh_salve",
+    "scout_recruit_trail_mark",
+    "fence_recruit_last_debt",
+}
+
+RECRUIT_ROLE_SPREAD = {
+    "guard": {"guard_recruit_iron_vow", "guard_recruit_harbor_oath"},
+    "priest": {"priest_recruit_candle_ward"},
+    "healer": {"healer_recruit_marsh_salve"},
+    "scout": {"scout_recruit_trail_mark"},
+    "fence": {"fence_recruit_last_debt"},
+}
+
+
+def _all_actions_in_dialog(dialog):
+    """Yield every action dict across all transitions in a dialog."""
+    for state in dialog["states"]:
+        for t in state.get("transitions", []):
+            yield from t.get("actions", [])
+
+
+def _walk_conditions(condition):
+    if not isinstance(condition, dict):
+        return
+    yield condition
+    for child in condition.get("children", []):
+        yield from _walk_conditions(child)
+
+
+def _all_conditions_in_dialog(dialog):
+    """Yield every condition dict across all transitions in a dialog."""
+    for state in dialog["states"]:
+        for t in state.get("transitions", []):
+            if t.get("condition"):
+                yield from _walk_conditions(t["condition"])
+
+
+class TestRecruitCandidateContent:
+    def test_recruit_dialog_ids_exist(self, dialog_defs):
+        for did in RECRUIT_CANDIDATE_DIALOG_IDS:
+            assert did in dialog_defs, f"Recruit dialog {did!r} missing from dialog_defs"
+
+    def test_recruit_role_family_spread(self, dialog_defs):
+        for family, expected_ids in RECRUIT_ROLE_SPREAD.items():
+            found = expected_ids & set(dialog_defs.keys())
+            assert len(found) >= 1, (
+                f"Recruit role family {family!r} has no dialog coverage. "
+                f"Expected at least one of {expected_ids}"
+            )
+
+    def test_recruit_dialogs_have_terminate_path(self, dialog_defs):
+        for did in RECRUIT_CANDIDATE_DIALOG_IDS:
+            dialog = dialog_defs[did]
+            has_terminate = any(
+                t.get("terminates")
+                for s in dialog["states"] for t in s.get("transitions", [])
+            )
+            assert has_terminate, f"Recruit dialog {did} has no terminate path"
+
+    def test_recruit_unlock_uses_set_recruitable(self, dialog_defs):
+        for did in RECRUIT_CANDIDATE_DIALOG_IDS:
+            dialog = dialog_defs[did]
+            has_set_recruitable = any(
+                a["action_type"] == "set_recruitable"
+                for a in _all_actions_in_dialog(dialog)
+            )
+            assert has_set_recruitable, (
+                f"Recruit dialog {did} has no set_recruitable action"
+            )
+
+    def test_recruit_has_pre_gate(self, dialog_defs):
+        for did in RECRUIT_CANDIDATE_DIALOG_IDS:
+            dialog = dialog_defs[did]
+            has_pre = any(
+                c["condition_type"] == "stat_check"
+                and c["params"].get("stat") == "PRE"
+                for c in _all_conditions_in_dialog(dialog)
+            )
+            assert has_pre, (
+                f"Recruit dialog {did} has no PRE stat gate"
+            )
+
+    def test_recruit_has_relationship_or_reaction_gate(self, dialog_defs):
+        gate_types = {"relationship_check", "reaction_check"}
+        for did in RECRUIT_CANDIDATE_DIALOG_IDS:
+            dialog = dialog_defs[did]
+            has_gate = any(
+                c["condition_type"] in gate_types
+                for c in _all_conditions_in_dialog(dialog)
+            )
+            assert has_gate, (
+                f"Recruit dialog {did} has no relationship_check or reaction_check gate"
+            )
+
+    def test_recruit_quest_ids_canonical(self, dialog_defs):
+        canonical = _campaign_quest_ids()
+        for did in RECRUIT_CANDIDATE_DIALOG_IDS:
+            dialog = dialog_defs[did]
+            for a in _all_actions_in_dialog(dialog):
+                if a["action_type"] in ("start_quest", "advance_quest"):
+                    qid = a["params"]["quest_id"]
+                    assert qid in canonical, (
+                        f"Recruit dialog {did} references quest "
+                        f"{qid!r} which is not in any campaign"
+                    )

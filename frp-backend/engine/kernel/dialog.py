@@ -199,6 +199,22 @@ def evaluate_condition(
     if condition.condition_type == "alignment_check":
         actor = _resolve_actor(str(params.get("actor", "player")), player, npc)
         return actor.raw_payload.get("alignment") == params.get("alignment")
+    if condition.condition_type == "relationship_check":
+        return _compare(
+            int(npc.raw_payload.get("relationship_score", 0)),
+            str(params.get("operator", "==")),
+            int(params.get("value", 0)),
+        )
+    if condition.condition_type == "reaction_check":
+        reputation = int(global_variables.get("reputation", 0))
+        reaction = compute_npc_reaction(player, npc, reputation)
+        return _compare(reaction, str(params.get("operator", "==")), int(params.get("value", 0)))
+    if condition.condition_type == "recruitable_check":
+        return _compare(
+            bool(npc.raw_payload.get("recruitable_companion", False)),
+            str(params.get("operator", "==")),
+            _as_bool(params.get("value", True)),
+        )
     raise ValueError(f"Unknown condition_type: {condition.condition_type}")
 
 
@@ -328,6 +344,26 @@ def execute_dialog_action(
     if action.action_type == "set_hostile":
         npc.raw_payload["hostile"] = True
         return {"type": "set_hostile", "npc_id": params.get("npc_id", npc.identity.actor_id)}
+    if action.action_type == "adjust_relationship":
+        delta = int(params.get("delta", 0))
+        score = _clamp_relationship_score(int(npc.raw_payload.get("relationship_score", 0)) + delta)
+        npc.raw_payload["relationship_score"] = score
+        return {
+            "type": "adjust_relationship",
+            "npc_id": npc.identity.actor_id,
+            "npc_name": npc.identity.display_name,
+            "delta": delta,
+            "relationship_score": score,
+        }
+    if action.action_type == "set_recruitable":
+        recruitable = _as_bool(params.get("value", True))
+        npc.raw_payload["recruitable_companion"] = recruitable
+        return {
+            "type": "set_recruitable",
+            "npc_id": npc.identity.actor_id,
+            "npc_name": npc.identity.display_name,
+            "recruitable": recruitable,
+        }
     if action.action_type == "add_journal":
         entry = {"text": str(params.get("text", "")), "quest_id": str(params.get("quest_id", ""))}
         player.raw_payload.setdefault("journal", []).append(entry)
@@ -343,6 +379,16 @@ def compute_npc_reaction(player: ActorRecord, npc: ActorRecord, reputation: int)
     cha = int(player.stats.get("PRE", 10))
     relationship_score = int(npc.raw_payload.get("relationship_score", 0))
     return ((cha - 10) * 2) + int(reputation) + relationship_score
+
+
+def _clamp_relationship_score(value: Any) -> int:
+    return max(-100, min(100, int(value or 0)))
+
+
+def _as_bool(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
 
 
 def _first_valid_state(

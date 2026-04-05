@@ -5,6 +5,7 @@ import logging
 import random
 from typing import TYPE_CHECKING, Optional
 
+from engine.api.campaign.actor_query import resolve_live_actor_query
 from engine.api.campaign.live_kernel import (
     _refresh_treatment_record,
     normalize_actor_medical_state,
@@ -54,7 +55,9 @@ def _handle_diagnose(
     doctor: "ActorRecord",
     target_name: str,
 ) -> tuple[str, str, int]:
-    target = _resolve_medical_target(actors, target_name, doctor)
+    target, error = _resolve_medical_target(actors, target_name, doctor)
+    if error:
+        return (error, "medical", 0)
     if target is None:
         return (f"No target '{target_name}' found to diagnose.", "medical", 0)
     if target.body_state is None:
@@ -114,7 +117,9 @@ def _handle_treat(
     doctor: "ActorRecord",
     target_name: str,
 ) -> tuple[str, str, int]:
-    target = _resolve_medical_target(actors, target_name, doctor)
+    target, error = _resolve_medical_target(actors, target_name, doctor)
+    if error:
+        return (error, "medical", 0)
     if target is None:
         return (f"No target '{target_name}' found to treat.", "medical", 0)
 
@@ -168,7 +173,9 @@ def _handle_surgery(
     doctor: "ActorRecord",
     target_name: str,
 ) -> tuple[str, str, int]:
-    target = _resolve_medical_target(actors, target_name, doctor)
+    target, error = _resolve_medical_target(actors, target_name, doctor)
+    if error:
+        return (error, "medical", 0)
     if target is None:
         return (f"No target '{target_name}' found for surgery.", "medical", 0)
 
@@ -217,13 +224,11 @@ def _handle_surgery(
     )
 
 
-def _resolve_medical_target(actors: dict, name: str, player: "ActorRecord") -> Optional["ActorRecord"]:
+def _resolve_medical_target(actors: dict, name: str, player: "ActorRecord") -> tuple[Optional["ActorRecord"], str | None]:
     if name.lower() in {"self", "me", "player"}:
-        return player
-    for actor in actors.values():
-        if hasattr(actor, "identity") and name.lower() in actor.identity.display_name.lower():
-            return actor
-    return None
+        return player, None
+    resolved = resolve_live_actor_query(actors, name, include_player=True)
+    return resolved.actor, resolved.error
 
 
 def _available_medical_materials(doctor: "ActorRecord") -> dict[str, int]:

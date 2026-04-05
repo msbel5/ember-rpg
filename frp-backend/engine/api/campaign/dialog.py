@@ -288,6 +288,14 @@ def _condition_reason(
         name = str(condition.params.get("name", "state"))
         store = global_vars if scope == "global" else variables
         return f"Requires {scope} variable {name} to match the branch condition." if name not in store else "Condition not met."
+    if condition.condition_type == "relationship_check":
+        required = int(condition.params.get("value", 0))
+        return f"Requires relationship {required} or higher."
+    if condition.condition_type == "reaction_check":
+        required = int(condition.params.get("value", 0))
+        return f"Requires reaction {required} or higher."
+    if condition.condition_type == "recruitable_check":
+        return "This companion is not ready to travel with you yet."
     return "Condition not met."
 
 

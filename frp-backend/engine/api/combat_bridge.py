@@ -7,6 +7,7 @@ from random import Random
 from typing import TYPE_CHECKING, Any, Optional
 
 from engine.api.kernel_adapter import advance_turn, begin_turn, check_combat_end, run_attack, start_fight
+from engine.api.campaign.actor_query import resolve_live_actor_query
 from engine.kernel.combat_engine import CombatState
 from engine.kernel.combat_math import ability_modifier
 from engine.kernel.game_state import FORMATIONS, party_tactic_for_actor
@@ -47,7 +48,10 @@ def _handle_attack(
     player: "ActorRecord",
     target_name: str,
 ) -> tuple[str, str, int]:
-    target = _resolve_combat_target(actors, target_name)
+    resolved = resolve_live_actor_query(actors, target_name, include_player=False, actor_types=_VALID_TARGET_TYPES)
+    if resolved.error:
+        return (resolved.error, "combat", 0)
+    target = resolved.actor
     if target is None:
         return (f"No target '{target_name}' found to attack.", "combat", 0)
     if not getattr(target, "alive", True):
@@ -246,23 +250,6 @@ def _resolve_non_player_turns(
         advance_turn(combat_state)
         begin_turn(combat_state, actors)
     return messages
-
-
-def _resolve_combat_target(actors: dict[str, Any], name: str) -> Optional["ActorRecord"]:
-    lower = name.lower().strip()
-    normalized = lower.replace(" ", "_")
-    for actor_id, actor in actors.items():
-        if actor_id == "player":
-            continue
-        actor_type = str(getattr(getattr(actor, "identity", None), "actor_type", "")).lower()
-        if actor_type not in _VALID_TARGET_TYPES:
-            continue
-        display_name = str(getattr(getattr(actor, "identity", None), "display_name", "")).lower()
-        if lower in display_name or normalized == actor_id.lower():
-            return actor
-    return None
-
-
 def _store_combat_state(context: "CampaignContext", combat_state: CombatState) -> None:
     runtime = context.kernel_runtime or {}
     game_state = runtime.get("game_state")

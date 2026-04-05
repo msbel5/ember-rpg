@@ -11128,6 +11128,1181 @@
           ]
         }
       ]
+    },
+    {
+      "dialog_id": "recruit_guard_haldric",
+      "npc_id": "recruit_guard_haldric",
+      "role": "guard",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A scarred garrison guard leans against the gatehouse wall, arms crossed, watching the road with tired eyes. \"Another traveler. The road is open but the garrison is short-handed. If you have business inside, state it. If not, move along.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_haldric_situation",
+              "text": "The garrison looks stretched thin. What happened?",
+              "next_state_id": "garrison_situation",
+              "actions": []
+            },
+            {
+              "transition_id": "haldric_offer_help",
+              "text": "I have fought beside soldiers before. I could use a steady shield at my side.",
+              "next_state_id": "haldric_consider",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_guard_haldric", "delta": 5}
+                }
+              ]
+            },
+            {
+              "transition_id": "haldric_farewell",
+              "text": "I will not keep you from your watch.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "garrison_situation",
+          "text": "\"Half the watch rotated south to deal with the marsh trouble. The rest of us cover double shifts. I have been at this gate for sixteen hours. The captain says reinforcements are coming. The captain has been saying that for three weeks.\"",
+          "transitions": [
+            {
+              "transition_id": "garrison_back",
+              "text": "That is a hard position. Have you thought about leaving?",
+              "next_state_id": "haldric_consider",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_guard_haldric", "delta": 5}
+                }
+              ]
+            },
+            {
+              "transition_id": "garrison_info_done",
+              "text": "I hope the reinforcements arrive.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "haldric_consider",
+          "text": "\"Leave? A soldier does not leave his post. But a soldier whose post has already left him — that is a different question. I have no loyalty to empty promises. But I will not follow someone I do not trust, and I will not follow someone the garrison would not respect.\"",
+          "transitions": [
+            {
+              "transition_id": "haldric_recruit_attempt",
+              "text": "I have earned respect on the road. Let me prove it. [PRE 14]",
+              "next_state_id": "haldric_pre_gate",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {"stat": "PRE", "operator": ">=", "value": 14}
+              },
+              "actions": []
+            },
+            {
+              "transition_id": "haldric_not_ready",
+              "text": "I understand. Perhaps another time.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "haldric_pre_gate",
+          "text": "\"You carry yourself like someone who has led people and brought them back alive. That counts for something. But words at a gate are cheap. I need to know you have stood your ground when it mattered — that people trust you with their lives, not just their coin.\"",
+          "transitions": [
+            {
+              "transition_id": "haldric_relationship_gate",
+              "text": "Ask anyone in this region. My name means something.",
+              "next_state_id": "haldric_unlock",
+              "condition": {
+                "condition_type": "relationship_check",
+                "params": {"npc_id": "recruit_guard_haldric", "operator": ">=", "value": 10}
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"npc_id": "recruit_guard_haldric", "recruitable": true}
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "Haldric, the garrison guard, has agreed that I am worth following. He is willing to leave the undermanned garrison and join my company when the time comes."}
+                }
+              ]
+            },
+            {
+              "transition_id": "haldric_not_enough_trust",
+              "text": "I will build that trust.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "Haldric respects my bearing but does not yet trust me enough to leave his post. I need to build a stronger reputation before he will consider it."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "haldric_unlock",
+          "text": "\"I asked around. The people you helped — they speak well of you. Not flattery, but the quiet kind of trust that soldiers recognize. When you are ready to march, send word. I will be at the gate until then, but my oath will be to you, not to an empty barracks.\"",
+          "transitions": [
+            {
+              "transition_id": "haldric_unlock_done",
+              "text": "I will send word when the time comes.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "recruit_guard_senna",
+      "npc_id": "recruit_guard_senna",
+      "role": "guard",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A guard with close-cropped hair sits sharpening a blade on the barracks steps, methodical and unhurried. Her shield bears dents from real combat, not training. \"You are not garrison. What do you want?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_senna_about_service",
+              "text": "You look like someone who has seen real fighting, not just gate duty.",
+              "next_state_id": "senna_background",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_guard_senna", "delta": 3}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_senna_local_info",
+              "text": "What should I know about this area?",
+              "next_state_id": "senna_local_info",
+              "actions": []
+            },
+            {
+              "transition_id": "senna_farewell",
+              "text": "Just passing through.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "senna_local_info",
+          "text": "\"The eastern road is bad — wolves denning near the ford, and the marsh gives everything a hiding place. The northern pass is clean if you travel by day. If you are headed south, bring company. Bandits work the bridge in pairs now. They are getting organized.\"",
+          "transitions": [
+            {
+              "transition_id": "senna_local_back",
+              "text": "You seem overqualified for wall patrol.",
+              "next_state_id": "senna_background",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_guard_senna", "delta": 3}
+                }
+              ]
+            },
+            {
+              "transition_id": "senna_local_done",
+              "text": "Good intelligence. Thank you.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "senna_background",
+          "text": "\"I served two years on the frontier before they rotated me to this garrison. The frontier was honest — you fought what came, and you knew who stood beside you. Here it is politics, paperwork, and watching a gate nobody attacks. I did not sign up to rust.\"",
+          "transitions": [
+            {
+              "transition_id": "senna_recruit_pitch",
+              "text": "I am building a company for real work. No paperwork, no politics. [PRE 13]",
+              "next_state_id": "senna_pre_gate",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {"stat": "PRE", "operator": ">=", "value": 13}
+              },
+              "actions": []
+            },
+            {
+              "transition_id": "senna_bg_done",
+              "text": "The frontier sounds like it suited you.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "senna_pre_gate",
+          "text": "\"Real work. I have heard that pitch before — usually from people who get their company killed in the first ambush. I do not follow talk. I follow track records. Prove you can lead and that the people who follow you do not regret it.\"",
+          "transitions": [
+            {
+              "transition_id": "senna_reaction_gate",
+              "text": "Judge me by what you have seen, not what you have heard.",
+              "next_state_id": "senna_unlock",
+              "condition": {
+                "condition_type": "reaction_check",
+                "params": {"npc_id": "recruit_guard_senna", "operator": ">=", "value": 15}
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"npc_id": "recruit_guard_senna", "recruitable": true}
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "Senna, the frontier-trained guard, has assessed my leadership and found it sufficient. She is willing to leave garrison duty and join my company when called."}
+                }
+              ]
+            },
+            {
+              "transition_id": "senna_not_convinced",
+              "text": "Fair enough. I will prove it.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "senna_unlock",
+          "text": "\"I have watched you handle yourself. You do not flinch, you do not bluff, and you do not leave people behind. That is enough. When you need a shield on your flank, you know where to find me. I will have my kit packed.\"",
+          "transitions": [
+            {
+              "transition_id": "senna_unlock_done",
+              "text": "I will not waste your time when I call.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "recruit_priest_aldwyn",
+      "npc_id": "recruit_priest_aldwyn",
+      "role": "priest",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A priest kneels before a modest shrine at the edge of town, hands folded, brow furrowed. His traveling robes are patched and road-worn. \"The light finds those who seek it, and sometimes those who do not. I am Brother Aldwyn. What brings you to this place?\"",
+          "transitions": [
+            {
+              "transition_id": "ask_aldwyn_purpose",
+              "text": "You look like a man carrying more than prayers. What troubles you?",
+              "next_state_id": "aldwyn_burden",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_priest_aldwyn", "delta": 5}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_aldwyn_healing",
+              "text": "Can you offer healing or blessing?",
+              "next_state_id": "aldwyn_service",
+              "actions": []
+            },
+            {
+              "transition_id": "aldwyn_farewell",
+              "text": "Peace be with you.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "aldwyn_service",
+          "text": "\"I offer what the light provides. Minor wounds, a blessing for the road, and counsel for the spirit. I do not charge — the light was not given to me so I could sell it. But I accept donations to the shrine if you feel moved.\"",
+          "transitions": [
+            {
+              "transition_id": "aldwyn_service_back",
+              "text": "What weighs on your mind, Brother?",
+              "next_state_id": "aldwyn_burden",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_priest_aldwyn", "delta": 3}
+                }
+              ]
+            },
+            {
+              "transition_id": "aldwyn_service_done",
+              "text": "Thank you for the blessing.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "aldwyn_burden",
+          "text": "\"The order sent me to tend this shrine, but I have seen the plague in the mining camps, the undead in the marshes, and the suffering on every road between. Tending one shrine while the world burns feels like polishing a candlestick in a collapsing cathedral. I want to do more. But a priest does not abandon his post without cause.\"",
+          "transitions": [
+            {
+              "transition_id": "aldwyn_recruit_pitch",
+              "text": "I walk those roads. The people on them need more than shrines — they need someone willing to bring the light to where the darkness is. [PRE 14]",
+              "next_state_id": "aldwyn_pre_gate",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {"stat": "PRE", "operator": ">=", "value": 14}
+              },
+              "actions": []
+            },
+            {
+              "transition_id": "aldwyn_burden_done",
+              "text": "Your duty here matters too, Brother.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "aldwyn_pre_gate",
+          "text": "\"You speak with conviction, and I sense no greed or cruelty in your words. But conviction alone is not enough. The light teaches discernment — I must know that the cause you serve is worthy, and that you treat those who follow you with the same care you would ask of the divine.\"",
+          "transitions": [
+            {
+              "transition_id": "aldwyn_relationship_gate",
+              "text": "I have stood against the darkness in this region and the people I have helped can vouch for my character.",
+              "next_state_id": "aldwyn_unlock",
+              "condition": {
+                "condition_type": "relationship_check",
+                "params": {"npc_id": "recruit_priest_aldwyn", "operator": ">=", "value": 10}
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"npc_id": "recruit_priest_aldwyn", "recruitable": true}
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "Brother Aldwyn has weighed my cause and my character. He is willing to leave his shrine and walk the dangerous roads at my side, bringing healing and the light where they are needed most."}
+                }
+              ]
+            },
+            {
+              "transition_id": "aldwyn_not_ready",
+              "text": "I will continue the work. Perhaps you will see enough to decide.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "Brother Aldwyn respects my intent but needs to see more evidence of my character before he will leave his shrine duties. I should help the region and return."}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "aldwyn_unlock",
+          "text": "\"I have prayed on it. The shrine will stand without me — but the people on the road may not stand without the light. When you are ready to march, I will carry my faith beside your banner. Not as a servant, but as a partner in a shared obligation.\"",
+          "transitions": [
+            {
+              "transition_id": "aldwyn_unlock_done",
+              "text": "A shared obligation. I will honor it.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "recruit_healer_maren",
+      "npc_id": "recruit_healer_maren",
+      "role": "healer",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A healer with steady hands and a direct gaze sorts dried herbs into labeled jars behind a clinic table. A line of patients waits outside. \"If you are wounded, sit down. If you are not wounded, make room for someone who is. I do not have time for pleasantries.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_maren_clinic",
+              "text": "Your clinic is overwhelmed. Where is the town healer?",
+              "next_state_id": "maren_situation",
+              "actions": []
+            },
+            {
+              "transition_id": "maren_offer_supplies",
+              "text": "I brought healing herbs from the road.",
+              "next_state_id": "maren_supplies",
+              "condition": {
+                "condition_type": "item_check",
+                "params": {"item_def_id": "healing_herb"}
+              },
+              "actions": [
+                {
+                  "action_type": "take_item",
+                  "params": {"item_def_id": "healing_herb", "quantity": 2}
+                },
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_healer_maren", "delta": 8}
+                },
+                {
+                  "action_type": "give_xp",
+                  "params": {"amount": 15}
+                }
+              ]
+            },
+            {
+              "transition_id": "maren_farewell",
+              "text": "I will get out of your way.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "maren_situation",
+          "text": "\"The town healer retired. His replacement never arrived. So I handle it — cuts, fevers, broken bones, and the plague cases they bring from the mining camps. One person, no assistant, no supplies beyond what I can forage. I manage. But managing is not the same as curing.\"",
+          "transitions": [
+            {
+              "transition_id": "maren_situation_back",
+              "text": "You could do more with support. Better supplies, a wider reach.",
+              "next_state_id": "maren_consider",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_healer_maren", "delta": 5}
+                }
+              ]
+            },
+            {
+              "transition_id": "maren_situation_done",
+              "text": "The town is lucky to have you.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "maren_supplies",
+          "text": "\"Herbs. Real ones, not the wilted stems the merchants try to pass off. You have my attention. These will keep three patients stable through the night. Not many travelers think to bring supplies to a clinic. What kind of person does that?\"",
+          "transitions": [
+            {
+              "transition_id": "maren_supplies_to_consider",
+              "text": "The kind who knows a good healer is worth more than a good sword.",
+              "next_state_id": "maren_consider",
+              "actions": []
+            },
+            {
+              "transition_id": "maren_supplies_done",
+              "text": "Just doing what I can.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "maren_consider",
+          "text": "\"A wider reach. You mean leave the clinic and travel with you. I have thought about it — a healer on the road saves different lives than a healer behind a desk. But I will not follow someone who sees me as a walking potion. I need to know you value the work, not just the convenience.\"",
+          "transitions": [
+            {
+              "transition_id": "maren_recruit_attempt",
+              "text": "I would not ask if I did not respect what you do. The road needs you more than this clinic does. [PRE 13]",
+              "next_state_id": "maren_pre_gate",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {"stat": "PRE", "operator": ">=", "value": 13}
+              },
+              "actions": []
+            },
+            {
+              "transition_id": "maren_consider_done",
+              "text": "I understand. The clinic needs you.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "maren_pre_gate",
+          "text": "\"Respect is a start. But I have seen people promise respect and then demand I heal their hangover at three in the morning. I watch what people do, not what they say. If the people who know you speak well of your character, I will trust their judgment.\"",
+          "transitions": [
+            {
+              "transition_id": "maren_relationship_gate",
+              "text": "Then ask them. I have nothing to hide.",
+              "next_state_id": "maren_unlock",
+              "condition": {
+                "condition_type": "relationship_check",
+                "params": {"npc_id": "recruit_healer_maren", "operator": ">=", "value": 12}
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"npc_id": "recruit_healer_maren", "recruitable": true}
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "Maren, the clinic healer, has verified my reputation and agreed to leave her overwhelmed clinic to serve as field healer in my company. Her skills will be invaluable on the road."}
+                }
+              ]
+            },
+            {
+              "transition_id": "maren_not_enough",
+              "text": "I will earn that trust.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "maren_unlock",
+          "text": "\"I asked. They said you kept your word, you did not leave the wounded behind, and you did not haggle over the cost of doing the right thing. That is enough. I will find someone to cover the clinic. When you are ready, I will have my kit and my jars packed.\"",
+          "transitions": [
+            {
+              "transition_id": "maren_unlock_done",
+              "text": "The road will be safer with you.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "recruit_scout_veris",
+      "npc_id": "recruit_scout_veris",
+      "role": "scout",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A scout crouches at the edge of camp, checking a bowstring and counting arrowheads with silent precision. \"You walk too loudly. I heard you coming from fifty paces. If you want to talk, sit down and lower your voice. Sound carries.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_veris_trails",
+              "text": "What do you know about the trails ahead?",
+              "next_state_id": "veris_trail_info",
+              "actions": []
+            },
+            {
+              "transition_id": "veris_compliment_skill",
+              "text": "I have not seen anyone read terrain the way you do. Where did you learn?",
+              "next_state_id": "veris_background",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_scout_veris", "delta": 5}
+                }
+              ]
+            },
+            {
+              "transition_id": "veris_farewell",
+              "text": "I will try to walk quieter.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "veris_trail_info",
+          "text": "\"The eastern trail has wolf sign — fresh scat and claw marks on the birches. Northern pass is clear but exposed. The ridge trail above the marsh is the safest route east if you do not mind the climb. I mapped the game trails last week — the deer are moving west, which means something is pushing them.\"",
+          "transitions": [
+            {
+              "transition_id": "veris_trail_back",
+              "text": "That is impressive field intelligence. Who trained you?",
+              "next_state_id": "veris_background",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_scout_veris", "delta": 3}
+                }
+              ]
+            },
+            {
+              "transition_id": "veris_trail_done",
+              "text": "I will take the ridge trail. Thank you.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "veris_background",
+          "text": "\"I apprenticed under the ranger outpost commander before the outpost was decommissioned. Budget cuts. Now I freelance — trail reports for caravans, pathfinding for merchant convoys, the occasional bounty when a wolf pack gets too bold. It pays, but it is not a purpose. I miss belonging to something that mattered.\"",
+          "transitions": [
+            {
+              "transition_id": "veris_recruit_pitch",
+              "text": "I am building something that matters. I need eyes and ears that can read the land before the fight starts. [PRE 12]",
+              "next_state_id": "veris_pre_gate",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {"stat": "PRE", "operator": ">=", "value": 12}
+              },
+              "actions": []
+            },
+            {
+              "transition_id": "veris_bg_done",
+              "text": "The outpost's loss. Your skills are wasted on caravan reports.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_scout_veris", "delta": 3}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "state_id": "veris_pre_gate",
+          "text": "\"Something that matters. I have heard that before, usually from people who mean something that matters to them. I am not interested in being someone's disposable pair of eyes. I need to know you value the intelligence I bring, and that you listen when I say the ground is bad.\"",
+          "transitions": [
+            {
+              "transition_id": "veris_reaction_gate",
+              "text": "A scout who is not listened to is a wasted scout. I do not waste people.",
+              "next_state_id": "veris_unlock",
+              "condition": {
+                "condition_type": "reaction_check",
+                "params": {"npc_id": "recruit_scout_veris", "operator": ">=", "value": 12}
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"npc_id": "recruit_scout_veris", "recruitable": true}
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "Veris, the freelance scout, has evaluated my leadership and found me worth following. They will serve as my company's eyes and ears when I am ready to call on them."}
+                }
+              ]
+            },
+            {
+              "transition_id": "veris_not_convinced",
+              "text": "I hear you. Let me show you I mean it.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "veris_unlock",
+          "text": "\"I watched how you moved through the area. You checked your flanks, you read the ground before crossing open terrain, and you did not rush past the signs I left to test you. You listen. That is enough. When you are ready to move, I will be a half-mile ahead making sure the path is clear.\"",
+          "transitions": [
+            {
+              "transition_id": "veris_unlock_done",
+              "text": "A half-mile ahead. I will trust your judgment.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "recruit_fence_tomas",
+      "npc_id": "recruit_fence_tomas",
+      "role": "fence",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A wiry man in a well-cut but deliberately plain coat sits in the back corner of a tavern, nursing a drink that he has not actually touched. His eyes track every person entering and leaving. \"I do not know you. That is unusual — I know everyone who matters in this district. State your interest or move on.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_tomas_network",
+              "text": "I need information that the official channels do not carry.",
+              "next_state_id": "tomas_network_info",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_fence_tomas", "delta": 3}
+                }
+              ]
+            },
+            {
+              "transition_id": "ask_tomas_district",
+              "text": "What is the real situation in this district?",
+              "next_state_id": "tomas_district_info",
+              "actions": []
+            },
+            {
+              "transition_id": "tomas_farewell",
+              "text": "Wrong table. My apologies.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "tomas_district_info",
+          "text": "\"The official story is that the garrison keeps order and the merchants keep commerce flowing. The real story is that the garrison is stretched thin, the merchants are cutting deals with smugglers to keep their margins, and the only thing keeping actual order is the fact that the three criminal families are too busy fighting each other to organize. When that changes, this district burns.\"",
+          "transitions": [
+            {
+              "transition_id": "tomas_district_back",
+              "text": "You know a lot about the underside. What is your angle?",
+              "next_state_id": "tomas_network_info",
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"npc_id": "recruit_fence_tomas", "delta": 3}
+                }
+              ]
+            },
+            {
+              "transition_id": "tomas_district_done",
+              "text": "Good to know. I will keep my head down.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "tomas_network_info",
+          "text": "\"My angle is survival. I facilitate — goods, information, introductions. I do not steal, I do not kill, and I do not betray a client. That is why I am still alive and the last three people who held this seat are not. I have been looking for an exit that does not involve a knife in the dark. But exits require trust, and trust is not something I hand out.\"",
+          "transitions": [
+            {
+              "transition_id": "tomas_recruit_pitch",
+              "text": "I could use someone who knows the underside of every district I pass through. Information saves more lives than swords. [PRE 15]",
+              "next_state_id": "tomas_pre_gate",
+              "condition": {
+                "condition_type": "stat_check",
+                "params": {"stat": "PRE", "operator": ">=", "value": 15}
+              },
+              "actions": []
+            },
+            {
+              "transition_id": "tomas_network_done",
+              "text": "I appreciate the honesty. Stay safe.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "tomas_pre_gate",
+          "text": "\"Information saves lives — you understand that. Most sword-swingers do not. But I have survived this long by reading people, and I will not stake my life on a speech. I need to see how the street reacts to you. People who fear you are a liability. People who respect you — that I can work with.\"",
+          "transitions": [
+            {
+              "transition_id": "tomas_reaction_gate",
+              "text": "Then watch. I do not hide how I operate.",
+              "next_state_id": "tomas_unlock",
+              "condition": {
+                "condition_type": "reaction_check",
+                "params": {"npc_id": "recruit_fence_tomas", "operator": ">=", "value": 15}
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"npc_id": "recruit_fence_tomas", "recruitable": true}
+                },
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "Tomas, the district fence, has observed my conduct and decided I am a safer bet than his current position. He is willing to serve as my company's intelligence and logistics specialist when the time comes."}
+                }
+              ]
+            },
+            {
+              "transition_id": "tomas_not_convinced",
+              "text": "I will give you time to watch.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "tomas_unlock",
+          "text": "\"I watched. You paid fair prices, you did not threaten anyone who did not threaten you first, and the people in this district nod when you pass instead of locking their doors. That tells me everything. When you leave this district, I will be two streets behind making sure nobody follows who should not. My kind of loyalty is quiet, but it is real.\"",
+          "transitions": [
+            {
+              "transition_id": "tomas_unlock_done",
+              "text": "Quiet loyalty. I will take it.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "guard_recruit_iron_vow",
+      "npc_id": "guard_recruit_iron_vow",
+      "role": "guard",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A scarred watch veteran studies the road beyond the gate. \"Plenty ask for an escort. Few ask what oath keeps a shield in place when the line breaks. If you want my trust, earn it.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_iron_vow_terms",
+              "text": "What would earn that trust?",
+              "next_state_id": "terms",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The watch veteran values sworn duty over coin and tests commitment before agreeing to travel."}
+                }
+              ]
+            },
+            {
+              "transition_id": "leave_iron_vow",
+              "text": "I will leave you to the wall.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "terms",
+          "text": "\"Stand the ugly watch. Keep your word when no one applauds it. Do that, and I listen. Ask for my shield before that, and the answer is no.\"",
+          "transitions": [
+            {
+              "transition_id": "earn_iron_vow_trust",
+              "text": "I understand the weight of an oath.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"delta": 8}
+                }
+              ]
+            },
+            {
+              "transition_id": "unlock_iron_vow_recruit",
+              "text": "Then stand with me beyond the wall.",
+              "terminates": true,
+              "condition": {
+                "condition_type": "and",
+                "children": [
+                  {"condition_type": "stat_check", "params": {"actor": "player", "stat": "PRE", "operator": ">=", "value": 18}},
+                  {"condition_type": "reaction_check", "params": {"operator": ">=", "value": 24}}
+                ]
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "iron_vow_done",
+              "text": "Duty before glory. Understood.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "guard_recruit_harbor_oath",
+      "npc_id": "guard_recruit_harbor_oath",
+      "role": "guard",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A harbor guard tightens a salt-stiff glove. \"The docks teach patience. Anyone can bark orders. Few can keep frightened people moving when the tide and the knives turn together.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_harbor_oath_terms",
+              "text": "What sort of captain do you follow?",
+              "next_state_id": "terms",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The harbor guard follows leaders who keep civilians steady under pressure and do not waste lives for pride."}
+                }
+              ]
+            },
+            {
+              "transition_id": "leave_harbor_oath",
+              "text": "The docks can keep you.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "terms",
+          "text": "\"I follow the one who gets people home. Not the loudest voice. Not the fastest blade. Show me restraint when panic wants spectacle, and maybe I take your banner seriously.\"",
+          "transitions": [
+            {
+              "transition_id": "earn_harbor_oath_trust",
+              "text": "Lives first. Pride later.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"delta": 8}
+                }
+              ]
+            },
+            {
+              "transition_id": "unlock_harbor_oath_recruit",
+              "text": "Sail with me and keep that line intact.",
+              "terminates": true,
+              "condition": {
+                "condition_type": "and",
+                "children": [
+                  {"condition_type": "stat_check", "params": {"actor": "player", "stat": "PRE", "operator": ">=", "value": 18}},
+                  {"condition_type": "relationship_check", "params": {"operator": ">=", "value": 8}}
+                ]
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "harbor_oath_done",
+              "text": "A steady hand, then.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "priest_recruit_candle_ward",
+      "npc_id": "priest_recruit_candle_ward",
+      "role": "priest",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A priest tends a ring of candles around a refugee shrine. \"Mercy is easy when it is ceremonial. Harder when it costs sleep, blood, and the last clean bandage. If you ask me to travel, know what you are asking.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_candle_ward_terms",
+              "text": "Tell me what that service demands.",
+              "next_state_id": "terms",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The shrine priest serves only where hardship is real and promises are kept once the wounded start arriving."}
+                }
+              ]
+            },
+            {
+              "transition_id": "leave_candle_ward",
+              "text": "Your shrine needs you more than I do.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "terms",
+          "text": "\"If I travel, it is to keep people alive, not to decorate a hero's story. Prove that you can carry burden without making others kneel to it, and I may walk beside you.\"",
+          "transitions": [
+            {
+              "transition_id": "earn_candle_ward_trust",
+              "text": "Then judge me by the burden I keep carrying.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"delta": 8}
+                }
+              ]
+            },
+            {
+              "transition_id": "unlock_candle_ward_recruit",
+              "text": "Bring your light with us. We will need it.",
+              "terminates": true,
+              "condition": {
+                "condition_type": "and",
+                "children": [
+                  {"condition_type": "stat_check", "params": {"actor": "player", "stat": "PRE", "operator": ">=", "value": 18}},
+                  {"condition_type": "reaction_check", "params": {"operator": ">=", "value": 24}}
+                ]
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "candle_ward_done",
+              "text": "Mercy with a spine. Good.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "healer_recruit_marsh_salve",
+      "npc_id": "healer_recruit_marsh_salve",
+      "role": "healer",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A field healer crushes bitter herbs into a thick salve. \"People ask for miracles. I ask whether they can hold a line long enough for medicine to matter. If you want me on the road, answer that first.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_marsh_salve_terms",
+              "text": "What answer are you looking for?",
+              "next_state_id": "terms",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The field healer values discipline after the fight as much as courage during it."}
+                }
+              ]
+            },
+            {
+              "transition_id": "leave_marsh_salve",
+              "text": "Keep the salves ready. I may return.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "terms",
+          "text": "\"I travel with those who understand aftercare, restraint, and the cost of rushing the wounded back into danger. If that sounds slow to you, then do not ask again.\"",
+          "transitions": [
+            {
+              "transition_id": "earn_marsh_salve_trust",
+              "text": "Victory means nothing if the wounded die later.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"delta": 8}
+                }
+              ]
+            },
+            {
+              "transition_id": "unlock_marsh_salve_recruit",
+              "text": "Come with us. We keep the living alive.",
+              "terminates": true,
+              "condition": {
+                "condition_type": "and",
+                "children": [
+                  {"condition_type": "stat_check", "params": {"actor": "player", "stat": "PRE", "operator": ">=", "value": 18}},
+                  {"condition_type": "relationship_check", "params": {"operator": ">=", "value": 8}}
+                ]
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "marsh_salve_done",
+              "text": "Then you know the long work.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "scout_recruit_trail_mark",
+      "npc_id": "scout_recruit_trail_mark",
+      "role": "scout",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A scout scratches route marks into a weathered board. \"Fast feet are cheap. Returning with everyone alive is expensive. If you want me on your trail, convince me you understand the difference.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_trail_mark_terms",
+              "text": "What convinces you?",
+              "next_state_id": "terms",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The scout follows leaders who know when to press and when to pull people back before the line collapses."}
+                }
+              ]
+            },
+            {
+              "transition_id": "leave_trail_mark",
+              "text": "Keep your routes. I will keep mine.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "terms",
+          "text": "\"Show me a leader who does not confuse speed with judgment. Show me a commander who knows when guard beats aggressive and when neither matters because the trap is already sprung.\"",
+          "transitions": [
+            {
+              "transition_id": "earn_trail_mark_trust",
+              "text": "Discipline is faster than panic in the long run.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"delta": 8}
+                }
+              ]
+            },
+            {
+              "transition_id": "unlock_trail_mark_recruit",
+              "text": "Then scout for us, and I will not waste what you find.",
+              "terminates": true,
+              "condition": {
+                "condition_type": "and",
+                "children": [
+                  {"condition_type": "stat_check", "params": {"actor": "player", "stat": "PRE", "operator": ">=", "value": 18}},
+                  {"condition_type": "reaction_check", "params": {"operator": ">=", "value": 24}}
+                ]
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "trail_mark_done",
+              "text": "Good. Then maybe you listen as well as you command.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "fence_recruit_last_debt",
+      "npc_id": "fence_recruit_last_debt",
+      "role": "fence",
+      "states": [
+        {
+          "state_id": "greeting",
+          "text": "A fence counts marked coins into tidy stacks. \"Everyone wants loyalty at cut-rate prices. I do not sell mine that cheaply. If you want me moving with your lot, prove you understand debt, leverage, and exits.\"",
+          "transitions": [
+            {
+              "transition_id": "ask_last_debt_terms",
+              "text": "What makes a debt worth paying?",
+              "next_state_id": "terms",
+              "actions": [
+                {
+                  "action_type": "add_journal",
+                  "params": {"text": "The fence respects leaders who know the price of favors and do not spend lives like loose coin."}
+                }
+              ]
+            },
+            {
+              "transition_id": "leave_last_debt",
+              "text": "Keep your ledger balanced.",
+              "terminates": true
+            }
+          ]
+        },
+        {
+          "state_id": "terms",
+          "text": "\"A good debt is one both sides remember the same way. Earn trust, keep your word, and leave me a clean road out if things sour. Do that, and I might call us even enough to travel.\"",
+          "transitions": [
+            {
+              "transition_id": "earn_last_debt_trust",
+              "text": "Clean exits and cleaner promises.",
+              "terminates": true,
+              "actions": [
+                {
+                  "action_type": "adjust_relationship",
+                  "params": {"delta": 8}
+                }
+              ]
+            },
+            {
+              "transition_id": "unlock_last_debt_recruit",
+              "text": "Travel with us. I keep my accounts settled.",
+              "terminates": true,
+              "condition": {
+                "condition_type": "and",
+                "children": [
+                  {"condition_type": "stat_check", "params": {"actor": "player", "stat": "PRE", "operator": ">=", "value": 18}},
+                  {"condition_type": "relationship_check", "params": {"operator": ">=", "value": 8}}
+                ]
+              },
+              "actions": [
+                {
+                  "action_type": "set_recruitable",
+                  "params": {"value": true}
+                }
+              ]
+            },
+            {
+              "transition_id": "last_debt_done",
+              "text": "Then maybe we can do business on the road.",
+              "terminates": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }

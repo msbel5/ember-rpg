@@ -24,10 +24,10 @@ def _make_campaign():
     return rt, ctx
 
 
-def _inject_enemy(context, *, name="Goblin", hp=10, mig=8, agi=8):
+def _inject_enemy(context, *, base_id="test_goblin", name="Goblin", hp=10, mig=8, agi=8):
     """Inject a test enemy into the kernel runtime actors dict."""
     template = {
-        "id": "test_goblin",
+        "id": base_id,
         "name": name,
         "type": "monster",
         "hp": hp,
@@ -51,6 +51,16 @@ def _set_runtime_tick(context, tick: int) -> None:
 # ---------------------------------------------------------------------------
 
 class TestAttackCommand:
+    def test_attack_duplicate_name_returns_ambiguity(self):
+        _rt, ctx = _make_campaign()
+        _inject_enemy(ctx, base_id="briga_ward_alpha", name="Briga Ward", hp=20)
+        _inject_enemy(ctx, base_id="briga_ward_beta", name="Briga Ward", hp=20)
+
+        result = maybe_handle_combat_command(ctx, "attack Briga Ward")
+
+        assert result is not None
+        assert "Multiple actors match 'Briga Ward'" in result[0]
+
     def test_attack_reduces_target_hp(self):
         _rt, ctx = _make_campaign()
         enemy = _inject_enemy(ctx, hp=50)

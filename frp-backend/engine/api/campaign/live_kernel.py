@@ -47,8 +47,16 @@ _RUNTIME_MEDICAL_KEYS = (
     "medical_recoveries",
     "permanent_consequences",
 )
+_RUNTIME_SOCIAL_KEYS = (
+    "recruitable_companion",
+    "relationship_score",
+)
 _PARTY_CAPABLE_ACTOR_TYPES = {"npc", "creature"}
 _NON_PARTY_ROLE_HINTS = {"cabinet", "cauldron", "table", "oven", "bench", "chair", "bed", "pew", "sack"}
+
+
+def _clamp_relationship_score(value: Any) -> int:
+    return max(-100, min(100, int(value or 0)))
 
 
 def _is_party_capable_actor(actor: ActorRecord | None) -> bool:
@@ -355,6 +363,7 @@ def _load_actors(saved_payload: Any, context: "CampaignContext") -> dict[str, Ac
     if isinstance(saved_payload, list):
         actors = {actor.identity.actor_id: actor for actor in [ActorRecord.from_dict(dict(item)) for item in saved_payload]}
         for actor in actors.values():
+            normalize_actor_social_state(actor)
             normalize_actor_medical_state(actor, sync_derived=True)
         return actors
     actors = {
@@ -366,6 +375,7 @@ def _load_actors(saved_payload: Any, context: "CampaignContext") -> dict[str, Ac
         )
     }
     for actor in actors.values():
+        normalize_actor_social_state(actor)
         normalize_actor_medical_state(actor, sync_derived=True)
     return actors
 
@@ -388,13 +398,16 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
     for actor_id, fresh_actor in fresh_actors.items():
         existing = merged.get(actor_id)
         if existing is None:
+            normalize_actor_social_state(fresh_actor)
             merged[actor_id] = fresh_actor
             continue
         _merge_actor(existing, fresh_actor)
+        normalize_actor_social_state(existing)
         normalize_actor_medical_state(existing, sync_derived=True)
         merged[actor_id] = existing
     for actor_id, actor in merged.items():
         if actor_id not in fresh_actors:
+            normalize_actor_social_state(actor)
             normalize_actor_medical_state(actor, sync_derived=True)
     runtime["actors"] = merged
     runtime["game_state"].actors = dict(merged)
@@ -447,6 +460,19 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
     context.campaign_state["reserve_party_members"] = list(getattr(runtime["game_state"], "inactive_npcs", []))
     for actor_id, actor in merged.items():
         eligible = _is_party_capable_actor(actor)
+        grandfathered_recruitable = actor_id != "player" and (
+            actor_id in context.campaign_state["party"] or actor_id in context.campaign_state["reserve_party_members"]
+        )
+        if actor_id != "player" and (
+            eligible
+            or grandfathered_recruitable
+            or "relationship_score" in actor.raw_payload
+            or "recruitable_companion" in actor.raw_payload
+        ):
+            actor.raw_payload["relationship_score"] = _clamp_relationship_score(actor.raw_payload.get("relationship_score", 0))
+            actor.raw_payload["recruitable_companion"] = bool(
+                actor.raw_payload.get("recruitable_companion", False) or grandfathered_recruitable
+            )
         preserve_roster_flag = bool(actor.raw_payload.get("companion_roster")) and eligible
         is_active = eligible and actor_id in context.campaign_state["party"] and actor_id != "player"
         is_reserve = eligible and actor_id in context.campaign_state["reserve_party_members"]
@@ -455,10 +481,17 @@ def _sync_runtime_from_context(context: "CampaignContext", runtime: dict[str, An
             actor.raw_payload["party_member"] = is_active
             actor.raw_payload["active_party_member"] = is_active
             actor.raw_payload["reserve_party_member"] = is_reserve
+            actor.raw_payload["recruitable_companion"] = bool(
+                actor.raw_payload.get("recruitable_companion")
+                or is_active
+                or is_reserve
+                or preserve_roster_flag
+            )
         if eligible and (is_active or is_reserve or preserve_roster_flag):
             actor.raw_payload["party_tactic_mode"] = str(getattr(runtime["game_state"], "party_tactics", {}).get(actor_id, "balanced"))
         elif actor_id != "player":
             actor.raw_payload.pop("party_tactic_mode", None)
+        normalize_actor_social_state(actor)
     context.player = merged.get("player", context.player)
 
 
@@ -482,9 +515,16 @@ def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
     # Preserve progression fields (xp, level) that the kernel owns.
     preserved_xp = target.raw_payload.get("xp")
     preserved_level = target.raw_payload.get("level")
+    preserved_recruitable = target.raw_payload.get("recruitable_companion") if "recruitable_companion" in target.raw_payload else None
+    preserved_relationship = target.raw_payload.get("relationship_score") if "relationship_score" in target.raw_payload else None
     preserved_medical = {
         key: target.raw_payload.get(key)
         for key in _RUNTIME_MEDICAL_KEYS
+        if key in target.raw_payload
+    }
+    preserved_social = {
+        key: target.raw_payload.get(key)
+        for key in _RUNTIME_SOCIAL_KEYS
         if key in target.raw_payload
     }
     target.raw_payload.update(fresh.raw_payload)
@@ -492,7 +532,13 @@ def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
         target.raw_payload["xp"] = max(int(preserved_xp), int(target.raw_payload.get("xp", 0)))
     if preserved_level is not None:
         target.raw_payload["level"] = max(int(preserved_level), int(target.raw_payload.get("level", 1)))
+    if preserved_recruitable is not None:
+        target.raw_payload["recruitable_companion"] = bool(preserved_recruitable)
+    if preserved_relationship is not None:
+        target.raw_payload["relationship_score"] = _clamp_relationship_score(preserved_relationship)
     for key, value in preserved_medical.items():
+        target.raw_payload[key] = value
+    for key, value in preserved_social.items():
         target.raw_payload[key] = value
     if target.body_state is None:
         target.body_state = fresh.body_state
@@ -506,6 +552,12 @@ def _merge_actor(target: ActorRecord, fresh: ActorRecord) -> None:
             existing_part.current_hp = min(existing_part.current_hp, part.current_hp)
     if target.schedule.owner_id == "" and fresh.schedule.owner_id:
         target.schedule = fresh.schedule
+
+
+def normalize_actor_social_state(actor: ActorRecord) -> None:
+    actor.raw_payload["recruitable_companion"] = bool(actor.raw_payload.get("recruitable_companion", False))
+    relationship_score = int(actor.raw_payload.get("relationship_score", 0) or 0)
+    actor.raw_payload["relationship_score"] = max(-100, min(100, relationship_score))
 
 
 def normalize_actor_medical_state(actor: ActorRecord, *, sync_derived: bool = False) -> None:

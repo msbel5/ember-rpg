@@ -26,6 +26,7 @@ def _inject_companion(context, *, actor_id: str, name: str, role: str):
     )
     actor.identity.actor_type = "npc"
     actor.raw_payload["role"] = role
+    actor.raw_payload["recruitable_companion"] = True
     context.kernel_runtime["actors"][actor.identity.actor_id] = actor
     return actor
 
@@ -97,7 +98,7 @@ def test_prop_named_target_is_not_recruitable() -> None:
     result = runtime.run_command(context.campaign_id, "recruit Table")
 
     assert result["command_type"] == "party"
-    assert "no recruitable companion matched" in result["narrative"].lower()
+    assert "no party-capable companion matched" in result["narrative"].lower()
     assert prop.identity.actor_id not in context.kernel_runtime["game_state"].party
     assert prop.identity.actor_id not in context.kernel_runtime["game_state"].inactive_npcs
 

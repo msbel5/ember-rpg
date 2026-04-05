@@ -90,6 +90,18 @@ def apply_dialog_events(context: "CampaignContext", events: Iterable[dict[str, A
             if hostile_name:
                 summaries.append(f"{hostile_name} turns hostile.")
             continue
+        if event_type == "adjust_relationship":
+            npc_name = str(event.get("npc_name", event.get("npc_id", "This companion"))).strip() or "This companion"
+            score = int(event.get("relationship_score", 0))
+            summaries.append(f"{npc_name} relationship is now {score}.")
+            continue
+        if event_type == "set_recruitable":
+            npc_name = str(event.get("npc_name", event.get("npc_id", "This companion"))).strip() or "This companion"
+            if bool(event.get("recruitable", False)):
+                summaries.append(f"{npc_name} can now be recruited.")
+            else:
+                summaries.append(f"{npc_name} is no longer recruitable.")
+            continue
         if event_type in {"give_item", "take_item"}:
             qty = int(event.get("quantity", 1))
             item_id = str(event.get("item_def_id", "item")).replace("_", " ")

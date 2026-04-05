@@ -15,6 +15,7 @@ from engine.api.campaign.party_bridge import allied_actor_ids
 from engine.api.campaign.quest_bridge import apply_dialog_events
 from engine.api.campaign.region_projection import apply_region_to_context
 from engine.api.campaign.settlement import build_settlement_state
+from engine.api.campaign.actor_query import resolve_live_actor_query
 
 if TYPE_CHECKING:
     from engine.api.campaign.context import CampaignContext
@@ -226,25 +227,19 @@ def maybe_handle_talk_command(
     npc_query = match.group(1).strip()
     runtime = context.kernel_runtime or {}
     actors = runtime.get("actors", {})
-    query_lower = npc_query.lower()
-    target_actor = None
-    target_id = ""
     talk_types = {"npc", "creature", "monster", "animal"}
-    for actor_id, actor in actors.items():
-        if actor_id == "player" or not getattr(actor, "alive", True):
-            continue
-        actor_type = str(getattr(getattr(actor, "identity", None), "actor_type", "")).lower()
-        if actor_type not in talk_types:
-            continue
-        name = str(getattr(getattr(actor, "identity", None), "display_name", "")).strip()
-        if not name:
-            continue
-        if query_lower in name.lower() or query_lower.replace(" ", "_") == actor_id.lower():
-            target_actor = actor
-            target_id = actor_id
-            break
+    resolved = resolve_live_actor_query(
+        actors,
+        npc_query,
+        allow_dead=False,
+        actor_types=talk_types,
+    )
+    if resolved.error:
+        return (resolved.error, "dialog", 0)
+    target_actor = resolved.actor
     if target_actor is None:
         return (f"No one named '{npc_query}' is here.", "dialog", 0)
+    target_id = str(target_actor.identity.actor_id)
 
     npc_name = str(getattr(target_actor.identity, "display_name", npc_query)).strip() or npc_query
     if target_id in allied_actor_ids(context):

@@ -3,11 +3,15 @@ from __future__ import annotations
 import engine.api.gameplay_bridge as gameplay_bridge
 
 from engine.api.campaign.runtime import CampaignRuntime
+from engine.api.campaign.dialog import clear_dialog_state
+from engine.api.campaign_commands import maybe_handle_dialog_command, maybe_handle_talk_command
 from engine.api.combat_bridge import _choose_aggressive_target_id, _choose_guard_target_id, _resolve_companion_turn
 from engine.kernel.actor import WoundRecord
 from engine.api.campaign.party_bridge import maybe_handle_party_command
+from engine.api.campaign.dialog import store_dialog_state
 from engine.api.campaign.state_sync import sync_context_clock
 from engine.kernel.combat_engine import CombatState, CombatantEntry
+from engine.kernel.dialog import DialogAction, DialogDef, DialogStateNode, DialogTransition, start_dialog
 from engine.kernel.gameplay import spawn_ground_item_entity
 from engine.kernel.game_state import FORMATIONS, party_tactic_for_actor
 from engine.kernel.progression import ProgressionState
@@ -27,6 +31,8 @@ def _inject_companion(
     name: str,
     role: str,
     hostile: bool = False,
+    recruitable: bool = True,
+    relationship_score: int = 0,
 ):
     from engine.kernel.actor_records import create_monster_actor
 
@@ -44,8 +50,17 @@ def _inject_companion(
     companion.identity.actor_type = "npc"
     companion.raw_payload["role"] = role
     companion.raw_payload["hostile"] = hostile
+    companion.raw_payload["recruitable_companion"] = recruitable
+    companion.raw_payload["relationship_score"] = relationship_score
     context.kernel_runtime["actors"][companion.identity.actor_id] = companion
     return companion
+
+
+def _inject_dialog(context, dialog_def: DialogDef) -> None:
+    context.kernel_runtime.setdefault("dialog_defs", {})[dialog_def.dialog_id] = dialog_def
+    from engine.data._shared import dialog_defs_registry
+
+    dialog_defs_registry()[dialog_def.dialog_id] = dialog_def.to_dict()
 
 
 def _project_actor_entity(
@@ -804,7 +819,168 @@ def test_recruit_hostile_and_invalid_actor_fail_safely() -> None:
     assert "hostile" in hostile_result["narrative"].lower()
     assert hostile.identity.actor_id not in context.kernel_runtime["game_state"].party
     assert invalid_result["command_type"] == "party"
-    assert "no recruitable companion matched" in invalid_result["narrative"].lower()
+    assert "no party-capable companion matched" in invalid_result["narrative"].lower()
+
+
+def test_recruit_requires_explicit_recruitable_flag() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(
+        context,
+        base_id="companion_friendly_guard",
+        name="Friendly Guard",
+        role="guard",
+        recruitable=False,
+    )
+
+    result = runtime.run_command(context.campaign_id, "recruit Friendly Guard")
+
+    assert result["command_type"] == "party"
+    assert "not recruitable" in result["narrative"].lower()
+    assert companion.identity.actor_id not in context.kernel_runtime["game_state"].party
+
+
+def test_duplicate_name_talk_requires_disambiguation_and_supports_index_suffix() -> None:
+    _runtime, context = _make_campaign()
+    first = _inject_companion(context, base_id="briga_ward_alpha", name="Briga Ward", role="guard")
+    second = _inject_companion(context, base_id="briga_ward_beta", name="Briga Ward", role="guard")
+
+    ambiguous = maybe_handle_talk_command(context, "talk Briga Ward")
+    assert ambiguous is not None
+    assert ambiguous[1] == "dialog"
+    assert "multiple actors match 'briga ward'" in ambiguous[0].lower()
+    assert context.conversation_state.get("npc_id", "") in {"", None}
+
+    selected = maybe_handle_talk_command(context, "talk Briga Ward #2")
+    assert selected is not None
+    assert selected[1] == "dialog"
+    assert context.conversation_state["npc_id"] == second.identity.actor_id
+    clear_dialog_state(context)
+
+    exact = maybe_handle_talk_command(context, f"talk {first.identity.actor_id}")
+    assert exact is not None
+    assert exact[1] == "dialog"
+    assert context.conversation_state["npc_id"] == first.identity.actor_id
+
+
+def test_duplicate_name_recruit_requires_disambiguation() -> None:
+    runtime, context = _make_campaign()
+    _inject_companion(context, base_id="briga_recruit_alpha", name="Briga Ward", role="guard")
+    second = _inject_companion(context, base_id="briga_recruit_beta", name="Briga Ward", role="scout")
+
+    ambiguous = runtime.run_command(context.campaign_id, "recruit Briga Ward")
+    selected = runtime.run_command(context.campaign_id, "recruit Briga Ward #2")
+
+    assert ambiguous["command_type"] == "party"
+    assert "multiple actors match 'briga ward'" in ambiguous["narrative"].lower()
+    assert selected["command_type"] == "party"
+    assert second.identity.actor_id in context.kernel_runtime["game_state"].party
+
+
+def test_duplicate_name_medical_target_requires_disambiguation() -> None:
+    runtime, context = _make_campaign()
+    patient_a = _inject_companion(context, base_id="briga_patient_alpha", name="Briga Ward", role="guard")
+    patient_b = _inject_companion(context, base_id="briga_patient_beta", name="Briga Ward", role="guard")
+    for index, actor in enumerate((patient_a, patient_b), start=1):
+        wound = WoundRecord(
+            wound_id=f"duplicate_medical_{index}",
+            body_part_id="left_leg",
+            damage_type="slash",
+            damage_amount=5,
+            bleeding=1,
+            pain=2,
+            open_wound=True,
+        )
+        actor.body_state.apply_wound(wound)
+        actor.raw_payload["wounds"] = list(actor.body_state.wounds)
+
+    ambiguous = runtime.run_command(context.campaign_id, "diagnose Briga Ward")
+    selected = runtime.run_command(context.campaign_id, "diagnose Briga Ward #2")
+
+    assert ambiguous["command_type"] == "medical"
+    assert "multiple actors match 'briga ward'" in ambiguous["narrative"].lower()
+    assert selected["command_type"] == "medical"
+    assert "diagnosis for briga ward" in selected["narrative"].lower()
+
+
+def test_dialog_unlock_persists_recruitability_and_relationship_until_later_recruit() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(
+        context,
+        base_id="companion_dialog_unlock",
+        name="Recruit Luna",
+        role="scout",
+        recruitable=False,
+    )
+    dialog_def = DialogDef(
+        dialog_id=companion.identity.actor_id,
+        npc_id=companion.identity.actor_id,
+        states=[
+            DialogStateNode(
+                state_id="start",
+                text="You have proven yourself.",
+                transitions=[
+                    DialogTransition(
+                        transition_id="unlock",
+                        text="Travel with me.",
+                        terminates=True,
+                        actions=[
+                            DialogAction("adjust_relationship", {"delta": 22}),
+                            DialogAction("set_recruitable", {"value": True}),
+                        ],
+                    )
+                ],
+            )
+        ],
+    )
+    _inject_dialog(context, dialog_def)
+    dialog_state, _, _ = start_dialog(
+        dialog_def,
+        companion,
+        context.kernel_runtime["actors"]["player"],
+        {},
+    )
+    store_dialog_state(context, dialog_state, dialog_def, companion)
+    unlock = maybe_handle_dialog_command(context, "dialog unlock")
+
+    assert unlock is not None
+    assert companion.identity.actor_id not in context.kernel_runtime["game_state"].party
+    assert companion.raw_payload["recruitable_companion"] is True
+    assert companion.raw_payload["relationship_score"] == 22
+
+    runtime.save_campaign(context.campaign_id, "recruitability_unlock_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("recruitability_unlock_slot")
+    loaded_actor = loaded.kernel_runtime["actors"][companion.identity.actor_id]
+
+    assert loaded_actor.raw_payload["recruitable_companion"] is True
+    assert loaded_actor.raw_payload["relationship_score"] == 22
+
+    recruit = runtime.run_command(loaded.campaign_id, "recruit Recruit Luna")
+
+    assert recruit["command_type"] == "party"
+    assert companion.identity.actor_id in loaded.kernel_runtime["game_state"].party
+
+
+def test_old_save_active_and_reserve_companions_are_grandfathered_recruitable() -> None:
+    runtime, context = _make_campaign()
+    active = _inject_companion(context, base_id="companion_grandfather_active", name="Grand Rowan", role="guard")
+    reserve = _inject_companion(context, base_id="companion_grandfather_reserve", name="Grand Vale", role="scout")
+
+    assert runtime.run_command(context.campaign_id, "recruit Grand Rowan")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "recruit Grand Vale")["command_type"] == "party"
+    assert runtime.run_command(context.campaign_id, "dismiss Grand Vale")["command_type"] == "party"
+
+    active.raw_payload.pop("recruitable_companion", None)
+    reserve.raw_payload.pop("recruitable_companion", None)
+
+    runtime.save_campaign(context.campaign_id, "recruitability_grandfather_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("recruitability_grandfather_slot")
+    loaded_active = loaded.kernel_runtime["actors"][active.identity.actor_id]
+    loaded_reserve = loaded.kernel_runtime["actors"][reserve.identity.actor_id]
+
+    assert active.identity.actor_id in loaded.kernel_runtime["game_state"].party
+    assert reserve.identity.actor_id in loaded.kernel_runtime["game_state"].inactive_npcs
+    assert loaded_active.raw_payload["recruitable_companion"] is True
+    assert loaded_reserve.raw_payload["recruitable_companion"] is True
 
 
 def test_region_projection_rebuild_preserves_allied_party_members() -> None:
@@ -1174,8 +1350,8 @@ def test_schedule_wraparound_across_midnight_uses_last_entry_before_hour() -> No
 def test_party_members_are_not_overwritten_by_schedule_motion() -> None:
     runtime, context = _make_campaign()
     entity_id, record = _first_scheduled_npc(context)
-    companion_name = str(record.get("name", entity_id))
-    recruited = runtime.run_command(context.campaign_id, f"recruit {companion_name}")
+    context.kernel_runtime["actors"][entity_id].raw_payload["recruitable_companion"] = True
+    recruited = runtime.run_command(context.campaign_id, f"recruit {entity_id}")
     context.world.simulation_snapshot.current_hour = 7
     result = runtime.run_command(context.campaign_id, "rest")
     record = context.entities[entity_id]

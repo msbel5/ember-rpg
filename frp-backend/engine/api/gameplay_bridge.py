@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from engine.data.classes import get_skill_stat_map
 from engine.data._shared import items_registry, load_registry_list, recipes_registry, spells_registry
 from engine.data.runtime import get_class_abilities
+from engine.api.campaign.actor_query import resolve_live_actor_query
 from engine.kernel.effects import EffectDef
 from engine.kernel.gameplay import (
     cast_registry_spell,
@@ -341,23 +342,16 @@ def _kernel_item_instance(item: Any, item_def: KernelItemDef) -> ItemInstance:
     )
 
 
-def _resolve_item_target(context: "CampaignContext", target_name: str | None) -> Any:
+def _resolve_item_target(context: "CampaignContext", target_name: str | None) -> tuple[Any, str | None]:
     player = _player(context)
     if not str(target_name or "").strip():
-        return player
+        return player, None
     normalized_target = str(target_name).strip().lower()
     if player is not None and normalized_target in {"self", "me", "myself", player.name.lower()}:
-        return player
+        return player, None
     runtime = context.kernel_runtime or {}
-    for actor in runtime.get("actors", {}).values():
-        identity = getattr(actor, "identity", None)
-        if identity is None:
-            continue
-        actor_id = str(identity.actor_id).lower()
-        display_name = str(identity.display_name).lower()
-        if normalized_target == actor_id or normalized_target in display_name:
-            return actor
-    return None
+    resolved = resolve_live_actor_query(runtime.get("actors", {}), normalized_target, include_player=True)
+    return resolved.actor, resolved.error
 
 
 def _sync_runtime_item_after_use(player: "ActorRecord", item: Any, item_def: KernelItemDef, item_state: ItemInstance, *, destroyed: bool) -> None:
@@ -594,7 +588,9 @@ def _use_class_ability(
         return (f"{ability_name} has already been used since your last long rest.", "progression", 0)
 
     seed = int(player.raw_payload.get("game_tick", 0)) + int(player.level)
-    target = _resolve_item_target(context, target_name)
+    target, target_error = _resolve_item_target(context, target_name)
+    if target_error:
+        return (target_error, "progression", 0)
 
     if ability_id == "second_wind":
         healed = _heal_actor(player, _roll_dice(seed, 1, 10, int(player.level)))
@@ -798,7 +794,9 @@ def maybe_handle_item_use_command(
     if not item_def.use_effect_ids:
         return (f"{item_def.label} cannot be used this way.", "inventory", 0)
 
-    target = _resolve_item_target(context, target_name)
+    target, target_error = _resolve_item_target(context, target_name)
+    if target_error:
+        return (target_error, "inventory", 0)
     if target is None:
         return (f"No valid target found for '{target_name}'.", "inventory", 0)
 
@@ -1096,7 +1094,9 @@ def maybe_handle_spell_command(
         spell_id, spell_raw = found
 
     # Resolve target actor.
-    target_actor = _resolve_spell_target(context, target_name, spell_raw)
+    target_actor, target_error = _resolve_spell_target(context, target_name, spell_raw)
+    if target_error:
+        return (target_error, "spell", 0)
 
     cast_result = cast_registry_spell(
         player,
@@ -1148,23 +1148,21 @@ def _resolve_spell_target(
     actors = runtime.get("actors", {})
     normalized_target = str(target_name or "").strip().lower()
     if normalized_target in {"self", "me", "myself", context.player.name.lower()}:
-        return _player(context)
+        return _player(context), None
     if normalized_target:
-        for actor in actors.values():
-            if not hasattr(actor, "identity"):
-                continue
-            display_name = str(actor.identity.display_name).lower()
-            actor_id = str(actor.identity.actor_id).lower()
-            if normalized_target in display_name or normalized_target == actor_id:
-                return actor
+        resolved = resolve_live_actor_query(actors, normalized_target, include_player=True)
+        if resolved.error:
+            return None, resolved.error
+        if resolved.actor is not None:
+            return resolved.actor, None
     hostile = str(spell_raw.get("target_type", "single")).lower() != "self"
     if hostile:
         for actor_id, actor in actors.items():
             if actor_id == "player":
                 continue
             if getattr(actor, "alive", True):
-                return actor
-    return _player(context) if str(spell_raw.get("target_type", "single")).lower() == "self" else None
+                return actor, None
+    return (_player(context), None) if str(spell_raw.get("target_type", "single")).lower() == "self" else (None, None)
 
 
 def _inventory_add_failure_message(context: "CampaignContext", item_name: str) -> str:

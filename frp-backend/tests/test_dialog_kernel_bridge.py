@@ -8,7 +8,10 @@ from engine.api.campaign.dialog import build_dialog_payload
 from engine.api.campaign_commands import maybe_handle_dialog_command, maybe_handle_talk_command
 from engine.kernel.dialog import (
     DialogAction,
+    compute_npc_reaction,
     DialogDef, DialogStateNode, DialogTransition, DialogCondition,
+    evaluate_condition,
+    execute_dialog_action,
     start_dialog,
 )
 
@@ -32,7 +35,7 @@ def _inject_npc(ctx, actor_id: str, display_name: str):
         identity=ActorIdentity(actor_id=actor_id, display_name=display_name, actor_type="npc"),
         position=ActorPosition(x=0, y=0),
         action_points=3, max_action_points=3, alive=True,
-        stats=dict(player.stats), skills={}, raw_payload={"role": "guard"},
+        stats=dict(player.stats), skills={}, raw_payload={"role": "guard", "relationship_score": 0, "recruitable_companion": False},
     )
     ctx.kernel_runtime["actors"][actor_id] = npc
     return npc
@@ -56,7 +59,7 @@ def _mock_actor(name="TestNPC", stats=None):
         identity=ActorIdentity(actor_id=name.lower().replace(" ", "_"), display_name=name, actor_type="npc"),
         position=ActorPosition(x=0, y=0),
         action_points=3, max_action_points=3, alive=True,
-        stats=merged, skills={}, raw_payload={},
+        stats=merged, skills={}, raw_payload={"relationship_score": 0, "recruitable_companion": False},
     )
 
 
@@ -333,3 +336,33 @@ def test_sync_runtime_objectives_marks_kill_objective_complete_for_dead_target()
     assert active_quest["objectives"][0]["progress"] == 1
     assert active_quest["objectives"][0]["completed"] is True
     assert active_quest["report_ready"] is True
+
+
+def test_relationship_and_reaction_checks_use_dialog_recruitability_authority():
+    player = _mock_actor("Player", {"PRE": 16})
+    npc = _mock_actor("Guide")
+    npc.raw_payload["relationship_score"] = 8
+
+    relationship_ok = DialogCondition("relationship_check", {"operator": ">=", "value": 8})
+    reaction_ok = DialogCondition("reaction_check", {"operator": ">=", "value": 20})
+    reaction_blocked = DialogCondition("reaction_check", {"operator": ">=", "value": 25})
+
+    assert evaluate_condition(relationship_ok, player, npc, {}, {"reputation": 4}) is True
+    assert evaluate_condition(reaction_ok, player, npc, {}, {"reputation": 4}) is True
+    assert evaluate_condition(reaction_blocked, player, npc, {}, {"reputation": 4}) is False
+    assert npc.raw_payload["relationship_score"] == 8
+
+
+def test_adjust_relationship_clamps_and_set_recruitable_unlocks_without_auto_join():
+    player = _mock_actor("Player", {"PRE": 12})
+    npc = _mock_actor("Mercenary")
+
+    adjusted = execute_dialog_action(DialogAction("adjust_relationship", {"delta": 150}), player, npc, {}, {})
+    unlocked = execute_dialog_action(DialogAction("set_recruitable", {"value": True}), player, npc, {}, {})
+    recruitable_check = DialogCondition("recruitable_check", {"operator": "==", "value": True})
+
+    assert adjusted["relationship_score"] == 100
+    assert npc.raw_payload["relationship_score"] == 100
+    assert unlocked["recruitable"] is True
+    assert npc.raw_payload["recruitable_companion"] is True
+    assert evaluate_condition(recruitable_check, player, npc, {}, {}) is True
