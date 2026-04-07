@@ -16742,6 +16742,984 @@
           "rarity": "COMMON"
         }
       ]
+    },
+    {
+      "id": "orc_warrior",
+      "name": "Orc Warrior",
+      "type": "humanoid",
+      "cr": 1.0,
+      "hp": 30,
+      "armor_class": 13,
+      "speed": 30,
+      "stats": {
+        "MIG": 16,
+        "AGI": 12,
+        "END": 14,
+        "MND": 7,
+        "INS": 10,
+        "PRE": 8
+      },
+      "attacks": [
+        {
+          "name": "Greataxe",
+          "damage_dice": "1d12+3",
+          "damage_type": "slashing",
+          "attack_bonus": 5
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Aggressive Charge"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 200,
+      "loot_table": [
+        {
+          "id": "orc_tusk",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "iron_ore",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "giant_rat",
+      "name": "Giant Rat",
+      "type": "beast",
+      "cr": 0.25,
+      "hp": 7,
+      "armor_class": 12,
+      "speed": 30,
+      "stats": {
+        "MIG": 7,
+        "AGI": 15,
+        "END": 11,
+        "MND": 2,
+        "INS": 10,
+        "PRE": 4
+      },
+      "attacks": [
+        {
+          "name": "Bite",
+          "damage_dice": "1d4+1",
+          "damage_type": "piercing",
+          "attack_bonus": 3
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Pack Tactics"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 25,
+      "loot_table": [
+        {
+          "id": "fang",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "leather_hide",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "hobgoblin_captain",
+      "name": "Hobgoblin Captain",
+      "type": "humanoid",
+      "cr": 3.0,
+      "hp": 60,
+      "armor_class": 17,
+      "speed": 30,
+      "stats": {
+        "MIG": 16,
+        "AGI": 14,
+        "END": 14,
+        "MND": 14,
+        "INS": 12,
+        "PRE": 14
+      },
+      "attacks": [
+        {
+          "name": "Longsword",
+          "damage_dice": "1d10+3",
+          "damage_type": "slashing",
+          "attack_bonus": 5
+        },
+        {
+          "name": "Javelin",
+          "damage_dice": "1d6+3",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Martial Advantage",
+          "Leadership"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 700,
+      "loot_table": [
+        {
+          "id": "iron_ore",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "leather_hide",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "drow_elite",
+      "name": "Drow Elite",
+      "type": "humanoid",
+      "cr": 5.0,
+      "hp": 80,
+      "armor_class": 18,
+      "speed": 30,
+      "stats": {
+        "MIG": 14,
+        "AGI": 19,
+        "END": 14,
+        "MND": 16,
+        "INS": 14,
+        "PRE": 16
+      },
+      "attacks": [
+        {
+          "name": "Shortsword",
+          "damage_dice": "1d6+4",
+          "damage_type": "piercing",
+          "attack_bonus": 7
+        },
+        {
+          "name": "Hand Crossbow",
+          "damage_dice": "1d6+4",
+          "damage_type": "piercing",
+          "attack_bonus": 7
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Fey Ancestry",
+          "Sunlight Sensitivity",
+          "Innate Spellcasting"
+        ],
+        "resistances": [],
+        "immunities": [
+          "sleep"
+        ]
+      },
+      "xp_reward": 1800,
+      "loot_table": [
+        {
+          "id": "gold_coin",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "arcane_crystal",
+          "rarity": "RARE"
+        },
+        {
+          "id": "leather_hide",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "bugbear_chief",
+      "name": "Bugbear Chief",
+      "type": "humanoid",
+      "cr": 3.0,
+      "hp": 65,
+      "armor_class": 15,
+      "speed": 30,
+      "stats": {
+        "MIG": 18,
+        "AGI": 14,
+        "END": 16,
+        "MND": 11,
+        "INS": 12,
+        "PRE": 11
+      },
+      "attacks": [
+        {
+          "name": "Morningstar",
+          "damage_dice": "2d8+4",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 6
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Brute",
+          "Surprise Attack"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 700,
+      "loot_table": [
+        {
+          "id": "gold_coin",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "leather_hide",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "bone_fragment",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "gnoll_packmaster",
+      "name": "Gnoll Packmaster",
+      "type": "humanoid",
+      "cr": 2.0,
+      "hp": 40,
+      "armor_class": 14,
+      "speed": 30,
+      "stats": {
+        "MIG": 16,
+        "AGI": 14,
+        "END": 14,
+        "MND": 8,
+        "INS": 12,
+        "PRE": 10
+      },
+      "attacks": [
+        {
+          "name": "Spear",
+          "damage_dice": "1d8+3",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        },
+        {
+          "name": "Bite",
+          "damage_dice": "1d4+3",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Rampage",
+          "Pack Leader"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 450,
+      "loot_table": [
+        {
+          "id": "fang",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "leather_hide",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "cultist_fanatic",
+      "name": "Cultist Fanatic",
+      "type": "humanoid",
+      "cr": 2.0,
+      "hp": 33,
+      "armor_class": 13,
+      "speed": 30,
+      "stats": {
+        "MIG": 11,
+        "AGI": 14,
+        "END": 12,
+        "MND": 16,
+        "INS": 13,
+        "PRE": 14
+      },
+      "attacks": [
+        {
+          "name": "Dagger",
+          "damage_dice": "1d4+2",
+          "damage_type": "piercing",
+          "attack_bonus": 4
+        },
+        {
+          "name": "Dark Bolt",
+          "damage_dice": "2d6+3",
+          "damage_type": "necrotic",
+          "attack_bonus": 5
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Dark Devotion",
+          "Spellcasting"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 450,
+      "loot_table": [
+        {
+          "id": "torn_cloth",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "necrotic_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "sahuagin_priestess",
+      "name": "Sahuagin Priestess",
+      "type": "humanoid",
+      "cr": 2.0,
+      "hp": 35,
+      "armor_class": 13,
+      "speed": 30,
+      "stats": {
+        "MIG": 13,
+        "AGI": 11,
+        "END": 12,
+        "MND": 14,
+        "INS": 15,
+        "PRE": 13
+      },
+      "attacks": [
+        {
+          "name": "Trident",
+          "damage_dice": "1d8+1",
+          "damage_type": "piercing",
+          "attack_bonus": 3
+        },
+        {
+          "name": "Tidal Bolt",
+          "damage_dice": "2d6+2",
+          "damage_type": "cold",
+          "attack_bonus": 4
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Blood Frenzy",
+          "Spellcasting"
+        ],
+        "resistances": [
+          "cold"
+        ],
+        "immunities": []
+      },
+      "xp_reward": 450,
+      "loot_table": [
+        {
+          "id": "fang",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "healing_herb",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "worg",
+      "name": "Worg",
+      "type": "beast",
+      "cr": 0.5,
+      "hp": 26,
+      "armor_class": 13,
+      "speed": 50,
+      "stats": {
+        "MIG": 16,
+        "AGI": 13,
+        "END": 13,
+        "MND": 7,
+        "INS": 11,
+        "PRE": 8
+      },
+      "attacks": [
+        {
+          "name": "Bite",
+          "damage_dice": "2d6+3",
+          "damage_type": "piercing",
+          "attack_bonus": 5
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Keen Hearing and Smell"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 100,
+      "loot_table": [
+        {
+          "id": "fang",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "leather_hide",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "shade",
+      "name": "Shade",
+      "type": "undead",
+      "cr": 3.0,
+      "hp": 35,
+      "armor_class": 14,
+      "speed": 40,
+      "stats": {
+        "MIG": 6,
+        "AGI": 16,
+        "END": 13,
+        "MND": 14,
+        "INS": 12,
+        "PRE": 8
+      },
+      "attacks": [
+        {
+          "name": "Shadow Touch",
+          "damage_dice": "2d6+3",
+          "damage_type": "necrotic",
+          "attack_bonus": 5
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Shadow Stealth",
+          "Incorporeal Movement"
+        ],
+        "resistances": [
+          "necrotic"
+        ],
+        "immunities": [
+          "poison"
+        ]
+      },
+      "xp_reward": 700,
+      "loot_table": [
+        {
+          "id": "ectoplasm",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "necrotic_essence",
+          "rarity": "UNCOMMON"
+        }
+      ]
+    },
+    {
+      "id": "spectral_skeleton",
+      "name": "Spectral Skeleton",
+      "type": "undead",
+      "cr": 1.0,
+      "hp": 20,
+      "armor_class": 13,
+      "speed": 30,
+      "stats": {
+        "MIG": 10,
+        "AGI": 14,
+        "END": 12,
+        "MND": 6,
+        "INS": 8,
+        "PRE": 5
+      },
+      "attacks": [
+        {
+          "name": "Spectral Blade",
+          "damage_dice": "1d8+2",
+          "damage_type": "necrotic",
+          "attack_bonus": 4
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Undead Fortitude"
+        ],
+        "resistances": [
+          "necrotic"
+        ],
+        "immunities": [
+          "poison"
+        ]
+      },
+      "xp_reward": 200,
+      "loot_table": [
+        {
+          "id": "bone_fragment",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "ectoplasm",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "ancient_red_dragon",
+      "name": "Ancient Red Dragon",
+      "type": "dragon",
+      "cr": 24.0,
+      "hp": 550,
+      "armor_class": 22,
+      "speed": 40,
+      "stats": {
+        "MIG": 30,
+        "AGI": 10,
+        "END": 29,
+        "MND": 18,
+        "INS": 15,
+        "PRE": 23
+      },
+      "attacks": [
+        {
+          "name": "Bite",
+          "damage_dice": "4d10+10",
+          "damage_type": "piercing",
+          "attack_bonus": 17
+        },
+        {
+          "name": "Claw",
+          "damage_dice": "2d8+10",
+          "damage_type": "slashing",
+          "attack_bonus": 17
+        },
+        {
+          "name": "Fire Breath",
+          "damage_dice": "18d6",
+          "damage_type": "fire",
+          "attack_bonus": 0
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Frightful Presence",
+          "Legendary Resistance",
+          "Wing Attack"
+        ],
+        "resistances": [],
+        "immunities": [
+          "fire"
+        ]
+      },
+      "xp_reward": 62000,
+      "loot_table": [
+        {
+          "id": "dragon_scale",
+          "rarity": "RARE"
+        },
+        {
+          "id": "dragon_blood",
+          "rarity": "RARE"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "EPIC"
+        }
+      ]
+    },
+    {
+      "id": "arcane_golem",
+      "name": "Arcane Golem",
+      "type": "construct",
+      "cr": 10.0,
+      "hp": 200,
+      "armor_class": 19,
+      "speed": 30,
+      "stats": {
+        "MIG": 24,
+        "AGI": 9,
+        "END": 20,
+        "MND": 3,
+        "INS": 10,
+        "PRE": 1
+      },
+      "attacks": [
+        {
+          "name": "Slam",
+          "damage_dice": "3d8+7",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 10
+        },
+        {
+          "name": "Arcane Pulse",
+          "damage_dice": "4d6",
+          "damage_type": "force",
+          "attack_bonus": 7
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Magic Resistance",
+          "Immutable Form"
+        ],
+        "resistances": [
+          "fire",
+          "cold"
+        ],
+        "immunities": [
+          "poison",
+          "psychic"
+        ]
+      },
+      "xp_reward": 5900,
+      "loot_table": [
+        {
+          "id": "arcane_crystal",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "iron_ore",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "UNCOMMON"
+        }
+      ]
+    },
+    {
+      "id": "arcane_sentry",
+      "name": "Arcane Sentry",
+      "type": "construct",
+      "cr": 3.0,
+      "hp": 50,
+      "armor_class": 16,
+      "speed": 25,
+      "stats": {
+        "MIG": 16,
+        "AGI": 10,
+        "END": 16,
+        "MND": 6,
+        "INS": 10,
+        "PRE": 1
+      },
+      "attacks": [
+        {
+          "name": "Energy Bolt",
+          "damage_dice": "2d6+3",
+          "damage_type": "force",
+          "attack_bonus": 5
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Sentinel Protocol"
+        ],
+        "resistances": [],
+        "immunities": [
+          "poison",
+          "psychic"
+        ]
+      },
+      "xp_reward": 700,
+      "loot_table": [
+        {
+          "id": "arcane_crystal",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "iron_ore",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "forge_guardian",
+      "name": "Forge Guardian",
+      "type": "construct",
+      "cr": 12.0,
+      "hp": 250,
+      "armor_class": 20,
+      "speed": 30,
+      "stats": {
+        "MIG": 26,
+        "AGI": 8,
+        "END": 22,
+        "MND": 3,
+        "INS": 10,
+        "PRE": 1
+      },
+      "attacks": [
+        {
+          "name": "Forge Hammer",
+          "damage_dice": "3d10+8",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 12
+        },
+        {
+          "name": "Flame Jet",
+          "damage_dice": "4d8",
+          "damage_type": "fire",
+          "attack_bonus": 8
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Heated Body",
+          "Immutable Form",
+          "Magic Resistance"
+        ],
+        "resistances": [
+          "cold"
+        ],
+        "immunities": [
+          "fire",
+          "poison",
+          "psychic"
+        ]
+      },
+      "xp_reward": 8400,
+      "loot_table": [
+        {
+          "id": "iron_ore",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "arcane_crystal",
+          "rarity": "RARE"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "UNCOMMON"
+        }
+      ]
+    },
+    {
+      "id": "mana_wraith",
+      "name": "Mana Wraith",
+      "type": "undead",
+      "cr": 5.0,
+      "hp": 70,
+      "armor_class": 15,
+      "speed": 0,
+      "stats": {
+        "MIG": 6,
+        "AGI": 16,
+        "END": 16,
+        "MND": 18,
+        "INS": 14,
+        "PRE": 12
+      },
+      "attacks": [
+        {
+          "name": "Mana Drain",
+          "damage_dice": "3d6+4",
+          "damage_type": "necrotic",
+          "attack_bonus": 7
+        },
+        {
+          "name": "Arcane Blast",
+          "damage_dice": "2d8+4",
+          "damage_type": "force",
+          "attack_bonus": 7
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Incorporeal Movement",
+          "Mana Siphon",
+          "Spell Resistance"
+        ],
+        "resistances": [
+          "necrotic"
+        ],
+        "immunities": [
+          "poison"
+        ]
+      },
+      "xp_reward": 1800,
+      "loot_table": [
+        {
+          "id": "ectoplasm",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "necrotic_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "arcane_crystal",
+          "rarity": "RARE"
+        }
+      ]
+    },
+    {
+      "id": "corrupted_druid",
+      "name": "Corrupted Druid",
+      "type": "humanoid",
+      "cr": 4.0,
+      "hp": 55,
+      "armor_class": 14,
+      "speed": 30,
+      "stats": {
+        "MIG": 12,
+        "AGI": 12,
+        "END": 14,
+        "MND": 17,
+        "INS": 16,
+        "PRE": 13
+      },
+      "attacks": [
+        {
+          "name": "Blight Staff",
+          "damage_dice": "1d8+3",
+          "damage_type": "necrotic",
+          "attack_bonus": 5
+        },
+        {
+          "name": "Entangling Vines",
+          "damage_dice": "2d6+3",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 5
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Wild Shape",
+          "Corrupted Spellcasting",
+          "Nature's Wrath"
+        ],
+        "resistances": [
+          "poison"
+        ],
+        "immunities": []
+      },
+      "xp_reward": 1100,
+      "loot_table": [
+        {
+          "id": "healing_herb",
+          "rarity": "COMMON"
+        },
+        {
+          "id": "necrotic_essence",
+          "rarity": "UNCOMMON"
+        },
+        {
+          "id": "gold_coin",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "giant_leech",
+      "name": "Giant Leech",
+      "type": "beast",
+      "cr": 0.5,
+      "hp": 15,
+      "armor_class": 10,
+      "speed": 20,
+      "stats": {
+        "MIG": 10,
+        "AGI": 8,
+        "END": 12,
+        "MND": 1,
+        "INS": 8,
+        "PRE": 2
+      },
+      "attacks": [
+        {
+          "name": "Blood Drain",
+          "damage_dice": "1d6+1",
+          "damage_type": "piercing",
+          "attack_bonus": 3
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Blood Drain"
+        ],
+        "resistances": [],
+        "immunities": []
+      },
+      "xp_reward": 100,
+      "loot_table": [
+        {
+          "id": "leather_hide",
+          "rarity": "COMMON"
+        }
+      ]
+    },
+    {
+      "id": "training_construct",
+      "name": "Training Construct",
+      "type": "construct",
+      "cr": 1.0,
+      "hp": 25,
+      "armor_class": 14,
+      "speed": 25,
+      "stats": {
+        "MIG": 14,
+        "AGI": 10,
+        "END": 14,
+        "MND": 1,
+        "INS": 8,
+        "PRE": 1
+      },
+      "attacks": [
+        {
+          "name": "Practice Sword",
+          "damage_dice": "1d6+2",
+          "damage_type": "bludgeoning",
+          "attack_bonus": 4
+        }
+      ],
+      "abilities": {
+        "special_moves": [
+          "Non-Lethal"
+        ],
+        "resistances": [],
+        "immunities": [
+          "poison",
+          "psychic"
+        ]
+      },
+      "xp_reward": 200,
+      "loot_table": [
+        {
+          "id": "iron_ore",
+          "rarity": "COMMON"
+        }
+      ]
     }
   ]
 }
