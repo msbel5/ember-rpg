@@ -42,8 +42,7 @@ def _enter_combat(campaign_id: str, actors: list[dict]) -> dict:
         and actor["identity"].get("actor_type") == "npc"
         and actor.get("alive", True)
     ]
-    if not npcs:
-        pytest.skip("No NPCs in fresh campaign to attack")
+    assert npcs, "No NPCs in fresh campaign to attack"
     target_name = npcs[0]["identity"]["display_name"]
     response = client.post(
         f"/game/campaigns/{campaign_id}/commands",
@@ -263,34 +262,50 @@ class TestTargetPayloadShape:
 class TestMoveOptionsContract:
     """When move_options exists in the combat payload, verify its shape."""
 
-    def test_move_options_shape_if_present(self):
+    def test_move_options_shape(self):
         payload = _create_campaign(seed=49)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
         combat = body["campaign"]["combat"]
-        if "move_options" not in combat:
-            pytest.skip("move_options not yet present in combat payload")
+        assert "move_options" in combat
         move_opts = combat["move_options"]
         assert isinstance(move_opts, list)
         for opt in move_opts:
-            assert "x" in opt and "y" in opt, "move_option must have x and y"
-            assert isinstance(opt["x"], int)
-            assert isinstance(opt["y"], int)
+            assert isinstance(opt["direction"], str)
+            assert isinstance(opt["position"], list)
+            assert len(opt["position"]) == 2
+            assert all(isinstance(value, int) for value in opt["position"])
+            assert isinstance(opt["available"], bool)
+            assert "blocked_reason" in opt
 
 
 # ── Called shot zones contract ───────────────────────────────────────
 
 
 class TestCalledShotZonesContract:
-    """When called_shot_zones exists and body-state is present, verify shape."""
+    """called_shot_zones lives on each target, NOT at top-level combat."""
 
-    def test_called_shot_zones_shape_if_present(self):
+    def test_top_level_called_shot_zones_absent(self):
+        """combat.called_shot_zones must NOT exist at the top level."""
         payload = _create_campaign(seed=50)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
         combat = body["campaign"]["combat"]
-        if "called_shot_zones" not in combat:
-            pytest.skip("called_shot_zones not yet present in combat payload")
-        zones = combat["called_shot_zones"]
-        assert isinstance(zones, list)
-        for zone in zones:
-            assert isinstance(zone, str), f"called_shot_zone must be a string, got {type(zone)}"
+        assert "called_shot_zones" not in combat, (
+            "called_shot_zones must be per-target, not top-level on combat payload"
+        )
 
+    def test_targets_expose_called_shot_zones_as_list_of_strings(self):
+        """Each target with body-state exposes called_shot_zones: list[str]."""
+        payload = _create_campaign(seed=51)
+        body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
+        targets = body["campaign"]["combat"]["targets"]
+        assert isinstance(targets, list)
+        for target in targets:
+            assert "called_shot_zones" in target, (
+                f"Target {target.get('actor_id','?')} missing called_shot_zones"
+            )
+            zones = target["called_shot_zones"]
+            assert isinstance(zones, list)
+            for zone in zones:
+                assert isinstance(zone, str), (
+                    f"called_shot_zone must be str, got {type(zone)}"
+                )

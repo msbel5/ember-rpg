@@ -35,10 +35,10 @@ from engine.api.campaign.region_projection import apply_region_to_context, persi
 from engine.api.campaign.settlement import build_settlement_state
 from engine.api.campaign.controls import merge_settlement_controls
 from engine.api.campaign.world import alerts_from_events
+from engine.api.campaign.commerce_commands import maybe_handle_commerce_command
+from engine.api.campaign.travel_commands import handle_travel
 from engine.api.campaign_commands import (
-    handle_travel,
     maybe_handle_commander_command,
-    maybe_handle_commerce_command,
     maybe_handle_dialog_command,
     maybe_handle_medical_command,
     maybe_handle_structured_interaction,
