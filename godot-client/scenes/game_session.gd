@@ -9,9 +9,10 @@ const PROFILE_PATH := ProfileStorage.PROFILE_PATH
 const QUICKSAVE_SLOT := "quicksave"
 
 @onready var world_view = $MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer
-@onready var sidebar_nav: HBoxContainer = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav
+@onready var modal_host = $MainMargin/MainVBox/ContentSplit/Sidebar
 @onready var sidebar_tabs: TabContainer = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs
 @onready var narrative_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/NarrativePanel
+@onready var character_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/CharacterPanel
 @onready var inventory_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/InventoryPanel
 @onready var settlement_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/SettlementPanel
 @onready var minimap_panel = $MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel
@@ -21,8 +22,6 @@ const QUICKSAVE_SLOT := "quicksave"
 
 var is_waiting := false
 var _pending_sync_callbacks := 0
-var _sidebar_button_group: ButtonGroup = ButtonGroup.new()
-var _sidebar_buttons: Dictionary = {}
 var _dialog_overlay = null
 var _combat_overlay_widget = null
 var _save_sync
@@ -37,21 +36,17 @@ func _ready() -> void:
 	_install_status_bar()
 	_install_dialog_overlay()
 	_install_combat_overlay()
-	_setup_sidebar_tabs()
-	if GameState.has_active_campaign():
-		sidebar_tabs.current_tab = 5
+	_configure_modal_host()
 
 	command_bar.command_submitted.connect(_submit_action)
 	command_bar.quick_save_requested.connect(_save_sync.on_quick_save_requested)
 	command_bar.saves_requested.connect(_save_sync.open_save_load_panel)
+	if command_bar.has_signal("panel_requested"):
+		command_bar.panel_requested.connect(_on_shell_panel_requested)
 	world_view.command_requested.connect(_on_world_command_requested)
 	world_view.command_sequence_requested.connect(_on_world_command_sequence_requested)
 	world_view.focus_changed.connect(command_bar.set_focus_summary)
 	world_view.focus_actions_changed.connect(command_bar.set_focus_actions)
-	inventory_panel.command_requested.connect(_submit_action)
-	settlement_panel.command_requested.connect(_submit_action)
-	minimap_panel.travel_requested.connect(_on_travel_requested)
-	quest_panel.command_requested.connect(_submit_action)
 	save_load_panel.save_requested.connect(_save_sync.on_save_requested)
 	save_load_panel.load_requested.connect(_save_sync.on_load_requested)
 	save_load_panel.delete_requested.connect(_save_sync.on_delete_save_requested)
@@ -70,6 +65,7 @@ func _ready() -> void:
 	command_bar.set_focus_summary(world_view.get_focus_summary())
 	command_bar.set_focus_actions(world_view.get_focus_actions())
 	_sync_dialog_overlay()
+	_sync_shell_state()
 	if not GameState.has_active_dialog():
 		command_bar.focus_input()
 
@@ -90,6 +86,10 @@ func _install_dialog_overlay() -> void:
 		world_pane.add_child(_dialog_overlay)
 		_dialog_overlay.command_requested.connect(_submit_action)
 		_dialog_overlay.dialog_closed.connect(_on_dialog_overlay_closed)
+		if _dialog_overlay.has_signal("structured_action_requested"):
+			_dialog_overlay.structured_action_requested.connect(_on_structured_action_requested)
+		if _dialog_overlay.has_signal("panel_requested"):
+			_dialog_overlay.panel_requested.connect(_on_shell_panel_requested)
 
 
 func _install_combat_overlay() -> void:
@@ -105,46 +105,11 @@ func _install_combat_overlay() -> void:
 			_combat_overlay_widget.structured_action_requested.connect(_on_structured_action_requested)
 
 
-func _setup_sidebar_tabs() -> void:
-	var tab_titles := {
-		"NarrativePanel": "Narrative",
-		"CharacterPanel": "Hero",
-		"SettlementPanel": "Town",
-		"QuestPanel": "Quests",
-		"InventoryPanel": "Items",
-		"MinimapPanel": "Map",
-	}
-	for child in sidebar_nav.get_children():
-		child.queue_free()
-	sidebar_tabs.tabs_visible = false
-	for index in range(sidebar_tabs.get_tab_count()):
-		var child = sidebar_tabs.get_tab_control(index)
-		if child != null and tab_titles.has(child.name):
-			var title := str(tab_titles[child.name])
-			sidebar_tabs.set_tab_title(index, title)
-			var button := Button.new()
-			button.name = "%sTabButton" % child.name
-			button.toggle_mode = true
-			button.button_group = _sidebar_button_group
-			button.text = title
-			button.tooltip_text = "%s panel" % title
-			button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			button.pressed.connect(_on_sidebar_tab_button_pressed.bind(index))
-			sidebar_nav.add_child(button)
-			_sidebar_buttons[index] = button
-	if _sidebar_buttons.has(sidebar_tabs.current_tab):
-		(_sidebar_buttons[sidebar_tabs.current_tab] as Button).button_pressed = true
-	sidebar_tabs.tab_changed.connect(_on_sidebar_tab_changed)
-
-
-func _on_sidebar_tab_button_pressed(index: int) -> void:
-	sidebar_tabs.current_tab = index
-
-
-func _on_sidebar_tab_changed(index: int) -> void:
-	for tab_index in _sidebar_buttons.keys():
-		var button: Button = _sidebar_buttons[tab_index]
-		button.button_pressed = int(tab_index) == index
+func _configure_modal_host() -> void:
+	if modal_host != null and modal_host.has_signal("host_closed"):
+		modal_host.host_closed.connect(_on_modal_host_closed)
+	_wire_modal_surfaces()
+	_sync_pause_panel_views()
 
 
 func _submit_action(text: String) -> void:
@@ -209,6 +174,7 @@ func _set_waiting(waiting: bool) -> void:
 	if settlement_panel.has_method("set_waiting"):
 		settlement_panel.set_waiting(waiting)
 	save_load_panel.set_busy(waiting)
+	_sync_shell_state()
 
 
 func _finish_turn_sync() -> void:
@@ -217,13 +183,15 @@ func _finish_turn_sync() -> void:
 	if not _queued_world_commands.is_empty():
 		_submit_next_queued_world_command()
 		return
-	if not save_load_panel.visible and not GameState.has_active_dialog():
+	if not save_load_panel.visible and not GameState.has_active_dialog() and (modal_host == null or str(modal_host.active_panel_id()).is_empty()):
 		command_bar.focus_input()
 
 
 func _on_state_updated() -> void:
 	_save_sync.remember_player_id()
 	_ensure_campaign_socket()
+	_sync_pause_panel_views()
+	_sync_shell_state()
 
 
 func _ensure_campaign_socket() -> void:
@@ -233,6 +201,8 @@ func _ensure_campaign_socket() -> void:
 
 func _on_dialog_state_changed(_payload: Dictionary) -> void:
 	_sync_dialog_overlay()
+	_sync_pause_panel_views()
+	_sync_shell_state()
 
 
 func _sync_dialog_overlay() -> void:
@@ -243,6 +213,8 @@ func _sync_dialog_overlay() -> void:
 		if _dialog_overlay.is_dialog_active():
 			_dialog_overlay.hide_dialog()
 		return
+	if modal_host != null and modal_host.has_method("hide_host"):
+		modal_host.hide_host()
 	_dialog_overlay.show_dialog(
 		str(dialog_payload.get("dialog_npc", "NPC")),
 		str(dialog_payload.get("dialog_text", "")),
@@ -251,16 +223,21 @@ func _sync_dialog_overlay() -> void:
 
 
 func _on_dialog_overlay_closed() -> void:
+	_sync_shell_state()
 	if not save_load_panel.visible:
 		command_bar.focus_input()
 
 
 func _on_combat_started() -> void:
+	if modal_host != null and modal_host.has_method("hide_host"):
+		modal_host.hide_host()
 	narrative_panel.append_system_text("[color=red]Combat begins.[/color]")
+	_sync_shell_state()
 
 
 func _on_combat_ended() -> void:
 	narrative_panel.append_system_text("[color=green]Combat ended.[/color]")
+	_sync_shell_state()
 
 
 func _on_level_up(new_level: int) -> void:
@@ -289,14 +266,45 @@ func _input(event: InputEvent) -> void:
 		return
 	if _dialog_overlay != null and _dialog_overlay.is_dialog_active():
 		return
+	if event.keycode == KEY_ESCAPE:
+		if modal_host != null and modal_host.has_method("active_panel_id") and not str(modal_host.active_panel_id()).is_empty():
+			modal_host.hide_host()
+			_sync_shell_state()
+			command_bar.focus_input()
+			get_viewport().set_input_as_handled()
+			return
+		if modal_host != null and modal_host.has_method("has_panel") and modal_host.has_panel("pause") and not GameState.is_in_combat():
+			_on_shell_panel_requested("pause")
+			get_viewport().set_input_as_handled()
+			return
 	if event.keycode == KEY_HOME or (event.keycode == KEY_I and not command_bar.has_input_focus()):
-		_submit_action("inventory")
+		_on_shell_panel_requested("items")
 		get_viewport().set_input_as_handled()
 		return
+	if not command_bar.has_input_focus():
+		match event.keycode:
+			KEY_C, KEY_H:
+				_on_shell_panel_requested("hero")
+				get_viewport().set_input_as_handled()
+				return
+			KEY_J:
+				_on_shell_panel_requested("quests")
+				get_viewport().set_input_as_handled()
+				return
+			KEY_M:
+				_on_shell_panel_requested("map")
+				get_viewport().set_input_as_handled()
+				return
+			KEY_T:
+				_on_shell_panel_requested("town")
+				get_viewport().set_input_as_handled()
+				return
 	if event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
 		if _should_focus_command_bar_on_enter():
 			command_bar.focus_input()
 			get_viewport().set_input_as_handled()
+		return
+	if modal_host != null and modal_host.has_method("active_panel_id") and not str(modal_host.active_panel_id()).is_empty():
 		return
 	if not command_bar.has_input_focus():
 		var direction := ""
@@ -315,7 +323,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _should_focus_command_bar_on_enter() -> bool:
-	return not save_load_panel.visible and not GameState.has_active_dialog() and not command_bar.has_input_focus()
+	return not save_load_panel.visible and not GameState.has_active_dialog() and not command_bar.has_input_focus() and (modal_host == null or str(modal_host.active_panel_id()).is_empty())
 
 
 func _on_backend_error(message: String) -> void:
@@ -358,6 +366,113 @@ func _on_travel_requested(request: Dictionary) -> void:
 
 func _on_structured_action_requested(shortcut: String, args: Dictionary, history_text: String) -> void:
 	_submit_structured_action(shortcut, args, history_text)
+
+
+func _wire_modal_surfaces() -> void:
+	for child in sidebar_tabs.get_children():
+		if child.has_signal("command_requested"):
+			var callable := Callable(self, "_submit_action")
+			if not child.command_requested.is_connected(callable):
+				child.command_requested.connect(callable)
+		if child.has_signal("travel_requested"):
+			var travel_callable := Callable(self, "_on_travel_requested")
+			if not child.travel_requested.is_connected(travel_callable):
+				child.travel_requested.connect(travel_callable)
+		if child.has_signal("structured_action_requested"):
+			var structured_callable := Callable(self, "_on_structured_action_requested")
+			if not child.structured_action_requested.is_connected(structured_callable):
+				child.structured_action_requested.connect(structured_callable)
+		if child.has_signal("panel_requested"):
+			var panel_callable := Callable(self, "_on_shell_panel_requested")
+			if not child.panel_requested.is_connected(panel_callable):
+				child.panel_requested.connect(panel_callable)
+		if child.has_signal("close_requested"):
+			var close_callable := Callable(self, "_on_modal_surface_close_requested")
+			if not child.close_requested.is_connected(close_callable):
+				child.close_requested.connect(close_callable)
+
+
+func _on_shell_panel_requested(panel_id: String) -> void:
+	if modal_host == null or str(panel_id).strip_edges().is_empty():
+		return
+	if is_waiting or save_load_panel.visible:
+		_sync_shell_state()
+		return
+	var normalized := str(panel_id).strip_edges().to_lower()
+	var allow_during_dialog := normalized == "narrative"
+	if (GameState.has_active_dialog() and not allow_during_dialog) or GameState.is_in_combat():
+		_sync_shell_state()
+		return
+	if not modal_host.has_panel(normalized):
+		_sync_shell_state()
+		return
+	if normalized == "pause":
+		if str(modal_host.active_panel_id()) == normalized:
+			modal_host.hide_host()
+		else:
+			modal_host.show_panel(normalized)
+	else:
+		modal_host.toggle_panel(normalized)
+	_sync_shell_state()
+	if str(modal_host.active_panel_id()).is_empty():
+		command_bar.focus_input()
+
+
+func _on_modal_host_closed() -> void:
+	_sync_shell_state()
+	if not save_load_panel.visible and not GameState.has_active_dialog():
+		command_bar.focus_input()
+
+
+func _on_modal_surface_close_requested() -> void:
+	if modal_host != null and modal_host.has_method("hide_host"):
+		modal_host.hide_host()
+
+
+func _sync_shell_state() -> void:
+	if modal_host == null or command_bar == null:
+		return
+	_sync_pause_panel_views()
+	var shell_mode := GameState.current_shell_mode()
+	if shell_mode != "exploration" and not str(modal_host.active_panel_id()).is_empty():
+		modal_host.hide_host()
+	var available_ids: Array[String] = []
+	if modal_host.has_method("available_panel_ids"):
+		available_ids = modal_host.available_panel_ids()
+	var panel_states := {}
+	var interaction_locked: bool = is_waiting or save_load_panel.visible or GameState.has_active_dialog() or GameState.is_in_combat()
+	for panel_id in ["hero", "items", "map", "quests", "town", "pause"]:
+		var exists := available_ids.has(panel_id)
+		panel_states[panel_id] = {
+			"visible": exists,
+			"enabled": exists and not interaction_locked,
+			"tooltip": "",
+		}
+	if interaction_locked and GameState.has_active_dialog() and available_ids.has("narrative"):
+		panel_states["hero"]["tooltip"] = "Panels close while dialog is active."
+		panel_states["items"]["tooltip"] = "Panels close while dialog is active."
+		panel_states["map"]["tooltip"] = "Panels close while dialog is active."
+		panel_states["quests"]["tooltip"] = "Panels close while dialog is active."
+		panel_states["town"]["tooltip"] = "Panels close while dialog is active."
+		panel_states["pause"]["tooltip"] = "Pause intelligence is disabled while dialog or combat is active."
+	var active_panel_id := str(modal_host.active_panel_id())
+	command_bar.set_panel_actions(panel_states, active_panel_id)
+
+
+func _sync_pause_panel_views() -> void:
+	if modal_host == null or not modal_host.has_method("panel_node") or not modal_host.has_panel("pause"):
+		return
+	var pause_panel = modal_host.panel_node("pause")
+	if pause_panel == null:
+		return
+	if pause_panel.has_method("set_advisor_view"):
+		pause_panel.set_advisor_view(GameState.advisor_view)
+	if pause_panel.has_method("set_knowledge_view"):
+		pause_panel.set_knowledge_view(GameState.knowledge_view)
+	if pause_panel.has_method("sync_from_game_state"):
+		pause_panel.sync_from_game_state()
+	if str(modal_host.active_panel_id()) == "pause" and pause_panel.has_method("open_menu"):
+		pause_panel.open_menu()
 
 
 func _capture_visual_proof(folder: String, prefix: String, include_world: bool) -> void:

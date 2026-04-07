@@ -122,6 +122,7 @@ static func flatten_campaign_response(data: Dictionary, current_map: Dictionary 
 	flattened["location"] = campaign_location
 	flattened["combat"] = campaign.get("combat", {})
 	flattened["conversation_state"] = campaign.get("conversation_state", {})
+	flattened["knowledge"] = campaign.get("knowledge", {})
 	var normalized_dialog := normalize_dialog(campaign)
 	if normalized_dialog.is_empty():
 		normalized_dialog = normalize_dialog(data)
@@ -152,6 +153,8 @@ static func flatten_campaign_response(data: Dictionary, current_map: Dictionary 
 	flattened["recent_event_log"] = campaign.get("recent_event_log", [])
 	flattened["active_quests"] = campaign.get("active_quests", [])
 	flattened["quest_offers"] = campaign.get("quest_offers", [])
+	flattened["advisor_view"] = data.get("advisor_view", {}) if data.has("advisor_view") and data["advisor_view"] is Dictionary else {}
+	flattened["knowledge_view"] = data.get("knowledge_view", {}) if data.has("knowledge_view") and data["knowledge_view"] is Dictionary else {}
 	flattened["ground_items"] = campaign.get("ground_items", [])
 	flattened["world_entities"] = campaign.get("world_entities", _entities_from_region(campaign.get("region", {})))
 	if campaign.has("map_data") and campaign["map_data"] is Dictionary:

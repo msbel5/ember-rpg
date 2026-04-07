@@ -1,0 +1,73 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/ask_dm_panel.gd" id="1"]
+
+[node name="AskDmPanel" type="PanelContainer"]
+script = ExtResource("1")
+
+[node name="AskMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="AskVBox" type="VBoxContainer" parent="AskMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="SummaryLabel" type="Label" parent="AskMargin/AskVBox"]
+layout_mode = 2
+autowrap_mode = 2
+text = "Consult the spoiler-safe advisor."
+
+[node name="InputRow" type="HBoxContainer" parent="AskMargin/AskVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PromptInput" type="LineEdit" parent="AskMargin/AskVBox/InputRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "What should I do next?"
+
+[node name="SubmitButton" type="Button" parent="AskMargin/AskVBox/InputRow"]
+layout_mode = 2
+text = "Ask DM"
+
+[node name="BlockersLabel" type="Label" parent="AskMargin/AskVBox"]
+layout_mode = 2
+autowrap_mode = 2
+text = ""
+
+[node name="AnswerText" type="RichTextLabel" parent="AskMargin/AskVBox"]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = false
+scroll_active = true
+text = "No advisor response yet."
+
+[node name="TopicSection" type="VBoxContainer" parent="AskMargin/AskVBox"]
+layout_mode = 2
+
+[node name="TopicTitle" type="Label" parent="AskMargin/AskVBox/TopicSection"]
+layout_mode = 2
+text = "Related Topics"
+
+[node name="TopicList" type="VBoxContainer" parent="AskMargin/AskVBox/TopicSection"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CommandSection" type="VBoxContainer" parent="AskMargin/AskVBox"]
+layout_mode = 2
+
+[node name="CommandTitle" type="Label" parent="AskMargin/AskVBox/CommandSection"]
+layout_mode = 2
+text = "Suggested Commands"
+
+[node name="CommandList" type="VBoxContainer" parent="AskMargin/AskVBox/CommandSection"]
+layout_mode = 2
+theme_override_constants/separation = 4

@@ -60,10 +60,10 @@ func _build_active_row(quest: Dictionary) -> Control:
 
 	var actions = HBoxContainer.new()
 	var turn_in_button = Button.new()
-	turn_in_button.text = "Turn In"
+	turn_in_button.text = "Report"
 	turn_in_button.disabled = _is_waiting
 	turn_in_button.pressed.connect(func() -> void:
-		command_requested.emit("turn in quest %s" % str(quest.get("title", quest.get("quest_id", ""))))
+		command_requested.emit("report %s" % str(quest.get("quest_id", quest.get("id", ""))))
 	)
 	actions.add_child(turn_in_button)
 	row.add_child(actions)
@@ -105,7 +105,7 @@ func _build_offer_row(offer: Dictionary) -> Control:
 	accept_button.disabled = _is_waiting or requires_talk_first
 	if not requires_talk_first:
 		accept_button.pressed.connect(func() -> void:
-			command_requested.emit("accept quest %s" % str(offer.get("title", offer.get("id", ""))))
+			command_requested.emit("accept %s" % str(offer.get("quest_id", offer.get("id", ""))))
 		)
 	actions.add_child(accept_button)
 	row.add_child(actions)

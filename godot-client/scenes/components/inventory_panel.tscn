@@ -4,6 +4,7 @@
 
 [node name="InventoryPanel" type="PanelContainer"]
 script = ExtResource("1")
+custom_minimum_size = Vector2(0, 320)
 
 [node name="InventoryMargin" type="MarginContainer" parent="."]
 layout_mode = 2
@@ -26,7 +27,9 @@ text = "Gold: 0"
 [node name="SummaryLabel" type="Label" parent="InventoryMargin/InventoryVBox"]
 layout_mode = 2
 text = "0 item(s)"
+autowrap_mode = 2
 
 [node name="ItemGrid" type="GridContainer" parent="InventoryMargin/InventoryVBox"]
 layout_mode = 2
-columns = 3
+size_flags_vertical = 3
+columns = 1

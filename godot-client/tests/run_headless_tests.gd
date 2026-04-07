@@ -887,12 +887,22 @@ func _test_ui_panels() -> void:
 	var session_instance = session_scene.instantiate()
 	root.add_child(session_instance)
 	await process_frame
-	var initial_defend_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/SettlementPanel/SettlementMargin/SettlementVBox/QuickActions/DefendButton")
-	_assert_true(initial_defend_button.disabled, "Settlement quick actions stay disabled until settlement data is available")
+	var modal_host = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar")
 	var sidebar_nav = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav")
 	var sidebar_tabs = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs")
-	_assert_true(sidebar_nav.get_child_count() >= 6, "GameSession exposes visible sidebar navigation buttons instead of relying on hidden tab discovery")
-	_assert_true(not sidebar_tabs.tabs_visible, "GameSession hides the built-in tab strip once explicit sidebar navigation is installed")
+	var initial_defend_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/SettlementPanel/SettlementMargin/SettlementVBox/QuickActions/DefendButton")
+	var map_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/ShellFrame/ShellMargin/ShellVBox/PanelRowOne/MapButton")
+	var menu_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/ShellFrame/ShellMargin/ShellVBox/PanelRowTwo/MenuButton")
+	_assert_true(initial_defend_button.disabled, "Settlement quick actions stay disabled until settlement data is available")
+	_assert_true(not modal_host.visible, "Modal host starts hidden until the rail opens a panel")
+	_assert_true(not sidebar_nav.visible, "Legacy sidebar navigation remains inert and hidden")
+	_assert_true(not sidebar_tabs.tabs_visible, "GameSession keeps the built-in tab strip hidden under the modal host")
+	map_button.pressed.emit()
+	await process_frame
+	_assert_true(modal_host.visible and modal_host.active_panel_id() == "map", "Instrument rail opens the map through the modal host")
+	map_button.pressed.emit()
+	await process_frame
+	_assert_true(not modal_host.visible, "Pressing the active rail panel button closes the modal host")
 	var minimap_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/SummaryLabel")
 	var minimap_intel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/IntelText")
 	_assert_true(minimap_summary.text.contains("No live survey"), "Minimap panel labels missing map data explicitly")
@@ -951,6 +961,17 @@ func _test_ui_panels() -> void:
 		],
 		"ground_items": [{"id": "bread_1", "entity_type": "item"}],
 		"items": [{"name": "Bread"}, {"name": "Potion"}],
+		"advisor_view": {
+			"answer_lines": ["The guard seems cautious.", "Ask about work for a grounded lead."],
+			"related_topic_ids": ["rumor.harbor_work"],
+			"suggested_commands": ["talk harbor guard"],
+		},
+		"knowledge_view": {
+			"topic": {"topic_id": "rumor.harbor_work", "label": "Harbor Work", "category": "rumor"},
+			"facts": ["The harbor guard watches the gate rotation."],
+			"rumors": ["Quartermaster jobs often start at dawn."],
+			"topics": [{"topic_id": "rumor.harbor_work", "label": "Harbor Work"}],
+		},
 		"narrative": "You steady your breath in the harbor square.",
 	})
 	await process_frame
@@ -1111,7 +1132,44 @@ func _test_ui_panels() -> void:
 		and str(focus_action_two.tooltip_text).contains("Attack"),
 		"Command bar uses tooltips to carry target-specific intent while the visible shell stays compact"
 	)
+	var requested_panels: Array[String] = []
+	command_bar.panel_requested.connect(func(panel_id: String) -> void:
+		requested_panels.append(panel_id)
+	)
+	menu_button.pressed.emit()
+	await process_frame
+	var pause_menu = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu")
+	_assert_true(modal_host.has_panel("pause") and pause_menu != null, "Modal host owns the pause intelligence surface")
+	var pause_tabs = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs")
+	var ask_dm_answer = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/AskDmPanel/AskMargin/AskVBox/AnswerText")
+	var think_facts = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/ThinkPanel/ThinkMargin/ThinkVBox/Columns/FactsPanel/FactsMargin/FactsText")
+	var think_rumors = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/ThinkPanel/ThinkMargin/ThinkVBox/Columns/RumorsPanel/RumorsMargin/RumorsText")
+	var think_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ActionRow/ThinkButton")
+	_assert_true(not pause_tabs.tabs_visible, "Pause menu keeps Ask DM and Think under a single owned surface")
+	_assert_true(ask_dm_answer.text.contains("guard seems cautious"), "Ask DM renders only the live advisor_view answer lines")
+	think_button.pressed.emit()
+	await process_frame
+	_assert_true(pause_tabs.current_tab == 1, "Pause menu switches to Think without leaving the modal host")
+	_assert_true(think_facts.text.contains("gate rotation"), "Think panel renders knowledge_view facts")
+	_assert_true(think_rumors.text.contains("Quartermaster jobs"), "Think panel renders knowledge_view rumors")
+	menu_button.pressed.emit()
+	await process_frame
+	_assert_true(not modal_host.visible, "The active pause rail button closes the modal host cleanly")
 	var dialog_overlay = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay")
+	game_state.conversation_state = {
+		"npc_id": "guard_1",
+		"npc_name": "Harbor Guard",
+		"ask_about_topic_ids": ["rumor.harbor_work", "faction.harbor_guard"],
+		"ask_about_selected_topic_id": "rumor.harbor_work",
+		"transcript": [
+			{"speaker": "Harbor Guard", "text": "State your business."},
+			{"speaker": "You", "text": "Looking for work."},
+		],
+	}
+	var structured_dialog_actions: Array = []
+	dialog_overlay.structured_action_requested.connect(func(shortcut: String, args: Dictionary, history_text: String) -> void:
+		structured_dialog_actions.append({"shortcut": shortcut, "args": args.duplicate(true), "history_text": history_text})
+	)
 	dialog_overlay.show_dialog("Harbor Guard", "State your business.", [
 		{"text": "Ask about work", "command": "ask about work", "available": true},
 		{"text": "Probe for rumors", "command": "ask about rumors", "check": "INS 12", "available": false},
@@ -1119,7 +1177,21 @@ func _test_ui_panels() -> void:
 	await process_frame
 	_assert_true(dialog_overlay.visible, "Dialog overlay becomes visible when dialog payload is shown")
 	var dialog_option = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/OptionsScroll/OptionsContainer/OptionButton0")
+	var ask_about_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/ActionRow/AskAboutButton")
+	var transcript_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/ActionRow/TranscriptButton")
+	var trade_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/ActionRow/TradeButton")
 	_assert_true(dialog_option.text.contains("Ask about work"), "Dialog overlay renders named semantic option buttons")
+	_assert_true(not ask_about_button.disabled and transcript_button.visible and not transcript_button.disabled, "Dialog overlay exposes Ask About and Transcript from live conversation state")
+	_assert_true(not trade_button.visible, "Dialog overlay keeps Trade hidden until a verified live store route exists")
+	ask_about_button.pressed.emit()
+	await process_frame
+	var topic_confirm = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/TopicProbeModal/ModalMargin/ModalVBox/FooterRow/ConfirmButton")
+	topic_confirm.pressed.emit()
+	await process_frame
+	var ask_about_request: Dictionary = structured_dialog_actions[-1] if not structured_dialog_actions.is_empty() else {}
+	_assert_true(ask_about_request.get("shortcut", "") == "dialog", "Ask About emits the structured dialog shortcut")
+	_assert_true(ask_about_request.get("args", {}).get("action_id", "") == "ask_about", "Ask About emits dialog.ask_about")
+	_assert_true(ask_about_request.get("args", {}).get("topic_id", "") == "rumor.harbor_work", "Ask About keeps the selected canonical topic id")
 	dialog_overlay.hide_dialog()
 	await process_frame
 	_assert_true(not dialog_overlay.visible, "Dialog overlay hides cleanly after close")
@@ -1201,6 +1273,7 @@ func _test_ui_panels() -> void:
 	})
 	await process_frame
 	_assert_true(combat_attack_button.disabled, "Combat attack disables when it is not the player's turn")
+	_assert_true(not modal_host.visible, "Modal host stays closed while combat is active")
 
 	var active_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/ActiveList")
 	var offer_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/OfferList")

@@ -22,6 +22,9 @@ var location: String = ""
 var combat_state: Dictionary = {}
 var travel_state: Dictionary = {}
 var crime_state: Dictionary = {}
+var knowledge: Dictionary = {}
+var advisor_view: Dictionary = {}
+var knowledge_view: Dictionary = {}
 var conversation_state: Dictionary = {}
 var dialog_npc: String = ""
 var dialog_text: String = ""
@@ -76,6 +79,9 @@ signal settlement_updated(settlement: Dictionary)
 signal creation_updated(state: Dictionary)
 signal character_sheet_updated(sheet: Dictionary)
 signal dialog_state_changed(dialog_payload: Dictionary)
+signal knowledge_updated(knowledge_payload: Dictionary)
+signal advisor_view_updated(payload: Dictionary)
+signal knowledge_view_updated(payload: Dictionary)
 
 func update_from_response(data: Dictionary) -> void:
 	if data.has("creation_id"):
@@ -132,6 +138,15 @@ func update_from_response(data: Dictionary) -> void:
 		travel_state = data["travel_state"] if data["travel_state"] is Dictionary else {}
 	if data.has("crime_state"):
 		crime_state = data["crime_state"] if data["crime_state"] is Dictionary else {}
+	if data.has("knowledge") and data["knowledge"] is Dictionary:
+		knowledge = data["knowledge"]
+		knowledge_updated.emit(knowledge)
+	if data.has("advisor_view") and data["advisor_view"] is Dictionary:
+		advisor_view = data["advisor_view"]
+		advisor_view_updated.emit(advisor_view)
+	if data.has("knowledge_view") and data["knowledge_view"] is Dictionary:
+		knowledge_view = data["knowledge_view"]
+		knowledge_view_updated.emit(knowledge_view)
 	if data.has("game_state_root") and data["game_state_root"] is Dictionary:
 		campaign_game_state = data["game_state_root"]
 	if data.has("actor_roster") and data["actor_roster"] is Array:
@@ -281,6 +296,9 @@ func reset() -> void:
 	combat_state = {}
 	travel_state = {}
 	crime_state = {}
+	knowledge = {}
+	advisor_view = {}
+	knowledge_view = {}
 	conversation_state = {}
 	_apply_dialog_payload({})
 	narrative_history.clear()

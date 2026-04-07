@@ -4,6 +4,7 @@
 
 [node name="MinimapPanel" type="PanelContainer"]
 script = ExtResource("1")
+custom_minimum_size = Vector2(0, 360)
 
 [node name="MinimapMargin" type="MarginContainer" parent="."]
 layout_mode = 2
@@ -24,6 +25,13 @@ layout_mode = 2
 text = "No map loaded"
 autowrap_mode = 2
 
+[node name="MapTexture" type="TextureRect" parent="MinimapMargin/MinimapVBox"]
+custom_minimum_size = Vector2(0, 132)
+layout_mode = 2
+size_flags_vertical = 1
+expand_mode = 1
+stretch_mode = 5
+
 [node name="RoutesLabel" type="Label" parent="MinimapMargin/MinimapVBox"]
 layout_mode = 2
 text = "Routes"
@@ -39,9 +47,3 @@ size_flags_vertical = 3
 bbcode_enabled = true
 fit_content = false
 scroll_active = true
-
-[node name="MapTexture" type="TextureRect" parent="MinimapMargin/MinimapVBox"]
-custom_minimum_size = Vector2(0, 58)
-layout_mode = 2
-expand_mode = 1
-stretch_mode = 5

@@ -4,6 +4,7 @@
 
 [node name="CharacterPanel" type="PanelContainer"]
 script = ExtResource("1")
+custom_minimum_size = Vector2(0, 340)
 
 [node name="CharacterMargin" type="MarginContainer" parent="."]
 layout_mode = 2
@@ -35,14 +36,17 @@ size_flags_horizontal = 3
 [node name="SummaryLabel" type="Label" parent="CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox"]
 layout_mode = 2
 text = "No active character"
+autowrap_mode = 2
 
 [node name="RoleLabel" type="Label" parent="CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox"]
 layout_mode = 2
 text = "Class | Alignment"
+autowrap_mode = 2
 
 [node name="VitalsLabel" type="Label" parent="CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox"]
 layout_mode = 2
 text = "HP 0/0  |  Turn idle"
+autowrap_mode = 2
 
 [node name="StatsText" type="RichTextLabel" parent="CharacterMargin/CharacterVBox"]
 layout_mode = 2
@@ -50,3 +54,4 @@ size_flags_vertical = 3
 bbcode_enabled = true
 fit_content = false
 scroll_active = true
+custom_minimum_size = Vector2(0, 228)

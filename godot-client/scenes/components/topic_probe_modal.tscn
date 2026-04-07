@@ -1,0 +1,82 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/topic_probe_modal.gd" id="1"]
+
+[node name="TopicProbeModal" type="PanelContainer"]
+visible = false
+script = ExtResource("1")
+
+[node name="ModalMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="ModalVBox" type="VBoxContainer" parent="ModalMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="HeaderRow" type="HBoxContainer" parent="ModalMargin/ModalVBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="ModalMargin/ModalVBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Ask About"
+
+[node name="SummaryLabel" type="Label" parent="ModalMargin/ModalVBox"]
+layout_mode = 2
+autowrap_mode = 2
+text = "0 discovered topic(s) available."
+
+[node name="BodyRow" type="HBoxContainer" parent="ModalMargin/ModalVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="TopicScroll" type="ScrollContainer" parent="ModalMargin/ModalVBox/BodyRow"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TopicList" type="VBoxContainer" parent="ModalMargin/ModalVBox/BodyRow/TopicScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="DetailPanel" type="PanelContainer" parent="ModalMargin/ModalVBox/BodyRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="DetailMargin" type="MarginContainer" parent="ModalMargin/ModalVBox/BodyRow/DetailPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="DetailText" type="RichTextLabel" parent="ModalMargin/ModalVBox/BodyRow/DetailPanel/DetailMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = false
+scroll_active = true
+text = "Select a topic."
+
+[node name="FooterRow" type="HBoxContainer" parent="ModalMargin/ModalVBox"]
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 8
+
+[node name="ConfirmButton" type="Button" parent="ModalMargin/ModalVBox/FooterRow"]
+layout_mode = 2
+text = "Ask"
+
+[node name="CloseButton" type="Button" parent="ModalMargin/ModalVBox/FooterRow"]
+layout_mode = 2
+text = "Close"

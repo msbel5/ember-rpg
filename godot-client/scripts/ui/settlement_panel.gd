@@ -16,12 +16,8 @@ func _ready() -> void:
 	defend_button.pressed.connect(func() -> void:
 		command_requested.emit("defend")
 	)
-	harvest_button.pressed.connect(func() -> void:
-		command_requested.emit("designate harvest")
-	)
-	build_button.pressed.connect(func() -> void:
-		command_requested.emit("build house")
-	)
+	harvest_button.visible = false
+	build_button.visible = false
 	GameState.state_updated.connect(_refresh)
 	GameState.settlement_updated.connect(_on_settlement_updated)
 	_refresh()
@@ -31,8 +27,8 @@ func set_waiting(waiting: bool) -> void:
 	_is_waiting = waiting
 	var disable_actions = waiting or GameState.settlement_state.is_empty()
 	defend_button.disabled = disable_actions
-	harvest_button.disabled = disable_actions
-	build_button.disabled = disable_actions
+	harvest_button.disabled = true
+	build_button.disabled = true
 
 
 func _on_settlement_updated(_settlement: Dictionary) -> void:
@@ -63,6 +59,7 @@ func _refresh() -> void:
 	_append_section("Jobs", _job_lines(jobs))
 	_append_section("Stockpiles", _stockpile_lines(stockpiles))
 	_append_section("Alerts", _alert_lines(alerts))
+	_append_section("Actions", _action_lines(settlement))
 	set_waiting(_is_waiting)
 
 
@@ -119,3 +116,20 @@ func _alert_lines(alerts: Array) -> Array[String]:
 	for alert in alerts:
 		lines.append(str(alert))
 	return lines
+
+
+func _action_lines(settlement: Dictionary) -> Array[String]:
+	var lines: Array[String] = []
+	lines.append("Defend is always available while a live settlement is active.")
+	var action_ids = settlement.get("available_actions", [])
+	if action_ids is Array:
+		for action_id in action_ids:
+			var normalized := str(action_id).strip_edges()
+			if normalized.is_empty() or normalized == "defend":
+				continue
+			lines.append(_humanize_action(normalized))
+	return lines
+
+
+func _humanize_action(action_id: String) -> String:
+	return action_id.replace("_", " ").capitalize()

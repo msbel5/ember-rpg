@@ -1,19 +1,14 @@
-[gd_scene load_steps=15 format=3 uid="uid://cgamesession"]
+[gd_scene load_steps=11 format=3 uid="uid://cgamesession"]
 
 [ext_resource type="Script" path="res://scenes/game_session.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/world/world_view.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/world/tilemap_controller.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/world/entity_layer.gd" id="4"]
 [ext_resource type="Script" path="res://scripts/world/camera_controller.gd" id="5"]
-[ext_resource type="PackedScene" path="res://scenes/components/narrative_panel.tscn" id="7"]
-[ext_resource type="PackedScene" path="res://scenes/components/inventory_panel.tscn" id="8"]
-[ext_resource type="PackedScene" path="res://scenes/components/minimap_panel.tscn" id="9"]
-[ext_resource type="PackedScene" path="res://scenes/components/command_bar.tscn" id="10"]
+[ext_resource type="PackedScene" path="res://scenes/components/instrument_rail.tscn" id="10"]
 [ext_resource type="Script" path="res://scripts/world/selection_overlay.gd" id="11"]
-[ext_resource type="PackedScene" path="res://scenes/components/quest_panel.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://scenes/components/modal_host.tscn" id="12"]
 [ext_resource type="PackedScene" path="res://scenes/components/save_load_panel.tscn" id="14"]
-[ext_resource type="PackedScene" path="res://scenes/components/settlement_panel.tscn" id="15"]
-[ext_resource type="PackedScene" path="res://scenes/components/character_panel.tscn" id="16"]
 
 [node name="GameSession" type="Control"]
 layout_mode = 3
@@ -46,17 +41,20 @@ grow_vertical = 2
 [node name="MainVBox" type="VBoxContainer" parent="MainMargin"]
 layout_mode = 2
 
-[node name="ContentSplit" type="HSplitContainer" parent="MainMargin/MainVBox"]
+[node name="ContentSplit" type="Control" parent="MainMargin/MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 772
 
 [node name="WorldPane" type="PanelContainer" parent="MainMargin/MainVBox/ContentSplit"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 custom_minimum_size = Vector2(720, 0)
 size_flags_horizontal = 3
 size_flags_vertical = 3
-size_flags_stretch_ratio = 1.9
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="WorldViewportContainer" type="SubViewportContainer" parent="MainMargin/MainVBox/ContentSplit/WorldPane"]
 layout_mode = 2
@@ -89,43 +87,20 @@ position_smoothing_enabled = true
 position_smoothing_speed = 10.0
 script = ExtResource("5")
 
-[node name="Sidebar" type="VBoxContainer" parent="MainMargin/MainVBox/ContentSplit"]
-layout_mode = 2
-custom_minimum_size = Vector2(340, 0)
-size_flags_horizontal = 3
-size_flags_vertical = 3
-size_flags_stretch_ratio = 0.95
-theme_override_constants/separation = 8
-
-[node name="SidebarNav" type="HBoxContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 6
-
-[node name="SidebarTabs" type="TabContainer" parent="MainMargin/MainVBox/ContentSplit/Sidebar"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-tab_alignment = 1
-
-[node name="NarrativePanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("7")]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="CharacterPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("16")]
-layout_mode = 2
-
-[node name="SettlementPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("15")]
-layout_mode = 2
-
-[node name="QuestPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("12")]
-layout_mode = 2
-
-[node name="InventoryPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("8")]
-layout_mode = 2
-
-[node name="MinimapPanel" parent="MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs" instance=ExtResource("9")]
-layout_mode = 2
+[node name="Sidebar" parent="MainMargin/MainVBox/ContentSplit" instance=ExtResource("12")]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.56
+anchor_top = 0.04
+anchor_right = 0.985
+anchor_bottom = 0.94
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="CommandBar" parent="MainMargin/MainVBox" instance=ExtResource("10")]
 layout_mode = 2

@@ -27,7 +27,7 @@ func _refresh() -> void:
 	if sheet.is_empty():
 		summary_label.text = "No active character"
 		role_label.text = "Role unavailable"
-		vitals_label.text = "No vitals available"
+		vitals_label.text = "No canonical sheet metadata"
 		portrait_rect.texture = null
 		stats_text.clear()
 		stats_text.text = "Character sheet data will appear here."
@@ -38,7 +38,7 @@ func _refresh() -> void:
 		str(sheet.get("class_name", sheet.get("class", "Adventurer"))),
 		str(sheet.get("alignment", "TN")),
 	]
-	vitals_label.text = _build_vitals_text()
+	vitals_label.text = _build_sheet_summary(sheet)
 	portrait_rect.texture = EntitySpriteCatalog.resolve_texture(_resolve_template_name(sheet))
 	stats_text.clear()
 	stats_text.text = _build_sheet_text(sheet)
@@ -117,20 +117,23 @@ func _build_sheet_text(sheet: Dictionary) -> String:
 	return "\n".join(lines)
 
 
-func _build_vitals_text() -> String:
-	var hp = _int_value(GameState.player.get("hp", 0), 0)
-	var max_hp = _int_value(GameState.player.get("max_hp", hp), hp)
-	var turn_resources: Dictionary = GameState.player.get("turn_resources", {})
-	if turn_resources.is_empty():
-		return "HP %d/%d  |  Turn idle" % [hp, maxi(max_hp, hp)]
-	return "HP %d/%d  |  %s  |  %s  |  Move %d/%d" % [
-		hp,
-		maxi(max_hp, hp),
-		"Action ready" if bool(turn_resources.get("action_available", false)) else "Action spent",
-		"Bonus ready" if bool(turn_resources.get("bonus_action_available", false)) else "Bonus spent",
-		int(turn_resources.get("movement_remaining", 0)),
-		int(turn_resources.get("speed", 0)),
-	]
+func _build_sheet_summary(sheet: Dictionary) -> String:
+	var summary_parts: Array[String] = []
+	var level_value = sheet.get("level", sheet.get("character_level", null))
+	if level_value != null:
+		summary_parts.append("Level %d" % _int_value(level_value, 1))
+	var xp_value = sheet.get("xp", sheet.get("experience", null))
+	if xp_value != null:
+		summary_parts.append("XP %d" % _int_value(xp_value, 0))
+	var origin_text := str(sheet.get("origin", sheet.get("background", sheet.get("homeland", "")))).strip_edges()
+	if not origin_text.is_empty():
+		summary_parts.append(origin_text)
+	var injuries = sheet.get("injuries", [])
+	if injuries is Array and not injuries.is_empty():
+		summary_parts.append("%d injury" % injuries.size())
+	if summary_parts.is_empty():
+		return "Canonical sheet synced"
+	return "  |  ".join(summary_parts)
 
 
 func _resolve_template_name(sheet: Dictionary) -> String:

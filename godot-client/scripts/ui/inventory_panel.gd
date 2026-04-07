@@ -24,7 +24,7 @@ func _refresh() -> void:
 		inventory = GameState.player["inventory"]
 
 	gold_label.text = "Gold: %d" % int(GameState.player.get("gold", 0))
-	summary_label.text = "%d item(s)" % inventory.size()
+	summary_label.text = "%d item(s) ready for inspection" % inventory.size()
 
 	for child in item_grid.get_children():
 		child.queue_free()
@@ -38,11 +38,18 @@ func _refresh() -> void:
 
 	for entry in inventory:
 		var item_name = str(entry.get("name", entry)) if entry is Dictionary else str(entry)
+		var item_ref = item_name.to_lower()
+		if entry is Dictionary:
+			item_ref = str(entry.get("item_id", entry.get("item_def_id", item_name))).strip_edges().to_lower()
 		var slot = Button.new()
-		slot.custom_minimum_size = Vector2(84, 28)
+		slot.custom_minimum_size = Vector2(84, 42)
+		slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		slot.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		slot.text = item_name
-		slot.tooltip_text = "Examine %s and decide whether it matters." % item_name
+		if entry is Dictionary and entry.has("quantity"):
+			slot.text += "  ×%d" % int(entry.get("quantity", 1))
+		slot.tooltip_text = "Examine %s using the canonical inventory command." % item_name
 		slot.pressed.connect(func() -> void:
-			command_requested.emit("examine %s" % item_name.to_lower())
+			command_requested.emit("examine %s" % item_ref)
 		)
 		item_grid.add_child(slot)

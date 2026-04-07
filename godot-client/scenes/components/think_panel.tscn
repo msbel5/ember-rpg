@@ -1,0 +1,103 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/think_panel.gd" id="1"]
+
+[node name="ThinkPanel" type="PanelContainer"]
+script = ExtResource("1")
+
+[node name="ThinkMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="ThinkVBox" type="VBoxContainer" parent="ThinkMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="SummaryLabel" type="Label" parent="ThinkMargin/ThinkVBox"]
+layout_mode = 2
+autowrap_mode = 2
+text = "Thread discovered knowledge."
+
+[node name="InputRow" type="HBoxContainer" parent="ThinkMargin/ThinkVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="QueryInput" type="LineEdit" parent="ThinkMargin/ThinkVBox/InputRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "topic id or label"
+
+[node name="ThinkButton" type="Button" parent="ThinkMargin/ThinkVBox/InputRow"]
+layout_mode = 2
+text = "Think"
+
+[node name="TopicLabel" type="Label" parent="ThinkMargin/ThinkVBox"]
+layout_mode = 2
+autowrap_mode = 2
+text = "No topic selected"
+
+[node name="BlockersLabel" type="Label" parent="ThinkMargin/ThinkVBox"]
+layout_mode = 2
+autowrap_mode = 2
+text = ""
+
+[node name="Columns" type="HBoxContainer" parent="ThinkMargin/ThinkVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="FactsPanel" type="PanelContainer" parent="ThinkMargin/ThinkVBox/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="FactsMargin" type="MarginContainer" parent="ThinkMargin/ThinkVBox/Columns/FactsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="FactsText" type="RichTextLabel" parent="ThinkMargin/ThinkVBox/Columns/FactsPanel/FactsMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = false
+scroll_active = true
+text = "No confirmed facts."
+
+[node name="RumorsPanel" type="PanelContainer" parent="ThinkMargin/ThinkVBox/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RumorsMargin" type="MarginContainer" parent="ThinkMargin/ThinkVBox/Columns/RumorsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="RumorsText" type="RichTextLabel" parent="ThinkMargin/ThinkVBox/Columns/RumorsPanel/RumorsMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = false
+scroll_active = true
+text = "No rumors."
+
+[node name="TopicsSection" type="VBoxContainer" parent="ThinkMargin/ThinkVBox"]
+layout_mode = 2
+
+[node name="TopicsTitle" type="Label" parent="ThinkMargin/ThinkVBox/TopicsSection"]
+layout_mode = 2
+text = "Known Topics"
+
+[node name="TopicsList" type="VBoxContainer" parent="ThinkMargin/ThinkVBox/TopicsSection"]
+layout_mode = 2
+theme_override_constants/separation = 4
