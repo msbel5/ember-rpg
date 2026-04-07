@@ -10,9 +10,8 @@ from engine.kernel.actor_items import (
     ItemStack,
     canonical_equipment_slot,
     canonical_slot_for_item_payload,
-    item_stack_from_legacy_payload,
+    item_stack_from_payload,
     preferred_storage_slot_for_item,
-    storage_slots_for_canonical_slot,
 )
 from engine.kernel.effects import EffectDef, tick_effects
 from engine.kernel.spells import SpellDef, SpellSlot, Spellbook, begin_casting, resolve_cast, tick_casting
@@ -39,7 +38,7 @@ def add_inventory_item(
         item_payload = dict(payload)
         item_payload["quantity"] = 1
         item_payload["instance_id"] = f"{instance_prefix}_{uuid.uuid4().hex[:8]}"
-        stack = item_stack_from_legacy_payload(item_payload)
+        stack = item_stack_from_payload(item_payload)
         actor.inventory.append(stack)
         created.append(stack)
     return created
@@ -203,10 +202,8 @@ def equip_inventory_item(actor: ActorRecord, *, item: ItemStack, slot: str) -> l
     )
     if canonical_slot is None:
         raise ValueError("item is not equippable in the canonical wearable topology")
-    storage_slot = requested_slot
-    if requested_slot == canonical_slot:
-        storage_slot = preferred_storage_slot_for_item(canonical_slot, payload)
-    alias_slots = storage_slots_for_canonical_slot(canonical_slot)
+    storage_slot = preferred_storage_slot_for_item(canonical_slot, payload, requested_slot=requested_slot)
+    alias_slots = [storage_slot]
     existing: list[ItemStack] = []
     for alias_slot in alias_slots:
         existing.extend(actor.equipment.slots.get(alias_slot, []))
@@ -225,12 +222,10 @@ def equip_inventory_item(actor: ActorRecord, *, item: ItemStack, slot: str) -> l
                 }
             )
     actor.equipment.slots[storage_slot] = [item]
-    item.payload["equipped_slot"] = storage_slot
     item.payload["canonical_slot"] = canonical_slot
-    if storage_slot != canonical_slot:
-        item.payload["legacy_slot"] = storage_slot
-    else:
-        item.payload.pop("legacy_slot", None)
+    item.payload["slot"] = canonical_slot
+    item.payload["equipped_slot"] = canonical_slot
+    item.payload.pop("equip_slot", None)
     if item in actor.inventory:
         actor.inventory.remove(item)
     events.append({"type": "equipped", "item_id": item.instance_id, "slot": storage_slot, "canonical_slot": canonical_slot})
@@ -240,7 +235,7 @@ def equip_inventory_item(actor: ActorRecord, *, item: ItemStack, slot: str) -> l
 def unequip_actor_slot(actor: ActorRecord, *, slot: str) -> list[dict[str, Any]]:
     requested_slot = str(slot).strip()
     canonical_slot = canonical_equipment_slot(requested_slot)
-    slots_to_clear = storage_slots_for_canonical_slot(canonical_slot) if canonical_slot is not None else [requested_slot]
+    slots_to_clear = [canonical_slot] if canonical_slot is not None else [requested_slot]
     items: list[ItemStack] = []
     for slot_name in slots_to_clear:
         items.extend(actor.equipment.slots.get(slot_name, []))
@@ -249,9 +244,9 @@ def unequip_actor_slot(actor: ActorRecord, *, slot: str) -> list[dict[str, Any]]
     for slot_name in slots_to_clear:
         actor.equipment.slots[slot_name] = []
     for item in items:
-        item.payload.pop("equipped_slot", None)
         item.payload.pop("canonical_slot", None)
-        item.payload.pop("legacy_slot", None)
+        item.payload.pop("equipped_slot", None)
+        item.payload.pop("equip_slot", None)
         actor.inventory.append(item)
     return [
         {

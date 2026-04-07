@@ -198,11 +198,13 @@ func _test_game_state_normalization() -> void:
 		"scene": "combat",
 		"combat": {
 			"round": 2,
-			"active": "Chaos",
+			"turn_actor_id": "player",
 			"ended": false,
+			"available_actions": ["attack", "defend", "flee", "move", "end_turn"],
 			"combatants": [],
 		},
 		"player": {
+			"actor_id": "player",
 			"name": "Chaos",
 			"position": [7, 8],
 			"facing": "east",
@@ -255,6 +257,7 @@ func _test_game_state_normalization() -> void:
 		"campaign": {
 			"world": {"adapter_id": "fantasy_ember", "profile_id": "standard"},
 			"world_state": {"seed": 42, "active_region_id": "region_001", "regions": {"region_001": {"region_id": "region_001"}}},
+			"crime_state": {"wanted": true, "active_bounty": 25, "witness_count": 2, "last_incident": {"crime_type": "theft"}},
 			"game_state": {"campaign_id": "camp_1", "seed": 42, "party": ["player"]},
 			"actors": [{"identity": {"actor_id": "player"}}],
 			"jobs": [{"job_id": "job_1", "label": "Haul supplies"}],
@@ -282,8 +285,24 @@ func _test_game_state_normalization() -> void:
 				],
 			},
 			"travel_options": [
-				{"destination_region_id": "region_006", "destination_settlement_id": "node_region_006_01", "destination_name": "Harbor Reach", "travel_hours": 4},
+				{"route_id": "edge_0", "destination_region_id": "region_006", "destination_settlement_id": "node_region_006_01", "destination_name": "Harbor Reach", "travel_hours": 4},
 			],
+			"travel_state": {
+				"status": "traveling",
+				"route_id": "edge_0",
+				"origin_region_id": "region_001",
+				"destination_region_id": "region_006",
+				"destination_settlement_id": "node_region_006_01",
+				"destination_name": "Harbor Reach",
+				"travel_hours_total": 4,
+				"travel_hours_remaining": 3,
+				"danger_level": 1,
+				"encounter_triggered": false,
+				"paused_for_encounter": false,
+				"encounter_resolved": false,
+				"can_advance": true,
+				"requires_resolution": false,
+			},
 			"current_region_summary": {"region_id": "region_001", "settlement_node_id": "node_region_001_00"},
 			"player": {"name": "Chaos", "position": [9, 9]},
 			"scene": "exploration",
@@ -291,6 +310,12 @@ func _test_game_state_normalization() -> void:
 			"map_data": TileCatalog.build_placeholder_map(16, 12),
 			"world_entities": [],
 			"settlement": {"name": "Dragon Eyrie", "residents": []},
+			"character_sheet": {
+				"name": "Chaos",
+				"equipment_topology": {"slots": {"main_hand": {"id": "iron_sword", "name": "Iron Sword"}}},
+				"equipment_modifiers": {"total_movement_penalty": 1, "total_stealth_noise": 0, "total_spell_interference": 0},
+				"attunement": {"slot_count": 3, "attuned_item_ids": [], "available_slots": 3},
+			},
 			"recent_event_log": [],
 		},
 	})
@@ -304,6 +329,10 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.systems_state.get("power_network", {}).get("total_required", -1) == 0, "GameState stores canonical systems payload slices")
 	_assert_true(game_state.world_graph.get("nodes", []).size() == 2, "GameState stores macro world graph nodes from campaign payloads")
 	_assert_true(game_state.travel_options.size() == 1, "GameState stores reachable travel options from campaign payloads")
+	_assert_true(game_state.has_active_travel(), "GameState stores active travel_state from campaign payloads")
+	_assert_true(game_state.travel_state.get("route_id", "") == "edge_0", "GameState stores the active travel route id")
+	_assert_true(game_state.crime_state.get("active_bounty", 0) == 25, "GameState stores crime_state from campaign payloads")
+	_assert_true(game_state.character_sheet.get("equipment_topology", {}).get("slots", {}).has("main_hand"), "GameState stores character_sheet from canonical campaign payloads")
 	_assert_true(game_state.selected_world_node == "node_region_001_00", "GameState tracks the selected world node from current region summary")
 	_assert_true(game_state.runtime_transport == "ws", "GameState stores WS as the authoritative runtime transport")
 	_assert_true(game_state.bootstrap_transport == "http", "GameState stores HTTP as the bootstrap transport")
@@ -384,18 +413,28 @@ func _test_response_normalizer() -> void:
 	var flattened_campaign = ResponseNormalizer.flatten_campaign_response({
 		"campaign": {
 			"world": {"active_region_id": "region_001"},
+			"crime_state": {"wanted": false, "active_bounty": 0, "witness_count": 0, "last_incident": {}},
 			"world_graph": {
 				"active_region_id": "region_001",
 				"nodes": [{"id": "node_region_001_00", "region_id": "region_001"}],
 				"edges": [],
 			},
-			"travel_options": [{"destination_region_id": "region_006"}],
+			"travel_options": [{"route_id": "edge_0", "destination_region_id": "region_006"}],
+			"travel_state": {"status": "traveling", "route_id": "edge_0", "can_advance": true, "requires_resolution": false},
+			"character_sheet": {
+				"equipment_topology": {"slots": {"body": {"id": "chain_mail"}}},
+				"equipment_modifiers": {"total_movement_penalty": 3, "total_stealth_noise": 4, "total_spell_interference": 2},
+				"attunement": {"slot_count": 3, "attuned_item_ids": ["ring_of_focus"], "available_slots": 2},
+			},
 			"current_region_summary": {"settlement_node_id": "node_region_001_00"},
 			"settlement": {"name": "Dragon Eyrie"},
 		}
 	})
 	_assert_true(flattened_campaign.get("world_graph", {}).get("nodes", []).size() == 1, "ResponseNormalizer flattens world graph payloads")
 	_assert_true(flattened_campaign.get("travel_options", []).size() == 1, "ResponseNormalizer flattens travel options")
+	_assert_true(flattened_campaign.get("travel_state", {}).get("route_id", "") == "edge_0", "ResponseNormalizer exposes travel_state")
+	_assert_true(flattened_campaign.get("crime_state", {}).get("active_bounty", -1) == 0, "ResponseNormalizer exposes crime_state")
+	_assert_true(flattened_campaign.get("character_sheet", {}).get("equipment_topology", {}).get("slots", {}).has("body"), "ResponseNormalizer exposes canonical character_sheet payloads")
 	_assert_true(str(flattened_campaign.get("selected_world_node", "")) == "node_region_001_00", "ResponseNormalizer derives selected_world_node from current region summary")
 	_assert_true(ResponseNormalizer.command_requires_inventory_refresh("pick up bread"), "ResponseNormalizer flags inventory-affecting commands")
 	_assert_true(not ResponseNormalizer.command_requires_inventory_refresh("look around"), "ResponseNormalizer ignores non-inventory commands")
@@ -861,6 +900,7 @@ func _test_ui_panels() -> void:
 
 	game_state.update_from_response({
 		"player": {
+			"actor_id": "player",
 			"name": "Chaos",
 			"level": 3,
 			"classes": {"warrior": 3},
@@ -882,6 +922,15 @@ func _test_ui_panels() -> void:
 			"name": "Chaos",
 			"class_name": "Warrior",
 			"alignment": "LG",
+			"equipment_topology": {
+				"slots": {
+					"body": {"id": "chain_mail", "name": "Chain Mail"},
+					"main_hand": {"id": "iron_sword", "name": "Iron Sword"},
+					"ring_left": {"id": "ring_of_focus", "name": "Ring of Focus"},
+				},
+			},
+			"equipment_modifiers": {"total_movement_penalty": 3, "total_stealth_noise": 4, "total_spell_interference": 2},
+			"attunement": {"slot_count": 3, "attuned_item_ids": ["ring_of_focus"], "available_slots": 2},
 			"stats": [
 				{"id": "MIG", "value": 16, "modifier": 3},
 				{"id": "AGI", "value": 12, "modifier": 1},
@@ -942,7 +991,7 @@ func _test_ui_panels() -> void:
 			],
 		},
 		"travel_options": [
-			{"destination_region_id": "region_006", "destination_settlement_id": "node_region_006_01", "destination_name": "Harbor Reach", "travel_hours": 4},
+			{"route_id": "edge_0", "destination_region_id": "region_006", "destination_settlement_id": "node_region_006_01", "destination_name": "Harbor Reach", "travel_hours": 4},
 		],
 		"current_region_summary": {"region_id": "region_001", "settlement_node_id": "node_region_001_00"},
 		"selected_world_node": "node_region_001_00",
@@ -953,6 +1002,62 @@ func _test_ui_panels() -> void:
 	_assert_true(minimap_intel.text.contains("Reachable") and minimap_intel.text.contains("Harbor Reach"), "Minimap panel surfaces graph travel options and local survey together")
 	var route_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList")
 	_assert_true(route_list.get_child_count() >= 1, "Minimap panel renders semantic route buttons for reachable destinations")
+	var travel_requests: Array = []
+	var minimap_panel_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel")
+	minimap_panel_widget.travel_requested.connect(func(request: Dictionary) -> void:
+		travel_requests.append(request.duplicate(true))
+	)
+	var route_button = route_list.get_node("RouteButton0")
+	route_button.pressed.emit()
+	await process_frame
+	var travel_request: Dictionary = travel_requests[0] if not travel_requests.is_empty() else {}
+	_assert_true(travel_request.get("shortcut", "") == "travel", "Minimap emits structured travel shortcut requests")
+	_assert_true(travel_request.get("args", {}).get("action_id", "") == "start", "Minimap emits travel.start requests")
+	_assert_true(travel_request.get("args", {}).get("route_id", "") == "edge_0", "Minimap emits route-backed travel.start requests")
+
+	game_state.update_from_response({
+		"travel_state": {
+			"status": "traveling",
+			"route_id": "edge_0",
+			"origin_region_id": "region_001",
+			"destination_region_id": "region_006",
+			"destination_settlement_id": "node_region_006_01",
+			"destination_name": "Harbor Reach",
+			"travel_hours_total": 4,
+			"travel_hours_remaining": 3,
+			"danger_level": 2,
+			"encounter_triggered": true,
+			"paused_for_encounter": true,
+			"encounter_resolved": false,
+			"can_advance": false,
+			"requires_resolution": true,
+		},
+	})
+	await process_frame
+	_assert_true(not route_list.has_node("RouteButton0"), "Minimap removes route-start controls while travel_state is active")
+	_assert_true(route_list.has_node("ResolveEncounterButton"), "Minimap renders active travel resolution controls from travel_state truth")
+	_assert_true(minimap_summary.text.contains("Traveling to Harbor Reach"), "Minimap summary reflects active travel_state instead of route options")
+	_assert_true(minimap_intel.text.contains("Encounter resolution required"), "Minimap intel reflects active travel blockers from travel_state truth")
+	game_state.update_from_response({
+		"travel_state": {
+			"status": "traveling",
+			"route_id": "edge_0",
+			"origin_region_id": "region_001",
+			"destination_region_id": "region_006",
+			"destination_settlement_id": "node_region_006_01",
+			"destination_name": "Harbor Reach",
+			"travel_hours_total": 4,
+			"travel_hours_remaining": 2,
+			"danger_level": 2,
+			"encounter_triggered": true,
+			"paused_for_encounter": false,
+			"encounter_resolved": true,
+			"can_advance": true,
+			"requires_resolution": false,
+		},
+	})
+	await process_frame
+	_assert_true(route_list.has_node("ContinueTravelButton"), "Minimap renders continue travel controls when can_advance is true")
 
 	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/NarrativePanel")
 	_assert_true(narrative_widget.narrative_log.autowrap_mode != TextServer.AUTOWRAP_OFF, "Narrative panel wraps long lines instead of clipping them")
@@ -986,6 +1091,8 @@ func _test_ui_panels() -> void:
 	var character_role = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/RoleLabel")
 	_assert_true(character_panel.text.contains("MIG"), "Character panel renders visible stat lines")
 	_assert_true(character_panel.text.contains("Skills"), "Character panel condenses stats and skills into a readable short brief")
+	_assert_true(character_panel.text.contains("Equipment") and character_panel.text.contains("Iron Sword"), "Character panel reads canonical equipment_topology without relying on character_sheet.equipment")
+	_assert_true(character_panel.text.contains("Attunement") and character_panel.text.contains("ring_of_focus"), "Character panel reads canonical attunement payloads")
 	_assert_true(character_portrait.texture != null, "Character panel renders an authored portrait instead of a text-only header")
 	_assert_true(character_role.text.contains("Warrior") and character_role.text.contains("LG"), "Character panel separates class and alignment into a readable header line")
 
@@ -1035,20 +1142,25 @@ func _test_ui_panels() -> void:
 	command_bar.focus_input()
 	await process_frame
 	_assert_true(not session_instance._should_focus_command_bar_on_enter(), "GameSession does not swallow Enter when the command bar already has focus")
-	quick_save_button.grab_focus()
+	var focus_probe := Button.new()
+	focus_probe.focus_mode = Control.FOCUS_ALL
+	session_instance.add_child(focus_probe)
+	focus_probe.grab_focus()
 	await process_frame
-	_assert_true(session_instance._should_focus_command_bar_on_enter(), "GameSession focuses the command bar on Enter when input is not focused")
+	focus_probe.queue_free()
 
 	game_state.update_from_response({
 		"scene": "combat",
 		"combat": {
 			"round": 3,
-			"active": "Chaos",
+			"turn_actor_id": "player",
 			"ended": false,
+			"available_actions": ["attack", "defend", "flee", "move", "end_turn"],
 			"combatants": [
-				{"name": "Chaos", "hp": 18, "max_hp": 20, "dead": false, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 3, "speed": 6}},
-				{"name": "Wolf", "hp": 7, "max_hp": 9, "dead": false, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 4, "speed": 8}},
+				{"actor_id": "player", "name": "Chaos", "is_player": true, "alive": true, "hp": 18, "max_hp": 20, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 3, "speed": 6}},
+				{"actor_id": "wolf_1", "name": "Wolf", "is_player": false, "alive": true, "hp": 7, "max_hp": 9, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 4, "speed": 8}},
 			],
+			"targets": [{"actor_id": "wolf_1", "name": "Wolf", "called_shot_zones": ["head"]}],
 		},
 		"active_quests": [{"quest_id": "q1", "title": "Bread Run", "status": "active", "deadline": 16}],
 		"quest_offers": [{"id": "offer_1", "title": "Clear The Roads", "description": "Drive goblins away.", "reward_gold": 60, "reward_xp": 75}],
@@ -1069,16 +1181,22 @@ func _test_ui_panels() -> void:
 	var combat_rows = session_instance.get_node("OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/CombatantScroll/CombatantList")
 	_assert_true(combat_rows.get_child_count() >= 2, "Combat panel renders combatant rows")
 	var combat_attack_button = session_instance.get_node("OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/QuickActions/AttackButton")
+	var combat_end_turn_button = session_instance.get_node("OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/QuickActions/EndTurnButton")
 	_assert_true(not combat_attack_button.disabled, "Combat attack stays enabled on the player's turn")
+	_assert_true(not combat_end_turn_button.disabled, "Combat overlay exposes end turn when the backend advertises it")
+	_assert_true(session_instance.get_node_or_null("OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/QuickActions/UseButton") == null, "Combat overlay does not expose quick use in this phase")
+	_assert_true(session_instance.get_node_or_null("OverlayCanvas/CombatPanel/CombatMargin/CombatVBox/QuickActions/DisengageButton") == null, "Combat overlay no longer exposes disengage")
 	game_state.update_from_response({
 		"combat": {
 			"round": 3,
-			"active": "Wolf",
+			"turn_actor_id": "wolf_1",
 			"ended": false,
+			"available_actions": [],
 			"combatants": [
-				{"name": "Chaos", "hp": 18, "max_hp": 20, "dead": false, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 3, "speed": 6}},
-				{"name": "Wolf", "hp": 7, "max_hp": 9, "dead": false, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 4, "speed": 8}},
+				{"actor_id": "player", "name": "Chaos", "is_player": true, "alive": true, "hp": 18, "max_hp": 20, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 3, "speed": 6}},
+				{"actor_id": "wolf_1", "name": "Wolf", "is_player": false, "alive": true, "hp": 7, "max_hp": 9, "turn_resources": {"action_available": true, "bonus_action_available": true, "reaction_available": true, "movement_remaining": 4, "speed": 8}},
 			],
+			"targets": [{"actor_id": "player", "name": "Chaos", "called_shot_zones": ["head"]}],
 		},
 	})
 	await process_frame

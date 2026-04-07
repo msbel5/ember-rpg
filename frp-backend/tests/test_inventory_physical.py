@@ -74,7 +74,7 @@ class TestItemStack:
         assert stack.stackable
 
     def test_equipment_not_stackable(self):
-        stack = ItemStack(item_id="sword", quantity=1, item_data={"name": "Sword", "slot": "weapon"})
+        stack = ItemStack(item_id="sword", quantity=1, item_data={"name": "Sword", "slot": "main_hand"})
         assert not stack.stackable
         assert stack.max_stack == 1
 
@@ -350,7 +350,7 @@ class TestPhysicalInventory:
 
     def test_weight_tracking(self):
         inv = PhysicalInventory()
-        sword = ItemStack(item_id="sword", quantity=1, item_data={"name": "Sword", "weight": 3.0, "slot": "weapon"}, shape=SHAPES["medium_h"])
+        sword = ItemStack(item_id="sword", quantity=1, item_data={"name": "Sword", "weight": 3.0, "slot": "main_hand"}, shape=SHAPES["medium_h"])
         inv.add_item_auto(sword)
         assert inv.total_carried_weight() == 3.0
 
@@ -489,3 +489,4 @@ class TestGetItemShape:
         shape = get_item_shape({"item_shape": {"cells": [[0, 0], [0, 1], [1, 0]], "rigid": False}})
         assert shape.cell_count == 3
         assert not shape.rigid
+

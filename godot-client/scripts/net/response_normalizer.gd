@@ -32,6 +32,14 @@ static func normalize_combat(data: Dictionary) -> Dictionary:
 	if combat_state.is_empty():
 		return {}
 	var normalized := combat_state.duplicate(true)
+	var normalized_actions: Array = []
+	for raw_action in normalized.get("available_actions", []):
+		var action_id := str(raw_action).strip_edges().to_lower()
+		if action_id.is_empty() or normalized_actions.has(action_id):
+			continue
+		normalized_actions.append(action_id)
+	if not normalized_actions.is_empty():
+		normalized["available_actions"] = normalized_actions
 	var normalized_combatants: Array = []
 	for combatant in normalized.get("combatants", []):
 		if not (combatant is Dictionary):
@@ -121,6 +129,8 @@ static func flatten_campaign_response(data: Dictionary, current_map: Dictionary 
 		flattened.merge(normalized_dialog, true)
 	flattened["world"] = campaign.get("world", {})
 	flattened["world_state"] = campaign.get("world_state", campaign.get("world", {}))
+	flattened["travel_state"] = campaign["travel_state"] if campaign.has("travel_state") else null
+	flattened["crime_state"] = campaign.get("crime_state", {})
 	flattened["game_state_root"] = campaign.get("game_state", {})
 	flattened["actor_roster"] = campaign.get("actors", [])
 	flattened["job_records"] = campaign.get("jobs", [])
@@ -138,6 +148,7 @@ static func flatten_campaign_response(data: Dictionary, current_map: Dictionary 
 	if flattened["current_region_summary"] is Dictionary:
 		flattened["selected_world_node"] = str(flattened["current_region_summary"].get("settlement_node_id", ""))
 	flattened["settlement_state"] = campaign.get("settlement", {})
+	flattened["character_sheet"] = campaign.get("character_sheet", {})
 	flattened["recent_event_log"] = campaign.get("recent_event_log", [])
 	flattened["active_quests"] = campaign.get("active_quests", [])
 	flattened["quest_offers"] = campaign.get("quest_offers", [])

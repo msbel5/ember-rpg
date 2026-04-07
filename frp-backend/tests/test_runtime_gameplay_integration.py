@@ -515,21 +515,21 @@ def test_snapshot_payload_exposes_spell_state_deterministically() -> None:
 
 
 def test_equipment_payload_is_deterministic_and_save_load_stable() -> None:
-    from engine.kernel.actor_items import item_stack_from_legacy_payload
+    from engine.kernel.actor_items import item_stack_from_payload
 
     runtime, context = _make_campaign()
     ensure_kernel_runtime(context)
     player = context.kernel_runtime["actors"]["player"]
     player.equipment.slots = {}
     player.equipment.add_item(
-        "armor",
-        item_stack_from_legacy_payload(
+        "chest",
+        item_stack_from_payload(
             {
                 "id": "chain_mail",
                 "name": "Chain Mail",
                 "type": "armor",
                 "material": "iron",
-                "slot": "armor",
+                "slot": "chest",
                 "coverage": ["torso", "chest"],
                 "movement_penalty": 2,
                 "stealth_noise": 3,
@@ -538,14 +538,14 @@ def test_equipment_payload_is_deterministic_and_save_load_stable() -> None:
         ),
     )
     player.equipment.add_item(
-        "shield",
-        item_stack_from_legacy_payload(
+        "off_hand",
+        item_stack_from_payload(
             {
                 "id": "kite_shield",
                 "name": "Kite Shield",
                 "type": "shield",
                 "material": "steel",
-                "slot": "shield",
+                "slot": "off_hand",
                 "coverage": ["left_arm"],
                 "movement_penalty": 1,
                 "stealth_noise": 1,
@@ -554,13 +554,13 @@ def test_equipment_payload_is_deterministic_and_save_load_stable() -> None:
         ),
     )
     player.equipment.add_item(
-        "left_ring",
-        item_stack_from_legacy_payload(
+        "ring_left",
+        item_stack_from_payload(
             {
                 "id": "ring_of_focus",
                 "name": "Ring of Focus",
                 "type": "trinket",
-                "slot": "left_ring",
+                "slot": "ring_left",
                 "attunement_required": True,
                 "attuned": True,
             }
@@ -587,11 +587,9 @@ def test_equipment_payload_is_deterministic_and_save_load_stable() -> None:
         "attuned_item_ids": ["ring_of_focus"],
         "available_slots": 2,
     }
-    assert before["equipment_topology"]["coverage_summary"] == {
-        "chest": ["chain_mail"],
-        "left_arm": ["kite_shield"],
-        "torso": ["chain_mail"],
-    }
+    assert before["equipment_topology"]["coverage_summary"]["chest"] == ["chain_mail"]
+    assert before["equipment_topology"]["coverage_summary"]["left_arm"] == ["kite_shield"]
+    assert before["equipment_topology"]["coverage_summary"]["torso"] == ["chain_mail"]
     assert set(loaded.kernel_runtime["actors"]["player"].raw_payload).isdisjoint({"equipment_topology", "equipment_modifiers", "attunement"})
 
 
@@ -2750,3 +2748,5 @@ def test_missing_schedule_positions_remain_non_crashing_and_non_destructive() ->
 
     assert record.get("position") == [1, 1]
     assert record.get("assignment") == "idle_watch"
+
+

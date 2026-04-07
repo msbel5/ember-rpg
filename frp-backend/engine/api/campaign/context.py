@@ -284,13 +284,13 @@ class CampaignContext:
         When ``merge=True`` and an existing stack has the same item_def_id,
         the quantity is increased instead of appending a new stack.
         """
-        from engine.kernel.actor_items import item_stack_from_legacy_payload
+        from engine.kernel.actor_items import item_stack_from_payload
         try:
             payload = dict(item_data)
             if "quantity" not in payload and payload.get("qty") is not None:
                 payload["quantity"] = payload.get("qty")
             payload.setdefault("item_def_id", str(payload.get("id", "")))
-            stack = item_stack_from_legacy_payload(payload)
+            stack = item_stack_from_payload(payload)
             if merge:
                 for existing in self.player.inventory:
                     if getattr(existing, "item_def_id", "") == stack.item_def_id:
@@ -335,9 +335,9 @@ class CampaignContext:
         if item_data is None:
             self.player.equipment.slots.pop(slot, None)
             return
-        from engine.kernel.actor_items import item_stack_from_legacy_payload
+        from engine.kernel.actor_items import item_stack_from_payload
 
-        stack = item_stack_from_legacy_payload(dict(item_data))
+        stack = item_stack_from_payload(dict(item_data))
         self.player.equipment.slots[slot] = [stack]
 
     def assess_item_addition(self, item_data: dict, merge: bool = False) -> dict:

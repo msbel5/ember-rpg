@@ -54,12 +54,14 @@ def compute_defense_ac(
     armor_max_dex = None
     for slot, items in defender.equipment.slots.items():
         for item in items:
-            if slot == "armor":
+            payload = getattr(item, "payload", {}) or {}
+            item_type = str(payload.get("type", "")).strip().lower()
+            if slot == "chest":
                 armor_bonus += int(item.payload.get("armor_bonus", 0))
                 item_max_dex = item.payload.get("max_dex")
                 if item_max_dex is not None:
                     armor_max_dex = int(item_max_dex) if armor_max_dex is None else min(armor_max_dex, int(item_max_dex))
-            if slot == "shield":
+            if slot == "off_hand" and item_type == "shield":
                 shield_bonus += int(item.payload.get("shield_bonus", 0))
     agi_bonus = 0
     if not flat_footed:

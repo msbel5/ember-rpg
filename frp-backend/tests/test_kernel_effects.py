@@ -292,9 +292,9 @@ def test_while_equipped_effects_drop_after_item_is_unequipped():
     item = ItemStack(
         instance_id="ring_1",
         item_def_id="ring_of_giant_strength",
-        payload={"slot": "ring", "coverage": []},
+        payload={"slot": "ring_left", "coverage": []},
     )
-    equipment = EquipmentLoadout(slots={"ring": [item]})
+    equipment = EquipmentLoadout(slots={"ring_left": [item]})
     actor = _actor(stats={"MIG": 14, "hp": 20, "max_hp": 20}, inventory=[item], equipment=equipment)
     effect = _effect_def(
         effect_def_id="ring_strength",
@@ -305,7 +305,7 @@ def test_while_equipped_effects_drop_after_item_is_unequipped():
     apply_effect(actor, effect, source_id="ring_1", current_tick=0)
     assert compute_effective_stat(actor, "MIG") == 18
 
-    actor.equipment.slots["ring"] = []
+    actor.equipment.slots["ring_left"] = []
     tick_effects(actor, 1)
 
     assert actor.effect_queue.instances == []
@@ -357,9 +357,9 @@ def test_contact_delivery_is_blocked_by_full_torso_coverage():
     armor = ItemStack(
         instance_id="plate_1",
         item_def_id="full_plate",
-        payload={"slot": "armor", "coverage": ["torso"], "coverage_percentage": 100},
+        payload={"slot": "chest", "coverage": ["torso"], "coverage_percentage": 100},
     )
-    actor = _actor(equipment=EquipmentLoadout(slots={"armor": [armor]}), inventory=[armor])
+    actor = _actor(equipment=EquipmentLoadout(slots={"chest": [armor]}), inventory=[armor])
     effect = _effect_def(effect_def_id="contact_poison", delivery="contact", category="condition", condition_flag="poisoned", target_stat="")
 
     applied, instance = apply_effect(actor, effect, source_id="poison_1", current_tick=0)
@@ -391,3 +391,4 @@ def test_saving_throw_respects_natural_one_and_natural_twenty():
 
     assert resolve_saving_throw(actor, "will", 1_000, 1) is False
     assert resolve_saving_throw(actor, "will", 1_000, 20) is True
+

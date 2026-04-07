@@ -81,7 +81,7 @@ def _body_state() -> BodyState:
 
 def _weapon(
     *,
-    instance_id: str = "weapon_1",
+    instance_id: str = "main_hand_weapon_1",
     damage: int = 6,
     damage_type: str = "slashing",
     crit_multiplier: int = 2,
@@ -92,7 +92,7 @@ def _weapon(
         instance_id=instance_id,
         item_def_id="test_weapon",
         payload={
-            "slot": "weapon",
+            "slot": "main_hand",
             "damage": damage,
             "damage_type": damage_type,
             "crit_multiplier": crit_multiplier,
@@ -107,7 +107,7 @@ def _armor(*, armor_bonus: int = 5, max_dex: int = 2) -> ItemStack:
         instance_id="armor_1",
         item_def_id="chain_mail",
         payload={
-            "slot": "armor",
+            "slot": "chest",
             "coverage": ["torso", "chest"],
             "coverage_percentage": 100,
             "armor_bonus": armor_bonus,
@@ -121,7 +121,8 @@ def _shield(*, shield_bonus: int = 2) -> ItemStack:
         instance_id="shield_1",
         item_def_id="kite_shield",
         payload={
-            "slot": "shield",
+            "slot": "off_hand",
+            "type": "shield",
             "coverage": ["torso", "chest"],
             "coverage_percentage": 100,
             "shield_bonus": shield_bonus,
@@ -169,7 +170,7 @@ def test_ac02_compute_defense_ac_uses_armor_shield_and_capped_dex():
     shield = _shield(shield_bonus=2)
     defender = _actor(
         stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20},
-        equipment=EquipmentLoadout(slots={"armor": [armor], "shield": [shield]}),
+        equipment=EquipmentLoadout(slots={"chest": [armor], "off_hand": [shield]}),
         inventory=[armor, shield],
     )
 
@@ -184,7 +185,7 @@ def test_ac03_attack_misses_when_total_below_ac():
     shield = _shield(shield_bonus=2)
     defender = _actor(
         stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20},
-        equipment=EquipmentLoadout(slots={"armor": [armor], "shield": [shield]}),
+        equipment=EquipmentLoadout(slots={"chest": [armor], "off_hand": [shield]}),
         inventory=[armor, shield],
     )
 
@@ -209,7 +210,7 @@ def test_ac05_natural_twenty_always_hits():
     shield = _shield(shield_bonus=5)
     defender = _actor(
         stats={"MIG": 10, "AGI": 20, "INS": 10, "hp": 20, "max_hp": 20},
-        equipment=EquipmentLoadout(slots={"armor": [armor], "shield": [shield]}),
+        equipment=EquipmentLoadout(slots={"chest": [armor], "off_hand": [shield]}),
         inventory=[armor, shield],
     )
 
@@ -235,7 +236,7 @@ def test_ac07_critical_is_not_confirmed_when_confirmation_misses():
     shield = _shield(shield_bonus=2)
     defender = _actor(
         stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20},
-        equipment=EquipmentLoadout(slots={"armor": [armor], "shield": [shield]}),
+        equipment=EquipmentLoadout(slots={"chest": [armor], "off_hand": [shield]}),
         inventory=[armor, shield],
     )
 
@@ -296,7 +297,7 @@ def test_ac12_unconscious_from_pain_drops_items_and_prevents_actions():
     defender = _actor(
         stats={"MIG": 10, "AGI": 10, "INS": 10, "hp": 20, "max_hp": 20},
         raw_payload={"base_max_pain": 20},
-        equipment=EquipmentLoadout(slots={"weapon": [weapon]}),
+        equipment=EquipmentLoadout(slots={"main_hand": [weapon]}),
         inventory=[weapon],
     )
     defender.body_state.parts["torso"].pain = 12
@@ -306,7 +307,7 @@ def test_ac12_unconscious_from_pain_drops_items_and_prevents_actions():
     assert result.incapacitation == "unconscious"
     assert defender.raw_payload.get("prone") is True
     assert defender.raw_payload.get("can_act") is False
-    assert defender.equipment.slots.get("weapon", []) == []
+    assert defender.equipment.slots.get("main_hand", []) == []
     assert defender.raw_payload.get("dropped_items") == ["main_hand_weapon"]
 
 
@@ -404,7 +405,7 @@ def test_ac22_touch_attack_ignores_armor_and_shield():
     shield = _shield(shield_bonus=2)
     defender = _actor(
         stats={"MIG": 10, "AGI": 14, "INS": 10, "hp": 20, "max_hp": 20},
-        equipment=EquipmentLoadout(slots={"armor": [armor], "shield": [shield]}),
+        equipment=EquipmentLoadout(slots={"chest": [armor], "off_hand": [shield]}),
         inventory=[armor, shield],
     )
 
@@ -413,3 +414,4 @@ def test_ac22_touch_attack_ignores_armor_and_shield():
     assert defense.armor_bonus == 0
     assert defense.shield_bonus == 0
     assert defense.total == 12
+

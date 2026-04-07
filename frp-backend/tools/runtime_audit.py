@@ -6,7 +6,10 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-MODULE_MAP_DOC = REPO_ROOT / "docs" / "runtime_module_map.md"
+MODULE_MAP_DOCS = [
+    REPO_ROOT / "docs" / "runtime_module_map.md",
+    REPO_ROOT / "frp-backend" / "docs" / "runtime_module_map.md",
+]
 RUNTIME_ROOTS = [
     REPO_ROOT / "frp-backend" / "engine",
     REPO_ROOT / "frp-backend" / "tools",
@@ -21,6 +24,7 @@ ALLOWED_OVERSIZE: Dict[str, str] = {
     "frp-backend/engine/api/campaign/region_projection.py": "Campaign region projection still centralizes realization, entity seeding, and party slot projection until it is split.",
     "frp-backend/engine/api/campaign/live_kernel.py": "Live kernel still centralizes runtime tick reconciliation, level-up checks, and companion/schedule updates until those slices split out.",
     "frp-backend/engine/api/campaign/advisor.py": "Advisor runtime currently centralizes deterministic intent classification, grounded response assembly, and response-only command wiring until a later cleanup splits it into smaller policy slices.",
+    "frp-backend/engine/api/campaign/crime.py": "Crime runtime centralizes incident recording, wanted-state tracking, witness evaluation, and consequence dispatch until crime subsystem slices split further.",
     "frp-backend/engine/api/campaign/knowledge.py": "Knowledge runtime now centralizes topic authority, grounded think/ask-about resolution, and discovery helpers until advisor and topic slices split further.",
     "frp-backend/engine/api/campaign_commands.py": "Campaign command dispatch centralizes all command handlers and dialog/commerce routing.",
     "frp-backend/engine/api/combat_bridge.py": "Combat bridge still centralizes text commands, combat setup, and minimal ally AI until combat command surfaces split further.",
@@ -171,17 +175,28 @@ def render_runtime_module_map_document() -> str:
 
 
 def module_map_is_fresh() -> bool:
-    if not MODULE_MAP_DOC.exists():
-        return False
     current = render_runtime_module_map_document().strip()
-    recorded = MODULE_MAP_DOC.read_text(encoding="utf-8").strip()
-    return current == recorded
+    for doc_path in MODULE_MAP_DOCS:
+        if not doc_path.exists():
+            return False
+        if doc_path.read_text(encoding="utf-8").strip() != current:
+            return False
+    return True
+
+
+def stale_module_map_docs() -> List[str]:
+    current = render_runtime_module_map_document().strip()
+    stale: List[str] = []
+    for doc_path in MODULE_MAP_DOCS:
+        if not doc_path.exists() or doc_path.read_text(encoding="utf-8").strip() != current:
+            stale.append(doc_path.relative_to(REPO_ROOT).as_posix())
+    return stale
 
 
 def find_audit_violations() -> List[str]:
     violations: List[str] = []
-    if not module_map_is_fresh():
-        violations.append("runtime module map is stale: docs/runtime_module_map.md")
+    for stale_doc in stale_module_map_docs():
+        violations.append(f"runtime module map is stale: {stale_doc}")
     for path in sorted(_iter_runtime_files()):
         rel = _relative(path)
         text = path.read_text(encoding="utf-8", errors="ignore")

@@ -18,7 +18,7 @@ def _legacy_entity(entity_type: EntityType) -> Entity:
         needs=NPCNeeds(safety=55, social=35, sustenance=80),
         inventory=[
             {"id": "iron_sword_1", "name": "Iron Sword", "slot": "main_hand", "quality": 2},
-            {"id": "travel_cloak_1", "name": "Travel Cloak", "slot": "cover", "coverage": ["torso", "chest"]},
+            {"id": "travel_cloak_1", "name": "Travel Cloak", "slot": "shoulders", "coverage": ["torso", "chest"]},
         ],
         skills={"sword": 4, "insight": 2},
         body=body,
@@ -83,3 +83,4 @@ def test_body_state_apply_wound_marks_vital_part_non_viable():
 
     assert body_state.parts["chest"].status == "destroyed"
     assert body_state.is_viable() is False
+

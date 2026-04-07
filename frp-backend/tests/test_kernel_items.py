@@ -275,7 +275,7 @@ def test_ac10_item_def_and_instance_round_trip_without_loss():
         identified=True,
         charges=7,
         stack_count=1,
-        equipped_slot="weapon_1",
+        equipped_slot="main_hand",
     )
 
     assert ItemDef.from_dict(item_def.to_dict()) == item_def
@@ -288,12 +288,12 @@ def test_ac11_equip_item_replaces_existing_weapon_to_inventory():
     axe_def = ItemDef(item_def_id="axe", label="Axe", item_type="weapon", item_category="axe", weight=25, base_price=60)
     sword = ItemInstance(instance_id="sword_1", item_def_id="sword")
     axe = ItemInstance(instance_id="axe_1", item_def_id="axe")
-    actor.equipment.slots["weapon_1"] = [sword]
+    actor.equipment.slots["main_hand"] = [sword]
     actor.inventory.append(axe)
 
-    equip_item(actor, axe, "weapon_1", axe_def)
+    equip_item(actor, axe, "main_hand", axe_def)
 
-    assert actor.equipment.slots["weapon_1"][0].instance_id == "axe_1"
+    assert actor.equipment.slots["main_hand"][0].instance_id == "axe_1"
     assert any(item.instance_id == "sword_1" for item in actor.inventory)
 
 

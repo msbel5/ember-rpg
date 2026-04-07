@@ -24,11 +24,11 @@ def _create_campaign(*, seed: int = 42) -> dict:
 
 
 def _inject_usable_inventory_item(campaign_id: str, *, item_def_id: str = "field_tonic") -> None:
-    from engine.kernel import item_stack_from_legacy_payload
+    from engine.kernel import item_stack_from_payload
 
     context = campaign_routes.campaign_runtime.get_campaign(campaign_id)
     context.kernel_runtime["actors"]["player"].inventory.append(
-        item_stack_from_legacy_payload(
+        item_stack_from_payload(
             {
                 "item_def_id": item_def_id,
                 "name": "Field Tonic" if item_def_id == "field_tonic" else item_def_id.replace("_", " ").title(),
@@ -90,7 +90,6 @@ def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
     assert isinstance(sheet["equipment_modifiers"], dict)
     assert isinstance(sheet["attunement"], dict)
     assert isinstance(sheet["equipment_topology"]["slots"], dict)
-    assert isinstance(sheet["equipment_topology"]["legacy_slot_aliases"], dict)
     assert isinstance(sheet["equipment_topology"]["coverage_summary"], dict)
     assert {"total_movement_penalty", "total_stealth_noise", "total_spell_interference"} <= set(sheet["equipment_modifiers"])
     assert {"slot_count", "attuned_item_ids", "available_slots"} <= set(sheet["attunement"])
@@ -126,10 +125,9 @@ def test_campaign_command_preserves_godot_payload_shape():
     assert payload["campaign"]["world_state"]["active_region_id"] == payload["campaign"]["world"]["active_region_id"]
     assert payload["campaign"]["game_state"]["current_area_id"] == payload["campaign"]["world"]["active_region_id"]
     assert payload["campaign"]["systems"]["temperature_state"]["ambient_band"]
-    assert isinstance(sheet["equipment"]["slots"], dict)
-    first_slot_items = next(iter(sheet["equipment"]["slots"].values()))
-    assert isinstance(first_slot_items, list)
-    assert {"canonical_slot", "coverage_zones", "armor_weight_class", "movement_penalty", "stealth_noise", "spell_interference", "attunement_required"} <= set(first_slot_items[0])
+    assert "equipment" not in sheet
+    first_slot_item = next(item for item in sheet["equipment_topology"]["slots"].values() if item is not None)
+    assert {"canonical_slot", "coverage_zones", "armor_weight_class", "movement_penalty", "stealth_noise", "spell_interference", "attunement_required"} <= set(first_slot_item)
 
 
 def test_campaign_advisor_response_shape_is_additive_for_godot_consumers():
@@ -286,3 +284,4 @@ def test_campaign_travel_payload_shape_is_present_for_godot_consumers():
     assert all("danger_level" in entry for entry in campaign["travel_options"])
     assert all("known" in entry for entry in campaign["travel_options"])
     assert all("visited" in entry for entry in campaign["travel_options"])
+

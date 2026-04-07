@@ -30,7 +30,7 @@ from engine.world.entity import Entity
 
 from .actor_body import BodyState, ConditionRecord
 from .actor_foundation import ActorIdentity, ActorPosition, NeedState, ScheduleState
-from .actor_items import EquipmentLoadout, ItemStack, item_stack_from_legacy_payload
+from .actor_items import EquipmentLoadout, ItemStack, item_stack_from_payload
 
 
 
@@ -359,7 +359,7 @@ class ActorRecord:
             if isinstance(item, dict):
                 inv.append(ItemStack.from_dict(item))
             elif isinstance(item, str):
-                inv.append(item_stack_from_legacy_payload(
+                inv.append(item_stack_from_payload(
                     {"id": item, "name": item}, index=idx))
         payload["inventory"] = inv
 
@@ -411,13 +411,12 @@ def actor_record_from_entity(
     )
     inventory_entries = list(entity.inventory or [])
     inventory = [
-        item_stack_from_legacy_payload(entry, index=idx)
+        item_stack_from_payload(entry, index=idx)
         for idx, entry in enumerate(inventory_entries)
     ]
     equipment = EquipmentLoadout()
     for item in inventory:
-        slot = str(item.payload.get("slot",
-                   item.payload.get("equip_slot", ""))).strip()
+        slot = str(item.payload.get("canonical_slot", item.payload.get("slot", ""))).strip()
         if slot:
             equipment.add_item(slot, item)
     return ActorRecord(
@@ -471,7 +470,7 @@ def actor_record_from_character(
             continue
         item_payload = dict(payload)
         item_payload.setdefault("slot", slot)
-        stack = item_stack_from_legacy_payload(item_payload, index=idx)
+        stack = item_stack_from_payload(item_payload, index=idx)
         equipment.add_item(slot, stack)
         inventory.append(stack)
     return ActorRecord(

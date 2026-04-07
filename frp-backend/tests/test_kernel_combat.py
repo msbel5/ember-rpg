@@ -2,7 +2,7 @@
 
 from engine.kernel import (
     actor_record_from_entity,
-    item_stack_from_legacy_payload,
+    item_stack_from_payload,
     resolve_strike,
     sync_body_state_to_tracker,
 )
@@ -20,7 +20,7 @@ def _defender(*, armored: bool = False) -> Entity:
             {
                 "id": "mail_shirt_01",
                 "name": "Mail Shirt",
-                "slot": "armor",
+                "slot": "chest",
                 "coverage": ["chest", "torso"],
                 "coverage_percentage": 100,
                 "material_id": "steel",
@@ -57,7 +57,7 @@ def _attacker_record_and_weapon():
     weapon_payload = {
         "id": "iron_longsword",
         "name": "Iron Longsword",
-        "slot": "weapon",
+        "slot": "main_hand",
         "material_id": "iron",
         "quality": 2,
         "damage": 8,
@@ -71,7 +71,7 @@ def test_resolve_strike_is_deterministic_for_same_seed():
     attacker, weapon_payload = _attacker_record_and_weapon()
     defender_a = actor_record_from_entity(_defender())
     defender_b = actor_record_from_entity(_defender())
-    weapon = item_stack_from_legacy_payload(weapon_payload)
+    weapon = item_stack_from_payload(weapon_payload)
 
     outcome_a = resolve_strike(attacker, defender_a, weapon=weapon, seed=7, raw_damage=9)
     outcome_b = resolve_strike(attacker, defender_b, weapon=weapon, seed=7, raw_damage=9)
@@ -82,7 +82,7 @@ def test_resolve_strike_is_deterministic_for_same_seed():
 def test_resolve_strike_applies_armor_and_wear_updates():
     attacker, weapon_payload = _attacker_record_and_weapon()
     defender = actor_record_from_entity(_defender(armored=True))
-    weapon = item_stack_from_legacy_payload(weapon_payload)
+    weapon = item_stack_from_payload(weapon_payload)
 
     outcome = resolve_strike(
         attacker,
@@ -98,14 +98,14 @@ def test_resolve_strike_applies_armor_and_wear_updates():
     assert outcome.armor_absorbed > 0
     assert outcome.effective_damage < outcome.attack_force
     assert outcome.equipment_wear
-    assert defender.equipment.slots["armor"][0].wear > 0
+    assert defender.equipment.slots["chest"][0].wear > 0
 
 
 def test_resolve_strike_marks_vital_wound_and_syncs_back_to_tracker():
     attacker, weapon_payload = _attacker_record_and_weapon()
     live_defender = _defender()
     defender = actor_record_from_entity(live_defender)
-    weapon = item_stack_from_legacy_payload(weapon_payload)
+    weapon = item_stack_from_payload(weapon_payload)
 
     outcome = resolve_strike(
         attacker,
@@ -123,3 +123,5 @@ def test_resolve_strike_marks_vital_wound_and_syncs_back_to_tracker():
     assert outcome.wound.bleeding >= 1
     assert outcome.defender_viable is False
     assert live_defender.body.current_hp["chest"] == defender.body_state.parts["chest"].current_hp
+
+

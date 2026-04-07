@@ -80,6 +80,40 @@ func _build_sheet_text(sheet: Dictionary) -> String:
 		if skill_chunks.size() > 4:
 			skill_text += "  +%d more" % (skill_chunks.size() - 4)
 		lines.append("[b]Skills[/b]  %s" % skill_text)
+
+	var topology: Dictionary = sheet.get("equipment_topology", {})
+	var slots: Dictionary = topology.get("slots", {}) if topology is Dictionary else {}
+	var equipped_chunks: Array[String] = []
+	for slot_id in slots.keys():
+		var slot_entry = slots.get(slot_id)
+		if not (slot_entry is Dictionary):
+			continue
+		var item_name := str(slot_entry.get("name", slot_entry.get("id", slot_entry.get("item_def_id", "")))).strip_edges()
+		if item_name.is_empty():
+			continue
+		equipped_chunks.append("%s: %s" % [str(slot_id).replace("_", " "), item_name])
+	if equipped_chunks.is_empty():
+		lines.append("[b]Equipment[/b]  No canonical loadout data.")
+	else:
+		lines.append("[b]Equipment[/b]  %s" % ", ".join(equipped_chunks.slice(0, min(equipped_chunks.size(), 3))))
+		if equipped_chunks.size() > 3:
+			lines.append("             %s" % ", ".join(equipped_chunks.slice(3, min(equipped_chunks.size(), 6))))
+
+	var modifiers: Dictionary = sheet.get("equipment_modifiers", {})
+	if modifiers is Dictionary and not modifiers.is_empty():
+		lines.append("[b]Loadout Effects[/b]  Move %d  |  Noise %d  |  Interference %d" % [
+			int(modifiers.get("total_movement_penalty", 0)),
+			int(modifiers.get("total_stealth_noise", 0)),
+			int(modifiers.get("total_spell_interference", 0)),
+		])
+
+	var attunement: Dictionary = sheet.get("attunement", {})
+	if attunement is Dictionary and not attunement.is_empty():
+		lines.append("[b]Attunement[/b]  %d/%d used  |  %s" % [
+			int(attunement.get("slot_count", 0)) - int(attunement.get("available_slots", 0)),
+			int(attunement.get("slot_count", 0)),
+			", ".join(attunement.get("attuned_item_ids", [])) if attunement.get("attuned_item_ids", []) is Array and not attunement.get("attuned_item_ids", []).is_empty() else "No attuned items",
+		])
 	return "\n".join(lines)
 
 

@@ -70,11 +70,14 @@ def test_vertical_desktop_scenarios_target_semantic_dialog_travel_and_combat() -
     travel = load_scenario(scenario_dir / "travel_route_desktop.toml")
     assert next(step for step in travel.steps if step.id == "open_map_tab").action == "activate_node"
     assert next(step for step in travel.steps if step.id == "wait_for_route_button").node_path.endswith("RouteButton0")
-    assert next(step for step in travel.steps if step.id == "wait_for_travel_arrival").text == "Grove Elf Grove"
+    assert next(step for step in travel.steps if step.id == "wait_for_active_travel_summary").action == "wait_for_node_text"
+    assert next(step for step in travel.steps if step.id == "wait_for_continue_travel").node_path.endswith("ContinueTravelButton")
+    assert next(step for step in travel.steps if step.id == "continue_travel_once").action == "activate_node"
+    assert next(step for step in travel.steps if step.id == "wait_for_continue_history").text == "continue travel"
 
     combat = load_scenario(scenario_dir / "combat_action_desktop.toml")
     assert next(step for step in combat.steps if step.id == "enter_combat").action == "activate_node"
     assert next(step for step in combat.steps if step.id == "prepare_attack").node_path.endswith("TextInput")
     assert next(step for step in combat.steps if step.id == "wait_for_attack_history").text == "attack wolf"
     assert next(step for step in combat.steps if step.id == "wait_for_combat_panel").node_path == "OverlayCanvas/CombatPanel"
-    assert next(step for step in combat.steps if step.id == "use_disengage").node_path.endswith("DisengageButton")
+    assert next(step for step in combat.steps if step.id == "use_end_turn").node_path.endswith("EndTurnButton")

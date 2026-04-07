@@ -30,7 +30,6 @@ from engine.kernel.actor_items import (
     candidate_canonical_slots_for_item_payload,
     canonical_equipment_slot,
     canonical_slot_for_item_payload,
-    canonical_slot_query_aliases,
     preferred_storage_slot_for_item,
 )
 from engine.kernel.items import ItemDef as KernelItemDef, ItemInstance, use_item
@@ -1047,10 +1046,9 @@ def maybe_handle_equipment_command(
         item_name = match.group(1).strip().lower().replace(" ", "_")
         # Search equipped slots for matching item.
         target_slot = None
-        slot_aliases = set(canonical_slot_query_aliases(item_name))
         for slot_name, slot_items in player.equipment.slots.items():
             normalized_slot_name = str(slot_name).strip().lower()
-            if normalized_slot_name in slot_aliases or (canonical_equipment_slot(normalized_slot_name) or "") in slot_aliases:
+            if normalized_slot_name == item_name:
                 target_slot = slot_name
                 break
             for equipped in slot_items:

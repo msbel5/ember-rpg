@@ -150,18 +150,16 @@ def test_character_sheet_equipment_exposes_topology_freeze_metadata():
 
     payload = runtime.snapshot(context.campaign_id)
     sheet = payload["campaign"]["character_sheet"]
-    equipment = sheet["equipment"]
     topology = sheet["equipment_topology"]
-    chest_item = topology["slots"]["body"]
+    chest_item = topology["slots"]["chest"]
     main_hand_item = topology["slots"]["main_hand"]
 
-    assert equipment["slots"]
+    assert "equipment" not in sheet
     assert chest_item is not None
-    assert chest_item["canonical_slot"] == "body"
+    assert chest_item["canonical_slot"] == "chest"
     assert "torso" in chest_item["coverage_zones"]
     assert main_hand_item is not None
     assert main_hand_item["canonical_slot"] == "main_hand"
-    assert "armor" in topology["legacy_slot_aliases"]["body"]
     assert sheet["equipment_modifiers"]["total_movement_penalty"] >= 0
     assert sheet["attunement"]["slot_count"] == 3
     assert "chain_mail" in topology["coverage_summary"]["chest"]

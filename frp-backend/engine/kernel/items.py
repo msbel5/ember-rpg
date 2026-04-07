@@ -7,31 +7,19 @@ from typing import Any
 from engine.kernel.actor import ActorRecord, MaterialDef
 from engine.kernel.actor_items import (
     CANONICAL_EQUIPMENT_SLOTS,
-    LEGACY_SLOT_ALIASES,
     candidate_canonical_slots_for_item_payload,
     canonical_equipment_slot,
     preferred_storage_slot_for_item,
-    storage_slots_for_canonical_slot,
 )
 from engine.kernel.common import serialize_value
 from engine.kernel.combat import QUALITY_MULTIPLIERS
 from engine.kernel.effects import apply_effect
 
 
-EQUIPMENT_SLOTS = sorted(
-    set(
-        [
-            "helmet", "armor", "shield", "gloves",
-            "left_ring", "right_ring", "amulet", "belt",
-            "boots", "cloak", "cover", "weapon",
-            "weapon_1", "weapon_2", "weapon_3", "weapon_4",
-            "quiver_1", "quiver_2", "quiver_3", "quiver_4",
-            "quick_item_1", "quick_item_2", "quick_item_3",
-        ]
-        + list(CANONICAL_EQUIPMENT_SLOTS)
-        + list(LEGACY_SLOT_ALIASES.keys())
-    )
-)
+EQUIPMENT_SLOTS = sorted(set(list(CANONICAL_EQUIPMENT_SLOTS) + [
+    "quiver_1", "quiver_2", "quiver_3", "quiver_4",
+    "quick_item_1", "quick_item_2", "quick_item_3",
+]))
 INVENTORY_SIZE = 16
 
 
@@ -188,7 +176,7 @@ def equip_item(actor: ActorRecord, item: ItemInstance, slot: str, item_def: Item
     requested_slot = str(slot)
     canonical_slot = canonical_equipment_slot(requested_slot)
     storage_slot = requested_slot
-    if canonical_slot is not None and requested_slot == canonical_slot:
+    if canonical_slot is not None:
         storage_slot = preferred_storage_slot_for_item(
             canonical_slot,
             {
@@ -197,8 +185,9 @@ def equip_item(actor: ActorRecord, item: ItemInstance, slot: str, item_def: Item
                 "name": item_def.label,
                 "type": item_def.item_type,
             },
+            requested_slot=requested_slot,
         )
-    alias_slots = storage_slots_for_canonical_slot(canonical_slot) if canonical_slot is not None else [storage_slot]
+    alias_slots = [storage_slot]
     existing: list[ItemInstance] = []
     for alias_slot in alias_slots:
         existing.extend(actor.equipment.slots.get(alias_slot, []))
@@ -210,7 +199,7 @@ def equip_item(actor: ActorRecord, item: ItemInstance, slot: str, item_def: Item
             actor.inventory.append(previous)
             events.append({"type": "unequipped", "item_id": previous.instance_id, "slot": storage_slot, "canonical_slot": canonical_slot or storage_slot})
     actor.equipment.slots[storage_slot] = [item]
-    item.equipped_slot = storage_slot
+    item.equipped_slot = canonical_slot or storage_slot
     if item in actor.inventory:
         actor.inventory.remove(item)
     for effect_id in item_def.equip_effect_ids:
@@ -328,29 +317,13 @@ def bypasses_weapon_immunity(item_def: ItemDef, target_traits: dict[str, Any]) -
 
 def _item_fits_slot(item_def: ItemDef, slot: str) -> bool:
     normalized_slot = str(slot).strip().lower()
-    slot_map = {
-        "helmet": {"helmet"},
-        "armor": {"armor"},
-        "shield": {"shield"},
-        "gloves": {"gloves"},
-        "left_ring": {"ring"},
-        "right_ring": {"ring"},
-        "amulet": {"amulet"},
-        "belt": {"belt"},
-        "boots": {"boots"},
-        "cloak": {"cloak"},
-    }
-    if normalized_slot.startswith("weapon_"):
-        return item_def.item_type == "weapon"
     if normalized_slot.startswith("quiver_"):
         return item_def.item_type in {"ammunition"}
     if normalized_slot.startswith("quick_item_"):
         return item_def.item_type in {"potion", "scroll", "wand", "misc"}
-    if normalized_slot in slot_map:
-        return item_def.item_type in slot_map.get(normalized_slot, {item_def.item_type})
     canonical_slot = canonical_equipment_slot(normalized_slot)
     if canonical_slot is None:
-        return item_def.item_type in slot_map.get(normalized_slot, {item_def.item_type})
+        return False
     candidates = set(
         candidate_canonical_slots_for_item_payload(
             {
@@ -366,7 +339,9 @@ def _item_fits_slot(item_def: ItemDef, slot: str) -> bool:
         return True
     if canonical_slot == "ring_right" and "ring_left" in candidates:
         return True
-    if canonical_slot.startswith("attunement_") and {"trinket_1", "trinket_2"} & candidates:
+    if canonical_slot == "trinket_2" and "trinket_1" in candidates:
+        return True
+    if canonical_slot.startswith("attunement_") and {"attunement_1", "attunement_2", "attunement_3"} & candidates:
         return True
     return False
 

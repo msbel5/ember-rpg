@@ -36,7 +36,7 @@
           "type": "weapon",
           "damage": 6,
           "material": "iron",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "chain_mail",
@@ -44,7 +44,7 @@
           "type": "armor",
           "ac_bonus": 4,
           "material": "iron",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "torch",
@@ -113,7 +113,7 @@
           "type": "weapon",
           "damage": 4,
           "material": "iron",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "leather_armor",
@@ -121,7 +121,7 @@
           "type": "armor",
           "ac_bonus": 2,
           "material": "leather",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "lockpick",
@@ -192,7 +192,7 @@
           "type": "weapon",
           "damage": 3,
           "material": "wood",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "robes",
@@ -200,7 +200,7 @@
           "type": "armor",
           "ac_bonus": 1,
           "material": "cloth",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "mana_potion",
@@ -266,7 +266,7 @@
           "type": "weapon",
           "damage": 5,
           "material": "iron",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "robes",
@@ -274,7 +274,7 @@
           "type": "armor",
           "ac_bonus": 1,
           "material": "cloth",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "shield",
@@ -282,7 +282,7 @@
           "type": "shield",
           "ac_bonus": 2,
           "material": "wood",
-          "slot": "shield"
+          "slot": "off_hand"
         },
         {
           "id": "healing_potion",
@@ -350,7 +350,7 @@
           "type": "weapon",
           "damage": 6,
           "material": "wood",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "leather_armor",
@@ -358,7 +358,7 @@
           "type": "armor",
           "ac_bonus": 2,
           "material": "leather",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "quiver",
@@ -429,7 +429,7 @@
           "type": "weapon",
           "damage": 6,
           "material": "iron",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "breastplate",
@@ -437,7 +437,7 @@
           "type": "armor",
           "ac_bonus": 4,
           "material": "iron",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "iron_shield",
@@ -445,7 +445,7 @@
           "type": "shield",
           "ac_bonus": 2,
           "material": "iron",
-          "slot": "shield"
+          "slot": "off_hand"
         },
         {
           "id": "healing_potion",
@@ -507,7 +507,7 @@
           "type": "weapon",
           "damage": 4,
           "material": "iron",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "padded_armor",
@@ -515,7 +515,7 @@
           "type": "armor",
           "ac_bonus": 1,
           "material": "cloth",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "lyre",
@@ -581,7 +581,7 @@
           "type": "weapon",
           "damage": 3,
           "material": "wood",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "leather_armor",
@@ -589,7 +589,7 @@
           "type": "armor",
           "ac_bonus": 2,
           "material": "leather",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "healing_potion",
@@ -650,7 +650,7 @@
           "type": "weapon",
           "damage": 4,
           "material": "iron",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "padded_armor",
@@ -658,7 +658,7 @@
           "type": "armor",
           "ac_bonus": 1,
           "material": "cloth",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "bread",
@@ -719,7 +719,7 @@
           "type": "weapon",
           "damage": 4,
           "material": "iron",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "leather_armor",
@@ -727,7 +727,7 @@
           "type": "armor",
           "ac_bonus": 2,
           "material": "leather",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "mana_potion",
@@ -788,7 +788,7 @@
           "type": "weapon",
           "damage": 4,
           "material": "iron",
-          "slot": "weapon"
+          "slot": "main_hand"
         },
         {
           "id": "robes",
@@ -796,7 +796,7 @@
           "type": "armor",
           "ac_bonus": 1,
           "material": "cloth",
-          "slot": "armor"
+          "slot": "chest"
         },
         {
           "id": "mana_potion",
@@ -821,3 +821,4 @@
     }
   }
 }
+

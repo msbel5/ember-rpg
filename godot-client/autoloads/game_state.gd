@@ -20,6 +20,8 @@ var player: Dictionary = {}
 var scene: String = "exploration"  # exploration | combat | dialogue | rest
 var location: String = ""
 var combat_state: Dictionary = {}
+var travel_state: Dictionary = {}
+var crime_state: Dictionary = {}
 var conversation_state: Dictionary = {}
 var dialog_npc: String = ""
 var dialog_text: String = ""
@@ -126,6 +128,10 @@ func update_from_response(data: Dictionary) -> void:
 		conversation_state = data["conversation_state"]
 	if data.has("world_state") and data["world_state"] is Dictionary:
 		world_state = data["world_state"]
+	if data.has("travel_state"):
+		travel_state = data["travel_state"] if data["travel_state"] is Dictionary else {}
+	if data.has("crime_state"):
+		crime_state = data["crime_state"] if data["crime_state"] is Dictionary else {}
 	if data.has("game_state_root") and data["game_state_root"] is Dictionary:
 		campaign_game_state = data["game_state_root"]
 	if data.has("actor_roster") and data["actor_roster"] is Array:
@@ -273,6 +279,8 @@ func reset() -> void:
 	scene = "exploration"
 	location = ""
 	combat_state = {}
+	travel_state = {}
+	crime_state = {}
 	conversation_state = {}
 	_apply_dialog_payload({})
 	narrative_history.clear()
@@ -312,6 +320,13 @@ func reset() -> void:
 
 func is_in_combat() -> bool:
 	return (scene == "combat" or (not combat_state.is_empty() and not bool(combat_state.get("ended", false)))) and not combat_state.is_empty()
+
+
+func has_active_travel() -> bool:
+	if travel_state.is_empty():
+		return false
+	var status := str(travel_state.get("status", "")).strip_edges().to_lower()
+	return not status.is_empty() and status not in ["idle", "cancelled"]
 
 func has_active_campaign() -> bool:
 	return active_runtime == "campaign" and not campaign_id.is_empty()

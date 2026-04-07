@@ -5,6 +5,8 @@ import copy
 import uuid
 from typing import Any, Dict, List, Optional
 
+from engine.kernel.actor_items import candidate_canonical_slots_for_item_payload, canonical_equipment_slot
+
 
 def make_conversation_state(
     turn: int,
@@ -33,45 +35,33 @@ def normalize_conversation_state(state: Any, *, turn: int = 0) -> Dict[str, Any]
     return normalized
 
 
-def canonical_slot(slot: Optional[str], legacy_slot_aliases: Dict[str, str]) -> Optional[str]:
+def canonical_slot(slot: Optional[str]) -> Optional[str]:
     if slot is None:
         return None
-    slot_lower = slot.lower().strip()
-    return legacy_slot_aliases.get(slot_lower, slot_lower)
+    normalized = slot.lower().strip()
+    if normalized and canonical_equipment_slot(normalized) is None:
+        raise ValueError(f"Legacy or unknown equipment slot `{normalized}` is no longer supported")
+    return normalized or None
 
 
 def display_name(item_id: str) -> str:
     return item_id.replace("_", " ").strip().title() or "Unknown Item"
 
 
-def infer_slot(item: Dict[str, Any], legacy_slot_aliases: Dict[str, str]) -> Optional[str]:
+def infer_slot(item: Dict[str, Any]) -> Optional[str]:
     item_type = str(item.get("type", "")).lower()
     item_id = str(item.get("id", "")).lower()
     name = str(item.get("name", "")).lower()
-    slot = canonical_slot(item.get("slot"), legacy_slot_aliases)
+    slot = canonical_slot(item.get("slot"))
     if slot:
         return slot
-    candidates = f"{item_type} {item_id} {name}"
-    if "shield" in candidates or item_type == "shield":
-        return "shield"
-    if "helmet" in candidates or "helm" in candidates:
-        return "helmet"
-    if "boot" in candidates:
-        return "boots"
-    if "glove" in candidates or "gauntlet" in candidates:
-        return "gloves"
-    if "ring" in candidates:
-        return "ring"
-    if "amulet" in candidates or "necklace" in candidates:
-        return "amulet"
-    if "armor" in candidates or "mail" in candidates or "robe" in candidates:
-        return "armor"
-    if item_type == "weapon" or any(word in candidates for word in ["sword", "axe", "dagger", "mace", "staff", "bow", "wand", "hammer"]):
-        return "weapon"
-    return None
+    candidates = candidate_canonical_slots_for_item_payload(
+        {"id": item_id, "item_def_id": item_id, "name": name, "type": item_type}
+    )
+    return candidates[0] if candidates else None
 
 
-def normalize_item_record(item: Any, legacy_slot_aliases: Dict[str, str]) -> Dict[str, Any]:
+def normalize_item_record(item: Any) -> Dict[str, Any]:
     if isinstance(item, str):
         data: Dict[str, Any] = {"id": item, "name": display_name(item), "qty": 1}
     else:
@@ -86,7 +76,7 @@ def normalize_item_record(item: Any, legacy_slot_aliases: Dict[str, str]) -> Dic
         data["qty"] = max(1, int(qty))
     except (TypeError, ValueError):
         data["qty"] = 1
-    slot = infer_slot(data, legacy_slot_aliases)
+    slot = infer_slot(data)
     if slot:
         data["slot"] = slot
     data.setdefault("type", slot or "item")

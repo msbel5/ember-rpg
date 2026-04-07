@@ -154,11 +154,11 @@ def create_player_state(
         item = dict(item_template)
         slot = item.get("slot")
         if slot and not player.equipment.slots.get(slot):
-            from engine.kernel.actor_items import item_stack_from_legacy_payload
+            from engine.kernel.actor_items import item_stack_from_payload
 
-            equipped_item = item_stack_from_legacy_payload(item)
+            equipped_item = item_stack_from_payload(item)
             player.equipment.add_item(slot, equipped_item)
-            if slot == "armor" and result.ap_tracker:
+            if slot == "chest" and result.ap_tracker:
                 material = item.get("material", "none")
                 armor_weight_map = {
                     "cloth": "cloth",
@@ -168,9 +168,9 @@ def create_player_state(
                 }
                 result.ap_tracker.set_armor(armor_weight_map.get(material, "none"))
         else:
-            from engine.kernel.actor_items import item_stack_from_legacy_payload
+            from engine.kernel.actor_items import item_stack_from_payload
             try:
-                stack = item_stack_from_legacy_payload(item)
+                stack = item_stack_from_payload(item)
                 player.inventory.append(stack)
             except Exception:
                 pass

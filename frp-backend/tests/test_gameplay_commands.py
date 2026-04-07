@@ -131,7 +131,7 @@ class TestEquipCommand:
         assert result[1] == "equipment"
         assert "main_hand" in result[0]
         assert player.equipment.slots["main_hand"][0].instance_id == sword.instance_id
-        assert player.equipment.slots.get("weapon", []) == []
+        assert player.equipment.slots.get("main_hand", []) != []
         assert sword.payload["canonical_slot"] == "main_hand"
         assert sword.payload["equipped_slot"] == "main_hand"
 
@@ -154,8 +154,8 @@ class TestEquipCommand:
 
         assert first is not None and "ring_left" in first[0]
         assert second is not None and "ring_right" in second[0]
-        assert player.equipment.slots["left_ring"][0].instance_id == first_ring.instance_id
-        assert player.equipment.slots["right_ring"][0].instance_id == second_ring.instance_id
+        assert player.equipment.slots["ring_left"][0].instance_id == first_ring.instance_id
+        assert player.equipment.slots["ring_right"][0].instance_id == second_ring.instance_id
         assert first_ring.payload["canonical_slot"] == "ring_left"
         assert second_ring.payload["canonical_slot"] == "ring_right"
 
@@ -172,7 +172,7 @@ class TestUnequipCommand:
             item_def_id="iron_shortsword",
             quantity=1,
         )
-        player.equipment.slots.setdefault("weapon_1", []).append(sword)
+        player.equipment.slots.setdefault("main_hand", []).append(sword)
         result = maybe_handle_equipment_command(ctx, "unequip iron_shortsword")
         assert result is not None
         narrative, cmd_type, hours = result
@@ -195,7 +195,7 @@ class TestUnequipCommand:
         assert result is not None
         assert result[1] == "equipment"
         assert "chest" in result[0]
-        assert ctx.kernel_runtime["actors"]["player"].equipment.slots.get("armor", []) == []
+        assert ctx.kernel_runtime["actors"]["player"].equipment.slots.get("chest", []) == []
 
 
 # ---------------------------------------------------------------------------

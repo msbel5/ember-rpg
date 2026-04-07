@@ -5047,7 +5047,7 @@
       "description": "Interlocking iron rings that provide reliable battlefield protection.",
       "armor_bonus": 4,
       "armor_type": "medium",
-      "slot": "armor"
+      "slot": "chest"
     },
     {
       "id": "chair",
@@ -5551,7 +5551,7 @@
       "description": "Supple leather armor favored by scouts and rogues.",
       "armor_bonus": 2,
       "armor_type": "light",
-      "slot": "armor"
+      "slot": "chest"
     },
     {
       "id": "lockpick",
@@ -5804,7 +5804,7 @@
       "description": "Simple robes cut for comfort, ritual, and spellcasting.",
       "armor_bonus": 1,
       "armor_type": "light",
-      "slot": "armor"
+      "slot": "chest"
     },
     {
       "id": "rope",
@@ -5870,7 +5870,7 @@
       "weight": 5.0,
       "description": "A round wooden shield bound with iron and leather straps.",
       "armor_bonus": 2,
-      "slot": "shield"
+      "slot": "off_hand"
     },
     {
       "id": "sinew",

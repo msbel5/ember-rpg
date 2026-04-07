@@ -50,7 +50,7 @@ func _ready() -> void:
 	world_view.focus_actions_changed.connect(command_bar.set_focus_actions)
 	inventory_panel.command_requested.connect(_submit_action)
 	settlement_panel.command_requested.connect(_submit_action)
-	minimap_panel.travel_requested.connect(_on_world_graph_travel_requested)
+	minimap_panel.travel_requested.connect(_on_travel_requested)
 	quest_panel.command_requested.connect(_submit_action)
 	save_load_panel.save_requested.connect(_save_sync.on_save_requested)
 	save_load_panel.load_requested.connect(_save_sync.on_load_requested)
@@ -101,6 +101,8 @@ func _install_combat_overlay() -> void:
 	if _combat_overlay_widget != null and world_pane != null and _combat_overlay_widget.has_method("attach_to_surface"):
 		_combat_overlay_widget.attach_to_surface(world_pane)
 		_combat_overlay_widget.command_requested.connect(_submit_action)
+		if _combat_overlay_widget.has_signal("structured_action_requested"):
+			_combat_overlay_widget.structured_action_requested.connect(_on_structured_action_requested)
 
 
 func _setup_sidebar_tabs() -> void:
@@ -165,6 +167,30 @@ func _submit_action(text: String) -> void:
 		narrative_panel.show_thinking_indicator()
 
 
+func _submit_structured_action(shortcut: String, args: Dictionary, history_text: String = "") -> void:
+	var normalized_shortcut := shortcut.strip_edges().to_lower()
+	if normalized_shortcut.is_empty() or is_waiting:
+		return
+	if GameState.campaign_id.is_empty():
+		narrative_panel.append_system_text("[color=red]No active game. Start a new adventure.[/color]")
+		return
+	var remember_text := history_text.strip_edges()
+	if not remember_text.is_empty():
+		command_bar.remember_command(remember_text)
+	_set_waiting(true)
+	command_bar.clear_input()
+	Backend.submit_campaign_command(
+		GameState.campaign_id,
+		"",
+		_on_campaign_action_response.bind(remember_text),
+		normalized_shortcut,
+		args,
+	)
+	await get_tree().create_timer(3.0).timeout
+	if is_waiting:
+		narrative_panel.show_thinking_indicator()
+
+
 func _on_campaign_action_response(data, _issued_text: String) -> void:
 	if data == null:
 		_finish_turn_sync()
@@ -198,6 +224,11 @@ func _finish_turn_sync() -> void:
 func _on_state_updated() -> void:
 	_save_sync.remember_player_id()
 	_ensure_campaign_socket()
+
+
+func _ensure_campaign_socket() -> void:
+	if _world_sync != null and _world_sync.has_method("initialize_runtime"):
+		_world_sync.initialize_runtime()
 
 
 func _on_dialog_state_changed(_payload: Dictionary) -> void:
@@ -317,21 +348,16 @@ func _submit_next_queued_world_command() -> void:
 	_submit_action(next_command)
 
 
-func _on_world_graph_travel_requested(destination_region_id: String, destination_settlement_id: String) -> void:
-	if is_waiting or GameState.campaign_id.is_empty():
+func _on_travel_requested(request: Dictionary) -> void:
+	var shortcut := str(request.get("shortcut", "travel"))
+	var args = request.get("args", {})
+	if not (args is Dictionary):
 		return
-	command_bar.remember_command("travel %s" % destination_region_id)
-	_set_waiting(true)
-	Backend.submit_campaign_command(
-		GameState.campaign_id,
-		"",
-		_on_campaign_action_response.bind("travel %s" % destination_region_id),
-		"travel",
-		{
-			"destination_region_id": destination_region_id,
-			"destination_settlement_id": destination_settlement_id,
-		},
-	)
+	_submit_structured_action(shortcut, args, str(request.get("history_text", "")))
+
+
+func _on_structured_action_requested(shortcut: String, args: Dictionary, history_text: String) -> void:
+	_submit_structured_action(shortcut, args, history_text)
 
 
 func _capture_visual_proof(folder: String, prefix: String, include_world: bool) -> void:

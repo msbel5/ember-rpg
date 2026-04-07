@@ -28,64 +28,29 @@ CANONICAL_EQUIPMENT_SLOTS = [
     "attunement_2",
     "attunement_3",
 ]
-LEGACY_SLOT_ALIASES = {
-    "weapon": "main_hand",
-    "weapon_1": "main_hand",
-    "weapon_2": "off_hand",
-    "weapon_3": "main_hand",
-    "weapon_4": "main_hand",
-    "main_hand": "main_hand",
-    "off_hand": "off_hand",
-    "shield": "off_hand",
-    "helmet": "head",
-    "head": "head",
-    "face": "face",
-    "amulet": "neck",
-    "neck": "neck",
-    "cover": "shoulders",
-    "cloak": "shoulders",
-    "shoulders": "shoulders",
-    "armor": "chest",
-    "chest": "chest",
-    "arms": "arms",
-    "gloves": "hands",
-    "hands": "hands",
-    "belt": "belt",
-    "legs": "legs",
-    "boots": "feet",
-    "feet": "feet",
-    "left_ring": "ring_left",
-    "ring_left": "ring_left",
-    "right_ring": "ring_right",
-    "ring_right": "ring_right",
-    "trinket_1": "trinket_1",
-    "trinket_2": "trinket_2",
-    "attunement_1": "attunement_1",
-    "attunement_2": "attunement_2",
-    "attunement_3": "attunement_3",
-}
 NON_WEARABLE_SLOT_PREFIXES = ("quiver_", "quick_item_")
 NON_WEARABLE_SLOTS = {"quiver", "backpack"}
-STORAGE_SLOT_PREFERENCES = {
-    "main_hand": ["main_hand", "weapon_1", "weapon"],
-    "off_hand": ["off_hand", "shield", "weapon_2"],
-    "head": ["helmet", "head"],
-    "face": ["face"],
-    "neck": ["amulet", "neck"],
-    "shoulders": ["cover", "cloak", "shoulders"],
-    "chest": ["armor", "chest"],
-    "arms": ["arms"],
-    "hands": ["gloves", "hands"],
-    "belt": ["belt"],
-    "legs": ["legs"],
-    "feet": ["boots", "feet"],
-    "ring_left": ["left_ring", "ring_left"],
-    "ring_right": ["right_ring", "ring_right"],
-    "trinket_1": ["trinket_1"],
-    "trinket_2": ["trinket_2"],
-    "attunement_1": ["attunement_1"],
-    "attunement_2": ["attunement_2"],
-    "attunement_3": ["attunement_3"],
+LEGACY_EQUIPMENT_SLOTS = {
+    "weapon",
+    "weapon_1",
+    "weapon_2",
+    "weapon_3",
+    "weapon_4",
+    "armor",
+    "shield",
+    "helmet",
+    "amulet",
+    "cloak",
+    "cover",
+    "left_ring",
+    "right_ring",
+    "body",
+    "underlayer",
+    "under",
+    "clothes",
+    "over",
+    "gloves",
+    "boots",
 }
 CANONICAL_SLOT_COVERAGE = {
     "main_hand": [],
@@ -163,35 +128,33 @@ def canonical_equipment_slot(slot: Any) -> str | None:
         return None
     if normalized in CANONICAL_EQUIPMENT_SLOTS:
         return normalized
-    return LEGACY_SLOT_ALIASES.get(normalized)
+    return None
 
 
-def storage_slots_for_canonical_slot(slot: Any) -> list[str]:
-    canonical = canonical_equipment_slot(slot)
-    if canonical is None:
-        normalized = _normalize_slot_token(slot)
-        return [normalized] if normalized else []
-    preferred = list(STORAGE_SLOT_PREFERENCES.get(canonical, [canonical]))
-    aliases = [
-        legacy_slot
-        for legacy_slot, mapped in LEGACY_SLOT_ALIASES.items()
-        if mapped == canonical and legacy_slot not in preferred and not is_nonwearable_slot(legacy_slot)
-    ]
-    return preferred + sorted(aliases)
+def _legacy_slot_error(slot: Any) -> ValueError:
+    return ValueError(
+        f"Legacy equipment slot `{_normalize_slot_token(slot)}` is no longer supported; "
+        "use canonical slot ids only."
+    )
 
 
-def canonical_slot_query_aliases(slot: Any) -> list[str]:
+def _reject_legacy_slot(slot: Any) -> None:
     normalized = _normalize_slot_token(slot)
-    if not normalized:
-        return []
-    canonical = canonical_equipment_slot(normalized)
-    if canonical is None:
-        return [normalized]
-    aliases = [canonical]
-    for storage_slot in storage_slots_for_canonical_slot(canonical):
-        if storage_slot not in aliases:
-            aliases.append(storage_slot)
-    return aliases
+    if normalized in LEGACY_EQUIPMENT_SLOTS:
+        raise _legacy_slot_error(normalized)
+
+
+def _validate_item_payload_slots(payload: dict[str, Any]) -> None:
+    if "legacy_slot" in payload:
+        raise _legacy_slot_error(payload.get("legacy_slot"))
+    for key in ("canonical_slot", "equipped_slot", "equip_slot", "slot"):
+        value = payload.get(key)
+        if value in (None, ""):
+            continue
+        normalized = _normalize_slot_token(value)
+        _reject_legacy_slot(normalized)
+        if normalized and not is_nonwearable_slot(normalized) and normalized not in CANONICAL_EQUIPMENT_SLOTS:
+            raise ValueError(f"Unknown equipment slot `{normalized}`")
 
 
 def _occupied_canonical_slots(loadout: "EquipmentLoadout | None") -> set[str]:
@@ -235,13 +198,13 @@ def candidate_canonical_slots_for_item_payload(
     occupied_slots: set[str] | None = None,
 ) -> list[str]:
     normalized_payload = dict(payload or {})
+    _validate_item_payload_slots(normalized_payload)
     explicit_candidates: list[str] = []
     for candidate in (
         normalized_payload.get("canonical_slot"),
         normalized_payload.get("equipped_slot"),
         normalized_payload.get("equip_slot"),
         normalized_payload.get("slot"),
-        normalized_payload.get("legacy_slot"),
     ):
         canonical = canonical_equipment_slot(candidate)
         if canonical and canonical not in explicit_candidates:
@@ -295,6 +258,7 @@ def canonical_slot_for_item_payload(
     occupied_slots: set[str] | None = None,
 ) -> str | None:
     normalized_payload = dict(payload or {})
+    _validate_item_payload_slots(normalized_payload)
     occupied = set(occupied_slots or set())
     canonical_hint = canonical_equipment_slot(normalized_payload.get("canonical_slot"))
     if canonical_hint is not None:
@@ -304,8 +268,8 @@ def canonical_slot_for_item_payload(
         normalized_payload.get("equipped_slot"),
         normalized_payload.get("equip_slot"),
         normalized_payload.get("slot"),
-        normalized_payload.get("legacy_slot"),
     ):
+        _reject_legacy_slot(candidate)
         canonical = canonical_equipment_slot(candidate)
         if canonical == "ring_left" and "ring_left" in occupied and "ring_right" not in occupied:
             return "ring_right"
@@ -322,13 +286,10 @@ def preferred_storage_slot_for_item(
     requested_slot: Any | None = None,
 ) -> str:
     requested = _normalize_slot_token(requested_slot)
-    if requested and requested in storage_slots_for_canonical_slot(canonical_slot):
+    _reject_legacy_slot(requested)
+    if requested and requested == canonical_slot:
         return requested
-    if canonical_slot == "off_hand":
-        text = _payload_text(payload)
-        if "shield" in text or str(payload.get("type", "")).strip().lower() == "shield":
-            return "shield"
-    return storage_slots_for_canonical_slot(canonical_slot)[0]
+    return canonical_slot
 
 
 def coverage_zones_for_item(item: "ItemStack", slot: Any) -> list[str]:
@@ -360,9 +321,11 @@ def armor_weight_class_for_item(item: "ItemStack", slot: Any) -> str:
     if armor_type:
         return ARMOR_WEIGHT_DEFAULTS.get(armor_type, armor_type)
     canonical = canonical_slot_for_item_payload(payload, explicit_slot=slot)
+    text = _payload_text(payload)
+    if canonical == "off_hand" and ("shield" in text or str(payload.get("type", "")).strip().lower() == "shield"):
+        return "medium"
     if canonical not in {"head", "face", "shoulders", "chest", "arms", "hands", "legs", "feet"}:
         return "none"
-    text = _payload_text(payload)
     if "plate" in text:
         return "plate_armor"
     if "chain" in text or "mail" in text:
@@ -428,8 +391,6 @@ def equipment_item_projection(slot: str, item: "ItemStack") -> dict[str, Any]:
         "spell_interference": spell_interference_for_item(item, slot),
         "attunement_required": attunement_required_for_item(item),
     }
-    if _normalize_slot_token(slot) != _normalize_slot_token(canonical_slot):
-        projection["legacy_slot"] = str(slot)
     return projection
 
 
@@ -450,15 +411,17 @@ def build_equipment_topology_payload(loadout: "EquipmentLoadout") -> dict[str, A
             for zone in projection["coverage_zones"]:
                 if zone in coverage_summary:
                     coverage_summary[zone].append(str(item.item_def_id))
-            if canonical_slot.startswith("attunement_"):
+            payload = dict(getattr(item, "payload", {}) or {})
+            if (
+                canonical_slot.startswith("attunement_")
+                or (
+                    bool(projection.get("attunement_required", False))
+                    and any(bool(payload.get(key, False)) for key in ("attuned", "is_attuned"))
+                )
+            ):
                 attuned_item_ids.append(str(item.item_def_id))
     return {
         "slots": canonical_slots,
-        "legacy_slot_aliases": {
-            legacy_slot: canonical_slot
-            for legacy_slot, canonical_slot in sorted(LEGACY_SLOT_ALIASES.items())
-            if legacy_slot != canonical_slot
-        },
         "coverage_summary": coverage_summary,
         "modifiers": equipment_modifier_totals(loadout),
         "attunement": equipment_attunement_summary(loadout, attuned_item_ids=attuned_item_ids),
@@ -561,7 +524,14 @@ class ItemStack:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ItemStack":
-        return cls(**data)
+        payload = dict(data)
+        nested_payload = dict(payload.get("payload", {}) or {})
+        if "legacy_slot_aliases" in nested_payload:
+            raise ValueError("legacy_slot_aliases is no longer supported in item payloads")
+        _validate_item_payload_slots(payload)
+        _validate_item_payload_slots(nested_payload)
+        payload["payload"] = nested_payload
+        return cls(**payload)
 
 
 @dataclass
@@ -569,12 +539,20 @@ class EquipmentLoadout:
     slots: dict[str, list[ItemStack]] = field(default_factory=dict)
 
     def add_item(self, slot: str, item: ItemStack) -> None:
-        canonical_slot = canonical_slot_for_item_payload(getattr(item, "payload", {}) or {}, explicit_slot=slot)
+        normalized_slot = _normalize_slot_token(slot)
+        _reject_legacy_slot(normalized_slot)
+        canonical_slot = canonical_slot_for_item_payload(getattr(item, "payload", {}) or {}, explicit_slot=normalized_slot)
+        storage_slot = canonical_slot or normalized_slot
+        if not storage_slot:
+            raise ValueError("equipment slot is required")
+        if not is_nonwearable_slot(storage_slot) and storage_slot not in CANONICAL_EQUIPMENT_SLOTS:
+            raise ValueError(f"Unknown equipment slot `{storage_slot}`")
         if canonical_slot is not None:
-            item.payload.setdefault("canonical_slot", canonical_slot)
-            if _normalize_slot_token(slot) != canonical_slot:
-                item.payload.setdefault("legacy_slot", str(slot))
-        self.slots.setdefault(slot, []).append(item)
+            item.payload["canonical_slot"] = canonical_slot
+            item.payload["slot"] = canonical_slot
+            item.payload.pop("equipped_slot", None)
+            item.payload.pop("equip_slot", None)
+        self.slots.setdefault(storage_slot, []).append(item)
 
     def covered_parts(self) -> set[str]:
         covered: set[str] = set()
@@ -599,45 +577,45 @@ class EquipmentLoadout:
         topology = build_equipment_topology_payload(self)
         payload["equipment_topology"] = {
             "slots": topology["slots"],
-            "legacy_slot_aliases": topology["legacy_slot_aliases"],
             "coverage_summary": topology["coverage_summary"],
         }
         payload["equipment_modifiers"] = topology["modifiers"]
-        payload["canonical_slots"] = topology["slots"]
-        payload["legacy_slot_aliases"] = topology["legacy_slot_aliases"]
-        payload["coverage_summary"] = topology["coverage_summary"]
-        payload["modifier_totals"] = topology["modifiers"]
         payload["attunement"] = topology["attunement"]
         return payload
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "EquipmentLoadout":
         payload = dict(data)
-        slots = {
-            key: [ItemStack.from_dict(item) for item in items]
-            for key, items in payload.get("slots", {}).items()
-        }
+        if "legacy_slot_aliases" in payload:
+            raise ValueError("legacy_slot_aliases is no longer supported in equipment payloads")
+        slots: dict[str, list[ItemStack]] = {}
+        for key, items in payload.get("slots", {}).items():
+            normalized_key = _normalize_slot_token(key)
+            _reject_legacy_slot(normalized_key)
+            if not normalized_key:
+                raise ValueError("equipment slot keys must not be empty")
+            if not is_nonwearable_slot(normalized_key) and normalized_key not in CANONICAL_EQUIPMENT_SLOTS:
+                raise ValueError(f"Unknown equipment slot `{normalized_key}`")
+            slots[normalized_key] = [ItemStack.from_dict(item) for item in items]
         return cls(slots=slots)
 
 
-def item_stack_from_legacy_payload(payload: dict[str, Any], *, index: int = 0) -> ItemStack:
+def item_stack_from_payload(payload: dict[str, Any], *, index: int = 0) -> ItemStack:
     normalized_payload = dict(payload)
+    _validate_item_payload_slots(normalized_payload)
     item_name = str(normalized_payload.get("name", normalized_payload.get("id", f"item_{index}"))).strip() or f"item_{index}"
-    instance_id = str(normalized_payload.get("instance_id", normalized_payload.get("id", f"legacy_item_{index}")))
+    instance_id = str(normalized_payload.get("instance_id", normalized_payload.get("id", f"item_{index}")))
     item_def_id = str(normalized_payload.get("item_def_id", item_name.lower().replace(" ", "_")))
     quantity = max(1, int(normalized_payload.get("quantity", normalized_payload.get("count", 1))))
     material_id = normalized_payload.get("material_id") or normalized_payload.get("material") or normalized_payload.get("weapon_material")
     sharpness = int(normalized_payload.get("sharpness", 100))
     canonical_slot = canonical_slot_for_item_payload(normalized_payload)
     if canonical_slot is not None:
-        normalized_payload.setdefault("canonical_slot", canonical_slot)
-        explicit_slot = (
-            normalized_payload.get("equipped_slot")
-            or normalized_payload.get("equip_slot")
-            or normalized_payload.get("slot")
-        )
-        if explicit_slot and _normalize_slot_token(explicit_slot) != canonical_slot:
-            normalized_payload.setdefault("legacy_slot", str(explicit_slot))
+        normalized_payload["canonical_slot"] = canonical_slot
+        normalized_payload["slot"] = canonical_slot
+        normalized_payload.pop("equipped_slot", None)
+        normalized_payload.pop("equip_slot", None)
+    normalized_payload.pop("legacy_slot", None)
     return ItemStack(
         instance_id=instance_id,
         item_def_id=item_def_id,
@@ -653,11 +631,6 @@ def item_stack_from_legacy_payload(payload: dict[str, Any], *, index: int = 0) -
 
 def equipment_layer_order(slot: str) -> int:
     order = {
-        "under": 0,
-        "underlayer": 0,
-        "clothes": 1,
-        "over": 1,
-        "armor": 2,
         "head": 2,
         "face": 2,
         "neck": 2,
@@ -668,10 +641,8 @@ def equipment_layer_order(slot: str) -> int:
         "belt": 2,
         "legs": 2,
         "feet": 2,
-        "cover": 3,
         "main_hand": 4,
         "off_hand": 4,
-        "weapon": 4,
     }
     return order.get(str(slot).lower(), 5)
 
@@ -682,7 +653,6 @@ __all__ = [
     "ItemStack",
     "BODY_ZONE_ORDER",
     "CANONICAL_EQUIPMENT_SLOTS",
-    "LEGACY_SLOT_ALIASES",
     "MaterialDef",
     "armor_weight_class_for_item",
     "attunement_required_for_item",
@@ -690,17 +660,15 @@ __all__ = [
     "candidate_canonical_slots_for_item_payload",
     "canonical_equipment_slot",
     "canonical_slot_for_item_payload",
-    "canonical_slot_query_aliases",
     "coverage_zones_for_item",
     "equipment_attunement_summary",
     "equipment_item_projection",
     "equipment_layer_order",
     "equipment_modifier_totals",
     "is_nonwearable_slot",
-    "item_stack_from_legacy_payload",
+    "item_stack_from_payload",
     "movement_penalty_for_item",
     "preferred_storage_slot_for_item",
     "spell_interference_for_item",
     "stealth_noise_for_item",
-    "storage_slots_for_canonical_slot",
 ]

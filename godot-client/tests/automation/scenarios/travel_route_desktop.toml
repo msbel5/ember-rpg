@@ -1,6 +1,6 @@
 [scenario]
 name = "travel_route_desktop"
-description = "Desktop proof for semantic world-graph travel from the Map tab."
+description = "Desktop proof for route-backed travel start and active travel_state controls from the Map tab."
 adapter_id = "fantasy_ember"
 player_name = "TravelSmoke"
 create_new = false
@@ -99,16 +99,38 @@ expected = "semantic travel command is issued from the map tab"
 id = "wait_for_travel_history"
 action = "wait_for_node_text"
 node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
-text = "travel region_024"
+text = "travel grove elf grove"
 duration_ms = 3000
-expected = "travel command is remembered by the shell"
+expected = "route-backed travel command is remembered by the shell"
 
 [[steps]]
-id = "wait_for_travel_arrival"
+id = "wait_for_active_travel_summary"
 action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/StatusBar/StatusRow/LocationLabel"
-text = "Grove Elf Grove"
-duration_ms = 5000
+node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/SummaryLabel"
+text = "Traveling to Grove Elf Grove"
+duration_ms = 10000
+expected = "map tab reflects active travel_state instead of route-start controls"
+
+[[steps]]
+id = "wait_for_continue_travel"
+action = "wait_for_node_visible"
+node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/ContinueTravelButton"
+duration_ms = 10000
+expected = "active travel exposes continue travel from travel_state truth"
+
+[[steps]]
+id = "continue_travel_once"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/ContinueTravelButton"
+wait_ms = 1800
 capture_os = true
 capture_viewport = true
-expected = "travel changes the visible location state"
+expected = "active travel advances through a truthful continue travel control"
+
+[[steps]]
+id = "wait_for_continue_history"
+action = "wait_for_node_text"
+node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
+text = "continue travel"
+duration_ms = 10000
+expected = "continue travel command is remembered by the shell"

@@ -31,6 +31,7 @@ from engine.kernel import (
     production_ledger_from_settlement,
     spread_contagion,
 )
+from engine.kernel.actor_items import CANONICAL_EQUIPMENT_SLOTS, build_equipment_topology_payload
 from engine.npc.npc_memory import NPCMemoryManager
 from engine.kernel.scene_types import SceneContext, SceneType
 from engine.world.body_parts import ARMOR_COVERAGE
@@ -74,38 +75,21 @@ _CRIME_STATE_KEYS = (
     "witness_count",
     "last_incident",
 )
+_CRIME_FLAG_PATTERNS = (
+    "crime",
+    "wanted",
+    "bounty",
+    "witness",
+    "guard",
+    "theft",
+    "assault",
+    "murder",
+    "trespass",
+)
 _KNOWLEDGE_STATE_KEYS = (
     "discovered_topic_ids",
     "pinned_topic_ids",
 )
-_EQUIPMENT_CANONICAL_SLOT_ALIASES: dict[str, tuple[str, ...]] = {
-    "head": ("helmet",),
-    "body": ("armor", "body", "chest"),
-    "shield": ("shield",),
-    "hands": ("gloves", "gauntlets"),
-    "waist": ("belt",),
-    "feet": ("boots", "greaves"),
-    "cloak": ("cloak", "cover", "over"),
-    "neck": ("amulet", "neck"),
-    "ring_left": ("left_ring", "ring_left"),
-    "ring_right": ("right_ring",),
-    "main_hand": ("weapon", "main_hand", "weapon_1"),
-    "off_hand": ("off_hand",),
-    "weapon_2": ("weapon_2",),
-    "weapon_3": ("weapon_3",),
-    "weapon_4": ("weapon_4",),
-    "quiver_1": ("quiver_1",),
-    "quiver_2": ("quiver_2",),
-    "quiver_3": ("quiver_3",),
-    "quiver_4": ("quiver_4",),
-    "quick_item_1": ("quick_item_1",),
-    "quick_item_2": ("quick_item_2",),
-    "quick_item_3": ("quick_item_3",),
-    "underlayer": ("under", "underlayer", "clothes"),
-}
-_EQUIPMENT_CANONICAL_SLOT_ORDER = tuple(_EQUIPMENT_CANONICAL_SLOT_ALIASES)
-
-
 def _normalize_runtime_scene_name(value: Any) -> str:
     normalized = str(value or "").strip().lower()
     if normalized == "travel":
@@ -285,21 +269,57 @@ def _persist_crime_state(runtime: dict[str, Any], crime_state: Any) -> None:
     raw_payload["crime_state"] = normalized
 
 
+def _crime_pending_effects(context: "CampaignContext") -> list[dict[str, Any]]:
+    cascade_engine = getattr(context, "cascade_engine", None)
+    pending_effects = getattr(cascade_engine, "pending_effects", None)
+    if not isinstance(pending_effects, list):
+        return []
+    normalized: list[dict[str, Any]] = []
+    for entry in pending_effects:
+        payload = copy.deepcopy(getattr(entry, "__dict__", entry))
+        if isinstance(payload, dict):
+            normalized.append(payload)
+    return normalized
+
+
+def _crime_world_flags(context: "CampaignContext") -> dict[str, Any]:
+    world_state = getattr(context, "world_state", None)
+    flags = getattr(world_state, "flags", None)
+    if not isinstance(flags, dict):
+        return {}
+    relevant: dict[str, Any] = {}
+    for key, value in flags.items():
+        normalized_key = str(key or "").strip()
+        if not normalized_key:
+            continue
+        lowered = normalized_key.lower()
+        if any(pattern in lowered for pattern in _CRIME_FLAG_PATTERNS):
+            relevant[normalized_key] = copy.deepcopy(value)
+    return dict(sorted(relevant.items(), key=lambda item: item[0]))
+
+
 def build_runtime_crime_payload(context: "CampaignContext", runtime: dict[str, Any]) -> dict[str, Any] | None:
     normalized = _crime_state(runtime)
-    if normalized is None:
+    pending_effects = _crime_pending_effects(context)
+    world_flags = _crime_world_flags(context)
+    if normalized is None and not pending_effects and not world_flags:
         return {
             "wanted": False,
             "active_bounty": 0,
             "witness_count": 0,
             "last_incident": None,
+            "pending_effects": [],
+            "world_flags": {},
         }
-    return {
+    payload = {
         "wanted": bool(normalized.get("wanted", False)),
         "active_bounty": int(normalized.get("active_bounty", 0) or 0),
         "witness_count": int(normalized.get("witness_count", 0) or 0),
-        "last_incident": copy.deepcopy(normalized.get("last_incident")),
+        "last_incident": copy.deepcopy(normalized.get("last_incident")) if normalized is not None else None,
+        "pending_effects": pending_effects,
+        "world_flags": world_flags,
     }
+    return payload
 
 
 def _knowledge_state(runtime: dict[str, Any]) -> dict[str, Any]:
@@ -1089,164 +1109,12 @@ def build_actor_spell_payload(actor: ActorRecord | None) -> dict[str, Any]:
     }
 
 
-def _equipment_canonical_slot(legacy_slot: str) -> str:
-    normalized = str(legacy_slot or "").strip().lower()
-    for canonical_slot, aliases in _EQUIPMENT_CANONICAL_SLOT_ALIASES.items():
-        if normalized == canonical_slot or normalized in aliases:
-            return canonical_slot
-    return normalized or "unknown"
-
-
-def _equipment_canonical_slot_index(canonical_slot: str) -> int:
-    try:
-        return _EQUIPMENT_CANONICAL_SLOT_ORDER.index(canonical_slot)
-    except ValueError:
-        return len(_EQUIPMENT_CANONICAL_SLOT_ORDER)
-
-
-def _normalized_equipment_lookup_key(value: Any) -> str:
-    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
-
-
-def _armor_piece_for_item(item_payload: dict[str, Any], legacy_slot: str, canonical_slot: str) -> Any:
-    normalized_lookup = {_normalized_equipment_lookup_key(key): piece for key, piece in ARMOR_COVERAGE.items()}
-    for candidate in (
-        item_payload.get("armor_piece"),
-        item_payload.get("armor_profile"),
-        item_payload.get("item_def_id"),
-        item_payload.get("id"),
-        item_payload.get("name"),
-        legacy_slot,
-        canonical_slot,
-    ):
-        piece = normalized_lookup.get(_normalized_equipment_lookup_key(candidate))
-        if piece is not None:
-            return piece
-    return None
-
-
-def _equipment_coverage_zones(item_payload: dict[str, Any], legacy_slot: str, canonical_slot: str) -> list[str]:
-    explicit = item_payload.get("coverage") or item_payload.get("covers") or item_payload.get("coverage_zones") or []
-    zones = sorted({str(zone).strip() for zone in list(explicit or []) if str(zone).strip()})
-    if zones:
-        return zones
-    piece = _armor_piece_for_item(item_payload, legacy_slot, canonical_slot)
-    if piece is not None:
-        return sorted({str(zone).strip() for zone in getattr(piece, "covers", ()) if str(zone).strip()})
-    fallback_by_slot = {
-        "head": ["head"],
-        "body": ["chest", "torso"],
-        "shield": ["left_arm"],
-        "hands": ["left_arm", "right_arm"],
-        "feet": ["left_leg", "right_leg"],
-    }
-    return list(fallback_by_slot.get(canonical_slot, []))
-
-
-def _equipment_armor_weight_class(item_payload: dict[str, Any], legacy_slot: str, canonical_slot: str) -> str:
-    explicit = str(
-        item_payload.get("armor_weight_class")
-        or item_payload.get("weight_class")
-        or item_payload.get("armor_class")
-        or ""
-    ).strip().lower()
-    if explicit in {"none", "light", "medium", "heavy"}:
-        return explicit
-    item_type = str(item_payload.get("type", "")).strip().lower()
-    if canonical_slot not in {"body", "shield", "hands", "feet", "head", "cloak", "underlayer"} and item_type not in {"armor", "shield"}:
-        return "none"
-    material = str(item_payload.get("material") or item_payload.get("material_id") or "").strip().lower()
-    item_name = " ".join(
-        str(part).strip().lower()
-        for part in (
-            item_payload.get("item_def_id"),
-            item_payload.get("id"),
-            item_payload.get("name"),
-            legacy_slot,
-        )
-        if str(part or "").strip()
-    )
-    if canonical_slot == "shield":
-        return "medium"
-    if any(token in item_name for token in ("plate", "breastplate", "full_plate")) or material in {"steel"}:
-        return "heavy"
-    if any(token in item_name for token in ("chain", "mail", "greaves")) or material in {"iron"}:
-        return "medium"
-    if any(token in item_name for token in ("leather", "hide", "cloak", "robe", "cap", "gloves", "boots")) or material in {"cloth", "linen", "leather", "hide", "silk"}:
-        return "light"
-    return "none"
-
-
-def _equipment_modifier_int(item_payload: dict[str, Any], *keys: str) -> int | None:
-    for key in keys:
-        if key not in item_payload:
-            continue
-        try:
-            return int(item_payload.get(key, 0) or 0)
-        except Exception:
-            return 0
-    return None
-
-
-def _equipment_default_modifiers(canonical_slot: str, armor_weight_class: str) -> tuple[int, int, int]:
-    if canonical_slot == "shield":
-        return (1, 1, 0)
-    if armor_weight_class == "light":
-        return (0, 1, 0)
-    if armor_weight_class == "medium":
-        return (1, 2, 1)
-    if armor_weight_class == "heavy":
-        return (2, 3, 2)
-    return (0, 0, 0)
-
-
-def _equipment_attunement_required(item_payload: dict[str, Any]) -> bool:
-    if any(bool(item_payload.get(key, False)) for key in ("attunement_required", "requires_attunement", "requires_attune")):
-        return True
-    tags = {str(tag).strip().lower() for tag in list(item_payload.get("tags", []) or []) if str(tag).strip()}
-    return "attunement_required" in tags or "requires_attunement" in tags
-
-
-def _equipment_item_is_attuned(item_payload: dict[str, Any]) -> bool:
-    return any(bool(item_payload.get(key, False)) for key in ("attuned", "is_attuned"))
-
-
-def _equipment_item_payload(stack: Any, legacy_slot: str) -> dict[str, Any]:
-    item_payload = copy.deepcopy(stack.to_dict() if hasattr(stack, "to_dict") else dict(stack))
-    source_payload = dict(item_payload.get("payload", {}))
-    source_payload.setdefault("item_def_id", item_payload.get("item_def_id"))
-    source_payload.setdefault("id", source_payload.get("id", item_payload.get("item_def_id")))
-    canonical_slot = _equipment_canonical_slot(legacy_slot)
-    coverage_zones = _equipment_coverage_zones(source_payload, legacy_slot, canonical_slot)
-    armor_weight_class = _equipment_armor_weight_class(source_payload, legacy_slot, canonical_slot)
-    movement_penalty = _equipment_modifier_int(source_payload, "movement_penalty")
-    stealth_noise = _equipment_modifier_int(source_payload, "stealth_noise")
-    spell_interference = _equipment_modifier_int(source_payload, "spell_interference")
-    if movement_penalty is None or stealth_noise is None or spell_interference is None:
-        defaults = _equipment_default_modifiers(canonical_slot, armor_weight_class)
-        movement_penalty = defaults[0] if movement_penalty is None else movement_penalty
-        stealth_noise = defaults[1] if stealth_noise is None else stealth_noise
-        spell_interference = defaults[2] if spell_interference is None else spell_interference
-    item_payload["canonical_slot"] = canonical_slot
-    if canonical_slot != str(legacy_slot or "").strip().lower():
-        item_payload["legacy_slot"] = str(legacy_slot)
-    item_payload["coverage_zones"] = coverage_zones
-    item_payload["armor_weight_class"] = armor_weight_class
-    item_payload["movement_penalty"] = int(movement_penalty)
-    item_payload["stealth_noise"] = int(stealth_noise)
-    item_payload["spell_interference"] = int(spell_interference)
-    item_payload["attunement_required"] = _equipment_attunement_required(source_payload)
-    return item_payload
-
-
 def build_actor_equipment_payload(actor: ActorRecord | None) -> dict[str, Any]:
-    base_slots = {canonical_slot: None for canonical_slot in _EQUIPMENT_CANONICAL_SLOT_ORDER}
+    base_slots = {canonical_slot: None for canonical_slot in CANONICAL_EQUIPMENT_SLOTS}
     if actor is None or getattr(actor, "equipment", None) is None:
         return {
-            "equipment": {"slots": {}},
             "equipment_topology": {
                 "slots": base_slots,
-                "legacy_slot_aliases": {key: list(value) for key, value in _EQUIPMENT_CANONICAL_SLOT_ALIASES.items()},
                 "coverage_summary": {},
             },
             "equipment_modifiers": {
@@ -1261,68 +1129,17 @@ def build_actor_equipment_payload(actor: ActorRecord | None) -> dict[str, Any]:
             },
         }
 
-    raw_slots = dict(getattr(actor.equipment, "slots", {}) or {})
-    equipment_slots_payload: dict[str, list[dict[str, Any]]] = {}
-    topology_slots = dict(base_slots)
-    coverage_summary: dict[str, list[str]] = {}
-    attuned_item_ids: list[str] = []
-    total_movement_penalty = 0
-    total_stealth_noise = 0
-    total_spell_interference = 0
-
-    sorted_slots = sorted(
-        raw_slots.items(),
-        key=lambda item: (
-            _equipment_canonical_slot_index(_equipment_canonical_slot(item[0])),
-            str(item[0]),
-        ),
-    )
-    for legacy_slot, stacks in sorted_slots:
-        enriched_items = [_equipment_item_payload(stack, str(legacy_slot)) for stack in list(stacks or [])]
-        if not enriched_items:
-            continue
-        equipment_slots_payload[str(legacy_slot)] = enriched_items
-        for item in enriched_items:
-            canonical_slot = str(item.get("canonical_slot", _equipment_canonical_slot(legacy_slot)))
-            if canonical_slot not in topology_slots:
-                topology_slots[canonical_slot] = None
-            if topology_slots[canonical_slot] is None:
-                topology_slots[canonical_slot] = copy.deepcopy(item)
-            total_movement_penalty += int(item.get("movement_penalty", 0) or 0)
-            total_stealth_noise += int(item.get("stealth_noise", 0) or 0)
-            total_spell_interference += int(item.get("spell_interference", 0) or 0)
-            instance_id = str(item.get("instance_id", item.get("item_def_id", ""))).strip()
-            if bool(item.get("attunement_required", False)) and _equipment_item_is_attuned(dict(item.get("payload", {}))):
-                if instance_id and instance_id not in attuned_item_ids:
-                    attuned_item_ids.append(instance_id)
-            for zone in list(item.get("coverage_zones", []) or []):
-                zone_key = str(zone).strip()
-                if not zone_key:
-                    continue
-                coverage_summary.setdefault(zone_key, [])
-                if instance_id and instance_id not in coverage_summary[zone_key]:
-                    coverage_summary[zone_key].append(instance_id)
-
-    for zone in sorted(coverage_summary):
-        coverage_summary[zone] = sorted(coverage_summary[zone])
-
+    topology = build_equipment_topology_payload(actor.equipment)
     return {
-        "equipment": {"slots": equipment_slots_payload},
         "equipment_topology": {
-            "slots": topology_slots,
-            "legacy_slot_aliases": {key: list(value) for key, value in _EQUIPMENT_CANONICAL_SLOT_ALIASES.items()},
-            "coverage_summary": coverage_summary,
+            "slots": {
+                slot: copy.deepcopy(topology["slots"].get(slot))
+                for slot in CANONICAL_EQUIPMENT_SLOTS
+            },
+            "coverage_summary": copy.deepcopy(topology["coverage_summary"]),
         },
-        "equipment_modifiers": {
-            "total_movement_penalty": total_movement_penalty,
-            "total_stealth_noise": total_stealth_noise,
-            "total_spell_interference": total_spell_interference,
-        },
-        "attunement": {
-            "slot_count": 3,
-            "attuned_item_ids": sorted(attuned_item_ids),
-            "available_slots": max(0, 3 - len(attuned_item_ids)),
-        },
+        "equipment_modifiers": copy.deepcopy(topology["modifiers"]),
+        "attunement": copy.deepcopy(topology["attunement"]),
     }
 
 

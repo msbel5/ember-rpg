@@ -980,7 +980,7 @@ def _steal_roll_seed(context: "CampaignContext", *, store_id: str, item_id: str)
 
 
 def _normalize_runtime_inventory_items(player: Any, *, item_registry: dict[str, Any]) -> None:
-    from engine.kernel import item_stack_from_legacy_payload
+    from engine.kernel import item_stack_from_payload
     from engine.kernel.items import ItemInstance as KernelItemInstance
 
     inventory = list(getattr(player, "inventory", []) or [])
@@ -1004,7 +1004,7 @@ def _normalize_runtime_inventory_items(player: Any, *, item_registry: dict[str, 
         }
         if getattr(item, "equipped_slot", None):
             payload["equipped_slot"] = str(item.equipped_slot)
-        normalized_inventory.append(item_stack_from_legacy_payload(payload, index=index))
+        normalized_inventory.append(item_stack_from_payload(payload, index=index))
         changed = True
     if changed:
         player.inventory[:] = normalized_inventory

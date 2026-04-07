@@ -1,24 +1,20 @@
-## Single authoritative combat surface for the gameplay shell.
-## Added programmatically under OverlayCanvas as "CombatPanel".
 extends PanelContainer
 class_name CombatOverlay
 
 signal command_requested(command_text: String)
+signal structured_action_requested(shortcut: String, args: Dictionary, history_text: String)
 signal combat_ended_ui()
 
 var _round_label: Label
 var _active_label: Label
 var _summary_label: Label
 var _turn_order_bar: HBoxContainer
+var _action_row: HBoxContainer
 var _combatant_list: VBoxContainer
-var _attack_button: Button
-var _defend_button: Button
-var _use_button: Button
-var _disengage_button: Button
-var _flee_button: Button
 var _owner_surface: Control
 var _is_active: bool = false
 var _is_waiting: bool = false
+var _action_buttons: Dictionary = {}
 
 
 func _ready() -> void:
@@ -43,7 +39,7 @@ func attach_to_surface(surface: Control) -> void:
 
 func set_waiting(waiting: bool) -> void:
 	_is_waiting = waiting
-	_refresh_buttons(GameState.combat_state)
+	_refresh(GameState.combat_state)
 
 
 func is_combat_active() -> bool:
@@ -130,21 +126,26 @@ func _build_ui() -> void:
 	_turn_order_bar.add_theme_constant_override("separation", 6)
 	vbox.add_child(_turn_order_bar)
 
-	var action_row := HBoxContainer.new()
-	action_row.name = "QuickActions"
-	action_row.add_theme_constant_override("separation", 8)
-	vbox.add_child(action_row)
+	_action_row = HBoxContainer.new()
+	_action_row.name = "QuickActions"
+	_action_row.add_theme_constant_override("separation", 8)
+	vbox.add_child(_action_row)
 
-	_attack_button = _make_action_button("AttackButton", "Attack", "attack")
-	action_row.add_child(_attack_button)
-	_defend_button = _make_action_button("DefendButton", "Defend", "defend")
-	action_row.add_child(_defend_button)
-	_use_button = _make_action_button("UseButton", "Use", "use item")
-	action_row.add_child(_use_button)
-	_disengage_button = _make_action_button("DisengageButton", "Disengage", "disengage")
-	action_row.add_child(_disengage_button)
-	_flee_button = _make_action_button("FleeButton", "Flee", "flee")
-	action_row.add_child(_flee_button)
+	for action_def in [
+		{"id": "attack", "node_name": "AttackButton", "label": "Attack"},
+		{"id": "defend", "node_name": "DefendButton", "label": "Defend"},
+		{"id": "end_turn", "node_name": "EndTurnButton", "label": "End Turn"},
+		{"id": "flee", "node_name": "FleeButton", "label": "Flee"},
+	]:
+		var button := Button.new()
+		button.name = str(action_def["node_name"])
+		button.text = str(action_def["label"])
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.custom_minimum_size = Vector2(0, 32)
+		button.visible = false
+		button.pressed.connect(_on_action_button_pressed.bind(button))
+		_action_row.add_child(button)
+		_action_buttons[str(action_def["id"])] = button
 
 	var scroll := ScrollContainer.new()
 	scroll.name = "CombatantScroll"
@@ -158,60 +159,96 @@ func _build_ui() -> void:
 	scroll.add_child(_combatant_list)
 
 
-func _make_action_button(node_name: String, text: String, command: String) -> Button:
-	var button := Button.new()
-	button.name = node_name
-	button.text = text
-	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	button.custom_minimum_size = Vector2(0, 32)
-	button.pressed.connect(func() -> void:
-		command_requested.emit(command)
-	)
-	return button
-
-
 func _refresh(combat_state: Dictionary) -> void:
 	if combat_state.is_empty() or bool(combat_state.get("ended", false)):
 		hide_combat()
 		_clear_rows()
+		_clear_turn_order()
+		_refresh_action_buttons({})
 		return
 
-	_round_label.text = "Round %d" % int(combat_state.get("round", 1))
-	_active_label.text = "Turn: %s" % str(combat_state.get("active", "Unknown"))
 	var combatants: Array = combat_state.get("combatants", [])
-	var living_enemies := _living_enemies(combatants)
+	_round_label.text = "Round %d" % int(combat_state.get("round", 1))
+	_active_label.text = "Turn: %s" % _resolve_turn_actor_name(combat_state)
 	var phase := str(combat_state.get("phase", "active_turn")).replace("_", " ").capitalize()
-	_summary_label.text = "%s  |  %d hostiles  |  %d combatants" % [phase, living_enemies.size(), combatants.size()]
-	_refresh_buttons(combat_state)
+	var living_enemies := _living_enemies(combatants)
+	var visible_actions := _supported_visible_actions(combat_state)
+	var action_summary := ", ".join(visible_actions.map(func(action_id: String) -> String:
+		return action_id.replace("_", " ").capitalize()
+	))
+	if action_summary.is_empty():
+		action_summary = "No direct shell actions"
+	_summary_label.text = "%s  |  %d hostiles  |  %s" % [phase, living_enemies.size(), action_summary]
+	_refresh_action_buttons(combat_state)
 
-	_clear_rows()
+	_clear_turn_order()
+	var active_actor_id := _current_turn_actor_id(combat_state)
 	var turn_order = combat_state.get("turn_order", combatants)
-	for child in _turn_order_bar.get_children():
-		child.queue_free()
 	for combatant in turn_order:
 		if combatant is Dictionary:
-			_turn_order_bar.add_child(_build_turn_chip(combatant, str(combat_state.get("active", ""))))
+			_turn_order_bar.add_child(_build_turn_chip(combatant, active_actor_id))
+
+	_clear_rows()
 	for combatant in combatants:
 		if combatant is Dictionary:
-			_combatant_list.add_child(_build_row(combatant, str(combat_state.get("active", ""))))
+			_combatant_list.add_child(_build_row(combatant, active_actor_id))
 
 
-func _refresh_buttons(combat_state: Dictionary) -> void:
-	var is_player_turn = _is_player_turn(combat_state)
-	var living_enemies := _living_enemies(combat_state.get("combatants", []))
-	var action_available := _active_player_action_available(combat_state)
-	_attack_button.disabled = _is_waiting or living_enemies.is_empty() or not is_player_turn or not action_available
-	_defend_button.disabled = _is_waiting or not is_player_turn or not action_available
-	_use_button.disabled = _is_waiting or not is_player_turn or not action_available
-	_disengage_button.disabled = _is_waiting or not is_player_turn or not action_available
-	_flee_button.disabled = _is_waiting or not is_player_turn or not action_available
+func _refresh_action_buttons(combat_state: Dictionary) -> void:
+	var supported := _supported_visible_actions(combat_state)
+	var player_turn := _is_player_turn(combat_state)
+	var attack_target := _first_attack_target(combat_state)
+	for action_id in _action_buttons.keys():
+		var button: Button = _action_buttons[action_id]
+		button.visible = false
+		button.disabled = true
+		button.set_meta("shortcut", "")
+		button.set_meta("args", {})
+		button.set_meta("history_text", "")
+		button.tooltip_text = ""
+
+	if supported.has("attack") and not attack_target.is_empty():
+		var attack_button: Button = _action_buttons["attack"]
+		var attack_target_name := _target_display_name(attack_target)
+		attack_button.visible = true
+		attack_button.disabled = _is_waiting or not player_turn
+		attack_button.tooltip_text = "Attack %s" % attack_target_name
+		attack_button.set_meta("shortcut", "combat")
+		attack_button.set_meta("args", {
+			"action_id": "attack",
+			"target_id": str(attack_target.get("actor_id", "")),
+		})
+		attack_button.set_meta("history_text", "attack %s" % attack_target_name.to_lower())
+
+	for simple_action in ["defend", "end_turn", "flee"]:
+		if not supported.has(simple_action):
+			continue
+		var button: Button = _action_buttons[simple_action]
+		button.visible = true
+		button.disabled = _is_waiting or not player_turn
+		button.tooltip_text = button.text
+		button.set_meta("shortcut", "combat")
+		button.set_meta("args", {"action_id": simple_action})
+		button.set_meta("history_text", simple_action)
 
 
-func _build_turn_chip(combatant: Dictionary, active_name: String) -> Control:
+func _supported_visible_actions(combat_state: Dictionary) -> Array[String]:
+	var visible_actions: Array[String] = []
+	var raw_actions = combat_state.get("available_actions", [])
+	if not (raw_actions is Array):
+		return visible_actions
+	for raw_action in raw_actions:
+		var action_id := str(raw_action).strip_edges().to_lower()
+		if action_id in ["attack", "defend", "flee", "end_turn"] and not visible_actions.has(action_id):
+			visible_actions.append(action_id)
+	return visible_actions
+
+
+func _build_turn_chip(combatant: Dictionary, active_actor_id: String) -> Control:
 	var slot := PanelContainer.new()
 	slot.custom_minimum_size = Vector2(92, 28)
 	var style := StyleBoxFlat.new()
-	var is_current := str(combatant.get("name", "")) == active_name
+	var is_current := str(combatant.get("actor_id", "")).strip_edges() == active_actor_id
 	style.bg_color = Color(0.80, 0.32, 0.26, 0.45) if is_current else Color(0.20, 0.18, 0.22, 0.60)
 	style.set_corner_radius_all(4)
 	if is_current:
@@ -219,7 +256,7 @@ func _build_turn_chip(combatant: Dictionary, active_name: String) -> Control:
 		style.set_border_width_all(1)
 	slot.add_theme_stylebox_override("panel", style)
 	var label := Label.new()
-	label.text = str(combatant.get("name", "???"))
+	label.text = _combatant_name(combatant)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 11)
@@ -227,7 +264,7 @@ func _build_turn_chip(combatant: Dictionary, active_name: String) -> Control:
 	return slot
 
 
-func _build_row(combatant: Dictionary, active_name: String) -> Control:
+func _build_row(combatant: Dictionary, active_actor_id: String) -> Control:
 	var row := VBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
@@ -236,8 +273,8 @@ func _build_row(combatant: Dictionary, active_name: String) -> Control:
 
 	var name_label := Label.new()
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_label.text = str(combatant.get("name", "?"))
-	if str(combatant.get("name", "")) == active_name:
+	name_label.text = _combatant_name(combatant)
+	if str(combatant.get("actor_id", "")).strip_edges() == active_actor_id:
 		name_label.add_theme_color_override("font_color", Color(0.96, 0.86, 0.56))
 	top.add_child(name_label)
 
@@ -255,36 +292,76 @@ func _build_row(combatant: Dictionary, active_name: String) -> Control:
 	return row
 
 
+func _combatant_name(combatant: Dictionary) -> String:
+	return str(combatant.get("name", combatant.get("actor_id", "?")))
+
+
 func _living_enemies(combatants: Array) -> Array:
 	var enemies: Array = []
 	for combatant in combatants:
 		if not (combatant is Dictionary):
 			continue
-		if _is_player_combatant(combatant):
+		if bool(combatant.get("is_player", false)):
 			continue
-		if bool(combatant.get("dead", false)):
+		if not _combatant_is_alive(combatant):
 			continue
 		enemies.append(combatant)
 	return enemies
 
 
-func _is_player_combatant(combatant: Dictionary) -> bool:
-	return str(combatant.get("name", "")).strip_edges() == str(GameState.player.get("name", "")).strip_edges()
+func _combatant_is_alive(combatant: Dictionary) -> bool:
+	if combatant.has("alive"):
+		return bool(combatant.get("alive", true))
+	return not bool(combatant.get("dead", false))
+
+
+func _player_actor_id() -> String:
+	var actor_id := str(GameState.player.get("actor_id", "")).strip_edges()
+	if actor_id.is_empty():
+		return "player"
+	return actor_id
+
+
+func _current_turn_actor_id(combat_state: Dictionary) -> String:
+	return str(combat_state.get("turn_actor_id", "")).strip_edges()
+
+
+func _resolve_turn_actor_name(combat_state: Dictionary) -> String:
+	var turn_actor_id := _current_turn_actor_id(combat_state)
+	for combatant in combat_state.get("combatants", []):
+		if combatant is Dictionary and str(combatant.get("actor_id", "")).strip_edges() == turn_actor_id:
+			return _combatant_name(combatant)
+	return str(combat_state.get("active", turn_actor_id if not turn_actor_id.is_empty() else "Unknown"))
 
 
 func _is_player_turn(combat_state: Dictionary) -> bool:
-	return str(combat_state.get("active", "")).strip_edges() == str(GameState.player.get("name", "")).strip_edges()
+	var turn_actor_id := _current_turn_actor_id(combat_state)
+	if not turn_actor_id.is_empty():
+		return turn_actor_id == _player_actor_id()
+	var player_name := str(GameState.player.get("name", "")).strip_edges()
+	return not player_name.is_empty() and _resolve_turn_actor_name(combat_state) == player_name
 
 
-func _active_player_action_available(combat_state: Dictionary) -> bool:
+func _first_attack_target(combat_state: Dictionary) -> Dictionary:
+	var targets = combat_state.get("targets", [])
+	if targets is Array:
+		for target in targets:
+			if target is Dictionary and str(target.get("actor_id", "")).strip_edges() != _player_actor_id():
+				return target
 	for combatant in combat_state.get("combatants", []):
-		if combatant is Dictionary and _is_player_combatant(combatant):
-			return bool(combatant.get("turn_resources", {}).get("action_available", true))
-	return true
+		if combatant is Dictionary and not bool(combatant.get("is_player", false)) and _combatant_is_alive(combatant):
+			return combatant
+	return {}
+
+
+func _target_display_name(target: Dictionary) -> String:
+	return str(target.get("name", target.get("actor_id", "target"))).strip_edges()
 
 
 func _combatant_turn_summary(combatant: Dictionary) -> String:
 	var turn_resources: Dictionary = combatant.get("turn_resources", {})
+	if turn_resources.is_empty():
+		return "HP %d/%d" % [int(combatant.get("hp", 0)), int(combatant.get("max_hp", 1))]
 	var action_text = "Act ready" if bool(turn_resources.get("action_available", false)) else "Act spent"
 	return "HP %d/%d  |  %s  |  Move %d/%d" % [
 		int(combatant.get("hp", 0)),
@@ -298,6 +375,20 @@ func _combatant_turn_summary(combatant: Dictionary) -> String:
 func _clear_rows() -> void:
 	for child in _combatant_list.get_children():
 		child.queue_free()
+
+
+func _clear_turn_order() -> void:
+	for child in _turn_order_bar.get_children():
+		child.queue_free()
+
+
+func _on_action_button_pressed(button: Button) -> void:
+	var shortcut := str(button.get_meta("shortcut", "")).strip_edges()
+	var history_text := str(button.get_meta("history_text", "")).strip_edges()
+	var args = button.get_meta("args", {})
+	if shortcut.is_empty() or not (args is Dictionary):
+		return
+	structured_action_requested.emit(shortcut, args, history_text)
 
 
 func _on_combat_started() -> void:

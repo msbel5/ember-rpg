@@ -11,7 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from engine.api import campaign_routes
-from engine.kernel import item_stack_from_legacy_payload
+from engine.kernel import item_stack_from_payload
 from main import app
 
 client = TestClient(app)
@@ -58,7 +58,7 @@ def _enter_combat(campaign_id: str, actors: list[dict]) -> dict:
 def _inject_usable_item(campaign_id: str, *, item_def_id: str = "field_tonic") -> None:
     context = campaign_routes.campaign_runtime.get_campaign(campaign_id)
     context.kernel_runtime["actors"]["player"].inventory.append(
-        item_stack_from_legacy_payload(
+        item_stack_from_payload(
             {
                 "item_def_id": item_def_id,
                 "name": "Field Tonic" if item_def_id == "field_tonic" else item_def_id.replace("_", " ").title(),
@@ -293,3 +293,4 @@ class TestCalledShotZonesContract:
         assert isinstance(zones, list)
         for zone in zones:
             assert isinstance(zone, str), f"called_shot_zone must be a string, got {type(zone)}"
+

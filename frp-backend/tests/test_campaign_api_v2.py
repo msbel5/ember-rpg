@@ -57,11 +57,11 @@ def _create_campaign(adapter_id: str = "fantasy_ember", *, seed: int = 42) -> di
 
 
 def _inject_usable_inventory_item(campaign_id: str, *, item_def_id: str = "field_tonic") -> None:
-    from engine.kernel import item_stack_from_legacy_payload
+    from engine.kernel import item_stack_from_payload
 
     context = campaign_routes.campaign_runtime.get_campaign(campaign_id)
     context.kernel_runtime["actors"]["player"].inventory.append(
-        item_stack_from_legacy_payload(
+        item_stack_from_payload(
             {
                 "item_def_id": item_def_id,
                 "name": "Field Tonic" if item_def_id == "field_tonic" else item_def_id.replace("_", " ").title(),
@@ -890,3 +890,4 @@ def test_legacy_session_routes_are_not_mounted():
 
     assert create_response.status_code == 404
     assert save_response.status_code == 404
+

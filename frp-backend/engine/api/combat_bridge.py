@@ -1123,10 +1123,9 @@ def _get_equipped_weapon(actor: "ActorRecord") -> Optional["ItemStack"]:
     equipment = getattr(actor, "equipment", None)
     if equipment is None:
         return None
-    for slot_key in ("weapon", "weapon_1", "main_hand"):
-        items = getattr(equipment, "slots", {}).get(slot_key)
-        if items and isinstance(items, list):
-            return items[0]
+    items = getattr(equipment, "slots", {}).get("main_hand")
+    if items and isinstance(items, list):
+        return items[0]
     return None
 
 

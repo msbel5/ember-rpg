@@ -26,7 +26,7 @@ from .actor_items import (
     ItemStack,
     MaterialDef,
     equipment_layer_order,
-    item_stack_from_legacy_payload,
+    item_stack_from_payload,
 )
 from .actor_records import (
     ActorRecord,
@@ -66,7 +66,7 @@ __all__ = [
     "actor_record_from_character",
     "actor_record_from_entity",
     "equipment_layer_order",
-    "item_stack_from_legacy_payload",
+    "item_stack_from_payload",
     "status_for_ratio",
     "sync_body_state_to_tracker",
 ]

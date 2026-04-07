@@ -38,7 +38,7 @@ def test_ring_candidates_fall_back_to_right_ring_when_left_is_occupied():
 def test_coverage_fallback_uses_canonical_body_zones_for_chest_armor():
     armor = _stack("chain_mail", name="Chain Mail", payload={"type": "armor"})
 
-    coverage = coverage_zones_for_item(armor, "armor")
+    coverage = coverage_zones_for_item(armor, "chest")
 
     assert coverage == ["chest", "torso"]
 

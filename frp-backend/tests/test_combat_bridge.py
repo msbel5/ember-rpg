@@ -11,7 +11,7 @@ from engine.api.campaign.runtime import CampaignRuntime
 import engine.api.combat_bridge as combat_bridge
 from engine.api.campaign.state_sync import sync_player_position
 from engine.api.combat_bridge import build_combat_payload, maybe_handle_combat_command
-from engine.kernel import item_stack_from_legacy_payload
+from engine.kernel import item_stack_from_payload
 from engine.kernel.actor_records import create_monster_actor, create_player_actor
 from engine.map import MapData, TileType
 
@@ -249,12 +249,12 @@ class TestAttackCommand:
         enemy.position.y = 0
         ctx.map_data = _map_from_rows(".#.", "...", "...")
         player = ctx.kernel_runtime["actors"]["player"]
-        player.equipment.slots["weapon"] = [
-            item_stack_from_legacy_payload(
+        player.equipment.slots["main_hand"] = [
+            item_stack_from_payload(
                 {
                     "id": "shortbow",
                     "name": "Shortbow",
-                    "slot": "weapon",
+                    "slot": "main_hand",
                     "attack_profile": {"attack_type": "ranged", "range": 5, "projectile_type": "arrow"},
                 }
             )
@@ -551,7 +551,7 @@ class TestCombatMovementAndPayload:
         hp_before = max(1, int(player.stats.get("max_hp", 20)) - 6)
         player.stats["hp"] = hp_before
         player.inventory.append(
-            item_stack_from_legacy_payload(
+            item_stack_from_payload(
                 {
                     "item_def_id": "field_tonic",
                     "name": "Field Tonic",
@@ -580,7 +580,7 @@ class TestCombatMovementAndPayload:
         hp_before = max(1, int(player.stats.get("max_hp", 20)) - 5)
         player.stats["hp"] = hp_before
         player.inventory.append(
-            item_stack_from_legacy_payload(
+            item_stack_from_payload(
                 {
                     "item_def_id": "field_tonic",
                     "name": "Field Tonic",
@@ -611,7 +611,7 @@ class TestCombatMovementAndPayload:
         enemy = _inject_enemy(ctx, hp=50)
         player = ctx.kernel_runtime["actors"]["player"]
         player.inventory.append(
-            item_stack_from_legacy_payload(
+            item_stack_from_payload(
                 {
                     "item_def_id": "field_tonic",
                     "name": "Field Tonic",
@@ -693,3 +693,5 @@ class TestNonCombatCommands:
         assert maybe_handle_combat_command(ctx, "attack Goblin") is None
         assert maybe_handle_combat_command(ctx, "defend") is None
         assert maybe_handle_combat_command(ctx, "flee") is None
+
+

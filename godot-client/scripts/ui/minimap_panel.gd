@@ -3,7 +3,7 @@ class_name MinimapPanelWidget
 
 const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 
-signal travel_requested(destination_region_id: String, destination_settlement_id: String)
+signal travel_requested(request: Dictionary)
 
 @onready var map_texture: TextureRect = $MinimapMargin/MinimapVBox/MapTexture
 @onready var summary_label: Label = $MinimapMargin/MinimapVBox/SummaryLabel
@@ -104,11 +104,15 @@ func _refresh_world_graph(world_graph: Dictionary) -> void:
 	map_texture.texture = ImageTexture.create_from_image(image)
 	_graph_texture_size = Vector2i(image_width, image_height)
 	_refresh_route_buttons()
-	summary_label.text = "World Graph\nActive: %s\nRoutes: %d available" % [
-		_current_region_label(world_graph),
-		GameState.travel_options.size(),
-	]
-	intel_text.text = _build_world_graph_intel(world_graph)
+	if GameState.has_active_travel():
+		summary_label.text = _active_travel_summary_text()
+		intel_text.text = _build_active_travel_intel(world_graph)
+	else:
+		summary_label.text = "World Graph\nActive: %s\nRoutes: %d available" % [
+			_current_region_label(world_graph),
+			_canonical_travel_options().size(),
+		]
+		intel_text.text = _build_world_graph_intel(world_graph)
 
 
 func _refresh_local_map() -> void:
@@ -118,8 +122,12 @@ func _refresh_local_map() -> void:
 	var map_data = GameState.map_data
 	if map_data.is_empty():
 		map_texture.texture = null
-		summary_label.text = "No live survey. Map feed is offline."
-		intel_text.text = "[b]Scene Read[/b]  Awaiting a live terrain feed."
+		if GameState.has_active_travel():
+			summary_label.text = _active_travel_summary_text()
+			intel_text.text = _build_active_travel_intel({})
+		else:
+			summary_label.text = "No live survey. Map feed is offline."
+			intel_text.text = "[b]Scene Read[/b]  Awaiting a live terrain feed."
 		return
 	var width = int(map_data.get("width", 0))
 	var height = int(map_data.get("height", 0))
@@ -153,34 +161,76 @@ func _refresh_local_map() -> void:
 	var item_count = GameState.entities.get("items", []).size()
 	var scene_label = GameState.scene.capitalize()
 	var scene_read = _scene_read(map_data)
-	if bool(map_data.get("placeholder", false)):
+	if GameState.has_active_travel():
+		summary_label.text = _active_travel_summary_text()
+		intel_text.text = _build_active_travel_intel({})
+	elif bool(map_data.get("placeholder", false)):
 		summary_label.text = "Placeholder map  %dx%d  |  %s\n%s  |  %d locals  %d threats  %d loot" % [width, height, scene_label, scene_read, npc_count, enemy_count, item_count]
+		intel_text.text = _build_intel_text(map_data)
 	else:
 		summary_label.text = "%s  |  %s\nLocals %d  |  Threats %d  |  Loot %d" % [GameState.get_display_location(), scene_label, npc_count, enemy_count, item_count]
-	intel_text.text = _build_intel_text(map_data)
+		intel_text.text = _build_intel_text(map_data)
 
 
 func _refresh_route_buttons() -> void:
 	for child in routes_list.get_children():
 		child.queue_free()
-	routes_label.visible = not GameState.travel_options.is_empty()
+	if GameState.has_active_travel():
+		_refresh_active_travel_buttons()
+		return
+	var travel_options := _canonical_travel_options()
+	routes_label.text = "Routes"
+	routes_label.visible = not travel_options.is_empty()
 	routes_list.visible = routes_label.visible
-	for index in range(GameState.travel_options.size()):
-		var option = GameState.travel_options[index]
-		if not (option is Dictionary):
-			continue
+	for index in range(travel_options.size()):
+		var option: Dictionary = travel_options[index]
 		var button := Button.new()
 		button.name = "RouteButton%d" % index
 		button.text = "%s  ·  %sh" % [str(option.get("destination_name", "Unknown")), int(option.get("travel_hours", 0))]
-		button.tooltip_text = "Travel route %s" % str(option.get("route_id", option.get("destination_region_id", "unknown")))
+		button.tooltip_text = "Travel route %s" % str(option.get("route_id", "unknown"))
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.pressed.connect(func() -> void:
-			travel_requested.emit(str(option.get("destination_region_id", "")), str(option.get("destination_settlement_id", "")))
+			travel_requested.emit(_travel_start_request(option))
 		)
 		routes_list.add_child(button)
 
 
+func _refresh_active_travel_buttons() -> void:
+	routes_label.text = "Active Travel"
+	routes_label.visible = true
+	routes_list.visible = true
+	var active_travel: Dictionary = GameState.travel_state
+	if bool(active_travel.get("requires_resolution", false)):
+		var resolve_button := Button.new()
+		resolve_button.name = "ResolveEncounterButton"
+		resolve_button.text = "Resolve Encounter"
+		resolve_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		resolve_button.pressed.connect(func() -> void:
+			travel_requested.emit({
+				"shortcut": "travel",
+				"args": {"action_id": "resolve_encounter"},
+				"history_text": "resolve travel encounter",
+			})
+		)
+		routes_list.add_child(resolve_button)
+	if bool(active_travel.get("can_advance", false)):
+		var advance_button := Button.new()
+		advance_button.name = "ContinueTravelButton"
+		advance_button.text = "Continue Travel"
+		advance_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		advance_button.pressed.connect(func() -> void:
+			travel_requested.emit({
+				"shortcut": "travel",
+				"args": {"action_id": "advance"},
+				"history_text": "continue travel",
+			})
+		)
+		routes_list.add_child(advance_button)
+
+
 func _on_map_texture_gui_input(event: InputEvent) -> void:
+	if GameState.has_active_travel():
+		return
 	if _graph_nodes.is_empty():
 		return
 	if not (event is InputEventMouseButton) or not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
@@ -190,9 +240,75 @@ func _on_map_texture_gui_input(event: InputEvent) -> void:
 		return
 	GameState.selected_world_node = str(node.get("id", ""))
 	if bool(node.get("reachable", false)) and str(node.get("region_id", "")) != str(GameState.world_graph.get("active_region_id", "")):
-		travel_requested.emit(str(node.get("region_id", "")), str(node.get("id", "")))
+		var option := _travel_option_for_node(node)
+		if not option.is_empty():
+			travel_requested.emit(_travel_start_request(option))
 		return
 	_refresh()
+
+
+func _canonical_travel_options() -> Array:
+	var canonical_options: Array = []
+	for option in GameState.travel_options:
+		if option is Dictionary and not str(option.get("route_id", "")).strip_edges().is_empty():
+			canonical_options.append(option)
+	return canonical_options
+
+
+func _travel_option_for_node(node: Dictionary) -> Dictionary:
+	var node_id := str(node.get("id", "")).strip_edges()
+	var region_id := str(node.get("region_id", "")).strip_edges()
+	for option in _canonical_travel_options():
+		if str(option.get("destination_settlement_id", "")).strip_edges() == node_id:
+			return option
+		if str(option.get("destination_region_id", "")).strip_edges() == region_id:
+			return option
+	return {}
+
+
+func _travel_start_request(option: Dictionary) -> Dictionary:
+	return {
+		"shortcut": "travel",
+		"args": {
+			"action_id": "start",
+			"route_id": str(option.get("route_id", "")),
+			"destination_region_id": str(option.get("destination_region_id", "")),
+			"destination_settlement_id": str(option.get("destination_settlement_id", "")),
+		},
+		"history_text": "travel %s" % str(option.get("destination_name", option.get("destination_region_id", ""))).to_lower(),
+	}
+
+
+func _active_travel_summary_text() -> String:
+	var active_travel: Dictionary = GameState.travel_state
+	var destination_name := str(active_travel.get("destination_name", active_travel.get("destination_region_id", "Unknown"))).strip_edges()
+	return "Traveling to %s\n%d / %dh remaining" % [
+		destination_name,
+		int(active_travel.get("travel_hours_remaining", 0)),
+		int(active_travel.get("travel_hours_total", 0)),
+	]
+
+
+func _build_active_travel_intel(world_graph: Dictionary) -> String:
+	var active_travel: Dictionary = GameState.travel_state
+	var lines: Array[String] = [
+		"[b]Travel[/b]  %s" % str(active_travel.get("status", "traveling")).replace("_", " ").capitalize(),
+		"[b]Route[/b]  %s" % str(active_travel.get("route_id", "unknown")),
+		"[b]Destination[/b]  %s" % str(active_travel.get("destination_name", active_travel.get("destination_region_id", "Unknown"))),
+		"[b]Progress[/b]  %dh remaining of %dh" % [
+			int(active_travel.get("travel_hours_remaining", 0)),
+			int(active_travel.get("travel_hours_total", 0)),
+		],
+	]
+	if bool(active_travel.get("requires_resolution", false)):
+		lines.append("[b]Travel State[/b]  Encounter resolution required before the route can continue.")
+	elif bool(active_travel.get("can_advance", false)):
+		lines.append("[b]Travel State[/b]  Route is clear to continue.")
+	else:
+		lines.append("[b]Travel State[/b]  Waiting for the backend to expose the next legal step.")
+	if world_graph is Dictionary and not world_graph.is_empty():
+		lines.append("[b]Origin[/b]  %s" % _current_region_label(world_graph))
+	return "\n".join(lines)
 
 
 func _node_at_event_position(local_position: Vector2) -> Dictionary:
