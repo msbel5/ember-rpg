@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from engine.api import campaign_routes
 from main import app
+from _seed_robust_helpers import ensure_attack_target
 
 
 client = TestClient(app)
@@ -29,17 +30,10 @@ def _create_campaign(seed: int = 42) -> dict:
 
 def _enter_combat(payload: dict) -> dict:
     campaign_id = payload["campaign_id"]
-    npcs = [
-        actor for actor in payload["campaign"]["actors"]
-        if actor["identity"]["actor_id"] != "player"
-        and actor["identity"].get("actor_type") == "npc"
-        and actor.get("alive", True)
-    ]
-    if not npcs:
-        pytest.skip("No NPCs in fresh campaign to attack")
+    target = ensure_attack_target(campaign_id, actor_id="combat_runtime_target", name="Combat Runtime Fang")
     response = client.post(
         f"/game/campaigns/{campaign_id}/commands",
-        json={"input": f"attack {npcs[0]['identity']['display_name']}"},
+        json={"input": f"attack {target['name']}"},
     )
     assert response.status_code == 200
     body = response.json()

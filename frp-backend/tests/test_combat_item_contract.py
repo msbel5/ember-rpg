@@ -11,6 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from main import app
+from _seed_robust_helpers import ensure_attack_target
 
 client = TestClient(app)
 
@@ -35,23 +36,15 @@ def _create_campaign(seed: int = 42, player_class: str = "warrior") -> dict:
 
 def _enter_combat(campaign_id: str, actors: list[dict]) -> dict | None:
     """Attack the first living NPC to enter combat.  Returns body or None."""
-    npcs = [
-        a for a in actors
-        if a["identity"]["actor_id"] != "player"
-        and a["identity"].get("actor_type") == "npc"
-        and a.get("alive", True)
-    ]
-    if not npcs:
-        return None
-    target_name = npcs[0]["identity"]["display_name"]
+    del actors
+    target = ensure_attack_target(campaign_id, actor_id="combat_item_contract_target", name="Combat Item Fang")
     response = client.post(
         f"/game/campaigns/{campaign_id}/commands",
-        json={"input": f"attack {target_name}"},
+        json={"input": f"attack {target['name']}"},
     )
     assert response.status_code == 200
     body = response.json()
-    if body.get("command_type") != "combat":
-        return None
+    assert body.get("command_type") == "combat"
     return body
 
 
@@ -66,8 +59,6 @@ class TestRawRequestShape:
     def test_use_item_text_command_returns_combat_type_in_combat(self):
         payload = _create_campaign(seed=60)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
-        if body is None:
-            pytest.skip("Could not enter combat")
 
         response = client.post(
             f"/game/campaigns/{payload['campaign_id']}/commands",
@@ -80,8 +71,6 @@ class TestRawRequestShape:
     def test_use_item_on_target_text_command_accepted(self):
         payload = _create_campaign(seed=61)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
-        if body is None:
-            pytest.skip("Could not enter combat")
 
         response = client.post(
             f"/game/campaigns/{payload['campaign_id']}/commands",
@@ -103,8 +92,6 @@ class TestStructuredRequestShape:
     def test_shortcut_use_item_accepted(self):
         payload = _create_campaign(seed=62)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
-        if body is None:
-            pytest.skip("Could not enter combat")
 
         response = client.post(
             f"/game/campaigns/{payload['campaign_id']}/commands",
@@ -124,8 +111,6 @@ class TestStructuredRequestShape:
     def test_shortcut_use_item_with_target_accepted(self):
         payload = _create_campaign(seed=63)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
-        if body is None:
-            pytest.skip("Could not enter combat")
 
         response = client.post(
             f"/game/campaigns/{payload['campaign_id']}/commands",
@@ -156,8 +141,6 @@ class TestUseItemTruthfulness:
         """Without combat-usable items, use_item must not appear."""
         payload = _create_campaign(seed=64)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
-        if body is None:
-            pytest.skip("Could not enter combat")
 
         actions = body["campaign"]["combat"]["available_actions"]
         # Currently the runtime does not advertise use_item at all.
@@ -175,8 +158,6 @@ class TestUseItemTruthfulness:
         """Player with empty inventory must never see use_item."""
         payload = _create_campaign(seed=65)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
-        if body is None:
-            pytest.skip("Could not enter combat")
 
         # Fresh campaign warrior — may or may not have combat-usable items.
         # The truthfulness contract: if use_item IS advertised, the player
@@ -205,8 +186,6 @@ class TestCombatItemUseRejection:
     def test_nonexistent_item_rejects_cleanly(self):
         payload = _create_campaign(seed=66)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
-        if body is None:
-            pytest.skip("Could not enter combat")
 
         combat_before = body["campaign"]["combat"]
         round_before = combat_before["round"]
@@ -244,8 +223,6 @@ class TestAvailableActionsBaseline:
     def test_attack_defend_flee_always_present(self):
         payload = _create_campaign(seed=67)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
-        if body is None:
-            pytest.skip("Could not enter combat")
 
         actions = body["campaign"]["combat"]["available_actions"]
         assert "attack" in actions
@@ -255,8 +232,6 @@ class TestAvailableActionsBaseline:
     def test_move_and_end_turn_present(self):
         payload = _create_campaign(seed=68)
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
-        if body is None:
-            pytest.skip("Could not enter combat")
 
         actions = body["campaign"]["combat"]["available_actions"]
         assert "move" in actions

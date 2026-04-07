@@ -36,7 +36,6 @@ FAMILY_ORDER = [
     "world_cultures",
     "world_buildings",
     "world_furniture",
-    "world_quests",
     "interaction_rules",
     "progression",
     "colony_config",
@@ -295,6 +294,7 @@ FAMILY_SPECS: dict[str, FamilySpec] = {
         goal="Generate new quest template patterns for worldgen quest generation.",
         constraints=("Quest kinds must be fetch/kill/escort/deliver/investigate/defend.", "Follow existing schema."),
         consumers=("engine.worldgen.registries.load_quest_templates()",),
+        generatable=False,
     ),
     "interaction_rules": FamilySpec(
         name="interaction_rules",
@@ -496,8 +496,12 @@ def _item_bank() -> dict[str, Any]:
     }
 
 
+def _workflow_family_names() -> list[str]:
+    return [name for name in FAMILY_ORDER if FAMILY_SPECS[name].generatable]
+
+
 def _review_assignments() -> dict[str, str]:
-    names = FAMILY_ORDER
+    names = _workflow_family_names()
     return {f"reviewer_{index + 1}": names[(index + 1) % len(names)] for index in range(len(names))}
 
 
@@ -604,7 +608,7 @@ def prepare_packets(batch_id: str | None = None, work_root: Path | None = None) 
     bank = _item_bank()
     assignments = _review_assignments()
     manifest = {"batch_id": stamp, "generated_at": datetime.now().isoformat(), "families": [], "review_assignments": assignments}
-    generatable_families = [name for name in FAMILY_ORDER if FAMILY_SPECS[name].generatable]
+    generatable_families = _workflow_family_names()
     for name in generatable_families:
         spec = FAMILY_SPECS[name]
         paths = _packet_paths(root, stamp, name)

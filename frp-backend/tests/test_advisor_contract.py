@@ -12,6 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from main import app
+from _seed_robust_helpers import ensure_attack_target
 
 client = TestClient(app)
 
@@ -202,21 +203,12 @@ class TestAdvisorSceneBehavior:
     def test_ask_dm_during_combat_does_not_advance_turn(self):
         payload = _create_campaign(seed=78)
         campaign_id = payload["campaign_id"]
-        npcs = [
-            a for a in payload["campaign"]["actors"]
-            if a["identity"]["actor_id"] != "player"
-            and a["identity"].get("actor_type") == "npc"
-            and a.get("alive", True)
-        ]
-        if not npcs:
-            pytest.skip("No NPCs to enter combat with")
-        target_name = npcs[0]["identity"]["display_name"]
+        target = ensure_attack_target(campaign_id, actor_id="advisor_contract_target", name="Advisor Contract Fang")
         combat_response = client.post(
             f"/game/campaigns/{campaign_id}/commands",
-            json={"input": f"attack {target_name}"},
+            json={"input": f"attack {target['name']}"},
         ).json()
-        if combat_response.get("command_type") != "combat":
-            pytest.skip("Could not enter combat")
+        assert combat_response.get("command_type") == "combat"
 
         combat_before = combat_response["campaign"]["combat"]
         round_before = combat_before["round"]

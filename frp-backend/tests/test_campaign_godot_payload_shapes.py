@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 from engine.api import campaign_routes
 from main import app
+from _seed_robust_helpers import ensure_attack_target
 
 
 client = TestClient(app)
@@ -166,19 +167,11 @@ def test_campaign_combat_payload_shape_is_present_for_godot_consumers():
     ).json()
     campaign_id = create["campaign_id"]
     _strip_usable_inventory_items(campaign_id)
-
-    npcs = [
-        actor for actor in create["campaign"]["actors"]
-        if actor["identity"]["actor_id"] != "player"
-        and actor["identity"].get("actor_type") == "npc"
-        and actor.get("alive", True)
-    ]
-    if not npcs:
-        pytest.skip("No NPCs in fresh campaign to attack")
+    target = ensure_attack_target(campaign_id, actor_id="godot_payload_target", name="Godot Payload Fang")
 
     response = client.post(
         f"/game/campaigns/{campaign_id}/commands",
-        json={"input": f"attack {npcs[0]['identity']['display_name']}"},
+        json={"input": f"attack {target['name']}"},
     )
     assert response.status_code == 200
     payload = response.json()
@@ -201,19 +194,11 @@ def test_campaign_combat_payload_advertises_use_item_when_inventory_has_legal_it
     create = _create_campaign(seed=151)
     campaign_id = create["campaign_id"]
     _inject_usable_inventory_item(campaign_id, item_def_id="field_tonic")
-
-    npcs = [
-        actor for actor in create["campaign"]["actors"]
-        if actor["identity"]["actor_id"] != "player"
-        and actor["identity"].get("actor_type") == "npc"
-        and actor.get("alive", True)
-    ]
-    if not npcs:
-        pytest.skip("No NPCs in fresh campaign to attack")
+    target = ensure_attack_target(campaign_id, actor_id="godot_payload_item_target", name="Godot Item Fang")
 
     response = client.post(
         f"/game/campaigns/{campaign_id}/commands",
-        json={"input": f"attack {npcs[0]['identity']['display_name']}"},
+        json={"input": f"attack {target['name']}"},
     )
     assert response.status_code == 200
     payload = response.json()

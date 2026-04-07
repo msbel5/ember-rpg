@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import pytest
 
+from _seed_robust_helpers import ensure_attack_target
+
 from engine.kernel.actor import ActorIdentity, ActorPosition
 from engine.kernel.actor_records import ActorRecord
 from engine.kernel.spells import (
@@ -394,21 +396,12 @@ class TestCombatCastTruthfulness:
             "seed": 55,
         }).json()
         campaign_id = payload["campaign_id"]
-        npcs = [
-            a for a in payload["campaign"]["actors"]
-            if a["identity"]["actor_id"] != "player"
-            and a["identity"].get("actor_type") == "npc"
-            and a.get("alive", True)
-        ]
-        if not npcs:
-            pytest.skip("No NPCs available to enter combat")
-        target = npcs[0]["identity"]["display_name"]
+        target = ensure_attack_target(campaign_id, actor_id="spell_contract_target", name="Spell Contract Fang")
         body = tc.post(
             f"/game/campaigns/{campaign_id}/commands",
-            json={"input": f"attack {target}"},
+            json={"input": f"attack {target['name']}"},
         ).json()
-        if body.get("command_type") != "combat":
-            pytest.skip("Attack did not enter combat")
+        assert body.get("command_type") == "combat"
 
         actions = body["campaign"]["combat"]["available_actions"]
         assert "cast" in actions, (

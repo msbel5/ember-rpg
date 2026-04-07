@@ -5,6 +5,7 @@ import pytest
 from engine.api.campaign.knowledge import discover_topics
 from engine.api.campaign.runtime import CampaignRuntime
 from engine.world.rumors import RumorNetwork
+from _seed_robust_helpers import ensure_talkable_authored_dialog_target
 
 
 def _make_campaign(seed: int = 42) -> tuple[CampaignRuntime, object]:
@@ -133,23 +134,9 @@ def test_travel_start_discovers_destination_topics() -> None:
 
 def test_talk_discovers_npc_topic_when_dialog_opens() -> None:
     runtime, context = _make_campaign(seed=42)
-    payload = runtime.snapshot(context.campaign_id, narrative="talk-knowledge-seed")
-    talkables = [
-        entity
-        for entity in payload["campaign"]["world_entities"]
-        if entity.get("entity_type") == "npc" and "talk" in entity.get("context_actions", [])
-    ]
-    for talkable in talkables:
-        target_name = str(talkable["name"])
-        target_position = talkable["position"]
-        move_x = max(0, int(target_position[0]) - 3)
-        move_y = int(target_position[1])
-        runtime.run_command(context.campaign_id, f"move to {move_x},{move_y}")
-        result = runtime.run_command(context.campaign_id, f"talk {target_name}")
-        if result["command_type"] != "dialog" or result.get("dialog_npc") != target_name:
-            continue
-        actor_id = str(result["campaign"]["conversation_state"]["npc_id"])
-        assert f"npc.{actor_id}" in result["campaign"]["knowledge"]["discovered_topic_ids"]
-        break
-    else:
-        pytest.skip("No authored dialog opening available for talkable NPCs in this seed")
+    talkable = ensure_talkable_authored_dialog_target(context, actor_id="knowledge_runtime_talker", name="Knowledge Keeper")
+    result = runtime.run_command(context.campaign_id, f"talk {talkable['name']}")
+    assert result["command_type"] == "dialog"
+    assert result.get("dialog_npc") == talkable["name"]
+    actor_id = str(result["campaign"]["conversation_state"]["npc_id"])
+    assert f"npc.{actor_id}" in result["campaign"]["knowledge"]["discovered_topic_ids"]

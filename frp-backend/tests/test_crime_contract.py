@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 
 from engine.api import campaign_routes
 from main import app
+from _seed_robust_helpers import ensure_talkable_authored_dialog_target
 
 client = TestClient(app)
 
@@ -354,12 +355,10 @@ class TestNoCrimeOnLegitimate:
     def test_talking_to_npc_does_not_create_crime(self):
         payload = _create_campaign(seed=96)
         campaign_id = payload["campaign_id"]
-        npc = _first_npc(payload)
-        if npc is None:
-            pytest.skip("No NPCs available")
+        npc = ensure_talkable_authored_dialog_target(campaign_id, actor_id="crime_contract_talker", name="Crime Contract Witness")
         client.post(
             f"/game/campaigns/{campaign_id}/commands",
-            json={"input": f"talk {npc['identity']['display_name']}"},
+            json={"input": f"talk {npc['name']}"},
         )
         snapshot = client.post(
             f"/game/campaigns/{campaign_id}/commands",

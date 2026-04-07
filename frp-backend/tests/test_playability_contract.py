@@ -17,7 +17,9 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from engine.api import campaign_routes
 from main import app
+from _seed_robust_helpers import ensure_entity_presence
 
 client = TestClient(app)
 
@@ -171,9 +173,8 @@ class TestWorldEntities:
     def test_world_entities_have_required_fields(self):
         """Each entity needs id, name, entity_type, position for rendering."""
         data = _create_campaign()
-        entities = data["campaign"]["world_entities"]
-        if not entities:
-            pytest.skip("No entities spawned in this seed")
+        ensure_entity_presence(data["campaign_id"])
+        entities = campaign_routes.campaign_runtime.snapshot(data["campaign_id"], narrative="playability-entities")["campaign"]["world_entities"]
         for i, entity in enumerate(entities[:5]):
             assert "id" in entity, f"Entity {i} missing id"
             assert "name" in entity, f"Entity {i} missing name"

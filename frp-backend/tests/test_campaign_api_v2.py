@@ -9,6 +9,11 @@ from engine.api.campaign.runtime import CampaignRuntime
 from engine.api import campaign_routes
 from engine.kernel.gameplay import spawn_ground_item_entity
 from main import app
+from _seed_robust_helpers import (
+    ensure_ask_about_topic,
+    ensure_attack_target,
+    ensure_talkable_authored_dialog_target,
+)
 
 
 client = TestClient(app)
@@ -322,106 +327,62 @@ def test_campaign_commerce_shortcut_steal_item_returns_crime_state_shape():
 def test_campaign_talk_command_returns_dialog_payload_when_conversation_is_active():
     payload = _create_campaign()
     campaign_id = payload["campaign_id"]
-    talkables = [
-        entity
-        for entity in payload["campaign"]["world_entities"]
-        if entity.get("entity_type") == "npc" and "talk" in entity.get("context_actions", [])
-    ]
+    talkable = ensure_talkable_authored_dialog_target(campaign_id, actor_id="campaign_api_talker", name="Campaign API Scholar")
 
-    for talkable in talkables:
-        target_name = str(talkable["name"])
-        target_position = talkable["position"]
-        move_x = max(0, int(target_position[0]) - 3)
-        move_y = int(target_position[1])
+    response = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": f"talk {talkable['name']}"})
+    assert response.status_code == 200
+    body = response.json()
 
-        moved = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": f"move to {move_x},{move_y}"})
-        assert moved.status_code == 200
-
-        response = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": f"talk {target_name}"})
-        assert response.status_code == 200
-        body = response.json()
-        if body.get("dialog_npc") != target_name:
-            continue
-
-        assert body.get("dialog_text")
-        assert body.get("dialog_options")
-        assert all(opt["command"].startswith("dialog ") for opt in body["dialog_options"])
-        assert all("enabled" in option for option in body["dialog_options"])
-        assert all("disabled_reason" in option for option in body["dialog_options"])
-        assert any("skill_check" in option for option in body["dialog_options"])
-        break
-    else:
-        pytest.skip("No authored dialog available for talkable NPCs in this campaign seed")
+    assert body.get("dialog_npc") == talkable["name"]
+    assert body.get("dialog_text")
+    assert body.get("dialog_options")
+    assert all(opt["command"].startswith("dialog ") for opt in body["dialog_options"])
+    assert all("enabled" in option for option in body["dialog_options"])
+    assert all("disabled_reason" in option for option in body["dialog_options"])
+    assert any("skill_check" in option for option in body["dialog_options"])
 
 
 def test_campaign_dialog_shortcut_ask_about_returns_additive_payload_during_active_conversation():
     payload = _create_campaign(seed=42)
     campaign_id = payload["campaign_id"]
-    region_topic_id = f"region.{payload['campaign']['world']['active_region_id']}"
-    talkables = [
-        entity
-        for entity in payload["campaign"]["world_entities"]
-        if entity.get("entity_type") == "npc" and "talk" in entity.get("context_actions", [])
-    ]
+    talkable = ensure_talkable_authored_dialog_target(campaign_id, actor_id="campaign_api_asker", name="Campaign API Chronicler")
+    topic_id = ensure_ask_about_topic(campaign_id, actor_id=talkable["actor_id"], actor_name=talkable["name"])
 
-    for talkable in talkables:
-        target_name = str(talkable["name"])
-        target_position = talkable["position"]
-        move_x = max(0, int(target_position[0]) - 3)
-        move_y = int(target_position[1])
+    opened = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": f"talk {talkable['name']}"})
+    assert opened.status_code == 200
+    assert opened.json().get("dialog_npc") == talkable["name"]
 
-        moved = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": f"move to {move_x},{move_y}"})
-        assert moved.status_code == 200
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "dialog",
+            "args": {"action_id": "ask_about", "topic_id": topic_id},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
 
-        opened = client.post(f"/game/campaigns/{campaign_id}/commands", json={"input": f"talk {target_name}"})
-        assert opened.status_code == 200
-        if opened.json().get("dialog_npc") != target_name:
-            continue
-
-        response = client.post(
-            f"/game/campaigns/{campaign_id}/commands",
-            json={
-                "input": "",
-                "shortcut": "dialog",
-                "args": {"action_id": "ask_about", "topic_id": region_topic_id},
-            },
-        )
-        assert response.status_code == 200
-        body = response.json()
-
-        assert body["command_type"] == "dialog"
-        assert isinstance(body["knowledge_view"], dict)
-        assert isinstance(body["knowledge_view"]["ask_about"], dict)
-        assert body["knowledge_view"]["ask_about"]["topic"]["topic_id"] == region_topic_id
-        assert body["knowledge_view"]["ask_about"]["response_type"] in {"fact", "rumor", "redirect", "refusal"}
-        assert isinstance(body["knowledge_view"]["ask_about"]["facts"], list)
-        assert isinstance(body["knowledge_view"]["ask_about"]["rumors"], list)
-        assert isinstance(body["knowledge_view"]["ask_about"]["redirect_topic_ids"], list)
-        assert isinstance(body["campaign"]["conversation_state"]["ask_about"], dict)
-        assert body["campaign"]["conversation_state"]["ask_about"]["topic"]["topic_id"] == region_topic_id
-        break
-    else:
-        pytest.skip("No authored dialog opening available for ask-about API coverage")
+    assert body["command_type"] == "dialog"
+    assert isinstance(body["knowledge_view"], dict)
+    assert isinstance(body["knowledge_view"]["ask_about"], dict)
+    assert body["knowledge_view"]["ask_about"]["topic"]["topic_id"] == topic_id
+    assert body["knowledge_view"]["ask_about"]["response_type"] in {"fact", "rumor", "redirect", "refusal"}
+    assert isinstance(body["knowledge_view"]["ask_about"]["facts"], list)
+    assert isinstance(body["knowledge_view"]["ask_about"]["rumors"], list)
+    assert isinstance(body["knowledge_view"]["ask_about"]["redirect_topic_ids"], list)
+    assert isinstance(body["campaign"]["conversation_state"]["ask_about"], dict)
+    assert body["campaign"]["conversation_state"]["ask_about"]["topic"]["topic_id"] == topic_id
 
 
 def test_campaign_attack_command_marks_scene_as_combat_when_combat_payload_exists():
     payload = _create_campaign()
     campaign_id = payload["campaign_id"]
-
-    # Find an actual NPC to attack (campaign-native, no enemy spawning).
-    npcs = [
-        actor for actor in payload["campaign"]["actors"]
-        if actor["identity"]["actor_id"] != "player"
-        and actor["identity"].get("actor_type") == "npc"
-        and actor.get("alive", True)
-    ]
-    if not npcs:
-        pytest.skip("No NPCs in fresh campaign to attack")
-    target_name = npcs[0]["identity"]["display_name"]
+    target = ensure_attack_target(campaign_id, actor_id="campaign_api_combat_target", name="Campaign API Fang")
 
     response = client.post(
         f"/game/campaigns/{campaign_id}/commands",
-        json={"input": f"attack {target_name}"},
+        json={"input": f"attack {target['name']}"},
     )
     assert response.status_code == 200
     body = response.json()
@@ -439,23 +400,14 @@ def test_campaign_attack_command_marks_scene_as_combat_when_combat_payload_exist
 def test_campaign_command_accepts_shortcut_combat_request_shape():
     payload = _create_campaign(seed=50)
     campaign_id = payload["campaign_id"]
-
-    npcs = [
-        actor for actor in payload["campaign"]["actors"]
-        if actor["identity"]["actor_id"] != "player"
-        and actor["identity"].get("actor_type") == "npc"
-        and actor.get("alive", True)
-    ]
-    if not npcs:
-        pytest.skip("No NPCs in fresh campaign to attack")
-    target_actor_id = npcs[0]["identity"]["actor_id"]
+    target = ensure_attack_target(campaign_id, actor_id="campaign_api_structured_target", name="Campaign API Raider")
 
     response = client.post(
         f"/game/campaigns/{campaign_id}/commands",
         json={
             "input": "",
             "shortcut": "combat",
-            "args": {"action_id": "attack", "target_id": target_actor_id, "called_shot": "head"},
+            "args": {"action_id": "attack", "target_id": target["actor_id"], "called_shot": "head"},
         },
     )
     assert response.status_code == 200
@@ -470,20 +422,11 @@ def test_campaign_command_accepts_structured_combat_use_item_request_shape():
     payload = _create_campaign(seed=150)
     campaign_id = payload["campaign_id"]
     _inject_usable_inventory_item(campaign_id, item_def_id="field_tonic")
-
-    npcs = [
-        actor for actor in payload["campaign"]["actors"]
-        if actor["identity"]["actor_id"] != "player"
-        and actor["identity"].get("actor_type") == "npc"
-        and actor.get("alive", True)
-    ]
-    if not npcs:
-        pytest.skip("No NPCs in fresh campaign to attack")
-    target_name = npcs[0]["identity"]["display_name"]
+    target = ensure_attack_target(campaign_id, actor_id="campaign_api_use_item_target", name="Campaign API Brute")
 
     attack = client.post(
         f"/game/campaigns/{campaign_id}/commands",
-        json={"input": f"attack {target_name}"},
+        json={"input": f"attack {target['name']}"},
     )
     assert attack.status_code == 200
     started = attack.json()

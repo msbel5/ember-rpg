@@ -280,6 +280,16 @@ def _near_duplicate_warnings(payload: Any) -> list[str]:
     return warnings
 
 
+def _family_source_paths(name: str) -> list[Path]:
+    spec = FAMILY_SPECS[name]
+    return [DATA_DIR / source_file for source_file in spec.source_files]
+
+
+def _family_source_errors(name: str) -> list[str]:
+    missing = [path for path in _family_source_paths(name) if not path.exists()]
+    return [f"source file missing: {path}" for path in missing]
+
+
 def validate_batches(batch_id: str | None = None, work_root: Path | None = None, strict_missing: bool = True) -> dict[str, Any]:
     root = work_root or DEFAULT_WORK_ROOT
     manifest = _load_json(root / "tmp" / "content_packets" / "manifest.json")
@@ -291,10 +301,12 @@ def validate_batches(batch_id: str | None = None, work_root: Path | None = None,
         candidate_path = Path(family["candidate"])
         review_path = Path(family["review"])
         entry = {"name": name, "candidate": str(candidate_path), "review": str(review_path), "status": "pass", "errors": [], "warnings": []}
-        if not candidate_path.exists():
+        source_errors = _family_source_errors(name)
+        if source_errors:
             entry["status"] = "missing"
-            message = f"candidate file missing: {candidate_path}"
-            (entry["errors"] if strict_missing else entry["warnings"]).append(message)
+            (entry["errors"] if strict_missing else entry["warnings"]).extend(source_errors)
+        elif not candidate_path.exists():
+            entry["warnings"].append(f"workflow candidate file missing: {candidate_path}")
         else:
             payload = _load_json(candidate_path)
             errors = _validate_worldgen(payload) if name == "worldgen" else _validate_bundle(payload) if name == "campaign_history_social" else _validate_standard_list_family(name, payload)
@@ -303,7 +315,7 @@ def validate_batches(batch_id: str | None = None, work_root: Path | None = None,
             if errors:
                 entry["status"] = "fail"
         if not review_path.exists():
-            entry["warnings"].append(f"review report missing: {review_path}")
+            entry["warnings"].append(f"workflow review report missing: {review_path}")
         if entry["errors"]:
             results["overall_status"] = "fail"
         elif entry["status"] == "missing" and strict_missing and results["overall_status"] != "fail":
