@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from engine.api.campaign.knowledge import discover_topics
 from engine.api.campaign.runtime import CampaignRuntime
 from engine.world.rumors import RumorNetwork
 
@@ -79,6 +80,32 @@ def test_pin_is_idempotent_for_discovered_topics() -> None:
     assert second["knowledge_view"]["pinned"] is True
     assert "already pinned" in second["narrative"].lower()
     assert region_topic["topic_id"] in context.kernel_runtime["game_state"].raw_payload["knowledge"]["pinned_topic_ids"]
+
+
+def test_discover_topics_preserves_existing_order_when_appending_missing_ids() -> None:
+    runtime, context = _make_campaign(seed=77)
+    region_id = str(context.region_snapshot.region_id)
+    settlement_id = str(
+        context.settlement_state.get("settlement_id")
+        or context.region_snapshot.metadata.get("settlement_id")
+        or ""
+    ).strip()
+    faction_id = str(context.world.factions[0].id).strip() if context.world.factions else "alliance"
+    existing = [f"region.{region_id}", f"faction.{faction_id}"]
+    context.kernel_runtime["game_state"].raw_payload["knowledge"] = {
+        "discovered_topic_ids": list(existing),
+        "pinned_topic_ids": [existing[0]],
+    }
+
+    discover_topics(
+        context,
+        [f"faction.{faction_id}", f"region.{region_id}", f"settlement.{settlement_id}"],
+    )
+
+    assert context.kernel_runtime["game_state"].raw_payload["knowledge"] == {
+        "discovered_topic_ids": existing + [f"settlement.{settlement_id}"],
+        "pinned_topic_ids": [existing[0]],
+    }
 
 
 def test_travel_start_discovers_destination_topics() -> None:

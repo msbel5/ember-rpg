@@ -64,10 +64,20 @@ _TRAVEL_STATE_KEYS = {
     "paused_for_encounter",
     "encounter_resolved",
 }
-_KNOWLEDGE_STATE_KEYS = {
+_ADVISOR_TRANSIENT_KEYS = (
+    "advisor",
+    "advisor_view",
+)
+_CRIME_STATE_KEYS = (
+    "wanted",
+    "active_bounty",
+    "witness_count",
+    "last_incident",
+)
+_KNOWLEDGE_STATE_KEYS = (
     "discovered_topic_ids",
     "pinned_topic_ids",
-}
+)
 _EQUIPMENT_CANONICAL_SLOT_ALIASES: dict[str, tuple[str, ...]] = {
     "head": ("helmet",),
     "body": ("armor", "body", "chest"),
@@ -154,6 +164,144 @@ def _normalize_knowledge_state_payload(raw_state: Any) -> dict[str, Any] | None:
     return normalized
 
 
+def _sanitize_knowledge_raw_payload(raw_payload: dict[str, Any]) -> None:
+    normalized_knowledge = _normalize_knowledge_state_payload(raw_payload.get("knowledge"))
+    if normalized_knowledge is None:
+        raw_payload.pop("knowledge", None)
+        return
+    raw_payload["knowledge"] = {
+        "discovered_topic_ids": list(normalized_knowledge["discovered_topic_ids"]),
+        "pinned_topic_ids": list(normalized_knowledge["pinned_topic_ids"]),
+    }
+
+
+def _sanitize_advisor_payload_map(payload: Any) -> None:
+    if not isinstance(payload, dict):
+        return
+    for key in _ADVISOR_TRANSIENT_KEYS:
+        payload.pop(key, None)
+
+
+def _sanitize_advisor_runtime(runtime: dict[str, Any]) -> None:
+    game_state = runtime.get("game_state")
+    raw_payload = getattr(game_state, "raw_payload", None) if game_state is not None else None
+    _sanitize_advisor_payload_map(raw_payload)
+    actors = runtime.get("actors") or {}
+    for actor in actors.values():
+        _sanitize_advisor_payload_map(getattr(actor, "raw_payload", None))
+
+
+def _sanitize_advisor_campaign_meta(meta: dict[str, Any]) -> None:
+    _sanitize_advisor_payload_map(meta)
+    game_state = meta.get("game_state")
+    if isinstance(game_state, dict):
+        _sanitize_advisor_payload_map(game_state.get("raw_payload"))
+    actors = meta.get("actors")
+    if isinstance(actors, list):
+        for actor in actors:
+            if not isinstance(actor, dict):
+                continue
+            _sanitize_advisor_payload_map(actor.get("raw_payload"))
+
+
+def _normalize_crime_last_incident(raw_incident: Any) -> dict[str, Any] | None:
+    if not isinstance(raw_incident, dict):
+        incident_text = str(raw_incident or "").strip()
+        if not incident_text:
+            return None
+        raw_incident = {"crime_type": incident_text}
+
+    crime_type = str(raw_incident.get("crime_type") or raw_incident.get("type") or "").strip().lower()
+    if not crime_type:
+        return None
+    responses = raw_incident.get("responses", [])
+    normalized_responses: list[str] = []
+    if isinstance(responses, Sequence) and not isinstance(responses, (str, bytes, bytearray)):
+        seen_responses: set[str] = set()
+        for entry in responses:
+            text = str(entry or "").strip()
+            if not text or text in seen_responses:
+                continue
+            seen_responses.add(text)
+            normalized_responses.append(text)
+    return {
+        "crime_type": crime_type,
+        "severity": str(raw_incident.get("severity", "low") or "low").strip().lower() or "low",
+        "target_id": str(raw_incident.get("target_id", "") or "").strip() or None,
+        "target_name": str(raw_incident.get("target_name", "") or "").strip() or None,
+        "faction_id": str(raw_incident.get("faction_id", "") or "").strip() or None,
+        "settlement_id": str(raw_incident.get("settlement_id", "") or "").strip() or None,
+        "witnessed": bool(raw_incident.get("witnessed")),
+        "reported": bool(raw_incident.get("reported")),
+        "responses": normalized_responses,
+        "tick": int(raw_incident.get("tick", 0) or 0),
+    }
+
+
+def _normalize_crime_state_payload(raw_state: Any) -> dict[str, Any] | None:
+    if not isinstance(raw_state, dict):
+        return None
+    normalized: dict[str, Any] = {}
+    if "wanted" in raw_state:
+        normalized["wanted"] = bool(raw_state.get("wanted"))
+    if "active_bounty" in raw_state or "bounty" in raw_state:
+        normalized["active_bounty"] = int(raw_state.get("active_bounty", raw_state.get("bounty", 0)) or 0)
+    if "witness_count" in raw_state:
+        normalized["witness_count"] = int(raw_state.get("witness_count", 0) or 0)
+    normalized_last_incident = _normalize_crime_last_incident(raw_state.get("last_incident"))
+    if normalized_last_incident is not None:
+        normalized["last_incident"] = normalized_last_incident
+    if not normalized:
+        return None
+    return normalized
+
+
+def _sanitize_crime_raw_payload(raw_payload: dict[str, Any]) -> None:
+    normalized_crime = _normalize_crime_state_payload(raw_payload.get("crime_state"))
+    if normalized_crime is None:
+        raw_payload.pop("crime_state", None)
+        return
+    raw_payload["crime_state"] = normalized_crime
+
+
+def _crime_state(runtime: dict[str, Any]) -> dict[str, Any] | None:
+    game_state = runtime.get("game_state")
+    raw_payload = getattr(game_state, "raw_payload", {}) if game_state is not None else {}
+    return _normalize_crime_state_payload(raw_payload.get("crime_state"))
+
+
+def _persist_crime_state(runtime: dict[str, Any], crime_state: Any) -> None:
+    game_state = runtime.get("game_state")
+    if game_state is None:
+        return
+    raw_payload = getattr(game_state, "raw_payload", None)
+    if not isinstance(raw_payload, dict):
+        raw_payload = {}
+        game_state.raw_payload = raw_payload
+    normalized = _normalize_crime_state_payload(crime_state)
+    if normalized is None:
+        raw_payload.pop("crime_state", None)
+        return
+    raw_payload["crime_state"] = normalized
+
+
+def build_runtime_crime_payload(context: "CampaignContext", runtime: dict[str, Any]) -> dict[str, Any] | None:
+    normalized = _crime_state(runtime)
+    if normalized is None:
+        return {
+            "wanted": False,
+            "active_bounty": 0,
+            "witness_count": 0,
+            "last_incident": None,
+        }
+    return {
+        "wanted": bool(normalized.get("wanted", False)),
+        "active_bounty": int(normalized.get("active_bounty", 0) or 0),
+        "witness_count": int(normalized.get("witness_count", 0) or 0),
+        "last_incident": copy.deepcopy(normalized.get("last_incident")),
+    }
+
+
 def _knowledge_state(runtime: dict[str, Any]) -> dict[str, Any]:
     game_state = runtime.get("game_state")
     raw_payload = getattr(game_state, "raw_payload", {}) if game_state is not None else {}
@@ -176,9 +324,15 @@ def _persist_knowledge_state(runtime: dict[str, Any], knowledge_state: Any) -> N
         game_state.raw_payload = raw_payload
     normalized = _normalize_knowledge_state_payload(knowledge_state)
     if normalized is None:
-        raw_payload.pop("knowledge", None)
+        raw_payload["knowledge"] = {
+            "discovered_topic_ids": [],
+            "pinned_topic_ids": [],
+        }
         return
-    raw_payload["knowledge"] = {key: normalized[key] for key in _KNOWLEDGE_STATE_KEYS}
+    raw_payload["knowledge"] = {
+        "discovered_topic_ids": list(normalized["discovered_topic_ids"]),
+        "pinned_topic_ids": list(normalized["pinned_topic_ids"]),
+    }
 
 
 def _travel_state(runtime: dict[str, Any]) -> TravelState | None:
@@ -1416,12 +1570,15 @@ def _annotate_live_combat_payload(context: "CampaignContext", runtime: dict[str,
 
 def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: bool = False) -> dict[str, Any]:
     if context.kernel_runtime and not rebuild_projection:
+        _sanitize_advisor_runtime(context.kernel_runtime)
+        _persist_crime_state(context.kernel_runtime, _crime_state(context.kernel_runtime))
         _sync_runtime_from_context(context, context.kernel_runtime)
         context.player = context.kernel_runtime.get("actors", {}).get("player", context.player)
         _sync_social_identity(context, context.kernel_runtime)
         sync_combat_projection_state(context)
         return context.kernel_runtime
     meta = dict(context.campaign_state.get("campaign") or {})
+    _sanitize_advisor_campaign_meta(meta)
     existing_runtime = context.kernel_runtime or {}
     if rebuild_projection and existing_runtime:
         existing_runtime_travel_payload = _normalize_travel_state_payload(existing_runtime.get("travel_state"))
@@ -1435,6 +1592,8 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
         raw_payload_meta = dict(game_state_meta.get("raw_payload") or {})
         if existing_game_state is not None and isinstance(getattr(existing_game_state, "raw_payload", None), dict):
             raw_payload_meta.update(copy.deepcopy(existing_game_state.raw_payload))
+        _sanitize_advisor_payload_map(raw_payload_meta)
+        _sanitize_crime_raw_payload(raw_payload_meta)
         if existing_travel is not None:
             status = str(existing_travel.status or "").lower().strip()
             if status in {"", "idle", "cancelled"}:
@@ -1443,11 +1602,22 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
                 raw_payload_meta["travel_state"] = existing_travel.to_dict()
             meta["travel_state"] = existing_travel.to_dict()
         if raw_payload_meta:
+            knowledge_present = "knowledge" in raw_payload_meta
             normalized_knowledge = _normalize_knowledge_state_payload(raw_payload_meta.get("knowledge"))
-            if normalized_knowledge is None:
-                raw_payload_meta.pop("knowledge", None)
+            if knowledge_present:
+                if normalized_knowledge is None:
+                    raw_payload_meta["knowledge"] = {
+                        "discovered_topic_ids": [],
+                        "pinned_topic_ids": [],
+                    }
+                else:
+                    raw_payload_meta["knowledge"] = {
+                        "discovered_topic_ids": list(normalized_knowledge["discovered_topic_ids"]),
+                        "pinned_topic_ids": list(normalized_knowledge["pinned_topic_ids"]),
+                    }
             else:
-                raw_payload_meta["knowledge"] = normalized_knowledge
+                raw_payload_meta.pop("knowledge", None)
+            _sanitize_crime_raw_payload(raw_payload_meta)
             game_state_meta["raw_payload"] = raw_payload_meta
             meta["game_state"] = game_state_meta
         for key in ("world_state", "path_authority", "local_map_state"):
@@ -1509,6 +1679,8 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
         "stores": load_stores(meta.get("stores"), context),
     }
     context.kernel_runtime = runtime
+    _sanitize_advisor_runtime(runtime)
+    _persist_crime_state(runtime, _crime_state(runtime))
     rebase_projection_slices(context, runtime, force=True)
     _persist_knowledge_state(runtime, _knowledge_state(runtime))
     _sync_travel_runtime_state(context, runtime)
@@ -1522,6 +1694,8 @@ def ensure_kernel_runtime(context: "CampaignContext", *, rebuild_projection: boo
 
 def serialize_kernel_runtime(context: "CampaignContext") -> dict[str, Any]:
     runtime = ensure_kernel_runtime(context)
+    _sanitize_advisor_runtime(runtime)
+    _persist_crime_state(runtime, _crime_state(runtime))
     _persist_knowledge_state(runtime, _knowledge_state(runtime))
     return {
         "world_state": runtime["world_state"].to_dict(),
@@ -1810,6 +1984,8 @@ def _load_actors(saved_payload: Any, context: "CampaignContext") -> dict[str, Ac
     if isinstance(saved_payload, list):
         actors = {actor.identity.actor_id: actor for actor in [ActorRecord.from_dict(dict(item)) for item in saved_payload]}
         for actor in actors.values():
+            _sanitize_advisor_payload_map(actor.raw_payload)
+            actor.raw_payload.pop("crime_state", None)
             _normalize_actor_spell_state(actor)
             normalize_actor_social_state(actor)
             normalize_actor_medical_state(actor, sync_derived=True)
@@ -1823,6 +1999,8 @@ def _load_actors(saved_payload: Any, context: "CampaignContext") -> dict[str, Ac
         )
     }
     for actor in actors.values():
+        _sanitize_advisor_payload_map(actor.raw_payload)
+        actor.raw_payload.pop("crime_state", None)
         _normalize_actor_spell_state(actor)
         normalize_actor_social_state(actor)
         normalize_actor_medical_state(actor, sync_derived=True)
@@ -1985,8 +2163,13 @@ def _merge_actor(
             target.stats[key] = value
     for key, value in fresh.skills.items():
         target.skills.setdefault(key, value)
-    target.inventory = fresh.inventory
-    target.equipment = fresh.equipment
+    # Runtime actors remain the single owner of live inventory/equipment state.
+    # Projection rebuilds may manufacture fresh actor shells, but must not
+    # overwrite consumed charges, destroyed stacks, or live equipment changes.
+    if target.inventory is None:
+        target.inventory = fresh.inventory
+    if target.equipment is None:
+        target.equipment = fresh.equipment
     # Preserve progression fields (xp, level) that the kernel owns.
     preserved_xp = target.raw_payload.get("xp")
     preserved_level = target.raw_payload.get("level")
@@ -2031,6 +2214,8 @@ def _merge_actor(
         target.raw_payload[key] = value
     for key, value in preserved_social.items():
         target.raw_payload[key] = value
+    _sanitize_advisor_payload_map(target.raw_payload)
+    target.raw_payload.pop("crime_state", None)
     _normalize_actor_spell_state(target)
     if target.body_state is None:
         target.body_state = fresh.body_state

@@ -10,6 +10,8 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from engine.api import campaign_routes
+from engine.kernel import item_stack_from_legacy_payload
 from main import app
 
 client = TestClient(app)
@@ -51,6 +53,34 @@ def _enter_combat(campaign_id: str, actors: list[dict]) -> dict:
     body = response.json()
     assert body["command_type"] == "combat", "Attack did not enter combat"
     return body
+
+
+def _inject_usable_item(campaign_id: str, *, item_def_id: str = "field_tonic") -> None:
+    context = campaign_routes.campaign_runtime.get_campaign(campaign_id)
+    context.kernel_runtime["actors"]["player"].inventory.append(
+        item_stack_from_legacy_payload(
+            {
+                "item_def_id": item_def_id,
+                "name": "Field Tonic" if item_def_id == "field_tonic" else item_def_id.replace("_", " ").title(),
+                "type": "consumable" if item_def_id == "field_tonic" else "wand",
+                "heal": 6 if item_def_id == "field_tonic" else 0,
+                "charges": 2 if item_def_id != "field_tonic" else 1,
+                "quantity": 1,
+            }
+        )
+    )
+
+
+def _strip_usable_items(campaign_id: str) -> None:
+    from engine.api.gameplay_bridge import _runtime_item_is_usable_now, _runtime_item_source
+
+    context = campaign_routes.campaign_runtime.get_campaign(campaign_id)
+    player = context.kernel_runtime["actors"]["player"]
+    player.inventory[:] = [
+        item
+        for item in player.inventory
+        if not _runtime_item_is_usable_now(item, _runtime_item_source(item))
+    ]
 
 
 # ── Combat entry contract ────────────────────────────────────────────
@@ -120,6 +150,7 @@ class TestAvailableActionsTruthfulness:
     @pytest.fixture(autouse=True)
     def _combat(self):
         payload = _create_campaign(seed=46)
+        _strip_usable_items(payload["campaign_id"])
         body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
         self.actions = body["campaign"]["combat"]["available_actions"]
 
@@ -139,7 +170,16 @@ class TestAvailableActionsTruthfulness:
 
     def test_use_item_is_not_advertised(self):
         assert "use_item" not in self.actions, (
-            "Combat payload advertises 'use_item' but item use is not supported in combat time"
+            "Combat payload should not advertise 'use_item' when no legal combat-usable item exists"
+        )
+
+    def test_use_item_is_advertised_when_usable_item_exists(self):
+        payload = _create_campaign(seed=460)
+        _inject_usable_item(payload["campaign_id"], item_def_id="field_tonic")
+        body = _enter_combat(payload["campaign_id"], payload["campaign"]["actors"])
+
+        assert "use_item" in body["campaign"]["combat"]["available_actions"], (
+            "Combat payload should advertise 'use_item' when the player has a legal combat-usable item"
         )
 
 

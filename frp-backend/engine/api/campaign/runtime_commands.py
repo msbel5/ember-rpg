@@ -10,6 +10,10 @@ from typing import Any, Optional
 
 from engine.api.campaign.debug_trace import snapshot_hash, trace_event
 from engine.api.campaign.dialog import build_dialog_payload
+from engine.api.campaign.advisor import (
+    maybe_handle_advisor_command,
+    maybe_handle_structured_advisor_command,
+)
 from engine.api.campaign.live_kernel import advance_kernel_runtime
 from engine.api.campaign.persistence import campaign_payload, persist_campaign_state
 from engine.api.campaign.quest_bridge import (
@@ -81,6 +85,7 @@ def run_command(
     )
     pending_dialog_payload = (context.kernel_runtime or {}).pop("_pending_dialog_payload", None)
     pending_knowledge_payload = (context.kernel_runtime or {}).pop("_pending_knowledge_payload", None)
+    pending_advisor_payload = (context.kernel_runtime or {}).pop("_pending_advisor_payload", None)
     _advance_world(context, command_type, hours_advanced, issued)
     # Dialog payload: use pre-built payload from talk handler if available, otherwise build fresh.
     runtime = context.kernel_runtime or {}
@@ -88,6 +93,7 @@ def run_command(
         build_dialog_payload(context, narrative) if command_type == "dialog" else {}
     )
     knowledge_payload = pending_knowledge_payload or runtime.pop("_pending_knowledge_payload", None) or {}
+    advisor_payload = pending_advisor_payload or runtime.pop("_pending_advisor_payload", None) or {}
     final_payload = campaign_payload(context)
     trace_event(
         "campaign_command_output",
@@ -106,6 +112,7 @@ def run_command(
         "campaign": final_payload,
         **dialog_payload,
         **knowledge_payload,
+        **advisor_payload,
     }
 
 
@@ -129,6 +136,14 @@ def _dispatch(
     lower = issued.lower().strip()
     from engine.api.combat_bridge import maybe_handle_combat_command, maybe_handle_structured_combat_command  # noqa: E402
     from engine.api.gameplay_bridge import maybe_handle_structured_spell_command  # noqa: E402
+
+    if shortcut == "advisor":
+        structured_advisor = maybe_handle_structured_advisor_command(context, command_args)
+        if structured_advisor is not None:
+            return structured_advisor
+    advisor = maybe_handle_advisor_command(context, issued)
+    if advisor is not None:
+        return advisor
 
     active_travel = _travel_scene_active(context)
     if active_travel:
@@ -279,7 +294,7 @@ def _dispatch(
     logger.warning("Unknown command rejected: %s", issued[:80])
     return (
         f"Unknown command: '{issued}'. Try: attack, cast, use, use ability, abilities, equip, craft, rest, "
-        f"travel, topics, think, pin, train, proficiency, raise, buy, sell, diagnose, dialog, recruit, quests, or world interaction controls.",
+        f"travel, topics, think, pin, ask dm, train, proficiency, raise, buy, sell, diagnose, dialog, recruit, quests, or world interaction controls.",
         "unknown",
         0,
     )

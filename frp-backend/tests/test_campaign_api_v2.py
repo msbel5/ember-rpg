@@ -56,12 +56,39 @@ def _create_campaign(adapter_id: str = "fantasy_ember", *, seed: int = 42) -> di
     return response.json()
 
 
+def _inject_usable_inventory_item(campaign_id: str, *, item_def_id: str = "field_tonic") -> None:
+    from engine.kernel import item_stack_from_legacy_payload
+
+    context = campaign_routes.campaign_runtime.get_campaign(campaign_id)
+    context.kernel_runtime["actors"]["player"].inventory.append(
+        item_stack_from_legacy_payload(
+            {
+                "item_def_id": item_def_id,
+                "name": "Field Tonic" if item_def_id == "field_tonic" else item_def_id.replace("_", " ").title(),
+                "type": "consumable" if item_def_id == "field_tonic" else "wand",
+                "heal": 6 if item_def_id == "field_tonic" else 0,
+                "charges": 2 if item_def_id != "field_tonic" else 1,
+                "quantity": 1,
+            }
+        )
+    )
+
+
 def _first_travel_destination(payload: dict) -> dict:
     travel_options = list(payload["campaign"]["travel_options"])
     destination = next(option for option in travel_options if not option.get("is_current"))
     assert destination["route_id"]
     assert destination["destination_region_id"]
     return destination
+
+
+def _first_store_item(payload: dict) -> tuple[str, str]:
+    stores = list(payload["campaign"].get("stores", []))
+    assert stores
+    store = stores[0]
+    items = list(store.get("items", []))
+    assert items
+    return str(store["store_id"]), str(items[0]["item_def_id"])
 
 
 def test_create_campaign_returns_campaign_snapshot():
@@ -203,6 +230,93 @@ def test_campaign_knowledge_shortcut_returns_knowledge_view_shape():
     assert isinstance(body["knowledge_view"]["topics"], list)
     assert isinstance(body["campaign"]["knowledge"]["discovered_topic_ids"], list)
     assert isinstance(body["campaign"]["knowledge"]["pinned_topic_ids"], list)
+
+
+def test_campaign_advisor_shortcut_returns_advisor_view_shape():
+    payload = _create_campaign(seed=322)
+    campaign_id = payload["campaign_id"]
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "advisor",
+            "args": {"action_id": "ask_dm", "query": "what should I do next"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["command_type"] == "advisor"
+    assert body["hours_advanced"] == 0
+    assert isinstance(body["advisor_view"], dict)
+    assert isinstance(body["advisor_view"]["answer_lines"], list)
+    assert isinstance(body["advisor_view"]["related_topic_ids"], list)
+    assert body["advisor_view"]["spoiler_safe"] is True
+    assert "advisor" not in body["campaign"]
+    assert "advisor_view" not in body["campaign"]
+
+
+def test_campaign_raw_ask_dm_works_during_active_travel():
+    payload = _create_campaign(seed=323)
+    campaign_id = payload["campaign_id"]
+    destination = _first_travel_destination(payload)
+
+    started = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "travel",
+            "args": {
+                "action_id": "start",
+                "route_id": destination["route_id"],
+                "destination_region_id": destination["destination_region_id"],
+                "destination_settlement_id": destination["destination_settlement_id"],
+            },
+        },
+    )
+    assert started.status_code == 200
+    started_body = started.json()
+    assert started_body["command_type"] == "travel"
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={"input": "ask dm how dangerous is this road"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["command_type"] == "advisor"
+    assert body["hours_advanced"] == 0
+    assert body["campaign"]["scene"] == "travel"
+    assert body["campaign"]["travel_state"]["route_id"] == destination["route_id"]
+    assert isinstance(body["advisor_view"], dict)
+
+
+def test_campaign_commerce_shortcut_steal_item_returns_crime_state_shape():
+    payload = _create_campaign(seed=324)
+    campaign_id = payload["campaign_id"]
+    store_id, item_id = _first_store_item(payload)
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "commerce",
+            "args": {
+                "action_id": "steal_item",
+                "item_id": item_id,
+                "store_id": store_id,
+            },
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["command_type"] == "commerce"
+    assert isinstance(body["campaign"]["crime_state"], dict)
+    assert {"wanted", "active_bounty", "witness_count", "last_incident"} <= set(body["campaign"]["crime_state"])
+    assert body["campaign"]["crime_state"]["last_incident"]["crime_type"] == "theft"
 
 
 def test_campaign_talk_command_returns_dialog_payload_when_conversation_is_active():
@@ -350,6 +464,44 @@ def test_campaign_command_accepts_shortcut_combat_request_shape():
     assert body["campaign"]["combat"]
     assert isinstance(body["campaign"]["combat"]["available_actions"], list)
     assert "cast" not in body["campaign"]["combat"]["available_actions"]
+
+
+def test_campaign_command_accepts_structured_combat_use_item_request_shape():
+    payload = _create_campaign(seed=150)
+    campaign_id = payload["campaign_id"]
+    _inject_usable_inventory_item(campaign_id, item_def_id="field_tonic")
+
+    npcs = [
+        actor for actor in payload["campaign"]["actors"]
+        if actor["identity"]["actor_id"] != "player"
+        and actor["identity"].get("actor_type") == "npc"
+        and actor.get("alive", True)
+    ]
+    if not npcs:
+        pytest.skip("No NPCs in fresh campaign to attack")
+    target_name = npcs[0]["identity"]["display_name"]
+
+    attack = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={"input": f"attack {target_name}"},
+    )
+    assert attack.status_code == 200
+    started = attack.json()
+    assert "use_item" in started["campaign"]["combat"]["available_actions"]
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "combat",
+            "args": {"action_id": "use_item", "item_id": "field_tonic"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["command_type"] == "combat"
+    assert "used field tonic" in body["narrative"].lower()
+    assert body["campaign"]["scene"] == "combat"
 
 
 def test_campaign_save_and_load_round_trip():

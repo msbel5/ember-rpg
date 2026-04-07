@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from engine.api import campaign_routes
 from main import app
 
 
@@ -22,11 +23,50 @@ def _create_campaign(*, seed: int = 42) -> dict:
     return response.json()
 
 
+def _inject_usable_inventory_item(campaign_id: str, *, item_def_id: str = "field_tonic") -> None:
+    from engine.kernel import item_stack_from_legacy_payload
+
+    context = campaign_routes.campaign_runtime.get_campaign(campaign_id)
+    context.kernel_runtime["actors"]["player"].inventory.append(
+        item_stack_from_legacy_payload(
+            {
+                "item_def_id": item_def_id,
+                "name": "Field Tonic" if item_def_id == "field_tonic" else item_def_id.replace("_", " ").title(),
+                "type": "consumable" if item_def_id == "field_tonic" else "wand",
+                "heal": 6 if item_def_id == "field_tonic" else 0,
+                "charges": 2 if item_def_id != "field_tonic" else 1,
+                "quantity": 1,
+            }
+        )
+    )
+
+
+def _strip_usable_inventory_items(campaign_id: str) -> None:
+    from engine.api.gameplay_bridge import _runtime_item_is_usable_now, _runtime_item_source
+
+    context = campaign_routes.campaign_runtime.get_campaign(campaign_id)
+    player = context.kernel_runtime["actors"]["player"]
+    player.inventory[:] = [
+        item
+        for item in player.inventory
+        if not _runtime_item_is_usable_now(item, _runtime_item_source(item))
+    ]
+
+
 def _first_travel_destination(payload: dict) -> dict:
     travel_options = list(payload["campaign"]["travel_options"])
     destination = next(option for option in travel_options if not option.get("is_current"))
     assert destination["route_id"]
     return destination
+
+
+def _first_store_item(payload: dict) -> tuple[str, str]:
+    stores = list(payload["campaign"].get("stores", []))
+    assert stores
+    store = stores[0]
+    items = list(store.get("items", []))
+    assert items
+    return str(store["store_id"]), str(items[0]["item_def_id"])
 
 
 def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
@@ -92,6 +132,29 @@ def test_campaign_command_preserves_godot_payload_shape():
     assert {"canonical_slot", "coverage_zones", "armor_weight_class", "movement_penalty", "stealth_noise", "spell_interference", "attunement_required"} <= set(first_slot_items[0])
 
 
+def test_campaign_advisor_response_shape_is_additive_for_godot_consumers():
+    create = _create_campaign(seed=100)
+    campaign_id = create["campaign_id"]
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "advisor",
+            "args": {"action_id": "ask_dm", "query": "where should I go next"},
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["command_type"] == "advisor"
+    assert payload["hours_advanced"] == 0
+    assert isinstance(payload["advisor_view"], dict)
+    assert {"intent", "answer_lines", "related_topic_ids", "suggested_commands", "blockers", "spoiler_safe"} <= set(payload["advisor_view"])
+    assert "advisor" not in payload["campaign"]
+    assert "advisor_view" not in payload["campaign"]
+
+
 def test_campaign_combat_payload_shape_is_present_for_godot_consumers():
     create = client.post(
         "/game/campaigns",
@@ -104,6 +167,7 @@ def test_campaign_combat_payload_shape_is_present_for_godot_consumers():
         },
     ).json()
     campaign_id = create["campaign_id"]
+    _strip_usable_inventory_items(campaign_id)
 
     npcs = [
         actor for actor in create["campaign"]["actors"]
@@ -133,6 +197,60 @@ def test_campaign_combat_payload_shape_is_present_for_godot_consumers():
     assert isinstance(combat["move_options"], list)
     assert any(entry["is_player"] for entry in combat["combatants"])
     assert all(isinstance(entry["position"], list) and len(entry["position"]) == 2 for entry in combat["combatants"])
+
+
+def test_campaign_combat_payload_advertises_use_item_when_inventory_has_legal_item():
+    create = _create_campaign(seed=151)
+    campaign_id = create["campaign_id"]
+    _inject_usable_inventory_item(campaign_id, item_def_id="field_tonic")
+
+    npcs = [
+        actor for actor in create["campaign"]["actors"]
+        if actor["identity"]["actor_id"] != "player"
+        and actor["identity"].get("actor_type") == "npc"
+        and actor.get("alive", True)
+    ]
+    if not npcs:
+        pytest.skip("No NPCs in fresh campaign to attack")
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={"input": f"attack {npcs[0]['identity']['display_name']}"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    combat = payload["campaign"]["combat"]
+
+    assert "use_item" in combat["available_actions"]
+
+
+def test_campaign_crime_payload_shape_is_present_for_godot_consumers():
+    create = _create_campaign(seed=188)
+    campaign_id = create["campaign_id"]
+    store_id, item_id = _first_store_item(create)
+
+    response = client.post(
+        f"/game/campaigns/{campaign_id}/commands",
+        json={
+            "input": "",
+            "shortcut": "commerce",
+            "args": {
+                "action_id": "steal_item",
+                "item_id": item_id,
+                "store_id": store_id,
+            },
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    crime = payload["campaign"]["crime_state"]
+
+    assert payload["command_type"] == "commerce"
+    assert isinstance(crime["wanted"], bool)
+    assert isinstance(crime["active_bounty"], int)
+    assert isinstance(crime["witness_count"], int)
+    assert isinstance(crime["last_incident"], dict)
+    assert {"crime_type", "severity", "target_id", "target_name", "faction_id", "settlement_id", "witnessed", "reported", "responses", "tick"} <= set(crime["last_incident"])
 
 
 def test_campaign_travel_payload_shape_is_present_for_godot_consumers():

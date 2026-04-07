@@ -95,6 +95,31 @@ class TestUnknownCommandRejection:
         assert result["knowledge_view"]["blockers"] == ["missing_topic_query"]
         assert result["knowledge_view"]["ask_about"]["refusal_reason"] == "missing_topic_query"
 
+    def test_raw_ask_dm_is_a_known_command(self):
+        rt, ctx = _make_campaign()
+
+        result = rt.run_command(ctx.campaign_id, "ask dm what should I do next")
+
+        assert result["command_type"] == "advisor"
+        assert result["hours_advanced"] == 0
+        assert isinstance(result["advisor_view"], dict)
+        assert result["advisor_view"]["spoiler_safe"] is True
+
+    def test_structured_ask_dm_without_query_fails_softly(self):
+        rt, ctx = _make_campaign()
+
+        result = rt.run_command(
+            ctx.campaign_id,
+            "",
+            shortcut="advisor",
+            args={"action_id": "ask_dm"},
+        )
+
+        assert result["command_type"] == "advisor"
+        assert result["hours_advanced"] == 0
+        assert result["advisor_view"]["blockers"] == ["missing_query"]
+        assert result["command_type"] != "unknown"
+
 
 # ---------------------------------------------------------------------------
 # Task 2: Dialog — no fallback payload

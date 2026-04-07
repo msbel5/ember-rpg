@@ -35,6 +35,7 @@ from .region_projection import build_world_entities, sync_combat_projection
 from .settlement import build_character_sheet, current_player_turn_resources
 from .live_kernel import (
     build_actor_spell_payload,
+    build_runtime_crime_payload,
     build_runtime_knowledge_payload,
     build_runtime_travel_payload,
     ensure_kernel_runtime,
@@ -56,15 +57,59 @@ if TYPE_CHECKING:
     from .context import CampaignContext
 
 
+_ADVISOR_TRANSIENT_KEYS = (
+    "advisor",
+    "advisor_view",
+)
+_CRIME_DUPLICATE_KEYS = (
+    "crime_state",
+)
+
+
+def _strip_advisor_keys(payload: Any) -> None:
+    if not isinstance(payload, dict):
+        return
+    for key in _ADVISOR_TRANSIENT_KEYS:
+        payload.pop(key, None)
+
+
+def _strip_crime_duplicate_keys(payload: Any) -> None:
+    if not isinstance(payload, dict):
+        return
+    for key in _CRIME_DUPLICATE_KEYS:
+        payload.pop(key, None)
+
+
+def _sanitize_persisted_actor_payloads(actors: Any) -> None:
+    if not isinstance(actors, list):
+        return
+    for actor in actors:
+        if not isinstance(actor, dict):
+            continue
+        _strip_advisor_keys(actor.get("raw_payload"))
+        _strip_crime_duplicate_keys(actor.get("raw_payload"))
+
+
+def _sanitize_campaign_snapshot_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    _strip_advisor_keys(payload)
+    game_state = payload.get("game_state")
+    if isinstance(game_state, dict):
+        _strip_advisor_keys(game_state.get("raw_payload"))
+    _sanitize_persisted_actor_payloads(payload.get("actors"))
+    return payload
+
+
 def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
     ensure_kernel_runtime(context)
     sync_combat_projection(context)
     if hasattr(context, "_knowledge_topic_cache"):
         delattr(context, "_knowledge_topic_cache")
     context_data = context.to_dict()
+    _strip_advisor_keys(context_data)
     runtime_state = runtime_region_state(context.world, context.region_snapshot.region_id)
     combat_state = _enrich_combat_payload(context, build_combat_payload(context))
-    kernel_payload = build_kernel_payload(context)
+    kernel_payload = _sanitize_campaign_snapshot_payload(build_kernel_payload(context))
+    crime_payload = build_runtime_crime_payload(context, context.kernel_runtime or {})
     knowledge_payload = build_campaign_knowledge_payload(context)
     travel_payload = build_runtime_travel_payload(context.kernel_runtime or {})
     fog_payload = build_fog_payload(context)
@@ -93,7 +138,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
                 player_payload["stats"] = normalized_stats
     player_payload["turn_resources"] = current_player_turn_resources(context)
     player_payload["spellcasting"] = build_actor_spell_payload(context.player)
-    return {
+    return _sanitize_campaign_snapshot_payload({
         "world": {
             "seed": context.world.seed,
             "profile_id": context.world.profile_id,
@@ -116,6 +161,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "scene": payload_scene,
         "location": context_data["location"],
         "combat": combat_state,
+        "crime_state": crime_payload,
         "knowledge": knowledge_payload,
         "conversation_state": context_data.get("conversation_state", {}),
         "region": region_payload(context),
@@ -131,13 +177,15 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "settlement": copy.deepcopy(context.settlement_state),
         "character_sheet": build_character_sheet(context, context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-12:]),
-    }
+    })
 
 
 def persist_campaign_state(context: "CampaignContext") -> None:
     ensure_kernel_runtime(context)
     sync_combat_projection(context)
-    kernel_payload = build_kernel_payload(context)
+    _strip_advisor_keys(context.campaign_state)
+    _strip_crime_duplicate_keys(context.campaign_state)
+    kernel_payload = _sanitize_campaign_snapshot_payload(build_kernel_payload(context))
     fog_payload = build_fog_payload(context)
     context.campaign_state["party"] = party_member_ids(context)
     context.campaign_state["fog"] = copy.deepcopy(fog_payload)
@@ -166,6 +214,8 @@ def persist_campaign_state(context: "CampaignContext") -> None:
         "fog_by_region": copy.deepcopy(context.campaign_state.get("fog_by_region", {})),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-20:]),
     }
+    _sanitize_campaign_snapshot_payload(context.campaign_state["campaign"])
+    _strip_crime_duplicate_keys(context.campaign_state["campaign"])
     context.campaign_state.pop("campaign_v2", None)
 
 

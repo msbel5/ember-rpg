@@ -31,6 +31,7 @@ _CAST_RE = re.compile(r"^cast\b", re.IGNORECASE)
 _USE_RE = re.compile(r"^use\b", re.IGNORECASE)
 _VALID_TARGET_TYPES = {"npc", "creature", "monster", "animal"}
 _SUPPORTED_ACTIONS = ["attack", "defend", "flee", "move", "end_turn"]
+_STRUCTURED_ACTIONS = set(_SUPPORTED_ACTIONS) | {"use_item"}
 _DIRECTION_DELTAS: dict[str, tuple[int, int]] = {
     "north": (0, -1),
     "south": (0, 1),
@@ -70,7 +71,11 @@ def maybe_handle_combat_command(context: "CampaignContext", command_text: str) -
 
         return maybe_handle_spell_command(context, text, allow_combat=True)
     if _USE_RE.match(text):
-        return None if not context.in_combat() else ("Using items or abilities is not available in combat yet.", "combat", 0)
+        if not context.in_combat():
+            return None
+        from engine.api.gameplay_bridge import maybe_handle_item_use_command
+
+        return maybe_handle_item_use_command(context, text, allow_combat=True)
     return None
 
 
@@ -101,13 +106,17 @@ def maybe_handle_structured_combat_command(
     action_id = str(args.get("action_id", "")).strip().lower()
     if not action_id:
         return None
-    if action_id not in set(_SUPPORTED_ACTIONS):
+    if action_id not in _STRUCTURED_ACTIONS:
         return (f"Unsupported combat action '{action_id}'.", "combat", 0)
     runtime = context.kernel_runtime or {}
     actors: dict[str, Any] = runtime.get("actors", {})
     player: Optional[ActorRecord] = actors.get("player")
     if player is None:
         return ("No combatant is ready to act.", "combat", 0)
+    if action_id == "use_item":
+        from engine.api.gameplay_bridge import maybe_handle_structured_item_use_command
+
+        return maybe_handle_structured_item_use_command(context, args, allow_combat=True)
     if action_id == "attack":
         target_id = str(args.get("target_id", "")).strip()
         if not target_id:
@@ -176,9 +185,18 @@ def _execute_attack(
     *,
     called_shot: str | None = None,
 ) -> tuple[str, str, int]:
+    from engine.api.campaign.crime import (
+        is_protected_crime_target,
+        record_assault_incident,
+        record_murder_incident,
+    )
+
     if not getattr(target, "alive", True):
         return (f"{target.identity.display_name} is already dead.", "combat", 0)
+    protected_target = is_protected_crime_target(context, target)
     combat_was_active = _combat_state(context) is not None
+    if protected_target and not combat_was_active:
+        record_assault_incident(context, target_actor=target)
     combat_state = _ensure_combat_state(context, actors, player, target, _combat_seed(context, offset=1))
     state_ready = _ensure_player_turn(context, combat_state, actors)
     if state_ready["resolved"]:
@@ -199,6 +217,8 @@ def _execute_attack(
         called_shot=called_shot,
     )
     narrative = _apply_attack_result(actors, attack_result)
+    if protected_target and not getattr(target, "alive", True):
+        record_murder_incident(context, target_actor=target)
     follow_up = _end_player_turn_and_resolve(context, combat_state, actors, seed_offset=17)
     if follow_up:
         narrative = f"{narrative} {follow_up}".strip()
@@ -1073,11 +1093,21 @@ def build_combat_payload(context: "CampaignContext") -> Optional[dict[str, Any]]
     available_actions = list(_SUPPORTED_ACTIONS) if active_actor_id == "player" else []
     if active_actor_id == "player":
         active_actor = actors.get("player")
+        active_entry = combat_state.active_combatant if combat_state.combatants else None
         if active_actor is not None and actor_can_cast_registry_spells(
             active_actor,
             current_tick=_combat_spell_tick(context, combat_state),
         ):
             available_actions.append("cast")
+        if (
+            active_actor is not None
+            and active_entry is not None
+            and bool(active_entry.turn_resources.action)
+        ):
+            from engine.api.gameplay_bridge import actor_has_usable_runtime_item
+
+            if actor_has_usable_runtime_item(active_actor):
+                available_actions.append("use_item")
     return {
         "phase": combat_state.phase,
         "round": int(combat_state.round_number),

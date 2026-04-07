@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+
 import engine.api.gameplay_bridge as gameplay_bridge
 
 from engine.api.campaign.runtime import CampaignRuntime
@@ -847,9 +849,32 @@ def test_campaign_knowledge_payload_is_deterministic_and_save_load_stable() -> N
         "source_types",
     }.issubset(before["topics"][0].keys())
     persisted_knowledge = loaded.kernel_runtime["game_state"].raw_payload["knowledge"]
-    assert set(persisted_knowledge) == {"discovered_topic_ids", "pinned_topic_ids"}
-    assert set(discovered_topic_ids).issubset(set(persisted_knowledge["discovered_topic_ids"]))
+    assert list(persisted_knowledge.keys()) == ["discovered_topic_ids", "pinned_topic_ids"]
+    assert persisted_knowledge["discovered_topic_ids"] == discovered_topic_ids
     assert persisted_knowledge["pinned_topic_ids"] == pinned_topic_ids[:2]
+    assert "topics" not in persisted_knowledge
+    assert "facts" not in persisted_knowledge
+
+
+def test_campaign_knowledge_raw_owner_order_survives_save_load_exactly() -> None:
+    runtime, context = _make_campaign()
+    ensure_kernel_runtime(context)
+
+    discovered_topic_ids = ["rumor.third", "region.second", "fact.first"]
+    pinned_topic_ids = ["fact.first", "rumor.third"]
+    context.kernel_runtime["game_state"].raw_payload["knowledge"] = {
+        "discovered_topic_ids": list(discovered_topic_ids),
+        "pinned_topic_ids": list(pinned_topic_ids),
+        "topics": [{"topic_id": "derived_should_die"}],
+    }
+
+    runtime.save_campaign(context.campaign_id, "knowledge_raw_order_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("knowledge_raw_order_slot")
+    loaded_knowledge = loaded.kernel_runtime["game_state"].raw_payload["knowledge"]
+
+    assert list(loaded_knowledge.keys()) == ["discovered_topic_ids", "pinned_topic_ids"]
+    assert loaded_knowledge["discovered_topic_ids"] == discovered_topic_ids
+    assert loaded_knowledge["pinned_topic_ids"] == pinned_topic_ids
 
 
 def test_ask_about_projection_is_deterministic_and_save_load_stable() -> None:
@@ -885,7 +910,215 @@ def test_ask_about_projection_is_deterministic_and_save_load_stable() -> None:
     assert set(before_npc["known_topic_ids"]).issubset(set(before_npc["ask_about_topic_ids"]))
     assert f"rumor.{rumor.rumor_id}" in set(before_npc["ask_about_topic_ids"])
     assert "ask_about" not in loaded.kernel_runtime["game_state"].raw_payload
-    assert loaded.kernel_runtime["game_state"].raw_payload["knowledge"] == context.kernel_runtime["game_state"].raw_payload["knowledge"]
+    assert loaded.kernel_runtime["game_state"].raw_payload.get("knowledge") == context.kernel_runtime["game_state"].raw_payload.get("knowledge")
+
+
+def test_crime_payload_save_load_preserves_summary_without_campaign_state_duplicate() -> None:
+    from engine.world.consequence import CascadeEngine
+    from engine.world.consequence import PendingEffect
+    from engine.world import WorldState
+
+    runtime, context = _make_campaign()
+    context.kernel_runtime["game_state"].raw_payload["crime_state"] = {
+        "wanted": True,
+        "active_bounty": 125,
+        "witness_count": 3,
+        "last_incident": {
+            "crime_type": "murder",
+            "severity": "critical",
+            "target_id": "test_target",
+            "target_name": "Test Target",
+            "faction_id": "test_faction",
+            "settlement_id": str(context.region_snapshot.region_id),
+            "witnessed": True,
+            "reported": True,
+            "responses": [],
+            "tick": 0,
+        },
+    }
+    if context.world_state is None:
+        context.world_state = WorldState(game_id=context.campaign_id)
+    if context.cascade_engine is None:
+        context.cascade_engine = CascadeEngine()
+    context.world_state.flags["wanted"] = True
+    context.world_state.flags["bounty_active"] = 125
+    context.world_state.flags["murder_reported"] = True
+    context.cascade_engine.pending_effects = [
+        PendingEffect(
+            rule_id="murder_bounty_followup",
+            effect={
+                "effect_type": "set_flag",
+                "target": "murder_reported",
+                "params": {"value": True},
+                "description": "Murder report posted",
+            },
+            trigger_at_day=3,
+            trigger_at_hour=8.0,
+            original_trigger={"type": "murder", "witness_count": 3, "bounty": 125},
+        )
+    ]
+
+    before = runtime.snapshot(context.campaign_id, narrative="crime-before-save")["campaign"]["crime_state"]
+    runtime.save_campaign(context.campaign_id, "crime_runtime_sync_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("crime_runtime_sync_slot")
+    after = runtime.snapshot(loaded.campaign_id, narrative="crime-after-load")["campaign"]["crime_state"]
+
+    assert before == after
+    assert before["active_bounty"] == 125
+    assert before["last_incident"]["crime_type"] == "murder"
+    assert len(getattr(loaded.cascade_engine, "pending_effects", [])) == 1
+    assert loaded.world_state.flags["bounty_active"] == 125
+    assert "crime_state" not in loaded.campaign_state
+    assert "crime_state" not in loaded.campaign_state.get("campaign", {})
+
+
+def test_advisor_residue_during_combat_does_not_change_turn_actor_or_turn_resources() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="advisor_combat_ally", name="Advisor Taren", role="guard")
+    hostile = _inject_companion(context, base_id="advisor_combat_enemy", name="Advisor Gnoll", role="raider", hostile=True)
+    _project_actor_entity(context, companion, position=(int(context.position[0]) + 1, int(context.position[1])), attitude="friendly", disposition="friendly")
+    _project_actor_entity(context, hostile, position=(int(context.position[0]) + 3, int(context.position[1])), attitude="hostile")
+
+    combat_state = CombatState(
+        combatants=[
+            CombatantEntry(actor_id="player", initiative=21, is_player=True),
+            CombatantEntry(actor_id=companion.identity.actor_id, initiative=18, is_player=True),
+            CombatantEntry(actor_id=hostile.identity.actor_id, initiative=11, is_player=False),
+        ],
+        current_turn_index=1,
+        phase="active",
+    )
+    combat_state.combatants[1].turn_resources.action = False
+    combat_state.combatants[1].turn_resources.bonus_action = False
+    combat_state.combatants[1].turn_resources.reaction = True
+    combat_state.combatants[1].turn_resources.movement = 2
+    combat_state.combatants[1].turn_resources.max_movement = 7
+    _install_combat_state(context, combat_state)
+    before_combat = copy.deepcopy(context.kernel_runtime["game_state"].raw_payload["combat"])
+    context.kernel_runtime["game_state"].raw_payload["advisor"] = {"leak": True}
+    context.kernel_runtime["game_state"].raw_payload["advisor_view"] = {"leak": True}
+    context.kernel_runtime["actors"][companion.identity.actor_id].raw_payload["advisor_view"] = {"leak": True}
+
+    snapshot = runtime.snapshot(context.campaign_id, narrative="advisor-combat-cleanup")
+
+    after_combat = context.kernel_runtime["game_state"].raw_payload["combat"]
+    assert after_combat["phase"] == before_combat["phase"]
+    assert after_combat["current_turn_index"] == before_combat["current_turn_index"]
+    assert after_combat["combatants"][1]["actor_id"] == before_combat["combatants"][1]["actor_id"]
+    assert after_combat["combatants"][1]["turn_resources"] == before_combat["combatants"][1]["turn_resources"]
+    assert snapshot["campaign"]["combat"]["turn_actor_id"] == companion.identity.actor_id
+    assert "advisor" not in context.kernel_runtime["game_state"].raw_payload
+    assert "advisor_view" not in context.kernel_runtime["game_state"].raw_payload
+    assert "advisor_view" not in context.kernel_runtime["actors"][companion.identity.actor_id].raw_payload
+
+
+def test_advisor_residue_during_travel_does_not_change_travel_state() -> None:
+    runtime, context = _make_campaign()
+    travel_state = _install_travel_state(context, status="traveling", travel_hours_remaining=2, travel_hours_total=5)
+    before = copy.deepcopy(context.kernel_runtime["game_state"].raw_payload["travel_state"])
+    context.kernel_runtime["game_state"].raw_payload["advisor"] = {"leak": True}
+    context.kernel_runtime["game_state"].raw_payload["advisor_view"] = {"leak": True}
+
+    snapshot = runtime.snapshot(context.campaign_id, narrative="advisor-travel-cleanup")
+
+    assert context.kernel_runtime["game_state"].raw_payload["travel_state"] == before
+    assert snapshot["campaign"]["travel_state"]["destination_region_id"] == travel_state.destination_region_id
+    assert "advisor" not in context.kernel_runtime["game_state"].raw_payload
+    assert "advisor_view" not in context.kernel_runtime["game_state"].raw_payload
+
+
+def test_advisor_residue_during_dialog_does_not_mutate_conversation_ask_about_state() -> None:
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="advisor_dialog_npc", name="Advisor Sera", role="scholar")
+    context.conversation_state = {
+        "target_type": "npc",
+        "npc_id": companion.identity.actor_id,
+        "npc_name": companion.identity.display_name,
+        "ask_about_topic_ids": ["fact.bridge", "rumor.market"],
+        "ask_about_selected_topic_id": "fact.bridge",
+    }
+    before_conversation = copy.deepcopy(context.conversation_state)
+    context.kernel_runtime["game_state"].raw_payload["advisor"] = {"leak": True}
+    context.kernel_runtime["game_state"].raw_payload["advisor_view"] = {"leak": True}
+
+    snapshot = runtime.snapshot(context.campaign_id, narrative="advisor-dialog-cleanup")
+
+    assert context.conversation_state == before_conversation
+    assert snapshot["campaign"]["conversation_state"] == before_conversation
+    assert "advisor" not in context.kernel_runtime["game_state"].raw_payload
+    assert "advisor_view" not in context.kernel_runtime["game_state"].raw_payload
+
+
+def test_save_load_sanitizes_advisor_residue_without_changing_gameplay_state() -> None:
+    from engine.kernel.actor_items import ItemStack
+
+    runtime, context = _make_campaign()
+    companion = _inject_companion(context, base_id="advisor_save_ally", name="Save Rowan", role="guard")
+    hostile = _inject_companion(context, base_id="advisor_save_enemy", name="Save Fang", role="raider", hostile=True)
+    _project_actor_entity(context, companion, position=(int(context.position[0]) + 1, int(context.position[1]) + 1), attitude="friendly", disposition="friendly")
+    _project_actor_entity(context, hostile, position=(int(context.position[0]) + 3, int(context.position[1]) + 1), attitude="hostile")
+
+    player = context.kernel_runtime["actors"]["player"]
+    player.stats["hp"] = max(1, int(player.stats.get("max_hp", 20)) - 5)
+    player.inventory.append(
+        ItemStack(
+            instance_id="advisor_bundle_1",
+            item_def_id="rope",
+            quantity=1,
+            payload={"name": "Rope", "identified": True},
+        )
+    )
+    context.kernel_runtime["game_state"].raw_payload["knowledge"] = {
+        "discovered_topic_ids": ["fact.bridge", "region.start"],
+        "pinned_topic_ids": ["fact.bridge"],
+    }
+
+    combat_state = CombatState(
+        combatants=[
+            CombatantEntry(actor_id="player", initiative=20, is_player=True),
+            CombatantEntry(actor_id=companion.identity.actor_id, initiative=16, is_player=True),
+            CombatantEntry(actor_id=hostile.identity.actor_id, initiative=10, is_player=False),
+        ],
+        current_turn_index=0,
+        phase="active",
+    )
+    combat_state.combatants[0].turn_resources.action = False
+    combat_state.combatants[0].turn_resources.bonus_action = True
+    combat_state.combatants[0].turn_resources.reaction = True
+    combat_state.combatants[0].turn_resources.movement = 3
+    combat_state.combatants[0].turn_resources.max_movement = 6
+    _install_combat_state(context, combat_state)
+
+    context.kernel_runtime["game_state"].raw_payload["advisor"] = {"leak": True}
+    context.kernel_runtime["game_state"].raw_payload["advisor_view"] = {"leak": True}
+    player.raw_payload["advisor"] = {"leak": True}
+    player.raw_payload["advisor_view"] = {"leak": True}
+    context.campaign_state["advisor"] = {"leak": True}
+    context.campaign_state["advisor_view"] = {"leak": True}
+
+    before = runtime.snapshot(context.campaign_id, narrative="advisor-save-before")["campaign"]
+    runtime.save_campaign(context.campaign_id, "advisor_state_hygiene_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("advisor_state_hygiene_slot")
+    after = runtime.snapshot(loaded.campaign_id, narrative="advisor-save-after")["campaign"]
+
+    assert before["combat"] == after["combat"]
+    assert before["knowledge"] == after["knowledge"]
+    assert before["player"]["hp"] == after["player"]["hp"]
+    assert before["player"]["inventory"] == after["player"]["inventory"]
+    assert before["character_sheet"]["inventory"] == after["character_sheet"]["inventory"]
+    assert before["character_sheet"]["resources"] == after["character_sheet"]["resources"]
+    assert "advisor" not in before
+    assert "advisor_view" not in before
+    assert "advisor" not in after
+    assert "advisor_view" not in after
+    assert "advisor" not in loaded.kernel_runtime["game_state"].raw_payload
+    assert "advisor_view" not in loaded.kernel_runtime["game_state"].raw_payload
+    assert "advisor" not in loaded.kernel_runtime["actors"]["player"].raw_payload
+    assert "advisor_view" not in loaded.kernel_runtime["actors"]["player"].raw_payload
+    assert "advisor" not in loaded.campaign_state
+    assert "advisor_view" not in loaded.campaign_state
+    assert "advisor" not in loaded.campaign_state.get("campaign", {})
+    assert "advisor_view" not in loaded.campaign_state.get("campaign", {})
 
 
 def test_campaign_payload_exposes_fog_shape() -> None:
@@ -2268,6 +2501,118 @@ def test_mid_combat_projection_payload_stays_aligned_with_kernel_positions() -> 
     assert context.entities[hostile.identity.actor_id]["position"] == list(hostile_position)
     assert context.spatial_index.get_position(companion.identity.actor_id) == companion_position
     assert context.spatial_index.get_position(hostile.identity.actor_id) == hostile_position
+
+
+def test_post_use_combat_snapshot_reflects_destroyed_stack_and_turn_state() -> None:
+    from engine.kernel.actor_items import ItemStack
+
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    tonic = ItemStack(
+        instance_id="combat_tonic_1",
+        item_def_id="field_tonic",
+        quantity=1,
+        payload={"name": "Field Tonic", "type": "consumable", "heal": 6},
+    )
+    damaged_hp = max(1, int(player.stats.get("max_hp", 20)) - 6)
+    player.stats["hp"] = damaged_hp
+    player.inventory.append(tonic)
+
+    combat_state = CombatState(
+        combatants=[CombatantEntry(actor_id="player", initiative=20, is_player=True)],
+        current_turn_index=0,
+        phase="active",
+    )
+    combat_state.combatants[0].turn_resources.action = False
+    combat_state.combatants[0].turn_resources.bonus_action = False
+    combat_state.combatants[0].turn_resources.movement = 4
+    _install_combat_state(context, combat_state)
+
+    player.stats["hp"] = min(int(player.stats.get("max_hp", damaged_hp)), damaged_hp + 6)
+    player.inventory.remove(tonic)
+
+    snapshot = runtime.snapshot(context.campaign_id, narrative="combat-item-post-use")["campaign"]
+    player_inventory_ids = [item.get("id") for item in snapshot["player"].get("inventory", [])]
+    sheet_inventory_ids = [item.get("id") for item in snapshot["character_sheet"]["inventory"]]
+    combat_entry = next(entry for entry in snapshot["combat"]["combatants"] if entry["actor_id"] == "player")
+
+    assert snapshot["scene"] == "combat"
+    assert snapshot["combat"]["phase"] == "active"
+    assert snapshot["combat"]["turn_actor_id"] == "player"
+    assert int(snapshot["player"]["hp"]) == int(player.stats["hp"])
+    assert int(snapshot["character_sheet"]["resources"]["hp"]["current"]) == int(player.stats["hp"])
+    assert "field_tonic" not in player_inventory_ids
+    assert "field_tonic" not in sheet_inventory_ids
+    assert context.find_inventory_item("field_tonic") is None
+    assert combat_entry["turn_resources"] == snapshot["player"]["turn_resources"]
+    assert "combat_items" not in context.kernel_runtime["game_state"].raw_payload
+    assert "usable_items" not in context.kernel_runtime["game_state"].raw_payload
+    assert "combat_items" not in player.raw_payload
+    assert "usable_items" not in player.raw_payload
+
+
+def test_combat_item_use_save_load_preserves_charges_inventory_and_turn_state() -> None:
+    from engine.kernel.actor_items import ItemStack
+
+    runtime, context = _make_campaign()
+    player = context.kernel_runtime["actors"]["player"]
+    player.stats["hp"] = max(1, int(player.stats.get("max_hp", 20)) - 4)
+    wand = ItemStack(
+        instance_id="combat_wand_1",
+        item_def_id="wand_of_healing",
+        quantity=1,
+        payload={"name": "Wand of Healing", "charges": 2, "identified": True},
+    )
+    player.inventory.append(wand)
+
+    combat_state = CombatState(
+        combatants=[CombatantEntry(actor_id="player", initiative=22, is_player=True)],
+        current_turn_index=0,
+        phase="active",
+    )
+    combat_state.combatants[0].turn_resources.action = False
+    combat_state.combatants[0].turn_resources.bonus_action = True
+    combat_state.combatants[0].turn_resources.reaction = True
+    combat_state.combatants[0].turn_resources.movement = 3
+    combat_state.combatants[0].turn_resources.max_movement = 6
+    _install_combat_state(context, combat_state)
+
+    player.stats["hp"] = min(int(player.stats.get("max_hp", 20)), int(player.stats.get("hp", 0)) + 4)
+    wand.payload = {**dict(wand.payload), "charges": 1}
+
+    pre_save_snapshot = runtime.snapshot(context.campaign_id, narrative="combat-item-pre-save")["campaign"]
+    runtime.save_campaign(context.campaign_id, "combat_item_payload_slot", "RuntimeTester")
+    loaded = runtime.load_campaign("combat_item_payload_slot")
+    loaded_snapshot = runtime.snapshot(loaded.campaign_id, narrative="combat-item-load")["campaign"]
+    loaded_player = loaded.kernel_runtime["actors"]["player"]
+    loaded_wand = next(
+        item
+        for item in loaded_player.inventory
+        if getattr(item, "item_def_id", "") == "wand_of_healing"
+    )
+    pre_save_player_entry = next(entry for entry in pre_save_snapshot["combat"]["combatants"] if entry["actor_id"] == "player")
+    loaded_player_entry = next(entry for entry in loaded_snapshot["combat"]["combatants"] if entry["actor_id"] == "player")
+    pre_save_sheet_wand = next(item for item in pre_save_snapshot["character_sheet"]["inventory"] if item["id"] == "wand_of_healing")
+    loaded_sheet_wand = next(item for item in loaded_snapshot["character_sheet"]["inventory"] if item["id"] == "wand_of_healing")
+    loaded_player_inventory_ids = [item.get("id") for item in loaded_snapshot["player"].get("inventory", [])]
+    loaded_sheet_inventory_ids = [item.get("id") for item in loaded_snapshot["character_sheet"]["inventory"]]
+
+    assert pre_save_snapshot["scene"] == "combat"
+    assert loaded_snapshot["scene"] == "combat"
+    assert loaded_snapshot["combat"]["phase"] == "active"
+    assert loaded_snapshot["combat"]["turn_actor_id"] == "player"
+    assert loaded_wand is not None
+    assert int(loaded_wand.payload.get("charges", -1)) == 1
+    assert pre_save_sheet_wand["charges"] == 1
+    assert loaded_sheet_wand["charges"] == 1
+    assert int(loaded_snapshot["player"]["hp"]) == int(loaded_player.stats["hp"])
+    assert "wand_of_healing" in loaded_player_inventory_ids
+    assert loaded_player_inventory_ids == loaded_sheet_inventory_ids
+    assert loaded_player_entry["turn_resources"] == pre_save_player_entry["turn_resources"]
+    assert "combat_items" not in loaded.kernel_runtime["game_state"].raw_payload
+    assert "usable_items" not in loaded.kernel_runtime["game_state"].raw_payload
+    assert "combat_items" not in loaded_player.raw_payload
+    assert "usable_items" not in loaded_player.raw_payload
 
 
 def test_authored_named_npc_identity_survives_runtime_save_load() -> None:

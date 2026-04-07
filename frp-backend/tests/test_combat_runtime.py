@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from engine.api import campaign_routes
 from main import app
 
 
@@ -46,9 +47,23 @@ def _enter_combat(payload: dict) -> dict:
     return body["campaign"]["combat"]
 
 
+def _strip_usable_items(campaign_id: str) -> None:
+    from engine.api.gameplay_bridge import _runtime_item_is_usable_now, _runtime_item_source
+
+    context = campaign_routes.campaign_runtime.get_campaign(campaign_id)
+    player = context.kernel_runtime["actors"]["player"]
+    player.inventory[:] = [
+        item
+        for item in player.inventory
+        if not _runtime_item_is_usable_now(item, _runtime_item_source(item))
+    ]
+
+
 class TestCombatRuntimeContract:
     def test_available_actions_do_not_advertise_unsupported_combat_time_actions(self):
-        combat = _enter_combat(_create_campaign(seed=60))
+        payload = _create_campaign(seed=60)
+        _strip_usable_items(payload["campaign_id"])
+        combat = _enter_combat(payload)
         actions = combat["available_actions"]
         assert "attack" in actions
         assert "defend" in actions

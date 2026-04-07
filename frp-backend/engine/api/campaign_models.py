@@ -139,3 +139,4 @@ class CampaignCommandResponse(BaseModel):
     dialog_text: Optional[str] = None
     dialog_options: List[Dict[str, Any]] = Field(default_factory=list)
     knowledge_view: Optional[Dict[str, Any]] = None
+    advisor_view: Optional[Dict[str, Any]] = None

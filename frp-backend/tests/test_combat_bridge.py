@@ -485,6 +485,14 @@ class TestCombatMovementAndPayload:
 
     def test_combat_payload_is_truthful(self):
         _rt, ctx = _make_campaign()
+        from engine.api.gameplay_bridge import _runtime_item_is_usable_now, _runtime_item_source
+
+        player = ctx.kernel_runtime["actors"]["player"]
+        player.inventory[:] = [
+            item
+            for item in player.inventory
+            if not _runtime_item_is_usable_now(item, _runtime_item_source(item))
+        ]
         enemy = _inject_enemy(ctx, hp=50)
         started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
         assert started is not None
@@ -530,14 +538,104 @@ class TestCombatMovementAndPayload:
         monkeypatch.setattr(combat_bridge, "_resolve_non_player_turns", lambda *_args, **_kwargs: [])
 
         cast = rt.run_command(ctx.campaign_id, "cast magic missile")
-        use_item = rt.run_command(ctx.campaign_id, "use field tonic")
 
         assert cast["command_type"] == "spell"
         assert "magic missile" in cast["narrative"].lower()
         assert player.spell_points == 8
         assert cast["campaign"]["combat"]["turn_actor_id"] != "player"
+
+    def test_use_item_works_in_combat_and_ends_turn(self, monkeypatch: pytest.MonkeyPatch):
+        rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        player = ctx.kernel_runtime["actors"]["player"]
+        hp_before = max(1, int(player.stats.get("max_hp", 20)) - 6)
+        player.stats["hp"] = hp_before
+        player.inventory.append(
+            item_stack_from_legacy_payload(
+                {
+                    "item_def_id": "field_tonic",
+                    "name": "Field Tonic",
+                    "type": "consumable",
+                    "heal": 6,
+                    "quantity": 1,
+                }
+            )
+        )
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+        monkeypatch.setattr(combat_bridge, "_resolve_non_player_turns", lambda *_args, **_kwargs: [])
+
+        use_item = rt.run_command(ctx.campaign_id, "use field tonic")
+
         assert use_item["command_type"] == "combat"
-        assert "not available in combat yet" in use_item["narrative"].lower()
+        assert "used field tonic" in use_item["narrative"].lower()
+        assert int(player.stats["hp"]) > hp_before
+        assert use_item["campaign"]["combat"]["turn_actor_id"] != "player"
+        assert all(getattr(item, "item_def_id", "") != "field_tonic" for item in player.inventory)
+
+    def test_structured_use_item_works_in_combat(self, monkeypatch: pytest.MonkeyPatch):
+        rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        player = ctx.kernel_runtime["actors"]["player"]
+        hp_before = max(1, int(player.stats.get("max_hp", 20)) - 5)
+        player.stats["hp"] = hp_before
+        player.inventory.append(
+            item_stack_from_legacy_payload(
+                {
+                    "item_def_id": "field_tonic",
+                    "name": "Field Tonic",
+                    "type": "consumable",
+                    "heal": 5,
+                    "quantity": 1,
+                }
+            )
+        )
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+        monkeypatch.setattr(combat_bridge, "_resolve_non_player_turns", lambda *_args, **_kwargs: [])
+
+        use_item = rt.run_command(
+            ctx.campaign_id,
+            "",
+            shortcut="combat",
+            args={"action_id": "use_item", "item_id": "field_tonic"},
+        )
+
+        assert use_item["command_type"] == "combat"
+        assert "used field tonic" in use_item["narrative"].lower()
+        assert int(player.stats["hp"]) > hp_before
+        assert use_item["campaign"]["combat"]["turn_actor_id"] != "player"
+
+    def test_structured_use_item_invalid_target_does_not_end_turn(self):
+        rt, ctx = _make_campaign()
+        enemy = _inject_enemy(ctx, hp=50)
+        player = ctx.kernel_runtime["actors"]["player"]
+        player.inventory.append(
+            item_stack_from_legacy_payload(
+                {
+                    "item_def_id": "field_tonic",
+                    "name": "Field Tonic",
+                    "type": "consumable",
+                    "heal": 5,
+                    "quantity": 1,
+                }
+            )
+        )
+        started = maybe_handle_combat_command(ctx, f"attack {enemy.name}")
+        assert started is not None
+        hp_before = int(player.stats["hp"])
+
+        rejected = rt.run_command(
+            ctx.campaign_id,
+            "",
+            shortcut="combat",
+            args={"action_id": "use_item", "item_id": "field_tonic", "target_id": "missing_target"},
+        )
+
+        assert rejected["command_type"] == "combat"
+        assert "not a live combatant" in rejected["narrative"].lower()
+        assert rejected["campaign"]["combat"]["turn_actor_id"] == "player"
+        assert int(player.stats["hp"]) == hp_before
 
     def test_invalid_combat_cast_fails_cleanly_without_ending_turn(self):
         rt, ctx = _make_campaign()

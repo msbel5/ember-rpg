@@ -15,7 +15,7 @@ import pytest
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 CAMPAIGN_DIR = DATA_DIR / "campaigns"
 SUPPORTED_OBJECTIVE_TYPES = {"kill", "collect", "talk", "visit"}
-QUEST_ID_RE = re.compile(r"^(tutorial|side|main)_[a-z0-9_]+$")
+QUEST_ID_RE = re.compile(r"^(tutorial|side|main|guild|faction)_[a-z0-9_]+$")
 SLUG_RE = re.compile(r"^[a-z0-9_]+$")
 
 
@@ -51,13 +51,24 @@ def _campaign_prefix(campaign_name: str) -> str:
         "tutorial_campaign": "tutorial",
         "side_quest_campaign": "side",
         "main_quest_campaign": "main",
+        "guild_campaign": "guild",
+        "faction_campaign": "faction",
     }[campaign_name]
 
 
 def _campaign_quest_ids() -> set[str]:
     quest_ids: set[str] = set()
-    for campaign_name in ("tutorial_campaign", "side_quest_campaign", "main_quest_campaign"):
-        data = _load_campaign(campaign_name)
+    for campaign_name in (
+        "tutorial_campaign",
+        "side_quest_campaign",
+        "main_quest_campaign",
+        "guild_campaign",
+        "faction_campaign",
+    ):
+        try:
+            data = _load_campaign(campaign_name)
+        except FileNotFoundError:
+            continue
         for act in data["acts"]:
             quest_id = act.get("quest_id")
             if quest_id:

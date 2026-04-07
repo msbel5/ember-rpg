@@ -220,12 +220,17 @@ def _runtime_item_charges(item: Any, source: dict[str, Any] | None = None) -> in
     return None
 
 
+def _runtime_item_public_id(item: Any, source: dict[str, Any] | None = None) -> str:
+    entry = source or _runtime_item_source(item)
+    return str(getattr(item, "item_def_id", entry.get("id", "")))
+
+
 def inventory_item_row(item: Any) -> dict[str, Any]:
     source = _runtime_item_source(item)
     charges = _runtime_item_charges(item, source)
     quantity = max(1, int(getattr(item, "quantity", source.get("quantity", source.get("qty", 1)) or 1)))
     return {
-        "id": str(getattr(item, "item_def_id", source.get("id", ""))),
+        "id": _runtime_item_public_id(item, source),
         "name": _runtime_item_label(item, source),
         "type": _runtime_item_type(item, source),
         "quantity": quantity,
@@ -240,6 +245,25 @@ def inventory_item_row(item: Any) -> dict[str, Any]:
 def _is_usable_runtime_item(item: Any, source: dict[str, Any] | None = None) -> bool:
     item_type = _runtime_item_type(item, source)
     return item_type in {"potion", "scroll", "wand"}
+
+
+def _runtime_item_is_usable_now(item: Any, source: dict[str, Any] | None = None) -> bool:
+    entry = source or _runtime_item_source(item)
+    if not _is_usable_runtime_item(item, entry):
+        return False
+    item_def, _effect_registry = _kernel_item_def(item)
+    if not item_def.use_effect_ids:
+        return False
+    item_state = _kernel_item_instance(item, item_def)
+    return int(item_state.charges) != 0
+
+
+def actor_has_usable_runtime_item(player: Any) -> bool:
+    for item in list(getattr(player, "inventory", []) or []):
+        source = _runtime_item_source(item)
+        if _runtime_item_is_usable_now(item, source):
+            return True
+    return False
 
 
 def _item_effect_id(item_def_id: str, index: int, effect: dict[str, Any]) -> str:
@@ -354,6 +378,70 @@ def _resolve_item_target(context: "CampaignContext", target_name: str | None) ->
     return resolved.actor, resolved.error
 
 
+def _combat_target_pool(context: "CampaignContext") -> dict[str, Any]:
+    from engine.api import combat_bridge
+
+    combat_state = combat_bridge._combat_state(context)
+    if combat_state is None:
+        return {}
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    pool: dict[str, Any] = {}
+    for entry in list(getattr(combat_state, "combatants", []) or []):
+        actor_id = str(getattr(entry, "actor_id", "")).strip()
+        actor = actors.get(actor_id)
+        if actor is not None:
+            pool[actor_id] = actor
+    return pool
+
+
+def _resolve_combat_item_target(
+    context: "CampaignContext",
+    *,
+    target_name: str | None = None,
+    target_id: str | None = None,
+) -> tuple[Any, str | None]:
+    player = _player(context)
+    if player is None:
+        return None, "No combatant is ready to act."
+    pool = _combat_target_pool(context)
+    if not pool:
+        return None, "No active combat."
+    if target_id:
+        target = pool.get(str(target_id).strip())
+        if target is None or not bool(getattr(target, "alive", True)):
+            return None, f"Target '{target_id}' is not a live combatant."
+        return target, None
+    if not str(target_name or "").strip():
+        return player, None
+    normalized_target = str(target_name).strip().lower()
+    if normalized_target in {"self", "me", "myself", "player", player.name.lower()}:
+        return player, None
+    resolved = resolve_live_actor_query(pool, normalized_target, include_player=True, allow_dead=False)
+    if resolved.error:
+        return None, resolved.error
+    if resolved.actor is None:
+        return None, f"No live combatant found for '{target_name}'."
+    return resolved.actor, None
+
+
+def _select_inventory_item_by_public_id(player: "ActorRecord", item_id: str) -> Any | None:
+    normalized = str(item_id or "").strip().lower()
+    if not normalized:
+        return None
+    matches: list[tuple[Any, dict[str, Any]]] = []
+    for item in list(getattr(player, "inventory", []) or []):
+        source = _runtime_item_source(item)
+        if _runtime_item_public_id(item, source).lower() == normalized:
+            matches.append((item, source))
+    if not matches:
+        return None
+    for item, source in matches:
+        if _runtime_item_is_usable_now(item, source):
+            return item
+    return matches[0][0]
+
+
 def _sync_runtime_item_after_use(player: "ActorRecord", item: Any, item_def: KernelItemDef, item_state: ItemInstance, *, destroyed: bool) -> None:
     payload = dict(getattr(item, "payload", {}) or {})
     payload["identified"] = bool(item_state.identified)
@@ -379,6 +467,81 @@ def _sync_runtime_item_after_use(player: "ActorRecord", item: Any, item_def: Ker
         payload["quantity"] = max(1, int(getattr(item, "quantity", 1) or 1))
         payload["qty"] = payload["quantity"]
     item.payload = payload
+
+
+def _execute_runtime_item_use(
+    context: "CampaignContext",
+    player: "ActorRecord",
+    item: Any,
+    *,
+    target: Any,
+) -> dict[str, Any]:
+    item_def, effect_registry = _kernel_item_def(item)
+    if not item_def.use_effect_ids:
+        return {"success": False, "narrative": f"{item_def.label} cannot be used this way."}
+
+    item_state = _kernel_item_instance(item, item_def)
+    if item_state.charges == 0:
+        return {"success": False, "narrative": f"{item_def.label} has no charges remaining."}
+
+    previous_registry = dict(player.raw_payload.get("effect_registry", {}))
+    player.raw_payload["effect_registry"] = {**previous_registry, **effect_registry}
+    try:
+        result = use_item(player, item_state, item_def, target)
+    except ValueError as exc:
+        return {"success": False, "narrative": f"Cannot use {item_def.label}: {exc}."}
+    finally:
+        player.raw_payload["effect_registry"] = previous_registry
+
+    _sync_runtime_item_after_use(player, item, item_def, item_state, destroyed=bool(result.get("destroyed", False)))
+    effect_text = ", ".join(str(effect_id).replace("_", " ") for effect_id in result.get("effects", []))
+    if not effect_text:
+        effect_text = "arcane energy pulses through it"
+    target_label = "yourself" if target is player else str(getattr(getattr(target, "identity", None), "display_name", "the target"))
+    if bool(result.get("destroyed", False)):
+        narrative = f"Used {item_def.label} on {target_label}. {effect_text}. It is consumed."
+    elif int(result.get("charges_remaining", -1)) >= 0:
+        narrative = (
+            f"Used {item_def.label} on {target_label}. {effect_text}. "
+            f"{int(result.get('charges_remaining', 0))} charges remain."
+        )
+    else:
+        narrative = f"Used {item_def.label} on {target_label}. {effect_text}."
+    return {"success": True, "narrative": narrative}
+
+
+def _run_combat_item_action(
+    context: "CampaignContext",
+    resolver,
+) -> tuple[str, str, int]:
+    from engine.api import combat_bridge
+
+    runtime = context.kernel_runtime or {}
+    actors = runtime.get("actors", {})
+    player = actors.get("player")
+    if player is None:
+        return ("No combatant is ready to act.", "combat", 0)
+    combat_state = combat_bridge._combat_state(context)
+    if combat_state is None:
+        return ("No active combat.", "combat", 0)
+    state_ready = combat_bridge._ensure_player_turn(context, combat_state, actors)
+    if state_ready["resolved"]:
+        return (state_ready["summary"] or "Combat is already over.", "combat", 0)
+    if state_ready["blocked"]:
+        return (state_ready["summary"], "combat", 0)
+    result = resolver()
+    if not bool(result.get("success", False)):
+        return (str(result.get("narrative", "You cannot use that item right now.")).strip(), "combat", 0)
+    follow_up = combat_bridge._end_player_turn_and_resolve(
+        context,
+        combat_state,
+        actors,
+        seed_offset=83,
+    )
+    narrative = str(result.get("narrative", "")).strip()
+    if follow_up:
+        narrative = f"{narrative} {follow_up}".strip()
+    return (narrative, "combat", 0)
 
 
 def _summarize_events(events: list[dict]) -> str:
@@ -955,9 +1118,53 @@ def maybe_handle_inventory_command(
 _USE_ITEM_RE = re.compile(r"^use\s+(.+?)(?:\s+on\s+(.+))?$", re.IGNORECASE)
 
 
+def maybe_handle_structured_item_use_command(
+    context: "CampaignContext",
+    args: dict[str, Any],
+    *,
+    allow_combat: bool = False,
+) -> Optional[tuple[str, str, int]]:
+    player = _player(context)
+    if player is None:
+        return None
+    action_id = str(args.get("action_id", "")).strip().lower()
+    if not action_id:
+        return None
+    command_type = "combat" if allow_combat else "inventory"
+    if action_id != "use_item":
+        return (f"Unsupported item action '{action_id}'.", command_type, 0)
+    item_id = str(args.get("item_id", "")).strip()
+    if not item_id:
+        return ("use_item requires an item_id.", command_type, 0)
+    item = _select_inventory_item_by_public_id(player, item_id)
+    if item is None:
+        known = _fuzzy_match(item_id, items_registry())
+        if known is not None:
+            return (f"You don't have '{item_id}' in your inventory.", command_type, 0)
+        return (f"Unknown item '{item_id}'.", command_type, 0)
+    if allow_combat:
+        if not context.in_combat():
+            return ("No active combat.", "combat", 0)
+        target, target_error = _resolve_combat_item_target(
+            context,
+            target_id=str(args.get("target_id", "")).strip() or None,
+        )
+        if target_error:
+            return (target_error, "combat", 0)
+        if target is None:
+            return ("No valid combat target found.", "combat", 0)
+        return _run_combat_item_action(
+            context,
+            lambda: _execute_runtime_item_use(context, player, item, target=target),
+        )
+    return (f"Unsupported item action '{action_id}'.", "inventory", 0)
+
+
 def maybe_handle_item_use_command(
     context: "CampaignContext",
     command_text: str,
+    *,
+    allow_combat: bool = False,
 ) -> Optional[tuple[str, str, int]]:
     player = _player(context)
     if player is None:
@@ -969,51 +1176,30 @@ def maybe_handle_item_use_command(
 
     item_name = match.group(1).strip()
     target_name = match.group(2).strip() if match.group(2) else None
+    command_type = "combat" if allow_combat and context.in_combat() else "inventory"
     item = _find_inventory_item_by_name(player, item_name)
     if item is None:
         known = _fuzzy_match(item_name, items_registry())
         if known is not None:
-            return (f"You don't have '{item_name}' in your inventory.", "inventory", 0)
-        return (f"Unknown item '{item_name}'.", "inventory", 0)
+            return (f"You don't have '{item_name}' in your inventory.", command_type, 0)
+        return (f"Unknown item '{item_name}'.", command_type, 0)
 
-    item_def, effect_registry = _kernel_item_def(item)
-    if not item_def.use_effect_ids:
-        return (f"{item_def.label} cannot be used this way.", "inventory", 0)
-
-    target, target_error = _resolve_item_target(context, target_name)
+    if allow_combat and context.in_combat():
+        target, target_error = _resolve_combat_item_target(context, target_name=target_name)
+    else:
+        target, target_error = _resolve_item_target(context, target_name)
     if target_error:
-        return (target_error, "inventory", 0)
+        return (target_error, command_type, 0)
     if target is None:
-        return (f"No valid target found for '{target_name}'.", "inventory", 0)
+        return (f"No valid target found for '{target_name}'.", command_type, 0)
 
-    item_state = _kernel_item_instance(item, item_def)
-    if item_state.charges == 0:
-        return (f"{item_def.label} has no charges remaining.", "inventory", 0)
-
-    previous_registry = dict(player.raw_payload.get("effect_registry", {}))
-    player.raw_payload["effect_registry"] = {**previous_registry, **effect_registry}
-    try:
-        result = use_item(player, item_state, item_def, target)
-    except ValueError as exc:
-        return (f"Cannot use {item_def.label}: {exc}.", "inventory", 0)
-    finally:
-        player.raw_payload["effect_registry"] = previous_registry
-
-    _sync_runtime_item_after_use(player, item, item_def, item_state, destroyed=bool(result.get("destroyed", False)))
-    effect_text = ", ".join(str(effect_id).replace("_", " ") for effect_id in result.get("effects", []))
-    if not effect_text:
-        effect_text = "arcane energy pulses through it"
-    target_label = "yourself" if target is player else str(getattr(getattr(target, "identity", None), "display_name", "the target"))
-    if bool(result.get("destroyed", False)):
-        return (f"Used {item_def.label} on {target_label}. {effect_text}. It is consumed.", "inventory", 0)
-    if int(result.get("charges_remaining", -1)) >= 0:
-        return (
-            f"Used {item_def.label} on {target_label}. {effect_text}. "
-            f"{int(result.get('charges_remaining', 0))} charges remain.",
-            "inventory",
-            0,
+    if allow_combat and context.in_combat():
+        return _run_combat_item_action(
+            context,
+            lambda: _execute_runtime_item_use(context, player, item, target=target),
         )
-    return (f"Used {item_def.label} on {target_label}. {effect_text}.", "inventory", 0)
+    result = _execute_runtime_item_use(context, player, item, target=target)
+    return (str(result["narrative"]), "inventory", 0)
 
 
 # ---------------------------------------------------------------------------

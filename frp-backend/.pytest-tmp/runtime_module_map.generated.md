@@ -6,18 +6,14 @@ Oversized runtime files are only permitted when explicitly documented below.
 
 ## Oversize Exceptions
 
-- `frp-backend/engine/api/campaign/advisor.py`: Advisor runtime currently centralizes deterministic intent classification, grounded response assembly, and response-only command wiring until a later cleanup splits it into smaller policy slices.
-- `frp-backend/engine/api/campaign/knowledge.py`: Knowledge runtime now centralizes topic authority, grounded think/ask-about resolution, and discovery helpers until advisor and topic slices split further.
 - `frp-backend/engine/api/campaign/live_kernel.py`: Live kernel still centralizes runtime tick reconciliation, level-up checks, and companion/schedule updates until those slices split out.
 - `frp-backend/engine/api/campaign/quest_bridge.py`: Quest bridge still centralizes accept/report flow, dialog quest hooks, and runtime sync until quest runtime splits further.
 - `frp-backend/engine/api/campaign/region_projection.py`: Campaign region projection still centralizes realization, entity seeding, and party slot projection until it is split.
 - `frp-backend/engine/api/campaign_commands.py`: Campaign command dispatch centralizes all command handlers and dialog/commerce routing.
 - `frp-backend/engine/api/combat_bridge.py`: Combat bridge still centralizes text commands, combat setup, and minimal ally AI until combat command surfaces split further.
 - `frp-backend/engine/api/gameplay_bridge.py`: Gameplay bridge still centralizes inventory, crafting, rest, spells, and progression command adapters until the runtime spend surfaces split out.
-- `frp-backend/engine/kernel/actor_items.py`: Actor item kernel still centralizes canonical slot mapping, loadout compatibility, and equipment topology helpers until equipment slices split further.
 - `frp-backend/engine/kernel/actor_records.py`: Actor record bridging still centralizes legacy-to-kernel conversion and sync helpers.
 - `frp-backend/engine/kernel/gameplay.py`: Gameplay kernel bundles equipment, crafting, rest, and ground-item helpers.
-- `frp-backend/engine/kernel/store.py`: Store kernel still centralizes merchant stock generation, barter price shaping, and service availability until commerce slices split further.
 - `frp-backend/engine/map/__init__.py`: Map generation package still centralizes multiple generators.
 - `frp-backend/engine/world/interactions_runtime.py`: Interaction runtime now centralizes skilldex derivation, canonical interaction descriptors, and structured interaction execution until shell and projection slices settle.
 - `frp-backend/tools/content_orchestrator.py`: Content orchestrator bundles world-building generation pipeline.
@@ -35,22 +31,21 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/__init__.py` | 0 | - | - |
 | `frp-backend/engine/api/campaign/__init__.py` | 3 | - | - |
 | `frp-backend/engine/api/campaign/actor_query.py` | 164 | ActorQueryCandidate (0), ActorQueryResolution (0) | resolve_live_actor_query, _candidate_pool, _parse_indexed_query, _sorted_candidates |
-| `frp-backend/engine/api/campaign/advisor.py` | 596 | - | maybe_handle_advisor_command, maybe_handle_structured_advisor_command, _advisor_command, _queue_advisor_view |
 | `frp-backend/engine/api/campaign/authored_campaigns.py` | 270 | - | load_authored_campaign_registry, ensure_authored_campaign_state, refresh_authored_campaign_offers, resolve_authored_offer |
 | `frp-backend/engine/api/campaign/context.py` | 422 | CampaignContext (21), CampaignCreationContext (0) | - |
 | `frp-backend/engine/api/campaign/controls.py` | 72 | - | merge_settlement_controls |
 | `frp-backend/engine/api/campaign/debug_trace.py` | 23 | - | snapshot_hash, trace_event |
 | `frp-backend/engine/api/campaign/dialog.py` | 399 | - | build_dialog_payload, _get_player_actor, _get_npc_actor, _resolve_dialog_def |
 | `frp-backend/engine/api/campaign/knowledge.py` | 1111 | - | _game_state, _normalize_topic_id_list, _knowledge_state, _normalize_alias |
-| `frp-backend/engine/api/campaign/live_kernel.py` | 2584 | - | _normalize_runtime_scene_name, _normalize_travel_state_payload, _normalize_topic_id_list, _normalize_knowledge_state_payload |
+| `frp-backend/engine/api/campaign/live_kernel.py` | 2538 | - | _normalize_runtime_scene_name, _normalize_travel_state_payload, _normalize_topic_id_list, _normalize_knowledge_state_payload |
 | `frp-backend/engine/api/campaign/party_bridge.py` | 450 | - | _is_recruitable_companion, _is_party_capable_actor, _reserve_member_ids, maybe_handle_party_command |
-| `frp-backend/engine/api/campaign/persistence.py` | 379 | - | _strip_advisor_keys, _sanitize_persisted_actor_payloads, _sanitize_campaign_snapshot_payload, campaign_payload |
+| `frp-backend/engine/api/campaign/persistence.py` | 345 | - | campaign_payload, persist_campaign_state, build_campaign_knowledge_payload, build_kernel_payload |
 | `frp-backend/engine/api/campaign/quest_bridge.py` | 548 | - | maybe_handle_quest_command, apply_dialog_events, sync_runtime_objectives, start_quest |
 | `frp-backend/engine/api/campaign/quest_objectives.py` | 244 | - | sync_runtime_objectives, normalize_objectives, refresh_quest_progress, quest_ready_to_report |
 | `frp-backend/engine/api/campaign/quest_state.py` | 46 | - | snapshot_quest_state, restore_quest_state |
 | `frp-backend/engine/api/campaign/region_projection.py` | 1653 | - | _is_party_capable_actor, _preserved_party_entities, _restore_party_entities, _clamp_party_position |
 | `frp-backend/engine/api/campaign/runtime.py` | 435 | CampaignRuntime (22) | _try_start_tick_loop, _try_stop_tick_loop |
-| `frp-backend/engine/api/campaign/runtime_commands.py` | 388 | - | run_command, advance_world_tick, _dispatch, _dialog_is_active |
+| `frp-backend/engine/api/campaign/runtime_commands.py` | 373 | - | run_command, advance_world_tick, _dispatch, _dialog_is_active |
 | `frp-backend/engine/api/campaign/runtime_common.py` | 36 | - | saved_or, saved_list_or, stable_seed, active_site_id |
 | `frp-backend/engine/api/campaign/runtime_effects.py` | 22 | - | effect_events |
 | `frp-backend/engine/api/campaign/runtime_macro_society.py` | 134 | - | macro_society_events, load_stores, default_stores, restock_store |
@@ -60,14 +55,14 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/campaign/state_sync.py` | 102 | - | sync_context_clock, sync_player_position |
 | `frp-backend/engine/api/campaign/tick_loop.py` | 141 | CampaignTickLoop (9) | start_tick_loop, stop_tick_loop, get_tick_loop |
 | `frp-backend/engine/api/campaign/world.py` | 359 | - | build_world, derive_creation_world_seed, choose_starting_settlement, region_payload |
-| `frp-backend/engine/api/campaign_commands.py` | 955 | StructuredInteractionTarget (0) | resolve_command_text, maybe_handle_structured_interaction, _resolve_structured_target, _structured_target_kind |
+| `frp-backend/engine/api/campaign_commands.py` | 949 | StructuredInteractionTarget (0) | resolve_command_text, maybe_handle_structured_interaction, _resolve_structured_target, _structured_target_kind |
 | `frp-backend/engine/api/campaign_kernel.py` | 113 | - | build_canonical_world_state, build_canonical_actor_roster, build_canonical_actor_records, build_canonical_game_state |
-| `frp-backend/engine/api/campaign_models.py` | 142 | CreateCampaignRequest (0), CampaignCreationStartRequest (0), CampaignCreationAnswerRequest (0), CampaignCreationFinalizeRequest (0) | - |
+| `frp-backend/engine/api/campaign_models.py` | 141 | CreateCampaignRequest (0), CampaignCreationStartRequest (0), CampaignCreationAnswerRequest (0), CampaignCreationFinalizeRequest (0) | - |
 | `frp-backend/engine/api/campaign_routes.py` | 292 | - | get_campaign_client_health, _creation_response, get_campaign_creation_catalog, start_campaign_creation |
-| `frp-backend/engine/api/combat_bridge.py` | 1135 | - | maybe_handle_combat_command, handle_attack_target_id, maybe_handle_structured_combat_command, _handle_attack |
+| `frp-backend/engine/api/combat_bridge.py` | 1116 | - | maybe_handle_combat_command, handle_attack_target_id, maybe_handle_structured_combat_command, _handle_attack |
 | `frp-backend/engine/api/context_factory.py` | 183 | PlayerInitState (0) | create_player_state |
 | `frp-backend/engine/api/exploration_bridge.py` | 386 | - | _player, _actors, _npc_list, _time_desc |
-| `frp-backend/engine/api/gameplay_bridge.py` | 1867 | - | _player, _fuzzy_match, _fuzzy_match_list, _find_inventory_item_by_name |
+| `frp-backend/engine/api/gameplay_bridge.py` | 1681 | - | _player, _fuzzy_match, _fuzzy_match_list, _find_inventory_item_by_name |
 | `frp-backend/engine/api/kernel_adapter.py` | 152 | - | create_player, create_monster, start_fight, run_attack |
 | `frp-backend/engine/api/medical_bridge.py` | 296 | - | maybe_handle_medical_command, _handle_diagnose, _handle_treat, _handle_surgery |
 | `frp-backend/engine/api/runtime_constants.py` | 53 | - | _build_starter_kits |
@@ -205,7 +200,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/tools/content_validator.py` | 335 | - | _infer_signature, _validate_signature, _validate_standard_list_family, _validate_campaigns |
 | `frp-backend/tools/doc_inventory.py` | 185 | - | _relative, _load_registry, _scan_active_prds, _scan_deprecated_prds |
 | `frp-backend/tools/generate_content.py` | 213 | - | header, step, ok, fail |
-| `frp-backend/tools/runtime_audit.py` | 203 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
+| `frp-backend/tools/runtime_audit.py` | 199 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
 | `godot-client/autoloads/backend.gd` | 262 | - | _ready, set_base_url, get_base_url, create_campaign |
 | `godot-client/autoloads/backend_runtime.gd` | 157 | - | ensure_bootstrap, reset_state, _run_bootstrap, _commit_backend |
 | `godot-client/autoloads/game_state.gd` | 487 | - | update_from_response, reset, is_in_combat, has_active_campaign |

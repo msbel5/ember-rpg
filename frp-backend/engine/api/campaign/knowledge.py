@@ -24,6 +24,21 @@ def _game_state(context: "CampaignContext") -> Any:
     return runtime.get("game_state")
 
 
+def _normalize_topic_id_list(values: Any, *, allowed_ids: Iterable[str] | None = None) -> list[str]:
+    allowed = None if allowed_ids is None else {str(item).strip() for item in allowed_ids if str(item).strip()}
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for value in list(values or []):
+        topic_id = str(value or "").strip()
+        if not topic_id or topic_id in seen:
+            continue
+        if allowed is not None and topic_id not in allowed:
+            continue
+        seen.add(topic_id)
+        normalized.append(topic_id)
+    return normalized
+
+
 def _knowledge_state(context: "CampaignContext") -> dict[str, list[str]]:
     game_state = _game_state(context)
     if game_state is None:
@@ -35,11 +50,11 @@ def _knowledge_state(context: "CampaignContext") -> dict[str, list[str]]:
     knowledge = raw_payload.get("knowledge")
     if not isinstance(knowledge, dict):
         knowledge = {}
-    discovered = sorted({str(item).strip() for item in knowledge.get("discovered_topic_ids", []) if str(item).strip()})
-    pinned = sorted({str(item).strip() for item in knowledge.get("pinned_topic_ids", []) if str(item).strip()})
+    discovered = _normalize_topic_id_list(knowledge.get("discovered_topic_ids", []))
+    pinned = _normalize_topic_id_list(knowledge.get("pinned_topic_ids", []), allowed_ids=discovered)
     knowledge = {
         "discovered_topic_ids": discovered,
-        "pinned_topic_ids": [item for item in pinned if item in discovered],
+        "pinned_topic_ids": pinned,
     }
     raw_payload["knowledge"] = knowledge
     return knowledge
@@ -149,30 +164,34 @@ def _quest_entries(context: "CampaignContext") -> dict[str, dict[str, Any]]:
     return entries
 
 
-def _active_quest_ids(context: "CampaignContext") -> set[str]:
-    result: set[str] = set()
+def _active_quest_ids(context: "CampaignContext") -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
     for item in list((context.campaign_state or {}).get("active_quests", []) or []):
         if not isinstance(item, dict):
             continue
         quest_id = str(item.get("quest_id") or item.get("id") or "").strip()
-        if quest_id:
-            result.add(quest_id)
+        if quest_id and quest_id not in seen:
+            seen.add(quest_id)
+            result.append(quest_id)
     return result
 
 
 def ensure_bootstrap_topics(context: "CampaignContext") -> dict[str, list[str]]:
     _knowledge_state(context)
-    bootstrap_ids = {
-        f"region.{_current_region_id(context)}" if _current_region_id(context) else "",
-        f"settlement.{_current_settlement_id(context)}" if _current_settlement_id(context) else "",
-        *{f"quest.{quest_id}" for quest_id in _active_quest_ids(context)},
-    }
+    bootstrap_ids: list[str] = []
+    region_id = _current_region_id(context)
+    if region_id:
+        bootstrap_ids.append(f"region.{region_id}")
+    settlement_id = _current_settlement_id(context)
+    if settlement_id:
+        bootstrap_ids.append(f"settlement.{settlement_id}")
+    bootstrap_ids.extend(f"quest.{quest_id}" for quest_id in _active_quest_ids(context))
     discover_topics(context, bootstrap_ids)
     return _knowledge_state(context)
 
 
 def build_topic_catalog(context: "CampaignContext") -> dict[str, dict[str, Any]]:
-    ensure_bootstrap_topics(context)
     runtime = getattr(context, "kernel_runtime", {}) or {}
     world_state = runtime.get("world_state")
     catalog: dict[str, dict[str, Any]] = {}
@@ -303,23 +322,24 @@ def _resolved_entry(catalog: dict[str, dict[str, Any]], topic_id: str) -> dict[s
 
 
 def build_campaign_knowledge_payload(context: "CampaignContext") -> dict[str, Any]:
-    ensure_bootstrap_topics(context)
     return build_runtime_knowledge_payload(context, getattr(context, "kernel_runtime", {}) or {})
 
 
 def discover_topics(context: "CampaignContext", topic_ids: Iterable[str]) -> list[str]:
     state = _knowledge_state(context)
-    updated = set(state.get("discovered_topic_ids", []))
+    discovered = list(state.get("discovered_topic_ids", []))
+    seen = set(discovered)
     new_ids: list[str] = []
     for topic_id in topic_ids:
         normalized = str(topic_id).strip()
         if not normalized:
             continue
-        if normalized not in updated:
-            updated.add(normalized)
+        if normalized not in seen:
+            seen.add(normalized)
+            discovered.append(normalized)
             new_ids.append(normalized)
-    state["discovered_topic_ids"] = sorted(updated)
-    state["pinned_topic_ids"] = sorted({item for item in state.get("pinned_topic_ids", []) if item in updated})
+    state["discovered_topic_ids"] = discovered
+    state["pinned_topic_ids"] = _normalize_topic_id_list(state.get("pinned_topic_ids", []), allowed_ids=discovered)
     return new_ids
 
 
@@ -988,10 +1008,18 @@ def _pin_command(context: "CampaignContext", query: str) -> tuple[str, str, int]
         )
         return (f"You cannot pin {entry['label']} before discovering it.", "knowledge", 0)
     state = _knowledge_state(context)
-    pinned = set(state.get("pinned_topic_ids", []))
-    already_pinned = topic_id in pinned
-    pinned.add(topic_id)
-    state["pinned_topic_ids"] = sorted(pinned)
+    discovered = _normalize_topic_id_list(state.get("discovered_topic_ids", []))
+    if topic_id not in set(discovered):
+        discovered.append(topic_id)
+    state["discovered_topic_ids"] = discovered
+    pinned = _normalize_topic_id_list(
+        state.get("pinned_topic_ids", []),
+        allowed_ids=discovered,
+    )
+    already_pinned = topic_id in set(pinned)
+    if not already_pinned:
+        pinned.append(topic_id)
+    state["pinned_topic_ids"] = pinned
     view = build_think_view(context, topic_id)
     view["pinned"] = True
     _queue_knowledge_view(context, view)

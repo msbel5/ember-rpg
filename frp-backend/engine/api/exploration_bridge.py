@@ -332,6 +332,8 @@ def maybe_handle_scene_verb_command(
     context: "CampaignContext", command_text: str,
 ) -> Optional[tuple[str, str, int]]:
     """Handle skill-check scene verbs: search, open, lockpick, climb, etc."""
+    from engine.api.campaign.crime import maybe_record_trespass
+
     m = _SCENE_VERB_RE.match(command_text.strip())
     if not m:
         return None
@@ -348,6 +350,14 @@ def maybe_handle_scene_verb_command(
     tgt = f" {target}" if target else ""
     detail = f"[{stat_name} check: d20({roll}) + {mod} = {total} vs DC {dc}]"
     narrative = _VERB_NARRATIVES[verb][0 if success else 1].format(target=tgt, detail=detail, verb=verb)
+    incident = maybe_record_trespass(
+        context,
+        verb=verb,
+        target_query=target,
+        success=success,
+    )
+    if incident is not None and isinstance(incident.get("last_incident"), dict):
+        narrative = f"{narrative} Trespass recorded.".strip()
     return (narrative, "exploration", 1)
 
 # success/failure narrative pairs per verb
