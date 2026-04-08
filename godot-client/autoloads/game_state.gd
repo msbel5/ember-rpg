@@ -43,6 +43,8 @@ var last_save_slot: String = ""
 var world: Dictionary = {}
 var world_state: Dictionary = {}
 var campaign_game_state: Dictionary = {}
+var stores: Array = []
+var active_store_id: String = ""
 var actor_roster: Array = []
 var job_records: Array = []
 var reaction_defs: Array = []
@@ -134,6 +136,10 @@ func update_from_response(data: Dictionary) -> void:
 		conversation_state = data["conversation_state"]
 	if data.has("world_state") and data["world_state"] is Dictionary:
 		world_state = data["world_state"]
+	if data.has("stores") and data["stores"] is Array:
+		stores = data["stores"]
+	if data.has("active_store_id"):
+		active_store_id = str(data["active_store_id"])
 	if data.has("travel_state"):
 		travel_state = data["travel_state"] if data["travel_state"] is Dictionary else {}
 	if data.has("crime_state"):
@@ -315,6 +321,8 @@ func reset() -> void:
 	world = {}
 	world_state = {}
 	campaign_game_state = {}
+	stores = []
+	active_store_id = ""
 	actor_roster = []
 	job_records = []
 	reaction_defs = []
@@ -369,6 +377,20 @@ func current_dialog_payload() -> Dictionary:
 		"dialog_text": dialog_text,
 		"dialog_options": dialog_options.duplicate(true),
 	}
+
+
+func store_by_id(store_id: String) -> Dictionary:
+	var normalized_id := store_id.strip_edges()
+	if normalized_id.is_empty():
+		return {}
+	for entry in stores:
+		if entry is Dictionary and str(entry.get("store_id", "")).strip_edges() == normalized_id:
+			return entry
+	return {}
+
+
+func active_store() -> Dictionary:
+	return store_by_id(active_store_id)
 
 func get_player_hp_ratio() -> float:
 	var hp = player.get("hp", 0)

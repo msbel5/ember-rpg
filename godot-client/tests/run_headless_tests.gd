@@ -258,6 +258,17 @@ func _test_game_state_normalization() -> void:
 			"world": {"adapter_id": "fantasy_ember", "profile_id": "standard"},
 			"world_state": {"seed": 42, "active_region_id": "region_001", "regions": {"region_001": {"region_id": "region_001"}}},
 			"crime_state": {"wanted": true, "active_bounty": 25, "witness_count": 2, "last_incident": {"crime_type": "theft"}},
+			"stores": [
+				{
+					"store_id": "quartermaster_store",
+					"label": "Quartermaster's Stall",
+					"npc_id": "merchant_1",
+					"npc_name": "Quartermaster",
+					"items": [{"item_def_id": "bread", "quantity": 2}],
+					"services": [{"service_id": "room", "service_type": "room", "label": "Room for the night", "price": 5}],
+				},
+			],
+			"active_store_id": "quartermaster_store",
 			"game_state": {"campaign_id": "camp_1", "seed": 42, "party": ["player"]},
 			"actors": [{"identity": {"actor_id": "player"}}],
 			"jobs": [{"job_id": "job_1", "label": "Haul supplies"}],
@@ -332,6 +343,8 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.has_active_travel(), "GameState stores active travel_state from campaign payloads")
 	_assert_true(game_state.travel_state.get("route_id", "") == "edge_0", "GameState stores the active travel route id")
 	_assert_true(game_state.crime_state.get("active_bounty", 0) == 25, "GameState stores crime_state from campaign payloads")
+	_assert_true(game_state.stores.size() == 1, "GameState stores canonical commerce store payloads")
+	_assert_true(game_state.active_store_id == "quartermaster_store", "GameState stores the active store id")
 	_assert_true(game_state.character_sheet.get("equipment_topology", {}).get("slots", {}).has("main_hand"), "GameState stores character_sheet from canonical campaign payloads")
 	_assert_true(game_state.selected_world_node == "node_region_001_00", "GameState tracks the selected world node from current region summary")
 	_assert_true(game_state.runtime_transport == "ws", "GameState stores WS as the authoritative runtime transport")
@@ -413,6 +426,17 @@ func _test_response_normalizer() -> void:
 	var flattened_campaign = ResponseNormalizer.flatten_campaign_response({
 		"campaign": {
 			"world": {"active_region_id": "region_001"},
+			"stores": [
+				{
+					"store_id": "merchant_1_store",
+					"label": "Quartermaster's Stall",
+					"npc_id": "merchant_1",
+					"npc_name": "Quartermaster",
+					"items": [{"item_def_id": "bread", "quantity": 2}],
+					"services": [{"service_id": "room", "service_type": "room", "label": "Room for the night", "price": 5}],
+				},
+			],
+			"active_store_id": "merchant_1_store",
 			"crime_state": {"wanted": false, "active_bounty": 0, "witness_count": 0, "last_incident": {}},
 			"world_graph": {
 				"active_region_id": "region_001",
@@ -434,6 +458,8 @@ func _test_response_normalizer() -> void:
 	_assert_true(flattened_campaign.get("travel_options", []).size() == 1, "ResponseNormalizer flattens travel options")
 	_assert_true(flattened_campaign.get("travel_state", {}).get("route_id", "") == "edge_0", "ResponseNormalizer exposes travel_state")
 	_assert_true(flattened_campaign.get("crime_state", {}).get("active_bounty", -1) == 0, "ResponseNormalizer exposes crime_state")
+	_assert_true(flattened_campaign.get("stores", []).size() == 1, "ResponseNormalizer exposes campaign stores")
+	_assert_true(str(flattened_campaign.get("active_store_id", "")) == "merchant_1_store", "ResponseNormalizer exposes active_store_id")
 	_assert_true(flattened_campaign.get("character_sheet", {}).get("equipment_topology", {}).get("slots", {}).has("body"), "ResponseNormalizer exposes canonical character_sheet payloads")
 	_assert_true(str(flattened_campaign.get("selected_world_node", "")) == "node_region_001_00", "ResponseNormalizer derives selected_world_node from current region summary")
 	_assert_true(ResponseNormalizer.command_requires_inventory_refresh("pick up bread"), "ResponseNormalizer flags inventory-affecting commands")
@@ -1121,6 +1147,9 @@ func _test_ui_panels() -> void:
 	var focus_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusLabel")
 	var focus_action_one = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionOne")
 	var focus_action_two = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionTwo")
+	var command_prompt = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/PromptLabel")
+	var command_input = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput")
+	var command_send = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SendButton")
 	_assert_true(str(focus_label.text).contains("Focus:"), "Command bar surfaces a persistent focus summary instead of leaving world actions implicit")
 	_assert_true(
 		str(focus_action_one.text) == "Talk"
@@ -1132,6 +1161,9 @@ func _test_ui_panels() -> void:
 		and str(focus_action_two.tooltip_text).contains("Attack"),
 		"Command bar uses tooltips to carry target-specific intent while the visible shell stays compact"
 	)
+	game_state.update_from_response({"dialog_npc": "", "dialog_text": "", "dialog_options": []})
+	await process_frame
+	_assert_true(not command_bar.command_entry_visible(), "Rail command entry stays hidden during exploration while point-and-click remains primary")
 	var requested_panels: Array[String] = []
 	command_bar.panel_requested.connect(func(panel_id: String) -> void:
 		requested_panels.append(panel_id)
@@ -1141,11 +1173,15 @@ func _test_ui_panels() -> void:
 	var pause_menu = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu")
 	_assert_true(modal_host.has_panel("pause") and pause_menu != null, "Modal host owns the pause intelligence surface")
 	var pause_tabs = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs")
+	var pause_title = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/TitleLabel")
+	var ask_dm_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ActionRow/AskDmButton")
 	var ask_dm_answer = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/AskDmPanel/AskMargin/AskVBox/AnswerText")
+	var ask_dm_submit = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/AskDmPanel/AskMargin/AskVBox/InputRow/SubmitButton")
 	var think_facts = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/ThinkPanel/ThinkMargin/ThinkVBox/Columns/FactsPanel/FactsMargin/FactsText")
 	var think_rumors = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/ThinkPanel/ThinkMargin/ThinkVBox/Columns/RumorsPanel/RumorsMargin/RumorsText")
 	var think_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ActionRow/ThinkButton")
 	_assert_true(not pause_tabs.tabs_visible, "Pause menu keeps Ask DM and Think under a single owned surface")
+	_assert_true(pause_title.text == "Pause Counsel" and ask_dm_button.text == "Consult Fate" and ask_dm_submit.text == "Consult Fate", "Pause counsel relabels Ask DM to Consult Fate without changing the backend route")
 	_assert_true(ask_dm_answer.text.contains("guard seems cautious"), "Ask DM renders only the live advisor_view answer lines")
 	think_button.pressed.emit()
 	await process_frame
@@ -1170,12 +1206,17 @@ func _test_ui_panels() -> void:
 	dialog_overlay.structured_action_requested.connect(func(shortcut: String, args: Dictionary, history_text: String) -> void:
 		structured_dialog_actions.append({"shortcut": shortcut, "args": args.duplicate(true), "history_text": history_text})
 	)
-	dialog_overlay.show_dialog("Harbor Guard", "State your business.", [
-		{"text": "Ask about work", "command": "ask about work", "available": true},
-		{"text": "Probe for rumors", "command": "ask about rumors", "check": "INS 12", "available": false},
-	])
+	game_state.update_from_response({
+		"dialog_npc": "Harbor Guard",
+		"dialog_text": "State your business.",
+		"dialog_options": [
+			{"text": "Ask about work", "command": "ask about work", "available": true},
+			{"text": "Probe for rumors", "command": "ask about rumors", "check": "INS 12", "available": false},
+		],
+	})
 	await process_frame
 	_assert_true(dialog_overlay.visible, "Dialog overlay becomes visible when dialog payload is shown")
+	_assert_true(command_bar.command_entry_visible(), "Rail command entry only appears once a live dialog context is active")
 	var dialog_option = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/OptionsScroll/OptionsContainer/OptionButton0")
 	var ask_about_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/ActionRow/AskAboutButton")
 	var transcript_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/ActionRow/TranscriptButton")
@@ -1183,6 +1224,26 @@ func _test_ui_panels() -> void:
 	_assert_true(dialog_option.text.contains("Ask about work"), "Dialog overlay renders named semantic option buttons")
 	_assert_true(not ask_about_button.disabled and transcript_button.visible and not transcript_button.disabled, "Dialog overlay exposes Ask About and Transcript from live conversation state")
 	_assert_true(not trade_button.visible, "Dialog overlay keeps Trade hidden until a verified live store route exists")
+	game_state.update_from_response({
+		"stores": [
+			{
+				"store_id": "guard_trade_pack",
+				"label": "Harbor Guard's Trade Pack",
+				"npc_id": "guard_1",
+				"npc_name": "Harbor Guard",
+				"items": [{"item_def_id": "bread", "quantity": 1}],
+				"services": [{"service_id": "room", "service_type": "room", "label": "Room for the night", "price": 5}],
+			},
+		],
+		"active_store_id": "guard_trade_pack",
+	})
+	game_state.conversation_state["store_id"] = "guard_trade_pack"
+	dialog_overlay.show_dialog("Harbor Guard", "State your business.", [
+		{"text": "Ask about work", "command": "ask about work", "available": true},
+		{"text": "Probe for rumors", "command": "ask about rumors", "check": "INS 12", "available": false},
+	])
+	await process_frame
+	_assert_true(trade_button.visible and not trade_button.disabled, "Dialog overlay exposes Trade once a verified live store route exists")
 	ask_about_button.pressed.emit()
 	await process_frame
 	var topic_confirm = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/TopicProbeModal/ModalMargin/ModalVBox/FooterRow/ConfirmButton")
@@ -1192,14 +1253,20 @@ func _test_ui_panels() -> void:
 	_assert_true(ask_about_request.get("shortcut", "") == "dialog", "Ask About emits the structured dialog shortcut")
 	_assert_true(ask_about_request.get("args", {}).get("action_id", "") == "ask_about", "Ask About emits dialog.ask_about")
 	_assert_true(ask_about_request.get("args", {}).get("topic_id", "") == "rumor.harbor_work", "Ask About keeps the selected canonical topic id")
+	var history_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel")
+	trade_button.pressed.emit()
+	await process_frame
+	_assert_true(history_label.text.contains("trade harbor guard"), "Dialog overlay routes Trade through the existing raw trade command path")
 	dialog_overlay.hide_dialog()
 	await process_frame
 	_assert_true(not dialog_overlay.visible, "Dialog overlay hides cleanly after close")
+	game_state.update_from_response({"dialog_npc": "", "dialog_text": "", "dialog_options": []})
+	await process_frame
+	_assert_true(not command_bar.command_entry_visible(), "Rail command entry hides again once the live dialog context ends")
 	var live_inventory_button = inventory_grid.get_child(0)
 	if live_inventory_button is Button:
 		live_inventory_button.pressed.emit()
 	await process_frame
-	var history_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel")
 	_assert_true(history_label.text.contains("examine bread"), "Inventory buttons route commands through the command bar")
 	command_bar.submit_command("inventory")
 	await process_frame

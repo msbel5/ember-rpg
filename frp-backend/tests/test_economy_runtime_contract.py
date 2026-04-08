@@ -58,10 +58,31 @@ def _setup_campaign(seed: int) -> tuple[object, object]:
 
 
 class TestBuyCommand:
+    def test_default_runtime_stores_are_npc_linked(self):
+        runtime, context = _setup_campaign(seed=109)
+        stores = list(context.kernel_runtime.get("stores", []))
+
+        assert stores
+        assert any(str(getattr(store, "npc_id", "") or "").strip() for store in stores)
+        assert any(str(getattr(store, "npc_name", "") or "").strip() for store in stores)
+
     def test_buy_returns_commerce_command_type(self):
         runtime, context = _setup_campaign(seed=110)
         result = _commerce_command(runtime, context, "buy bread")
         assert result["command_type"] == "commerce"
+
+    def test_trade_command_routes_to_commerce_and_sets_active_store(self):
+        runtime, context = _setup_campaign(seed=110)
+        store = next(
+            item for item in context.kernel_runtime["stores"]
+            if str(getattr(item, "npc_name", "") or "").strip()
+        )
+
+        result = _commerce_command(runtime, context, f"trade {store.npc_name}")
+
+        assert result["command_type"] == "commerce"
+        assert result["campaign"]["active_store_id"] == store.store_id
+        assert str(result.get("narrative", "") or "").strip()
 
     def test_buy_adds_item_and_spends_gold(self):
         runtime, context = _setup_campaign(seed=111)

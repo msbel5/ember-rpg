@@ -29,15 +29,25 @@ def maybe_handle_commerce_command(
     if player is None:
         return None
     item_registry = _item_registry()
+    if lower == "trade" or lower.startswith("trade "):
+        npc_part = command_text[5:].strip() if len(command_text) > 5 else ""
+        if not npc_part:
+            npc_part = _conversation_store_hint(context)
+        store = _find_store(stores, npc_part.strip())
+        if store is None:
+            return ("No merchant found to trade with.", "commerce", 0)
+        _activate_store(context, store)
+        return (_trade_summary(store), "commerce", 0)
     if lower.startswith("steal "):
         item_name = command_text[6:].strip()
         npc_part = ""
         if " from " in item_name:
             item_name, npc_part = item_name.rsplit(" from ", 1)
         item_name = item_name.strip()
-        store = _find_store(stores, npc_part.strip())
+        store = _find_store(stores, npc_part.strip() or _conversation_store_hint(context))
         if store is None:
             return (f"No merchant found to steal '{item_name}' from.", "commerce", 1)
+        _activate_store(context, store)
         store_item_id = _find_store_item_id(store, item_name)
         if not store_item_id:
             return (f"'{item_name}' is not in stock there.", "commerce", 1)
@@ -65,9 +75,10 @@ def maybe_handle_commerce_command(
         if " from " in item_name:
             item_name, npc_part = item_name.split(" from ", 1)
         item_name = item_name.strip()
-        store = _find_store(stores, npc_part.strip())
+        store = _find_store(stores, npc_part.strip() or _conversation_store_hint(context))
         if store is None:
             return (f"No merchant found to buy '{item_name}' from.", "commerce", 1)
+        _activate_store(context, store)
         ok, msg = buy_item(player, store, item_name, 1, item_registry)
         if not ok:
             return (msg, "commerce", 1)
@@ -79,13 +90,14 @@ def maybe_handle_commerce_command(
         if " to " in item_name:
             item_name, npc_part = item_name.split(" to ", 1)
         item_name = item_name.strip()
-        store = _find_store(stores, npc_part.strip())
+        store = _find_store(stores, npc_part.strip() or _conversation_store_hint(context))
         if store is None:
             return (f"No merchant found to sell '{item_name}' to.", "commerce", 1)
+        _activate_store(context, store)
         item_instance = next((i for i in player.inventory if i.item_def_id == item_name), None)
         if item_instance is None:
             return (f"You don't have '{item_name}' to sell.", "commerce", 1)
-        ok, msg = sell_item(player, store, item_instance, item_registry)
+        ok, msg, _price = sell_item(player, store, item_instance, item_registry)
         if not ok:
             return (msg, "commerce", 1)
         logger.info("Sell: %s sold %s", player.identity.display_name, item_name)
@@ -94,6 +106,7 @@ def maybe_handle_commerce_command(
         store = _find_store(stores, "")
         if store is None:
             return ("No inn found to rent a room.", "commerce", 1)
+        _activate_store(context, store)
         ok, msg = rent_room(player, store, "room")
         if not ok:
             return (msg, "commerce", 8)
@@ -103,6 +116,7 @@ def maybe_handle_commerce_command(
         store = _find_store_with_service(stores, "identify")
         if store is None:
             return ("No merchant with identification services found.", "commerce", 1)
+        _activate_store(context, store)
         item_instance = _find_inventory_item(player, item_name)
         if item_instance is None:
             return (f"You don't have '{item_name}' to identify.", "commerce", 1)
@@ -126,13 +140,59 @@ def _find_store(stores: list, npc_hint: str) -> Any:
             store_id = str(getattr(store, "store_id", "") or "")
             label = str(getattr(store, "label", "") or "")
             npc_id = getattr(store, "npc_id", "") or ""
+            npc_name = getattr(store, "npc_name", "") or ""
+            role = getattr(store, "role", "") or ""
             if (
                 normalized_hint in npc_id.lower()
+                or normalized_hint in npc_name.lower()
                 or normalized_hint in store_id.lower()
                 or normalized_hint in label.lower()
+                or normalized_hint == role.lower().strip()
             ):
                 return store
     return stores[0] if stores else None
+
+
+def _activate_store(context: "CampaignContext", store: Any) -> None:
+    runtime = context.kernel_runtime or {}
+    store_id = str(getattr(store, "store_id", "") or "").strip()
+    runtime["active_store_id"] = store_id
+    conversation = dict(getattr(context, "conversation_state", {}) or {})
+    if conversation:
+        conversation["store_id"] = store_id
+        conversation["store_label"] = str(getattr(store, "label", "") or "")
+        context.conversation_state = conversation
+
+
+def _conversation_store_hint(context: "CampaignContext") -> str:
+    conversation = dict(getattr(context, "conversation_state", {}) or {})
+    for key in ("store_id", "npc_id", "npc_name"):
+        value = str(conversation.get(key, "") or "").strip()
+        if value:
+            return value
+    runtime = getattr(context, "kernel_runtime", {}) or {}
+    dialog_npc_id = str(runtime.get("dialog_npc_id", "") or "").strip()
+    return dialog_npc_id
+
+
+def _trade_summary(store: Any) -> str:
+    label = str(getattr(store, "label", "") or "the merchant's wares").strip() or "the merchant's wares"
+    item_names = [
+        str(getattr(item, "item_def_id", "") or "").replace("_", " ").title()
+        for item in list(getattr(store, "items", []) or [])[:3]
+        if str(getattr(item, "item_def_id", "") or "").strip()
+    ]
+    service_names = [
+        str(getattr(service, "label", "") or "").strip()
+        for service in list(getattr(store, "services", []) or [])[:3]
+        if str(getattr(service, "label", "") or "").strip()
+    ]
+    summary_parts: list[str] = [f"You look over {label}."]
+    if item_names:
+        summary_parts.append("Stock: %s." % ", ".join(item_names))
+    if service_names:
+        summary_parts.append("Services: %s." % ", ".join(service_names))
+    return " ".join(summary_parts)
 
 
 def _find_store_item_id(store: Any, item_name: str) -> str:

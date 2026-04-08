@@ -66,8 +66,6 @@ func _ready() -> void:
 	command_bar.set_focus_actions(world_view.get_focus_actions())
 	_sync_dialog_overlay()
 	_sync_shell_state()
-	if not GameState.has_active_dialog():
-		command_bar.focus_input()
 
 
 func _install_status_bar() -> void:
@@ -184,7 +182,7 @@ func _finish_turn_sync() -> void:
 		_submit_next_queued_world_command()
 		return
 	if not save_load_panel.visible and not GameState.has_active_dialog() and (modal_host == null or str(modal_host.active_panel_id()).is_empty()):
-		command_bar.focus_input()
+		_focus_command_entry_if_available()
 
 
 func _on_state_updated() -> void:
@@ -225,7 +223,7 @@ func _sync_dialog_overlay() -> void:
 func _on_dialog_overlay_closed() -> void:
 	_sync_shell_state()
 	if not save_load_panel.visible:
-		command_bar.focus_input()
+		_focus_command_entry_if_available()
 
 
 func _on_combat_started() -> void:
@@ -270,7 +268,7 @@ func _input(event: InputEvent) -> void:
 		if modal_host != null and modal_host.has_method("active_panel_id") and not str(modal_host.active_panel_id()).is_empty():
 			modal_host.hide_host()
 			_sync_shell_state()
-			command_bar.focus_input()
+			_focus_command_entry_if_available()
 			get_viewport().set_input_as_handled()
 			return
 		if modal_host != null and modal_host.has_method("has_panel") and modal_host.has_panel("pause") and not GameState.is_in_combat():
@@ -301,7 +299,7 @@ func _input(event: InputEvent) -> void:
 				return
 	if event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
 		if _should_focus_command_bar_on_enter():
-			command_bar.focus_input()
+			_focus_command_entry_if_available()
 			get_viewport().set_input_as_handled()
 		return
 	if modal_host != null and modal_host.has_method("active_panel_id") and not str(modal_host.active_panel_id()).is_empty():
@@ -323,7 +321,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _should_focus_command_bar_on_enter() -> bool:
-	return not save_load_panel.visible and not GameState.has_active_dialog() and not command_bar.has_input_focus() and (modal_host == null or str(modal_host.active_panel_id()).is_empty())
+	return not save_load_panel.visible and not GameState.has_active_dialog() and not command_bar.has_input_focus() and _command_entry_available() and (modal_host == null or str(modal_host.active_panel_id()).is_empty())
 
 
 func _on_backend_error(message: String) -> void:
@@ -415,13 +413,13 @@ func _on_shell_panel_requested(panel_id: String) -> void:
 		modal_host.toggle_panel(normalized)
 	_sync_shell_state()
 	if str(modal_host.active_panel_id()).is_empty():
-		command_bar.focus_input()
+		_focus_command_entry_if_available()
 
 
 func _on_modal_host_closed() -> void:
 	_sync_shell_state()
 	if not save_load_panel.visible and not GameState.has_active_dialog():
-		command_bar.focus_input()
+		_focus_command_entry_if_available()
 
 
 func _on_modal_surface_close_requested() -> void:
@@ -433,6 +431,7 @@ func _sync_shell_state() -> void:
 	if modal_host == null or command_bar == null:
 		return
 	_sync_pause_panel_views()
+	_sync_command_entry_context()
 	var shell_mode := GameState.current_shell_mode()
 	if shell_mode != "exploration" and not str(modal_host.active_panel_id()).is_empty():
 		modal_host.hide_host()
@@ -457,6 +456,26 @@ func _sync_shell_state() -> void:
 		panel_states["pause"]["tooltip"] = "Pause intelligence is disabled while dialog or combat is active."
 	var active_panel_id := str(modal_host.active_panel_id())
 	command_bar.set_panel_actions(panel_states, active_panel_id)
+
+
+func _sync_command_entry_context() -> void:
+	if command_bar == null or not command_bar.has_method("set_command_entry_context"):
+		return
+	var context := "dialog" if GameState.has_active_dialog() else "hidden"
+	command_bar.set_command_entry_context(context)
+
+
+func _command_entry_available() -> bool:
+	if command_bar == null:
+		return false
+	if command_bar.has_method("command_entry_visible"):
+		return bool(command_bar.command_entry_visible())
+	return true
+
+
+func _focus_command_entry_if_available() -> void:
+	if _command_entry_available():
+		command_bar.focus_input()
 
 
 func _sync_pause_panel_views() -> void:

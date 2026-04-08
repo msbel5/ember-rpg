@@ -5,6 +5,7 @@ signal close_requested()
 signal command_requested(command_text: String)
 signal structured_action_requested(shortcut: String, args: Dictionary, history_text: String)
 
+@onready var title_label: Label = $PauseMargin/PauseVBox/TitleLabel
 @onready var summary_label: Label = $PauseMargin/PauseVBox/SummaryLabel
 @onready var state_label: Label = $PauseMargin/PauseVBox/StateLabel
 @onready var ask_dm_button: Button = $PauseMargin/PauseVBox/ActionRow/AskDmButton
@@ -20,6 +21,8 @@ func _ready() -> void:
 	name = "PauseMenu"
 	visible = false
 	tabs.tabs_visible = false
+	title_label.text = "Pause Counsel"
+	ask_dm_button.text = "Consult Fate"
 	ask_dm_button.pressed.connect(func() -> void:
 		tabs.current_tab = 0
 	)
@@ -48,15 +51,15 @@ func sync_from_game_state() -> void:
 	var in_combat := GameState.is_in_combat()
 	var disabled := in_dialog or in_combat
 	visible = visible and not disabled
-	summary_label.text = "Pause intelligence surfaces render only live `advisor_view` and `knowledge_view` payloads."
+	summary_label.text = "Consult Fate and Think render only live `advisor_view` and `knowledge_view` payloads."
 	state_label.text = "Scene: %s  |  Location: %s" % [GameState.current_shell_mode().capitalize(), GameState.get_display_location()]
 	blocker_label.text = ""
 	ask_dm_button.disabled = disabled
 	think_button.disabled = disabled
 	if in_dialog:
-		blocker_label.text = "Ask DM and Think stay closed during active dialogue."
+		blocker_label.text = "Consult Fate and Think stay closed during active dialogue."
 	elif in_combat:
-		blocker_label.text = "Ask DM and Think stay closed during combat."
+		blocker_label.text = "Consult Fate and Think stay closed during combat."
 	think_panel.sync_from_game_state()
 
 

@@ -130,6 +130,8 @@ static func flatten_campaign_response(data: Dictionary, current_map: Dictionary 
 		flattened.merge(normalized_dialog, true)
 	flattened["world"] = campaign.get("world", {})
 	flattened["world_state"] = campaign.get("world_state", campaign.get("world", {}))
+	flattened["stores"] = campaign.get("stores", [])
+	flattened["active_store_id"] = str(campaign.get("active_store_id", ""))
 	flattened["travel_state"] = campaign["travel_state"] if campaign.has("travel_state") else null
 	flattened["crime_state"] = campaign.get("crime_state", {})
 	flattened["game_state_root"] = campaign.get("game_state", {})

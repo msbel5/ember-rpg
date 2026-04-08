@@ -386,6 +386,20 @@ func _conversation_transcript_lines() -> Array:
 
 
 func _resolve_trade_context() -> Dictionary:
+	var conversation: Dictionary = GameState.conversation_state if GameState.conversation_state is Dictionary else {}
+	var hinted_store_id := str(conversation.get("store_id", "")).strip_edges()
+	if not hinted_store_id.is_empty():
+		var hinted_store := GameState.store_by_id(hinted_store_id)
+		if not hinted_store.is_empty():
+			return _trade_context_from_store(hinted_store)
+	var npc_id := str(conversation.get("npc_id", "")).strip_edges()
+	var npc_name := str(conversation.get("npc_name", _npc_name_label.text)).strip_edges()
+	for raw_store in GameState.stores:
+		if not (raw_store is Dictionary):
+			continue
+		var store: Dictionary = raw_store
+		if _store_matches_conversation(store, npc_id, npc_name):
+			return _trade_context_from_store(store)
 	return {
 		"enabled": false,
 		"tooltip": "Trade stays hidden until a verified live store route is exposed.",
@@ -424,7 +438,40 @@ func _on_trade_pressed() -> void:
 		return
 	var store_id := str(trade_context.get("store_id", "")).strip_edges()
 	trade_requested.emit(store_id)
-	_emit_command("trade")
+	var conversation: Dictionary = GameState.conversation_state if GameState.conversation_state is Dictionary else {}
+	var npc_name := str(conversation.get("npc_name", _npc_name_label.text)).strip_edges().to_lower()
+	_emit_command("trade %s" % npc_name if not npc_name.is_empty() else "trade")
+
+
+func _store_matches_conversation(store: Dictionary, npc_id: String, npc_name: String) -> bool:
+	var store_npc_id := str(store.get("npc_id", "")).strip_edges()
+	if not npc_id.is_empty() and not store_npc_id.is_empty() and store_npc_id == npc_id:
+		return true
+	var store_npc_name := str(store.get("npc_name", "")).strip_edges()
+	if not npc_name.is_empty() and not store_npc_name.is_empty() and store_npc_name.to_lower() == npc_name.to_lower():
+		return true
+	return false
+
+
+func _trade_context_from_store(store: Dictionary) -> Dictionary:
+	var store_id := str(store.get("store_id", "")).strip_edges()
+	var label := str(store.get("label", "Trader")).strip_edges()
+	var services = store.get("services", [])
+	var service_labels: Array[String] = []
+	if services is Array:
+		for service in services:
+			if service is Dictionary:
+				var service_label := str(service.get("label", "")).strip_edges()
+				if not service_label.is_empty():
+					service_labels.append(service_label)
+	var tooltip := "Trade with %s." % label
+	if not service_labels.is_empty():
+		tooltip += " Services: %s." % ", ".join(service_labels.slice(0, 3))
+	return {
+		"enabled": not store_id.is_empty(),
+		"store_id": store_id,
+		"tooltip": tooltip,
+	}
 
 
 func _forward_structured_action(shortcut: String, args: Dictionary, history_text: String) -> void:

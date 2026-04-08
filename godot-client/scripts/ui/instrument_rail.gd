@@ -15,6 +15,7 @@ signal panel_requested(panel_id: String)
 @onready var focus_action_three: Button = $CommandVBox/FocusActionsRow/FocusActionThree
 @onready var focus_action_four: Button = $CommandVBox/FocusActionsRow/FocusActionFour
 @onready var focus_action_five: Button = $CommandVBox/FocusActionsRow/FocusActionFive
+@onready var prompt_label: Label = $CommandVBox/InputRow/PromptLabel
 @onready var text_input: LineEdit = $CommandVBox/InputRow/TextInput
 @onready var send_btn: Button = $CommandVBox/InputRow/SendButton
 @onready var quick_save_btn: Button = $CommandVBox/InputRow/QuickSaveButton
@@ -44,11 +45,15 @@ const PANEL_LABELS := {
 	"town": "Town",
 	"pause": "Menu",
 }
+const COMMAND_CONTEXT_HIDDEN := "hidden"
+const COMMAND_CONTEXT_DIALOG := "dialog"
 
 var _history: Array[String] = []
 var _action_buttons: Dictionary = {}
 var _panel_buttons: Dictionary = {}
 var _panel_group: ButtonGroup = ButtonGroup.new()
+var _command_entry_context: String = COMMAND_CONTEXT_HIDDEN
+var _is_waiting: bool = false
 
 
 func _ready() -> void:
@@ -92,12 +97,14 @@ func _ready() -> void:
 	set_focus_summary("")
 	set_focus_actions([])
 	set_panel_actions({}, "")
+	set_command_entry_context(COMMAND_CONTEXT_HIDDEN)
 	_refresh_history()
 	_refresh_monitor()
 
 
 func focus_input() -> void:
-	text_input.grab_focus()
+	if command_entry_visible():
+		text_input.grab_focus()
 
 
 func clear_input() -> void:
@@ -108,9 +115,34 @@ func has_input_focus() -> bool:
 	return text_input.has_focus()
 
 
+func command_entry_visible() -> bool:
+	return text_input.visible and send_btn.visible
+
+
+func set_command_entry_context(context: String) -> void:
+	var normalized := context.strip_edges().to_lower()
+	if normalized != COMMAND_CONTEXT_DIALOG:
+		normalized = COMMAND_CONTEXT_HIDDEN
+	_command_entry_context = normalized
+	var entry_visible := _command_entry_context == COMMAND_CONTEXT_DIALOG
+	history_label.visible = entry_visible
+	prompt_label.visible = entry_visible
+	text_input.visible = entry_visible
+	send_btn.visible = entry_visible
+	text_input.placeholder_text = "Ask about a known topic or speak plainly..." if entry_visible else "Point-and-click to act"
+	send_btn.text = "Speak" if entry_visible else "Act"
+	if not entry_visible:
+		text_input.release_focus()
+		text_input.text = ""
+	text_input.editable = not _is_waiting and entry_visible
+	send_btn.disabled = _is_waiting or not entry_visible
+	_refresh_history()
+
+
 func set_waiting(waiting: bool) -> void:
-	text_input.editable = not waiting
-	send_btn.disabled = waiting
+	_is_waiting = waiting
+	text_input.editable = not waiting and command_entry_visible()
+	send_btn.disabled = waiting or not command_entry_visible()
 	quick_save_btn.disabled = waiting
 	saves_btn.disabled = waiting
 	for button in _action_buttons.values():
@@ -119,7 +151,8 @@ func set_waiting(waiting: bool) -> void:
 		for panel_button in _panel_buttons.values():
 			panel_button.disabled = true
 	if waiting:
-		history_label.text = "Orders locked while the world catches up..."
+		if history_label.visible:
+			history_label.text = "Prompts locked while the world catches up..."
 	else:
 		_refresh_history()
 
@@ -187,10 +220,14 @@ func remember_command(text: String) -> void:
 
 
 func _on_text_submitted(text: String) -> void:
+	if not command_entry_visible():
+		return
 	_emit_command(text)
 
 
 func _on_send_pressed() -> void:
+	if not command_entry_visible():
+		return
 	_emit_command(text_input.text)
 
 
@@ -203,10 +240,11 @@ func _emit_command(text: String) -> void:
 
 
 func _refresh_history() -> void:
+	var prefix := "Recent Prompts" if _command_entry_context == COMMAND_CONTEXT_DIALOG else "Recent Orders"
 	if _history.is_empty():
-		history_label.text = "Recent Orders: none yet"
+		history_label.text = "%s: none yet" % prefix
 		return
-	history_label.text = "Recent Orders: %s" % " | ".join(_history.slice(maxi(_history.size() - 3, 0), _history.size()))
+	history_label.text = "%s: %s" % [prefix, " | ".join(_history.slice(maxi(_history.size() - 3, 0), _history.size()))]
 
 
 func _refresh_monitor() -> void:

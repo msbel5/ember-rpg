@@ -86,6 +86,7 @@ def build_dialog_payload(context: "CampaignContext", narrative: str) -> dict[str
     store_dialog_state(context, dialog_state, dialog_def, npc_actor)
     dialog_text = str(state_node.text or narrative or f"{npc_name} studies you in silence.").strip()
     options = _transitions_to_options(state_node.transitions, player_actor, npc_actor, dialog_state.variables, global_vars)
+    _sync_conversation_store_state(context, npc_actor)
     return {
         "dialog_npc": npc_name,
         "dialog_text": dialog_text,
@@ -394,6 +395,33 @@ def clear_dialog_state(context: "CampaignContext") -> None:
         "npc_id": "",
         "npc_name": "",
     }
+
+
+def _sync_conversation_store_state(context: "CampaignContext", npc_actor: "ActorRecord") -> None:
+    conversation = dict(getattr(context, "conversation_state", {}) or {})
+    if not conversation:
+        return
+    runtime = getattr(context, "kernel_runtime", {}) or {}
+    actor_id = str(getattr(getattr(npc_actor, "identity", None), "actor_id", "") or "").strip()
+    npc_name = str(getattr(getattr(npc_actor, "identity", None), "display_name", actor_id) or "").strip()
+    matched_store = None
+    for store in list(runtime.get("stores", []) or []):
+        store_actor_id = str(getattr(store, "npc_id", "") or "").strip()
+        store_npc_name = str(getattr(store, "npc_name", "") or "").strip()
+        if actor_id and actor_id == store_actor_id:
+            matched_store = store
+            break
+        if npc_name and store_npc_name and npc_name.lower() == store_npc_name.lower():
+            matched_store = store
+            break
+    if matched_store is None:
+        conversation.pop("store_id", None)
+        conversation.pop("store_label", None)
+        context.conversation_state = conversation
+        return
+    conversation["store_id"] = str(getattr(matched_store, "store_id", "") or "")
+    conversation["store_label"] = str(getattr(matched_store, "label", "") or "")
+    context.conversation_state = conversation
 
 
 __all__ = ["build_dialog_payload", "clear_dialog_state", "store_dialog_state"]

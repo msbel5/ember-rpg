@@ -49,6 +49,10 @@ class StoreDef:
     store_id: str
     label: str
     store_type: str
+    npc_id: str = ""
+    npc_name: str = ""
+    role: str = ""
+    named_npc_id: str = ""
     buy_markup: float = 1.5
     sell_markup: float = 0.5
     steal_difficulty: int = 50

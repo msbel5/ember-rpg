@@ -9,7 +9,9 @@ signal command_requested(command_text: String)
 @onready var submit_button: Button = $AskMargin/AskVBox/InputRow/SubmitButton
 @onready var blockers_label: Label = $AskMargin/AskVBox/BlockersLabel
 @onready var answer_text: RichTextLabel = $AskMargin/AskVBox/AnswerText
+@onready var topic_title: Label = $AskMargin/AskVBox/TopicSection/TopicTitle
 @onready var topic_list: VBoxContainer = $AskMargin/AskVBox/TopicSection/TopicList
+@onready var command_title: Label = $AskMargin/AskVBox/CommandSection/CommandTitle
 @onready var command_list: VBoxContainer = $AskMargin/AskVBox/CommandSection/CommandList
 
 var _view: Dictionary = {}
@@ -17,6 +19,10 @@ var _waiting: bool = false
 
 
 func _ready() -> void:
+	prompt_input.placeholder_text = "Ask for a grounded reading of your next move..."
+	submit_button.text = "Consult Fate"
+	topic_title.text = "Related Threads"
+	command_title.text = "Grounded Leads"
 	submit_button.pressed.connect(_submit_query)
 	prompt_input.text_submitted.connect(func(_text: String) -> void:
 		_submit_query()
@@ -40,7 +46,7 @@ func set_prompt(prompt: String) -> void:
 
 
 func _render() -> void:
-	summary_label.text = "Consult the spoiler-safe advisor using only the live `advisor_view`."
+	summary_label.text = "Consult Fate using only the live `advisor_view`."
 	blockers_label.text = ""
 	answer_text.clear()
 	for child in topic_list.get_children():
@@ -48,7 +54,7 @@ func _render() -> void:
 	for child in command_list.get_children():
 		child.queue_free()
 	if _view.is_empty():
-		answer_text.text = "No advisor response yet. Submit a grounded question."
+		answer_text.text = "No fate reading yet. Submit a grounded question."
 		return
 	var answer_lines = _view.get("answer_lines", [])
 	answer_text.text = "\n".join(answer_lines) if answer_lines is Array and not answer_lines.is_empty() else "No grounded answer lines returned."

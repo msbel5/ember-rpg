@@ -1537,6 +1537,7 @@ def serialize_kernel_runtime(context: "CampaignContext") -> dict[str, Any]:
             if runtime["systems"]["strange_mood_incident"] is not None
             else None,
         },
+        "active_store_id": str(runtime.get("active_store_id", "") or ""),
         "stores": [store.to_dict() for store in runtime["stores"]],
     }
 

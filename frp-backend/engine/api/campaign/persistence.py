@@ -268,6 +268,7 @@ def build_kernel_payload(context: "CampaignContext") -> dict[str, Any]:
             "temperature_state": temperature_state_from_region(context.region_snapshot).to_dict(),
             "strange_mood_incident": strange_mood.to_dict() if strange_mood is not None else None,
         },
+        "active_store_id": str(ensure_kernel_runtime(context).get("active_store_id", "") or ""),
         "stores": [store.to_dict() for store in ensure_kernel_runtime(context).get("stores", [])],
     }
 
