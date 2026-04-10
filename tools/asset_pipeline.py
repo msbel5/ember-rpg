@@ -1156,9 +1156,18 @@ class LocalSDXLGenerator:
             variant="fp16",
         )
 
-        # IP-Adapter (style anchor image conditioning — runs alongside LoRA stack)
+        # IP-Adapter (style anchor image conditioning).
+        # IMPORTANT: IP-Adapter is INCOMPATIBLE with multi-LoRA + LCM scheduler combination.
+        # The IPAdapterAttnProcessor2_0 receives encoder_hidden_states as a tuple when LCM
+        # is active and multiple LoRAs share cross-attention, producing:
+        #     AttributeError: 'tuple' object has no attribute 'shape'
+        # The LoRA stack (Gerald Brom + Dark Fantasy XL + Dark Gothic + Fallout Art) already
+        # provides much stronger painted CRPG style conditioning than a single style anchor
+        # image, so IP-Adapter is redundant when the stack is active. Only attach IP-Adapter
+        # in the single-LoRA / no-LoRA code path.
         self.style_image = None
-        if style_ref and style_ref.exists():
+        stack_is_active = bool(lora_stack) and not single_lora_path
+        if style_ref and style_ref.exists() and not stack_is_active:
             try:
                 self.pipeline.load_ip_adapter(
                     ip_adapter_repo,
@@ -1167,8 +1176,11 @@ class LocalSDXLGenerator:
                 )
                 self.pipeline.set_ip_adapter_scale(ip_adapter_scale)
                 self.style_image = self.load_image(str(style_ref))
+                print("[IP-Adapter] attached — no LoRA stack active, using style anchor")
             except Exception as exc:  # pragma: no cover - model environment dependent
                 print("[WARN] Could not load IP-Adapter style reference: %s" % exc)
+        elif style_ref and stack_is_active:
+            print("[IP-Adapter] skipped — LoRA stack provides style conditioning (attn-processor conflict with LCM+multi-LoRA)")
 
         # LoRA stacking via set_adapters (multi-LoRA). single_lora_path takes precedence if supplied.
         # Do NOT call fuse_lora — it prevents per-adapter weight control and later unload/swap.
