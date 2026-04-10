@@ -46,7 +46,14 @@ def fetch_backend_health(base_url: str, timeout: float = 2.0) -> dict[str, objec
         return None
     if not isinstance(payload, dict):
         return None
-    required_keys = {"ok", "campaign_creation", "campaign_runtime", "campaign_save_load"}
+    required_keys = {
+        "ok",
+        "campaign_creation",
+        "campaign_runtime",
+        "campaign_save_load",
+        "websocket_transport",
+        "websocket_library",
+    }
     if not required_keys.issubset(payload.keys()):
         return None
     return payload
@@ -64,6 +71,7 @@ def backend_supports_paths(
             and health.get("campaign_creation")
             and health.get("campaign_runtime")
             and health.get("campaign_save_load")
+            and health.get("websocket_transport")
         )
     try:
         with urlopen(f"{base_url.rstrip('/')}/openapi.json", timeout=timeout) as response:  # noqa: S310

@@ -53,6 +53,10 @@ class CampaignTickLoop:
     def paused(self) -> bool:
         return bool(self._pause_reasons)
 
+    @property
+    def pause_reasons(self) -> tuple[str, ...]:
+        return tuple(sorted(self._pause_reasons))
+
     async def start(self) -> None:
         """Start the background tick task."""
         if self.running:
@@ -87,7 +91,7 @@ class CampaignTickLoop:
         """Main tick loop — runs until cancelled."""
         while True:
             await asyncio.sleep(self._interval)
-            if self._paused:
+            if self.paused:
                 continue
             try:
                 context = self._runtime.get_campaign(self._campaign_id)

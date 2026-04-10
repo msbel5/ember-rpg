@@ -19,11 +19,19 @@ from .persistence import campaign_payload, persist_campaign_state
 from .quest_bridge import sync_quest_state
 from .quest_state import restore_quest_state, snapshot_quest_state
 from .runtime_commands import run_command as _run_command
+from .runtime_transport import (
+    build_transport_payload,
+    build_tick_state,
+    build_world_ready,
+    resolve_runtime_mode,
+    sync_tick_loop_mode,
+    try_start_tick_loop,
+    try_stop_tick_loop,
+)
 from .state_sync import sync_context_clock
 from .controls import merge_settlement_controls
 from .region_projection import apply_region_to_context
 from .settlement import build_character_sheet, build_settlement_state
-from .tick_loop import DEFAULT_TICK_HOURS, DEFAULT_TICK_INTERVAL, get_tick_loop
 from .world import (
     build_world,
     choose_starting_settlement,
@@ -121,10 +129,10 @@ class CampaignRuntime:
         sync_context_clock(context)
         ensure_kernel_runtime(context)
         sync_quest_state(context)
-        self._sync_tick_loop_mode(context)
+        sync_tick_loop_mode(context)
         self._campaigns[campaign_id] = context
         persist_campaign_state(context)
-        _try_start_tick_loop(self, campaign_id)
+        try_start_tick_loop(self, campaign_id)
         return context
 
     def start_creation(
@@ -258,7 +266,7 @@ class CampaignRuntime:
 
     def delete_campaign(self, campaign_id: str) -> None:
         self.get_campaign(campaign_id)
-        _try_stop_tick_loop(campaign_id)
+        try_stop_tick_loop(campaign_id)
         self._campaigns.pop(campaign_id, None)
 
     def get_current_region(self, campaign_id: str) -> dict[str, Any]:
@@ -361,8 +369,8 @@ class CampaignRuntime:
         sync_context_clock(context)
         ensure_kernel_runtime(context, rebuild_projection=True)
         sync_quest_state(context)
-        self._sync_tick_loop_mode(context)
-        _try_start_tick_loop(self, context.campaign_id)
+        sync_tick_loop_mode(context)
+        try_start_tick_loop(self, context.campaign_id)
         trace_event(
             "campaign_load_completed",
             campaign_id=context.campaign_id,
@@ -380,87 +388,35 @@ class CampaignRuntime:
     ) -> dict[str, Any]:
         context = self.get_campaign(campaign_id)
         result = _run_command(context, input_text, shortcut=shortcut, args=args)
-        self._sync_tick_loop_mode(context)
-        result["transport"] = self._build_transport_payload(context)
-        result["runtime_mode"] = self._resolve_runtime_mode(context)
+        sync_tick_loop_mode(context)
+        result["transport"] = build_transport_payload(context)
+        result["runtime_mode"] = resolve_runtime_mode(
+            context,
+            dialog_payload=build_dialog_payload(context, str(result.get("narrative", ""))),
+            campaign_payload=result.get("campaign") if isinstance(result.get("campaign"), dict) else None,
+        )
+        result["tick_state"] = build_tick_state(context)
+        if isinstance(result.get("campaign"), dict):
+            result["world_ready"] = build_world_ready(result["campaign"])
         return result
 
     def snapshot(self, campaign_id: str, narrative: str = "") -> dict[str, Any]:
         context = self.get_campaign(campaign_id)
         dialog_payload = build_dialog_payload(context, narrative)
-        self._sync_tick_loop_mode(context, dialog_payload=dialog_payload)
+        sync_tick_loop_mode(context, dialog_payload=dialog_payload)
+        payload = campaign_payload(context)
         return {
             "campaign_id": context.campaign_id,
             "adapter_id": context.adapter_id,
             "profile_id": context.profile_id,
             "narrative": narrative,
-            "transport": self._build_transport_payload(context),
-            "runtime_mode": self._resolve_runtime_mode(context, dialog_payload=dialog_payload),
-            "campaign": campaign_payload(context),
+            "transport": build_transport_payload(context),
+            "runtime_mode": resolve_runtime_mode(context, dialog_payload=dialog_payload, campaign_payload=payload),
+            "tick_state": build_tick_state(context),
+            "world_ready": build_world_ready(payload),
+            "campaign": payload,
             **dialog_payload,
         }
-
-    def _build_transport_payload(self, context: CampaignContext) -> dict[str, Any]:
-        tick_loop = get_tick_loop(context.campaign_id)
-        interval = float(getattr(tick_loop, "_interval", DEFAULT_TICK_INTERVAL))
-        tick_hours = int(getattr(tick_loop, "_tick_hours", DEFAULT_TICK_HOURS))
-        return {
-            "mode": "ws",
-            "bootstrap": "http",
-            "command_transport": "ws",
-            "snapshot_mode": "full",
-            "idle_world_ticks": not context.in_combat(),
-            "tick_interval_seconds": interval,
-            "tick_hours_per_interval": tick_hours,
-            "ws_path": f"/game/ws/campaigns/{context.campaign_id}",
-            "ws_url": "",
-        }
-
-    def _resolve_runtime_mode(
-        self,
-        context: CampaignContext,
-        *,
-        dialog_payload: Optional[dict[str, Any]] = None,
-    ) -> str:
-        if context.in_combat():
-            return "combat_turn_based"
-        if dialog_payload is None:
-            dialog_payload = build_dialog_payload(context, "")
-        if dialog_payload:
-            return "dialog"
-        travel_state = (context.kernel_runtime or {}).get("travel_state")
-        if isinstance(travel_state, dict):
-            status = str(travel_state.get("status", "")).strip().lower()
-            if status and status not in {"idle", "arrived", "completed", "resolved", "cancelled"}:
-                return "travel"
-        payload = campaign_payload(context)
-        if isinstance(payload.get("travel_state"), dict):
-            status = str(payload["travel_state"].get("status", "")).strip().lower()
-            if status and status not in {"idle", "arrived", "completed", "resolved", "cancelled"}:
-                return "travel"
-        tick_loop = get_tick_loop(context.campaign_id)
-        if tick_loop is not None and tick_loop.paused:
-            return "tactical_pause"
-        return "exploration_realtime"
-
-    def _sync_tick_loop_mode(
-        self,
-        context: CampaignContext,
-        *,
-        dialog_payload: Optional[dict[str, Any]] = None,
-    ) -> None:
-        tick_loop = get_tick_loop(context.campaign_id)
-        if tick_loop is None:
-            return
-        if context.in_combat():
-            tick_loop.pause("combat")
-        else:
-            tick_loop.resume("combat")
-        active_dialog = bool(dialog_payload if dialog_payload is not None else build_dialog_payload(context, ""))
-        if active_dialog:
-            tick_loop.pause("dialog")
-        else:
-            tick_loop.resume("dialog")
 
     def _resolve_assigned_stats(
         self,
@@ -481,30 +437,6 @@ class CampaignRuntime:
         if sorted(normalized.values()) == sorted(int(value) for value in state.current_roll):
             return normalized, "rolled_assignment"
         return normalized, "custom_override"
-
-
-def _try_start_tick_loop(runtime: "CampaignRuntime", campaign_id: str) -> None:
-    """Start tick loop if an asyncio event loop is running."""
-    import asyncio
-    from engine.api.campaign.tick_loop import start_tick_loop
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.ensure_future(start_tick_loop(runtime, campaign_id, interval=30.0))
-    except RuntimeError:
-        pass  # No event loop (sync tests).
-
-
-def _try_stop_tick_loop(campaign_id: str) -> None:
-    """Stop tick loop if an asyncio event loop is running."""
-    import asyncio
-    from engine.api.campaign.tick_loop import stop_tick_loop
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.ensure_future(stop_tick_loop(campaign_id))
-    except RuntimeError:
-        pass
 
 
 __all__ = ["CampaignRuntime"]

@@ -75,6 +75,11 @@ def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
     campaign = payload["campaign"]
     sheet = campaign["character_sheet"]
 
+    assert payload["runtime_mode"] in {"exploration_realtime", "dialog", "travel", "combat_turn_based", "tactical_pause"}
+    assert payload["transport"]["websocket_ready"] is True
+    assert payload["transport"]["websocket_library"] in {"websockets", "wsproto"}
+    assert payload["world_ready"] is True
+    assert {"running", "paused", "pause_reasons", "interval_seconds", "tick_hours_per_interval"} <= set(payload["tick_state"])
     assert campaign["world_state"]["seed"] == 42
     assert campaign["game_state"]["campaign_id"] == payload["campaign_id"]
     assert campaign["game_state"]["party"] == ["player"]
@@ -85,6 +90,8 @@ def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
     assert len(campaign["map_data"]["tiles"]) == 60
     assert len(campaign["map_data"]["tiles"][0]) == 80
     assert campaign["world_entities"]
+    assert all("entity_kind" in entry and "template_id" in entry for entry in campaign["world_entities"])
+    assert all("site_anchor_id" in entry and "anchor_kind" in entry and "site_role" in entry and "placement_priority" in entry for entry in campaign["world_entities"])
     assert campaign["settlement"]["residents"]
     assert campaign["recent_event_log"]
     assert isinstance(sheet["equipment_topology"], dict)
@@ -120,6 +127,9 @@ def test_campaign_command_preserves_godot_payload_shape():
     payload = response.json()
     sheet = payload["campaign"]["character_sheet"]
 
+    assert payload["transport"]["websocket_ready"] is True
+    assert isinstance(payload["tick_state"], dict)
+    assert isinstance(payload["world_ready"], bool)
     assert payload["campaign"]["settlement"]["defense_posture"] == "fortified"
     assert payload["campaign"]["map_data"]["metadata"]["region_id"]
     assert payload["campaign"]["world"]["adapter_id"] == "scifi_frontier"
@@ -147,6 +157,7 @@ def test_campaign_advisor_response_shape_is_additive_for_godot_consumers():
     payload = response.json()
 
     assert payload["command_type"] == "advisor"
+    assert payload["runtime_mode"] in {"exploration_realtime", "dialog", "travel", "combat_turn_based", "tactical_pause"}
     assert payload["hours_advanced"] == 0
     assert isinstance(payload["advisor_view"], dict)
     assert {"intent", "answer_lines", "related_topic_ids", "suggested_commands", "blockers", "spoiler_safe"} <= set(payload["advisor_view"])
@@ -177,6 +188,7 @@ def test_campaign_combat_payload_shape_is_present_for_godot_consumers():
     payload = response.json()
     combat = payload["campaign"]["combat"]
 
+    assert payload["runtime_mode"] == "combat_turn_based"
     assert isinstance(combat["phase"], str)
     assert isinstance(combat["round"], int)
     assert isinstance(combat["turn_actor_id"], str)
@@ -259,6 +271,7 @@ def test_campaign_travel_payload_shape_is_present_for_godot_consumers():
     campaign = payload["campaign"]
     travel_state = campaign["travel_state"]
 
+    assert payload["runtime_mode"] == "travel"
     assert campaign["scene"] == "travel"
     assert isinstance(travel_state, dict)
     assert travel_state["route_id"] == destination["route_id"]
@@ -269,4 +282,3 @@ def test_campaign_travel_payload_shape_is_present_for_godot_consumers():
     assert all("danger_level" in entry for entry in campaign["travel_options"])
     assert all("known" in entry for entry in campaign["travel_options"])
     assert all("visited" in entry for entry in campaign["travel_options"])
-

@@ -76,6 +76,8 @@ def test_fetch_backend_health_reads_campaign_client_contract(monkeypatch) -> Non
                     "campaign_runtime": True,
                     "campaign_save_load": True,
                     "schema_version": "campaign-v2",
+                    "websocket_transport": True,
+                    "websocket_library": "websockets",
                 }
             ).encode("utf-8")
 
@@ -87,7 +89,37 @@ def test_fetch_backend_health_reads_campaign_client_contract(monkeypatch) -> Non
         "campaign_runtime": True,
         "campaign_save_load": True,
         "schema_version": "campaign-v2",
+        "websocket_transport": True,
+        "websocket_library": "websockets",
     }
+
+
+def test_backend_supports_paths_rejects_backend_without_websocket_transport(monkeypatch) -> None:
+    class _Response:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self) -> bytes:
+            return json.dumps(
+                {
+                    "ok": True,
+                    "campaign_creation": True,
+                    "campaign_runtime": True,
+                    "campaign_save_load": True,
+                    "schema_version": "campaign-v2",
+                    "websocket_transport": False,
+                    "websocket_library": "",
+                }
+            ).encode("utf-8")
+
+    monkeypatch.setattr("automation.process_utils.urlopen", lambda *_args, **_kwargs: _Response())
+
+    assert backend_supports_paths("http://127.0.0.1:8741") is False
 
 
 def test_backend_supports_paths_rejects_session_only_backend(monkeypatch) -> None:

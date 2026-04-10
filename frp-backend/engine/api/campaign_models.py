@@ -127,6 +127,8 @@ class CampaignSnapshotResponse(BaseModel):
     narrative: str
     transport: Dict[str, Any] = Field(default_factory=dict)
     runtime_mode: str = "exploration_realtime"
+    tick_state: Dict[str, Any] = Field(default_factory=dict)
+    world_ready: bool = False
     campaign: Dict[str, Any]
     dialog_npc: Optional[str] = None
     dialog_text: Optional[str] = None
@@ -143,6 +145,8 @@ class CampaignCommandResponse(BaseModel):
     generated_events: List[Dict[str, Any]] = Field(default_factory=list)
     transport: Dict[str, Any] = Field(default_factory=dict)
     runtime_mode: str = "exploration_realtime"
+    tick_state: Dict[str, Any] = Field(default_factory=dict)
+    world_ready: bool = False
     campaign: Dict[str, Any]
     dialog_npc: Optional[str] = None
     dialog_text: Optional[str] = None

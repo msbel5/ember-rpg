@@ -19,6 +19,7 @@ from engine.api.campaign_models import (
 )
 from engine.kernel.creation import get_creation_catalog
 from engine.api.campaign.runtime import CampaignRuntime
+from engine.api.websocket_support import websocket_support_payload
 from engine.save.save_models import CURRENT_SCHEMA_VERSION
 
 
@@ -34,6 +35,7 @@ def get_campaign_client_health():
         "campaign_runtime": True,
         "campaign_save_load": True,
         "schema_version": CURRENT_SCHEMA_VERSION,
+        **websocket_support_payload(),
     }
 
 

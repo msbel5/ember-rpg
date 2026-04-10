@@ -6,6 +6,7 @@ extends PanelContainer
 class_name DialogOverlay
 
 const TopicProbeModalScene = preload("res://scenes/components/topic_probe_modal.tscn")
+const DialogOverlayState = preload("res://scripts/ui/dialog_overlay_state.gd")
 
 signal command_requested(command_text: String)
 signal structured_action_requested(shortcut: String, args: Dictionary, history_text: String)
@@ -287,134 +288,30 @@ func _make_side_button(button_name: String, button_text: String) -> Button:
 
 
 func _refresh_side_actions() -> void:
-	var topic_entries := _topic_entries_from_state()
+	var topic_entries := DialogOverlayState.topic_entries_from_state()
 	var has_topics := not topic_entries.is_empty()
 	_ask_about_button.visible = true
 	_ask_about_button.disabled = not has_topics
 	_ask_about_button.tooltip_text = "Ask about a discovered topic." if has_topics else "No discovered ask-about topics for this speaker."
 
-	var transcript_lines := _conversation_transcript_lines()
+	var transcript_lines := DialogOverlayState.conversation_transcript_lines(_npc_name_label.text, _npc_text.text, _last_dialog_options)
 	_transcript_button.visible = true
 	_transcript_button.disabled = transcript_lines.is_empty()
 	_transcript_button.tooltip_text = "Review the current conversation." if not transcript_lines.is_empty() else "No transcript lines recorded yet."
 
-	var trade_context := _resolve_trade_context()
+	var trade_context := DialogOverlayState.resolve_trade_context(_npc_name_label.text)
 	_trade_button.visible = trade_context.get("enabled", false)
 	_trade_button.disabled = not trade_context.get("enabled", false)
 	_trade_button.tooltip_text = str(trade_context.get("tooltip", "Trade is unavailable."))
 
 	if _topic_modal != null:
-		_topic_modal.set_topics(topic_entries, _selected_topic_id_from_state())
-
-
-func _topic_entries_from_state() -> Array:
-	var conversation: Dictionary = GameState.conversation_state if GameState.conversation_state is Dictionary else {}
-	var topic_ids = conversation.get("ask_about_topic_ids", [])
-	if not (topic_ids is Array):
-		return []
-	var selected_id := _selected_topic_id_from_state()
-	var entries: Array = []
-	for topic_id in topic_ids:
-		var normalized_id := str(topic_id).strip_edges()
-		if normalized_id.is_empty():
-			continue
-		entries.append({
-			"topic_id": normalized_id,
-			"label": _topic_label(normalized_id),
-			"subtitle": _topic_category_label(normalized_id),
-			"selected": normalized_id == selected_id,
-		})
-	return entries
-
-
-func _selected_topic_id_from_state() -> String:
-	var conversation: Dictionary = GameState.conversation_state if GameState.conversation_state is Dictionary else {}
-	var ask_about = conversation.get("ask_about", {})
-	if ask_about is Dictionary:
-		var topic = ask_about.get("topic", {})
-		if topic is Dictionary:
-			var nested_id := str(topic.get("topic_id", "")).strip_edges()
-			if not nested_id.is_empty():
-				return nested_id
-	return str(conversation.get("ask_about_selected_topic_id", "")).strip_edges()
-
-
-func _topic_label(topic_id: String) -> String:
-	var tokens := topic_id.split(".")
-	if tokens.size() >= 2:
-		return _humanize_token(" ".join(tokens.slice(1, tokens.size())))
-	return _humanize_token(topic_id)
-
-
-func _topic_category_label(topic_id: String) -> String:
-	var category := topic_id.split(".")[0] if topic_id.contains(".") else topic_id
-	return _humanize_token(category)
-
-
-func _humanize_token(value: String) -> String:
-	var words: Array[String] = []
-	for raw_word in value.replace(".", " ").replace("_", " ").split(" "):
-		var word := str(raw_word).strip_edges()
-		if word.is_empty():
-			continue
-		words.append(word.capitalize())
-	return " ".join(words)
-
-
-func _conversation_transcript_lines() -> Array:
-	var conversation: Dictionary = GameState.conversation_state if GameState.conversation_state is Dictionary else {}
-	var transcript = conversation.get("transcript", [])
-	var lines: Array = []
-	if transcript is Array:
-		for entry in transcript:
-			if entry is Dictionary:
-				var speaker := _normalized_line(entry.get("speaker", entry.get("role", "")))
-				var text := _normalized_line(entry.get("text", entry.get("line", "")))
-				if text.is_empty():
-					continue
-				lines.append("[b]%s[/b] %s" % [speaker if not speaker.is_empty() else "Line", text])
-			else:
-				var raw_text := _normalized_line(entry)
-				if not raw_text.is_empty():
-					lines.append(raw_text)
-	if lines.is_empty():
-		var npc_name := _normalized_line(_npc_name_label.text)
-		var npc_text := _normalized_line(_npc_text.text)
-		if not npc_name.is_empty() and not npc_text.is_empty():
-			lines.append("[b]%s[/b] %s" % [npc_name, npc_text])
-		for option in _last_dialog_options:
-			if option is Dictionary:
-				var option_text := _normalized_line(option.get("text", ""))
-				if not option_text.is_empty():
-					lines.append("[i]You:[/i] %s" % option_text)
-	return lines
-
-
-func _resolve_trade_context() -> Dictionary:
-	var conversation: Dictionary = GameState.conversation_state if GameState.conversation_state is Dictionary else {}
-	var hinted_store_id := str(conversation.get("store_id", "")).strip_edges()
-	if not hinted_store_id.is_empty():
-		var hinted_store := GameState.store_by_id(hinted_store_id)
-		if not hinted_store.is_empty():
-			return _trade_context_from_store(hinted_store)
-	var npc_id := str(conversation.get("npc_id", "")).strip_edges()
-	var npc_name := str(conversation.get("npc_name", _npc_name_label.text)).strip_edges()
-	for raw_store in GameState.stores:
-		if not (raw_store is Dictionary):
-			continue
-		var store: Dictionary = raw_store
-		if _store_matches_conversation(store, npc_id, npc_name):
-			return _trade_context_from_store(store)
-	return {
-		"enabled": false,
-		"tooltip": "Trade stays hidden until a verified live store route is exposed.",
-	}
+		_topic_modal.set_topics(topic_entries, DialogOverlayState.selected_topic_id_from_state())
 
 
 func _on_ask_about_pressed() -> void:
 	if _topic_modal == null:
 		return
-	_topic_modal.set_topics(_topic_entries_from_state(), _selected_topic_id_from_state())
+	_topic_modal.set_topics(DialogOverlayState.topic_entries_from_state(), DialogOverlayState.selected_topic_id_from_state())
 	_topic_modal.show_modal()
 
 
@@ -428,7 +325,7 @@ func _on_topic_submitted(topic_id: String) -> void:
 
 
 func _on_transcript_pressed() -> void:
-	var lines := _conversation_transcript_lines()
+	var lines := DialogOverlayState.conversation_transcript_lines(_npc_name_label.text, _npc_text.text, _last_dialog_options)
 	if lines.is_empty() or _transcript_modal == null or _transcript_text == null:
 		return
 	_transcript_text.clear()
@@ -438,7 +335,7 @@ func _on_transcript_pressed() -> void:
 
 
 func _on_trade_pressed() -> void:
-	var trade_context := _resolve_trade_context()
+	var trade_context := DialogOverlayState.resolve_trade_context(_npc_name_label.text)
 	if not trade_context.get("enabled", false):
 		return
 	var store_id := str(trade_context.get("store_id", "")).strip_edges()
@@ -446,37 +343,6 @@ func _on_trade_pressed() -> void:
 	var conversation: Dictionary = GameState.conversation_state if GameState.conversation_state is Dictionary else {}
 	var npc_name := str(conversation.get("npc_name", _npc_name_label.text)).strip_edges().to_lower()
 	_emit_command("trade %s" % npc_name if not npc_name.is_empty() else "trade")
-
-
-func _store_matches_conversation(store: Dictionary, npc_id: String, npc_name: String) -> bool:
-	var store_npc_id := str(store.get("npc_id", "")).strip_edges()
-	if not npc_id.is_empty() and not store_npc_id.is_empty() and store_npc_id == npc_id:
-		return true
-	var store_npc_name := str(store.get("npc_name", "")).strip_edges()
-	if not npc_name.is_empty() and not store_npc_name.is_empty() and store_npc_name.to_lower() == npc_name.to_lower():
-		return true
-	return false
-
-
-func _trade_context_from_store(store: Dictionary) -> Dictionary:
-	var store_id := str(store.get("store_id", "")).strip_edges()
-	var label := str(store.get("label", "Trader")).strip_edges()
-	var services = store.get("services", [])
-	var service_labels: Array[String] = []
-	if services is Array:
-		for service in services:
-			if service is Dictionary:
-				var service_label := str(service.get("label", "")).strip_edges()
-				if not service_label.is_empty():
-					service_labels.append(service_label)
-	var tooltip := "Trade with %s." % label
-	if not service_labels.is_empty():
-		tooltip += " Services: %s." % ", ".join(service_labels.slice(0, 3))
-	return {
-		"enabled": not store_id.is_empty(),
-		"store_id": store_id,
-		"tooltip": tooltip,
-	}
 
 
 func _forward_structured_action(shortcut: String, args: Dictionary, history_text: String) -> void:
@@ -491,24 +357,5 @@ func _has_structured_connections() -> bool:
 	return not get_signal_connection_list("structured_action_requested").is_empty()
 
 
-func _normalized_line(value) -> String:
-	if value == null:
-		return ""
-	var normalized := str(value).strip_edges()
-	return "" if normalized == "<null>" else normalized
-
-
 func _resolve_leave_command() -> String:
-	for option in _last_dialog_options:
-		if not (option is Dictionary):
-			continue
-		var command := str(option.get("command", "")).strip_edges()
-		if command.is_empty():
-			continue
-		var transition_id := str(option.get("transition_id", "")).strip_edges().to_lower()
-		var option_text := str(option.get("text", "")).strip_edges().to_lower()
-		if transition_id.contains("leave") or transition_id.contains("goodbye"):
-			return command
-		if option_text.contains("maybe later") or option_text.contains("goodbye") or option_text.contains("leave"):
-			return command
-	return ""
+	return DialogOverlayState.resolve_leave_command(_last_dialog_options)

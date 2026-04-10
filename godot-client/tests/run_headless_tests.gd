@@ -452,13 +452,13 @@ func _test_response_normalizer() -> void:
 	)
 	var prop_entities = ResponseNormalizer.normalize_entities({
 		"world_entities": [
-			{"id": "chest_1", "entity_type": "npc", "name": "Wooden Chest", "template": "warrior", "position": [5, 2]},
-			{"id": "table_1", "entity_type": "npc", "name": "Oak Table", "template": "warrior", "position": [6, 2]},
-			{"id": "anvil_1", "entity_type": "npc", "name": "Smithy Anvil", "template": "warrior", "position": [7, 2]},
-			{"id": "rack_1", "entity_type": "npc", "name": "Armor Rack", "template": "warrior", "position": [8, 2]},
-			{"id": "altar_1", "entity_type": "npc", "name": "Stone Altar", "template": "warrior", "position": [9, 2]},
-			{"id": "pew_1", "entity_type": "npc", "name": "Chapel Pew", "template": "warrior", "position": [10, 2]},
-			{"id": "workbench_1", "entity_type": "npc", "name": "Craft Workbench", "template": "workbench", "position": [11, 2]},
+			{"id": "chest_1", "entity_type": "furniture", "entity_kind": "furniture", "name": "Wooden Chest", "template_id": "chest", "position": [5, 2]},
+			{"id": "table_1", "entity_type": "furniture", "entity_kind": "furniture", "name": "Oak Table", "template_id": "table", "position": [6, 2]},
+			{"id": "anvil_1", "entity_type": "furniture", "entity_kind": "furniture", "name": "Smithy Anvil", "template_id": "anvil", "position": [7, 2]},
+			{"id": "rack_1", "entity_type": "furniture", "entity_kind": "furniture", "name": "Armor Rack", "template_id": "rack", "position": [8, 2]},
+			{"id": "altar_1", "entity_type": "furniture", "entity_kind": "furniture", "name": "Stone Altar", "template_id": "altar", "position": [9, 2]},
+			{"id": "pew_1", "entity_type": "furniture", "entity_kind": "furniture", "name": "Chapel Pew", "template_id": "pew", "position": [10, 2]},
+			{"id": "workbench_1", "entity_type": "furniture", "entity_kind": "furniture", "name": "Craft Workbench", "template_id": "workbench", "position": [11, 2]},
 		]
 	})
 	var props: Array = prop_entities.get("furniture", [])
@@ -472,12 +472,12 @@ func _test_response_normalizer() -> void:
 		and str(props[4].get("template", "")) == "altar"
 		and str(props[5].get("template", "")) == "pew"
 		and str(props[6].get("template", "")) == "workbench",
-		"ResponseNormalizer routes prop-looking NPC payloads into furniture templates"
+		"ResponseNormalizer routes authoritative furniture payloads into furniture templates"
 	)
 	_assert_true(
 		props.size() > 0
 		and props[0].get("context_actions", []) == ["examine"],
-		"ResponseNormalizer strips talk actions from prop-looking NPC payloads"
+		"ResponseNormalizer strips talk actions from authoritative furniture payloads"
 	)
 	var prop_named_person_entities = ResponseNormalizer.normalize_entities({
 		"world_entities": [

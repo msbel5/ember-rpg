@@ -5,6 +5,7 @@ const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const PovRendererConfig = preload("res://scripts/pov_renderer_config.gd")
 const WorldOverlay = preload("res://scripts/world/world_overlay.gd")
 const WorldIntentRouter = preload("res://scripts/world/world_intent_router.gd")
+const WorldViewPlanner = preload("res://scripts/world/world_view_planner.gd")
 const ENABLE_WORLD_OVERLAY := false
 
 signal command_requested(command_text: String)
@@ -285,9 +286,9 @@ func _refresh_from_state(_payload = null) -> void:
 		map_payload = TileCatalog.build_placeholder_map()
 	_update_placeholder_banner(not has_real_map or bool(map_payload.get("placeholder", false)))
 	terrain_layer.render_map(map_payload)
-	_update_attention_layers(map_payload)
-	_rebuild_atmosphere(map_payload)
-	_background_key = _resolve_background_key()
+	WorldViewPlanner.update_attention_layers(selection_layer, map_payload, GameState.entities)
+	_atmosphere_motes = WorldViewPlanner.rebuild_atmosphere(map_payload, size)
+	_background_key = WorldViewPlanner.resolve_background_key(GameState.get_display_location(), GameState.scene)
 	if ENABLE_WORLD_OVERLAY and _world_overlay != null and _world_overlay.has_method("configure"):
 		_world_overlay.configure(_current_adapter_id(), _background_key, _atmosphere_motes, _is_placeholder())
 	var player_tile := GameState.player_map_pos
@@ -296,7 +297,7 @@ func _refresh_from_state(_payload = null) -> void:
 		if sp is Array and sp.size() >= 2:
 			player_tile = Vector2i(int(sp[0]), int(sp[1]))
 	entity_layer.render_entities(player_tile, GameState.entities, _resolve_player_template())
-	world_camera.focus_on_tiles(_camera_focus_tiles(player_tile), TileCatalog.TILE_SIZE)
+	world_camera.focus_on_tiles(WorldViewPlanner.camera_focus_tiles(player_tile, GameState.entities), TileCatalog.TILE_SIZE)
 	if selection_layer.has_method("set_selected_tile") and player_tile != Vector2i.ZERO:
 		selection_layer.set_selected_tile(player_tile)
 	_set_focus_summary(WorldFocus.default_summary(GameState.get_display_location(), GameState.entities))
@@ -425,131 +426,6 @@ func _current_adapter_id() -> String:
 	return str(GameState.adapter_id).strip_edges().to_lower()
 
 
-func _update_attention_layers(map_payload: Dictionary) -> void:
-	if selection_layer == null:
-		return
-	if selection_layer.has_method("set_interest_tiles"):
-		selection_layer.set_interest_tiles([])
-	if selection_layer.has_method("set_hostile_tiles"):
-		selection_layer.set_hostile_tiles(_hostile_positions())
-	if selection_layer.has_method("set_ambient_tiles"):
-		selection_layer.set_ambient_tiles(_ambient_positions(map_payload))
-
-
-func _interactive_positions(mp: Dictionary) -> Array:
-	var result: Array = []
-	var rows = mp.get("tiles", [])
-	for y in range(rows.size()):
-		var row = rows[y]
-		if not (row is Array):
-			continue
-		for x in range(row.size()):
-			if TileCatalog.resolve_tile_name(row[x]) in WorldInteraction.INTERACTIVE_TILE_NAMES:
-				result.append(Vector2i(x, y))
-	for e in GameState.entities.get("furniture", []):
-		if e is Dictionary:
-			result.append(_entity_tile(e))
-	return result
-
-
-func _ambient_positions(mp: Dictionary) -> Array:
-	var result: Array = []
-	var rows = mp.get("tiles", [])
-	for y in range(rows.size()):
-		var row = rows[y]
-		if not (row is Array):
-			continue
-		for x in range(row.size()):
-			if TileCatalog.resolve_tile_name(row[x]) in ["well", "fountain"]:
-				result.append(Vector2i(x, y))
-	return result
-
-
-func _hostile_positions() -> Array:
-	var result: Array = []
-	for e in GameState.entities.get("enemies", []):
-		if e is Dictionary:
-			result.append(_entity_tile(e))
-	return result
-
-
-func _entity_tile(entry: Dictionary) -> Vector2i:
-	var p = entry.get("position", [0, 0])
-	if p is Array and p.size() >= 2:
-		return Vector2i(int(p[0]), int(p[1]))
-	return Vector2i.ZERO
-
-
-func _camera_focus_tiles(player_tile: Vector2i) -> Array:
-	var tiles: Array = [player_tile]
-	var nearest: Array[Dictionary] = []
-	for bucket in ["npcs", "enemies", "items", "furniture"]:
-		for e in GameState.entities.get(bucket, []):
-			if not (e is Dictionary):
-				continue
-			var t: Vector2i = _entity_tile(e)
-			var distance: int = abs(t.x - player_tile.x) + abs(t.y - player_tile.y)
-			if t == Vector2i.ZERO:
-				continue
-			nearest.append({
-				"tile": t,
-				"distance": distance,
-				"bucket": bucket,
-				"priority": _camera_focus_priority(e, bucket, distance),
-			})
-	nearest.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
-		var left_priority := int(left.get("priority", 0))
-		var right_priority := int(right.get("priority", 0))
-		if left_priority == right_priority:
-			var left_distance := int(left.get("distance", 99))
-			var right_distance := int(right.get("distance", 99))
-			if left_distance == right_distance:
-				return str(left.get("bucket", "")) < str(right.get("bucket", ""))
-			return left_distance < right_distance
-		return left_priority > right_priority
-	)
-	for entry in nearest:
-		var next_tile: Vector2i = entry.get("tile", Vector2i.ZERO)
-		if tiles.has(next_tile):
-			continue
-		tiles.append(next_tile)
-		if tiles.size() >= 5:
-			break
-	return tiles
-
-
-func _camera_focus_priority(entry: Dictionary, bucket: String, distance: int) -> int:
-	var priority := int(entry.get("placement_priority", 0))
-	var actions: Array = entry.get("context_actions", [])
-	var action_ids: Array[String] = []
-	for action in actions:
-		action_ids.append(str(action).strip_edges().to_lower())
-	match bucket:
-		"npcs":
-			priority += 110 if action_ids.has("talk") else 60
-			if str(entry.get("anchor_kind", "")) == "service":
-				priority += 25
-		"furniture":
-			if _is_service_landmark(entry):
-				priority += 80
-			else:
-				priority += 20
-		"enemies":
-			priority += 95
-		"items":
-			priority += 18
-	priority -= mini(distance, 32) * 2
-	return priority
-
-
-func _is_service_landmark(entry: Dictionary) -> bool:
-	var anchor_kind := str(entry.get("anchor_kind", "")).strip_edges().to_lower()
-	if anchor_kind in ["service", "landmark"]:
-		return true
-	var template := str(entry.get("template", entry.get("site_role", ""))).strip_edges().to_lower()
-	return template in ["altar", "anvil", "bar_counter", "bookshelf", "campfire", "door", "fountain", "well", "workbench"]
-
-
 func _world_input_locked() -> bool:
 	if GameState.has_active_dialog():
 		return true
@@ -564,28 +440,3 @@ func _world_input_locked() -> bool:
 		return true
 	return false
 
-
-func _rebuild_atmosphere(mp: Dictionary) -> void:
-	_atmosphere_motes.clear()
-	var mw := maxf(float(mp.get("width", 16)), 16.0)
-	var mh := maxf(float(mp.get("height", 12)), 12.0)
-	var density := clampi(int((mw * mh) / 96.0), 10, 28)
-	for i in range(density):
-		var s := float(i + 1)
-		_atmosphere_motes.append({
-			"x": fposmod(mw * 13.0 + s * 57.0, maxf(size.x, 320.0)),
-			"y": fposmod(mh * 11.0 + s * 31.0, maxf(size.y, 220.0)),
-			"speed": 0.35 + fposmod(s * 0.17, 0.85),
-			"drift": 4.0 + fposmod(s * 1.3, 14.0),
-			"radius": 1.2 + fposmod(s * 0.41, 1.8),
-			"phase": s * 0.63,
-			"alpha": 0.08 + fposmod(s * 0.019, 0.08),
-		})
-
-
-func _resolve_background_key() -> String:
-	var hint := GameState.get_display_location().to_lower()
-	var path := PovRendererConfig.resolve_background(hint)
-	if path.contains("dungeon") or GameState.scene == "combat":
-		return "dungeon"
-	return "harbor"

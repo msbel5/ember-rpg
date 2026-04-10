@@ -35,7 +35,10 @@ class TestWebSocketConnection:
             assert snapshot["transport"]["mode"] == "ws"
             assert snapshot["transport"]["bootstrap"] == "http"
             assert snapshot["transport"]["ws_path"] == f"/game/ws/campaigns/{cid}"
+            assert snapshot["transport"]["websocket_ready"] is True
             assert snapshot["runtime_mode"] in {"exploration_realtime", "travel", "dialog"}
+            assert isinstance(snapshot["tick_state"], dict)
+            assert isinstance(snapshot["world_ready"], bool)
 
     def test_ws_ping_pong(self, client):
         resp = client.post("/game/campaigns", json={

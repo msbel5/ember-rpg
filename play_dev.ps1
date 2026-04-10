@@ -43,7 +43,8 @@ function Test-BackendReady([string]$Url) {
     return [bool]$payload.ok `
         -and [bool]$payload.campaign_creation `
         -and [bool]$payload.campaign_runtime `
-        -and [bool]$payload.campaign_save_load
+        -and [bool]$payload.campaign_save_load `
+        -and [bool]$payload.websocket_transport
 }
 
 function Wait-BackendReady([string]$Url, [int]$Timeout) {
@@ -145,6 +146,12 @@ if (Test-BackendReady $BackendUrl) {
     if (-not (Wait-BackendReady $BackendUrl $TimeoutSeconds)) {
         Write-Host ""
         Write-Host "Backend belirtilen sürede hazır olmadı." -ForegroundColor Red
+        try {
+            $healthPayload = Invoke-RestMethod -Uri "$($BackendUrl.TrimEnd('/'))/game/health/campaign-client" -Method Get -TimeoutSec 2
+            if ($null -ne $healthPayload -and -not [bool]$healthPayload.websocket_transport) {
+                Write-Host "Backend ayağa kalktı ama WebSocket runtime desteği yok. 'websockets' bağımlılığını kurup yeniden başlat." -ForegroundColor Yellow
+            }
+        } catch {}
         if (Test-Path -LiteralPath $BackendErrLog) {
             Write-Host ""
             Write-Host "Son backend error log satırları:" -ForegroundColor Yellow

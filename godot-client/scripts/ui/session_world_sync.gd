@@ -12,7 +12,7 @@ func _init(owner) -> void:
 func initialize_runtime() -> void:
 	if GameState.campaign_id.is_empty():
 		return
-	if GameState.runtime_transport == "ws":
+	if GameState.runtime_transport == "ws" and bool(GameState.transport.get("websocket_ready", false)):
 		Backend.ensure_runtime_socket(GameState.campaign_id, GameState.ws_url, GameState.ws_path)
 	# Always pull one bootstrap snapshot when the session scene mounts.
 	# Continue/load can otherwise show the settlement before the first live tick lands,

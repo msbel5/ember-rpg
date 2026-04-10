@@ -2,9 +2,9 @@ extends Control
 
 const ScreenshotCapture = preload("res://scripts/ui/screenshot_capture.gd")
 const WorldViewWidget = preload("res://scripts/world/world_view.gd")
-# ResponseNormalizer, EmberTheme, ProfileStorage, StatusBarWidget,
-# DialogOverlay, CombatOverlay, SessionSaveSync, SessionWorldSync
-# are all available globally via class_name — no preload needed.
+const SessionSaveSync = preload("res://scripts/ui/session_save_sync.gd")
+const SessionWorldSync = preload("res://scripts/ui/session_world_sync.gd")
+const SessionShellSync = preload("res://scripts/ui/session_shell_sync.gd")
 
 const PROFILE_PATH := ProfileStorage.PROFILE_PATH
 const QUICKSAVE_SLOT := "quicksave"
@@ -20,12 +20,14 @@ var _dialog_overlay = null
 var _combat_overlay_widget = null
 var _save_sync
 var _world_sync
+var _shell_sync
 var _queued_world_commands: Array[String] = []
 
 
 func _ready() -> void:
 	_save_sync = SessionSaveSync.new(self)
 	_world_sync = SessionWorldSync.new(self)
+	_shell_sync = SessionShellSync.new(self)
 	EmberTheme.apply_game_session(self)
 	_install_status_bar()
 	_install_dialog_overlay()
@@ -61,7 +63,7 @@ func _ready() -> void:
 	instrument_rail.set_focus_summary(world_view.get_focus_summary())
 	instrument_rail.set_focus_actions(world_view.get_focus_actions())
 	_sync_dialog_overlay()
-	_sync_shell_state()
+	_shell_sync.sync_shell_state()
 
 
 func _install_status_bar() -> void:
@@ -102,8 +104,8 @@ func _install_combat_overlay() -> void:
 func _configure_modal_host() -> void:
 	if modal_host != null and modal_host.has_signal("host_closed"):
 		modal_host.host_closed.connect(_on_modal_host_closed)
-	_wire_modal_surfaces()
-	_sync_pause_panel_views()
+	_shell_sync.wire_modal_surfaces()
+	_shell_sync.sync_pause_panel_views()
 
 
 func _submit_action(text: String) -> void:
@@ -112,11 +114,11 @@ func _submit_action(text: String) -> void:
 		return
 	instrument_rail.remember_command(text)
 	if GameState.campaign_id.is_empty():
-		_append_narrative_system_text("[color=red]No active game. Start a new adventure.[/color]")
+		_shell_sync.append_narrative_system_text("[color=red]No active game. Start a new adventure.[/color]")
 		return
 	var hp := int(GameState.player.get("hp", 1))
 	if hp <= 0 and not text.to_lower().begins_with("rest"):
-		_append_narrative_system_text("[color=red]You have fallen. Type 'rest' to recover or start anew.[/color]")
+		_shell_sync.append_narrative_system_text("[color=red]You have fallen. Type 'rest' to recover or start anew.[/color]")
 		return
 	_set_waiting(true)
 	instrument_rail.clear_input()
@@ -124,7 +126,7 @@ func _submit_action(text: String) -> void:
 		Backend.submit_campaign_command(GameState.campaign_id, text, _on_campaign_action_response.bind(text))
 	await get_tree().create_timer(3.0).timeout
 	if is_waiting:
-		_show_narrative_thinking_indicator()
+		_shell_sync.show_narrative_thinking_indicator()
 
 
 func _submit_structured_action(shortcut: String, args: Dictionary, history_text: String = "") -> void:
@@ -132,7 +134,7 @@ func _submit_structured_action(shortcut: String, args: Dictionary, history_text:
 	if normalized_shortcut.is_empty() or is_waiting:
 		return
 	if GameState.campaign_id.is_empty():
-		_append_narrative_system_text("[color=red]No active game. Start a new adventure.[/color]")
+		_shell_sync.append_narrative_system_text("[color=red]No active game. Start a new adventure.[/color]")
 		return
 	var remember_text := history_text.strip_edges()
 	if not remember_text.is_empty():
@@ -149,7 +151,7 @@ func _submit_structured_action(shortcut: String, args: Dictionary, history_text:
 		)
 	await get_tree().create_timer(3.0).timeout
 	if is_waiting:
-		_show_narrative_thinking_indicator()
+		_shell_sync.show_narrative_thinking_indicator()
 
 
 func _on_campaign_action_response(data, _issued_text: String) -> void:
@@ -165,14 +167,14 @@ func _set_waiting(waiting: bool) -> void:
 	instrument_rail.set_waiting(waiting)
 	if _combat_overlay_widget != null and _combat_overlay_widget.has_method("set_waiting"):
 		_combat_overlay_widget.set_waiting(waiting)
-	var quest_panel = _panel_widget("quests")
+	var quest_panel = _shell_sync.panel_widget("quests")
 	if quest_panel != null and quest_panel.has_method("set_waiting"):
 		quest_panel.set_waiting(waiting)
-	var settlement_panel = _panel_widget("town")
+	var settlement_panel = _shell_sync.panel_widget("town")
 	if settlement_panel != null and settlement_panel.has_method("set_waiting"):
 		settlement_panel.set_waiting(waiting)
 	save_load_panel.set_busy(waiting)
-	_sync_shell_state()
+	_shell_sync.sync_shell_state()
 
 
 func _finish_turn_sync() -> void:
@@ -186,8 +188,8 @@ func _finish_turn_sync() -> void:
 func _on_state_updated() -> void:
 	_save_sync.remember_player_id()
 	_ensure_campaign_socket()
-	_sync_pause_panel_views()
-	_sync_shell_state()
+	_shell_sync.sync_pause_panel_views()
+	_shell_sync.sync_shell_state()
 
 
 func _ensure_campaign_socket() -> void:
@@ -199,8 +201,8 @@ func _ensure_campaign_socket() -> void:
 
 func _on_dialog_state_changed(_payload: Dictionary) -> void:
 	_sync_dialog_overlay()
-	_sync_pause_panel_views()
-	_sync_shell_state()
+	_shell_sync.sync_pause_panel_views()
+	_shell_sync.sync_shell_state()
 
 
 func _sync_dialog_overlay() -> void:
@@ -221,23 +223,23 @@ func _sync_dialog_overlay() -> void:
 
 
 func _on_dialog_overlay_closed() -> void:
-	_sync_shell_state()
+	_shell_sync.sync_shell_state()
 
 
 func _on_combat_started() -> void:
 	if modal_host != null and modal_host.has_method("hide_host"):
 		modal_host.hide_host()
-	_append_narrative_system_text("[color=red]Combat begins.[/color]")
-	_sync_shell_state()
+	_shell_sync.append_narrative_system_text("[color=red]Combat begins.[/color]")
+	_shell_sync.sync_shell_state()
 
 
 func _on_combat_ended() -> void:
-	_append_narrative_system_text("[color=green]Combat ended.[/color]")
-	_sync_shell_state()
+	_shell_sync.append_narrative_system_text("[color=green]Combat ended.[/color]")
+	_shell_sync.sync_shell_state()
 
 
 func _on_level_up(new_level: int) -> void:
-	_append_narrative_system_text("[color=yellow]Level up. You reached level %d.[/color]" % new_level)
+	_shell_sync.append_narrative_system_text("[color=yellow]Level up. You reached level %d.[/color]" % new_level)
 
 
 func _input(event: InputEvent) -> void:
@@ -269,7 +271,7 @@ func _input(event: InputEvent) -> void:
 	if event.keycode == KEY_ESCAPE:
 		if modal_host != null and modal_host.has_method("active_panel_id") and not str(modal_host.active_panel_id()).is_empty():
 			modal_host.hide_host()
-			_sync_shell_state()
+			_shell_sync.sync_shell_state()
 			get_viewport().set_input_as_handled()
 			return
 		if modal_host != null and modal_host.has_method("has_panel") and modal_host.has_panel("pause") and not GameState.is_in_combat():
@@ -324,7 +326,7 @@ func _on_backend_error(message: String) -> void:
 	_queued_world_commands.clear()
 	_set_waiting(false)
 	save_load_panel.set_status(message)
-	_append_narrative_system_text("[color=red][%s][/color]" % message)
+	_shell_sync.append_narrative_system_text("[color=red][%s][/color]" % message)
 
 
 func _on_runtime_message_received(message: Dictionary) -> void:
@@ -348,7 +350,7 @@ func _on_runtime_message_received(message: Dictionary) -> void:
 
 func _on_runtime_socket_disconnected(_campaign_id: String, _reason: String) -> void:
 	if GameState.has_active_campaign():
-		_append_narrative_system_text("[color=orange]Runtime link dropped. Attempting to reconnect.[/color]")
+		_shell_sync.append_narrative_system_text("[color=orange]Runtime link dropped. Attempting to reconnect.[/color]")
 		call_deferred("_ensure_campaign_socket")
 
 
@@ -359,7 +361,7 @@ func _toggle_tactical_pause() -> void:
 	if GameState.runtime_mode == "tactical_pause":
 		target_mode = "exploration_realtime"
 	if not Backend.set_runtime_mode(GameState.campaign_id, target_mode):
-		_append_narrative_system_text("[color=orange]Live runtime pause is unavailable.[/color]")
+		_shell_sync.append_narrative_system_text("[color=orange]Live runtime pause is unavailable.[/color]")
 
 
 func _on_world_command_requested(command_text: String) -> void:
@@ -396,112 +398,16 @@ func _on_structured_action_requested(shortcut: String, args: Dictionary, history
 	_submit_structured_action(shortcut, args, history_text)
 
 
-func _wire_modal_surfaces() -> void:
-	if modal_host == null or not modal_host.has_method("available_panel_ids"):
-		return
-	for panel_id in modal_host.available_panel_ids():
-		var child = modal_host.panel_node(panel_id)
-		if child == null:
-			continue
-		if child.has_signal("command_requested"):
-			var callable := Callable(self, "_submit_action")
-			if not child.command_requested.is_connected(callable):
-				child.command_requested.connect(callable)
-		if child.has_signal("travel_requested"):
-			var travel_callable := Callable(self, "_on_travel_requested")
-			if not child.travel_requested.is_connected(travel_callable):
-				child.travel_requested.connect(travel_callable)
-		if child.has_signal("structured_action_requested"):
-			var structured_callable := Callable(self, "_on_structured_action_requested")
-			if not child.structured_action_requested.is_connected(structured_callable):
-				child.structured_action_requested.connect(structured_callable)
-		if child.has_signal("panel_requested"):
-			var panel_callable := Callable(self, "_on_shell_panel_requested")
-			if not child.panel_requested.is_connected(panel_callable):
-				child.panel_requested.connect(panel_callable)
-		if child.has_signal("close_requested"):
-			var close_callable := Callable(self, "_on_modal_surface_close_requested")
-			if not child.close_requested.is_connected(close_callable):
-				child.close_requested.connect(close_callable)
-
-
 func _on_shell_panel_requested(panel_id: String) -> void:
-	if modal_host == null or str(panel_id).strip_edges().is_empty():
-		return
-	if is_waiting or save_load_panel.visible:
-		_sync_shell_state()
-		return
-	var normalized := str(panel_id).strip_edges().to_lower()
-	var allow_during_dialog := normalized == "narrative"
-	if (GameState.has_active_dialog() and not allow_during_dialog) or GameState.is_in_combat():
-		_sync_shell_state()
-		return
-	if not modal_host.has_panel(normalized):
-		_sync_shell_state()
-		return
-	if normalized == "pause":
-		if str(modal_host.active_panel_id()) == normalized:
-			modal_host.hide_host()
-		else:
-			modal_host.show_panel(normalized)
-	else:
-		modal_host.toggle_panel(normalized)
-	_sync_shell_state()
+	_shell_sync.on_shell_panel_requested(panel_id)
 
 
 func _on_modal_host_closed() -> void:
-	_sync_shell_state()
+	_shell_sync.on_modal_host_closed()
 
 
 func _on_modal_surface_close_requested() -> void:
-	if modal_host != null and modal_host.has_method("hide_host"):
-		modal_host.hide_host()
-
-
-func _sync_shell_state() -> void:
-	if modal_host == null or instrument_rail == null:
-		return
-	_sync_pause_panel_views()
-	var shell_mode := GameState.current_shell_mode()
-	if shell_mode != "exploration" and not str(modal_host.active_panel_id()).is_empty():
-		modal_host.hide_host()
-	var available_ids: Array[String] = []
-	if modal_host.has_method("available_panel_ids"):
-		available_ids = modal_host.available_panel_ids()
-	var panel_states := {}
-	var interaction_locked: bool = is_waiting or save_load_panel.visible or GameState.has_active_dialog() or GameState.is_in_combat()
-	for panel_id in ["hero", "items", "map", "quests", "town", "pause"]:
-		var exists := available_ids.has(panel_id)
-		panel_states[panel_id] = {
-			"visible": exists,
-			"enabled": exists and not interaction_locked,
-			"tooltip": "",
-		}
-	if interaction_locked and GameState.has_active_dialog() and available_ids.has("narrative"):
-		panel_states["hero"]["tooltip"] = "Panels close while dialog is active."
-		panel_states["items"]["tooltip"] = "Panels close while dialog is active."
-		panel_states["map"]["tooltip"] = "Panels close while dialog is active."
-		panel_states["quests"]["tooltip"] = "Panels close while dialog is active."
-		panel_states["town"]["tooltip"] = "Panels close while dialog is active."
-		panel_states["pause"]["tooltip"] = "Pause intelligence is disabled while dialog or combat is active."
-	var active_panel_id := str(modal_host.active_panel_id())
-	instrument_rail.set_panel_actions(panel_states, active_panel_id)
-
-
-func _sync_pause_panel_views() -> void:
-	if modal_host == null or not modal_host.has_method("panel_node") or not modal_host.has_panel("pause"):
-		return
-	var pause_panel = modal_host.panel_node("pause")
-	if pause_panel == null:
-		return
-	if pause_panel.has_method("set_advisor_view"):
-		pause_panel.set_advisor_view(GameState.advisor_view)
-	if pause_panel.has_method("set_knowledge_view"):
-		pause_panel.set_knowledge_view(GameState.knowledge_view)
-	if pause_panel.has_method("sync_from_game_state"):
-		pause_panel.sync_from_game_state()
-	if str(modal_host.active_panel_id()) == "pause" and pause_panel.has_method("open_menu"):
-		pause_panel.open_menu()
+	_shell_sync.on_modal_surface_close_requested()
 
 
 func _capture_visual_proof(folder: String, prefix: String, include_world: bool) -> void:
@@ -515,34 +421,17 @@ func _capture_visual_proof(folder: String, prefix: String, include_world: bool) 
 	if not world_path.is_empty():
 		parts.append("world=%s" % world_path)
 	if parts.is_empty():
-		_append_narrative_system_text("[color=red]Viewport capture failed.[/color]")
+		_shell_sync.append_narrative_system_text("[color=red]Viewport capture failed.[/color]")
 		return
-	_append_narrative_system_text("[color=gray]Visual proof saved: %s[/color]" % " | ".join(parts))
+	_shell_sync.append_narrative_system_text("[color=gray]Visual proof saved: %s[/color]" % " | ".join(parts))
 
 
 func _on_save_completed(data, keep_panel_open: bool) -> void:
 	_save_sync.on_save_completed(data, keep_panel_open)
 
 
-func _panel_widget(panel_id: String):
-	if modal_host == null or not modal_host.has_method("panel_node"):
-		return null
-	return modal_host.panel_node(panel_id)
-
-
 func _append_narrative_system_text(text: String) -> void:
-	var panel = _panel_widget("narrative")
-	if panel != null and panel.has_method("append_system_text"):
-		panel.append_system_text(text)
-
-
-func _show_narrative_thinking_indicator() -> void:
-	var panel = _panel_widget("narrative")
-	if panel != null and panel.has_method("show_thinking_indicator"):
-		panel.show_thinking_indicator()
-
+	_shell_sync.append_narrative_system_text(text)
 
 func _load_narrative_history(lines: Array) -> void:
-	var panel = _panel_widget("narrative")
-	if panel != null and panel.has_method("load_history"):
-		panel.load_history(lines)
+	_shell_sync.load_narrative_history(lines)

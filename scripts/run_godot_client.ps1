@@ -21,7 +21,7 @@ function Test-BackendHealth {
             return $false
         }
         $payload = $response.Content | ConvertFrom-Json
-        return ($payload.ok -eq $true) -and ($payload.campaign_creation -eq $true) -and ($payload.campaign_runtime -eq $true) -and ($payload.campaign_save_load -eq $true)
+        return ($payload.ok -eq $true) -and ($payload.campaign_creation -eq $true) -and ($payload.campaign_runtime -eq $true) -and ($payload.campaign_save_load -eq $true) -and ($payload.websocket_transport -eq $true)
     }
     catch {
         return $false
@@ -54,6 +54,17 @@ if (-not $NoBackend) {
                 Start-Sleep -Milliseconds 400
             }
             if (-not (Test-BackendHealth -Url $BackendHealthUrl)) {
+                try {
+                    $payload = (Invoke-WebRequest -UseBasicParsing -Uri $BackendHealthUrl -TimeoutSec 2).Content | ConvertFrom-Json
+                    if ($payload.websocket_transport -ne $true) {
+                        throw "Backend health is up but WebSocket runtime support is missing. Install backend websocket requirements and relaunch."
+                    }
+                }
+                catch {
+                    if ($_.Exception.Message -like "*WebSocket runtime support is missing*") {
+                        throw
+                    }
+                }
                 throw "Backend failed to become healthy at $BackendHealthUrl"
             }
         }

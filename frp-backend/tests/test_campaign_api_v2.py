@@ -98,6 +98,10 @@ def _first_store_item(payload: dict) -> tuple[str, str]:
 
 def test_create_campaign_returns_campaign_snapshot():
     payload = _create_campaign()
+    assert payload["transport"]["websocket_ready"] is True
+    assert payload["runtime_mode"] in {"exploration_realtime", "dialog", "travel", "combat_turn_based", "tactical_pause"}
+    assert payload["world_ready"] is True
+    assert {"running", "paused", "pause_reasons", "interval_seconds", "tick_hours_per_interval"} <= set(payload["tick_state"])
     assert payload["adapter_id"] == "fantasy_ember"
     assert payload["campaign"]["world"]["active_region_id"]
     assert payload["campaign"]["world_state"]["active_region_id"]
@@ -132,13 +136,14 @@ def test_campaign_client_health_endpoint_reports_required_capabilities():
     response = client.get("/game/health/campaign-client")
 
     assert response.status_code == 200
-    assert response.json() == {
-        "ok": True,
-        "campaign_creation": True,
-        "campaign_runtime": True,
-        "campaign_save_load": True,
-        "schema_version": "4.0",
-    }
+    payload = response.json()
+    assert payload["ok"] is True
+    assert payload["campaign_creation"] is True
+    assert payload["campaign_runtime"] is True
+    assert payload["campaign_save_load"] is True
+    assert payload["schema_version"] == "4.0"
+    assert payload["websocket_transport"] is True
+    assert payload["websocket_library"] in {"websockets", "wsproto"}
 
 
 def test_create_scifi_campaign_returns_scifi_world_state():
@@ -155,6 +160,9 @@ def test_campaign_command_and_region_endpoints_work():
     assert command.status_code == 200
     body = command.json()
     assert body["command_type"] == "exploration"
+    assert body["transport"]["websocket_ready"] is True
+    assert {"running", "paused", "pause_reasons", "interval_seconds", "tick_hours_per_interval"} <= set(body["tick_state"])
+    assert isinstance(body["world_ready"], bool)
     assert body["campaign"]["recent_event_log"]
     assert body["campaign"]["jobs"]
     assert "unrest" in body["campaign"]["colony_pressure"]
@@ -833,4 +841,3 @@ def test_legacy_session_routes_are_not_mounted():
 
     assert create_response.status_code == 404
     assert save_response.status_code == 404
-

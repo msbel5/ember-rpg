@@ -17,6 +17,8 @@ var bootstrap_transport: String = "http"
 var ws_url: String = ""
 var ws_path: String = ""
 var runtime_mode: String = "exploration_realtime"
+var world_ready: bool = false
+var tick_state: Dictionary = {}
 var player: Dictionary = {}
 var scene: String = "exploration"  # exploration | combat | dialogue | rest
 var location: String = ""
@@ -125,6 +127,10 @@ func update_from_response(data: Dictionary) -> void:
 		ws_path = str(transport.get("ws_path", ws_path))
 	if data.has("runtime_mode"):
 		runtime_mode = str(data["runtime_mode"]).strip_edges().to_lower()
+	if data.has("world_ready"):
+		world_ready = bool(data["world_ready"])
+	if data.has("tick_state") and data["tick_state"] is Dictionary:
+		tick_state = data["tick_state"]
 	if data.has("runtime_transport"):
 		runtime_transport = str(data["runtime_transport"])
 	if data.has("bootstrap_transport"):
@@ -305,6 +311,8 @@ func reset() -> void:
 	ws_url = ""
 	ws_path = ""
 	runtime_mode = "exploration_realtime"
+	world_ready = false
+	tick_state = {}
 	player = {}
 	scene = "exploration"
 	location = ""

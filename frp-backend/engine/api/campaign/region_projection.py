@@ -198,6 +198,22 @@ for (_target_type, _interaction_type), _rule in load_interaction_rules().items()
     _RULES_BY_TARGET_TYPE[_target_type].append((_interaction_type, dict(_rule)))
 
 
+def _entity_kind_from_payload(entity_type: str, disposition: str = "") -> str:
+    normalized_type = str(entity_type).strip().lower()
+    normalized_disposition = str(disposition).strip().lower()
+    if normalized_type == "item":
+        return "item"
+    if normalized_type == "furniture":
+        return "furniture"
+    if normalized_type == "creature":
+        return "hostile" if normalized_disposition == "hostile" else "creature"
+    if normalized_type == "npc":
+        return "hostile" if normalized_disposition == "hostile" else "npc"
+    if normalized_type in {"object", "fixture"}:
+        return "furniture"
+    return normalized_type or "object"
+
+
 def _is_party_capable_actor(actor: Any) -> bool:
     if actor is None:
         return False
@@ -840,7 +856,26 @@ def _placement_projection_fields(payload: dict[str, Any]) -> dict[str, Any]:
             "site_role": template or role or "fixture",
             "placement_priority": placement_priority,
         }
-    return {}
+    if entity_type in {"creature", "enemy"}:
+        return {
+            "site_anchor_id": f"{building_id or 'site'}:threat:{payload.get('id', '')}",
+            "anchor_kind": "threat",
+            "site_role": role or str(payload.get("template", "")).strip().lower() or "hostile",
+            "placement_priority": 88,
+        }
+    if entity_type == "item":
+        return {
+            "site_anchor_id": f"{building_id or 'site'}:loot:{payload.get('id', '')}",
+            "anchor_kind": "loot",
+            "site_role": role or str(payload.get("template", "")).strip().lower() or "item",
+            "placement_priority": 26,
+        }
+    return {
+        "site_anchor_id": f"{building_id or 'site'}:ambient:{payload.get('id', '')}",
+        "anchor_kind": "ambient",
+        "site_role": role or entity_type or "object",
+        "placement_priority": 20,
+    }
 
 
 def _semantic_spawn_position(context: CampaignContext, fallback: tuple[int, int]) -> tuple[int, int]:
@@ -1013,10 +1048,12 @@ def _build_region_world_entities(world: WorldBlueprint, region_snapshot: RegionS
             {
                 "id": npc_id,
                 "entity_type": "npc",
+                "entity_kind": "npc",
                 "name": str(npc.get("name", str(npc.get("role", "Resident")).replace("_", " ").title())),
                 "position": [int(npc["x"]), int(npc["y"])],
                 "role": str(npc.get("role", "resident")),
                 "template": str(npc.get("template", npc.get("role", "merchant"))),
+                "template_id": str(npc.get("template", npc.get("role", "merchant"))),
                 "activity": str(npc.get("activity", "")),
                 "building_kind": str(npc.get("building_kind", "")),
                 "building_id": npc.get("building_id"),
@@ -1031,9 +1068,11 @@ def _build_region_world_entities(world: WorldBlueprint, region_snapshot: RegionS
             {
                 "id": str(furniture.get("id", f"{furniture['kind']}_{furniture['x']}_{furniture['y']}")),
                 "entity_type": "furniture",
+                "entity_kind": "furniture",
                 "name": str(furniture["kind"]).replace("_", " ").title(),
                 "position": [int(furniture["x"]), int(furniture["y"])],
                 "template": furniture_template(str(furniture["kind"])),
+                "template_id": furniture_template(str(furniture["kind"])),
                 "building_id": furniture.get("building_id"),
                 "context_actions": furniture_actions(str(furniture["kind"])),
             }
@@ -1044,9 +1083,11 @@ def _build_region_world_entities(world: WorldBlueprint, region_snapshot: RegionS
             {
                 "id": f"{region_snapshot.region_id}_fauna_0",
                 "entity_type": "creature",
+                "entity_kind": "hostile",
                 "name": str(region["fauna"][0]).replace("_", " ").title(),
                 "position": [region_snapshot.width - 5, region_snapshot.height - 5],
                 "template": str(region["fauna"][0]).lower(),
+                "template_id": str(region["fauna"][0]).lower(),
                 "disposition": "hostile",
                 "context_actions": ["attack", "examine"],
             }
@@ -1097,14 +1138,22 @@ def _build_context_world_entities(context: CampaignContext) -> list[dict[str, An
             "building_kind": str(record.get("building_kind", "")),
             "context_actions": list(record.get("context_actions", [])),
         }
-        if record.get("template") is not None:
-            payload["template"] = str(record.get("template", ""))
+        disposition = str(record.get("disposition", record.get("attitude", ""))).strip().lower()
+        payload["entity_kind"] = str(record.get("entity_kind", _entity_kind_from_payload(entity_type, disposition)))
+        template_id = str(
+            record.get(
+                "template_id",
+                record.get("template", record.get("role", entity_type or "object")),
+            )
+        ).strip()
+        if template_id:
+            payload["template_id"] = template_id
+            payload["template"] = str(record.get("template", template_id))
         if record.get("faction") is not None:
             payload["faction"] = record.get("faction")
         for field_name in ("building_id", "home_building_id", "work_building_id"):
             if record.get(field_name) is not None:
                 payload[field_name] = record.get(field_name)
-        disposition = str(record.get("disposition", record.get("attitude", ""))).strip().lower()
         if disposition:
             payload["disposition"] = disposition
         locked = _record_flag(record, "locked")
@@ -1140,6 +1189,13 @@ def _augment_world_entities(
         payload["available_interactions"] = descriptors
         payload["primary_interaction_id"] = _primary_interaction_id(descriptors, normalized_context_actions)
         payload["target_kind"] = target_kind
+        if not str(payload.get("entity_kind", "")).strip():
+            payload["entity_kind"] = _entity_kind_from_payload(
+                str(payload.get("entity_type", "")),
+                str(payload.get("disposition", payload.get("attitude", ""))),
+            )
+        if not str(payload.get("template_id", "")).strip() and str(payload.get("template", "")).strip():
+            payload["template_id"] = str(payload.get("template", "")).strip()
         payload.update(_placement_projection_fields(payload))
         payload.update(
             _social_projection_fields(
@@ -1714,11 +1770,13 @@ def seed_region_entities(
         context.entities[entity.id] = {
             "name": entity.name,
             "type": "npc",
+            "entity_kind": "npc",
             "position": [entity.position[0], entity.position[1]],
             "faction": controller,
             "role": role,
             "attitude": "friendly",
             "template": str(spawn.get("template", role)),
+            "template_id": str(spawn.get("template", role)),
             "activity": str(spawn.get("activity", "")),
             "building_kind": str(spawn.get("building_kind", "")),
             "building_id": spawn.get("building_id"),
@@ -1747,9 +1805,11 @@ def seed_region_entities(
         context.entities[furniture_entity.id] = {
             "name": furniture_entity.name,
             "type": "furniture",
+            "entity_kind": "furniture",
             "position": [furniture_entity.position[0], furniture_entity.position[1]],
             "role": str(furniture["kind"]),
             "template": furniture_template(str(furniture["kind"])),
+            "template_id": furniture_template(str(furniture["kind"])),
             "building_id": furniture.get("building_id"),
             "context_actions": furniture_actions(str(furniture["kind"])),
             "entity_ref": furniture_entity,
@@ -1775,10 +1835,13 @@ def seed_region_entities(
         context.entities[hostile.id] = {
             "name": hostile.name,
             "type": "creature",
+            "entity_kind": "hostile",
             "position": [hostile.position[0], hostile.position[1]],
             "faction": hostile.faction,
             "role": hostile.job,
             "attitude": "hostile",
+            "template": str(region["fauna"][0]).lower(),
+            "template_id": str(region["fauna"][0]).lower(),
             "entity_ref": hostile,
         }
 

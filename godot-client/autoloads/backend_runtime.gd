@@ -40,6 +40,7 @@ func _run_bootstrap() -> void:
 	var candidates = _candidate_urls()
 	for candidate in candidates:
 		var payload = await _probe_backend(candidate)
+		_record_health_failure(payload)
 		if _health_is_ready(payload):
 			_commit_backend(candidate, payload)
 			return
@@ -61,17 +62,20 @@ func _run_bootstrap() -> void:
 		await get_tree().create_timer(1.0).timeout
 		for candidate in candidates:
 			var payload = await _probe_backend(candidate)
+			_record_health_failure(payload)
 			if _health_is_ready(payload):
 				_commit_backend(candidate, payload)
 				return
 	# Final attempt: try launching managed backend on alternate port
 	if OS.is_debug_build():
 		var launched = await _launch_managed_backend()
+		_record_health_failure(launched.get("payload", {}))
 		if _health_is_ready(launched.get("payload", {})):
 			_commit_backend(str(launched.get("url", "")), launched.get("payload", {}))
 			return
 	backend_ready = false
-	last_error = "Campaign backend is unavailable. Start the backend or fix the configured URL."
+	if last_error.is_empty():
+		last_error = "Campaign backend is unavailable. Start the backend or fix the configured URL."
 	status_changed.emit(last_error)
 	bootstrap_finished.emit(false)
 
@@ -140,7 +144,15 @@ func _health_is_ready(payload: Dictionary) -> bool:
 	return bool(payload.get("ok", false)) \
 		and bool(payload.get("campaign_creation", false)) \
 		and bool(payload.get("campaign_runtime", false)) \
-		and bool(payload.get("campaign_save_load", false))
+		and bool(payload.get("campaign_save_load", false)) \
+		and bool(payload.get("websocket_transport", false))
+
+
+func _record_health_failure(payload: Dictionary) -> void:
+	if payload.is_empty():
+		return
+	if not bool(payload.get("websocket_transport", false)):
+		last_error = "Campaign backend is missing WebSocket runtime support. Install backend requirements and relaunch."
 
 
 func _launch_managed_backend(prefer_spawn: bool = false) -> Dictionary:
