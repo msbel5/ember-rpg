@@ -1265,14 +1265,38 @@ class LocalSDXLGenerator:
             self.torch.cuda.empty_cache()
 
 
+_REMBG_SESSION: Any = None
+_REMBG_MODEL_NAME = "isnet-general-use"  # far better hard-edge preservation than default u2net
+                                         # (handles dark blade tips, fine hair wisps, etc.)
+
+
+def _get_rembg_session() -> Any:
+    global _REMBG_SESSION
+    if _REMBG_SESSION is not None:
+        return _REMBG_SESSION if _REMBG_SESSION is not False else None
+    try:
+        from rembg import new_session  # type: ignore
+        _REMBG_SESSION = new_session(_REMBG_MODEL_NAME)
+        print(f"[rembg] session ready: {_REMBG_MODEL_NAME}")
+        return _REMBG_SESSION
+    except Exception as exc:  # pragma: no cover - depends on local environment
+        print(f"[rembg] could not init {_REMBG_MODEL_NAME}, falling back to default: {exc}")
+        _REMBG_SESSION = False
+        return None
+
+
 def remove_background(img: Image.Image) -> Image.Image:
     try:
-        from rembg import remove
+        from rembg import remove  # type: ignore
 
         buf = BytesIO()
         img.save(buf, format="PNG")
         buf.seek(0)
-        result = remove(buf.read())
+        session = _get_rembg_session()
+        if session is not None:
+            result = remove(buf.read(), session=session)
+        else:
+            result = remove(buf.read())
         return Image.open(BytesIO(result)).convert("RGBA")
     except ImportError:
         return img.convert("RGBA")
