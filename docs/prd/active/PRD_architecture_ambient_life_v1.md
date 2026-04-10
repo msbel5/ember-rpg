@@ -50,7 +50,7 @@ This PRD defines the minimum vertical slice that produces visible ambient NPC mo
 
 ## 3. Functional Requirements (FR)
 
-**FR-01:** A new class `VisualTickLoop` MUST exist in `frp-backend/engine/api/campaign/visual_tick_loop.py` that runs an asyncio task at a configurable interval (default 1.0 second) while a campaign is active and in exploration mode. It MUST NOT run during combat, dialog, tactical pause, or modal screens.
+**FR-01:** A new class `VisualTickLoop` MUST exist in `frp-backend/engine/api/campaign/visual_tick_loop.py` that runs an asyncio task at a configurable interval (**default 33 ms = ~30 Hz**) while a campaign is active and in exploration mode. It MUST NOT run during combat, dialog, tactical pause, or modal screens. The interval is tunable via constructor param `tick_interval` and env var `EMBER_VISUAL_TICK_INTERVAL` (seconds, float); valid range `0.016` (~60 Hz) to `1.0` (slow fallback). User-confirmed on 2026-04-10 that 30-subticks-per-second is acceptable — default 30 Hz is the target; 1 Hz is the fallback only if performance does not hold. The implementing agent MUST measure and report per-tick CPU on a 20-NPC area before locking the default, adjusting upward if budget is blown.
 
 **FR-02:** Each tick, `VisualTickLoop` MUST iterate all NPCs in the player's current area that have a `wander_tree` attached, evaluate their behavior tree once, collect any resulting position/facing changes, and push a compact `visual_delta` message through the existing WebSocket channel.
 
@@ -66,14 +66,51 @@ This PRD defines the minimum vertical slice that produces visible ambient NPC mo
 
 Only actors whose state changed since the previous visual tick are included. Empty actor lists are allowed (keepalive) but throttled to once per 5 visual ticks max.
 
-**FR-04:** The behavior tree MUST support these new leaf nodes (in `frp-backend/engine/world/behavior_tree.py` or a new sibling `behavior_tree_leaves.py`):
+**FR-04:** The behavior tree MUST support these new leaf nodes (in `frp-backend/engine/world/behavior_tree.py` or a new sibling `behavior_tree_leaves.py`). Each MUST be a subclass of `BehaviorNode` with the exact signatures and post-tick contracts below — Copilot CLI MUST generate these exact method names:
 
-- `WanderInBoundsNode(center: (int,int), radius: int, step_cadence: int)`: Picks a random reachable tile within `radius` of `center` every `step_cadence` visual ticks. Returns RUNNING while moving, SUCCESS when arrived, FAILURE if no reachable tile.
-- `FollowScheduleNode(schedule: Dict[int, str], waypoints: Dict[str, (int,int)])`: Reads current game hour, looks up the waypoint name for that hour (falling back to previous hour), walks the actor toward `waypoints[name]`. Returns RUNNING while traveling, SUCCESS on arrival.
-- `GoToWaypointNode(target: (int,int))`: Single one-shot walker. Uses the existing backend pathfinder if one exists, otherwise a simple straight-line Bresenham fallback.
-- `FaceTargetNode(target: (int,int))`: Sets `actor.facing` to the 8-compass direction from actor position toward target.
-- `WaitNode(ticks: int)`: Returns RUNNING for `ticks` visual ticks, then SUCCESS.
-- `SleepAtNightNode(bed: (int,int), night_hours: range)`: If current hour is in `night_hours`, walk to `bed`, set `state="sleep"`, stay there. Exits SUCCESS at dawn.
+    class WanderInBoundsNode(BehaviorNode):
+        def __init__(self, center: tuple[int, int], radius: int, step_cadence: int = 15, name: str = "WanderInBounds") -> None: ...
+        def tick(self, ctx: BehaviorContext) -> Status: ...
+            # Post: if ctx.entity.position changes, ctx.blackboard["last_step_tick"] = current tick
+            #       sets ctx.entity.facing toward chosen target
+            #       returns RUNNING while moving, SUCCESS on arrival, FAILURE if no reachable tile in radius
+            #       step_cadence controls how many visual ticks between movement decisions
+
+    class FollowScheduleNode(BehaviorNode):
+        def __init__(self, schedule: dict[int, str], waypoints: dict[str, tuple[int, int]], name: str = "FollowSchedule") -> None: ...
+        def tick(self, ctx: BehaviorContext) -> Status: ...
+            # Reads ctx.game_time.hour (0..23). Finds self.schedule.get(hour) or falls through
+            # to previous scheduled hour (search backward). If no schedule entry, returns FAILURE.
+            # Calls GoToWaypointNode.tick() internally with target = self.waypoints[waypoint_name]
+            # Returns RUNNING while walking, SUCCESS on arrival, FAILURE if waypoint name unknown
+
+    class GoToWaypointNode(BehaviorNode):
+        def __init__(self, target: tuple[int, int], name: str = "GoToWaypoint") -> None: ...
+        def tick(self, ctx: BehaviorContext) -> Status: ...
+            # Moves ctx.entity one tile toward self.target using the backend pathfinder if available,
+            # otherwise Bresenham step. Sets ctx.entity.facing each step.
+            # Returns RUNNING until arrived, SUCCESS on arrival.
+
+    class FaceTargetNode(BehaviorNode):
+        def __init__(self, target: tuple[int, int], name: str = "FaceTarget") -> None: ...
+        def tick(self, ctx: BehaviorContext) -> Status: ...
+            # Sets ctx.entity.facing to the 8-compass direction from entity position toward target.
+            # Always returns SUCCESS. Non-blocking.
+
+    class WaitNode(BehaviorNode):
+        def __init__(self, ticks: int, name: str = "Wait") -> None: ...
+        def tick(self, ctx: BehaviorContext) -> Status: ...
+            # Uses ctx.blackboard["{self.name}_elapsed"] counter.
+            # Returns RUNNING for self.ticks consecutive ticks, then SUCCESS and resets counter.
+
+    class SleepAtNightNode(BehaviorNode):
+        def __init__(self, bed: tuple[int, int], night_hours: range, name: str = "SleepAtNight") -> None: ...
+        def tick(self, ctx: BehaviorContext) -> Status: ...
+            # If ctx.game_time.hour not in self.night_hours, returns FAILURE (lets priority fall through).
+            # Otherwise walks to self.bed via GoToWaypointNode.tick(), then sets ctx.entity.state = "sleep".
+            # Returns RUNNING while walking, SUCCESS on bed arrival, stays SUCCESS during night.
+
+Pathfinder fallback note: if no backend pathfinder exists yet, implement a simple helper `def step_toward(pos, target, map_data) -> tuple[int,int]` in `behavior_tree_leaves.py` using 8-way Bresenham with obstacle check from `map_data["tiles"]`. Document this as a known limitation to be replaced when `PRD_architecture_pathfinding_v1.md` lands.
 
 **FR-05:** A default ambient behavior tree MUST be constructed by a new helper `build_default_ambient_tree(npc_record) -> BehaviorNode` that composes: `PriorityNode([SleepAtNightNode(...), FollowScheduleNode(...), WanderInBoundsNode(...)])`. This becomes the default for any NPC flagged `ambient_life: true` in the authored data.
 
