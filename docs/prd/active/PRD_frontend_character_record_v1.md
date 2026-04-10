@@ -197,7 +197,126 @@ The widget is self-contained; state comes from `GameState.character_sheet`.
 
 All three MUST be green.
 
-## 12. Implementation notes (non-binding)
+## 12. Method catalog — GemRB GUIREC.py + GUIRECCommon.py → Godot mapping
+
+The implementation MUST provide Godot equivalents for every GemRB function listed below. Source: `gemrb/GUIScripts/GUIREC.py` (838 LOC) and `gemrb/GUIScripts/GUIRECCommon.py` (859 LOC). Method names may adapt to idiomatic GDScript; responsibilities MUST be covered one-to-one.
+
+### Main record window (must_have)
+
+    # GemRB: InitRecordsWindow(Window), UpdateRecordsWindow(Window)
+    func init_record_panel() -> void
+    func update_record_panel() -> void
+    
+    # GemRB: UpdateActorDescription(Window) — updates the biography / stat overview text
+    func update_actor_description() -> void
+    
+    # GemRB: GetStatOverview(pc) — produces the multi-line text block at the bottom
+    func get_stat_overview(pc_id: String) -> String
+
+### Ability bonus display (must_have)
+
+    # GemRB: GetAbilityBonuses(pc, expand=True)
+    func get_ability_bonuses(pc_id: String, expand: bool = true) -> Dictionary
+        # returns {to_hit_bonus, damage_bonus, ac_bonus, save_bonus, spell_bonus, weight_allowance, ...}
+    
+    # GemRB: GetBonusSpells(pc, expand=True)
+    func get_bonus_spells(pc_id: String, expand: bool = true) -> Dictionary
+        # returns {level_1: int, level_2: int, ..., level_7: int} — wisdom bonus spells per day for clerics/druids
+    
+    # GemRB: TypeSetStats(stats, pc, recolor=False)
+    func type_set_stats(stats_dict: Dictionary, pc_id: String, recolor: bool = false) -> Array[String]
+        # formats a list of rich-text lines for the overview panel
+
+### Exportability / dual-class / level up (must_have queries)
+
+    # GemRB: Exportable(pc)
+    func is_exportable(pc_id: String) -> bool
+    
+    # GemRB: CanDualClass(pc) — from GUICommon
+    func can_dual_class(pc_id: String) -> bool
+    
+    # GemRB: LUCommon.CanLevelUp(pc)
+    func can_level_up(pc_id: String) -> bool
+
+### Customize sub-window (must_have — separate modal)
+
+    # GemRB: OpenCustomizeWindow()
+    func open_customize_modal() -> void
+    
+    # GemRB: OpenPortraitSelectWindow, PortraitLeftPress, PortraitRightPress, PortraitDonePress
+    func open_portrait_select() -> void
+    func portrait_select_left() -> void
+    func portrait_select_right() -> void
+    func portrait_select_done() -> void
+    
+    # GemRB: OpenCustomPortraitWindow, CustomPortraitDonePress, LargeCustomPortrait, SmallCustomPortrait
+    func open_custom_portrait_file_picker() -> void
+    func apply_custom_portrait(large_slug: String, small_slug: String) -> void
+
+### Sound set sub-window
+
+    # GemRB: OpenSoundWindow, CloseSoundWindow, DoneSoundWindow, PlaySoundPressed, NextSound
+    func open_sound_set_modal() -> void
+    func close_sound_set_modal() -> void
+    func apply_sound_set(sound_set_id: String) -> void
+    func play_sound_sample(sample_index: int) -> void
+    func next_sound_sample() -> void
+
+### Script sub-window
+
+    # GemRB: OpenScriptWindow, DoneScriptWindow, FindScriptFile(selected)
+    func open_script_modal() -> void
+    func apply_script_selection(script_resref: String) -> void
+    func find_script_file(script_name: String) -> String
+
+### Biography sub-window
+
+    # GemRB: OpenBiographyWindow, OpenBiographyEditWindow, RevertBiography, ClearBiography, DoneBiographyWindow, GetProtagonistBiography
+    func open_biography_modal() -> void
+    func open_biography_editor() -> void
+    func revert_biography() -> void
+    func clear_biography() -> void
+    func save_biography(text: String) -> void
+    func get_biography_text(pc_id: String) -> String
+
+### Export
+
+    # GemRB: OpenExportWindow, ExportDonePress, ExportCancelPress, ExportEditChanged
+    func open_export_modal() -> void
+    func export_character(filename: String) -> bool
+    func validate_export_filename(filename: String) -> Dictionary  # {valid: bool, error: String}
+
+### Reform party
+
+    # GemRB: OpenRecReformPartyWindow
+    func open_reform_party_modal() -> void
+
+### Skills helpers (thief / bard / ranger)
+
+    # GemRB: GetValidSkill(pc, stat)
+    func get_valid_skill_value(pc_id: String, skill_stat: String) -> int
+    
+    # GemRB: GS(pc, stat), GA(pc, stat, col) — low-level stat getters
+    func get_player_stat_direct(pc_id: String, stat_id: String) -> int
+    func get_player_stat_array(pc_id: String, stat_id: String, col: int) -> int
+
+### Information window (the inline "details" sub-panel)
+
+    # GemRB: OpenInformationWindow
+    func open_information_sub_panel() -> void
+    func close_information_sub_panel() -> void
+    func build_information_text(pc_id: String) -> String             # derived stats text
+
+### Kit information (BG2-style; stubbed for BG1 scope)
+
+    # GemRB: OpenKitInfoWindow (BG2+ only)
+    func open_kit_info_modal(kit_id: String) -> void                 # no-op in BG1 mode
+
+### Reflection acceptance criterion
+
+**AC-11 [method catalog completeness]:** A headless test MUST enumerate every method listed in §5 and §12 and assert `script.has_method(name) == true` for each. Any missing method fails the test with the specific name.
+
+## 13. Implementation notes (non-binding)
 
 - The header HP/AC/THAC0/APR labels should share a common "stat label" widget. Extract a small helper `scripts/ui/stat_label.gd` if repetition exceeds three instances.
 - Consider a read-only "compact" view for the sidebar rail separately — NOT part of this PRD.

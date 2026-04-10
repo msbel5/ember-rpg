@@ -183,6 +183,111 @@ Do not introduce autoloads. Keep the widget self-contained; all state comes from
 
 All three MUST be green. If the backend shortcut spot check is red, escalate to the kernel team before proceeding — this PRD is front-end only.
 
-## 12. Out-of-band: the paper-doll art question
+## 12. Method catalog — GemRB InventoryCommon.py → Godot mapping
+
+The implementation MUST provide Godot equivalents for every GemRB function listed below. These are extracted from `gemrb/GUIScripts/InventoryCommon.py` (1165 LOC) and `gemrb/GUIScripts/bg1/GUIINV.py` (243 LOC). The Godot method names MAY differ slightly for idiomatic GDScript but MUST cover the same responsibilities. The acceptance test MUST enumerate every `must_have` method via reflection.
+
+### Window lifecycle (must_have)
+
+    # GemRB: InitInventoryWindow(Window), UpdateInventoryWindow(Window), RefreshInventoryWindow(Window)
+    func init_inventory_panel() -> void                              # one-time wiring on _ready
+    func update_inventory_panel() -> void                            # full refresh + scroll reset (on panel open)
+    func refresh_inventory_panel() -> void                           # partial refresh without scroll reset (on state change)
+    
+    # GemRB: InventoryClosed(win)
+    func on_inventory_closed() -> void                               # drop currently-held item on close; fallback to ground
+
+### Slot rendering (must_have)
+
+    # GemRB: UpdateSlot(pc, slot)
+    func update_slot(pc_id: String, slot_index: int) -> void
+    
+    # GemRB: UpdateInventorySlot(pc, Button, Slot, slot_type)
+    func update_inventory_slot(pc_id: String, button: Control, slot: Dictionary, slot_type: String) -> void
+
+### Drag-drop (must_have)
+
+    # GemRB: OnDragItem(btn)
+    func on_drag_item(btn_id: int) -> void                           # pickup OR place OR swap
+    
+    # GemRB: OnDragItemGround(btn)
+    func on_drag_item_ground(btn_id: int) -> void                    # ground-slot specific
+    
+    # GemRB: OnAutoEquip()
+    func on_auto_equip() -> void                                     # drop to -1 (any equipable), failure plays GAM_47
+    
+    # GemRB: MouseEnterSlot, MouseLeaveSlot (hover tooltip)
+    func on_mouse_enter_slot(btn_id: int) -> void
+    func on_mouse_leave_slot(btn_id: int) -> void
+    func on_mouse_enter_ground(btn_id: int) -> void
+    func on_mouse_leave_ground(btn_id: int) -> void
+
+### Item info / amount sub-windows (must_have)
+
+    # GemRB: OpenGroundItemInfoWindow, OpenItemInfoWindow, OpenSlotItemInfoWindow
+    func open_item_info_modal(item_entry: Dictionary, source_region: String) -> void
+    
+    # GemRB: OpenGroundItemAmountWindow, OpenItemAmountWindow
+    func open_item_amount_modal(item_entry: Dictionary, source_region: String) -> void
+    
+    # GemRB: OpenItemIdentifyWindow
+    func open_item_identify_modal(item_entry: Dictionary) -> void
+    
+    # GemRB: OpenItemAbilitiesWindow
+    func open_item_abilities_modal(item_entry: Dictionary) -> void
+
+### Paper doll (must_have)
+
+    # GemRB: PaperDoll.SetupEquipment(pc, button, size, stats)
+    func setup_paper_doll_equipment(pc_id: String, body_node: Control, size: String, stats: Dictionary) -> void
+    
+    # GemRB: PaperDoll.GetActorPaperDoll(pc)
+    func get_actor_paper_doll_slug(pc_id: String) -> String
+    
+    # GemRB: PaperDoll.ColorStatsFromPC(pc)
+    func color_stats_from_pc(pc_id: String) -> Dictionary             # {major_color, minor_color, skin_color, hair_color}
+    
+    # GemRB: PaperDoll.SelectPickerColor(stat_id)
+    func open_color_picker(stat_id: String) -> void                   # opens major/minor color picker modal
+
+### Stack split (must_have)
+
+    # GemRB: DragItemAmount window handling
+    func split_stack(source_slot: int, amount: int) -> void
+    func combine_stack(source_slot: int, target_slot: int) -> void
+
+### Identification & usability (must_have)
+
+    # GemRB: CheckItemUsability(pc, item)
+    func check_item_usability(pc_id: String, item_entry: Dictionary) -> Dictionary
+        # returns {usable: bool, reason: String, class_restricted: bool, alignment_restricted: bool}
+    
+    # GemRB: IdentifyItem (from the lore skill)
+    func try_identify_item(pc_id: String, item_entry: Dictionary) -> bool
+
+### Container interactions (must_have for in-area chests/bodies)
+
+    # GemRB: EnterStore + ChangeStoreItem pattern for containers
+    func enter_container(container_id: String) -> void
+    func leave_container() -> void
+    func transfer_from_container(container_id: String, item_entry: Dictionary, amount: int) -> bool
+    func transfer_to_container(container_id: String, item_entry: Dictionary, amount: int) -> bool
+
+### Encumbrance (must_have — read-only projection, no mutation)
+
+    # GemRB: SetEncumbranceLabels(Window, light_label_id, heavy_label_id, pc)
+    func update_encumbrance_labels() -> void                         # reads GameState.player.encumbrance
+
+### Class restrictions (BG1-specific)
+
+    # GemRB: BG2-style monk offhand check; class-based armor restrictions
+    func is_armor_allowed(pc_class: int, armor_type: String) -> bool
+    func is_weapon_allowed(pc_class: int, weapon_type: String) -> bool
+
+### Reflection acceptance criterion
+
+**AC-11 [method catalog completeness]:** A headless test MUST enumerate every method listed in §5 AND §12 and assert `script.has_method(name) == true` for each. If any is missing, the test fails with the specific name. This is the bright-line test that Copilot CLI has implemented the full method surface.
+
+## 13. Out-of-band: the paper-doll art question
 
 BG1's paper-doll renders actual equipment over a body sprite tinted by major/minor colors. The ember-rpg art pipeline does not yet have per-item paper-doll overlays. For this PRD, render the paper-doll as a **body sprite with colored tint** only (no equipment overlays); equipped items appear only in the slot icons around the body, not on the body itself. A later PRD (`PRD_frontend_paper_doll_art_v1`) will add overlay sprites once the art pipeline supports them. This limitation MUST be stated in §8 of the implementation's code comments and the acceptance test MUST NOT require overlay sprites.

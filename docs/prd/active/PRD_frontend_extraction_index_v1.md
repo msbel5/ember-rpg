@@ -92,6 +92,17 @@ Each row is one PRD. `Status` values: `placeholder` (not yet written), `draft` (
 | 26 | Console (dev) | `GUIScripts/Console.py`, `core/GUI/Console.cpp` | OPTIONAL — may stay out of scope | `PRD_frontend_dev_console_v1.md` | skipped |
 | 27 | Movie player (cutscenes) | `GUIScripts/GUIMOVIE.py` | OPTIONAL — may stay out of scope for Phase 2 | `PRD_frontend_movie_player_v1.md` | skipped |
 
+### Ember-specific features (NOT in BG1/GemRB — ember differentiators)
+
+These are the three features that set ember-rpg apart from a pure BG1 clone, plus the Fallout-1-inspired called-shot system. The existing Godot scaffolds for the first three already ship (see `ask_dm_panel.gd`, `think_panel.gd`, `topic_probe_modal.gd`); these PRDs extend them with method-level contracts.
+
+| # | Feature | Ember backend authority | Godot target | PRD | Status |
+|---|---|---|---|---|---|
+| E1 | Ask About (F1-style topic probe) | `conversation_state.ask_about_topic_ids` + `knowledge.py` | `godot-client/scripts/ui/topic_probe_modal.gd` (scaffold exists) | **`PRD_frontend_ask_about_v1.md`** | **draft** |
+| E2 | Think Panel (grounded knowledge synthesis) | `knowledge_view` in `/state` + `knowledge.py` | `godot-client/scripts/ui/think_panel.gd` (scaffold exists) | **`PRD_frontend_think_panel_v1.md`** | **draft** |
+| E3 | Ask DM (free-text fate consultation) | `advisor_view` in `/state` + `advisor.py` | `godot-client/scripts/ui/ask_dm_panel.gd` (scaffold exists) | **`PRD_frontend_ask_dm_v1.md`** | **draft** |
+| E4 | Sniped Shot (Fallout-1 called-shot targeting) | Combat kernel `called_shot` action + `/query/called_shot_preview` endpoint (NEW backend dependency) | NEW: `godot-client/scripts/ui/sniped_shot_modal.gd` + `world_view.gd` + `action_bar.gd` extensions | **`PRD_frontend_sniped_shot_v1.md`** | **draft (BLOCKED on backend endpoint)** |
+
 ### Architectural layers — the "alive world" (added 2026-04-10 per user directive)
 
 The UI layer alone doesn't produce BG1's signature "alive" feel. That comes from the below architectural layers. These PRDs cover backend simulation + client rendering **together** as vertical slices, not just UI.
@@ -158,3 +169,7 @@ When a child PRD moves from `placeholder` to `draft`, update its row in §3. Whe
 ### Changelog
 
 - 2026-04-10: Index created. `PRD_frontend_inventory_v1.md` and `PRD_frontend_character_record_v1.md` drafted as exemplars to anchor the authoring convention.
+- 2026-04-10 (later same day): Added **Architectural layers** section (rows A1..A9) per user directive "sadece on yuz degil yazilim mimarisine de bak". Drafted `PRD_architecture_ambient_life_v1.md` as architectural exemplar.
+- 2026-04-10 (core play loop batch): Drafted method-level PRDs for rows 1..4 of core play loop: `PRD_frontend_exploration_view_v1.md`, `PRD_frontend_action_bar_v1.md`, `PRD_frontend_party_portraits_v1.md`, `PRD_frontend_message_window_v1.md`. Updated `PRD_architecture_ambient_life_v1.md` to 30 Hz default with method-level behavior tree leaf specs per user directive "30 subtik de olur".
+- 2026-04-10 (ember differentiators + deep upgrades): Added **Ember-specific features** section (rows E1..E4) per user directive "f1 deki gibi ask about olucak think ve ask dm olucak ve f1 deki gibi sniped shotlar olucak". Drafted `PRD_frontend_ask_about_v1.md`, `PRD_frontend_think_panel_v1.md`, `PRD_frontend_ask_dm_v1.md`, `PRD_frontend_sniped_shot_v1.md`. Upgraded `PRD_frontend_inventory_v1.md` and `PRD_frontend_character_record_v1.md` with method catalogs (§12) enumerating every GemRB function that MUST have a Godot equivalent. Drafted `PRD_architecture_actor_animation_v1.md` (row A2) with full state machine + 8-directional sprite spec.
+- Current PRD library: 1 gate (PLAYABILITY_RESCUE), 1 index (this file), 8 core-play-loop UI PRDs (4 method-level: exploration/action/portraits/message; 2 method-level upgraded: inventory/character_record), 4 ember-specific (ask_about/think/ask_dm/sniped_shot), 2 architectural (ambient_life/actor_animation). Total **16 active PRDs** in the frontend extraction family.
