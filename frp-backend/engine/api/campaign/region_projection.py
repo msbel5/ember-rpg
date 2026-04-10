@@ -14,8 +14,10 @@ from engine.kernel.scene_types import SceneType
 from engine.map import MapData, Room, TileType
 from engine.world.interactions_catalog import load_interaction_rules
 from engine.world.interactions_types import InteractionType
+from engine.world.behavior_tree_leaves import build_default_ambient_tree
 from engine.world.entity import Entity, EntityType
 from engine.world.spatial_index import SpatialIndex
+from engine.worldgen.npc_authored import is_ambient_life_enabled
 from engine.worldgen.models import RegionSnapshot, WorldBlueprint
 
 from .world import choose_spawn_point, runtime_region_state
@@ -382,6 +384,123 @@ def _valid_schedule_position(context: CampaignContext, position: Any) -> tuple[i
     if tile in {TileType.WALL, TileType.WATER, TileType.TREE}:
         return None
     return (x, y)
+
+
+def _waypoint_name_for_building(building: dict[str, Any]) -> str:
+    building_id = str(building.get("id", "building")).strip() or "building"
+    kind = str(building.get("kind", "building")).strip().lower()
+    if any(token in kind for token in ("inn", "tavern")):
+        return "tavern_counter"
+    if any(token in kind for token in ("market", "shop", "merchant", "trader", "stall")):
+        return "market_stall"
+    if any(token in kind for token in ("temple", "shrine", "chapel")):
+        return "temple_door"
+    if any(token in kind for token in ("house", "home", "residence")):
+        return f"home_{building_id}"
+    return f"building_{building_id}"
+
+
+def _anchor_from_building(building: dict[str, Any]) -> tuple[int, int]:
+    x = int(building.get("x", 0))
+    y = int(building.get("y", 0))
+    width = max(1, int(building.get("width", 1)))
+    height = max(1, int(building.get("height", 1)))
+    doors = list(building.get("doors", [])) if isinstance(building.get("doors", []), list) else []
+    if doors:
+        door = doors[0]
+        if isinstance(door, dict):
+            return (int(door.get("x", x)), int(door.get("y", y)))
+    return (x + width // 2, y + height // 2)
+
+
+def _derive_region_waypoints(context: CampaignContext, region_snapshot: RegionSnapshot) -> dict[str, tuple[int, int]]:
+    waypoints: dict[str, tuple[int, int]] = {
+        "settlement_square": (int(context.position[0]), int(context.position[1])) if len(context.position) >= 2 else choose_spawn_point(region_snapshot)
+    }
+    for building in list(region_snapshot.layout.buildings):
+        if not isinstance(building, dict):
+            continue
+        name = _waypoint_name_for_building(building)
+        candidate = _valid_schedule_position(context, _anchor_from_building(building))
+        if candidate is not None and name not in waypoints:
+            waypoints[name] = candidate
+    for furniture in list(region_snapshot.layout.furniture):
+        if not isinstance(furniture, dict):
+            continue
+        kind = str(furniture.get("kind", "")).strip().lower()
+        if kind == "bar_counter":
+            name = "tavern_counter"
+        elif kind in {"display_table", "rack", "desk"}:
+            name = "market_stall"
+        elif kind in {"altar", "pew", "ward_totem"}:
+            name = "temple_door"
+        elif kind == "bed":
+            name = "bed_home"
+        else:
+            continue
+        candidate = _valid_schedule_position(context, (int(furniture.get("x", 0)), int(furniture.get("y", 0))))
+        if candidate is not None and name not in waypoints:
+            waypoints[name] = candidate
+    if len(waypoints) < 3:
+        for spawn in list(region_snapshot.layout.npc_spawns):
+            candidate = _valid_schedule_position(context, (int(spawn.get("x", 0)), int(spawn.get("y", 0))))
+            if candidate is None:
+                continue
+            name = f"anchor_{len(waypoints)}"
+            waypoints.setdefault(name, candidate)
+            if len(waypoints) >= 3:
+                break
+    return waypoints
+
+
+def _nearest_waypoint_name(position: tuple[int, int], waypoints: dict[str, tuple[int, int]]) -> str | None:
+    if not waypoints:
+        return None
+    return min(
+        waypoints.keys(),
+        key=lambda name: max(
+            abs(int(waypoints[name][0]) - int(position[0])),
+            abs(int(waypoints[name][1]) - int(position[1])),
+        ),
+    )
+
+
+def _ambient_profile_for_spawn(
+    spawn: dict[str, Any],
+    *,
+    settlement_id: str,
+    waypoints: dict[str, tuple[int, int]],
+) -> dict[str, Any]:
+    ambient_waypoints = {str(name): (int(pos[0]), int(pos[1])) for name, pos in dict(waypoints).items()}
+    schedule_map: dict[int, str] = {}
+    schedule_entries = [dict(item) for item in list(spawn.get("schedule", [])) if isinstance(item, dict)]
+    home_tile = (int(spawn.get("x", 0)), int(spawn.get("y", 0)))
+    wander_center = home_tile
+    for entry in schedule_entries:
+        position = (int(entry.get("position", [home_tile[0], home_tile[1]])[0]), int(entry.get("position", [home_tile[0], home_tile[1]])[1]))
+        waypoint_name = _nearest_waypoint_name(position, ambient_waypoints)
+        if waypoint_name is None or ambient_waypoints.get(waypoint_name) != position:
+            waypoint_name = f"schedule_{int(entry.get('hour', 0))}"
+            ambient_waypoints[waypoint_name] = position
+        schedule_map[int(entry.get("hour", 0)) % 24] = waypoint_name
+        if str(entry.get("building_kind", "")).strip().lower() == "home" or str(entry.get("activity", "")).strip().lower() in {"sleep", "rest", "wake"}:
+            home_tile = position
+        if str(entry.get("building_kind", "")).strip().lower() in {"work", "leisure"}:
+            wander_center = position
+    ambient_enabled = is_ambient_life_enabled(spawn, settlement_id=settlement_id)
+    ambient_seed = int(hashlib.sha1(f"{settlement_id}:{spawn.get('id', '')}".encode("utf-8")).hexdigest()[:8], 16)
+    return {
+        "ambient_life": ambient_enabled,
+        "home_tile": home_tile,
+        "wander_center": wander_center,
+        "wander_radius": 4 + ambient_seed % 5,
+        "schedule": schedule_map,
+        "default_waypoint": _nearest_waypoint_name(wander_center, ambient_waypoints) or "settlement_square",
+        "waypoints": ambient_waypoints,
+        "night_hours": range(0, 7),
+        "state": str(spawn.get("state", "stand") or "stand"),
+        "facing": str(spawn.get("facing", "south") or "south"),
+    }
 
 
 def _write_schedule_state(record: dict[str, Any], entry: dict[str, Any], *, activity: str) -> None:
@@ -946,6 +1065,7 @@ def apply_region_to_context(
     )
     map_data = build_map_data(region_snapshot)
     context.map_data = map_data
+    context.campaign_state["area_waypoints"] = {}
     next_position = list(map_data.spawn_point)
     if preserve_position and context.position:
         px = int(context.position[0])
@@ -1037,6 +1157,7 @@ def build_map_data(region_snapshot: RegionSnapshot) -> MapData:
 
 def _build_region_world_entities(world: WorldBlueprint, region_snapshot: RegionSnapshot) -> list[dict[str, Any]]:
     runtime_state = runtime_region_state(world, region_snapshot.region_id)
+    settlement_waypoints = {"settlement_square": choose_spawn_point(region_snapshot)}
     entities: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     for npc in runtime_state.get("npcs", region_snapshot.layout.npc_spawns):
@@ -1044,6 +1165,11 @@ def _build_region_world_entities(world: WorldBlueprint, region_snapshot: RegionS
         if npc_id in seen_ids or bool(npc.get("party_member_active")):
             continue
         seen_ids.add(npc_id)
+        ambient_profile = _ambient_profile_for_spawn(
+            dict(npc),
+            settlement_id=region_snapshot.region_id,
+            waypoints=settlement_waypoints,
+        )
         entities.append(
             {
                 "id": npc_id,
@@ -1060,6 +1186,9 @@ def _build_region_world_entities(world: WorldBlueprint, region_snapshot: RegionS
                 "home_building_id": npc.get("home_building_id"),
                 "work_building_id": npc.get("work_building_id"),
                 "disposition": str(npc.get("disposition", "friendly")),
+                "ambient_life": bool(ambient_profile.get("ambient_life", False)),
+                "facing": str(npc.get("facing", ambient_profile.get("facing", "south"))),
+                "state": str(npc.get("state", ambient_profile.get("state", "stand"))),
                 "context_actions": list(npc.get("context_actions", ["talk", "examine"])),
             }
         )
@@ -1136,6 +1265,9 @@ def _build_context_world_entities(context: CampaignContext) -> list[dict[str, An
             "role": str(record.get("role", "")),
             "activity": str(record.get("activity", "")),
             "building_kind": str(record.get("building_kind", "")),
+            "ambient_life": bool(record.get("ambient_life", False)),
+            "facing": str(record.get("facing", "south") or "south"),
+            "state": str(record.get("state", "stand") or "stand"),
             "context_actions": list(record.get("context_actions", [])),
         }
         disposition = str(record.get("disposition", record.get("attitude", ""))).strip().lower()
@@ -1740,6 +1872,11 @@ def seed_region_entities(
     adapter_id: str,
 ) -> None:
     runtime_state = runtime_region_state(world, region_snapshot.region_id)
+    settlement_waypoints = _derive_region_waypoints(context, region_snapshot)
+    context.campaign_state["area_waypoints"] = {
+        str(name): [int(position[0]), int(position[1])]
+        for name, position in settlement_waypoints.items()
+    }
     controller = next(
         (
             region.get("controller_faction_id")
@@ -1751,6 +1888,11 @@ def seed_region_entities(
     for spawn in runtime_state.get("npcs", region_snapshot.layout.npc_spawns):
         role = str(spawn["role"])
         display_name = str(spawn.get("name", role.replace("_", " ").title()))
+        ambient_profile = _ambient_profile_for_spawn(
+            dict(spawn),
+            settlement_id=region_snapshot.region_id,
+            waypoints=settlement_waypoints,
+        )
         entity = Entity(
             id=str(spawn["id"]),
             entity_type=EntityType.NPC,
@@ -1766,7 +1908,10 @@ def seed_region_entities(
             schedule={"npc_id": str(spawn["id"]), "npc_name": display_name, "entries": copy.deepcopy(spawn.get("schedule", []))},
             job=role,
         )
+        setattr(entity, "facing", str(ambient_profile.get("facing", "south")))
+        setattr(entity, "state", str(ambient_profile.get("state", "stand")))
         context.spatial_index.add(entity)
+        ambient_enabled = bool(ambient_profile.get("ambient_life", False))
         context.entities[entity.id] = {
             "name": entity.name,
             "type": "npc",
@@ -1782,12 +1927,19 @@ def seed_region_entities(
             "building_id": spawn.get("building_id"),
             "home_building_id": spawn.get("home_building_id"),
             "work_building_id": spawn.get("work_building_id"),
+            "ambient_life": ambient_enabled,
+            "ambient_profile": ambient_profile,
+            "waypoints": dict(ambient_profile.get("waypoints", {})),
+            "facing": str(ambient_profile.get("facing", "south")),
+            "state": str(ambient_profile.get("state", "stand")),
             "context_actions": list(spawn.get("context_actions", ["talk", "examine"])),
             "named_npc_id": spawn.get("named_npc_id"),
             "identity_source": str(spawn.get("identity_source", "generated")),
             "memory_id": spawn.get("memory_id"),
             "entity_ref": entity,
         }
+        if ambient_enabled:
+            context.entities[entity.id]["wander_tree"] = build_default_ambient_tree(context.entities[entity.id])
     for furniture in region_snapshot.layout.furniture:
         furniture_entity = Entity(
             id=str(furniture.get("id", f"{furniture['kind']}_{furniture['x']}_{furniture['y']}")),

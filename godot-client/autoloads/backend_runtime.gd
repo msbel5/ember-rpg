@@ -10,6 +10,7 @@ const REPO_VENV_PYTHON := "res://../.venv/Scripts/python.exe"
 
 signal status_changed(message: String)
 signal bootstrap_finished(success: bool)
+signal visual_delta_received(payload: Dictionary)
 
 var backend_ready: bool = false
 var last_error: String = ""
@@ -22,6 +23,11 @@ var _managed_backend_pid: int = -1
 
 func _exit_tree() -> void:
 	test_cleanup()
+	_unbind_backend_runtime_socket()
+
+
+func _ready() -> void:
+	_bind_backend_runtime_socket()
 
 
 func ensure_bootstrap() -> void:
@@ -37,11 +43,35 @@ func reset_state() -> void:
 	resolved_url = ""
 	health_payload = {}
 	_bootstrap_started = false
+	_unbind_backend_runtime_socket()
+	_bind_backend_runtime_socket()
 
 
 func test_cleanup() -> void:
 	reset_state()
 	_cleanup_pending_http_requests()
+
+
+func _bind_backend_runtime_socket() -> void:
+	if Backend == null:
+		return
+	if not Backend.runtime_message_received.is_connected(_on_runtime_message_received):
+		Backend.runtime_message_received.connect(_on_runtime_message_received)
+
+
+func _unbind_backend_runtime_socket() -> void:
+	if Backend == null:
+		return
+	if Backend.runtime_message_received.is_connected(_on_runtime_message_received):
+		Backend.runtime_message_received.disconnect(_on_runtime_message_received)
+
+
+func _on_runtime_message_received(message: Dictionary) -> void:
+	var message_type := str(message.get("type", "")).strip_edges().to_lower()
+	if message_type != "visual_delta":
+		return
+	GameState.apply_visual_delta(message)
+	visual_delta_received.emit(message.duplicate(true))
 
 
 func _cleanup_pending_http_requests() -> void:

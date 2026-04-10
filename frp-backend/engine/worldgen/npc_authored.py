@@ -127,8 +127,21 @@ def authored_candidates_for_role(
     return list(candidates_by_id.values())
 
 
+def is_ambient_life_enabled(npc_record: dict[str, Any], *, settlement_id: str = "") -> bool:
+    explicit = npc_record.get("ambient_life")
+    if explicit is not None:
+        return bool(explicit)
+    npc_id = str(npc_record.get("id", "")).strip()
+    role = str(npc_record.get("role", "resident")).strip().lower()
+    named_npc_id = str(npc_record.get("named_npc_id", "")).strip()
+    threshold = 60 if named_npc_id else 70
+    score = stable_seed_from_parts(settlement_id or "settlement", npc_id or role, role) % 100
+    return int(score) < threshold
+
+
 __all__ = [
     "authored_npc_for_role",
     "choose_authored_location_id",
+    "is_ambient_life_enabled",
     "role_family_candidates",
 ]

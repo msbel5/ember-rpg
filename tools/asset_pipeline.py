@@ -56,11 +56,12 @@ PIXEL_CRAWLER_TILE_DIR = PIXEL_CRAWLER_DIR / "tiles"
 LPC_DIR = THIRD_PARTY_DIR / "lpc" / "extracted"
 LPC_TILE_DIR = LPC_DIR / "tiles"
 
-SPRITE_SIZE = (32, 32)
-GENERATED_SIZE = (32, 32)
-ITEM_SIZE = (32, 32)
-RAW_SIZE = (768, 768)
-UPSCALE_SIZE = (96, 96)
+SPRITE_SIZE = (64, 64)
+GENERATED_SIZE = (64, 64)
+ITEM_SIZE = (64, 64)
+RAW_SIZE = (1024, 1024)
+UPSCALE_SIZE = (256, 256)  # intermediate step in the downscale chain: 1024 -> 256 -> 64
+DOWNSAMPLE_RESAMPLE = Image.NEAREST  # flip to Image.LANCZOS if you want softer painted edges; NEAREST keeps pixel alignment crisp
 
 LEGACY_HF_API_URL = (
     "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
@@ -68,6 +69,21 @@ LEGACY_HF_API_URL = (
 DEFAULT_LOCAL_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 DEFAULT_IP_ADAPTER_REPO = "h94/IP-Adapter"
 DEFAULT_IP_ADAPTER_WEIGHT = "ip-adapter_sdxl.bin"
+
+# Painted CRPG multi-LoRA stack — Gerald Brom XL + Dark Fantasy XL + Dark Gothic + Fallout Art.
+# LCM-LoRA enables ~8-step sampling (5x faster than base 50-step SDXL).
+# Each entry: (adapter_name, absolute_path, scale).
+# Order matters for set_adapters weight application; lcm should stay last.
+DEFAULT_LORA_STACK: list[tuple[str, str, float]] = [
+    ("brom",       r"D:\ember-models\Gerald Brom XL - Dark Fantasy Art\Gerald_Brom_XL_-_Dark_Fantasy_Art-mid_180346-vid_202421.safetensors", 0.70),
+    ("darkfan",    r"D:\ember-models\DARK FANTASY XL\DarkFanXLGrain-mid_1223108-vid_1618369.safetensors", 0.40),
+    ("darkgothic", r"D:\ember-models\Dark Gothic Fantasy\dark_gothic_fantasy_xl_3.01-mid_293532-vid_329901.safetensors", 0.30),
+    ("fallout",    r"D:\ember-models\Fallout Art (SDXL)\fallout_sdxl_lora-mid_721383-vid_806630.safetensors", 0.20),
+    ("lcm",        r"D:\ember-models\lcm-lora-sdxl\pytorch_lora_weights.safetensors", 1.00),
+]
+USE_LCM_BY_DEFAULT = True
+LCM_STEPS = 8
+LCM_GUIDANCE = 1.5
 ROGUES_DIR = PROJECT_ROOT / "tmp" / "asset_probe" / "32rogues"
 ROGUES_ITEMS_PNG = ROGUES_DIR / "items.png"
 ROGUES_ITEMS_TXT = ROGUES_DIR / "items.txt"
@@ -80,18 +96,18 @@ ROGUES_TILES_TXT = ROGUES_DIR / "tiles.txt"
 ROGUES_CELL_SIZE = 32
 
 SPRITE_STYLE_PREFIX = (
-    "pixel art RPG character sprite, 3/4 top-down view, single character centered, "
-    "dark fantasy style, transparent background, no shadow, clean silhouette, "
-    "coherent palette, readable at 32x32, production game asset, "
+    "painted CRPG character sprite, 3/4 top-down view, single character centered, "
+    "Baldur's Gate dark fantasy oil painting style, transparent background, no shadow, clean silhouette, "
+    "Gerald Brom painterly palette, readable at 64x64, hand-painted infinity engine sprite, production game asset, "
 )
 ITEM_STYLE_PREFIX = (
-    "pixel art CRPG inventory icon, top-down item render, single item centered, "
-    "transparent background, dark fantasy palette, crisp readable silhouette, "
-    "no text, no frame, game-ready icon, "
+    "painted CRPG inventory icon, top-down item render, single item centered, "
+    "transparent background, dark fantasy oil painting, crisp readable silhouette, "
+    "no text, no frame, painterly game-ready icon, Baldur's Gate style, readable at 64x64, "
 )
 TILE_STYLE_PREFIX = (
-    "pixel art CRPG terrain tile, seamless tileable texture, top-down, "
-    "consistent dark fantasy palette, 32x32 readable structure, no text, "
+    "painted CRPG terrain tile, seamless tileable texture, top-down, "
+    "consistent dark fantasy painterly palette, 64x64 readable structure, hand-painted brushwork, no text, "
 )
 
 NEGATIVE_PROMPT = (
@@ -1111,16 +1127,18 @@ class LocalSDXLGenerator:
         self,
         model_id: str,
         style_ref: Path | None,
-        lora_path: str | None = None,
+        lora_stack: list[tuple[str, str, float]] | None = None,
+        single_lora_path: str | None = None,
+        single_lora_scale: float = 0.8,
         ip_adapter_repo: str = DEFAULT_IP_ADAPTER_REPO,
         ip_adapter_weight: str = DEFAULT_IP_ADAPTER_WEIGHT,
         ip_adapter_scale: float = 0.7,
-        lora_scale: float = 0.8,
         cpu_offload: bool = True,
+        use_lcm: bool = USE_LCM_BY_DEFAULT,
     ) -> None:
         try:
             import torch
-            from diffusers import AutoPipelineForText2Image
+            from diffusers import AutoPipelineForText2Image, LCMScheduler
             from diffusers.utils import load_image
         except ImportError as exc:  # pragma: no cover - depends on local environment
             raise SystemExit(
@@ -1130,12 +1148,15 @@ class LocalSDXLGenerator:
 
         self.torch = torch
         self.load_image = load_image
+        self.use_lcm = use_lcm
         self.pipeline = AutoPipelineForText2Image.from_pretrained(
             model_id,
             torch_dtype=torch.float16,
             use_safetensors=True,
             variant="fp16",
         )
+
+        # IP-Adapter (style anchor image conditioning — runs alongside LoRA stack)
         self.style_image = None
         if style_ref and style_ref.exists():
             try:
@@ -1148,12 +1169,47 @@ class LocalSDXLGenerator:
                 self.style_image = self.load_image(str(style_ref))
             except Exception as exc:  # pragma: no cover - model environment dependent
                 print("[WARN] Could not load IP-Adapter style reference: %s" % exc)
-        if lora_path:
+
+        # LoRA stacking via set_adapters (multi-LoRA). single_lora_path takes precedence if supplied.
+        # Do NOT call fuse_lora — it prevents per-adapter weight control and later unload/swap.
+        loaded_adapters: list[str] = []
+        loaded_weights: list[float] = []
+        if single_lora_path:
             try:
-                self.pipeline.load_lora_weights(lora_path)
-                self.pipeline.fuse_lora(lora_scale=lora_scale)
-            except Exception as exc:  # pragma: no cover - model environment dependent
-                print("[WARN] Could not load LoRA weights: %s" % exc)
+                self.pipeline.load_lora_weights(single_lora_path, adapter_name="user_override")
+                loaded_adapters.append("user_override")
+                loaded_weights.append(float(single_lora_scale))
+                print(f"[LoRA] single-override: {single_lora_path} scale={single_lora_scale}")
+            except Exception as exc:  # pragma: no cover
+                print("[WARN] Could not load override LoRA: %s" % exc)
+        elif lora_stack:
+            for adapter_name, path, scale in lora_stack:
+                if not Path(path).exists():
+                    print(f"[WARN] LoRA not found, skipping: {adapter_name} -> {path}")
+                    continue
+                try:
+                    self.pipeline.load_lora_weights(path, adapter_name=adapter_name)
+                    loaded_adapters.append(adapter_name)
+                    loaded_weights.append(float(scale))
+                    print(f"[LoRA] loaded: {adapter_name} scale={scale}")
+                except Exception as exc:  # pragma: no cover
+                    print(f"[WARN] Could not load LoRA {adapter_name}: {exc}")
+
+        if loaded_adapters:
+            try:
+                self.pipeline.set_adapters(loaded_adapters, adapter_weights=loaded_weights)
+                print(f"[LoRA] stack active: {loaded_adapters} weights={loaded_weights}")
+            except Exception as exc:  # pragma: no cover
+                print(f"[WARN] set_adapters failed: {exc}")
+
+        # LCM scheduler swap — only when the lcm adapter is active (otherwise 8-step is bad)
+        self._effective_lcm = bool(self.use_lcm and "lcm" in loaded_adapters)
+        if self._effective_lcm:
+            self.pipeline.scheduler = LCMScheduler.from_config(self.pipeline.scheduler.config)
+            print("[LCM] scheduler swapped to LCMScheduler — sampling at 8 steps")
+        elif self.use_lcm:
+            print("[LCM] requested but lcm adapter not loaded; keeping default scheduler")
+
         self.pipeline.enable_attention_slicing()
         self.pipeline.vae.enable_slicing()
         if cpu_offload:
@@ -1171,6 +1227,10 @@ class LocalSDXLGenerator:
         steps: int,
         guidance_scale: float,
     ) -> Image.Image:
+        # LCM override — 8 steps with CFG ~1.5 is the canonical sweet spot.
+        if self._effective_lcm:
+            steps = LCM_STEPS
+            guidance_scale = LCM_GUIDANCE
         generator = self.torch.Generator(device="cpu").manual_seed(seed)
         kwargs: dict[str, Any] = {
             "prompt": prompt,
@@ -1211,30 +1271,32 @@ def quantize_pixel_art(img: Image.Image, colors: int = 32) -> Image.Image:
 
 
 def postprocess_sprite(raw_img: Image.Image, final_size: tuple[int, int]) -> Image.Image:
+    # Painted CRPG sprite pipeline: raw 1024 -> 256 NEAREST -> 64 NEAREST (power-of-2 chain, no LANCZOS blur)
+    # Softer contrast/saturation boosts than old 32x32 path since painted 64x64 preserves natural brushwork.
     img = remove_background(raw_img)
-    img = ImageEnhance.Contrast(img).enhance(1.2)
-    img = ImageEnhance.Color(img).enhance(1.25)
-    img = img.resize(UPSCALE_SIZE, Image.LANCZOS)
-    img = quantize_pixel_art(img, colors=32)
-    return img.resize(final_size, Image.NEAREST)
+    img = ImageEnhance.Contrast(img).enhance(1.08)
+    img = ImageEnhance.Color(img).enhance(1.12)
+    img = img.resize(UPSCALE_SIZE, DOWNSAMPLE_RESAMPLE)
+    img = quantize_pixel_art(img, colors=64)
+    return img.resize(final_size, DOWNSAMPLE_RESAMPLE)
 
 
 def postprocess_tile(raw_img: Image.Image, final_size: tuple[int, int]) -> Image.Image:
     img = raw_img.convert("RGBA")
-    img = ImageEnhance.Contrast(img).enhance(1.1)
-    img = ImageEnhance.Color(img).enhance(1.15)
-    img = img.resize(UPSCALE_SIZE, Image.LANCZOS)
-    img = quantize_pixel_art(img, colors=48)
-    return img.resize(final_size, Image.NEAREST)
+    img = ImageEnhance.Contrast(img).enhance(1.05)
+    img = ImageEnhance.Color(img).enhance(1.08)
+    img = img.resize(UPSCALE_SIZE, DOWNSAMPLE_RESAMPLE)
+    img = quantize_pixel_art(img, colors=72)
+    return img.resize(final_size, DOWNSAMPLE_RESAMPLE)
 
 
 def postprocess_item(raw_img: Image.Image, final_size: tuple[int, int]) -> Image.Image:
     img = remove_background(raw_img)
-    img = ImageEnhance.Contrast(img).enhance(1.18)
-    img = ImageEnhance.Color(img).enhance(1.3)
-    img = img.resize(UPSCALE_SIZE, Image.LANCZOS)
-    img = quantize_pixel_art(img, colors=40)
-    return img.resize(final_size, Image.NEAREST)
+    img = ImageEnhance.Contrast(img).enhance(1.08)
+    img = ImageEnhance.Color(img).enhance(1.15)
+    img = img.resize(UPSCALE_SIZE, DOWNSAMPLE_RESAMPLE)
+    img = quantize_pixel_art(img, colors=56)
+    return img.resize(final_size, DOWNSAMPLE_RESAMPLE)
 
 
 def has_visible_pixels(img: Image.Image) -> bool:
@@ -1342,8 +1404,10 @@ def generate_jobs(
     height: int,
     gc_every: int,
     pause_ms: int,
-    lora_path: str | None,
-    lora_scale: float,
+    lora_stack: list[tuple[str, str, float]] | None,
+    single_lora_path: str | None,
+    single_lora_scale: float,
+    use_lcm: bool,
 ) -> None:
     ensure_output_dirs()
     cache = load_cache()
@@ -1354,8 +1418,10 @@ def generate_jobs(
         local_backend = LocalSDXLGenerator(
             model_id=model_id,
             style_ref=style_ref,
-            lora_path=lora_path,
-            lora_scale=lora_scale,
+            lora_stack=lora_stack,
+            single_lora_path=single_lora_path,
+            single_lora_scale=single_lora_scale,
+            use_lcm=use_lcm,
         )
 
     total = len(jobs)
@@ -1546,8 +1612,10 @@ def main() -> None:
     parser.add_argument("--height", type=int, default=RAW_SIZE[1])
     parser.add_argument("--gc-every", type=int, default=1, help="Run gc and CUDA cache cleanup every N jobs")
     parser.add_argument("--pause-ms", type=int, default=250, help="Pause between jobs to reduce desktop stutter")
-    parser.add_argument("--lora-path", help="Optional LoRA weights directory or file for local SDXL generation")
-    parser.add_argument("--lora-scale", type=float, default=0.8, help="LoRA influence when --lora-path is used")
+    parser.add_argument("--lora-path", help="Override: single LoRA weights file (bypass the default painted CRPG stack)")
+    parser.add_argument("--lora-scale", type=float, default=0.8, help="LoRA strength when --lora-path override is used")
+    parser.add_argument("--no-lora-stack", action="store_true", help="Disable the default painted CRPG LoRA stack (use base SDXL only)")
+    parser.add_argument("--no-lcm", action="store_true", help="Disable LCM scheduler (fall back to 30-step sampling)")
     parser.add_argument("--postprocess", action="store_true")
     parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
@@ -1571,6 +1639,9 @@ def main() -> None:
         jobs = build_jobs(args.generate, limit=args.limit, views=args.views, variants=max(1, args.variants))
         wanted = load_name_filters(args.names, args.names_file)
         jobs = filter_jobs_by_name(jobs, wanted)
+        # Use default painted CRPG stack unless user explicitly opts out or supplies a single override.
+        lora_stack: list[tuple[str, str, float]] | None = None if (args.no_lora_stack or args.lora_path) else DEFAULT_LORA_STACK
+        use_lcm: bool = not args.no_lcm
         generate_jobs(
             jobs=jobs,
             backend=args.backend,
@@ -1583,8 +1654,10 @@ def main() -> None:
             height=args.height,
             gc_every=max(1, args.gc_every),
             pause_ms=max(0, args.pause_ms),
-            lora_path=args.lora_path,
-            lora_scale=args.lora_scale,
+            lora_stack=lora_stack,
+            single_lora_path=args.lora_path,
+            single_lora_scale=args.lora_scale,
+            use_lcm=use_lcm,
         )
         return
 

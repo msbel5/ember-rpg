@@ -23,12 +23,16 @@ from .runtime_transport import (
     build_transport_payload,
     build_tick_state,
     build_world_ready,
+    emit_visual_delta,
     resolve_runtime_mode,
     sync_tick_loop_mode,
     try_start_tick_loop,
+    try_start_visual_tick_loop,
     try_stop_tick_loop,
+    try_stop_visual_tick_loop,
 )
 from .tick_loop import get_tick_loop
+from .visual_tick_loop import get_visual_tick_loop, is_visual_tick_env_disabled
 from .state_sync import sync_context_clock
 from .controls import merge_settlement_controls
 from .region_projection import apply_region_to_context
@@ -134,6 +138,7 @@ class CampaignRuntime:
         self._campaigns[campaign_id] = context
         persist_campaign_state(context)
         try_start_tick_loop(self, campaign_id)
+        try_start_visual_tick_loop(self, campaign_id, on_tick=emit_visual_delta)
         return context
 
     def start_creation(
@@ -268,6 +273,7 @@ class CampaignRuntime:
     def delete_campaign(self, campaign_id: str) -> None:
         self.get_campaign(campaign_id)
         try_stop_tick_loop(campaign_id)
+        try_stop_visual_tick_loop(campaign_id)
         self._campaigns.pop(campaign_id, None)
 
     def get_current_region(self, campaign_id: str) -> dict[str, Any]:
@@ -372,6 +378,7 @@ class CampaignRuntime:
         sync_quest_state(context)
         sync_tick_loop_mode(context)
         try_start_tick_loop(self, context.campaign_id)
+        try_start_visual_tick_loop(self, context.campaign_id, on_tick=emit_visual_delta)
         trace_event(
             "campaign_load_completed",
             campaign_id=context.campaign_id,
@@ -405,6 +412,36 @@ class CampaignRuntime:
                 "campaign_id": context.campaign_id,
                 "command_type": "system",
                 "narrative": "",
+                "generated_events": [],
+                "hours_advanced": 0,
+                "campaign": campaign_payload(context),
+            }
+        elif normalized_shortcut == "set_visual_tick" or str(input_text).strip().lower().startswith("set_visual_tick"):
+            requested_mode = str(
+                command_args.get(
+                    "mode",
+                    command_args.get("state", str(input_text).strip().split(maxsplit=1)[1] if len(str(input_text).strip().split(maxsplit=1)) > 1 else ""),
+                )
+            ).strip().lower()
+            if requested_mode in {"", "status"}:
+                narrative = "visual_tick enabled" if get_visual_tick_loop(campaign_id) is not None else "visual_tick disabled"
+            elif requested_mode in {"disabled", "off", "false", "0"}:
+                context.campaign_state["visual_tick_enabled"] = False
+                try_stop_visual_tick_loop(campaign_id)
+                narrative = "visual_tick disabled"
+            elif requested_mode in {"enabled", "on", "true", "1"}:
+                context.campaign_state["visual_tick_enabled"] = True
+                if is_visual_tick_env_disabled():
+                    narrative = "visual_tick disabled by EMBER_DISABLE_VISUAL_TICK"
+                else:
+                    try_start_visual_tick_loop(self, campaign_id, on_tick=emit_visual_delta)
+                    narrative = "visual_tick enabled"
+            else:
+                raise ValueError(f"Unknown visual tick mode: {requested_mode}")
+            result = {
+                "campaign_id": context.campaign_id,
+                "command_type": "system",
+                "narrative": narrative,
                 "generated_events": [],
                 "hours_advanced": 0,
                 "campaign": campaign_payload(context),

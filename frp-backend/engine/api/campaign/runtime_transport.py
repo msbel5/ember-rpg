@@ -1,6 +1,7 @@
 """Transport/runtime-mode helpers shared by campaign runtime and websocket flow."""
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 
 from engine.api.websocket_support import websocket_support_payload
@@ -12,12 +13,21 @@ from .tick_loop import (
     get_tick_loop,
     schedule_tick_loop_coroutine,
 )
+from .visual_tick_loop import (
+    DEFAULT_VISUAL_TICK_INTERVAL,
+    get_visual_tick_loop,
+    try_start_visual_tick_loop,
+    try_stop_visual_tick_loop,
+)
+
+logger = logging.getLogger(__name__)
 
 
 def build_transport_payload(context: Any) -> dict[str, Any]:
     tick_loop = get_tick_loop(context.campaign_id)
     interval = float(getattr(tick_loop, "_interval", DEFAULT_TICK_INTERVAL))
     tick_hours = int(getattr(tick_loop, "_tick_hours", DEFAULT_TICK_HOURS))
+    visual_tick_loop = get_visual_tick_loop(context.campaign_id)
     websocket_support = websocket_support_payload()
     return {
         "mode": "ws",
@@ -27,6 +37,9 @@ def build_transport_payload(context: Any) -> dict[str, Any]:
         "idle_world_ticks": not context.in_combat(),
         "tick_interval_seconds": interval,
         "tick_hours_per_interval": tick_hours,
+        "visual_tick_interval_seconds": float(
+            getattr(visual_tick_loop, "interval_seconds", DEFAULT_VISUAL_TICK_INTERVAL)
+        ),
         "ws_path": f"/game/ws/campaigns/{context.campaign_id}",
         "ws_url": "",
         "websocket_ready": bool(websocket_support["websocket_transport"]),
@@ -36,8 +49,9 @@ def build_transport_payload(context: Any) -> dict[str, Any]:
 
 def build_tick_state(context: Any) -> dict[str, Any]:
     tick_loop = get_tick_loop(context.campaign_id)
+    visual_tick_loop = get_visual_tick_loop(context.campaign_id)
     if tick_loop is None:
-        return {
+        payload = {
             "running": False,
             "paused": False,
             "pause_reasons": [],
@@ -45,7 +59,8 @@ def build_tick_state(context: Any) -> dict[str, Any]:
             "tick_hours_per_interval": DEFAULT_TICK_HOURS,
             "tick_index": 0,
         }
-    return {
+    else:
+        payload = {
         "running": bool(tick_loop.running),
         "paused": bool(tick_loop.paused),
         "pause_reasons": list(tick_loop.pause_reasons),
@@ -53,6 +68,15 @@ def build_tick_state(context: Any) -> dict[str, Any]:
         "tick_hours_per_interval": int(getattr(tick_loop, "_tick_hours", DEFAULT_TICK_HOURS)),
         "tick_index": int(getattr(tick_loop, "tick_index", 0)),
     }
+    payload["visual_tick"] = {
+        "running": bool(getattr(visual_tick_loop, "running", False)),
+        "paused": bool(getattr(visual_tick_loop, "paused", False)),
+        "pause_reasons": list(getattr(visual_tick_loop, "pause_reasons", ())),
+        "interval_seconds": float(getattr(visual_tick_loop, "interval_seconds", DEFAULT_VISUAL_TICK_INTERVAL)),
+        "tick_index": int(getattr(visual_tick_loop, "tick_index", 0)),
+        "last_tick_duration_ms": float(getattr(visual_tick_loop, "last_tick_duration_ms", 0.0)),
+    }
+    return payload
 
 
 def build_world_ready(campaign_payload: dict[str, Any]) -> bool:
@@ -124,17 +148,28 @@ def sync_tick_loop_mode(
     dialog_payload: Optional[dict[str, Any]] = None,
 ) -> None:
     tick_loop = get_tick_loop(context.campaign_id)
-    if tick_loop is None:
+    visual_tick_loop = get_visual_tick_loop(context.campaign_id)
+    loops = [loop for loop in (tick_loop, visual_tick_loop) if loop is not None]
+    if not loops:
         return
     if context.in_combat():
-        tick_loop.pause("combat")
+        for loop in loops:
+            loop.pause("combat")
     else:
-        tick_loop.resume("combat")
+        for loop in loops:
+            loop.resume("combat")
     active_dialog = bool(dialog_payload if dialog_payload is not None else build_dialog_payload(context, ""))
     if active_dialog:
-        tick_loop.pause("dialog")
+        for loop in loops:
+            loop.pause("dialog")
     else:
-        tick_loop.resume("dialog")
+        for loop in loops:
+            loop.resume("dialog")
+    if tick_loop is not None and tick_loop.paused:
+        if visual_tick_loop is not None:
+            visual_tick_loop.pause("manual")
+    elif visual_tick_loop is not None:
+        visual_tick_loop.resume("manual")
 
 
 def try_start_tick_loop(runtime: Any, campaign_id: str, *, interval: float = DEFAULT_TICK_INTERVAL) -> None:
@@ -155,12 +190,36 @@ def try_stop_tick_loop(campaign_id: str) -> None:
         coro.close()
 
 
+async def emit_transport_message(campaign_id: str, payload: dict[str, Any]) -> None:
+    from engine.api.ws_campaign import get_connections
+
+    sockets = list(get_connections(campaign_id))
+    dead: list[Any] = []
+    for ws in sockets:
+        try:
+            await ws.send_json(payload)
+        except Exception:
+            dead.append(ws)
+    if dead:
+        logger.debug("Dropped %d dead websocket connections while emitting transport payload", len(dead))
+
+
+async def emit_visual_delta(campaign_id: str, payload: dict[str, Any]) -> None:
+    message = dict(payload)
+    message["type"] = "visual_delta"
+    await emit_transport_message(campaign_id, message)
+
+
 __all__ = [
     "build_transport_payload",
     "build_tick_state",
     "build_world_ready",
+    "emit_transport_message",
+    "emit_visual_delta",
     "resolve_runtime_mode",
     "sync_tick_loop_mode",
     "try_start_tick_loop",
+    "try_start_visual_tick_loop",
     "try_stop_tick_loop",
+    "try_stop_visual_tick_loop",
 ]
