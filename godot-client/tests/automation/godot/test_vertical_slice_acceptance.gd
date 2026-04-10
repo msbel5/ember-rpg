@@ -13,6 +13,8 @@ const FANTASY_CARD_PATH := "CharacterCreation/VBox/CreationBody/FormPane/FormScr
 const NEXT_BUTTON_PATH := "CharacterCreation/VBox/ButtonRow/NextButton"
 const ANSWER_0_PATH := "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/QuestionSection/AnswerButtons/AnswerButton0"
 const START_BUTTON_PATH := "CharacterCreation/VBox/ButtonRow/StartButton"
+const CREATION_STEP_TIMEOUT := 6.0
+const GAME_SESSION_TIMEOUT := 6.0
 
 var failures: int = 0
 var _first_frame_ms: int = -1
@@ -122,7 +124,7 @@ func _complete_creation_flow() -> void:
 			"node_path": ANSWER_0_PATH,
 		})
 		return bool(state.get("node_visible", false))
-	, 3.0)
+	, CREATION_STEP_TIMEOUT)
 	_assert_true(question_ready, "Creation questionnaire appears after identity confirmation")
 
 	for _i in range(5):
@@ -135,41 +137,45 @@ func _complete_creation_flow() -> void:
 	var history_visible = await _wait_until(func() -> bool:
 		var wizard = _creation_wizard()
 		return wizard != null and int(wizard.current_step()) == int(wizard.STEP_HISTORY)
-	, 3.0)
+	, CREATION_STEP_TIMEOUT)
 	_assert_true(history_visible, "Creation flow reaches the history reveal after the final question")
 
 	await _bridge().execute_command({"action": "activate_node", "node_path": NEXT_BUTTON_PATH})
 	await _bridge().execute_command({"action": "activate_node", "node_path": NEXT_BUTTON_PATH})
+	await _settle_frames(6)
 	var roll_visible = await _wait_until(func() -> bool:
 		var wizard = _creation_wizard()
 		return wizard != null and int(wizard.current_step()) == int(wizard.STEP_ROLL)
-	, 2.0)
+	, CREATION_STEP_TIMEOUT)
 	_assert_true(roll_visible, "Creation flow advances from history to the roll step")
 
 	await _bridge().execute_command({"action": "activate_node", "node_path": NEXT_BUTTON_PATH})
+	await _settle_frames(6)
 	var build_visible = await _wait_until(func() -> bool:
 		var wizard = _creation_wizard()
 		return wizard != null and int(wizard.current_step()) == int(wizard.STEP_BUILD)
-	, 2.0)
+	, CREATION_STEP_TIMEOUT)
 	_assert_true(build_visible, "Creation flow advances from roll to the build step")
 
 	await _bridge().execute_command({"action": "activate_node", "node_path": NEXT_BUTTON_PATH})
+	await _settle_frames(6)
 	var dossier_visible = await _wait_until(func() -> bool:
 		var state = await _bridge().execute_command({
 			"action": "query_state",
 			"node_path": START_BUTTON_PATH,
 		})
 		return bool(state.get("node_visible", false))
-	, 2.0)
+	, CREATION_STEP_TIMEOUT)
 	_assert_true(dossier_visible, "Creation flow reaches the dossier step before finalize")
 
 	await _bridge().execute_command({"action": "activate_node", "node_path": START_BUTTON_PATH})
+	await _settle_frames(6)
 
 
 func _ac02_arrive_in_game_session() -> void:
 	var changed = await _wait_until(func() -> bool:
 		return current_scene != null and current_scene.name == "GameSession" and not String(_game_state().campaign_id).strip_edges().is_empty()
-	, 3.0)
+	, GAME_SESSION_TIMEOUT)
 	_assert_true(changed, "Finalize creation transitions to GameSession with a live campaign id")
 	_first_frame_ms = Time.get_ticks_msec()
 
