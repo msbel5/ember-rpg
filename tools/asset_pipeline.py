@@ -56,12 +56,15 @@ PIXEL_CRAWLER_TILE_DIR = PIXEL_CRAWLER_DIR / "tiles"
 LPC_DIR = THIRD_PARTY_DIR / "lpc" / "extracted"
 LPC_TILE_DIR = LPC_DIR / "tiles"
 
-SPRITE_SIZE = (64, 64)
-GENERATED_SIZE = (64, 64)
-ITEM_SIZE = (64, 64)
+# Hi-res painted CRPG target: SDXL native 1024x1024, finals kept at the same size so we never
+# lose Gerald Brom / Dark Fantasy XL brushwork to a downscale chain. Godot can scale textures
+# down at display time for inventory grids, minimap icons, etc. via Texture2D filter settings.
+# Asset folder size at full regen: ~3-4 GB on disk. Not committed to git (see .gitignore).
+SPRITE_SIZE = (1024, 1024)
+GENERATED_SIZE = (1024, 1024)
+ITEM_SIZE = (1024, 1024)
 RAW_SIZE = (1024, 1024)
-UPSCALE_SIZE = (256, 256)  # intermediate step in the downscale chain: 1024 -> 256 -> 64
-DOWNSAMPLE_RESAMPLE = Image.NEAREST  # flip to Image.LANCZOS if you want softer painted edges; NEAREST keeps pixel alignment crisp
+# UPSCALE_SIZE and DOWNSAMPLE_RESAMPLE removed — we do not downscale anymore.
 
 LEGACY_HF_API_URL = (
     "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
@@ -98,16 +101,16 @@ ROGUES_CELL_SIZE = 32
 SPRITE_STYLE_PREFIX = (
     "painted CRPG character sprite, 3/4 top-down view, single character centered, "
     "Baldur's Gate dark fantasy oil painting style, transparent background, no shadow, clean silhouette, "
-    "Gerald Brom painterly palette, readable at 64x64, hand-painted infinity engine sprite, production game asset, "
+    "Gerald Brom painterly palette, hand-painted infinity engine sprite, high detail, painterly masterpiece, production game asset, "
 )
 ITEM_STYLE_PREFIX = (
     "painted CRPG inventory icon, top-down item render, single item centered, "
     "transparent background, dark fantasy oil painting, crisp readable silhouette, "
-    "no text, no frame, painterly game-ready icon, Baldur's Gate style, readable at 64x64, "
+    "no text, no frame, painterly game-ready icon, Baldur's Gate style, high detail, hand-painted masterpiece, "
 )
 TILE_STYLE_PREFIX = (
     "painted CRPG terrain tile, seamless tileable texture, top-down, "
-    "consistent dark fantasy painterly palette, 64x64 readable structure, hand-painted brushwork, no text, "
+    "consistent dark fantasy painterly palette, hand-painted brushwork, high detail, no text, "
 )
 
 NEGATIVE_PROMPT = (
@@ -1282,33 +1285,33 @@ def quantize_pixel_art(img: Image.Image, colors: int = 32) -> Image.Image:
     return Image.merge("RGBA", (*rgb.split(), alpha))
 
 
+def _maybe_resize(img: Image.Image, final_size: tuple[int, int]) -> Image.Image:
+    # Only resize if the target differs from the raw size. Single LANCZOS step preserves
+    # painted brushwork far better than a NEAREST chain for hi-res finals.
+    if img.size == final_size:
+        return img
+    return img.resize(final_size, Image.LANCZOS)
+
+
 def postprocess_sprite(raw_img: Image.Image, final_size: tuple[int, int]) -> Image.Image:
-    # Painted CRPG sprite pipeline: raw 1024 -> 256 NEAREST -> 64 NEAREST (power-of-2 chain, no LANCZOS blur)
-    # Softer contrast/saturation boosts than old 32x32 path since painted 64x64 preserves natural brushwork.
+    # Hi-res painted CRPG sprite: remove background, preserve full painted detail, no quantization.
     img = remove_background(raw_img)
-    img = ImageEnhance.Contrast(img).enhance(1.08)
-    img = ImageEnhance.Color(img).enhance(1.12)
-    img = img.resize(UPSCALE_SIZE, DOWNSAMPLE_RESAMPLE)
-    img = quantize_pixel_art(img, colors=64)
-    return img.resize(final_size, DOWNSAMPLE_RESAMPLE)
+    img = _maybe_resize(img, final_size)
+    return img.convert("RGBA")
 
 
 def postprocess_tile(raw_img: Image.Image, final_size: tuple[int, int]) -> Image.Image:
+    # Tile: keep full background (seamless texture), preserve painted detail.
     img = raw_img.convert("RGBA")
-    img = ImageEnhance.Contrast(img).enhance(1.05)
-    img = ImageEnhance.Color(img).enhance(1.08)
-    img = img.resize(UPSCALE_SIZE, DOWNSAMPLE_RESAMPLE)
-    img = quantize_pixel_art(img, colors=72)
-    return img.resize(final_size, DOWNSAMPLE_RESAMPLE)
+    img = _maybe_resize(img, final_size)
+    return img
 
 
 def postprocess_item(raw_img: Image.Image, final_size: tuple[int, int]) -> Image.Image:
+    # Hi-res painted CRPG item icon: remove background, preserve full painted detail.
     img = remove_background(raw_img)
-    img = ImageEnhance.Contrast(img).enhance(1.08)
-    img = ImageEnhance.Color(img).enhance(1.15)
-    img = img.resize(UPSCALE_SIZE, DOWNSAMPLE_RESAMPLE)
-    img = quantize_pixel_art(img, colors=56)
-    return img.resize(final_size, DOWNSAMPLE_RESAMPLE)
+    img = _maybe_resize(img, final_size)
+    return img.convert("RGBA")
 
 
 def has_visible_pixels(img: Image.Image) -> bool:
