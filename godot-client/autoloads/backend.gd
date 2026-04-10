@@ -25,6 +25,10 @@ func _ready() -> void:
 	set_process(true)
 
 
+func _exit_tree() -> void:
+	test_cleanup()
+
+
 func _process(_delta: float) -> void:
 	_poll_runtime_socket()
 
@@ -75,6 +79,20 @@ func close_runtime_socket(reason: String = "closed") -> void:
 	_runtime_connected = false
 	_runtime_campaign_id = ""
 	_runtime_url = ""
+
+
+func test_cleanup() -> void:
+	set_process(false)
+	close_runtime_socket("test_cleanup")
+	_cleanup_pending_http_requests()
+
+
+func _cleanup_pending_http_requests() -> void:
+	for child in get_children():
+		if child is HTTPRequest:
+			var request: HTTPRequest = child
+			request.cancel_request()
+			request.queue_free()
 
 
 func runtime_submit_command(campaign_id: String, input_text: String, shortcut: String = "", args: Dictionary = {}) -> bool:

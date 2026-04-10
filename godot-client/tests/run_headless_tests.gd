@@ -10,8 +10,10 @@ const CameraController = preload("res://scripts/world/camera_controller.gd")
 const EntityLayer = preload("res://scripts/world/entity_layer.gd")
 const EntitySpriteCatalog = preload("res://scripts/world/entity_sprite_catalog.gd")
 const SelectionOverlay = preload("res://scripts/world/selection_overlay.gd")
+const RuntimeAutomationProbe = preload("res://autoloads/runtime_automation_probe.gd")
 
 var failures: int = 0
+const _ROOT_AUTLOADS_TO_KEEP := ["GameState", "Backend", "BackendRuntime", "RuntimeAutomationBridge"]
 
 
 func _initialize() -> void:
@@ -54,7 +56,7 @@ func _test_backend_routes() -> void:
 	var backend_script = load("res://autoloads/backend.gd")
 	var backend_instance = backend_script.new()
 	_assert_true(not String(backend_instance._resolve_base_url()).strip_edges().is_empty(), "Backend resolves a usable default base URL")
-	backend_instance.free()
+	backend_instance.queue_free()
 
 	var game_state = _game_state()
 	_assert_true(game_state != null, "GameState autoload is available")
@@ -760,8 +762,7 @@ func _test_scene_instantiation() -> void:
 		await process_frame
 		var load_row = load_save_list.get_child(0)
 		_assert_true(load_row is Button and load_row.disabled, "TitleScreen disables load buttons while the browser is busy")
-		title_instance.free()
-		await process_frame
+		await _dispose_node(title_instance)
 
 	var session_scene = load("res://scenes/game_session.tscn")
 	_assert_true(session_scene != null, "GameSession scene loads")
@@ -783,8 +784,7 @@ func _test_scene_instantiation() -> void:
 		session_profile.load(session_instance.PROFILE_PATH)
 		_assert_true(str(session_profile.get_value("profile", "last_resume_player_id", "")) == "Chaos", "GameSession remembers the last resumable player after a successful save")
 		_restore_profile_values(session_instance.PROFILE_PATH, session_profile_keys, session_profile_backup)
-		session_instance.free()
-		await process_frame
+		await _dispose_node(session_instance)
 
 
 func _test_world_shell() -> void:
@@ -804,8 +804,7 @@ func _test_world_shell() -> void:
 	await process_frame
 	terrain.render_map({})
 	_assert_true(terrain.get_used_cells().size() > 0, "TileMapLayer populates placeholder cells")
-	terrain.free()
-	await process_frame
+	await _dispose_node(terrain)
 
 	var camera = CameraController.new()
 	root.add_child(camera)
@@ -821,8 +820,7 @@ func _test_world_shell() -> void:
 	_assert_true(is_equal_approx(camera.position.x, 176.0) and is_equal_approx(camera.position.y, 208.0), "CameraController centers on the tile midpoint")
 	camera.focus_on_tiles([Vector2i(5, 6), Vector2i(12, 6), Vector2i(11, 11)])
 	_assert_true(camera.get_zoom_index() <= 2, "CameraController zooms out to frame multi-entity clusters instead of pinning the player alone")
-	camera.free()
-	await process_frame
+	await _dispose_node(camera)
 
 	var selection = SelectionOverlay.new()
 	root.add_child(selection)
@@ -836,8 +834,7 @@ func _test_world_shell() -> void:
 	_assert_true(selection.get_interest_tile_count() == 2, "SelectionOverlay tracks interactive attention tiles")
 	_assert_true(selection.get_hostile_tile_count() == 1, "SelectionOverlay tracks hostile threat tiles")
 	_assert_true(selection.get_ambient_tile_count() == 1, "SelectionOverlay tracks ambient landmark tiles for lightweight activity")
-	selection.free()
-	await process_frame
+	await _dispose_node(selection)
 
 
 func _test_entity_rendering() -> void:
@@ -877,8 +874,7 @@ func _test_entity_rendering() -> void:
 	for _index in range(8):
 		await process_frame
 	_assert_true(merchant_actor.position.x > merchant_start.x, "EntityLayer animates actor movement between tile updates")
-	layer.free()
-	await process_frame
+	await _dispose_node(layer)
 
 	var session_scene = load("res://scenes/game_session.tscn")
 	var session_instance = session_scene.instantiate()
@@ -969,8 +965,7 @@ func _test_entity_rendering() -> void:
 	await process_frame
 	_assert_true(session_world_view.command_for_tile(Vector2i(0, 0)) == "examine wall", "World view keeps impassable wall clicks truthful")
 	_assert_true(session_world_view.command_for_tile(Vector2i(1, 0)) == "examine water", "World view keeps water clicks truthful")
-	session_instance.free()
-	await process_frame
+	await _dispose_node(session_instance)
 
 
 func _test_ui_panels() -> void:
@@ -984,14 +979,13 @@ func _test_ui_panels() -> void:
 	root.add_child(session_instance)
 	await process_frame
 	var modal_host = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost")
-	var sidebar_nav = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav")
 	var sidebar_tabs = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack")
 	var initial_defend_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/SettlementPanel/SettlementMargin/SettlementVBox/QuickActions/DefendButton")
 	var map_button = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/MapButton")
 	var menu_button = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/MenuButton")
 	_assert_true(initial_defend_button.disabled, "Settlement quick actions stay disabled until settlement data is available")
 	_assert_true(not modal_host.visible, "Modal host starts hidden until the rail opens a panel")
-	_assert_true(not sidebar_nav.visible, "Legacy sidebar navigation remains inert and hidden")
+	_assert_true(modal_host.get_node_or_null("ModalNav") == null, "Modal host no longer carries the removed legacy sidebar navigation")
 	_assert_true(not sidebar_tabs.tabs_visible, "GameSession keeps the built-in tab strip hidden under the modal host")
 	map_button.pressed.emit()
 	await process_frame
@@ -1062,6 +1056,9 @@ func _test_ui_panels() -> void:
 			"related_topic_ids": ["rumor.harbor_work"],
 			"suggested_commands": ["talk harbor guard"],
 		},
+		"tick_state": {
+			"tick_index": 17,
+		},
 		"knowledge_view": {
 			"topic": {"topic_id": "rumor.harbor_work", "label": "Harbor Work", "category": "rumor"},
 			"facts": ["The harbor guard watches the gate rotation."],
@@ -1074,6 +1071,10 @@ func _test_ui_panels() -> void:
 	await process_frame
 	for _index in range(20):
 		await process_frame
+	var runtime_probe_payload = RuntimeAutomationProbe.runtime_state_payload("GameSession", game_state, "", session_instance)
+	_assert_true(bool(runtime_probe_payload.get("spawn_frame_verified", false)), "Runtime probe verifies the first-frame spawn baseline when live entities are present")
+	_assert_true(runtime_probe_payload.get("spawn_frame_missing", []).is_empty(), "Runtime probe reports no missing first-frame spawn requirements once the scene is populated")
+	_assert_true(int(runtime_probe_payload.get("tick_index", -1)) == 17, "Runtime probe mirrors tick_state.tick_index into the automation payload")
 
 	var player_info = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/PlayerInfo")
 	_assert_true(player_info.text.contains("Chaos"), "Status bar reflects player identity")
@@ -1231,7 +1232,7 @@ func _test_ui_panels() -> void:
 	)
 	game_state.update_from_response({"dialog_npc": "", "dialog_text": "", "dialog_options": []})
 	await process_frame
-	_assert_true(not command_bar.command_entry_visible(), "Rail command entry stays hidden during exploration while point-and-click remains primary")
+	_assert_true(command_bar.find_child("CommandEntry", true, false) == null, "Rail exposes no parser command entry during exploration")
 	game_state.update_from_response({"dialog_npc": null, "dialog_text": null, "dialog_options": []})
 	await process_frame
 	_assert_true(not game_state.has_active_dialog(), "GameState does not activate dialog from null dialog fields")
@@ -1265,6 +1266,7 @@ func _test_ui_panels() -> void:
 		},
 	})
 	_assert_true(not isolated_game_state.has_active_dialog(), "Loaded campaign snapshots with resume narrative do not open a blank dialog overlay")
+	isolated_game_state.free()
 	var requested_panels: Array[String] = []
 	command_bar.panel_requested.connect(func(panel_id: String) -> void:
 		requested_panels.append(panel_id)
@@ -1317,7 +1319,7 @@ func _test_ui_panels() -> void:
 	})
 	await process_frame
 	_assert_true(dialog_overlay.visible, "Dialog overlay becomes visible when dialog payload is shown")
-	_assert_true(not command_bar.command_entry_visible(), "Rail keeps parser input out of the active player path even during dialog")
+	_assert_true(command_bar.find_child("CommandEntry", true, false) == null, "Rail keeps parser input out of the active player path even during dialog")
 	var dialog_option = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/OptionsScroll/OptionsContainer/OptionButton0")
 	var ask_about_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/ActionRow/AskAboutButton")
 	var transcript_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/ActionRow/TranscriptButton")
@@ -1379,7 +1381,7 @@ func _test_ui_panels() -> void:
 	_assert_true(not dialog_overlay.visible, "Dialog overlay hides cleanly after close")
 	game_state.update_from_response({"dialog_npc": "", "dialog_text": "", "dialog_options": []})
 	await process_frame
-	_assert_true(not command_bar.command_entry_visible(), "Rail command entry hides again once the live dialog context ends")
+	_assert_true(command_bar.find_child("CommandEntry", true, false) == null, "Rail still exposes no parser command entry after dialog closes")
 	game_state.conversation_state = {
 		"npc_id": "guard_1",
 		"npc_name": "Harbor Guard",
@@ -1417,7 +1419,7 @@ func _test_ui_panels() -> void:
 	var quick_save_button = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/QuickSaveButton")
 	var saves_button = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/SavesButton")
 	_assert_true(quick_save_button != null and saves_button != null, "Instrument rail exposes save controls without a parser row")
-	_assert_true(not command_bar.has_input_focus(), "Instrument rail has no visible text-entry focus path")
+	_assert_true(command_bar.find_child("CommandEntry", true, false) == null, "Instrument rail has no visible text-entry focus path")
 
 	game_state.update_from_response({
 		"scene": "combat",
@@ -1508,8 +1510,7 @@ func _test_ui_panels() -> void:
 	var save_list = session_instance.get_node("OverlayCanvas/SaveLoadPanel/ModalFrame/ModalMargin/ModalVBox/SaveScroll/SaveList")
 	_assert_true(save_list.get_child_count() == 1, "Save/load panel renders save slot summaries")
 
-	session_instance.free()
-	await process_frame
+	await _dispose_node(session_instance)
 
 
 func _test_asset_bootstrap() -> void:
@@ -1563,10 +1564,23 @@ func _test_generated_asset_resolution() -> void:
 
 
 func _cleanup_test_nodes() -> void:
+	for singleton_name in _ROOT_AUTLOADS_TO_KEEP:
+		var singleton_node = root.get_node_or_null(singleton_name)
+		if singleton_node != null and singleton_node.has_method("test_cleanup"):
+			singleton_node.call("test_cleanup")
 	for child in root.get_children():
-		if child.name in ["GameState", "Backend"]:
+		if child.name in _ROOT_AUTLOADS_TO_KEEP:
 			continue
-		child.free()
+		await _dispose_node(child)
+	await process_frame
+	await process_frame
+
+
+func _dispose_node(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	node.queue_free()
+	await process_frame
 	await process_frame
 
 

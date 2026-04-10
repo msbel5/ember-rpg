@@ -28,6 +28,7 @@ from .runtime_transport import (
     try_start_tick_loop,
     try_stop_tick_loop,
 )
+from .tick_loop import get_tick_loop
 from .state_sync import sync_context_clock
 from .controls import merge_settlement_controls
 from .region_projection import apply_region_to_context
@@ -387,7 +388,29 @@ class CampaignRuntime:
         args: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         context = self.get_campaign(campaign_id)
-        result = _run_command(context, input_text, shortcut=shortcut, args=args)
+        normalized_shortcut = str(shortcut or "").strip().lower()
+        command_args = args if isinstance(args, dict) else {}
+        if normalized_shortcut == "runtime_mode":
+            tick_loop = get_tick_loop(campaign_id)
+            if tick_loop is None:
+                raise ValueError("Runtime loop unavailable")
+            requested_mode = str(command_args.get("mode", input_text)).strip().lower()
+            if requested_mode == "tactical_pause":
+                tick_loop.pause("manual")
+            elif requested_mode in {"exploration_realtime", "resume"}:
+                tick_loop.resume("manual")
+            else:
+                raise ValueError(f"Unknown runtime mode: {requested_mode}")
+            result = {
+                "campaign_id": context.campaign_id,
+                "command_type": "system",
+                "narrative": "",
+                "generated_events": [],
+                "hours_advanced": 0,
+                "campaign": campaign_payload(context),
+            }
+        else:
+            result = _run_command(context, input_text, shortcut=shortcut, args=args)
         sync_tick_loop_mode(context)
         result["transport"] = build_transport_payload(context)
         result["runtime_mode"] = resolve_runtime_mode(

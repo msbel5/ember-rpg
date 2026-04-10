@@ -52,6 +52,15 @@ func _ready() -> void:
 	_write_json(_status_file, _status_payload({"status": "ok"}))
 
 
+func _exit_tree() -> void:
+	test_cleanup()
+
+
+func test_cleanup() -> void:
+	_enabled = false
+	set_process(false)
+
+
 func _process(_delta: float) -> void:
 	if not _enabled:
 		return
@@ -76,6 +85,17 @@ func _poll_once() -> void:
 func _dispatch_command(command: Dictionary) -> Dictionary:
 	var action = str(command.get("action", "")).strip_edges()
 	match action:
+		"key_down":
+			_dispatch_key(str(command.get("key", "")), true)
+		"key_up":
+			_dispatch_key(str(command.get("key", "")), false)
+		"key_press":
+			_dispatch_key(str(command.get("key", "")), true)
+			_dispatch_key(str(command.get("key", "")), false)
+		"key_hold":
+			_dispatch_key(str(command.get("key", "")), true)
+			await get_tree().create_timer(float(command.get("duration_ms", 0)) / 1000.0).timeout
+			_dispatch_key(str(command.get("key", "")), false)
 		"focus_node":
 			var focus_target = _resolve_node(str(command.get("node_path", "")))
 			if focus_target == null:
@@ -274,6 +294,23 @@ func _dispatch_mouse_button(button_name: String, pressed: bool) -> void:
 	_push_input(event)
 
 
+func _dispatch_key(key_name: String, pressed: bool) -> void:
+	var normalized := key_name.strip_edges().to_lower()
+	var event := InputEventKey.new()
+	var keycode: Key = KEY_NONE
+	if KEY_NAME_MAP.has(normalized):
+		keycode = KEY_NAME_MAP[normalized]
+	elif normalized.length() == 1:
+		keycode = OS.find_keycode_from_string(normalized)
+	if keycode == KEY_NONE:
+		return
+	event.keycode = keycode
+	event.physical_keycode = keycode
+	event.unicode = keycode if int(keycode) < 128 else 0
+	event.pressed = pressed
+	_push_input(event)
+
+
 func _push_input(event: InputEvent) -> void:
 	var current_scene = _current_scene_root()
 	if current_scene != null:
@@ -342,7 +379,7 @@ func _runtime_state_payload() -> Dictionary:
 	var active_panel_id := ""
 	if modal_host != null and modal_host.has_method("active_panel_id"):
 		active_panel_id = str(modal_host.call("active_panel_id"))
-	return RuntimeAutomationProbe.runtime_state_payload(scene_name, game_state, active_panel_id)
+	return RuntimeAutomationProbe.runtime_state_payload(scene_name, game_state, active_panel_id, current_scene)
 
 
 func _read_json(path: String) -> Dictionary:
@@ -380,3 +417,7 @@ func _status_payload(extra: Dictionary = {}) -> Dictionary:
 	for key in extra.keys():
 		payload[key] = extra[key]
 	return payload
+
+
+func execute_command(command: Dictionary) -> Dictionary:
+	return await _dispatch_command(command)

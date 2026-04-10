@@ -3,12 +3,14 @@
 HTTP routes handle creation, bootstrap, save/load, and admin.
 WebSocket is the primary runtime transport after campaign start.
 """
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from engine.api.campaign_routes import campaign_runtime, router as campaign_router
+from engine.api.campaign.tick_loop import register_tick_loop_scheduler
 from engine.api.ws_campaign import set_runtime, ws_router
 
 logger = logging.getLogger(__name__)
@@ -18,8 +20,10 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Wire the shared CampaignRuntime into the WebSocket handler on startup."""
     set_runtime(campaign_runtime)
+    register_tick_loop_scheduler(asyncio.get_running_loop())
     logger.info("Ember RPG backend started — WS transport active")
     yield
+    register_tick_loop_scheduler(None)
     logger.info("Ember RPG backend shutting down")
 
 

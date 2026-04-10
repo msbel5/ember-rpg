@@ -87,26 +87,6 @@ func _ready() -> void:
 	_refresh_monitor()
 
 
-func focus_input() -> void:
-	return
-
-
-func clear_input() -> void:
-	return
-
-
-func has_input_focus() -> bool:
-	return false
-
-
-func command_entry_visible() -> bool:
-	return false
-
-
-func set_command_entry_context(_context: String) -> void:
-	return
-
-
 func set_waiting(waiting: bool) -> void:
 	_is_waiting = waiting
 	quick_save_btn.disabled = waiting

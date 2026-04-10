@@ -12,6 +12,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 - `frp-backend/engine/api/campaign/live_kernel.py`: Live kernel still centralizes runtime tick reconciliation, level-up checks, and companion/schedule updates until those slices split out.
 - `frp-backend/engine/api/campaign/quest_bridge.py`: Quest bridge still centralizes accept/report flow, dialog quest hooks, and runtime sync until quest runtime splits further.
 - `frp-backend/engine/api/campaign/region_projection.py`: Campaign region projection still centralizes realization, entity seeding, and party slot projection until it is split.
+- `frp-backend/engine/api/campaign/runtime.py`: Campaign runtime remains the rescue-phase orchestration seam for creation finalization, save/load hydration, command dispatch, and runtime mode payload shaping until the post-rescue runtime split lands.
 - `frp-backend/engine/api/campaign_commands.py`: Campaign command dispatch centralizes all command handlers and dialog/commerce routing.
 - `frp-backend/engine/api/combat_bridge.py`: Combat bridge still centralizes text commands, combat setup, and minimal ally AI until combat command surfaces split further.
 - `frp-backend/engine/api/gameplay_bridge.py`: Gameplay bridge still centralizes inventory, crafting, rest, spells, and progression command adapters until the runtime spend surfaces split out.
@@ -23,6 +24,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 - `frp-backend/engine/world/interactions_runtime.py`: Interaction runtime now centralizes skilldex derivation, canonical interaction descriptors, and structured interaction execution until shell and projection slices settle.
 - `frp-backend/tools/content_orchestrator.py`: Content orchestrator bundles world-building generation pipeline.
 - `godot-client/autoloads/game_state.gd`: Game state autoload centralizes client-side state management.
+- `godot-client/scenes/game_session.gd`: Game session still centralizes runtime shell wiring, pause/input orchestration, and rescue acceptance hooks while UI-state/controller slices settle after the playability rescue.
 - `godot-client/scripts/ui/creation_wizard.gd`: Creation wizard still owns the transitional multi-step shell flow until the UI rewrite lands.
 - `godot-client/scripts/ui/minimap_panel.gd`: Minimap panel still bundles viewport, legend, and travel affordances in one surface.
 - `godot-client/tests/automation/godot/automation_bridge.gd`: Semantic automation bridge remains centralized as a test-only control surface.
@@ -53,24 +55,24 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/campaign/quest_bridge.py` | 548 | - | maybe_handle_quest_command, apply_dialog_events, sync_runtime_objectives, start_quest |
 | `frp-backend/engine/api/campaign/quest_objectives.py` | 244 | - | sync_runtime_objectives, normalize_objectives, refresh_quest_progress, quest_ready_to_report |
 | `frp-backend/engine/api/campaign/quest_state.py` | 46 | - | snapshot_quest_state, restore_quest_state |
-| `frp-backend/engine/api/campaign/region_projection.py` | 1839 | - | _is_party_capable_actor, _preserved_party_entities, _restore_party_entities, _clamp_party_position |
-| `frp-backend/engine/api/campaign/runtime.py` | 431 | CampaignRuntime (22) | - |
+| `frp-backend/engine/api/campaign/region_projection.py` | 1902 | - | _entity_kind_from_payload, _is_party_capable_actor, _preserved_party_entities, _restore_party_entities |
+| `frp-backend/engine/api/campaign/runtime.py` | 465 | CampaignRuntime (22) | - |
 | `frp-backend/engine/api/campaign/runtime_commands.py` | 388 | - | run_command, advance_world_tick, _dispatch, _dialog_is_active |
 | `frp-backend/engine/api/campaign/runtime_common.py` | 36 | - | saved_or, saved_list_or, stable_seed, active_site_id |
 | `frp-backend/engine/api/campaign/runtime_effects.py` | 22 | - | effect_events |
 | `frp-backend/engine/api/campaign/runtime_macro_society.py` | 307 | - | macro_society_events, load_stores, default_stores, _base_store_items |
 | `frp-backend/engine/api/campaign/runtime_settlement.py` | 184 | - | job_and_farm_events, apply_job_outputs, refresh_runtime_views, project_runtime_to_settlement |
 | `frp-backend/engine/api/campaign/runtime_systems.py` | 132 | - | systems_events, load_systems |
-| `frp-backend/engine/api/campaign/runtime_transport.py` | 106 | - | build_transport_payload, resolve_runtime_mode, sync_tick_loop_mode, try_start_tick_loop |
+| `frp-backend/engine/api/campaign/runtime_transport.py` | 166 | - | build_transport_payload, build_tick_state, build_world_ready, resolve_runtime_mode |
 | `frp-backend/engine/api/campaign/settlement.py` | 261 | - | _build_progression_summary, build_settlement_state, build_character_sheet, current_player_turn_resources |
 | `frp-backend/engine/api/campaign/state_sync.py` | 102 | - | sync_context_clock, sync_player_position |
-| `frp-backend/engine/api/campaign/tick_loop.py` | 140 | CampaignTickLoop (9) | start_tick_loop, stop_tick_loop, get_tick_loop |
+| `frp-backend/engine/api/campaign/tick_loop.py` | 182 | CampaignTickLoop (11) | start_tick_loop, stop_tick_loop, get_tick_loop, register_tick_loop_scheduler |
 | `frp-backend/engine/api/campaign/travel_commands.py` | 260 | - | _travel_runtime_state, _travel_is_active, _set_travel_scene, _travel_seed |
 | `frp-backend/engine/api/campaign/world.py` | 359 | - | build_world, derive_creation_world_seed, choose_starting_settlement, region_payload |
 | `frp-backend/engine/api/campaign_commands.py` | 590 | StructuredInteractionTarget (0) | resolve_command_text, maybe_handle_structured_interaction, _resolve_structured_target, _structured_target_kind |
 | `frp-backend/engine/api/campaign_kernel.py` | 113 | - | build_canonical_world_state, build_canonical_actor_roster, build_canonical_actor_records, build_canonical_game_state |
-| `frp-backend/engine/api/campaign_models.py` | 151 | CreateCampaignRequest (0), CampaignCreationStartRequest (0), CampaignCreationAnswerRequest (0), CampaignCreationFinalizeRequest (0) | - |
-| `frp-backend/engine/api/campaign_routes.py` | 292 | - | get_campaign_client_health, _creation_response, get_campaign_creation_catalog, start_campaign_creation |
+| `frp-backend/engine/api/campaign_models.py` | 155 | CreateCampaignRequest (0), CampaignCreationStartRequest (0), CampaignCreationAnswerRequest (0), CampaignCreationFinalizeRequest (0) | - |
+| `frp-backend/engine/api/campaign_routes.py` | 294 | - | get_campaign_client_health, _creation_response, get_campaign_creation_catalog, start_campaign_creation |
 | `frp-backend/engine/api/combat_bridge.py` | 864 | - | maybe_handle_combat_command, handle_attack_target_id, maybe_handle_structured_combat_command, _handle_attack |
 | `frp-backend/engine/api/context_factory.py` | 183 | PlayerInitState (0) | create_player_state |
 | `frp-backend/engine/api/exploration_bridge.py` | 396 | - | _player, _actors, _npc_list, _time_desc |
@@ -84,7 +86,8 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/engine/api/save/core.py` | 15 | SaveSystem (1) | - |
 | `frp-backend/engine/api/save/repository.py` | 146 | SaveRepositoryMixin (11) | - |
 | `frp-backend/engine/api/session_utils.py` | 196 | - | make_conversation_state, normalize_conversation_state, canonical_slot, display_name |
-| `frp-backend/engine/api/ws_campaign.py` | 179 | - | set_runtime, _get_runtime, get_connections, push_tick_events |
+| `frp-backend/engine/api/websocket_support.py` | 26 | - | websocket_support_payload, websocket_transport_available |
+| `frp-backend/engine/api/ws_campaign.py` | 225 | - | _compact_snapshot, set_runtime, _get_runtime, get_connections |
 | `frp-backend/engine/campaign/__init__.py` | 435 | QuestStatus (0), QuestType (0), EventType (0), QuestObjective (2) | - |
 | `frp-backend/engine/data/__init__.py` | 2 | - | - |
 | `frp-backend/engine/data/_shared.py` | 208 | - | load_json_path, _load_json, _unwrap, _normalize_list |
@@ -213,21 +216,21 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `frp-backend/tools/content_validator.py` | 347 | - | _infer_signature, _validate_signature, _validate_standard_list_family, _validate_campaigns |
 | `frp-backend/tools/doc_inventory.py` | 185 | - | _relative, _load_registry, _scan_active_prds, _scan_deprecated_prds |
 | `frp-backend/tools/generate_content.py` | 213 | - | header, step, ok, fail |
-| `frp-backend/tools/runtime_audit.py` | 218 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
-| `godot-client/autoloads/backend.gd` | 398 | - | _ready, _process, set_base_url, get_base_url |
-| `godot-client/autoloads/backend_runtime.gd` | 206 | - | ensure_bootstrap, reset_state, _run_bootstrap, _commit_backend |
-| `godot-client/autoloads/game_state.gd` | 564 | - | update_from_response, reset, is_in_combat, has_active_travel |
-| `godot-client/autoloads/runtime_automation_bridge.gd` | 382 | - | _ready, _process, _poll_once, _dispatch_command |
-| `godot-client/autoloads/runtime_automation_probe.gd` | 92 | RuntimeAutomationProbe (0) | - |
-| `godot-client/scenes/game_session.gd` | 437 | - | _ready, _install_status_bar, _install_dialog_overlay, _install_combat_overlay |
+| `frp-backend/tools/runtime_audit.py` | 220 | - | _iter_runtime_files, _relative, _python_map, _gdscript_map |
+| `godot-client/autoloads/backend.gd` | 416 | - | _ready, _exit_tree, _process, set_base_url |
+| `godot-client/autoloads/backend_runtime.gd` | 235 | - | _exit_tree, ensure_bootstrap, reset_state, test_cleanup |
+| `godot-client/autoloads/game_state.gd` | 572 | - | update_from_response, reset, is_in_combat, has_active_travel |
+| `godot-client/autoloads/runtime_automation_bridge.gd` | 423 | - | _ready, _exit_tree, test_cleanup, _process |
+| `godot-client/autoloads/runtime_automation_probe.gd` | 162 | RuntimeAutomationProbe (0) | - |
+| `godot-client/scenes/game_session.gd` | 464 | - | _ready, _exit_tree, _install_status_bar, _install_dialog_overlay |
 | `godot-client/scenes/title_menu.gd` | 331 | TitleMenu (0) | _ready, set_continue_enabled, focus_default, _cache_nodes |
 | `godot-client/scenes/title_screen.gd` | 366 | - | _ready, _on_new_game, _on_continue, _on_load_requested |
 | `godot-client/scripts/asset/asset_bootstrap.gd` | 38 | AssetBootstrap (0) | - |
 | `godot-client/scripts/asset/asset_manifest.gd` | 38 | AssetManifest (0) | - |
 | `godot-client/scripts/game_session_helpers.gd` | 96 | GameSessionHelpers (0) | - |
-| `godot-client/scripts/net/response_entity_normalizer.gd` | 274 | ResponseEntityNormalizer (0) | - |
+| `godot-client/scripts/net/response_entity_normalizer.gd` | 288 | ResponseEntityNormalizer (0) | - |
 | `godot-client/scripts/net/response_map_normalizer.gd` | 108 | ResponseMapNormalizer (0) | - |
-| `godot-client/scripts/net/response_normalizer.gd` | 243 | ResponseNormalizer (0) | - |
+| `godot-client/scripts/net/response_normalizer.gd` | 247 | ResponseNormalizer (0) | - |
 | `godot-client/scripts/pov_renderer.gd` | 414 | - | _ready, set_location_type, _load_ai_background, update_player |
 | `godot-client/scripts/pov_renderer_config.gd` | 101 | PovRendererConfig (0) | - |
 | `godot-client/scripts/tile_map_renderer.gd` | 263 | - | _ready, _process, _create_player_marker, _on_map_loaded |
@@ -243,7 +246,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/scripts/ui/dialog_overlay.gd` | 361 | DialogOverlay (0) | _ready, _unhandled_key_input, show_dialog, hide_dialog |
 | `godot-client/scripts/ui/dialog_overlay_state.gd` | 160 | DialogOverlayState (0) | - |
 | `godot-client/scripts/ui/ember_theme.gd` | 259 | EmberTheme (0) | - |
-| `godot-client/scripts/ui/instrument_rail.gd` | 266 | InstrumentRailWidget (0) | _ready, focus_input, clear_input, has_input_focus |
+| `godot-client/scripts/ui/instrument_rail.gd` | 246 | InstrumentRailWidget (0) | _ready, set_waiting, set_focus_summary, set_focus_actions |
 | `godot-client/scripts/ui/inventory_panel.gd` | 110 | InventoryPanelWidget (0) | _ready, _refresh_inventory, _refresh, _load_item_icon |
 | `godot-client/scripts/ui/load_browser_widget.gd` | 356 | LoadBrowserWidget (0) | _ready, open, close, refresh |
 | `godot-client/scripts/ui/minimap_panel.gd` | 573 | MinimapPanelWidget (0) | _ready, _refresh_from_map, _refresh, _refresh_world_graph |
@@ -256,7 +259,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/scripts/ui/screenshot_capture.gd` | 28 | - | - |
 | `godot-client/scripts/ui/session_save_sync.gd` | 152 | SessionSaveSync (0) | _init, on_quick_save_requested, open_save_load_panel, on_save_requested |
 | `godot-client/scripts/ui/session_shell_sync.gd` | 141 | SessionShellSync (0) | _init, wire_modal_surfaces, on_shell_panel_requested, on_modal_host_closed |
-| `godot-client/scripts/ui/session_world_sync.gd` | 60 | SessionWorldSync (0) | _init, initialize_runtime, on_map_resynced, on_inventory_resynced |
+| `godot-client/scripts/ui/session_world_sync.gd` | 200 | SessionWorldSync (0) | _init, initialize_runtime, on_map_resynced, on_inventory_resynced |
 | `godot-client/scripts/ui/settlement_panel.gd` | 135 | SettlementPanelWidget (0) | _ready, set_waiting, _on_settlement_updated, _refresh |
 | `godot-client/scripts/ui/status_bar_widget.gd` | 181 | StatusBarWidget (0) | _ready, _refresh, _set_hp, _apply_bar_style |
 | `godot-client/scripts/ui/think_panel.gd` | 88 | ThinkPanelWidget (0) | _ready, set_view, sync_from_game_state, _render |
@@ -272,8 +275,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/scripts/world/world_focus.gd` | 260 | WorldFocus (0) | - |
 | `godot-client/scripts/world/world_intent_router.gd` | 88 | WorldIntentRouter (0) | - |
 | `godot-client/scripts/world/world_interaction.gd` | 217 | WorldInteraction (0) | - |
-| `godot-client/scripts/world/world_overlay.gd` | 121 | WorldOverlay (0) | _ready, _process, configure, _draw |
-| `godot-client/scripts/world/world_view.gd` | 442 | WorldViewWidget (0) | _ready, refresh_from_state, get_atmosphere_state, get_focus_summary |
+| `godot-client/scripts/world/world_view.gd` | 431 | WorldViewWidget (0) | _ready, refresh_from_state, get_atmosphere_state, get_focus_summary |
 | `godot-client/scripts/world/world_view_planner.gd` | 140 | WorldViewPlanner (0) | - |
 | `godot-client/scripts/world/world_walk.gd` | 144 | WorldWalk (0) | compute_path, start_walk, advance_step, cancel |
 | `godot-client/tests/automation/godot/automation_bridge.gd` | 558 | - | configure, poll_once, tick_recording, playback_steps |
@@ -281,6 +283,7 @@ Oversized runtime files are only permitted when explicitly documented below.
 | `godot-client/tests/automation/godot/automation_state.gd` | 25 | - | status_payload |
 | `godot-client/tests/automation/godot/input_probe.gd` | 52 | - | _ready, _input |
 | `godot-client/tests/automation/godot/test_automation_bridge.gd` | 153 | - | _initialize, _run_tests, _setup_bridge, _test_mouse_input |
+| `godot-client/tests/automation/godot/test_vertical_slice_acceptance.gd` | 339 | - | _initialize, _ensure_autoloads, _ensure_singleton, _run_acceptance |
 | `godot-client/tests/doubles/backend_probe.gd` | 29 | - | _ensure_base_url, _post, _http_get, _http_delete |
 | `godot-client/tests/manual/capture_creation_proof.gd` | 127 | - | _initialize |
-| `godot-client/tests/run_headless_tests.gd` | 1595 | - | _initialize, _run_tests, _assert_true, _game_state |
+| `godot-client/tests/run_headless_tests.gd` | 1609 | - | _initialize, _run_tests, _assert_true, _game_state |

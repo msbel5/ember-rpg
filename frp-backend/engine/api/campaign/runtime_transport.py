@@ -6,7 +6,12 @@ from typing import Any, Optional
 from engine.api.websocket_support import websocket_support_payload
 
 from .dialog import build_dialog_payload
-from .tick_loop import DEFAULT_TICK_HOURS, DEFAULT_TICK_INTERVAL, get_tick_loop
+from .tick_loop import (
+    DEFAULT_TICK_HOURS,
+    DEFAULT_TICK_INTERVAL,
+    get_tick_loop,
+    schedule_tick_loop_coroutine,
+)
 
 
 def build_transport_payload(context: Any) -> dict[str, Any]:
@@ -38,6 +43,7 @@ def build_tick_state(context: Any) -> dict[str, Any]:
             "pause_reasons": [],
             "interval_seconds": DEFAULT_TICK_INTERVAL,
             "tick_hours_per_interval": DEFAULT_TICK_HOURS,
+            "tick_index": 0,
         }
     return {
         "running": bool(tick_loop.running),
@@ -45,6 +51,7 @@ def build_tick_state(context: Any) -> dict[str, Any]:
         "pause_reasons": list(tick_loop.pause_reasons),
         "interval_seconds": float(getattr(tick_loop, "_interval", DEFAULT_TICK_INTERVAL)),
         "tick_hours_per_interval": int(getattr(tick_loop, "_tick_hours", DEFAULT_TICK_HOURS)),
+        "tick_index": int(getattr(tick_loop, "tick_index", 0)),
     }
 
 
@@ -130,30 +137,22 @@ def sync_tick_loop_mode(
         tick_loop.resume("dialog")
 
 
-def try_start_tick_loop(runtime: Any, campaign_id: str, *, interval: float = 30.0) -> None:
+def try_start_tick_loop(runtime: Any, campaign_id: str, *, interval: float = DEFAULT_TICK_INTERVAL) -> None:
     """Start tick loop if an asyncio event loop is running."""
-    import asyncio
     from engine.api.campaign.tick_loop import start_tick_loop
 
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.ensure_future(start_tick_loop(runtime, campaign_id, interval=interval))
-    except RuntimeError:
-        pass
+    coro = start_tick_loop(runtime, campaign_id, interval=interval)
+    if not schedule_tick_loop_coroutine(coro):
+        coro.close()
 
 
 def try_stop_tick_loop(campaign_id: str) -> None:
     """Stop tick loop if an asyncio event loop is running."""
-    import asyncio
     from engine.api.campaign.tick_loop import stop_tick_loop
 
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.ensure_future(stop_tick_loop(campaign_id))
-    except RuntimeError:
-        pass
+    coro = stop_tick_loop(campaign_id)
+    if not schedule_tick_loop_coroutine(coro):
+        coro.close()
 
 
 __all__ = [

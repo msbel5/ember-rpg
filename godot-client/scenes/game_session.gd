@@ -60,10 +60,18 @@ func _ready() -> void:
 
 	_save_sync.remember_player_id()
 	_world_sync.initialize_runtime()
+	_world_sync.ensure_first_frame_baseline()
 	instrument_rail.set_focus_summary(world_view.get_focus_summary())
 	instrument_rail.set_focus_actions(world_view.get_focus_actions())
 	_sync_dialog_overlay()
 	_shell_sync.sync_shell_state()
+
+
+func _exit_tree() -> void:
+	if _world_sync != null and _world_sync.has_method("shutdown"):
+		_world_sync.shutdown()
+	if Backend != null and Backend.has_method("close_runtime_socket"):
+		Backend.close_runtime_socket("game_session_exit")
 
 
 func _install_status_bar() -> void:
@@ -121,7 +129,6 @@ func _submit_action(text: String) -> void:
 		_shell_sync.append_narrative_system_text("[color=red]You have fallen. Type 'rest' to recover or start anew.[/color]")
 		return
 	_set_waiting(true)
-	instrument_rail.clear_input()
 	if not Backend.runtime_submit_command(GameState.campaign_id, text):
 		Backend.submit_campaign_command(GameState.campaign_id, text, _on_campaign_action_response.bind(text))
 	await get_tree().create_timer(3.0).timeout
@@ -140,7 +147,6 @@ func _submit_structured_action(shortcut: String, args: Dictionary, history_text:
 	if not remember_text.is_empty():
 		instrument_rail.remember_command(remember_text)
 	_set_waiting(true)
-	instrument_rail.clear_input()
 	if not Backend.runtime_submit_command(GameState.campaign_id, "", normalized_shortcut, args):
 		Backend.submit_campaign_command(
 			GameState.campaign_id,
@@ -360,8 +366,19 @@ func _toggle_tactical_pause() -> void:
 	var target_mode := "tactical_pause"
 	if GameState.runtime_mode == "tactical_pause":
 		target_mode = "exploration_realtime"
+	GameState.runtime_mode = target_mode
+	if GameState.tick_state.is_empty():
+		GameState.tick_state = {}
+	GameState.tick_state["paused"] = target_mode == "tactical_pause"
+	GameState.state_updated.emit()
 	if not Backend.set_runtime_mode(GameState.campaign_id, target_mode):
-		_shell_sync.append_narrative_system_text("[color=orange]Live runtime pause is unavailable.[/color]")
+		Backend.submit_campaign_command(
+			GameState.campaign_id,
+			"",
+			_on_campaign_action_response.bind("runtime mode"),
+			"runtime_mode",
+			{"mode": target_mode},
+		)
 
 
 func _on_world_command_requested(command_text: String) -> void:
@@ -408,6 +425,16 @@ func _on_modal_host_closed() -> void:
 
 func _on_modal_surface_close_requested() -> void:
 	_shell_sync.on_modal_surface_close_requested()
+
+
+func automation_spawn_frame_payload() -> Dictionary:
+	if _world_sync == null or not _world_sync.has_method("ensure_first_frame_baseline"):
+		return {
+			"verified": false,
+			"missing": [],
+			"tick_index": int(GameState.tick_state.get("tick_index", -1)),
+		}
+	return _world_sync.ensure_first_frame_baseline()
 
 
 func _capture_visual_proof(folder: String, prefix: String, include_world: bool) -> void:

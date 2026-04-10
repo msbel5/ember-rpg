@@ -79,7 +79,7 @@ def test_campaign_snapshot_contains_godot_ready_map_and_settlement_payload():
     assert payload["transport"]["websocket_ready"] is True
     assert payload["transport"]["websocket_library"] in {"websockets", "wsproto"}
     assert payload["world_ready"] is True
-    assert {"running", "paused", "pause_reasons", "interval_seconds", "tick_hours_per_interval"} <= set(payload["tick_state"])
+    assert {"running", "paused", "pause_reasons", "interval_seconds", "tick_hours_per_interval", "tick_index"} <= set(payload["tick_state"])
     assert campaign["world_state"]["seed"] == 42
     assert campaign["game_state"]["campaign_id"] == payload["campaign_id"]
     assert campaign["game_state"]["party"] == ["player"]

@@ -101,7 +101,7 @@ def test_create_campaign_returns_campaign_snapshot():
     assert payload["transport"]["websocket_ready"] is True
     assert payload["runtime_mode"] in {"exploration_realtime", "dialog", "travel", "combat_turn_based", "tactical_pause"}
     assert payload["world_ready"] is True
-    assert {"running", "paused", "pause_reasons", "interval_seconds", "tick_hours_per_interval"} <= set(payload["tick_state"])
+    assert {"running", "paused", "pause_reasons", "interval_seconds", "tick_hours_per_interval", "tick_index"} <= set(payload["tick_state"])
     assert payload["adapter_id"] == "fantasy_ember"
     assert payload["campaign"]["world"]["active_region_id"]
     assert payload["campaign"]["world_state"]["active_region_id"]
@@ -161,7 +161,7 @@ def test_campaign_command_and_region_endpoints_work():
     body = command.json()
     assert body["command_type"] == "exploration"
     assert body["transport"]["websocket_ready"] is True
-    assert {"running", "paused", "pause_reasons", "interval_seconds", "tick_hours_per_interval"} <= set(body["tick_state"])
+    assert {"running", "paused", "pause_reasons", "interval_seconds", "tick_hours_per_interval", "tick_index"} <= set(body["tick_state"])
     assert isinstance(body["world_ready"], bool)
     assert body["campaign"]["recent_event_log"]
     assert body["campaign"]["jobs"]
@@ -177,6 +177,48 @@ def test_campaign_command_and_region_endpoints_work():
     settlement = client.get(f"/game/campaigns/{campaign_id}/settlement/current")
     assert settlement.status_code == 200
     assert settlement.json()["rooms"]
+
+
+def test_campaign_runtime_mode_shortcut_pauses_and_resumes_idle_loop():
+    with TestClient(app) as live_client:
+        payload = live_client.post(
+            "/game/campaigns",
+            json={
+                "player_name": "CampaignTester",
+                "player_class": "warrior",
+                "adapter_id": "fantasy_ember",
+                "profile_id": "standard",
+                "seed": 246,
+            },
+        ).json()
+        campaign_id = payload["campaign_id"]
+
+        paused = live_client.post(
+            f"/game/campaigns/{campaign_id}/commands",
+            json={
+                "input": "",
+                "shortcut": "runtime_mode",
+                "args": {"mode": "tactical_pause"},
+            },
+        )
+        assert paused.status_code == 200
+        paused_body = paused.json()
+        assert paused_body["runtime_mode"] == "tactical_pause"
+        assert paused_body["tick_state"]["paused"] is True
+        assert "manual" in paused_body["tick_state"]["pause_reasons"]
+
+        resumed = live_client.post(
+            f"/game/campaigns/{campaign_id}/commands",
+            json={
+                "input": "",
+                "shortcut": "runtime_mode",
+                "args": {"mode": "exploration_realtime"},
+            },
+        )
+        assert resumed.status_code == 200
+        resumed_body = resumed.json()
+        assert resumed_body["runtime_mode"] in {"exploration_realtime", "dialog", "travel"}
+        assert resumed_body["tick_state"]["paused"] is False
 
 
 def test_campaign_travel_shortcut_starts_active_travel_without_immediate_region_switch():

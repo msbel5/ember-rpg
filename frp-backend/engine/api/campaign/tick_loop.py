@@ -20,9 +20,12 @@ from .runtime_commands import advance_world_tick
 
 logger = logging.getLogger(__name__)
 
-# Default: one game-hour every 30 real seconds.
-DEFAULT_TICK_INTERVAL = 30.0
+# Default: one game-hour every 5 real seconds so the live shell visibly flows
+# during the rescue-gate acceptance window.
+DEFAULT_TICK_INTERVAL = 5.0
 DEFAULT_TICK_HOURS = 1
+
+_scheduler_loop: Optional[asyncio.AbstractEventLoop] = None
 
 
 class CampaignTickLoop:
@@ -44,6 +47,7 @@ class CampaignTickLoop:
         self._on_tick = on_tick
         self._task: Optional[asyncio.Task] = None
         self._pause_reasons: set[str] = set()
+        self._tick_index: int = 0
 
     @property
     def running(self) -> bool:
@@ -56,6 +60,10 @@ class CampaignTickLoop:
     @property
     def pause_reasons(self) -> tuple[str, ...]:
         return tuple(sorted(self._pause_reasons))
+
+    @property
+    def tick_index(self) -> int:
+        return self._tick_index
 
     async def start(self) -> None:
         """Start the background tick task."""
@@ -102,6 +110,7 @@ class CampaignTickLoop:
                 continue
             try:
                 events = advance_world_tick(context, hours=self._tick_hours)
+                self._tick_index += 1
                 if self._on_tick is not None:
                     snapshot = self._runtime.snapshot(self._campaign_id)
                     await self._on_tick(self._campaign_id, events, snapshot)
@@ -141,4 +150,33 @@ def get_tick_loop(campaign_id: str) -> Optional[CampaignTickLoop]:
     return _tick_loops.get(campaign_id)
 
 
-__all__ = ["CampaignTickLoop", "get_tick_loop", "start_tick_loop", "stop_tick_loop"]
+def register_tick_loop_scheduler(loop: Optional[asyncio.AbstractEventLoop]) -> None:
+    """Register the application event loop used to schedule tick tasks from sync routes."""
+    global _scheduler_loop
+    _scheduler_loop = loop
+
+
+def schedule_tick_loop_coroutine(coro: Coroutine[Any, Any, Any]) -> bool:
+    """Schedule a tick-loop coroutine on the active app loop when available."""
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(coro)
+        return True
+    except RuntimeError:
+        pass
+    if _scheduler_loop is not None and _scheduler_loop.is_running():
+        asyncio.run_coroutine_threadsafe(coro, _scheduler_loop)
+        return True
+    return False
+
+
+__all__ = [
+    "CampaignTickLoop",
+    "DEFAULT_TICK_HOURS",
+    "DEFAULT_TICK_INTERVAL",
+    "get_tick_loop",
+    "register_tick_loop_scheduler",
+    "schedule_tick_loop_coroutine",
+    "start_tick_loop",
+    "stop_tick_loop",
+]

@@ -20,6 +20,10 @@ var _bootstrap_started: bool = false
 var _managed_backend_pid: int = -1
 
 
+func _exit_tree() -> void:
+	test_cleanup()
+
+
 func ensure_bootstrap() -> void:
 	if _bootstrap_started:
 		return
@@ -33,6 +37,19 @@ func reset_state() -> void:
 	resolved_url = ""
 	health_payload = {}
 	_bootstrap_started = false
+
+
+func test_cleanup() -> void:
+	reset_state()
+	_cleanup_pending_http_requests()
+
+
+func _cleanup_pending_http_requests() -> void:
+	for child in get_children():
+		if child is HTTPRequest:
+			var request: HTTPRequest = child
+			request.cancel_request()
+			request.queue_free()
 
 
 func _run_bootstrap() -> void:

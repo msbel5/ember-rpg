@@ -3,10 +3,8 @@ class_name WorldViewWidget
 
 const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const PovRendererConfig = preload("res://scripts/pov_renderer_config.gd")
-const WorldOverlay = preload("res://scripts/world/world_overlay.gd")
 const WorldIntentRouter = preload("res://scripts/world/world_intent_router.gd")
 const WorldViewPlanner = preload("res://scripts/world/world_view_planner.gd")
-const ENABLE_WORLD_OVERLAY := false
 
 signal command_requested(command_text: String)
 signal command_sequence_requested(commands: Array[String])
@@ -19,7 +17,6 @@ signal focus_actions_changed(actions: Array)
 @onready var selection_layer = $WorldViewport/WorldRoot/SelectionLayer
 @onready var world_camera: Camera2D = $WorldViewport/WorldRoot/WorldCamera
 
-var _world_overlay: Control
 var _placeholder_banner: Label
 var _atmosphere_motes: Array = []
 var _background_key: String = ""
@@ -37,10 +34,6 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_exited.connect(_on_mouse_exited)
 	resized.connect(_sync_viewport_size)
-	if ENABLE_WORLD_OVERLAY:
-		_world_overlay = WorldOverlay.new()
-		_world_overlay.name = "WorldOverlay"
-		add_child(_world_overlay)
 	_placeholder_banner = Label.new()
 	_placeholder_banner.name = "PlaceholderBanner"
 	_placeholder_banner.visible = false
@@ -107,8 +100,6 @@ func _sync_viewport_size() -> void:
 	var next_size := Vector2i(maxi(int(size.x), 1), maxi(int(size.y), 1))
 	if world_viewport.size != next_size:
 		world_viewport.size = next_size
-
-# Legacy public API preserved for game_session.gd compatibility
 func command_for_entity(entity: Dictionary) -> String:
 	return WorldInteraction.command_for_entity(entity)
 
@@ -289,8 +280,6 @@ func _refresh_from_state(_payload = null) -> void:
 	WorldViewPlanner.update_attention_layers(selection_layer, map_payload, GameState.entities)
 	_atmosphere_motes = WorldViewPlanner.rebuild_atmosphere(map_payload, size)
 	_background_key = WorldViewPlanner.resolve_background_key(GameState.get_display_location(), GameState.scene)
-	if ENABLE_WORLD_OVERLAY and _world_overlay != null and _world_overlay.has_method("configure"):
-		_world_overlay.configure(_current_adapter_id(), _background_key, _atmosphere_motes, _is_placeholder())
 	var player_tile := GameState.player_map_pos
 	if player_tile == Vector2i.ZERO and map_payload.has("spawn_point"):
 		var sp = map_payload.get("spawn_point", [])

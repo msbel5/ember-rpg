@@ -1,11 +1,11 @@
 [scenario]
-name = "sidebar_tabs_desktop"
-description = "Desktop proof for the main gameplay sidebar tabs with real OS and viewport captures."
+name = "shell_panels_desktop"
+description = "Desktop proof for the active gameplay shell panels driven by the instrument rail."
 adapter_id = "fantasy_ember"
 player_name = "Chaos"
 create_new = false
 requires_backend = true
-tags = ["desktop", "gameplay", "tabs", "proof"]
+tags = ["desktop", "gameplay", "shell", "proof"]
 
 [[steps]]
 id = "focus_window"
@@ -47,49 +47,55 @@ capture_viewport = true
 expected = "gameplay shell opens from the selected save"
 
 [[steps]]
-id = "open_hero_tab"
+id = "open_hero_panel"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav/CharacterPanelTabButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/HeroButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
-expected = "hero tab is visible"
+expected = "hero panel opens through the active shell rail"
 
 [[steps]]
-id = "open_town_tab"
+id = "open_town_panel"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav/SettlementPanelTabButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/TownButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
-expected = "town tab is visible"
+expected = "town panel opens through the active shell rail"
 
 [[steps]]
-id = "open_quests_tab"
+id = "open_quests_panel"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav/QuestPanelTabButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/QuestsButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
-expected = "quests tab is visible"
+expected = "quests panel opens through the active shell rail"
 
 [[steps]]
-id = "open_items_tab"
+id = "open_items_panel"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav/InventoryPanelTabButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/ItemsButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
-expected = "items tab is visible"
+expected = "items panel opens through the active shell rail"
 
 [[steps]]
-id = "open_map_tab"
+id = "open_map_panel"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav/MinimapPanelTabButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/MapButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
-expected = "map tab is visible"
+expected = "map panel opens through the active shell rail"
 
-
-
+[[steps]]
+id = "open_pause_panel"
+action = "activate_node"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/MenuButton"
+wait_ms = 600
+capture_os = true
+capture_viewport = true
+expected = "pause counsel opens through the active shell rail"

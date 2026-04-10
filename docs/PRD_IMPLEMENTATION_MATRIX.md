@@ -4,7 +4,7 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 
 ## Summary
 
-- Active PRDs: 44
+- Active PRDs: 94
 - Deprecated PRDs: 0
 - Deprecated Notes: 0
 - Canonical mechanics map: `docs/architecture/ember_mechanics_canon_v1.md`
@@ -16,6 +16,15 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 | `docs/prd/active/PRD_actor_kernel_v1.md` | `kernel_actor` | DF:M02, DF:M03, DF:M18, GEMRB:M01 | `frp-backend/engine/kernel/actor.py`, `frp-backend/engine/api/campaign_kernel.py` | - |
 | `docs/prd/active/PRD_actor_record_authority_v1.md` | `kernel_actor` | DF:M02, GEMRB:M01 | `frp-backend/engine/kernel/actor_records.py`, `frp-backend/engine/api/campaign_kernel.py` | - |
 | `docs/prd/active/PRD_api_handler_cleanup_v1.md` | `runtime_cleanup` | EMBER:CLEANUP | `frp-backend/engine/api/campaign/runtime_commands.py` | - |
+| `docs/prd/active/PRD_architecture_actor_animation_v1.md` | `client_architecture` | CLIENT:ARCH | `frp-backend/engine/api/campaign/runtime.py`, `godot-client/autoloads/game_state.gd`, `godot-client/scenes/game_session.gd` | - |
+| `docs/prd/active/PRD_architecture_actor_runtime_v1.md` | `client_architecture` | CLIENT:ARCH | `frp-backend/engine/api/campaign/runtime.py`, `godot-client/autoloads/game_state.gd`, `godot-client/scenes/game_session.gd` | - |
+| `docs/prd/active/PRD_architecture_actor_spawning_v1.md` | `client_architecture` | CLIENT:ARCH | `frp-backend/engine/api/campaign/runtime.py`, `godot-client/autoloads/game_state.gd`, `godot-client/scenes/game_session.gd` | - |
+| `docs/prd/active/PRD_architecture_ambient_life_v1.md` | `client_architecture` | CLIENT:ARCH | `frp-backend/engine/api/campaign/runtime.py`, `godot-client/autoloads/game_state.gd`, `godot-client/scenes/game_session.gd` | - |
+| `docs/prd/active/PRD_architecture_area_ambient_v1.md` | `client_architecture` | CLIENT:ARCH | `frp-backend/engine/api/campaign/runtime.py`, `godot-client/autoloads/game_state.gd`, `godot-client/scenes/game_session.gd` | - |
+| `docs/prd/active/PRD_architecture_effect_visualization_v1.md` | `client_architecture` | CLIENT:ARCH | `frp-backend/engine/api/campaign/runtime.py`, `godot-client/autoloads/game_state.gd`, `godot-client/scenes/game_session.gd` | - |
+| `docs/prd/active/PRD_architecture_fast_visual_tick_v1.md` | `client_architecture` | CLIENT:ARCH | `frp-backend/engine/api/campaign/runtime.py`, `godot-client/autoloads/game_state.gd`, `godot-client/scenes/game_session.gd` | - |
+| `docs/prd/active/PRD_architecture_pathfinding_v1.md` | `client_architecture` | CLIENT:ARCH | `frp-backend/engine/api/campaign/runtime.py`, `godot-client/autoloads/game_state.gd`, `godot-client/scenes/game_session.gd` | - |
+| `docs/prd/active/PRD_architecture_sprite_layers_v1.md` | `client_architecture` | CLIENT:ARCH | `frp-backend/engine/api/campaign/runtime.py`, `godot-client/autoloads/game_state.gd`, `godot-client/scenes/game_session.gd` | - |
 | `docs/prd/active/PRD_area_map_v1.md` | `kernel_area` | DF:M16, GEMRB:M10 | `frp-backend/engine/kernel/area.py`, `frp-backend/engine/map` | `docs/deprecated/prd/PRD_map_generator.md`, `docs/deprecated/prd/PRD_pov_system.md` |
 | `docs/prd/active/PRD_automation_authority_v1.md` | `qa_automation` | QA:AUTO | `godot-client/tests/automation`, `frp-backend/tests` | `docs/deprecated/prd/PRD_visual_automation_backup_v1.md`, `docs/deprecated/prd/PRD_visual_automation_desktop_executor_v1.md`, `docs/deprecated/prd/PRD_visual_automation_headless_executor_v1.md` |
 | `docs/prd/active/PRD_campaign_combat_turn_economy_v1.md` | `kernel_combat` | DF:M01, GEMRB:M02, GEMRB:M03 | `frp-backend/engine/kernel/combat_engine.py`, `frp-backend/engine/api/combat_bridge.py` | - |
@@ -28,6 +37,47 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 | `docs/prd/active/PRD_data_externalization_v1.md` | `data_registries` | DATA:REGISTRY | `frp-backend/data`, `frp-backend/engine/data_loader.py` | - |
 | `docs/prd/active/PRD_dialog_system_v1.md` | `kernel_dialog` | GEMRB:M09 | `frp-backend/engine/kernel/dialog.py`, `frp-backend/engine/api/handlers/social_actions.py` | - |
 | `docs/prd/active/PRD_effect_system_v1.md` | `kernel_effects` | DF:M06, DF:M03, GEMRB:M04, GEMRB:M06 | `frp-backend/engine/kernel/effects.py`, `frp-backend/engine/api/game_engine.py` | - |
+| `docs/prd/active/PRD_frontend_action_bar_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_area_map_ui_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_ask_about_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_ask_dm_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_character_creation_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_character_record_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_clock_widget_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_abilities_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_alignment_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_class_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_finalize_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_gender_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_name_bio_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_portrait_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_proficiencies_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_race_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_skills_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_sound_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_creation_spells_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_death_screen_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_dev_console_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_dual_class_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_exploration_view_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_extraction_index_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_inventory_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_journal_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_level_up_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_load_ui_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_loading_screen_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_mage_spellbook_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_message_window_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_options_menu_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_party_portraits_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_priest_spellbook_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_quit_confirm_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_save_ui_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_sniped_shot_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_think_panel_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_title_menu_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/title_screen.gd`, `godot-client/scripts/ui/creation_wizard.gd` | - |
+| `docs/prd/active/PRD_frontend_tooltip_system_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
+| `docs/prd/active/PRD_frontend_world_map_v1.md` | `client_frontend` | CLIENT:UX | `godot-client/scenes/game_session.gd`, `godot-client/autoloads/game_state.gd`, `godot-client/scripts/world/world_view.gd` | - |
 | `docs/prd/active/PRD_game_state_v1.md` | `kernel_game_state` | GEMRB:M16 | `frp-backend/engine/kernel/game_state.py`, `frp-backend/engine/api/campaign_kernel.py` | - |
 | `docs/prd/active/PRD_gamescript_ai_v1.md` | `kernel_scripts` | GEMRB:M08 | `frp-backend/engine/kernel/scripts.py`, `frp-backend/engine/world/behavior_tree.py` | - |
 | `docs/prd/active/PRD_godot_campaign_shell_contract_v1.md` | `client_runtime` | CLIENT:CONTRACT | `godot-client/autoloads/backend.gd`, `godot-client/scenes/game_session.gd` | - |
@@ -62,3 +112,4 @@ Generated from `docs/doc_registry.json` via `python -m tools.doc_inventory`.
 
 
 ## Deprecated Notes
+

@@ -291,6 +291,539 @@
       "supersedes": [],
       "note": "Removal of legacy handler mixins; all commands now route through campaign dispatch chain."
     },
+    "PRD_architecture_actor_animation_v1.md": {
+      "owner": "client_architecture",
+      "mechanism_ids": ["CLIENT:ARCH"],
+      "runtime_surface": [
+        "frp-backend/engine/api/campaign/runtime.py",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scenes/game_session.gd"
+      ],
+      "supersedes": [],
+      "note": "Architecture guardrail PRD for actor animation v1 runtime/client boundaries."
+    },
+    "PRD_architecture_actor_runtime_v1.md": {
+      "owner": "client_architecture",
+      "mechanism_ids": ["CLIENT:ARCH"],
+      "runtime_surface": [
+        "frp-backend/engine/api/campaign/runtime.py",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scenes/game_session.gd"
+      ],
+      "supersedes": [],
+      "note": "Architecture guardrail PRD for actor runtime v1 runtime/client boundaries."
+    },
+    "PRD_architecture_actor_spawning_v1.md": {
+      "owner": "client_architecture",
+      "mechanism_ids": ["CLIENT:ARCH"],
+      "runtime_surface": [
+        "frp-backend/engine/api/campaign/runtime.py",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scenes/game_session.gd"
+      ],
+      "supersedes": [],
+      "note": "Architecture guardrail PRD for actor spawning v1 runtime/client boundaries."
+    },
+    "PRD_architecture_ambient_life_v1.md": {
+      "owner": "client_architecture",
+      "mechanism_ids": ["CLIENT:ARCH"],
+      "runtime_surface": [
+        "frp-backend/engine/api/campaign/runtime.py",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scenes/game_session.gd"
+      ],
+      "supersedes": [],
+      "note": "Architecture guardrail PRD for ambient life v1 runtime/client boundaries."
+    },
+    "PRD_architecture_area_ambient_v1.md": {
+      "owner": "client_architecture",
+      "mechanism_ids": ["CLIENT:ARCH"],
+      "runtime_surface": [
+        "frp-backend/engine/api/campaign/runtime.py",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scenes/game_session.gd"
+      ],
+      "supersedes": [],
+      "note": "Architecture guardrail PRD for area ambient v1 runtime/client boundaries."
+    },
+    "PRD_architecture_effect_visualization_v1.md": {
+      "owner": "client_architecture",
+      "mechanism_ids": ["CLIENT:ARCH"],
+      "runtime_surface": [
+        "frp-backend/engine/api/campaign/runtime.py",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scenes/game_session.gd"
+      ],
+      "supersedes": [],
+      "note": "Architecture guardrail PRD for effect visualization v1 runtime/client boundaries."
+    },
+    "PRD_architecture_fast_visual_tick_v1.md": {
+      "owner": "client_architecture",
+      "mechanism_ids": ["CLIENT:ARCH"],
+      "runtime_surface": [
+        "frp-backend/engine/api/campaign/runtime.py",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scenes/game_session.gd"
+      ],
+      "supersedes": [],
+      "note": "Architecture guardrail PRD for fast visual tick v1 runtime/client boundaries."
+    },
+    "PRD_architecture_pathfinding_v1.md": {
+      "owner": "client_architecture",
+      "mechanism_ids": ["CLIENT:ARCH"],
+      "runtime_surface": [
+        "frp-backend/engine/api/campaign/runtime.py",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scenes/game_session.gd"
+      ],
+      "supersedes": [],
+      "note": "Architecture guardrail PRD for pathfinding v1 runtime/client boundaries."
+    },
+    "PRD_architecture_sprite_layers_v1.md": {
+      "owner": "client_architecture",
+      "mechanism_ids": ["CLIENT:ARCH"],
+      "runtime_surface": [
+        "frp-backend/engine/api/campaign/runtime.py",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scenes/game_session.gd"
+      ],
+      "supersedes": [],
+      "note": "Architecture guardrail PRD for sprite layers v1 runtime/client boundaries."
+    },
+    "PRD_frontend_action_bar_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend action bar v1."
+    },
+    "PRD_frontend_area_map_ui_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend area map ui v1."
+    },
+    "PRD_frontend_ask_about_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend ask about v1."
+    },
+    "PRD_frontend_ask_dm_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend ask dm v1."
+    },
+    "PRD_frontend_character_creation_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend character creation v1."
+    },
+    "PRD_frontend_character_record_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend character record v1."
+    },
+    "PRD_frontend_clock_widget_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend clock widget v1."
+    },
+    "PRD_frontend_creation_abilities_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation abilities v1."
+    },
+    "PRD_frontend_creation_alignment_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation alignment v1."
+    },
+    "PRD_frontend_creation_class_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation class v1."
+    },
+    "PRD_frontend_creation_finalize_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation finalize v1."
+    },
+    "PRD_frontend_creation_gender_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation gender v1."
+    },
+    "PRD_frontend_creation_name_bio_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation name bio v1."
+    },
+    "PRD_frontend_creation_portrait_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation portrait v1."
+    },
+    "PRD_frontend_creation_proficiencies_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation proficiencies v1."
+    },
+    "PRD_frontend_creation_race_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation race v1."
+    },
+    "PRD_frontend_creation_skills_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation skills v1."
+    },
+    "PRD_frontend_creation_sound_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation sound v1."
+    },
+    "PRD_frontend_creation_spells_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend creation spells v1."
+    },
+    "PRD_frontend_death_screen_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend death screen v1."
+    },
+    "PRD_frontend_dev_console_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend dev console v1."
+    },
+    "PRD_frontend_dual_class_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend dual class v1."
+    },
+    "PRD_frontend_exploration_view_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend exploration view v1."
+    },
+    "PRD_frontend_extraction_index_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend extraction index v1."
+    },
+    "PRD_frontend_inventory_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend inventory v1."
+    },
+    "PRD_frontend_journal_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend journal v1."
+    },
+    "PRD_frontend_level_up_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend level up v1."
+    },
+    "PRD_frontend_load_ui_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend load ui v1."
+    },
+    "PRD_frontend_loading_screen_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend loading screen v1."
+    },
+    "PRD_frontend_mage_spellbook_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend mage spellbook v1."
+    },
+    "PRD_frontend_message_window_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend message window v1."
+    },
+    "PRD_frontend_options_menu_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend options menu v1."
+    },
+    "PRD_frontend_party_portraits_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend party portraits v1."
+    },
+    "PRD_frontend_priest_spellbook_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend priest spellbook v1."
+    },
+    "PRD_frontend_quit_confirm_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend quit confirm v1."
+    },
+    "PRD_frontend_save_ui_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend save ui v1."
+    },
+    "PRD_frontend_sniped_shot_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend sniped shot v1."
+    },
+    "PRD_frontend_think_panel_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend think panel v1."
+    },
+    "PRD_frontend_title_menu_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/title_screen.gd",
+        "godot-client/scripts/ui/creation_wizard.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend title menu v1."
+    },
+    "PRD_frontend_tooltip_system_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend tooltip system v1."
+    },
+    "PRD_frontend_world_map_v1.md": {
+      "owner": "client_frontend",
+      "mechanism_ids": ["CLIENT:UX"],
+      "runtime_surface": [
+        "godot-client/scenes/game_session.gd",
+        "godot-client/autoloads/game_state.gd",
+        "godot-client/scripts/world/world_view.gd"
+      ],
+      "supersedes": [],
+      "note": "Frontend shell PRD for frontend world map v1."
+    },
     "PRD_campaign_combat_turn_economy_v1.md": {
       "owner": "kernel_combat",
       "mechanism_ids": ["DF:M01", "GEMRB:M02", "GEMRB:M03"],
