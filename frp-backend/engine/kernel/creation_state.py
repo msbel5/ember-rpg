@@ -22,7 +22,16 @@ from .creation_catalog import (
     roll_stat_array,
 )
 
-_GENESIS_YEAR_MARKERS = (1, 120, 260, 410, 575, 740, 890, 1040)
+_GENESIS_ERA_MARKERS = (
+    {"sequence": 1, "legacy_year": 1, "era_label": "Founding Decades"},
+    {"sequence": 2, "legacy_year": 120, "era_label": "First Caravan Age"},
+    {"sequence": 3, "legacy_year": 260, "era_label": "Border Fort Years"},
+    {"sequence": 4, "legacy_year": 410, "era_label": "Pilgrim Road Generation"},
+    {"sequence": 5, "legacy_year": 575, "era_label": "Shrine-Market Era"},
+    {"sequence": 6, "legacy_year": 740, "era_label": "Guild Tension Years"},
+    {"sequence": 7, "legacy_year": 890, "era_label": "Convoy Crisis Age"},
+    {"sequence": 8, "legacy_year": 1040, "era_label": "Present Chronicle"},
+)
 
 
 @dataclass
@@ -155,7 +164,10 @@ class CreationState:
         tone_pool = tone_tags or ["uncertain"]
         history_events: list[str] = []
         history_timeline: list[dict[str, Any]] = []
-        for index, year in enumerate(_GENESIS_YEAR_MARKERS):
+        for index, era_marker in enumerate(_GENESIS_ERA_MARKERS):
+            sequence = int(era_marker["sequence"])
+            legacy_year = int(era_marker["legacy_year"])
+            era_label = str(era_marker["era_label"])
             tag = tag_pool[index % len(tag_pool)]
             theme = theme_pool[
                 (index + rng.randint(0, max(0, len(theme_pool) - 1))) % len(theme_pool)
@@ -168,10 +180,12 @@ class CreationState:
                 f"{theme.title()} pressure defines the "
                 f"{preferred_adapter.replace('_', ' ')} frontier in a {tone} age."
             )
-            history_events.append(f"Year {year}: {summary}")
+            history_events.append(f"{era_label}: {summary}")
             history_timeline.append(
                 {
-                    "year": year,
+                    "sequence": sequence,
+                    "era_label": era_label,
+                    "year": legacy_year,
                     "headline": headline,
                     "summary": summary,
                     "tags": [tag, theme, tone, preferred_adapter],

@@ -8,6 +8,7 @@ Protocol (JSON over WebSocket text frames):
   Client -> Server:
     {"type": "command", "input": "attack goblin"}
     {"type": "command", "input": "", "shortcut": "travel", "args": {...}}
+    {"type": "runtime_mode", "mode": "tactical_pause"}
     {"type": "ping"}
 
   Server -> Client:
@@ -120,6 +121,23 @@ async def ws_campaign(websocket: WebSocket, campaign_id: str):
 
             if msg_type == "ping":
                 await websocket.send_json({"type": "pong"})
+                continue
+
+            if msg_type == "runtime_mode":
+                requested_mode = str(msg.get("mode", "")).strip().lower()
+                tick_loop = get_tick_loop(campaign_id)
+                if tick_loop is None:
+                    await websocket.send_json({"type": "error", "message": "Runtime loop unavailable"})
+                    continue
+                if requested_mode == "tactical_pause":
+                    tick_loop.pause("manual")
+                elif requested_mode in {"exploration_realtime", "resume"}:
+                    tick_loop.resume("manual")
+                else:
+                    await websocket.send_json({"type": "error", "message": f"Unknown runtime mode: {requested_mode}"})
+                    continue
+                snapshot = runtime.snapshot(campaign_id, narrative="")
+                await websocket.send_json({"type": "state", "snapshot": snapshot, "events": []})
                 continue
 
             if msg_type == "command":

@@ -17,14 +17,14 @@ expected = "title screen is visible in a desktop window"
 [[steps]]
 id = "wait_for_continue_button"
 action = "wait_for_node_visible"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 duration_ms = 4000
 expected = "continue button is ready"
 
 [[steps]]
 id = "open_continue"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 1200
 capture_os = true
 capture_viewport = true
@@ -54,3 +54,6 @@ wait_ms = 1200
 capture_os = true
 capture_viewport = true
 expected = "save panel opens in the gameplay shell"
+
+
+

@@ -60,6 +60,13 @@ def test_named_npc_loader_exists_and_population_prefers_authored_records():
     runtime_authored = [npc for npc in runtime_state if npc.get("identity_source") == "authored"]
     assert runtime_authored
     assert {npc["named_npc_id"] for npc in runtime_authored} == set(authored_ids)
+    routed_workers = [
+        npc
+        for npc in runtime_state
+        if str(npc.get("building_id", "")).startswith(("guard_post", "tavern", "town_hall"))
+    ]
+    work_positions = {(int(npc["x"]), int(npc["y"])) for npc in routed_workers}
+    assert len(work_positions) == len(routed_workers), "runtime work anchors should not stack settlement roles onto one tile"
 
 
 def test_live_runtime_stamps_social_identity_and_persists_through_save_load():

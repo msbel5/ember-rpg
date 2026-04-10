@@ -6,6 +6,8 @@ import copy
 import random
 from typing import Any
 
+from engine.data.world import get_building_templates
+
 from .registries import load_authored_npc_location_index, load_npc_templates
 from .world_seed import stable_seed_from_parts
 
@@ -60,6 +62,62 @@ def _interior_anchor(building: dict[str, Any], offset: int = 0) -> tuple[int, in
     width = int(building["width"])
     height = int(building["height"])
     return (x + min(2 + offset, max(2, width - 3)), y + max(2, height // 2))
+
+
+def _template_anchor_slots(building: dict[str, Any]) -> list[tuple[int, int]]:
+    templates = get_building_templates()
+    kind = str(building.get("kind", "")).strip().lower()
+    template = templates.get(kind, {})
+    anchors: list[tuple[int, int]] = []
+    for index, furniture in enumerate(template.get("required_furniture", [])):
+        if not isinstance(furniture, dict):
+            continue
+        raw_anchor = furniture.get("anchor", [])
+        if not isinstance(raw_anchor, list) or len(raw_anchor) < 2:
+            continue
+        local_x = int(raw_anchor[0])
+        local_y = int(raw_anchor[1])
+        anchors.append((int(building["x"]) + local_x, int(building["y"]) + local_y + (index % 2)))
+    return anchors
+
+
+def _spread_anchor_slots(building: dict[str, Any]) -> list[tuple[int, int]]:
+    x = int(building["x"])
+    y = int(building["y"])
+    width = int(building["width"])
+    height = int(building["height"])
+    mid_y = y + max(2, height // 2)
+    inner_right = x + max(2, width - 3)
+    center_x = x + max(2, width // 2)
+    lower_y = y + max(2, height - 3)
+    anchors = [
+        (x + 2, y + 2),
+        (center_x, y + 2),
+        (inner_right, y + 2),
+        (x + 2, mid_y),
+        (center_x, mid_y),
+        (inner_right, mid_y),
+        (x + 2, lower_y),
+        (center_x, lower_y),
+        (inner_right, lower_y),
+    ]
+    deduped: list[tuple[int, int]] = []
+    seen: set[tuple[int, int]] = set()
+    for anchor in anchors:
+        if anchor in seen:
+            continue
+        deduped.append(anchor)
+        seen.add(anchor)
+    return deduped
+
+
+def _work_anchor(building: dict[str, Any], role_index: int) -> tuple[int, int]:
+    candidate_slots = _template_anchor_slots(building)
+    if not candidate_slots:
+        candidate_slots = _spread_anchor_slots(building)
+    if not candidate_slots:
+        return _interior_anchor(building, role_index)
+    return candidate_slots[role_index % len(candidate_slots)]
 
 
 def _schedule_entries(
@@ -346,7 +404,7 @@ def generate_npc_population(
             home_building = houses[home_index % len(houses)] if houses else building
             home_index += 1
             home_anchor = _interior_anchor(home_building, role_index % 2)
-            work_position = _interior_anchor(building, role_index)
+            work_position = _work_anchor(building, role_index)
             if role == "guard":
                 leisure = (int(center_feature["x"]) - 2 + (role_index % 4), int(center_feature["y"]) + 3)
             elif role in {"merchant", "innkeeper", "bard"}:

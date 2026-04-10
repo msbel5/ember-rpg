@@ -168,15 +168,15 @@ def test_creation_answers_emit_history_reveal_lines():
     assert history_timeline
     assert len(history_events) >= 8
     assert len(history_timeline) >= 8
-    assert all(str(entry).startswith("Year ") for entry in history_events)
-    years = [int(str(entry).split(":")[0].replace("Year", "").strip()) for entry in history_events]
-    timeline_years = [int(entry["year"]) for entry in history_timeline]
-    assert years[0] == 1
-    assert years[-1] >= 1000
-    assert years[-1] - years[0] >= 900
-    assert timeline_years[0] == 1
-    assert timeline_years[-1] >= 1000
-    assert timeline_years[-1] - timeline_years[0] >= 900
+    assert all(":" in str(entry) for entry in history_events)
+    assert not any(str(entry).startswith("Year ") for entry in history_events)
+    era_labels = [str(entry["era_label"]).strip() for entry in history_timeline]
+    sequences = [int(entry["sequence"]) for entry in history_timeline]
+    assert era_labels[0] == "Founding Decades"
+    assert era_labels[-1] == "Present Chronicle"
+    assert sequences == sorted(sequences)
+    assert sequences[0] == 1
+    assert sequences[-1] >= 8
     assert all(entry["headline"] for entry in history_timeline)
     assert all(entry["summary"] for entry in history_timeline)
     assert all(isinstance(entry["tags"], list) for entry in history_timeline)

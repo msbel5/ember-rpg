@@ -38,7 +38,7 @@ func render_entities(player_tile: Vector2i, grouped_entities: Dictionary, player
 	_ensure_textures()
 	var desired_ids: Dictionary = {}
 	var next_entities_by_tile: Dictionary = {}
-	var render_entries: Array = [{"id": "player", "name": "Player", "template": player_template, "position": [player_tile.x, player_tile.y], "bucket": "player"}]
+	var render_entries: Array = [{"id": "player", "name": "", "template": player_template, "position": [player_tile.x, player_tile.y], "bucket": "player"}]
 	for npc in grouped_entities.get("npcs", []):
 		render_entries.append(_with_bucket(npc, "npc"))
 	for enemy in grouped_entities.get("enemies", []):
@@ -132,13 +132,13 @@ func _create_actor(actor_id: String, entry: Dictionary, tile_pos: Vector2i) -> N
 
 	# Name label
 	var entity_name := str(entry.get("name", "")).strip_edges()
-	if not entity_name.is_empty() and bucket != "furniture":
+	if not entity_name.is_empty() and bucket == "enemy":
 		var lbl := Label.new()
 		lbl.name = "NameLabel"
 		lbl.text = entity_name
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var label_width := maxi(108, entity_name.length() * 9)
-		lbl.position = Vector2(-float(label_width) / 2.0, -28.0)
+		var label_width := maxi(120, entity_name.length() * 8)
+		lbl.position = Vector2(-float(label_width) / 2.0, -34.0)
 		lbl.size = Vector2(label_width, 24)
 		lbl.add_theme_font_size_override("font_size", 12)
 		lbl.add_theme_color_override("font_color", EntityVisuals.name_label_color(bucket))

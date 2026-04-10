@@ -11,15 +11,16 @@ const STEP_ROLL := CreationWizard.STEP_ROLL
 const STEP_BUILD := CreationWizard.STEP_BUILD
 const STEP_SUMMARY := CreationWizard.STEP_DOSSIER
 
-@onready var title_menu: Control = $TitleMenu
+@onready var title_menu: TitleMenu = $TitleMenu
 @onready var status_label: Label = $StatusLabel
 @onready var backend_panel: PanelContainer = $BackendDiagnostics
 @onready var backend_message_label: RichTextLabel = $BackendDiagnostics/Margin/VBox/MessageLabel
 @onready var backend_retry_button: Button = $BackendDiagnostics/Margin/VBox/RetryButton
-@onready var creation_wizard: PanelContainer = $CharacterCreation
-@onready var load_browser: Panel = $LoadBrowser
+@onready var creation_wizard: CreationWizard = $CharacterCreation
+@onready var load_browser: LoadBrowserWidget = $LoadBrowser
 
 var _backend_ready := false
+var _backend_blocking_error := false
 var _catalog_loading := false
 var _catalog: Dictionary = {}
 var _pending_open_creation := false
@@ -29,6 +30,8 @@ func _ready() -> void:
 	EmberTheme.apply_title_screen(self)
 	title_menu.new_game_requested.connect(_on_new_game)
 	title_menu.continue_requested.connect(_on_continue)
+	if title_menu.has_signal("load_requested"):
+		title_menu.load_requested.connect(_on_load_requested)
 	title_menu.quit_requested.connect(func() -> void: get_tree().quit())
 	creation_wizard.canceled.connect(_close_creation)
 	creation_wizard.start_creation_requested.connect(_start_creation_flow)
@@ -52,9 +55,10 @@ func _ready() -> void:
 
 
 func _on_new_game() -> void:
+	print("[TitleScreen] _on_new_game called, _backend_ready=%s, catalog_empty=%s" % [str(_backend_ready), str(_catalog.is_empty())])
 	if not _backend_ready:
 		status_label.text = "Campaign backend is still starting."
-		backend_panel.visible = true
+		backend_panel.visible = _backend_blocking_error
 		return
 	if _catalog.is_empty():
 		_pending_open_creation = true
@@ -68,11 +72,23 @@ func _on_continue() -> void:
 	if not _backend_ready:
 		status_label.text = "Campaign backend is not ready yet."
 		return
+	var save_id := ProfileStorage.last_campaign_save_id().strip_edges()
+	if not save_id.is_empty():
+		status_label.text = "Resuming %s..." % save_id
+		_load_campaign(save_id)
+		return
+	_on_load_requested()
+
+
+func _on_load_requested() -> void:
+	if not _backend_ready:
+		status_label.text = "Campaign backend is not ready yet."
+		return
 	var player_id := ProfileStorage.preferred_resume_player_id()
 	load_browser.open(player_id)
 	title_menu.visible = false
 	creation_wizard.visible = false
-	status_label.text = "Continue from a canonical campaign save."
+	status_label.text = "Review the save ledger and choose a chronicle."
 
 
 func _open_creation() -> void:
@@ -175,7 +191,13 @@ func _load_campaign(save_id: String) -> void:
 
 func _on_campaign_loaded(data, save_id: String) -> void:
 	if data == null:
+		if ProfileStorage.last_campaign_save_id().strip_edges() == save_id:
+			ProfileStorage.store_last_campaign_save_id("")
 		status_label.text = "Failed to load %s." % save_id
+		if save_id == "campfire" or not save_id.strip_edges().is_empty():
+			_on_load_requested()
+		else:
+			_refresh_menu_state()
 		return
 	GameState.reset()
 	GameState.update_from_response(data)
@@ -212,6 +234,7 @@ func _on_creation_catalog_loaded(data) -> void:
 
 func _on_backend_error(message: String) -> void:
 	status_label.text = message
+	_backend_blocking_error = true
 	if _requires_backend_bootstrap():
 		backend_panel.visible = true
 		backend_message_label.text = "[b]Backend error[/b]\n%s" % message
@@ -226,33 +249,46 @@ func _bind_backend_runtime() -> void:
 
 func _retry_backend_bootstrap() -> void:
 	backend_retry_button.disabled = true
+	_backend_blocking_error = false
+	backend_panel.visible = false
 	BackendRuntime.reset_state()
 	_bind_backend_runtime()
 	BackendRuntime.ensure_bootstrap()
 
 
 func _on_backend_runtime_status(message: String) -> void:
-	backend_panel.visible = true
-	backend_message_label.text = "[b]Campaign backend required[/b]\n%s" % message
 	status_label.text = message
 	backend_retry_button.disabled = false
+	if _backend_blocking_error:
+		backend_panel.visible = true
+		backend_message_label.text = "[b]Campaign backend required[/b]\n%s" % message
+	else:
+		backend_panel.visible = false
 
 
 func _on_backend_runtime_finished(success: bool) -> void:
+	print("[TitleScreen] bootstrap_finished signal received, success=%s" % str(success))
 	backend_retry_button.disabled = false
 	_backend_ready = success
+	_backend_blocking_error = not success
 	if success:
 		backend_panel.visible = false
 		_request_creation_catalog()
 	else:
 		backend_panel.visible = true
+		backend_message_label.text = "[b]Campaign backend required[/b]\n%s" % BackendRuntime.last_error
 	_refresh_menu_state()
 
 
 func _refresh_menu_state() -> void:
-	title_menu.set_continue_enabled(_backend_ready and not ProfileStorage.preferred_resume_player_id().is_empty())
-	if not _backend_ready and _requires_backend_bootstrap():
+	var last_save_id := ProfileStorage.last_campaign_save_id().strip_edges()
+	var resume_player_id := ProfileStorage.preferred_resume_player_id().strip_edges()
+	var can_continue := _backend_ready and (not last_save_id.is_empty() or not resume_player_id.is_empty())
+	title_menu.set_continue_enabled(can_continue, last_save_id, resume_player_id)
+	if _backend_blocking_error and _requires_backend_bootstrap():
 		backend_panel.visible = true
+	elif not _backend_ready:
+		backend_panel.visible = false
 	elif status_label.text == "Loading creation catalog..." and not _catalog_loading:
 		status_label.text = ""
 	if title_menu.visible and not creation_wizard.visible and not load_browser.visible:

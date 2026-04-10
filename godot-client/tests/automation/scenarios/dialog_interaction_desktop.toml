@@ -17,14 +17,14 @@ expected = "title screen is visible in a desktop window"
 [[steps]]
 id = "wait_for_continue_button"
 action = "wait_for_node_visible"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 duration_ms = 4000
 expected = "continue button is ready"
 
 [[steps]]
 id = "open_continue"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 1200
 capture_os = true
 capture_viewport = true
@@ -63,55 +63,16 @@ expected = "gameplay scene loads"
 expect_note_contains = "GameSession"
 
 [[steps]]
-id = "wait_for_command_input"
+id = "wait_for_talk_verb"
 action = "wait_for_node_visible"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionOne"
 duration_ms = 3000
-expected = "command bar is ready"
-
-[[steps]]
-id = "move_to_dialog_npc"
-action = "set_text_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
-text = "move to 33,11"
-wait_ms = 100
-expected = "dialog proof moves into speaking range"
-
-[[steps]]
-id = "send_move_to_dialog_npc"
-action = "activate_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SendButton"
-wait_ms = 1200
-expected = "movement command is submitted"
-
-[[steps]]
-id = "wait_for_move_history"
-action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
-text = "move to 33,11"
-duration_ms = 3000
-expected = "movement is recorded by the shell"
-
-[[steps]]
-id = "wait_for_move_unlock"
-action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
-text = "Recent Orders"
-duration_ms = 4000
-expected = "command bar unlocks after the move resolves"
-
-[[steps]]
-id = "wait_for_focus_on_dialog_npc"
-action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/FocusLabel"
-text = "Hale Pike"
-duration_ms = 4000
-expected = "world focus locks onto the nearby NPC before the talk verb is used"
+expected = "talk verb is available from the instrument rail"
 
 [[steps]]
 id = "send_talk"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionOne"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionOne"
 wait_ms = 2000
 capture_os = true
 capture_viewport = true
@@ -172,3 +133,6 @@ duration_ms = 3000
 capture_os = true
 capture_viewport = true
 expected = "dialog overlay closes cleanly"
+
+
+

@@ -10,7 +10,7 @@ tags = ["gameplay", "world-click", "semantic"]
 [[steps]]
 id = "open_continue"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 700
 capture_viewport = true
 expected = "continue browser opens"
@@ -70,3 +70,6 @@ wait_ms = 1000
 capture_viewport = true
 expected = "world click triggers movement or interaction"
 expect_note_contains = "GameSession"
+
+
+

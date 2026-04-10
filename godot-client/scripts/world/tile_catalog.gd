@@ -3,7 +3,9 @@ class_name TileCatalog
 
 const AssetBootstrap = preload("res://scripts/asset/asset_bootstrap.gd")
 const AssetManifest = preload("res://scripts/asset/asset_manifest.gd")
-const TILE_SIZE := 16
+const TILE_SIZE := 32
+const PRIMARY_TILE_ROOT := "res://assets/third_party/pixel_crawler/extracted/tiles"
+const FALLBACK_TILE_ROOT := "res://assets/third_party/lpc/extracted/tiles"
 const DEFAULT_MAP_SIZE := Vector2i(48, 36)
 const TILE_VARIANT_COUNT := 3
 const TILE_ORDER := [
@@ -12,6 +14,7 @@ const TILE_ORDER := [
 	"marble",
 	"brick",
 	"dark_stone",
+	"sand",
 	"dirt_path",
 	"water",
 	"wall",
@@ -59,6 +62,7 @@ const TILE_PALETTE := {
 	"marble": Color(0.74, 0.74, 0.76),
 	"brick": Color(0.50, 0.28, 0.22),
 	"dark_stone": Color(0.24, 0.26, 0.30),
+	"sand": Color(0.70, 0.59, 0.37),
 	"dirt_path": Color(0.48, 0.32, 0.18),
 	"water": Color(0.16, 0.30, 0.52),
 	"wall": Color(0.22, 0.24, 0.28),
@@ -254,11 +258,17 @@ static func _draw_tile(target_image: Image, offset_x: int, base_color: Color, va
 
 
 static func _variant_tile_image(tile_name: String, variant: int) -> Image:
-	var loaded = _load_tile_image(tile_name)
+	var loaded = _load_generated_tile_image(tile_name)
 	if loaded != null:
 		if loaded.get_width() != TILE_SIZE or loaded.get_height() != TILE_SIZE:
 			loaded.resize(TILE_SIZE, TILE_SIZE, Image.INTERPOLATE_NEAREST)
-		return _variantize_image(tile_name, loaded, variant)
+		return _variantize_image(tile_name, loaded, variant, true)
+
+	loaded = _load_third_party_tile_image(tile_name)
+	if loaded != null:
+		if loaded.get_width() != TILE_SIZE or loaded.get_height() != TILE_SIZE:
+			loaded.resize(TILE_SIZE, TILE_SIZE, Image.INTERPOLATE_NEAREST)
+		return _variantize_image(tile_name, loaded, variant, false)
 
 	var image = Image.create(TILE_SIZE, TILE_SIZE, false, Image.FORMAT_RGBA8)
 	_draw_tile(image, 0, TILE_PALETTE[tile_name], variant)
@@ -267,9 +277,10 @@ static func _variant_tile_image(tile_name: String, variant: int) -> Image:
 	return image
 
 
-static func _variantize_image(tile_name: String, source: Image, variant: int) -> Image:
+static func _variantize_image(tile_name: String, source: Image, variant: int, apply_grade: bool = true) -> Image:
 	var image = source.duplicate()
-	_apply_tile_grade(tile_name, image)
+	if apply_grade:
+		_apply_tile_grade(tile_name, image)
 	if variant == 0:
 		return image
 	for y in range(image.get_height()):
@@ -289,12 +300,18 @@ static func _variantize_image(tile_name: String, source: Image, variant: int) ->
 					pixel = pixel.lightened(0.04)
 			image.set_pixel(x, y, pixel)
 	_apply_tile_pattern(tile_name, image, variant)
-	if INTERACTIVE_TILE_NAMES.has(tile_name) or tile_name in ["door", "well", "fountain", "tree"]:
-		_draw_interactive_icon(image, tile_name)
 	return image
 
 
-static func _load_tile_image(tile_name: String) -> Image:
+static func _load_third_party_tile_image(tile_name: String) -> Image:
+	for root in [PRIMARY_TILE_ROOT, FALLBACK_TILE_ROOT]:
+		var third_party_path := "%s/%s.png" % [root, tile_name]
+		if FileAccess.file_exists(third_party_path):
+			return _load_image_file(third_party_path)
+	return null
+
+
+static func _load_generated_tile_image(tile_name: String) -> Image:
 	var lookup_name = TILE_TEXTURE_ALIASES.get(tile_name, tile_name)
 	var relative_path = AssetManifest.resolve_relative_path("tiles", lookup_name)
 	if relative_path.is_empty():
@@ -302,9 +319,12 @@ static func _load_tile_image(tile_name: String) -> Image:
 	var asset_path = AssetBootstrap.resolve_asset(relative_path, "res://assets/generated/tiles/%s.png" % lookup_name)
 	if asset_path.is_empty() or not FileAccess.file_exists(asset_path):
 		return null
+	return _load_image_file(asset_path)
 
+
+static func _load_image_file(resource_path: String) -> Image:
 	var image = Image.new()
-	if image.load(ProjectSettings.globalize_path(asset_path)) != OK:
+	if image.load(ProjectSettings.globalize_path(resource_path)) != OK:
 		return null
 	return image
 
@@ -326,6 +346,9 @@ static func _apply_tile_grade(tile_name: String, image: Image) -> void:
 					pixel = pixel.lightened(0.10)
 				"brick", "dark_stone":
 					pixel = pixel.lightened(0.04)
+				"sand":
+					pixel = pixel.lightened(0.06)
+					pixel = pixel.lerp(Color(0.72, 0.63, 0.41, pixel.a), 0.28)
 				"wood_floor", "table", "chair", "bench", "bed", "bookshelf", "crate", "barrel":
 					pixel = pixel.lightened(0.04)
 				"tavern_floor":
@@ -357,6 +380,12 @@ static func _apply_tile_pattern(tile_name: String, image: Image, variant: int) -
 					var rut = image.get_pixel(x, y)
 					if rut.a > 0.0:
 						image.set_pixel(x, y, rut.darkened(0.16))
+		"sand":
+			for y in range(2 + variant, TILE_SIZE, 6):
+				for x in range((y + variant) % 5, TILE_SIZE, 5):
+					var grain = image.get_pixel(x, y)
+					if grain.a > 0.0:
+						image.set_pixel(x, y, grain.darkened(0.10))
 		"cobblestone", "stone_floor", "marble", "brick", "dark_stone":
 			for point in [Vector2i(2 + variant, 3), Vector2i(11, 5 + variant), Vector2i(6, 11)]:
 				if point.x < TILE_SIZE and point.y < TILE_SIZE:

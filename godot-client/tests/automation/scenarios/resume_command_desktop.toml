@@ -25,14 +25,14 @@ expected = "title screen finishes backend bootstrap and save discovery"
 [[steps]]
 id = "wait_for_continue_button"
 action = "wait_for_node_visible"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 duration_ms = 4000
 expected = "continue button is ready"
 
 [[steps]]
 id = "open_continue"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 1200
 capture_os = true
 capture_viewport = true
@@ -66,27 +66,22 @@ expected = "gameplay shell loads from the fresh canonical save"
 expect_note_contains = "GameSession"
 
 [[steps]]
-id = "wait_for_command_bar"
+id = "wait_for_examine_verb"
 action = "wait_for_node_visible"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionThree"
 duration_ms = 4000
-expected = "command bar is visible"
-
-[[steps]]
-id = "set_command"
-action = "set_text_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
-text = "look around"
-wait_ms = 150
-expected = "command text appears in the input"
+expected = "examine verb is visible on the instrument rail"
 
 [[steps]]
 id = "submit_command"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SendButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionThree"
 wait_ms = 1800
 capture_os = true
 capture_viewport = true
-expected = "narrative updates after the command"
+expected = "field notes update after the examine verb"
 expect_note_contains = "GameSession"
 expect_artifact_differs_from = "wait_for_game_session:viewport_capture"
+
+
+

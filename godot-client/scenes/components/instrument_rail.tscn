@@ -3,19 +3,35 @@
 [ext_resource type="Script" path="res://scripts/ui/instrument_rail.gd" id="1"]
 
 [node name="InstrumentRail" type="PanelContainer"]
-custom_minimum_size = Vector2(0, 220)
+custom_minimum_size = Vector2(0, 176)
 script = ExtResource("1")
 
-[node name="MonitorFrame" type="PanelContainer" parent="."]
+[node name="RailMargin" type="MarginContainer" parent="."]
 layout_mode = 1
-anchors_preset = 5
-anchor_right = 0.31
+anchors_preset = 15
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = -12.0
-offset_bottom = -2.0
+offset_left = 14.0
+offset_top = 12.0
+offset_right = -14.0
+offset_bottom = -12.0
+grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MonitorMargin" type="MarginContainer" parent="MonitorFrame"]
+[node name="RailVBox" type="VBoxContainer" parent="RailMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="IntelRow" type="HBoxContainer" parent="RailMargin/RailVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MonitorFrame" type="PanelContainer" parent="RailMargin/RailVBox/IntelRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MonitorMargin" type="MarginContainer" parent="RailMargin/RailVBox/IntelRow/MonitorFrame"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -27,117 +43,28 @@ offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MonitorVBox" type="VBoxContainer" parent="MonitorFrame/MonitorMargin"]
+[node name="MonitorVBox" type="VBoxContainer" parent="RailMargin/RailVBox/IntelRow/MonitorFrame/MonitorMargin"]
 layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
-[node name="MonitorTitle" type="Label" parent="MonitorFrame/MonitorMargin/MonitorVBox"]
+[node name="MonitorTitle" type="Label" parent="RailMargin/RailVBox/IntelRow/MonitorFrame/MonitorMargin/MonitorVBox"]
 layout_mode = 2
-text = "Field Monitor"
+text = "Field Notes"
 
-[node name="MonitorLog" type="RichTextLabel" parent="MonitorFrame/MonitorMargin/MonitorVBox"]
+[node name="MonitorLog" type="RichTextLabel" parent="RailMargin/RailVBox/IntelRow/MonitorFrame/MonitorMargin/MonitorVBox"]
 layout_mode = 2
-size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 48)
 bbcode_enabled = true
-autowrap_mode = 3
+fit_content = true
 scroll_active = false
+autowrap_mode = 3
 text = "No recent field notes."
 
-[node name="CommandVBox" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 0.34
-anchor_top = 0.0
-anchor_right = 0.71
-anchor_bottom = 1.0
-offset_left = 0.0
-offset_top = 14.0
-offset_right = -8.0
-offset_bottom = -14.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 6
-
-[node name="HistoryLabel" type="Label" parent="CommandVBox"]
+[node name="StateFrame" type="PanelContainer" parent="RailMargin/RailVBox/IntelRow"]
 layout_mode = 2
-autowrap_mode = 3
-text = "Recent Orders: none yet"
+custom_minimum_size = Vector2(360, 0)
 
-[node name="FocusLabel" type="Label" parent="CommandVBox"]
-layout_mode = 2
-autowrap_mode = 3
-text = "Focus: choose a person, threat, or landmark to reveal the next useful verb."
-
-[node name="FocusActionsRow" type="HBoxContainer" parent="CommandVBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="FocusActionOne" type="Button" parent="CommandVBox/FocusActionsRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Talk"
-
-[node name="FocusActionTwo" type="Button" parent="CommandVBox/FocusActionsRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Attack"
-
-[node name="FocusActionThree" type="Button" parent="CommandVBox/FocusActionsRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Examine"
-
-[node name="FocusActionFour" type="Button" parent="CommandVBox/FocusActionsRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Use"
-
-[node name="FocusActionFive" type="Button" parent="CommandVBox/FocusActionsRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Rest"
-
-[node name="InputRow" type="HBoxContainer" parent="CommandVBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="PromptLabel" type="Label" parent="CommandVBox/InputRow"]
-layout_mode = 2
-text = ">"
-
-[node name="TextInput" type="LineEdit" parent="CommandVBox/InputRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "What do you do?"
-
-[node name="SendButton" type="Button" parent="CommandVBox/InputRow"]
-layout_mode = 2
-text = "Act"
-
-[node name="QuickSaveButton" type="Button" parent="CommandVBox/InputRow"]
-layout_mode = 2
-text = "Save"
-
-[node name="SavesButton" type="Button" parent="CommandVBox/InputRow"]
-layout_mode = 2
-text = "Loads"
-
-[node name="ShellFrame" type="PanelContainer" parent="."]
-layout_mode = 1
-anchors_preset = 9
-anchor_left = 0.73
-anchor_top = 0.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = -2.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="ShellMargin" type="MarginContainer" parent="ShellFrame"]
+[node name="StateMargin" type="MarginContainer" parent="RailMargin/RailVBox/IntelRow/StateFrame"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -149,54 +76,99 @@ offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ShellVBox" type="VBoxContainer" parent="ShellFrame/ShellMargin"]
+[node name="StateVBox" type="VBoxContainer" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin"]
 layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
-[node name="ModeLabel" type="Label" parent="ShellFrame/ShellMargin/ShellVBox"]
+[node name="ModeLabel" type="Label" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox"]
 layout_mode = 2
 text = "Mode: exploration"
 
-[node name="StateLabel" type="Label" parent="ShellFrame/ShellMargin/ShellVBox"]
+[node name="StateLabel" type="Label" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox"]
 layout_mode = 2
 autowrap_mode = 3
 text = "No urgent field pressure."
 
-[node name="PanelRowOne" type="HBoxContainer" parent="ShellFrame/ShellMargin/ShellVBox"]
+[node name="SaveRow" type="HBoxContainer" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="HeroButton" type="Button" parent="ShellFrame/ShellMargin/ShellVBox/PanelRowOne"]
+[node name="QuickSaveButton" type="Button" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Quick Save"
+
+[node name="SavesButton" type="Button" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Save Ledger"
+
+[node name="FocusLabel" type="Label" parent="RailMargin/RailVBox"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Focus: choose a person, threat, or landmark to reveal the next useful verb."
+
+[node name="FocusActionsRow" type="HBoxContainer" parent="RailMargin/RailVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="FocusActionOne" type="Button" parent="RailMargin/RailVBox/FocusActionsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Talk"
+
+[node name="FocusActionTwo" type="Button" parent="RailMargin/RailVBox/FocusActionsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Attack"
+
+[node name="FocusActionThree" type="Button" parent="RailMargin/RailVBox/FocusActionsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Examine"
+
+[node name="FocusActionFour" type="Button" parent="RailMargin/RailVBox/FocusActionsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Use"
+
+[node name="FocusActionFive" type="Button" parent="RailMargin/RailVBox/FocusActionsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Rest"
+
+[node name="ShellGrid" type="GridContainer" parent="RailMargin/RailVBox"]
+layout_mode = 2
+columns = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="HeroButton" type="Button" parent="RailMargin/RailVBox/ShellGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Hero"
 
-[node name="ItemsButton" type="Button" parent="ShellFrame/ShellMargin/ShellVBox/PanelRowOne"]
+[node name="ItemsButton" type="Button" parent="RailMargin/RailVBox/ShellGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Items"
 
-[node name="MapButton" type="Button" parent="ShellFrame/ShellMargin/ShellVBox/PanelRowOne"]
+[node name="MapButton" type="Button" parent="RailMargin/RailVBox/ShellGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Map"
 
-[node name="PanelRowTwo" type="HBoxContainer" parent="ShellFrame/ShellMargin/ShellVBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="QuestsButton" type="Button" parent="ShellFrame/ShellMargin/ShellVBox/PanelRowTwo"]
+[node name="QuestsButton" type="Button" parent="RailMargin/RailVBox/ShellGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Quests"
 
-[node name="TownButton" type="Button" parent="ShellFrame/ShellMargin/ShellVBox/PanelRowTwo"]
+[node name="TownButton" type="Button" parent="RailMargin/RailVBox/ShellGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Town"
 
-[node name="MenuButton" type="Button" parent="ShellFrame/ShellMargin/ShellVBox/PanelRowTwo"]
+[node name="MenuButton" type="Button" parent="RailMargin/RailVBox/ShellGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Menu"

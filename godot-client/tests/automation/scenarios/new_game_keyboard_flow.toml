@@ -15,14 +15,14 @@ expected = "title screen is visible"
 [[steps]]
 id = "focus_new_game"
 action = "focus_node"
-node_path = "VBoxContainer/NewGameButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton"
 wait_ms = 150
 expected = "new game button receives keyboard focus"
 
 [[steps]]
 id = "open_new_game"
 action = "activate_node"
-node_path = "VBoxContainer/NewGameButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton"
 wait_ms = 500
 capture_viewport = true
 expected = "new game wizard opens"
@@ -30,7 +30,7 @@ expected = "new game wizard opens"
 [[steps]]
 id = "set_player_name"
 action = "set_text_node"
-node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/NameInput"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/NamePanel/NameMargin/NameVBox/NameInput"
 text = "VisualSmoke"
 wait_ms = 150
 expected = "name field receives input"
@@ -48,3 +48,6 @@ wait_ms = 800
 capture_viewport = true
 expected = "wizard advances past identity"
 expect_artifact_differs_from = "capture_identity_ready:viewport_capture"
+
+
+

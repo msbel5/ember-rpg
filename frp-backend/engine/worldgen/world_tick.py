@@ -12,6 +12,8 @@ from .quest_generator import generate_quest_offers
 from .settlement_generator import generate_settlement_layout
 from .world_seed import stable_seed_from_parts
 
+_INITIAL_SIMULATION_HOUR = 8
+
 
 def _season_for_day(day: int) -> str:
     seasons = ["spring", "summer", "autumn", "winter"]
@@ -73,7 +75,7 @@ def _build_region_state(world: WorldBlueprint, region: dict[str, Any], active_re
         return state
 
     layout = generate_settlement_layout(world, region["id"])
-    state["npcs"] = runtime_npc_state(layout.npc_spawns, 0)
+    state["npcs"] = runtime_npc_state(layout.npc_spawns, _INITIAL_SIMULATION_HOUR)
     state["economy"] = initialize_region_economy(region, settlement)
     state["economy"]["resources"] = deepcopy(base_economy.get("resources", state["economy"].get("resources", {})))
     settlement_state = {
@@ -115,7 +117,7 @@ def initialize_simulation(world: WorldBlueprint, start_region_id: str | None = N
     }
     world.simulation_snapshot = SimulationSnapshot(
         current_year=world.history_end_year,
-        current_hour=0,
+        current_hour=_INITIAL_SIMULATION_HOUR,
         current_day=1,
         season="spring",
         active_region_id=active_region_id,

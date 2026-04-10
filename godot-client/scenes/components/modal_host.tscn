@@ -35,7 +35,7 @@ text = "Panel"
 layout_mode = 2
 text = "Close"
 
-[node name="SidebarNav" type="HBoxContainer" parent="."]
+[node name="ModalNav" type="HBoxContainer" parent="."]
 visible = false
 layout_mode = 1
 anchors_preset = 10
@@ -47,37 +47,37 @@ offset_bottom = 86.0
 grow_horizontal = 2
 theme_override_constants/separation = 6
 
-[node name="NavNarrative" type="Button" parent="SidebarNav"]
+[node name="NavNarrative" type="Button" parent="ModalNav"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Transcript"
 
-[node name="NavHero" type="Button" parent="SidebarNav"]
+[node name="NavHero" type="Button" parent="ModalNav"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Hero"
 
-[node name="NavTown" type="Button" parent="SidebarNav"]
+[node name="NavTown" type="Button" parent="ModalNav"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Town"
 
-[node name="NavQuests" type="Button" parent="SidebarNav"]
+[node name="NavQuests" type="Button" parent="ModalNav"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Quests"
 
-[node name="NavItems" type="Button" parent="SidebarNav"]
+[node name="NavItems" type="Button" parent="ModalNav"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Items"
 
-[node name="NavMap" type="Button" parent="SidebarNav"]
+[node name="NavMap" type="Button" parent="ModalNav"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Map"
 
-[node name="SidebarTabs" type="TabContainer" parent="."]
+[node name="ModalStack" type="TabContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -91,24 +91,24 @@ grow_vertical = 2
 tab_alignment = 1
 tabs_visible = false
 
-[node name="NarrativePanel" parent="SidebarTabs" instance=ExtResource("2")]
+[node name="NarrativePanel" parent="ModalStack" instance=ExtResource("2")]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CharacterPanel" parent="SidebarTabs" instance=ExtResource("3")]
+[node name="CharacterPanel" parent="ModalStack" instance=ExtResource("3")]
 layout_mode = 2
 
-[node name="SettlementPanel" parent="SidebarTabs" instance=ExtResource("4")]
+[node name="SettlementPanel" parent="ModalStack" instance=ExtResource("4")]
 layout_mode = 2
 
-[node name="QuestPanel" parent="SidebarTabs" instance=ExtResource("5")]
+[node name="QuestPanel" parent="ModalStack" instance=ExtResource("5")]
 layout_mode = 2
 
-[node name="InventoryPanel" parent="SidebarTabs" instance=ExtResource("6")]
+[node name="InventoryPanel" parent="ModalStack" instance=ExtResource("6")]
 layout_mode = 2
 
-[node name="MinimapPanel" parent="SidebarTabs" instance=ExtResource("7")]
+[node name="MinimapPanel" parent="ModalStack" instance=ExtResource("7")]
 layout_mode = 2
 
-[node name="PauseMenu" parent="SidebarTabs" instance=ExtResource("8")]
+[node name="PauseMenu" parent="ModalStack" instance=ExtResource("8")]
 layout_mode = 2

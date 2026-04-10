@@ -70,6 +70,10 @@ size = Vector2i(960, 640)
 
 [node name="WorldRoot" type="Node2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport"]
 
+[node name="WorldBackdrop" type="Polygon2D" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
+color = Color(0.0392157, 0.0470588, 0.0588235, 1)
+polygon = PackedVector2Array(-4096, -4096, 4096, -4096, 4096, 4096, -4096, 4096)
+
 [node name="TerrainLayer" type="TileMapLayer" parent="MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot"]
 texture_filter = 1
 script = ExtResource("3")
@@ -87,14 +91,14 @@ position_smoothing_enabled = true
 position_smoothing_speed = 10.0
 script = ExtResource("5")
 
-[node name="Sidebar" parent="MainMargin/MainVBox/ContentSplit" instance=ExtResource("12")]
+[node name="ModalHost" parent="MainMargin/MainVBox/ContentSplit" instance=ExtResource("12")]
 visible = false
 layout_mode = 1
 anchors_preset = 0
-anchor_left = 0.56
-anchor_top = 0.04
-anchor_right = 0.985
-anchor_bottom = 0.94
+anchor_left = 0.14
+anchor_top = 0.08
+anchor_right = 0.86
+anchor_bottom = 0.84
 offset_left = 0.0
 offset_top = 0.0
 offset_right = 0.0
@@ -102,7 +106,7 @@ offset_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="CommandBar" parent="MainMargin/MainVBox" instance=ExtResource("10")]
+[node name="InstrumentRail" parent="MainMargin/MainVBox" instance=ExtResource("10")]
 layout_mode = 2
 
 [node name="OverlayCanvas" type="CanvasLayer" parent="."]

@@ -289,7 +289,7 @@ func _activate_node(target: Node) -> bool:
 		if button.disabled:
 			return false
 		button.grab_focus()
-		button.emit_signal("pressed")
+		button.pressed.emit()
 		return true
 	if target is OptionButton:
 		var option_button: OptionButton = target
@@ -298,7 +298,7 @@ func _activate_node(target: Node) -> bool:
 	if target is LineEdit:
 		var line_edit: LineEdit = target
 		line_edit.grab_focus()
-		line_edit.emit_signal("text_submitted", line_edit.text)
+		line_edit.text_submitted.emit(line_edit.text)
 		return true
 	return _focus_node(target)
 
@@ -309,7 +309,7 @@ func _set_text_on_node(target: Node, text: String) -> bool:
 		line_edit.grab_focus()
 		line_edit.text = text
 		line_edit.caret_column = line_edit.text.length()
-		line_edit.emit_signal("text_changed", line_edit.text)
+		line_edit.text_changed.emit(line_edit.text)
 		return true
 	return false
 
@@ -320,7 +320,7 @@ func _select_option_on_node(target: Node, option_text: String) -> bool:
 		for index in range(option_button.item_count):
 			if option_button.get_item_text(index) == option_text:
 				option_button.select(index)
-				option_button.emit_signal("item_selected", index)
+				option_button.item_selected.emit(index)
 				return true
 	return false
 

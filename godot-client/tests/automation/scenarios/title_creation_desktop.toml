@@ -23,26 +23,44 @@ capture_viewport = true
 expected = "title screen finishes backend bootstrap and catalog loading"
 
 [[steps]]
+id = "wait_for_new_game_button"
+action = "wait_for_node_visible"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton"
+duration_ms = 4000
+expected = "new game button is visible"
+
+[[steps]]
 id = "open_new_game"
-action = "key_press"
-key = "enter"
-wait_ms = 2200
+action = "activate_node"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton"
+wait_ms = 1500
 capture_os = true
 capture_viewport = true
 expected = "new game shell opens"
 
 [[steps]]
+id = "wait_for_name_input"
+action = "wait_for_node_visible"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/NamePanel/NameMargin/NameVBox/NameInput"
+duration_ms = 4000
+expected = "identity step is visible"
+
+[[steps]]
 id = "type_name"
-action = "text"
+action = "set_text_node"
+node_path = "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/NamePanel/NameMargin/NameVBox/NameInput"
 text = "VisualSmoke"
 wait_ms = 150
 expected = "identity name is entered"
 
 [[steps]]
 id = "advance_identity"
-action = "key_press"
-key = "enter"
+action = "activate_node"
+node_path = "CharacterCreation/VBox/ButtonRow/NextButton"
 wait_ms = 1600
 capture_os = true
 capture_viewport = true
 expected = "questionnaire step opens"
+
+
+

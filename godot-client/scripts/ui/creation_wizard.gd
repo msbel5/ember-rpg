@@ -9,6 +9,42 @@ const STEP_ROLL := 3
 const STEP_BUILD := 4
 const STEP_DOSSIER := 5
 
+const STEP_KEYS := ["genre", "question", "history", "roll", "build", "dossier"]
+const STEP_SUBTITLES := {
+	STEP_GENRE: "Name the survivor and choose a starting discipline.",
+	STEP_QUESTION: "Answer the world's first questions and set your moral pull.",
+	STEP_HISTORY: "Watch the continent cohere into a living chronicle.",
+	STEP_ROLL: "Assign the rolled pool into a body that can survive the ashlands.",
+	STEP_BUILD: "Choose class, oath, and field proficiencies.",
+	STEP_DOSSIER: "Review the finished dossier before the first day begins.",
+}
+const OPENING_PRESETS := {
+	"ash_scout": {
+		"label": "Ash Scout",
+		"class_id": "ranger",
+		"alignment": "TN",
+		"skills": ["survival", "perception"],
+	},
+	"relic_hunter": {
+		"label": "Relic Hunter",
+		"class_id": "rogue",
+		"alignment": "CN",
+		"skills": ["investigation", "sleight_of_hand"],
+	},
+	"court_emissary": {
+		"label": "Court Emissary",
+		"class_id": "bard",
+		"alignment": "NG",
+		"skills": ["persuasion", "history"],
+	},
+	"ember_adept": {
+		"label": "Ember Adept",
+		"class_id": "mage",
+		"alignment": "CG",
+		"skills": ["arcana", "history"],
+	},
+}
+
 signal canceled()
 signal start_creation_requested(player_name: String, adapter_id: String, profile_id: String, world_seed: int)
 signal answer_requested(question_id: String, answer_id: String)
@@ -22,13 +58,23 @@ var _payload: Dictionary = {}
 var _step: int = STEP_GENRE
 var _selected_adapter_id := "fantasy_ember"
 var _selected_profile_id := "standard"
+var _selected_archetype_id := "ash_scout"
 var _selected_class_id := "warrior"
 var _selected_alignment := "TN"
 var _selected_skills: Array[String] = []
 var _assigned_stats: Dictionary = {}
 var _busy := false
 var _advanced_open := false
+var _class_locked_by_player := false
+var _alignment_locked_by_player := false
+var _skills_locked_by_player := false
 
+@onready var _root_vbox: VBoxContainer = $VBox
+@onready var _chapter_row: HBoxContainer = $VBox/HeaderPanel/HeaderMargin/HeaderVBox/ChapterRail
+@onready var _form_content: VBoxContainer = $VBox/CreationBody/FormPane/FormScroll/FormContent
+@onready var _header_panel: PanelContainer = $VBox/HeaderPanel
+@onready var _form_pane: PanelContainer = $VBox/CreationBody/FormPane
+@onready var _cancel_button: Button = $VBox/ButtonRow/CancelButton
 var _name_input: LineEdit
 var _seed_input: LineEdit
 var _advanced_section: VBoxContainer
@@ -36,10 +82,12 @@ var _advanced_toggle: Button
 var _profile_hint: Label
 var _genre_card_buttons: Dictionary = {}
 var _sections: Dictionary = {}
-var _step_label: Label
-var _preview_title: Label
-var _preview_text: RichTextLabel
-var _preview_meta: RichTextLabel
+@onready var _step_label: Label = $VBox/HeaderPanel/HeaderMargin/HeaderVBox/StepLabel
+@onready var _step_subtitle: Label = $VBox/HeaderPanel/HeaderMargin/HeaderVBox/StepSubtitle
+@onready var _preview_title: Label = $VBox/CreationBody/PreviewPane/PreviewMargin/PreviewVBox/PreviewHeading
+@onready var _preview_text: RichTextLabel = $VBox/CreationBody/PreviewPane/PreviewMargin/PreviewVBox/PreviewText
+@onready var _preview_meta: RichTextLabel = $VBox/CreationBody/PreviewPane/PreviewMargin/PreviewVBox/PreviewMeta
+@onready var _preview_footer: RichTextLabel = $VBox/CreationBody/PreviewPane/PreviewMargin/PreviewVBox/PreviewFooter
 var _question_progress: Label
 var _question_prompt: RichTextLabel
 var _answer_buttons: VBoxContainer
@@ -61,21 +109,23 @@ var _dossier_identity: RichTextLabel
 var _dossier_world: RichTextLabel
 var _dossier_history: RichTextLabel
 var _dossier_stats_grid: GridContainer
-var _preview_pane: PanelContainer
-var _back_button: Button
-var _next_button: Button
-var _start_button: Button
+@onready var _preview_pane: PanelContainer = $VBox/CreationBody/PreviewPane
+var _chapter_buttons: Array[Button] = []
+@onready var _back_button: Button = $VBox/ButtonRow/BackButton
+@onready var _next_button: Button = $VBox/ButtonRow/NextButton
+@onready var _start_button: Button = $VBox/ButtonRow/StartButton
 
 
 func _ready() -> void:
 	visible = false
 	anchors_preset = Control.PRESET_FULL_RECT
-	offset_left = 56.0
-	offset_top = 42.0
-	offset_right = -56.0
-	offset_bottom = -42.0
-	if get_child_count() == 0:
-		_build_ui()
+	offset_left = 34.0
+	offset_top = 28.0
+	offset_right = -34.0
+	offset_bottom = -28.0
+	_apply_shell_styling()
+	_build_dynamic_sections()
+	_wire_footer_actions()
 	_reset_state()
 
 
@@ -87,6 +137,10 @@ func open(player_name: String, adapter_id: String, profile_id: String) -> void:
 	_seed_input.text = ""
 	_payload = {}
 	_step = STEP_GENRE
+	_class_locked_by_player = false
+	_alignment_locked_by_player = false
+	_skills_locked_by_player = false
+	_apply_opening_preset(_selected_archetype_id, false)
 	_render()
 
 
@@ -99,7 +153,7 @@ func set_catalog(catalog: Dictionary) -> void:
 	_catalog = catalog.duplicate(true)
 	_selected_profile_id = CreationCatalog.default_profile_id(_catalog)
 	if _payload.is_empty():
-		_selected_class_id = CreationCatalog.default_class_id(_catalog)
+		_apply_opening_preset(_selected_archetype_id, false)
 	_render()
 
 
@@ -122,6 +176,8 @@ func set_busy(busy: bool) -> void:
 	for child in _answer_buttons.get_children():
 		if child is Button:
 			child.disabled = busy
+	for button in _chapter_buttons:
+		button.disabled = busy
 
 
 func current_step() -> int:
@@ -156,98 +212,96 @@ func activate_answer_shortcut(index: int) -> bool:
 		return false
 	var button = _answer_buttons.get_child(index)
 	if button is Button and not button.disabled:
-		button.emit_signal("pressed")
+		button.pressed.emit()
 		return true
 	return false
 
 
-func _build_ui() -> void:
-	var root := VBoxContainer.new()
-	root.name = "VBox"
-	root.anchors_preset = Control.PRESET_FULL_RECT
-	root.offset_left = 18.0
-	root.offset_top = 18.0
-	root.offset_right = -18.0
-	root.offset_bottom = -18.0
-	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	root.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root.add_theme_constant_override("separation", 16)
-	add_child(root)
-
-	var header := Label.new()
-	header.text = "Create Your Character"
-	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 34)
-	root.add_child(header)
-
-	_step_label = Label.new()
-	_step_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_step_label.add_theme_font_size_override("font_size", 24)
-	root.add_child(_step_label)
-
-	var split := HSplitContainer.new()
-	split.name = "CreationBody"
-	split.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	split.split_offset = 930
-	root.add_child(split)
-
-	var form := VBoxContainer.new()
-	form.name = "FormPane"
-	form.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	form.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	split.add_child(form)
-
-	var form_scroll := ScrollContainer.new()
-	form_scroll.name = "FormScroll"
-	form_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	form_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	form.add_child(form_scroll)
-
-	var form_content := VBoxContainer.new()
-	form_content.name = "FormContent"
-	form_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	form_content.add_theme_constant_override("separation", 14)
-	form_scroll.add_child(form_content)
-
-	_preview_pane = PanelContainer.new()
-	_preview_pane.name = "PreviewPane"
+func _apply_shell_styling() -> void:
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.07, 0.10, 0.97)
+	panel_style.border_color = Color(0.46, 0.32, 0.18, 0.94)
+	panel_style.set_border_width_all(1)
+	panel_style.set_corner_radius_all(18)
+	panel_style.shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+	panel_style.shadow_size = 10
+	add_theme_stylebox_override("panel", panel_style)
+	if _root_vbox != null:
+		_root_vbox.add_theme_constant_override("separation", 16)
+	if _header_panel != null:
+		_header_panel.add_theme_stylebox_override("panel", _card_style(Color(0.12, 0.10, 0.14, 0.98), 16))
+	var header_margin: MarginContainer = $VBox/HeaderPanel/HeaderMargin
+	if header_margin != null:
+		header_margin.add_theme_constant_override("margin_left", 18)
+		header_margin.add_theme_constant_override("margin_top", 16)
+		header_margin.add_theme_constant_override("margin_right", 18)
+		header_margin.add_theme_constant_override("margin_bottom", 16)
+	var header_vbox: VBoxContainer = $VBox/HeaderPanel/HeaderMargin/HeaderVBox
+	if header_vbox != null:
+		header_vbox.add_theme_constant_override("separation", 10)
+	var eyebrow: Label = $VBox/HeaderPanel/HeaderMargin/HeaderVBox/EyebrowLabel
+	if eyebrow != null:
+		eyebrow.add_theme_font_size_override("font_size", 14)
+		eyebrow.add_theme_color_override("font_color", Color(0.80, 0.66, 0.39))
+	var title: Label = $VBox/HeaderPanel/HeaderMargin/HeaderVBox/TitleLabel
+	if title != null:
+		title.add_theme_font_size_override("font_size", 34)
+	if _step_label != null:
+		_step_label.add_theme_font_size_override("font_size", 24)
+	if _step_subtitle != null:
+		_step_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_step_subtitle.add_theme_color_override("font_color", Color(0.72, 0.68, 0.61))
+	if _chapter_row != null:
+		_chapter_row.add_theme_constant_override("separation", 8)
+	var body: HSplitContainer = $VBox/CreationBody
+	if body != null:
+		body.split_offset = 420
+	if _preview_pane != null:
+		_preview_pane.add_theme_stylebox_override("panel", _card_style(Color(0.12, 0.09, 0.10, 0.98), 18))
 	_preview_pane.custom_minimum_size = Vector2(360, 0)
-	split.add_child(_preview_pane)
-	var preview := _preview_pane
+	var preview_margin: MarginContainer = $VBox/CreationBody/PreviewPane/PreviewMargin
+	if preview_margin != null:
+		preview_margin.add_theme_constant_override("margin_left", 18)
+		preview_margin.add_theme_constant_override("margin_top", 18)
+		preview_margin.add_theme_constant_override("margin_right", 18)
+		preview_margin.add_theme_constant_override("margin_bottom", 18)
+	var preview_vbox: VBoxContainer = $VBox/CreationBody/PreviewPane/PreviewMargin/PreviewVBox
+	if preview_vbox != null:
+		preview_vbox.add_theme_constant_override("separation", 12)
+	if _form_pane != null:
+		_form_pane.add_theme_stylebox_override("panel", _card_style(Color(0.11, 0.10, 0.13, 0.98), 18))
+	var form_scroll: ScrollContainer = $VBox/CreationBody/FormPane/FormScroll
+	if form_scroll != null:
+		form_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		form_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	if _form_content != null:
+		_form_content.add_theme_constant_override("separation", 16)
+	var footer: HBoxContainer = $VBox/ButtonRow
+	if footer != null:
+		footer.alignment = BoxContainer.ALIGNMENT_END
+		footer.add_theme_constant_override("separation", 10)
+	if _back_button != null:
+		_back_button.custom_minimum_size = Vector2(140, 46)
+	if _next_button != null:
+		_next_button.custom_minimum_size = Vector2(180, 46)
+	if _start_button != null:
+		_start_button.custom_minimum_size = Vector2(200, 46)
+	if _cancel_button != null:
+		_cancel_button.custom_minimum_size = Vector2(160, 46)
 
-	var preview_margin := MarginContainer.new()
-	preview_margin.name = "PreviewMargin"
-	preview_margin.anchors_preset = Control.PRESET_FULL_RECT
-	preview_margin.add_theme_constant_override("margin_left", 14)
-	preview_margin.add_theme_constant_override("margin_top", 14)
-	preview_margin.add_theme_constant_override("margin_right", 14)
-	preview_margin.add_theme_constant_override("margin_bottom", 14)
-	preview.add_child(preview_margin)
 
-	var preview_vbox := VBoxContainer.new()
-	preview_vbox.name = "PreviewVBox"
-	preview_vbox.add_theme_constant_override("separation", 10)
-	preview_margin.add_child(preview_vbox)
-
-	_preview_title = Label.new()
-	_preview_title.name = "PreviewHeading"
-	_preview_title.add_theme_font_size_override("font_size", 22)
-	preview_vbox.add_child(_preview_title)
-
-	_preview_text = RichTextLabel.new()
-	_preview_text.name = "PreviewText"
-	_preview_text.bbcode_enabled = true
-	_preview_text.fit_content = false
-	_preview_text.scroll_active = true
-	_preview_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	preview_vbox.add_child(_preview_text)
-
-	_preview_meta = RichTextLabel.new()
-	_preview_meta.name = "PreviewMeta"
-	_preview_meta.bbcode_enabled = true
-	_preview_meta.fit_content = true
-	_preview_meta.scroll_active = false
-	preview_vbox.add_child(_preview_meta)
+func _build_dynamic_sections() -> void:
+	if _form_content == null or not _sections.is_empty():
+		return
+	for step_index in range(STEP_KEYS.size()):
+		var chapter_button := Button.new()
+		chapter_button.name = "ChapterChip%d" % step_index
+		chapter_button.text = "%d. %s" % [step_index + 1, CreationWizardState.step_name(step_index)]
+		chapter_button.custom_minimum_size = Vector2(0, 40)
+		chapter_button.focus_mode = Control.FOCUS_NONE
+		chapter_button.pressed.connect(_on_chapter_pressed.bind(step_index))
+		_chapter_row.add_child(chapter_button)
+		_chapter_buttons.append(chapter_button)
 
 	var genre_refs := CreationStepGenreQuestion.build_genre_section()
 	_name_input = genre_refs.name_input
@@ -260,9 +314,9 @@ func _build_ui() -> void:
 		_advanced_open = not _advanced_open
 		CreationStepGenreQuestion.sync_advanced_section(self)
 	)
-	for adapter_id in _genre_card_buttons.keys():
-		var card: Button = _genre_card_buttons[adapter_id]
-		card.pressed.connect(_on_genre_card_pressed.bind(str(adapter_id)))
+	for preset_id in _genre_card_buttons.keys():
+		var card_button: Button = _genre_card_buttons[preset_id]
+		card_button.pressed.connect(_on_genre_card_pressed.bind(String(preset_id)))
 	_sections["genre"] = genre_refs.root
 
 	var question_refs := CreationStepGenreQuestion.build_question_section()
@@ -299,45 +353,31 @@ func _build_ui() -> void:
 	_sections["dossier"] = dossier_refs.root
 
 	for section in _sections.values():
-		form_content.add_child(section)
+		_form_content.add_child(section)
 
-	var footer := HBoxContainer.new()
-	footer.name = "ButtonRow"
-	footer.alignment = BoxContainer.ALIGNMENT_END
-	footer.add_theme_constant_override("separation", 10)
-	root.add_child(footer)
 
-	_back_button = Button.new()
-	_back_button.name = "BackButton"
-	_back_button.text = "Previous"
-	_back_button.pressed.connect(_on_back_pressed)
-	footer.add_child(_back_button)
+func _wire_footer_actions() -> void:
+	if _back_button != null and not _back_button.pressed.is_connected(_on_back_pressed):
+		_back_button.pressed.connect(_on_back_pressed)
+	if _next_button != null and not _next_button.pressed.is_connected(_on_next_pressed):
+		_next_button.pressed.connect(_on_next_pressed)
+	if _start_button != null and not _start_button.pressed.is_connected(_emit_finalize):
+		_start_button.pressed.connect(_emit_finalize)
+	if _cancel_button != null and not _cancel_button.pressed.is_connected(_emit_cancel):
+		_cancel_button.pressed.connect(_emit_cancel)
 
-	_next_button = Button.new()
-	_next_button.name = "NextButton"
-	_next_button.text = "Next"
-	_next_button.pressed.connect(_on_next_pressed)
-	footer.add_child(_next_button)
 
-	_start_button = Button.new()
-	_start_button.name = "StartButton"
-	_start_button.text = "Begin Your Story"
-	_start_button.pressed.connect(_emit_finalize)
-	footer.add_child(_start_button)
-
-	var cancel_button := Button.new()
-	cancel_button.name = "CancelButton"
-	cancel_button.text = "Cancel"
-	cancel_button.pressed.connect(func() -> void: canceled.emit())
-	footer.add_child(cancel_button)
+func _emit_cancel() -> void:
+	canceled.emit()
 
 
 func _render() -> void:
-	var section_order := ["genre", "question", "history", "roll", "build", "dossier"]
 	for key in _sections.keys():
 		var control: Control = _sections[key]
-		control.visible = key == section_order[_step]
+		control.visible = key == STEP_KEYS[_step]
 	_step_label.text = CreationWizardState.step_name(_step)
+	_step_subtitle.text = STEP_SUBTITLES.get(_step, "")
+	_sync_chapter_rail()
 	CreationStepGenreQuestion.sync_advanced_section(self)
 	CreationStepGenreQuestion.render_genre_cards(self)
 	CreationStepGenreQuestion.render_question(self)
@@ -345,11 +385,20 @@ func _render() -> void:
 	CreationStepHistoryRoll.render_roll(self)
 	CreationStepBuildDossier.render_build(self)
 	CreationStepBuildDossier.render_dossier(self)
-	_preview_pane.visible = _step != STEP_DOSSIER
 	if _preview_pane.visible:
 		CreationStepBuildDossier.render_preview(self)
+	_render_preview_footer()
 	CreationStepBuildDossier.sync_footer(self)
 	call_deferred("_focus_current_step")
+
+
+func _sync_chapter_rail() -> void:
+	for index in range(_chapter_buttons.size()):
+		var button := _chapter_buttons[index]
+		button.disabled = _busy or index > _step
+		button.add_theme_stylebox_override("normal", _chapter_style(index == _step, index < _step))
+		button.add_theme_stylebox_override("hover", _chapter_style(true, index < _step))
+		button.add_theme_stylebox_override("pressed", _chapter_style(true, index < _step))
 
 
 func _on_next_pressed() -> void:
@@ -375,6 +424,11 @@ func _on_next_pressed() -> void:
 			_render()
 
 
+func _on_chapter_pressed(target_step: int) -> void:
+	if target_step <= _step and not _busy:
+		go_to_step(target_step)
+
+
 func _on_back_pressed() -> void:
 	if _busy:
 		return
@@ -396,6 +450,15 @@ func _emit_finalize() -> void:
 			"assigned_stats": _assigned_stats.duplicate(true),
 		}
 	)
+
+
+func _render_preview_footer() -> void:
+	var archetype: Dictionary = OPENING_PRESETS.get(_selected_archetype_id, {})
+	var class_label := str(archetype.get("label", CreationCatalog.humanize_id(_selected_class_id)))
+	var skill_line := ", ".join(_selected_skills) if not _selected_skills.is_empty() else "No field proficiencies locked yet."
+	_preview_footer.text = (
+		"[b]Opening discipline[/b] %s\n[b]Chosen class[/b] %s\n[b]Alignment[/b] %s\n[b]Field proficiencies[/b] %s"
+	) % [class_label, CreationCatalog.humanize_id(_selected_class_id), _selected_alignment, skill_line]
 
 
 func _current_question() -> Dictionary:
@@ -444,9 +507,30 @@ func _seed_value() -> int:
 	return int(raw) if raw.is_valid_int() else -1
 
 
-func _on_genre_card_pressed(adapter_id: String) -> void:
-	_selected_adapter_id = adapter_id
+func _on_genre_card_pressed(preset_id: String) -> void:
+	_apply_opening_preset(preset_id, true)
 	_render()
+
+
+func _apply_opening_preset(preset_id: String, user_initiated: bool) -> void:
+	var normalized := preset_id.strip_edges()
+	if not OPENING_PRESETS.has(normalized):
+		return
+	_selected_archetype_id = normalized
+	var preset: Dictionary = OPENING_PRESETS[normalized]
+	_selected_class_id = str(preset.get("class_id", _selected_class_id))
+	_selected_alignment = str(preset.get("alignment", _selected_alignment))
+	_selected_skills = CreationWizardState.string_array(preset.get("skills", []))
+	if user_initiated:
+		_class_locked_by_player = true
+		_alignment_locked_by_player = true
+		_skills_locked_by_player = true
+	if not _payload.is_empty():
+		_assigned_stats = CreationCatalog.suggested_stats_for(
+			_catalog,
+			_selected_class_id,
+			_payload.get("current_roll", []),
+		)
 
 
 func _reset_state() -> void:
@@ -456,6 +540,7 @@ func _reset_state() -> void:
 	_history_visible_events = 0
 	_selected_adapter_id = "fantasy_ember"
 	_selected_profile_id = CreationCatalog.default_profile_id(_catalog)
+	_selected_archetype_id = "ash_scout"
 	_selected_class_id = CreationCatalog.default_class_id(_catalog)
 	_selected_alignment = "TN"
 	_selected_skills = []
@@ -463,6 +548,10 @@ func _reset_state() -> void:
 	_step = STEP_GENRE
 	_busy = false
 	_advanced_open = false
+	_class_locked_by_player = false
+	_alignment_locked_by_player = false
+	_skills_locked_by_player = false
+	_apply_opening_preset(_selected_archetype_id, false)
 	_render()
 
 
@@ -512,3 +601,25 @@ func _clear_children(node: Node) -> void:
 	for child in node.get_children():
 		node.remove_child(child)
 		child.queue_free()
+
+
+func _card_style(bg: Color, radius: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg
+	style.border_color = Color(0.42, 0.31, 0.18, 0.94)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(radius)
+	return style
+
+
+func _chapter_style(active: bool, completed: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.28, 0.18, 0.10, 0.98) if active else (Color(0.18, 0.14, 0.12, 0.98) if completed else Color(0.11, 0.10, 0.13, 0.98))
+	style.border_color = Color(0.82, 0.66, 0.38, 1.0) if active else Color(0.30, 0.26, 0.20, 0.96)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(10)
+	style.content_margin_left = 12
+	style.content_margin_top = 8
+	style.content_margin_right = 12
+	style.content_margin_bottom = 8
+	return style

@@ -25,14 +25,14 @@ expected = "title screen finishes backend bootstrap and catalog loading"
 [[steps]]
 id = "wait_for_new_game_button"
 action = "wait_for_node_visible"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton"
 duration_ms = 4000
 expected = "title menu is ready for semantic interaction"
 
 [[steps]]
 id = "open_new_game"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton"
 wait_ms = 1200
 capture_os = true
 capture_viewport = true
@@ -293,11 +293,11 @@ duration_ms = 5000
 expected = "world viewport is visible in the gameplay shell"
 
 [[steps]]
-id = "wait_for_command_bar"
+id = "wait_for_shell_actions"
 action = "wait_for_node_visible"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/MapButton"
 duration_ms = 4000
-expected = "command bar is visible after gameplay boot"
+expected = "instrument rail is visible after gameplay boot"
 
 [[steps]]
 id = "quicksave_campaign"
@@ -327,14 +327,14 @@ expected = "title screen loads after restarting the client"
 [[steps]]
 id = "wait_for_continue_after_restart"
 action = "wait_for_node_visible"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 duration_ms = 4000
 expected = "continue is visible after the restart"
 
 [[steps]]
 id = "open_continue_after_restart"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 1200
 capture_os = true
 capture_viewport = true
@@ -382,3 +382,6 @@ capture_os = true
 capture_viewport = true
 expected = "continued campaign accepts a semantic world click"
 expect_note_contains = "GameSession"
+
+
+

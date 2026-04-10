@@ -10,7 +10,7 @@ tags = ["gameplay", "save-panel", "semantic"]
 [[steps]]
 id = "open_continue"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 700
 capture_viewport = true
 expected = "continue browser opens"
@@ -56,15 +56,18 @@ expect_note_contains = "GameSession"
 [[steps]]
 id = "wait_for_saves_button"
 action = "wait_for_node_visible"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SavesButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/SavesButton"
 duration_ms = 3000
 expected = "save button is available"
 
 [[steps]]
 id = "open_save_panel"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SavesButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/SavesButton"
 wait_ms = 750
 capture_viewport = true
 expected = "save/load panel opens"
 expect_note_contains = "GameSession"
+
+
+

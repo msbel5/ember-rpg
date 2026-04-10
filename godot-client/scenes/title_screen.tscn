@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://ctitle"]
 
 [ext_resource type="Script" path="res://scenes/title_screen.gd" id="1"]
-[ext_resource type="Script" path="res://scenes/title_menu.gd" id="2"]
-[ext_resource type="Script" path="res://scripts/ui/creation_wizard.gd" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/components/title_menu.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/components/creation_wizard.tscn" id="3"]
 [ext_resource type="Script" path="res://scripts/ui/load_browser_widget.gd" id="4"]
 
 [node name="TitleScreen" type="Control"]
@@ -21,12 +21,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.05, 0.04, 0.07, 1)
 
-[node name="TitleMenu" type="Control" parent="."]
+[node name="TitleMenu" parent="." instance=ExtResource("2")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-script = ExtResource("2")
 
 [node name="StatusLabel" type="Label" parent="."]
 layout_mode = 1
@@ -84,13 +83,12 @@ scroll_active = false
 layout_mode = 2
 text = "Retry Backend"
 
-[node name="CharacterCreation" type="PanelContainer" parent="."]
+[node name="CharacterCreation" parent="." instance=ExtResource("3")]
 visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-script = ExtResource("3")
 
 [node name="HeroPanel" type="PanelContainer" parent="."]
 visible = false

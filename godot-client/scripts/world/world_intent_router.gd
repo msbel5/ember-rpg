@@ -23,15 +23,18 @@ static func route_walk_or_interact(
 		var entity_path := walker.compute_path(player_tile, adjacent, map_data)
 		if entity_path.is_empty():
 			return {"command": WorldInteraction.command_for_entity(entity)}
-		var entity_commands := _commands_for_path(player_tile, entity_path)
-		entity_commands.append(WorldInteraction.command_for_entity(entity))
-		return {"commands": entity_commands}
+		return {
+			"commands": [
+				"move to %d,%d" % [adjacent.x, adjacent.y],
+				WorldInteraction.command_for_entity(entity),
+			]
+		}
 
 	var tile_name := str(tile_name_at.call(target_tile))
 	var path := walker.compute_path(player_tile, target_tile, map_data)
 	if path.is_empty():
 		return {"command": WorldInteraction.command_for_tile(target_tile, tile_name)}
-	var commands := _commands_for_path(player_tile, path)
+	var commands: Array[String] = ["move to %d,%d" % [target_tile.x, target_tile.y]]
 	if tile_name in WorldInteraction.INTERACTIVE_TILE_NAMES:
 		commands.append(WorldInteraction.command_for_tile(target_tile, tile_name))
 	return {"commands": commands}

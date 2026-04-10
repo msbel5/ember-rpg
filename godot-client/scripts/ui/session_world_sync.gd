@@ -12,8 +12,12 @@ func _init(owner) -> void:
 func initialize_runtime() -> void:
 	if GameState.campaign_id.is_empty():
 		return
-	if GameState.map_data.is_empty() or not map_has_tiles():
-		resync_campaign()
+	if GameState.runtime_transport == "ws":
+		Backend.ensure_runtime_socket(GameState.campaign_id, GameState.ws_url, GameState.ws_path)
+	# Always pull one bootstrap snapshot when the session scene mounts.
+	# Continue/load can otherwise show the settlement before the first live tick lands,
+	# which makes the world look empty even though the runtime is populated.
+	resync_campaign()
 
 
 func on_map_resynced(data) -> void:

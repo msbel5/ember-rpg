@@ -16,6 +16,7 @@ var runtime_transport: String = "http"
 var bootstrap_transport: String = "http"
 var ws_url: String = ""
 var ws_path: String = ""
+var runtime_mode: String = "exploration_realtime"
 var player: Dictionary = {}
 var scene: String = "exploration"  # exploration | combat | dialogue | rest
 var location: String = ""
@@ -122,6 +123,8 @@ func update_from_response(data: Dictionary) -> void:
 		bootstrap_transport = str(transport.get("bootstrap", bootstrap_transport))
 		ws_url = str(transport.get("ws_url", ws_url))
 		ws_path = str(transport.get("ws_path", ws_path))
+	if data.has("runtime_mode"):
+		runtime_mode = str(data["runtime_mode"]).strip_edges().to_lower()
 	if data.has("runtime_transport"):
 		runtime_transport = str(data["runtime_transport"])
 	if data.has("bootstrap_transport"):
@@ -296,6 +299,12 @@ func reset() -> void:
 	campaign_id = ""
 	adapter_id = "fantasy_ember"
 	profile_id = "standard"
+	transport = {}
+	runtime_transport = "http"
+	bootstrap_transport = "http"
+	ws_url = ""
+	ws_path = ""
+	runtime_mode = "exploration_realtime"
 	player = {}
 	scene = "exploration"
 	location = ""
@@ -363,11 +372,17 @@ func current_shell_mode() -> String:
 		return "dialog"
 	if is_in_combat():
 		return "combat"
+	if has_active_travel():
+		return "travel"
+	if runtime_mode == "tactical_pause":
+		return "tactical_pause"
 	return "exploration"
 
 
 func has_active_dialog() -> bool:
-	return not dialog_npc.is_empty() or not dialog_text.is_empty() or not dialog_options.is_empty()
+	var has_speaker := not _normalize_dialog_string(dialog_npc).is_empty()
+	var has_text := not _normalize_dialog_string(dialog_text).is_empty()
+	return has_speaker or has_text or not dialog_options.is_empty()
 
 func current_dialog_payload() -> Dictionary:
 	if not has_active_dialog():
@@ -510,8 +525,8 @@ func _facing_to_int(facing: String) -> int:
 
 func _apply_dialog_payload(payload: Dictionary) -> void:
 	var normalized_payload := payload.duplicate(true) if payload is Dictionary else {}
-	var next_npc := str(normalized_payload.get("dialog_npc", "")).strip_edges()
-	var next_text := str(normalized_payload.get("dialog_text", "")).strip_edges()
+	var next_npc := _normalize_dialog_string(normalized_payload.get("dialog_npc", ""))
+	var next_text := _normalize_dialog_string(normalized_payload.get("dialog_text", ""))
 	var next_options = normalized_payload.get("dialog_options", [])
 	if not (next_options is Array):
 		next_options = []
@@ -540,3 +555,10 @@ func _dialog_options_equal(left_options: Array, right_options: Array) -> bool:
 
 func _has_dialog_keys(data: Dictionary) -> bool:
 	return data.has("dialog_npc") or data.has("dialog_text") or data.has("dialog_options") or (data.has("dialog") and data["dialog"] is Dictionary)
+
+
+func _normalize_dialog_string(value) -> String:
+	if value == null:
+		return ""
+	var normalized := str(value).strip_edges()
+	return "" if normalized == "<null>" else normalized

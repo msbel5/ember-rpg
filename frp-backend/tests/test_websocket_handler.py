@@ -31,6 +31,12 @@ class _MockRuntime:
         return {
             "campaign_id": campaign_id,
             "narrative": narrative,
+            "transport": {
+                "mode": "ws",
+                "bootstrap": "http",
+                "ws_path": f"/game/ws/campaigns/{campaign_id}",
+            },
+            "runtime_mode": "exploration_realtime",
             "player": {"name": "TestPlayer", "hp": 20},
         }
 
@@ -133,6 +139,39 @@ def test_unknown_message_type():
         data = ws.receive_json()
         assert data["type"] == "error"
         assert "unknown" in data["message"].lower()
+
+
+def test_runtime_mode_pause_resume(monkeypatch):
+    class _DummyLoop:
+        def __init__(self):
+            self.paused = False
+
+        def set_on_tick(self, _callback) -> None:
+            return
+
+        def pause(self, _reason: str = "manual") -> None:
+            self.paused = True
+
+        def resume(self, _reason: str = "manual") -> None:
+            self.paused = False
+
+    from engine.api import ws_campaign
+
+    dummy_loop = _DummyLoop()
+    monkeypatch.setattr(ws_campaign, "get_tick_loop", lambda _campaign_id: dummy_loop)
+
+    client = TestClient(app)
+    with client.websocket_connect("/game/ws/campaigns/test_campaign") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "runtime_mode", "mode": "tactical_pause"})
+        paused = ws.receive_json()
+        assert paused["type"] == "state"
+        assert dummy_loop.paused is True
+
+        ws.send_json({"type": "runtime_mode", "mode": "exploration_realtime"})
+        resumed = ws.receive_json()
+        assert resumed["type"] == "state"
+        assert dummy_loop.paused is False
 
 
 # ── HTTP still works alongside WebSocket ─────────────────────────────

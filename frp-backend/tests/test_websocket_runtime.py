@@ -31,6 +31,11 @@ class TestWebSocketConnection:
             msg = ws.receive_json()
             assert msg["type"] == "state"
             assert "snapshot" in msg
+            snapshot = msg["snapshot"]
+            assert snapshot["transport"]["mode"] == "ws"
+            assert snapshot["transport"]["bootstrap"] == "http"
+            assert snapshot["transport"]["ws_path"] == f"/game/ws/campaigns/{cid}"
+            assert snapshot["runtime_mode"] in {"exploration_realtime", "travel", "dialog"}
 
     def test_ws_ping_pong(self, client):
         resp = client.post("/game/campaigns", json={

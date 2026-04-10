@@ -163,23 +163,23 @@ def test_win32_executor_semantic_actions_proxy_to_runtime_bridge(monkeypatch, tm
         recorded.append((action, payload))
         if action == "query_state":
             response = {"status": "ok", "scene_name": "TitleScreen", "node_exists": False}
-            if payload.get("node_path") == "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton":
+            if payload.get("node_path") == "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton":
                 response["node_exists"] = True
             return response
         return {"status": "ok"}
 
     monkeypatch.setattr(executor, "_send_command", fake_send_command)
 
-    executor.focus_node("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton")
-    executor.activate_node("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton")
+    executor.focus_node("TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton")
+    executor.activate_node("TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton")
     executor.set_text_node("CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent/IdentitySection/NameInput", "Nova")
-    executor.click_node("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton", normalized_x=0.5, normalized_y=0.5)
+    executor.click_node("TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton", normalized_x=0.5, normalized_y=0.5)
     assert executor.current_scene_name() == "TitleScreen"
-    assert executor.node_exists("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton") is True
+    assert executor.node_exists("TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton") is True
 
     assert recorded == [
-        ("focus_node", {"node_path": "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"}),
-        ("activate_node", {"node_path": "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"}),
+        ("focus_node", {"node_path": "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton"}),
+        ("activate_node", {"node_path": "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton"}),
         (
             "set_text_node",
             {
@@ -190,12 +190,14 @@ def test_win32_executor_semantic_actions_proxy_to_runtime_bridge(monkeypatch, tm
         (
             "click_node",
             {
-                "node_path": "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton",
+                "node_path": "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton",
                 "normalized_x": 0.5,
                 "normalized_y": 0.5,
                 "button": "left",
             },
         ),
         ("query_state", {}),
-        ("query_state", {"node_path": "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"}),
+        ("query_state", {"node_path": "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton"}),
     ]
+
+

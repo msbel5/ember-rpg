@@ -17,14 +17,14 @@ expected = "title screen is visible in a desktop window"
 [[steps]]
 id = "wait_for_continue_button"
 action = "wait_for_node_visible"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 duration_ms = 4000
 expected = "continue button is ready"
 
 [[steps]]
 id = "open_continue"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 1200
 capture_os = true
 capture_viewport = true
@@ -49,7 +49,7 @@ expected = "gameplay shell opens from the selected save"
 [[steps]]
 id = "open_hero_tab"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/CharacterPanelTabButton"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav/CharacterPanelTabButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
@@ -58,7 +58,7 @@ expected = "hero tab is visible"
 [[steps]]
 id = "open_town_tab"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/SettlementPanelTabButton"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav/SettlementPanelTabButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
@@ -67,7 +67,7 @@ expected = "town tab is visible"
 [[steps]]
 id = "open_quests_tab"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/QuestPanelTabButton"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav/QuestPanelTabButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
@@ -76,7 +76,7 @@ expected = "quests tab is visible"
 [[steps]]
 id = "open_items_tab"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/InventoryPanelTabButton"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav/InventoryPanelTabButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
@@ -85,8 +85,11 @@ expected = "items tab is visible"
 [[steps]]
 id = "open_map_tab"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/MinimapPanelTabButton"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav/MinimapPanelTabButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
 expected = "map tab is visible"
+
+
+

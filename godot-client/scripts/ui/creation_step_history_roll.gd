@@ -6,8 +6,10 @@ class_name CreationStepHistoryRoll
 static func build_history_section(owner) -> Dictionary:
 	var section := VBoxContainer.new()
 	section.name = "HistorySection"
+	section.add_theme_constant_override("separation", 12)
 	var prompt := Label.new()
-	prompt.text = "World history settles into place..."
+	prompt.text = "The long road behind the present begins to surface."
+	prompt.add_theme_color_override("font_color", Color(0.72, 0.68, 0.62))
 	section.add_child(prompt)
 
 	var history_text := RichTextLabel.new()
@@ -34,21 +36,46 @@ static func build_history_section(owner) -> Dictionary:
 static func build_roll_section(owner) -> Dictionary:
 	var section := VBoxContainer.new()
 	section.name = "RollSection"
+	section.add_theme_constant_override("separation", 12)
 
 	var roll_pool_label := Label.new()
+	roll_pool_label.add_theme_font_size_override("font_size", 20)
 	section.add_child(roll_pool_label)
 
 	var saved_roll_label := Label.new()
+	saved_roll_label.add_theme_color_override("font_color", Color(0.72, 0.68, 0.62))
 	section.add_child(saved_roll_label)
+
+	var silhouette_panel := PanelContainer.new()
+	silhouette_panel.add_theme_stylebox_override("panel", _panel_style())
+	section.add_child(silhouette_panel)
+
+	var silhouette_margin := MarginContainer.new()
+	silhouette_margin.add_theme_constant_override("margin_left", 12)
+	silhouette_margin.add_theme_constant_override("margin_top", 12)
+	silhouette_margin.add_theme_constant_override("margin_right", 12)
+	silhouette_margin.add_theme_constant_override("margin_bottom", 12)
+	silhouette_panel.add_child(silhouette_margin)
 
 	var silhouette := Control.new()
 	silhouette.name = "SilhouetteBoard"
 	silhouette.custom_minimum_size = Vector2(0, 220)
-	section.add_child(silhouette)
+	silhouette_margin.add_child(silhouette)
+
+	var stat_panel := PanelContainer.new()
+	stat_panel.add_theme_stylebox_override("panel", _panel_style())
+	section.add_child(stat_panel)
+	var stat_margin := MarginContainer.new()
+	stat_margin.add_theme_constant_override("margin_left", 12)
+	stat_margin.add_theme_constant_override("margin_top", 12)
+	stat_margin.add_theme_constant_override("margin_right", 12)
+	stat_margin.add_theme_constant_override("margin_bottom", 12)
+	stat_panel.add_child(stat_margin)
 
 	var stat_rows := VBoxContainer.new()
 	stat_rows.name = "StatRows"
-	section.add_child(stat_rows)
+	stat_rows.add_theme_constant_override("separation", 8)
+	stat_margin.add_child(stat_rows)
 
 	var button_row := HBoxContainer.new()
 	button_row.add_theme_constant_override("separation", 10)
@@ -153,8 +180,10 @@ static func render_roll(owner) -> void:
 
 static func _stat_row(owner, ability: String, value: int) -> Control:
 	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
 	var minus := Button.new()
 	minus.text = "-"
+	minus.custom_minimum_size = Vector2(40, 34)
 	minus.pressed.connect(func() -> void: owner._shift_stat_value(ability, -1))
 	row.add_child(minus)
 
@@ -166,6 +195,7 @@ static func _stat_row(owner, ability: String, value: int) -> Control:
 
 	var plus := Button.new()
 	plus.text = "+"
+	plus.custom_minimum_size = Vector2(40, 34)
 	plus.pressed.connect(func() -> void: owner._shift_stat_value(ability, 1))
 	row.add_child(plus)
 	return row
@@ -176,12 +206,28 @@ static func _formatted_timeline(entries: Array) -> String:
 	for entry in entries:
 		if not (entry is Dictionary):
 			continue
-		var year := int(entry.get("year", 0))
+		var era_label := str(entry.get("era_label", "")).strip_edges()
 		var headline := str(entry.get("headline", "")).strip_edges()
 		var summary := str(entry.get("summary", "")).strip_edges()
 		var tags: Array = entry.get("tags", [])
 		var tag_line := ""
 		if tags is Array and not tags.is_empty():
 			tag_line = "\n[color=#bfa56a]%s[/color]" % "  |  ".join(tags.slice(0, 4))
-		sections.append("[b]Year %d - %s[/b]\n%s%s" % [year, headline, summary, tag_line])
+		var heading := headline
+		if not era_label.is_empty() and not headline.is_empty():
+			heading = "%s - %s" % [era_label, headline]
+		elif not era_label.is_empty():
+			heading = era_label
+		if heading.is_empty():
+			heading = "Recorded Event"
+		sections.append("[b]%s[/b]\n%s%s" % [heading, summary, tag_line])
 	return "\n\n".join(sections)
+
+
+static func _panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.12, 0.10, 0.13, 0.98)
+	style.set_corner_radius_all(12)
+	style.set_border_width_all(1)
+	style.border_color = Color(0.31, 0.25, 0.18, 0.95)
+	return style

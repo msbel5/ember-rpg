@@ -18,12 +18,12 @@ static func apply_title_screen(root: Control) -> void:
 	if background is ColorRect:
 		background.color = Color(0.05, 0.04, 0.07, 1.0)
 
-	var title_label = root.get_node_or_null("TitleMenu/Shell/RootVBox/TitleBlock/TitleLabel")
+	var title_label = root.get_node_or_null("TitleMenu/FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox/TitleBlock/TitleLabel")
 	if title_label is Label:
 		title_label.add_theme_font_size_override("font_size", 42)
 		title_label.add_theme_color_override("font_color", IVORY)
 
-	var subtitle_label = root.get_node_or_null("TitleMenu/Shell/RootVBox/TitleBlock/SubtitleLabel")
+	var subtitle_label = root.get_node_or_null("TitleMenu/FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox/TitleBlock/SubtitleLabel")
 	if subtitle_label is Label:
 		subtitle_label.add_theme_font_size_override("font_size", 19)
 		subtitle_label.add_theme_color_override("font_color", MUTED)
@@ -33,9 +33,9 @@ static func apply_title_screen(root: Control) -> void:
 		status_label.add_theme_font_size_override("font_size", 15)
 		status_label.add_theme_color_override("font_color", WARNING)
 
-	_style_primary_button(root.get_node_or_null("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/NewGameButton"), Vector2(280, 56))
-	_style_secondary_button(root.get_node_or_null("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"), Vector2(280, 56))
-	_style_secondary_button(root.get_node_or_null("TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/QuitButton"), Vector2(280, 52))
+	_style_primary_button(root.get_node_or_null("TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/NewGameButton"), Vector2(280, 56))
+	_style_secondary_button(root.get_node_or_null("TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"), Vector2(280, 56))
+	_style_secondary_button(root.get_node_or_null("TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/QuitButton"), Vector2(280, 52))
 	_style_primary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/NextButton"), Vector2(148, 44))
 	_style_primary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/StartButton"), Vector2(188, 44))
 	_style_secondary_button(root.get_node_or_null("CharacterCreation/VBox/ButtonRow/BackButton"), Vector2(132, 44))
@@ -62,21 +62,41 @@ static func apply_game_session(root: Control) -> void:
 	if background is ColorRect:
 		background.color = Color(0.05, 0.05, 0.07, 1.0)
 
-	_style_primary_button(root.get_node_or_null("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SendButton"), Vector2(100, 40))
-	_style_secondary_button(root.get_node_or_null("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/QuickSaveButton"), Vector2(126, 40))
-	_style_secondary_button(root.get_node_or_null("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SavesButton"), Vector2(100, 40))
-
 	var world_pane = root.get_node_or_null("MainMargin/MainVBox/ContentSplit/WorldPane")
 	if world_pane is PanelContainer:
 		world_pane.add_theme_stylebox_override("panel", _panel_style(Color(0.08, 0.08, 0.10, 0.98), 10, Color(0.33, 0.39, 0.46, 0.90)))
 
-	var sidebar = root.get_node_or_null("MainMargin/MainVBox/ContentSplit/Sidebar")
-	if sidebar != null:
-		sidebar.add_theme_stylebox_override("panel", _panel_style(PANEL_ALT, 10, ACCENT_SOFT))
+	var modal_host = root.get_node_or_null("MainMargin/MainVBox/ContentSplit/ModalHost")
+	if modal_host is PanelContainer:
+		modal_host.add_theme_stylebox_override("panel", _panel_style(PANEL_ALT, 10, ACCENT_SOFT))
 
-	var command_bar = root.get_node_or_null("MainMargin/MainVBox/CommandBar")
-	if command_bar is PanelContainer:
-		command_bar.add_theme_stylebox_override("panel", _panel_style(PANEL_ALT, 10, ACCENT_SOFT))
+	var instrument_rail = root.get_node_or_null("MainMargin/MainVBox/InstrumentRail")
+	if instrument_rail is PanelContainer:
+		instrument_rail.add_theme_stylebox_override("panel", _panel_style(PANEL_ALT, 10, ACCENT_SOFT))
+		var monitor_frame = root.get_node_or_null("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/MonitorFrame")
+		if monitor_frame is PanelContainer:
+			monitor_frame.add_theme_stylebox_override("panel", _panel_style(Color(0.10, 0.09, 0.12, 0.98), 8, ACCENT_SOFT))
+		var state_frame = root.get_node_or_null("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/StateFrame")
+		if state_frame is PanelContainer:
+			state_frame.add_theme_stylebox_override("panel", _panel_style(Color(0.10, 0.09, 0.12, 0.98), 8, ACCENT_SOFT))
+		for path in [
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/QuickSaveButton",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/SavesButton",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionOne",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionTwo",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionThree",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionFour",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionFive",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/HeroButton",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/ItemsButton",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/MapButton",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/QuestsButton",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/TownButton",
+			"MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/MenuButton",
+		]:
+			var button = root.get_node_or_null(path)
+			if button is Button:
+				_style_secondary_button(button, Vector2(120, 38))
 
 
 static func _install_title_hero(root: Control) -> void:
@@ -235,3 +255,5 @@ static func _focus_style() -> StyleBoxFlat:
 	style.set_border_width_all(2)
 	style.border_color = ACCENT
 	return style
+
+

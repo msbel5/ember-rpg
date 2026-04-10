@@ -41,3 +41,6 @@ node_path = "LoadButton"
 duration_ms = 6000
 capture_viewport = true
 expected = "continue browser shows campaign saves for Chaos"
+
+
+

@@ -21,6 +21,75 @@ const INVENTORY_COMMAND_MARKERS := [
 	"wear ",
 	"remove ",
 ]
+const NPC_TEMPLATE_POOL := ["merchant", "guard", "bard", "rogue", "sage", "priest", "blacksmith", "beggar"]
+const ENEMY_TEMPLATE_POOL := ["orc", "goblin", "skeleton", "wolf", "rat", "spider", "bandit", "troll", "zombie"]
+const GENERIC_ENTITY_TYPES := ["npc", "creature", "item", "furniture", "object", "fixture", "enemy"]
+const GENERIC_CHARACTER_TEMPLATES := ["warrior", "adventurer", "commoner", "resident", "villager", "human", "person"]
+const ROLE_TEMPLATE_MAP := {
+	"merchant": "merchant",
+	"shopkeeper": "merchant",
+	"trader": "merchant",
+	"vendor": "merchant",
+	"guard": "guard",
+	"guard_captain": "guard",
+	"sentinel": "guard",
+	"soldier": "guard",
+	"knight": "knight",
+	"innkeeper": "innkeeper",
+	"blacksmith": "blacksmith",
+	"smith": "blacksmith",
+	"healer": "healer",
+	"priest": "priest",
+	"cleric": "priest",
+	"mage": "mage",
+	"wizard": "mage",
+	"wizzard": "mage",
+	"witch": "witch",
+	"sage": "sage",
+	"quest_giver": "quest_giver",
+	"bard": "bard",
+	"rogue": "rogue",
+	"thief": "thief",
+	"spy": "spy",
+	"beggar": "beggar",
+	"orc": "orc",
+	"goblin": "goblin",
+	"skeleton": "skeleton",
+	"wolf": "wolf",
+	"rat": "rat",
+	"spider": "spider",
+	"bandit": "bandit",
+	"troll": "troll",
+	"zombie": "zombie",
+	"ghost": "ghost",
+	"fairy": "fairy",
+}
+const PROP_TEMPLATE_KEYWORDS := {
+	"armor_rack": "rack",
+	"barrel": "barrel",
+	"crate": "crate",
+	"chest": "chest",
+	"rack": "rack",
+	"shelf": "bookshelf",
+	"anvil": "anvil",
+	"forge": "anvil",
+	"altar": "altar",
+	"shrine": "altar",
+	"pew": "pew",
+	"bed": "bed",
+	"bench": "bench",
+	"table": "table",
+	"chair": "chair",
+	"counter": "table",
+	"desk": "table",
+	"workbench": "workbench",
+	"bookshelf": "bookshelf",
+	"bookcase": "bookshelf",
+	"door": "door",
+	"well": "well",
+	"fountain": "fountain",
+	"tree": "tree",
+}
 
 
 static func normalize_combat(data: Dictionary) -> Dictionary:
@@ -68,8 +137,8 @@ static func normalize_dialog(data: Dictionary) -> Dictionary:
 		dialog_source = data["dialog"]
 	else:
 		dialog_source = data
-	var npc_name := str(dialog_source.get("dialog_npc", dialog_source.get("speaker", ""))).strip_edges()
-	var dialog_text := str(dialog_source.get("dialog_text", dialog_source.get("narrative", ""))).strip_edges()
+	var npc_name := _nullable_string(dialog_source.get("dialog_npc", dialog_source.get("speaker", "")))
+	var dialog_text := _nullable_string(dialog_source.get("dialog_text", ""))
 	var raw_options = dialog_source.get("dialog_options", [])
 	var normalized_options: Array = []
 	if raw_options is Array:
@@ -89,6 +158,13 @@ static func normalize_dialog(data: Dictionary) -> Dictionary:
 		"dialog_text": dialog_text,
 		"dialog_options": normalized_options,
 	}
+
+
+static func _nullable_string(value) -> String:
+	if value == null:
+		return ""
+	var normalized := str(value).strip_edges()
+	return "" if normalized == "<null>" else normalized
 
 
 static func flatten_campaign_response(data: Dictionary, current_map: Dictionary = {}) -> Dictionary:
@@ -114,6 +190,8 @@ static func flatten_campaign_response(data: Dictionary, current_map: Dictionary 
 		flattened["bootstrap_transport"] = str(data["transport"].get("bootstrap", "http"))
 		flattened["ws_url"] = str(data["transport"].get("ws_url", ""))
 		flattened["ws_path"] = str(data["transport"].get("ws_path", ""))
+	if data.has("runtime_mode"):
+		flattened["runtime_mode"] = str(data["runtime_mode"]).strip_edges().to_lower()
 	if data.has("narrative"):
 		flattened["narrative"] = data["narrative"]
 
@@ -193,17 +271,25 @@ static func group_entity_list(raw_entities: Array) -> Dictionary:
 		if not (entry is Dictionary):
 			continue
 		var entity_type = str(entry.get("type", entry.get("entity_type", "npc"))).to_lower()
+		var template := guess_entity_template(entry)
 		var normalized = {
 			"id": entry.get("id", ""),
 			"name": entry.get("name", "Unknown"),
-			"template": guess_entity_template(entry),
+			"template": template,
 			"position": entry.get("position", [0, 0]),
 			"role": entry.get("role", ""),
 			"context_actions": context_actions_for(entry),
+			"site_anchor_id": entry.get("site_anchor_id", ""),
+			"anchor_kind": entry.get("anchor_kind", ""),
+			"site_role": entry.get("site_role", ""),
+			"placement_priority": int(entry.get("placement_priority", 0)),
+			"building_id": entry.get("building_id", ""),
+			"home_building_id": entry.get("home_building_id", ""),
+			"work_building_id": entry.get("work_building_id", ""),
 		}
 		if entity_type == "item":
 			grouped["items"].append(normalized)
-		elif entity_type in ["furniture", "object", "fixture"]:
+		elif entity_type in ["furniture", "object", "fixture"] or _entry_looks_like_prop(entry, template):
 			normalized["bucket"] = "furniture"
 			grouped["furniture"].append(normalized)
 		elif entity_type == "creature" or str(entry.get("disposition", "")).to_lower() == "hostile":
@@ -219,17 +305,26 @@ static func group_world_entities(raw_entities: Array) -> Dictionary:
 		if not (entry is Dictionary):
 			continue
 		var entity_type = str(entry.get("entity_type", "npc")).to_lower()
+		var template := guess_entity_template(entry)
 		var normalized = {
 			"id": entry.get("id", ""),
 			"name": entry.get("name", "Unknown"),
-			"template": guess_entity_template(entry),
+			"template": template,
 			"position": entry.get("position", [0, 0]),
+			"role": entry.get("role", entry.get("job", entry.get("assignment", ""))),
 			"context_actions": context_actions_for(entry),
 			"is_hostile": str(entry.get("disposition", "")).to_lower() == "hostile",
+			"site_anchor_id": entry.get("site_anchor_id", ""),
+			"anchor_kind": entry.get("anchor_kind", ""),
+			"site_role": entry.get("site_role", ""),
+			"placement_priority": int(entry.get("placement_priority", 0)),
+			"building_id": entry.get("building_id", ""),
+			"home_building_id": entry.get("home_building_id", ""),
+			"work_building_id": entry.get("work_building_id", ""),
 		}
 		if entity_type == "item":
 			grouped["items"].append(normalized)
-		elif entity_type in ["furniture", "object", "fixture"]:
+		elif entity_type in ["furniture", "object", "fixture"] or _entry_looks_like_prop(entry, template):
 			normalized["bucket"] = "furniture"
 			grouped["furniture"].append(normalized)
 		elif entity_type == "creature" or normalized["is_hostile"]:
@@ -241,22 +336,87 @@ static func group_world_entities(raw_entities: Array) -> Dictionary:
 
 static func guess_entity_template(entry: Dictionary) -> String:
 	var explicit_template = str(entry.get("template", "")).strip_edges().to_lower()
+	var role = _normalize_template_token(str(entry.get("role", entry.get("job", ""))))
+	var name_hint = _normalize_template_token(str(entry.get("name", "")))
+	var entity_type = _normalize_template_token(str(entry.get("type", entry.get("entity_type", "npc"))))
 	if not explicit_template.is_empty():
-		return explicit_template
-	var role = str(entry.get("role", entry.get("job", ""))).to_lower()
+		var explicit_normalized := _normalize_template_token(explicit_template)
+		if ROLE_TEMPLATE_MAP.has(explicit_normalized):
+			return str(ROLE_TEMPLATE_MAP[explicit_normalized])
+		if PROP_TEMPLATE_KEYWORDS.has(explicit_normalized):
+			return str(PROP_TEMPLATE_KEYWORDS[explicit_normalized])
+		if not GENERIC_ENTITY_TYPES.has(explicit_normalized) and not GENERIC_CHARACTER_TEMPLATES.has(explicit_normalized):
+			return explicit_normalized
 	if not role.is_empty():
-		return role.replace(" ", "_")
-	var name_hint = str(entry.get("name", "")).to_lower()
-	for candidate in ["merchant", "guard", "blacksmith", "priest", "beggar", "goblin", "skeleton", "orc", "wolf", "rat", "spider"]:
+		for key in ROLE_TEMPLATE_MAP.keys():
+			if role.contains(key):
+				return str(ROLE_TEMPLATE_MAP[key])
+	if entity_type in ["item", "furniture", "object", "fixture"]:
+		var prop_template := _guess_prop_template(name_hint, role, explicit_template)
+		return prop_template
+	var named_prop_template := _guess_prop_template(name_hint, "", explicit_template)
+	if not named_prop_template.is_empty():
+		return named_prop_template
+	for candidate in ROLE_TEMPLATE_MAP.keys():
 		if name_hint.contains(candidate):
-			return candidate
-	var entity_type = str(entry.get("type", entry.get("entity_type", "warrior"))).to_lower()
-	if entity_type == "item":
-		return "chest"
-	return "warrior"
+			return str(ROLE_TEMPLATE_MAP[candidate])
+	if entity_type == "creature" or str(entry.get("disposition", "")).to_lower() == "hostile":
+		return _deterministic_template_from_pool(entry, ENEMY_TEMPLATE_POOL)
+	return _deterministic_template_from_pool(entry, NPC_TEMPLATE_POOL)
+
+
+static func _guess_prop_template(name_hint: String, role_hint: String, explicit_template: String) -> String:
+	for source in [name_hint, role_hint, _normalize_template_token(explicit_template)]:
+		for key in PROP_TEMPLATE_KEYWORDS.keys():
+			if source.contains(key):
+				return str(PROP_TEMPLATE_KEYWORDS[key])
+	return ""
+
+
+static func _entry_looks_like_prop(entry: Dictionary, template: String = "") -> bool:
+	var entity_type = _normalize_template_token(str(entry.get("type", entry.get("entity_type", ""))))
+	if entity_type in ["item", "furniture", "object", "fixture"]:
+		return entity_type != "item"
+	var template_hint = _normalize_template_token(template)
+	if PROP_TEMPLATE_KEYWORDS.values().has(template_hint):
+		return true
+	var explicit_template = _normalize_template_token(str(entry.get("template", "")))
+	if PROP_TEMPLATE_KEYWORDS.has(explicit_template):
+		return true
+	var explicit_actor_template := not explicit_template.is_empty() and not GENERIC_ENTITY_TYPES.has(explicit_template) and not GENERIC_CHARACTER_TEMPLATES.has(explicit_template)
+	if entity_type == "npc" and explicit_actor_template:
+		return false
+	var role_hint = _normalize_template_token(str(entry.get("role", entry.get("job", ""))))
+	for key in ROLE_TEMPLATE_MAP.keys():
+		if role_hint.contains(key):
+			return false
+	var name_hint = _normalize_template_token(str(entry.get("name", "")))
+	for key in PROP_TEMPLATE_KEYWORDS.keys():
+		if name_hint.contains(key):
+			return true
+	return false
+
+
+static func _deterministic_template_from_pool(entry: Dictionary, pool: Array) -> String:
+	if pool.is_empty():
+		return ""
+	var seed_text := "%s|%s|%s|%s" % [
+		str(entry.get("id", "")),
+		str(entry.get("name", "")),
+		str(entry.get("role", entry.get("job", ""))),
+		str(entry.get("entity_type", entry.get("type", ""))),
+	]
+	return str(pool[posmod(seed_text.hash(), pool.size())])
+
+
+static func _normalize_template_token(value: String) -> String:
+	return value.strip_edges().to_lower().replace(" ", "_").replace("-", "_")
 
 
 static func context_actions_for(entry: Dictionary) -> Array:
+	var template := guess_entity_template(entry)
+	if _entry_looks_like_prop(entry, template):
+		return ["examine"]
 	if entry.has("context_actions") and entry["context_actions"] is Array:
 		return entry["context_actions"]
 	var entity_type = str(entry.get("type", entry.get("entity_type", "npc"))).to_lower()
@@ -275,6 +435,16 @@ static func context_actions_for(entry: Dictionary) -> Array:
 static func player_position_from(player_data: Dictionary, fallback: Vector2i = Vector2i.ZERO) -> Vector2i:
 	if player_data.has("position") and player_data["position"] is Array and player_data["position"].size() >= 2:
 		return Vector2i(int(player_data["position"][0]), int(player_data["position"][1]))
+	if player_data.has("position") and player_data["position"] is Dictionary:
+		var position: Dictionary = player_data["position"]
+		if position.has("x") and position.has("y"):
+			return Vector2i(int(position["x"]), int(position["y"]))
+	if player_data.has("map_position") and player_data["map_position"] is Array and player_data["map_position"].size() >= 2:
+		return Vector2i(int(player_data["map_position"][0]), int(player_data["map_position"][1]))
+	if player_data.has("map_position") and player_data["map_position"] is Dictionary:
+		var map_position: Dictionary = player_data["map_position"]
+		if map_position.has("x") and map_position.has("y"):
+			return Vector2i(int(map_position["x"]), int(map_position["y"]))
 	return fallback
 
 

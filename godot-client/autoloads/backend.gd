@@ -11,9 +11,22 @@ var base_url: String = ""
 signal request_started
 signal request_finished
 signal request_error(message: String)
+signal runtime_socket_connected(campaign_id: String)
+signal runtime_socket_disconnected(campaign_id: String, reason: String)
+signal runtime_message_received(message: Dictionary)
+
+var _runtime_socket: WebSocketPeer
+var _runtime_campaign_id: String = ""
+var _runtime_connected: bool = false
+var _runtime_url: String = ""
 
 func _ready() -> void:
 	base_url = _resolve_base_url()
+	set_process(true)
+
+
+func _process(_delta: float) -> void:
+	_poll_runtime_socket()
 
 
 func set_base_url(url: String) -> void:
@@ -22,6 +35,75 @@ func set_base_url(url: String) -> void:
 
 func get_base_url() -> String:
 	return base_url
+
+
+func ensure_runtime_socket(campaign_id: String, explicit_ws_url: String = "", explicit_ws_path: String = "") -> void:
+	var normalized_campaign := campaign_id.strip_edges()
+	if normalized_campaign.is_empty():
+		return
+	var next_url := explicit_ws_url.strip_edges()
+	if next_url.is_empty():
+		var ws_path := explicit_ws_path.strip_edges()
+		if ws_path.is_empty():
+			ws_path = "/game/ws/campaigns/%s" % normalized_campaign
+		next_url = _build_ws_url(ws_path)
+	if next_url.is_empty():
+		request_error.emit("Runtime socket URL is not configured.")
+		return
+	if _runtime_connected and normalized_campaign == _runtime_campaign_id and next_url == _runtime_url:
+		return
+	if _runtime_socket != null and normalized_campaign == _runtime_campaign_id and next_url == _runtime_url:
+		return
+	close_runtime_socket("reconnect")
+	_runtime_socket = WebSocketPeer.new()
+	var error := _runtime_socket.connect_to_url(next_url)
+	if error != OK:
+		_runtime_socket = null
+		request_error.emit("Runtime socket failed: %s" % error_string(error))
+		return
+	_runtime_campaign_id = normalized_campaign
+	_runtime_url = next_url
+	_runtime_connected = false
+
+
+func close_runtime_socket(reason: String = "closed") -> void:
+	if _runtime_socket != null:
+		_runtime_socket.close()
+	_runtime_socket = null
+	if _runtime_connected:
+		runtime_socket_disconnected.emit(_runtime_campaign_id, reason)
+	_runtime_connected = false
+	_runtime_campaign_id = ""
+	_runtime_url = ""
+
+
+func runtime_submit_command(campaign_id: String, input_text: String, shortcut: String = "", args: Dictionary = {}) -> bool:
+	if not _runtime_socket_ready(campaign_id):
+		return false
+	var payload := {
+		"type": "command",
+		"input": input_text,
+		"args": args,
+	}
+	if not shortcut.strip_edges().is_empty():
+		payload["shortcut"] = shortcut.strip_edges().to_lower()
+	return _send_runtime_payload(payload)
+
+
+func set_runtime_mode(campaign_id: String, mode: String) -> bool:
+	if not _runtime_socket_ready(campaign_id):
+		return false
+	var normalized_mode := mode.strip_edges().to_lower()
+	if normalized_mode.is_empty():
+		return false
+	return _send_runtime_payload({
+		"type": "runtime_mode",
+		"mode": normalized_mode,
+	})
+
+
+func runtime_connected_for(campaign_id: String) -> bool:
+	return _runtime_connected and campaign_id.strip_edges() == _runtime_campaign_id
 
 # --- API Methods ---
 
@@ -167,6 +249,60 @@ func _infer_location_type(location: String) -> String:
 	if loc.contains("tavern") or loc.contains("inn"):
 		return "tavern"
 	return "town"
+
+
+func _build_ws_url(path: String) -> String:
+	var normalized_path := path.strip_edges()
+	if normalized_path.is_empty():
+		return ""
+	var origin := base_url if not base_url.is_empty() else _resolve_base_url()
+	if origin.begins_with("https://"):
+		origin = "wss://%s" % origin.trim_prefix("https://")
+	elif origin.begins_with("http://"):
+		origin = "ws://%s" % origin.trim_prefix("http://")
+	if not normalized_path.begins_with("/"):
+		normalized_path = "/%s" % normalized_path
+	return origin.trim_suffix("/") + normalized_path
+
+
+func _runtime_socket_ready(campaign_id: String) -> bool:
+	if _runtime_socket == null:
+		return false
+	if campaign_id.strip_edges() != _runtime_campaign_id:
+		return false
+	return _runtime_socket.get_ready_state() == WebSocketPeer.STATE_OPEN
+
+
+func _send_runtime_payload(payload: Dictionary) -> bool:
+	if _runtime_socket == null:
+		return false
+	var error := _runtime_socket.send_text(JSON.stringify(payload))
+	if error != OK:
+		request_error.emit("Runtime socket send failed: %s" % error_string(error))
+		return false
+	return true
+
+
+func _poll_runtime_socket() -> void:
+	if _runtime_socket == null:
+		return
+	_runtime_socket.poll()
+	var state := _runtime_socket.get_ready_state()
+	if state == WebSocketPeer.STATE_OPEN and not _runtime_connected:
+		_runtime_connected = true
+		runtime_socket_connected.emit(_runtime_campaign_id)
+	elif state == WebSocketPeer.STATE_CLOSED:
+		var code := _runtime_socket.get_close_code()
+		var reason := _runtime_socket.get_close_reason()
+		close_runtime_socket("closed:%s:%s" % [code, reason])
+		return
+	while _runtime_socket.get_available_packet_count() > 0:
+		var packet := _runtime_socket.get_packet()
+		var parsed = JSON.parse_string(packet.get_string_from_utf8())
+		if parsed is Dictionary:
+			runtime_message_received.emit(parsed)
+		else:
+			request_error.emit("Runtime socket delivered invalid JSON.")
 
 func _post(path: String, body: String, callback: Callable) -> void:
 	if not _ensure_base_url(callback):

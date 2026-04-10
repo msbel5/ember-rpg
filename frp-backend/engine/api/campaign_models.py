@@ -125,7 +125,14 @@ class CampaignSnapshotResponse(BaseModel):
     adapter_id: str
     profile_id: str
     narrative: str
+    transport: Dict[str, Any] = Field(default_factory=dict)
+    runtime_mode: str = "exploration_realtime"
     campaign: Dict[str, Any]
+    dialog_npc: Optional[str] = None
+    dialog_text: Optional[str] = None
+    dialog_options: List[Dict[str, Any]] = Field(default_factory=list)
+    knowledge_view: Optional[Dict[str, Any]] = None
+    advisor_view: Optional[Dict[str, Any]] = None
 
 
 class CampaignCommandResponse(BaseModel):
@@ -134,6 +141,8 @@ class CampaignCommandResponse(BaseModel):
     command_type: str
     hours_advanced: int
     generated_events: List[Dict[str, Any]] = Field(default_factory=list)
+    transport: Dict[str, Any] = Field(default_factory=dict)
+    runtime_mode: str = "exploration_realtime"
     campaign: Dict[str, Any]
     dialog_npc: Optional[str] = None
     dialog_text: Optional[str] = None

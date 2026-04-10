@@ -133,6 +133,12 @@ static func describe_hover(entity: Dictionary, tile_name: String, tile_position:
 	if not entity.is_empty():
 		var entity_name := str(entity.get("name", "Unknown")).strip_edges()
 		var actions = entity.get("context_actions", [])
+		var left_action := "Select"
+		var bucket := str(entity.get("bucket", "npc")).strip_edges().to_lower()
+		if bucket == "npc":
+			left_action = "Talk"
+		elif bucket == "enemy":
+			left_action = "Attack" if GameState.is_in_combat() else "Select"
 		if actions is Array and not actions.is_empty():
 			var labels: Array[String] = []
 			for raw_action in actions:
@@ -140,11 +146,11 @@ static func describe_hover(entity: Dictionary, tile_name: String, tile_position:
 				if action.is_empty():
 					continue
 				labels.append(_hover_action_label(action))
-			return "%s  |  Click: %s  |  %s" % [entity_name, command_for_entity(entity), ", ".join(labels)]
-		return "%s  |  Click: %s" % [entity_name, command_for_entity(entity)]
+			return "%s  |  Left: %s  |  Right: act menu  |  %s" % [entity_name, left_action, ", ".join(labels)]
+		return "%s  |  Left: %s  |  Right: act menu" % [entity_name, left_action]
 	if tile_name.is_empty():
 		return "Unknown ground"
-	return "%s  |  Click: %s" % [display_tile_name(tile_name), command_for_tile(tile_position, tile_name)]
+	return "%s  |  Left: focus  |  Right: %s" % [display_tile_name(tile_name), command_for_tile(tile_position, tile_name)]
 
 
 static func display_tile_name(tile_name: String) -> String:

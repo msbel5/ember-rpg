@@ -43,7 +43,7 @@ class CampaignTickLoop:
         self._tick_hours = tick_hours
         self._on_tick = on_tick
         self._task: Optional[asyncio.Task] = None
-        self._paused = False
+        self._pause_reasons: set[str] = set()
 
     @property
     def running(self) -> bool:
@@ -51,7 +51,7 @@ class CampaignTickLoop:
 
     @property
     def paused(self) -> bool:
-        return self._paused
+        return bool(self._pause_reasons)
 
     async def start(self) -> None:
         """Start the background tick task."""
@@ -71,13 +71,13 @@ class CampaignTickLoop:
         self._task = None
         logger.info("Tick loop stopped for campaign %s", self._campaign_id[:8])
 
-    def pause(self) -> None:
-        """Pause ticking (e.g. during combat)."""
-        self._paused = True
+    def pause(self, reason: str = "manual") -> None:
+        """Pause ticking for a named reason."""
+        self._pause_reasons.add(str(reason or "manual"))
 
-    def resume(self) -> None:
-        """Resume ticking after pause."""
-        self._paused = False
+    def resume(self, reason: str = "manual") -> None:
+        """Resume ticking for a named reason."""
+        self._pause_reasons.discard(str(reason or "manual"))
 
     def set_on_tick(self, callback: Optional[Callable]) -> None:
         """Update the push callback. Pass None to stop pushing events."""
@@ -99,8 +99,7 @@ class CampaignTickLoop:
             try:
                 events = advance_world_tick(context, hours=self._tick_hours)
                 if self._on_tick is not None:
-                    from .persistence import campaign_payload
-                    snapshot = campaign_payload(context)
+                    snapshot = self._runtime.snapshot(self._campaign_id)
                     await self._on_tick(self._campaign_id, events, snapshot)
                 logger.debug("Tick: campaign=%s events=%d", self._campaign_id[:8], len(events))
             except Exception:

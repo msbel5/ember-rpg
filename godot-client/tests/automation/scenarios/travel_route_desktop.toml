@@ -17,14 +17,14 @@ expected = "title screen is visible in a desktop window"
 [[steps]]
 id = "wait_for_continue_button"
 action = "wait_for_node_visible"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 duration_ms = 4000
 expected = "continue button is ready"
 
 [[steps]]
 id = "open_continue"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 1200
 capture_os = true
 capture_viewport = true
@@ -65,7 +65,7 @@ expect_note_contains = "GameSession"
 [[steps]]
 id = "open_map_tab"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav/MinimapPanelTabButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/MapButton"
 wait_ms = 600
 capture_os = true
 capture_viewport = true
@@ -74,14 +74,14 @@ expected = "map tab is visible"
 [[steps]]
 id = "wait_for_route_button"
 action = "wait_for_node_visible"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/RouteButton0"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/RouteButton0"
 duration_ms = 4000
 expected = "a semantic travel route is available"
 
 [[steps]]
 id = "wait_for_route_button_text"
 action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/RouteButton0"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/RouteButton0"
 text = "Grove Elf Grove"
 duration_ms = 3000
 expected = "the first route points to the expected destination"
@@ -89,24 +89,16 @@ expected = "the first route points to the expected destination"
 [[steps]]
 id = "use_first_route"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/RouteButton0"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/RouteButton0"
 wait_ms = 1800
 capture_os = true
 capture_viewport = true
 expected = "semantic travel command is issued from the map tab"
 
 [[steps]]
-id = "wait_for_travel_history"
-action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
-text = "travel grove elf grove"
-duration_ms = 3000
-expected = "route-backed travel command is remembered by the shell"
-
-[[steps]]
 id = "wait_for_active_travel_summary"
 action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/SummaryLabel"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel/MinimapMargin/MinimapVBox/SummaryLabel"
 text = "Traveling to Grove Elf Grove"
 duration_ms = 10000
 expected = "map tab reflects active travel_state instead of route-start controls"
@@ -114,23 +106,18 @@ expected = "map tab reflects active travel_state instead of route-start controls
 [[steps]]
 id = "wait_for_continue_travel"
 action = "wait_for_node_visible"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/ContinueTravelButton"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/ContinueTravelButton"
 duration_ms = 10000
 expected = "active travel exposes continue travel from travel_state truth"
 
 [[steps]]
 id = "continue_travel_once"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/ContinueTravelButton"
+node_path = "MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList/ContinueTravelButton"
 wait_ms = 1800
 capture_os = true
 capture_viewport = true
 expected = "active travel advances through a truthful continue travel control"
 
-[[steps]]
-id = "wait_for_continue_history"
-action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
-text = "continue travel"
-duration_ms = 10000
-expected = "continue travel command is remembered by the shell"
+
+

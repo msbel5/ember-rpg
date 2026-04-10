@@ -10,7 +10,7 @@ tags = ["title", "resume", "command", "semantic"]
 [[steps]]
 id = "open_continue"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 700
 capture_viewport = true
 expected = "continue browser opens"
@@ -54,33 +54,21 @@ expected = "gameplay scene loads"
 expect_note_contains = "GameSession"
 
 [[steps]]
-id = "wait_for_command_bar"
+id = "wait_for_examine_verb"
 action = "wait_for_node_visible"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionThree"
 duration_ms = 3000
-expected = "command bar is available"
-
-[[steps]]
-id = "focus_command_bar"
-action = "focus_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
-wait_ms = 100
-expected = "command input receives focus"
-
-[[steps]]
-id = "set_command"
-action = "set_text_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
-text = "look around"
-wait_ms = 100
-expected = "command text appears in input"
+expected = "examine verb is available from the instrument rail"
 
 [[steps]]
 id = "submit_command"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SendButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionThree"
 wait_ms = 1200
 capture_viewport = true
-expected = "narrative updates after command"
+expected = "field notes update after the examine verb resolves"
 expect_note_contains = "GameSession"
 expect_artifact_differs_from = "wait_for_game_session:viewport_capture"
+
+
+

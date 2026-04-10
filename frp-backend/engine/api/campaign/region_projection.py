@@ -80,6 +80,41 @@ _ROLE_COLORS: dict[str, str] = {
     "warden": "orange",
     "researcher": "purple",
 }
+_SERVICE_NPC_ROLES = {
+    "merchant",
+    "innkeeper",
+    "blacksmith",
+    "smith",
+    "healer",
+    "priest",
+    "alchemist",
+    "scribe",
+    "quartermaster",
+    "stablehand",
+    "bard",
+}
+_SERVICE_FURNITURE_KINDS = {
+    "altar",
+    "anvil",
+    "bar_counter",
+    "bookshelf",
+    "display_table",
+    "forge",
+    "loom",
+    "map_table",
+    "press",
+    "table",
+    "well",
+    "workbench",
+}
+_LANDMARK_FURNITURE_KINDS = {
+    "campfire",
+    "door",
+    "fountain",
+    "shrine",
+    "sign",
+    "well",
+}
 _PARTY_CAPABLE_ACTOR_TYPES = {"npc", "creature"}
 _NON_PARTY_ROLE_HINTS = {"cabinet", "cauldron", "table", "oven", "bench", "chair", "bed", "pew", "sack"}
 _INTERACTION_HINT_ALIASES: dict[str, str] = {
@@ -336,6 +371,7 @@ def _valid_schedule_position(context: CampaignContext, position: Any) -> tuple[i
 def _write_schedule_state(record: dict[str, Any], entry: dict[str, Any], *, activity: str) -> None:
     record["activity"] = activity
     record["assignment"] = activity
+    record["building_kind"] = str(entry.get("building_kind", record.get("building_kind", "")))
     record["schedule_hour"] = int(entry.get("hour", 0))
     entity_ref = record.get("entity_ref")
     if entity_ref is not None:
@@ -729,6 +765,133 @@ def sync_party_projection(context: CampaignContext) -> None:
         record["tactic_mode"] = party_tactic_mode(game_state, actor_id)
 
 
+def _tile_passable(context: CampaignContext, x: int, y: int) -> bool:
+    map_data = getattr(context, "map_data", None)
+    if map_data is None:
+        return True
+    width = int(getattr(map_data, "width", 0))
+    height = int(getattr(map_data, "height", 0))
+    if x < 0 or y < 0 or x >= width or y >= height:
+        return False
+    tile = map_data.tiles[y][x]
+    return tile not in {TileType.WALL, TileType.WATER, TileType.TREE}
+
+
+def _nearest_open_tile(context: CampaignContext, origin: tuple[int, int]) -> tuple[int, int]:
+    ox, oy = int(origin[0]), int(origin[1])
+    spatial_index = getattr(context, "spatial_index", None)
+    for radius in range(0, 5):
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
+                x = ox + dx
+                y = oy + dy
+                if not _tile_passable(context, x, y):
+                    continue
+                if spatial_index is not None and spatial_index.blocking_at(x, y):
+                    continue
+                return (x, y)
+    return (ox, oy)
+
+
+def _placement_projection_fields(payload: dict[str, Any]) -> dict[str, Any]:
+    entity_type = str(payload.get("entity_type", payload.get("type", ""))).strip().lower()
+    role = str(payload.get("role", payload.get("template", ""))).strip().lower()
+    building_id = str(
+        payload.get("building_id")
+        or payload.get("work_building_id")
+        or payload.get("home_building_id")
+        or ""
+    ).strip()
+    activity = str(payload.get("activity", "")).strip().lower()
+    if entity_type == "npc":
+        anchor_kind = "resident"
+        placement_priority = 55
+        if "meal" in activity or "social" in activity:
+            anchor_kind = "plaza"
+            placement_priority = 72
+        elif activity in {"sleep", "rest", "wake"}:
+            anchor_kind = "home"
+            placement_priority = 45
+        elif role in {"guard", "warden", "scout", "jailer"}:
+            anchor_kind = "road"
+            placement_priority = 84
+        elif role in _SERVICE_NPC_ROLES:
+            anchor_kind = "service"
+            placement_priority = 96
+        return {
+            "site_anchor_id": f"{building_id or 'site'}:{anchor_kind}:{payload.get('id', '')}",
+            "anchor_kind": anchor_kind,
+            "site_role": role or "resident",
+            "placement_priority": placement_priority,
+        }
+    if entity_type in {"furniture", "object", "fixture"}:
+        template = str(payload.get("template", role)).strip().lower()
+        anchor_kind = "interior"
+        placement_priority = 38
+        if template in _LANDMARK_FURNITURE_KINDS:
+            anchor_kind = "landmark"
+            placement_priority = 82
+        elif template in _SERVICE_FURNITURE_KINDS:
+            anchor_kind = "service"
+            placement_priority = 74
+        return {
+            "site_anchor_id": f"{building_id or 'site'}:{anchor_kind}:{payload.get('id', '')}",
+            "anchor_kind": anchor_kind,
+            "site_role": template or role or "fixture",
+            "placement_priority": placement_priority,
+        }
+    return {}
+
+
+def _semantic_spawn_position(context: CampaignContext, fallback: tuple[int, int]) -> tuple[int, int]:
+    building_scores: dict[str, int] = {}
+    building_focus_tiles: dict[str, list[tuple[int, int]]] = {}
+    for record in context.entities.values():
+        if not isinstance(record, dict):
+            continue
+        entity_type = str(record.get("type", "")).strip().lower()
+        position = record.get("position", fallback)
+        if not isinstance(position, (list, tuple)) or len(position) < 2:
+            continue
+        building_id = str(
+            record.get("building_id")
+            or record.get("work_building_id")
+            or record.get("home_building_id")
+            or ""
+        ).strip()
+        if building_id:
+            building_focus_tiles.setdefault(building_id, []).append((int(position[0]), int(position[1])))
+        if entity_type == "npc":
+            role = str(record.get("role", "")).strip().lower()
+            score = 70
+            if role in _SERVICE_NPC_ROLES:
+                score += 55
+            if "talk" in [str(item).strip().lower() for item in list(record.get("context_actions", []))]:
+                score += 25
+            if building_id:
+                building_scores[building_id] = building_scores.get(building_id, 0) + score
+        elif entity_type == "furniture":
+            template = str(record.get("template", record.get("role", ""))).strip().lower()
+            score = 12
+            if template in _SERVICE_FURNITURE_KINDS:
+                score += 42
+            elif template in _LANDMARK_FURNITURE_KINDS:
+                score += 28
+            if building_id:
+                building_scores[building_id] = building_scores.get(building_id, 0) + score
+    if not building_scores:
+        return _nearest_open_tile(context, fallback)
+    best_building_id = max(
+        building_scores.keys(),
+        key=lambda building_id: (building_scores.get(building_id, 0), building_id),
+    )
+    focus_tiles = building_focus_tiles.get(best_building_id, [])
+    if not focus_tiles:
+        return _nearest_open_tile(context, fallback)
+    focus_tiles.sort(key=lambda item: abs(int(item[0]) - int(fallback[0])) + abs(int(item[1]) - int(fallback[1])))
+    return _nearest_open_tile(context, focus_tiles[0])
+
+
 def apply_region_to_context(
     *,
     context: CampaignContext,
@@ -781,6 +944,11 @@ def apply_region_to_context(
         context,
         current_hour=int(getattr(getattr(world, "simulation_snapshot", None), "current_hour", 0)),
     )
+    if not preserve_position:
+        from .state_sync import sync_player_position
+
+        semantic_spawn = _semantic_spawn_position(context, (int(context.position[0]), int(context.position[1])))
+        sync_player_position(context, semantic_spawn[0], semantic_spawn[1], center_viewport=False)
     sync_combat_projection(context)
     context.campaign_state.setdefault("active_quests", [])
     context.campaign_state.setdefault("completed_quests", [])
@@ -849,6 +1017,11 @@ def _build_region_world_entities(world: WorldBlueprint, region_snapshot: RegionS
                 "position": [int(npc["x"]), int(npc["y"])],
                 "role": str(npc.get("role", "resident")),
                 "template": str(npc.get("template", npc.get("role", "merchant"))),
+                "activity": str(npc.get("activity", "")),
+                "building_kind": str(npc.get("building_kind", "")),
+                "building_id": npc.get("building_id"),
+                "home_building_id": npc.get("home_building_id"),
+                "work_building_id": npc.get("work_building_id"),
                 "disposition": str(npc.get("disposition", "friendly")),
                 "context_actions": list(npc.get("context_actions", ["talk", "examine"])),
             }
@@ -861,6 +1034,7 @@ def _build_region_world_entities(world: WorldBlueprint, region_snapshot: RegionS
                 "name": str(furniture["kind"]).replace("_", " ").title(),
                 "position": [int(furniture["x"]), int(furniture["y"])],
                 "template": furniture_template(str(furniture["kind"])),
+                "building_id": furniture.get("building_id"),
                 "context_actions": furniture_actions(str(furniture["kind"])),
             }
         )
@@ -919,12 +1093,17 @@ def _build_context_world_entities(context: CampaignContext) -> list[dict[str, An
             "name": str(record.get("name", entity_id)),
             "position": [int(position[0]), int(position[1])],
             "role": str(record.get("role", "")),
+            "activity": str(record.get("activity", "")),
+            "building_kind": str(record.get("building_kind", "")),
             "context_actions": list(record.get("context_actions", [])),
         }
         if record.get("template") is not None:
             payload["template"] = str(record.get("template", ""))
         if record.get("faction") is not None:
             payload["faction"] = record.get("faction")
+        for field_name in ("building_id", "home_building_id", "work_building_id"):
+            if record.get(field_name) is not None:
+                payload[field_name] = record.get(field_name)
         disposition = str(record.get("disposition", record.get("attitude", ""))).strip().lower()
         if disposition:
             payload["disposition"] = disposition
@@ -961,6 +1140,7 @@ def _augment_world_entities(
         payload["available_interactions"] = descriptors
         payload["primary_interaction_id"] = _primary_interaction_id(descriptors, normalized_context_actions)
         payload["target_kind"] = target_kind
+        payload.update(_placement_projection_fields(payload))
         payload.update(
             _social_projection_fields(
                 payload,
@@ -1539,6 +1719,11 @@ def seed_region_entities(
             "role": role,
             "attitude": "friendly",
             "template": str(spawn.get("template", role)),
+            "activity": str(spawn.get("activity", "")),
+            "building_kind": str(spawn.get("building_kind", "")),
+            "building_id": spawn.get("building_id"),
+            "home_building_id": spawn.get("home_building_id"),
+            "work_building_id": spawn.get("work_building_id"),
             "context_actions": list(spawn.get("context_actions", ["talk", "examine"])),
             "named_npc_id": spawn.get("named_npc_id"),
             "identity_source": str(spawn.get("identity_source", "generated")),
@@ -1565,6 +1750,7 @@ def seed_region_entities(
             "position": [furniture_entity.position[0], furniture_entity.position[1]],
             "role": str(furniture["kind"]),
             "template": furniture_template(str(furniture["kind"])),
+            "building_id": furniture.get("building_id"),
             "context_actions": furniture_actions(str(furniture["kind"])),
             "entity_ref": furniture_entity,
         }

@@ -1,0 +1,165 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/title_menu.gd" id="1"]
+
+[node name="TitleMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="FrontDoor" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RootSplit" type="HBoxContainer" parent="FrontDoor"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="LoreColumn" type="VBoxContainer" parent="FrontDoor/RootSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CrestPanel" type="PanelContainer" parent="FrontDoor/RootSplit/LoreColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CrestMargin" type="MarginContainer" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CrestVBox" type="VBoxContainer" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TitleBlock" type="VBoxContainer" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox"]
+layout_mode = 2
+
+[node name="OverlineLabel" type="Label" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox/TitleBlock"]
+layout_mode = 2
+text = "ASH CHRONICLE AUTHORITY"
+
+[node name="TitleLabel" type="Label" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox/TitleBlock"]
+layout_mode = 2
+text = "EMBER RPG"
+
+[node name="SubtitleLabel" type="Label" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox/TitleBlock"]
+layout_mode = 2
+text = "Deterministic frontier chronicle. Built for rumor, consequence, and hard travel."
+
+[node name="ScenePanel" type="PanelContainer" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="SceneMargin" type="MarginContainer" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox/ScenePanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="SceneVBox" type="VBoxContainer" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox/ScenePanel/SceneMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Herald" type="Label" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox/ScenePanel/SceneMargin/SceneVBox"]
+layout_mode = 2
+text = "Tonight's Front"
+
+[node name="SceneText" type="RichTextLabel" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox/ScenePanel/SceneMargin/SceneVBox"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="StatusCard" type="RichTextLabel" parent="FrontDoor/RootSplit/LoreColumn/CrestPanel/CrestMargin/CrestVBox/ScenePanel/SceneMargin/SceneVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="MenuColumn" type="VBoxContainer" parent="FrontDoor/RootSplit"]
+layout_mode = 2
+custom_minimum_size = Vector2(420, 0)
+size_flags_vertical = 3
+
+[node name="MenuPanel" type="PanelContainer" parent="FrontDoor/RootSplit/MenuColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MenuMargin" type="MarginContainer" parent="FrontDoor/RootSplit/MenuColumn/MenuPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="MenuVBox" type="VBoxContainer" parent="FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MenuHeading" type="Label" parent="FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox"]
+layout_mode = 2
+text = "Chronicle Access"
+
+[node name="ResumeHint" type="Label" parent="FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox"]
+layout_mode = 2
+text = "Resume the last frontier chronicle."
+
+[node name="ContinueButton" type="Button" parent="FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox"]
+layout_mode = 2
+text = "Continue Chronicle"
+
+[node name="NewGameButton" type="Button" parent="FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox"]
+layout_mode = 2
+text = "New Chronicle"
+
+[node name="LoadButton" type="Button" parent="FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox"]
+layout_mode = 2
+text = "Load Chronicle"
+
+[node name="GuideButton" type="Button" parent="FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox"]
+layout_mode = 2
+text = "Field Guide"
+
+[node name="QuitButton" type="Button" parent="FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox"]
+layout_mode = 2
+text = "Exit to Dust"
+
+[node name="GuidePanel" type="PanelContainer" parent="FrontDoor/RootSplit/MenuColumn"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GuideMargin" type="MarginContainer" parent="FrontDoor/RootSplit/MenuColumn/GuidePanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="GuideVBox" type="VBoxContainer" parent="FrontDoor/RootSplit/MenuColumn/GuidePanel/GuideMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GuideTitle" type="Label" parent="FrontDoor/RootSplit/MenuColumn/GuidePanel/GuideMargin/GuideVBox"]
+layout_mode = 2
+text = "Field Guide"
+
+[node name="GuideBody" type="RichTextLabel" parent="FrontDoor/RootSplit/MenuColumn/GuidePanel/GuideMargin/GuideVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false

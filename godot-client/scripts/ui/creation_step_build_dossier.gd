@@ -20,16 +20,34 @@ const GOLD := Color(0.78, 0.55, 0.25)
 static func build_build_section() -> Dictionary:
 	var section := VBoxContainer.new()
 	section.name = "BuildSection"
-	section.add_theme_constant_override("separation", 12)
+	section.add_theme_constant_override("separation", 14)
 
+	var intro := Label.new()
+	intro.text = "Lock class, alignment, and field proficiencies before the first day begins."
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intro.add_theme_color_override("font_color", Color(0.72, 0.68, 0.62))
+	section.add_child(intro)
+
+	var class_label := Label.new()
+	class_label.text = "Calling"
+	class_label.add_theme_font_size_override("font_size", 20)
+	section.add_child(class_label)
 	var class_grid := GridContainer.new()
 	class_grid.name = "ClassGrid"
 	class_grid.columns = 2
+	class_grid.add_theme_constant_override("h_separation", 10)
+	class_grid.add_theme_constant_override("v_separation", 10)
 	section.add_child(class_grid)
 
+	var alignment_label := Label.new()
+	alignment_label.text = "Alignment"
+	alignment_label.add_theme_font_size_override("font_size", 20)
+	section.add_child(alignment_label)
 	var alignment_grid := GridContainer.new()
 	alignment_grid.name = "AlignmentGrid"
 	alignment_grid.columns = 3
+	alignment_grid.add_theme_constant_override("h_separation", 8)
+	alignment_grid.add_theme_constant_override("v_separation", 8)
 	section.add_child(alignment_grid)
 
 	var skill_budget_label := Label.new()
@@ -37,7 +55,9 @@ static func build_build_section() -> Dictionary:
 
 	var skill_grid := GridContainer.new()
 	skill_grid.name = "SkillGrid"
-	skill_grid.columns = 5
+	skill_grid.columns = 4
+	skill_grid.add_theme_constant_override("h_separation", 8)
+	skill_grid.add_theme_constant_override("v_separation", 8)
 	section.add_child(skill_grid)
 
 	return {
@@ -182,9 +202,18 @@ static func render_dossier(owner) -> void:
 	for entry in timeline_entries.slice(0, min(8, timeline_entries.size())):
 		if not (entry is Dictionary):
 			continue
+		var era_label := str(entry.get("era_label", "")).strip_edges()
+		var headline := str(entry.get("headline", "")).strip_edges()
+		var heading := headline
+		if not era_label.is_empty() and not headline.is_empty():
+			heading = "%s - %s" % [era_label, headline]
+		elif not era_label.is_empty():
+			heading = era_label
+		if heading.is_empty():
+			heading = "Recorded Event"
 		history_sections.append(
-			"[b]Year %d - %s[/b]\n%s"
-			% [int(entry.get("year", 0)), str(entry.get("headline", "")), str(entry.get("summary", ""))]
+			"[b]%s[/b]\n%s"
+			% [heading, str(entry.get("summary", ""))]
 		)
 	owner._dossier_history.text = "[b]Chronicle Highlights[/b]\n\n%s" % "\n\n".join(history_sections)
 	if owner._dossier_text != null:
@@ -200,15 +229,48 @@ static func render_dossier(owner) -> void:
 static func render_preview(owner) -> void:
 	var genesis: Dictionary = owner._payload.get("campaign_genesis", {})
 	owner._preview_title.text = CreationWizardState.preview_heading(owner._step)
-	owner._preview_text.text = "[b]World Premise[/b]\n%s\n\n[b]Starting Pressure[/b]\n%s" % [
-		str(genesis.get("world_premise", "Shape the world.")),
-		str(genesis.get("starting_pressure", "")),
-	]
-	owner._preview_meta.text = "[b]Recommended[/b] %s / %s\n[b]Quest Seeds[/b] %s" % [
-		str(owner._payload.get("recommended_class", "warrior")).capitalize(),
-		str(owner._payload.get("recommended_alignment", "TN")),
-		", ".join(owner._payload.get("recommended_skills", [])),
-	]
+	var quest_seed_text := ", ".join(genesis.get("quest_seed_themes", []))
+	var body := ""
+	var meta := ""
+	match owner._step:
+		owner.STEP_GENRE:
+			body = (
+				"[b]Opening route[/b]\n%s\n\n[b]What changes now[/b]\n"
+				+ "Your chosen discipline preloads class, alignment, and skill leanings without locking the backend out of later recommendations."
+			) % str(owner.OPENING_PRESETS.get(owner._selected_archetype_id, {}).get("label", "Ash Scout"))
+			meta = "[b]Current lean[/b] %s / %s\n[b]Skills[/b] %s" % [
+				str(owner._selected_class_id).capitalize(),
+				str(owner._selected_alignment),
+				", ".join(owner._selected_skills),
+			]
+		owner.STEP_QUESTION:
+			body = "[b]World Premise[/b]\n%s" % str(genesis.get("world_premise", "Shape the world."))
+			meta = "[b]Question drift[/b] Each answer nudges alignment, history, and likely class fit."
+		owner.STEP_HISTORY:
+			body = "[b]Starting Pressure[/b]\n%s" % str(genesis.get("starting_pressure", "The frontier is already under pressure."))
+			meta = "[b]Quest Seeds[/b] %s" % (quest_seed_text if not quest_seed_text.is_empty() else "Still coalescing.")
+		owner.STEP_ROLL:
+			body = "[b]Current Pool[/b]\n%s" % CreationCatalog.roll_text(owner._payload.get("current_roll", []))
+			meta = "[b]Locked Pool[/b] %s" % CreationCatalog.roll_text(owner._payload.get("saved_roll", []))
+		owner.STEP_BUILD:
+			body = "[b]Recommended build[/b]\n%s / %s\n\n[b]Quest Seeds[/b]\n%s" % [
+				str(owner._payload.get("recommended_class", "warrior")).capitalize(),
+				str(owner._payload.get("recommended_alignment", "TN")),
+				quest_seed_text if not quest_seed_text.is_empty() else "No world hooks surfaced yet.",
+			]
+			meta = "[b]Current skills[/b] %s" % (", ".join(owner._selected_skills) if not owner._selected_skills.is_empty() else "None selected.")
+		_:
+			body = "[b]World Premise[/b]\n%s\n\n[b]Starting Pressure[/b]\n%s" % [
+				str(genesis.get("world_premise", "Shape the world.")),
+				str(genesis.get("starting_pressure", "")),
+			]
+			meta = "[b]Recommended[/b] %s / %s\n[b]Quest Seeds[/b] %s" % [
+				str(owner._payload.get("recommended_class", "warrior")).capitalize(),
+				str(owner._payload.get("recommended_alignment", "TN")),
+				quest_seed_text,
+			]
+	owner._preview_text.text = body
+	owner._preview_meta.text = meta
 
 
 static func sync_footer(owner) -> void:
@@ -242,7 +304,9 @@ static func _rebuild_class_grid(owner) -> void:
 			button.add_theme_stylebox_override("focus", _selection_style(true))
 		button.pressed.connect(func() -> void:
 			owner._selected_class_id = class_id
+			owner._class_locked_by_player = true
 			owner._selected_skills = CreationWizardState.string_array(entry.get("default_skills", []))
+			owner._skills_locked_by_player = true
 			owner._assigned_stats = CreationCatalog.suggested_stats_for(
 				owner._catalog,
 				owner._selected_class_id,
@@ -270,6 +334,7 @@ static func _rebuild_alignment_grid(owner) -> void:
 			button.add_theme_stylebox_override("focus", _selection_style(true))
 		button.pressed.connect(func() -> void:
 			owner._selected_alignment = code
+			owner._alignment_locked_by_player = true
 			owner._render()
 		)
 		owner._alignment_grid.add_child(button)
@@ -299,6 +364,7 @@ static func _rebuild_skill_grid(owner) -> void:
 				owner._selected_skills.append(skill)
 			elif not pressed:
 				owner._selected_skills.erase(skill)
+			owner._skills_locked_by_player = true
 			owner._render()
 		)
 		owner._skill_grid.add_child(button)

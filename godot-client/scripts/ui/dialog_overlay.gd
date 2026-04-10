@@ -260,6 +260,10 @@ func _on_option_selected(command: String) -> void:
 
 
 func _on_close() -> void:
+	var leave_command := _resolve_leave_command()
+	if not leave_command.is_empty():
+		_emit_command(leave_command)
+		return
 	hide_dialog()
 
 
@@ -364,22 +368,23 @@ func _conversation_transcript_lines() -> Array:
 	if transcript is Array:
 		for entry in transcript:
 			if entry is Dictionary:
-				var speaker := str(entry.get("speaker", entry.get("role", ""))).strip_edges()
-				var text := str(entry.get("text", entry.get("line", ""))).strip_edges()
+				var speaker := _normalized_line(entry.get("speaker", entry.get("role", "")))
+				var text := _normalized_line(entry.get("text", entry.get("line", "")))
 				if text.is_empty():
 					continue
 				lines.append("[b]%s[/b] %s" % [speaker if not speaker.is_empty() else "Line", text])
 			else:
-				var raw_text := str(entry).strip_edges()
+				var raw_text := _normalized_line(entry)
 				if not raw_text.is_empty():
 					lines.append(raw_text)
 	if lines.is_empty():
-		var npc_name := _npc_name_label.text.strip_edges()
-		if not npc_name.is_empty():
-			lines.append("[b]%s[/b] %s" % [npc_name, _npc_text.text.strip_edges()])
+		var npc_name := _normalized_line(_npc_name_label.text)
+		var npc_text := _normalized_line(_npc_text.text)
+		if not npc_name.is_empty() and not npc_text.is_empty():
+			lines.append("[b]%s[/b] %s" % [npc_name, npc_text])
 		for option in _last_dialog_options:
 			if option is Dictionary:
-				var option_text := str(option.get("text", "")).strip_edges()
+				var option_text := _normalized_line(option.get("text", ""))
 				if not option_text.is_empty():
 					lines.append("[i]You:[/i] %s" % option_text)
 	return lines
@@ -484,3 +489,26 @@ func _emit_command(command_text: String) -> void:
 
 func _has_structured_connections() -> bool:
 	return not get_signal_connection_list("structured_action_requested").is_empty()
+
+
+func _normalized_line(value) -> String:
+	if value == null:
+		return ""
+	var normalized := str(value).strip_edges()
+	return "" if normalized == "<null>" else normalized
+
+
+func _resolve_leave_command() -> String:
+	for option in _last_dialog_options:
+		if not (option is Dictionary):
+			continue
+		var command := str(option.get("command", "")).strip_edges()
+		if command.is_empty():
+			continue
+		var transition_id := str(option.get("transition_id", "")).strip_edges().to_lower()
+		var option_text := str(option.get("text", "")).strip_edges().to_lower()
+		if transition_id.contains("leave") or transition_id.contains("goodbye"):
+			return command
+		if option_text.contains("maybe later") or option_text.contains("goodbye") or option_text.contains("leave"):
+			return command
+	return ""

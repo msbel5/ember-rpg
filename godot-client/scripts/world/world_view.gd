@@ -1,4 +1,5 @@
 extends SubViewportContainer
+class_name WorldViewWidget
 
 const TileCatalog = preload("res://scripts/world/tile_catalog.gd")
 const PovRendererConfig = preload("res://scripts/pov_renderer_config.gd")
@@ -34,6 +35,7 @@ var _walker := WorldWalk.new()
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_exited.connect(_on_mouse_exited)
+	resized.connect(_sync_viewport_size)
 	if ENABLE_WORLD_OVERLAY:
 		_world_overlay = WorldOverlay.new()
 		_world_overlay.name = "WorldOverlay"
@@ -52,6 +54,7 @@ func _ready() -> void:
 		GameState.map_loaded.connect(_refresh_from_state)
 		GameState.entities_loaded.connect(_refresh_from_state)
 		GameState.state_updated.connect(_refresh_from_state)
+	call_deferred("_sync_viewport_size")
 	_refresh_from_state()
 func refresh_from_state() -> void:
 	_refresh_from_state()
@@ -72,6 +75,37 @@ func capture_world_screenshot(folder: String, prefix: String) -> String:
 	var image := capture_world_image()
 	var screenshot_capture = preload("res://scripts/ui/screenshot_capture.gd")
 	return screenshot_capture.capture_image(image, folder, prefix)
+
+
+func automation_click_tile(tile: Vector2i, button_name: String = "left") -> bool:
+	if not _tile_in_bounds(tile):
+		return false
+	_select_tile(tile)
+	var entity: Dictionary = entity_layer.get_entity_at_tile(tile)
+	_emit_focus(tile, entity)
+	match button_name.strip_edges().to_lower():
+		"left":
+			if _left_click_should_interact(entity):
+				_handle_walk_or_interact(tile, entity)
+			return true
+		"right":
+			if entity.is_empty():
+				_handle_walk_or_interact(tile, {})
+				return true
+			var popup_pos := _tile_to_screen(tile)
+			_show_context_menu(popup_pos, tile, entity)
+			return true
+	return false
+
+
+func _sync_viewport_size() -> void:
+	if world_viewport == null:
+		return
+	if stretch:
+		return
+	var next_size := Vector2i(maxi(int(size.x), 1), maxi(int(size.y), 1))
+	if world_viewport.size != next_size:
+		world_viewport.size = next_size
 
 # Legacy public API preserved for game_session.gd compatibility
 func command_for_entity(entity: Dictionary) -> String:
@@ -115,6 +149,12 @@ func _handle_home_key() -> void:
 			world_camera.position = Vector2(player_tile) * TileCatalog.TILE_SIZE + Vector2(TileCatalog.TILE_SIZE / 2.0, TileCatalog.TILE_SIZE / 2.0)
 
 func _gui_input(event: InputEvent) -> void:
+	if _world_input_locked():
+		if event is InputEventMouseMotion:
+			tooltip_text = ""
+			if selection_layer.has_method("clear_hover"):
+				selection_layer.clear_hover()
+		return
 	if event is InputEventMouseMotion:
 		if _is_camera_dragging:
 			world_camera.position -= event.relative / world_camera.zoom
@@ -148,20 +188,23 @@ func _on_left_click(screen_pos: Vector2) -> void:
 	var tile := _screen_to_tile(screen_pos)
 	if not _tile_in_bounds(tile):
 		return
-	if selection_layer.has_method("set_selected_tile"):
-		selection_layer.set_selected_tile(tile)
-	if selection_layer.has_method("flash_tile"):
-		selection_layer.flash_tile(tile)
+	_select_tile(tile)
 	var entity: Dictionary = entity_layer.get_entity_at_tile(tile)
 	_emit_focus(tile, entity)
-	_handle_walk_or_interact(tile, entity)
+	if _left_click_should_interact(entity):
+		_handle_walk_or_interact(tile, entity)
 
 
 func _on_right_click(screen_pos: Vector2) -> void:
 	var tile := _screen_to_tile(screen_pos)
 	if not _tile_in_bounds(tile):
 		return
+	_select_tile(tile)
 	var entity: Dictionary = entity_layer.get_entity_at_tile(tile)
+	_emit_focus(tile, entity)
+	if entity.is_empty():
+		_handle_walk_or_interact(tile, {})
+		return
 	_show_context_menu(screen_pos, tile, entity)
 
 func _handle_walk_or_interact(tile: Vector2i, entity: Dictionary) -> void:
@@ -179,6 +222,18 @@ func _handle_walk_or_interact(tile: Vector2i, entity: Dictionary) -> void:
 		return
 	if route.has("command"):
 		command_requested.emit(str(route["command"]))
+
+
+func _left_click_should_interact(entity: Dictionary) -> bool:
+	if entity.is_empty():
+		return false
+	var bucket := str(entity.get("bucket", "")).strip_edges().to_lower()
+	match bucket:
+		"npc":
+			return true
+		"enemy":
+			return GameState.is_in_combat()
+	return false
 
 
 func _find_adjacent(target: Vector2i, from: Vector2i) -> Vector2i:
@@ -248,6 +303,11 @@ func _refresh_from_state(_payload = null) -> void:
 	_set_focus_actions(WorldFocus.default_actions(GameState.entities))
 
 func _update_hover(screen_pos: Vector2) -> void:
+	if _world_input_locked():
+		tooltip_text = ""
+		if selection_layer.has_method("clear_hover"):
+			selection_layer.clear_hover()
+		return
 	var tile := _screen_to_tile(screen_pos)
 	if not _tile_in_bounds(tile):
 		tooltip_text = ""
@@ -305,9 +365,23 @@ func _set_focus_actions(actions: Array) -> void:
 	focus_actions_changed.emit(next)
 
 
+func _select_tile(tile: Vector2i) -> void:
+	if selection_layer.has_method("set_selected_tile"):
+		selection_layer.set_selected_tile(tile)
+	if selection_layer.has_method("flash_tile"):
+		selection_layer.flash_tile(tile)
+
+
 func _screen_to_tile(screen_pos: Vector2) -> Vector2i:
 	var wp := world_camera.position + (screen_pos - Vector2(size) / 2.0) / world_camera.zoom
 	return Vector2i(floori(wp.x / TileCatalog.TILE_SIZE), floori(wp.y / TileCatalog.TILE_SIZE))
+
+
+func _tile_to_screen(tile: Vector2i) -> Vector2:
+	var tile_center := Vector2(tile) * TileCatalog.TILE_SIZE + Vector2(TileCatalog.TILE_SIZE / 2.0, TileCatalog.TILE_SIZE / 2.0)
+	var viewport_center := Vector2(size) / 2.0
+	var delta := (tile_center - world_camera.position) * world_camera.zoom
+	return viewport_center + delta
 
 
 func _tile_in_bounds(t: Vector2i) -> bool:
@@ -355,7 +429,7 @@ func _update_attention_layers(map_payload: Dictionary) -> void:
 	if selection_layer == null:
 		return
 	if selection_layer.has_method("set_interest_tiles"):
-		selection_layer.set_interest_tiles(_interactive_positions(map_payload))
+		selection_layer.set_interest_tiles([])
 	if selection_layer.has_method("set_hostile_tiles"):
 		selection_layer.set_hostile_tiles(_hostile_positions())
 	if selection_layer.has_method("set_ambient_tiles"):
@@ -408,17 +482,87 @@ func _entity_tile(entry: Dictionary) -> Vector2i:
 
 func _camera_focus_tiles(player_tile: Vector2i) -> Array:
 	var tiles: Array = [player_tile]
+	var nearest: Array[Dictionary] = []
 	for bucket in ["npcs", "enemies", "items", "furniture"]:
 		for e in GameState.entities.get(bucket, []):
 			if not (e is Dictionary):
 				continue
 			var t: Vector2i = _entity_tile(e)
-			if t == Vector2i.ZERO or abs(t.x - player_tile.x) + abs(t.y - player_tile.y) > 12:
+			var distance: int = abs(t.x - player_tile.x) + abs(t.y - player_tile.y)
+			if t == Vector2i.ZERO:
 				continue
-			tiles.append(t)
-			if tiles.size() >= 10:
-				return tiles
+			nearest.append({
+				"tile": t,
+				"distance": distance,
+				"bucket": bucket,
+				"priority": _camera_focus_priority(e, bucket, distance),
+			})
+	nearest.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
+		var left_priority := int(left.get("priority", 0))
+		var right_priority := int(right.get("priority", 0))
+		if left_priority == right_priority:
+			var left_distance := int(left.get("distance", 99))
+			var right_distance := int(right.get("distance", 99))
+			if left_distance == right_distance:
+				return str(left.get("bucket", "")) < str(right.get("bucket", ""))
+			return left_distance < right_distance
+		return left_priority > right_priority
+	)
+	for entry in nearest:
+		var next_tile: Vector2i = entry.get("tile", Vector2i.ZERO)
+		if tiles.has(next_tile):
+			continue
+		tiles.append(next_tile)
+		if tiles.size() >= 5:
+			break
 	return tiles
+
+
+func _camera_focus_priority(entry: Dictionary, bucket: String, distance: int) -> int:
+	var priority := int(entry.get("placement_priority", 0))
+	var actions: Array = entry.get("context_actions", [])
+	var action_ids: Array[String] = []
+	for action in actions:
+		action_ids.append(str(action).strip_edges().to_lower())
+	match bucket:
+		"npcs":
+			priority += 110 if action_ids.has("talk") else 60
+			if str(entry.get("anchor_kind", "")) == "service":
+				priority += 25
+		"furniture":
+			if _is_service_landmark(entry):
+				priority += 80
+			else:
+				priority += 20
+		"enemies":
+			priority += 95
+		"items":
+			priority += 18
+	priority -= mini(distance, 32) * 2
+	return priority
+
+
+func _is_service_landmark(entry: Dictionary) -> bool:
+	var anchor_kind := str(entry.get("anchor_kind", "")).strip_edges().to_lower()
+	if anchor_kind in ["service", "landmark"]:
+		return true
+	var template := str(entry.get("template", entry.get("site_role", ""))).strip_edges().to_lower()
+	return template in ["altar", "anvil", "bar_counter", "bookshelf", "campfire", "door", "fountain", "well", "workbench"]
+
+
+func _world_input_locked() -> bool:
+	if GameState.has_active_dialog():
+		return true
+	var current_scene = get_tree().current_scene
+	if current_scene == null:
+		return false
+	var modal = current_scene.get_node_or_null("MainMargin/MainVBox/ContentSplit/ModalHost")
+	if modal is Control and modal.visible:
+		return true
+	var save_panel = current_scene.get_node_or_null("OverlayCanvas/SaveLoadPanel")
+	if save_panel is Control and save_panel.visible:
+		return true
+	return false
 
 
 func _rebuild_atmosphere(mp: Dictionary) -> void:

@@ -236,6 +236,13 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.entities.get("items", []).size() == 1, "item world entities group as items")
 	_assert_true(game_state.ground_items.size() == 1, "ground items are retained")
 	_assert_true(game_state.active_quests.size() == 1 and game_state.quest_offers.size() == 1, "quest payloads are retained")
+	game_state.update_from_response({
+		"player": {
+			"name": "Chaos",
+			"position": {"x": 40, "y": 32, "z": 0},
+		},
+	})
+	_assert_true(game_state.player_map_pos == Vector2i(40, 32), "player position accepts dict-shaped save/load payloads")
 
 	game_state.reset()
 	game_state.update_from_response({
@@ -250,9 +257,10 @@ func _test_game_state_normalization() -> void:
 			"idle_world_ticks": true,
 			"tick_interval_seconds": 30.0,
 			"tick_hours_per_interval": 1,
-			"ws_path": "/ws/campaigns/camp_1",
-			"ws_url": "ws://127.0.0.1:8741/ws/campaigns/camp_1",
+			"ws_path": "/game/ws/campaigns/camp_1",
+			"ws_url": "ws://127.0.0.1:8741/game/ws/campaigns/camp_1",
 		},
+		"runtime_mode": "tactical_pause",
 		"narrative": "Chaos enters Dragon Eyrie.",
 		"campaign": {
 			"world": {"adapter_id": "fantasy_ember", "profile_id": "standard"},
@@ -349,7 +357,9 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.selected_world_node == "node_region_001_00", "GameState tracks the selected world node from current region summary")
 	_assert_true(game_state.runtime_transport == "ws", "GameState stores WS as the authoritative runtime transport")
 	_assert_true(game_state.bootstrap_transport == "http", "GameState stores HTTP as the bootstrap transport")
-	_assert_true(game_state.ws_path == "/ws/campaigns/camp_1", "GameState stores the canonical campaign WS path")
+	_assert_true(game_state.ws_path == "/game/ws/campaigns/camp_1", "GameState stores the canonical campaign WS path")
+	_assert_true(game_state.runtime_mode == "tactical_pause", "GameState stores the explicit runtime mode from campaign snapshots")
+	_assert_true(game_state.current_shell_mode() == "travel", "GameState surfaces travel as the active shell mode when travel is in progress")
 	_assert_true(game_state._clean_narrative("resume_campaign_ok.") == "You step back into the campaign.", "GameState humanizes token-like narrative text with concise seeded copy")
 	game_state.seed_campaign_resume_narrative("Loaded campaign from resume_campaign_ok.")
 	_assert_true(
@@ -423,6 +433,63 @@ func _test_response_normalizer() -> void:
 	_assert_true(normalized_entities.get("npcs", []).size() == 1 and normalized_entities.get("enemies", []).size() == 1, "ResponseNormalizer groups world entities into gameplay buckets")
 	_assert_true(normalized_entities.get("furniture", []).size() == 1, "ResponseNormalizer groups furniture entities into furniture bucket")
 	_assert_true(normalized_entities["furniture"][0].get("bucket", "") == "furniture", "ResponseNormalizer tags furniture entities with furniture bucket")
+	var role_template_entities = ResponseNormalizer.normalize_entities({
+		"world_entities": [
+			{"id": "smith_1", "entity_type": "npc", "name": "Doran Ironhand", "template": "warrior", "role": "blacksmith", "position": [1, 2]},
+			{"id": "guard_1", "entity_type": "npc", "name": "Gate Guard", "template": "warrior", "role": "guard", "position": [2, 2]},
+			{"id": "merchant_1", "entity_type": "npc", "name": "Arlen Meadowcroft", "template": "warrior", "role": "merchant", "position": [3, 2]},
+			{"id": "healer_1", "entity_type": "npc", "name": "Mira Softlight", "template": "warrior", "role": "healer", "position": [4, 2]},
+		]
+	})
+	var role_npcs: Array = role_template_entities.get("npcs", [])
+	_assert_true(
+		role_npcs.size() == 4
+		and str(role_npcs[0].get("template", "")) == "blacksmith"
+		and str(role_npcs[1].get("template", "")) == "guard"
+		and str(role_npcs[2].get("template", "")) == "merchant"
+		and str(role_npcs[3].get("template", "")) == "healer",
+		"ResponseNormalizer uses NPC role to override generic warrior template"
+	)
+	var prop_entities = ResponseNormalizer.normalize_entities({
+		"world_entities": [
+			{"id": "chest_1", "entity_type": "npc", "name": "Wooden Chest", "template": "warrior", "position": [5, 2]},
+			{"id": "table_1", "entity_type": "npc", "name": "Oak Table", "template": "warrior", "position": [6, 2]},
+			{"id": "anvil_1", "entity_type": "npc", "name": "Smithy Anvil", "template": "warrior", "position": [7, 2]},
+			{"id": "rack_1", "entity_type": "npc", "name": "Armor Rack", "template": "warrior", "position": [8, 2]},
+			{"id": "altar_1", "entity_type": "npc", "name": "Stone Altar", "template": "warrior", "position": [9, 2]},
+			{"id": "pew_1", "entity_type": "npc", "name": "Chapel Pew", "template": "warrior", "position": [10, 2]},
+			{"id": "workbench_1", "entity_type": "npc", "name": "Craft Workbench", "template": "workbench", "position": [11, 2]},
+		]
+	})
+	var props: Array = prop_entities.get("furniture", [])
+	_assert_true(
+		prop_entities.get("npcs", []).is_empty()
+		and props.size() == 7
+		and str(props[0].get("template", "")) == "chest"
+		and str(props[1].get("template", "")) == "table"
+		and str(props[2].get("template", "")) == "anvil"
+		and str(props[3].get("template", "")) == "rack"
+		and str(props[4].get("template", "")) == "altar"
+		and str(props[5].get("template", "")) == "pew"
+		and str(props[6].get("template", "")) == "workbench",
+		"ResponseNormalizer routes prop-looking NPC payloads into furniture templates"
+	)
+	_assert_true(
+		props.size() > 0
+		and props[0].get("context_actions", []) == ["examine"],
+		"ResponseNormalizer strips talk actions from prop-looking NPC payloads"
+	)
+	var prop_named_person_entities = ResponseNormalizer.normalize_entities({
+		"world_entities": [
+			{"id": "alchemist_1", "entity_type": "npc", "name": "Gorim Anvilborn", "template": "witch", "role": "alchemist", "position": [12, 2]},
+			{"id": "mayor_1", "entity_type": "npc", "name": "Pewter Brook", "template": "sage", "role": "mayor", "position": [13, 2]},
+		]
+	})
+	_assert_true(
+		prop_named_person_entities.get("npcs", []).size() == 2
+		and prop_named_person_entities.get("furniture", []).is_empty(),
+		"ResponseNormalizer keeps actor-template NPCs as people even when their names contain prop words"
+	)
 	var flattened_campaign = ResponseNormalizer.flatten_campaign_response({
 		"campaign": {
 			"world": {"active_region_id": "region_001"},
@@ -485,7 +552,7 @@ func _test_scene_instantiation() -> void:
 		var title_instance = title_scene.instantiate()
 		root.add_child(title_instance)
 		await process_frame
-		var creation_form_root := "CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent"
+		var creation_form_root: Node = null
 		var creation_catalog = {
 			"default_class_id": "warrior",
 			"default_adapter_id": "fantasy_ember",
@@ -522,30 +589,33 @@ func _test_scene_instantiation() -> void:
 			creation_panel.anchor_left == 0.0 and creation_panel.anchor_right == 1.0,
 			"TitleScreen promotes creation into a full-shell panel instead of a centered modal"
 		)
-		_assert_true(
-			title_instance.get_node_or_null("CharacterCreation/VBox/CreationBody/FormPane/FormScroll/FormContent") != null,
-			"TitleScreen installs a scrollable creation form shell"
-		)
+		creation_form_root = title_instance.find_child("FormContent", true, false)
+		_assert_true(creation_form_root != null, "TitleScreen installs a scrollable creation form shell")
 		_assert_true(
 			title_instance.get_node_or_null("CharacterCreation/VBox/CreationBody/PreviewPane/PreviewMargin/PreviewVBox/PreviewText") != null,
 			"TitleScreen installs a dedicated live preview pane"
 		)
-		_assert_true(title_instance.get_node_or_null("%s/IdentitySection/GenreCards/FantasyCard" % creation_form_root) != null, "TitleScreen exposes genre cards instead of an adapter dropdown")
-		_assert_true(title_instance.get_node_or_null("%s/IdentitySection/AdapterOption" % creation_form_root) == null, "TitleScreen no longer uses adapter dropdowns")
-		_assert_true(not title_instance.get_node("%s/IdentitySection/AdvancedSection" % creation_form_root).visible, "TitleScreen hides advanced settings by default")
-		title_instance.get_node("%s/IdentitySection/NameInput" % creation_form_root).text = "Chaos"
+		var genre_cards = title_instance.find_child("GenreCards", true, false)
+		_assert_true(
+			genre_cards != null and genre_cards.get_child_count() >= 4,
+			"TitleScreen exposes opening discipline cards instead of an adapter dropdown"
+		)
+		_assert_true(title_instance.find_child("AdapterOption", true, false) == null, "TitleScreen no longer uses adapter dropdowns")
+		var advanced_section = title_instance.find_child("AdvancedSection", true, false)
+		_assert_true(advanced_section != null and not advanced_section.visible, "TitleScreen hides advanced settings by default")
+		var name_input = title_instance.find_child("NameInput", true, false)
+		name_input.text = "Chaos"
 		_assert_true(title_instance._primary_wizard_action_for_key(KEY_ENTER) == "next", "TitleScreen maps Enter to the primary identity action once the shell is open")
-		title_instance._on_continue()
-		await process_frame
-		_assert_true(title_instance.get_node("LoadBrowser").visible, "TitleScreen opens the save browser for continue flow")
-		var title_profile_keys := PackedStringArray(["last_player_id", "last_resume_player_id", "last_adapter_id"])
+		var title_profile_keys := PackedStringArray(["last_player_id", "last_resume_player_id", "last_adapter_id", "last_campaign_save_id"])
 		var title_profile_backup = _capture_profile_values(title_instance.PROFILE_PATH, title_profile_keys)
 		title_instance._store_last_player_id("UnsavedHero")
 		title_instance._store_last_resume_player_id("Chaos")
+		ProfileStorage.store_last_campaign_save_id("")
 		title_instance._close_load_browser()
-		title_instance._on_continue()
+		title_instance._on_load_requested()
 		await process_frame
-		var load_player_input = title_instance.get_node("LoadBrowser/VBox/PlayerRow/PlayerInput")
+		_assert_true(title_instance.get_node("LoadBrowser").visible, "TitleScreen opens the save browser for load flow")
+		var load_player_input = title_instance.get_node("LoadBrowser").find_child("PlayerInput", true, false)
 		_assert_true(load_player_input.text == "Chaos", "TitleScreen continue flow prefers the last resumable player over the last created player")
 		_restore_profile_values(title_instance.PROFILE_PATH, title_profile_keys, title_profile_backup)
 		title_instance._set_busy(true, "Starting creation...")
@@ -574,7 +644,7 @@ func _test_scene_instantiation() -> void:
 			"campaign_genesis": {
 				"world_premise": "Ash and iron grip the frontier.",
 				"starting_pressure": "Food is short, nerves are shorter.",
-				"history_events": ["Year 1: The First Age begins.", "Year 47: The border keep falls silent."],
+				"history_events": ["Founding Decades: The first age begins.", "Border Fort Years: The border keep falls silent."],
 			},
 			"recommended_class": "warrior",
 			"recommended_alignment": "LG",
@@ -585,8 +655,8 @@ func _test_scene_instantiation() -> void:
 		title_instance._go_to_step(title_instance.STEP_QUESTIONNAIRE)
 		await process_frame
 		var title_preview_text = title_instance.get_node("CharacterCreation/VBox/CreationBody/PreviewPane/PreviewMargin/PreviewVBox/PreviewText")
-		var question_prompt = title_instance.get_node("%s/QuestionSection/QuestionPrompt" % creation_form_root)
-		var answer_buttons = title_instance.get_node("%s/QuestionSection/AnswerButtons" % creation_form_root)
+		var question_prompt = title_instance.find_child("QuestionPrompt", true, false)
+		var answer_buttons = title_instance.find_child("AnswerButtons", true, false)
 		_assert_true(
 			question_prompt.text.contains("How do you react?"),
 			"TitleScreen renders one question at a time in the questionnaire step"
@@ -620,13 +690,13 @@ func _test_scene_instantiation() -> void:
 			"recommended_skills": ["athletics", "perception"],
 		})
 		await process_frame
-		var history_text = title_instance.get_node("%s/HistorySection/HistoryText" % creation_form_root)
+		var history_text = title_instance.find_child("HistoryText", true, false)
 		_assert_true(
 			title_instance._primary_wizard_action_for_key(KEY_ENTER) == "next",
 			"TitleScreen exposes a primary action on the history step even when backend history is empty"
 		)
 		_assert_true(
-			history_text.text.contains("Year 1") and history_text.text.contains("Ash and iron"),
+			history_text.text.contains("Founding Decades") and history_text.text.contains("Ash and iron"),
 			"TitleScreen synthesizes fallback history text instead of recursing when history_events is empty"
 		)
 		title_instance._apply_creation_state({
@@ -652,7 +722,7 @@ func _test_scene_instantiation() -> void:
 			"campaign_genesis": {
 				"world_premise": "Ash and iron grip the frontier.",
 				"starting_pressure": "Food is short, nerves are shorter.",
-				"history_events": ["Year 1: The First Age begins.", "Year 47: The border keep falls silent."],
+				"history_events": ["Founding Decades: The first age begins.", "Border Fort Years: The border keep falls silent."],
 			},
 			"recommended_class": "warrior",
 			"recommended_alignment": "LG",
@@ -661,19 +731,19 @@ func _test_scene_instantiation() -> void:
 		await process_frame
 		title_instance._go_to_step(title_instance.STEP_BUILD)
 		await process_frame
-		var title_class_grid = title_instance.get_node("%s/BuildSection/ClassGrid" % creation_form_root)
-		var title_alignment_grid = title_instance.get_node("%s/BuildSection/AlignmentGrid" % creation_form_root)
-		var title_skill_grid = title_instance.get_node("%s/BuildSection/SkillGrid" % creation_form_root)
-		_assert_true(title_instance.get_node_or_null("%s/BuildSection/ClassOption" % creation_form_root) == null, "TitleScreen no longer uses a class dropdown in build step")
+		var title_class_grid = title_instance.find_child("ClassGrid", true, false)
+		var title_alignment_grid = title_instance.find_child("AlignmentGrid", true, false)
+		var title_skill_grid = title_instance.find_child("SkillGrid", true, false)
+		_assert_true(title_instance.find_child("ClassOption", true, false) == null, "TitleScreen no longer uses a class dropdown in build step")
 		_assert_true(title_class_grid.get_child_count() >= 4, "TitleScreen build step exposes class cards")
 		_assert_true(title_alignment_grid.get_child_count() == 9, "TitleScreen build step exposes a 3x3 alignment grid")
 		_assert_true(title_skill_grid.get_child_count() >= 2, "TitleScreen build step exposes visible skill toggles")
-		(title_class_grid.get_child(2) as Button).emit_signal("pressed")
-		(title_alignment_grid.get_child(2) as Button).emit_signal("pressed")
+		(title_class_grid.get_child(2) as Button).pressed.emit()
+		(title_alignment_grid.get_child(2) as Button).pressed.emit()
 		(title_skill_grid.get_child(0) as Button).set_pressed_no_signal(true)
 		title_instance._go_to_step(title_instance.STEP_SUMMARY)
 		await process_frame
-		var title_summary = title_instance.get_node("%s/DossierSection/DossierText" % creation_form_root)
+		var title_summary = title_instance.find_child("DossierText", true, false)
 		var title_start_button = title_instance.get_node("CharacterCreation/VBox/ButtonRow/StartButton")
 		_assert_true(title_summary.text.contains("History") and title_summary.text.contains("World Premise"), "TitleScreen dossier step renders world premise and history")
 		_assert_true(title_instance.get_viewport().gui_get_focus_owner() == title_start_button, "TitleScreen focuses Start Campaign on the summary step")
@@ -682,14 +752,14 @@ func _test_scene_instantiation() -> void:
 		title_instance._on_saves_listed([
 			{"save_id": "campaign_a", "slot_name": "campaign_a", "location": "Dragon Eyrie", "timestamp": "2026-03-28T10:00:00"},
 		])
-		var load_save_list = title_instance.get_node("LoadBrowser/VBox/SaveScroll/SaveList")
+		var load_save_list = title_instance.get_node("LoadBrowser").find_child("SaveList", true, false)
 		_assert_true(load_save_list.get_child_count() == 1, "TitleScreen renders canonical campaign save rows in continue flow")
-		_assert_true(title_instance.get_node("LoadBrowser/VBox/StatusLabel").text.contains("save"), "TitleScreen reports canonical campaign save counts")
+		var browser_status = title_instance.get_node("LoadBrowser").find_child("StatusLabel", true, false)
+		_assert_true(browser_status != null and browser_status.text.contains("save"), "TitleScreen reports canonical campaign save counts")
 		title_instance._set_load_browser_busy(true, "Loading saves...")
 		await process_frame
 		var load_row = load_save_list.get_child(0)
-		var load_button = load_row.get_node_or_null("LoadButton0")
-		_assert_true(load_button != null and load_button.disabled, "TitleScreen disables load buttons while the browser is busy")
+		_assert_true(load_row is Button and load_row.disabled, "TitleScreen disables load buttons while the browser is busy")
 		title_instance.free()
 		await process_frame
 
@@ -748,7 +818,7 @@ func _test_world_shell() -> void:
 		camera.zoom_out()
 	_assert_true(camera.get_zoom_index() == 0, "CameraController clamps zoom_out to minimum")
 	camera.focus_on_tile(Vector2i(5, 6))
-	_assert_true(is_equal_approx(camera.position.x, 88.0) and is_equal_approx(camera.position.y, 104.0), "CameraController centers on the tile midpoint")
+	_assert_true(is_equal_approx(camera.position.x, 176.0) and is_equal_approx(camera.position.y, 208.0), "CameraController centers on the tile midpoint")
 	camera.focus_on_tiles([Vector2i(5, 6), Vector2i(12, 6), Vector2i(11, 11)])
 	_assert_true(camera.get_zoom_index() <= 2, "CameraController zooms out to frame multi-entity clusters instead of pinning the player alone")
 	camera.free()
@@ -835,7 +905,7 @@ func _test_entity_rendering() -> void:
 	_assert_true(session_world_view.command_for_tile(Vector2i(1, 0)) == "examine well", "World view synthesizes examine commands for well tiles")
 	var world_selection = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/WorldViewportContainer/WorldViewport/WorldRoot/SelectionLayer")
 	_assert_true(world_selection.get_ambient_tile_count() >= 1, "World view flags fountain and well landmarks for ambient activity")
-	_assert_true(session_world_view._describe_hover(Vector2i(1, 0), {}).contains("Click:"), "World view hover text explains the tile click result")
+	_assert_true(session_world_view._describe_hover(Vector2i(1, 0), {}).contains("Right:"), "World view hover text explains the left/right click result")
 	game_state.map_data = {
 		"width": 3,
 		"height": 1,
@@ -853,7 +923,7 @@ func _test_entity_rendering() -> void:
 	}
 	session_world_view.refresh_from_state()
 	await process_frame
-	_assert_true(world_selection.get_interest_tile_count() >= 3, "World view highlights interactive prop tiles in the selection overlay")
+	_assert_true(world_selection.get_interest_tile_count() == 0, "World view keeps interactive props unboxed until the player hovers or clicks them")
 	_assert_true(world_selection.get_hostile_tile_count() == 1, "World view highlights hostile tiles in the selection overlay")
 	_assert_true(session_world_view.get_atmosphere_state().get("mote_count", 0) > 0, "World view exposes live atmosphere state once map data is present")
 	_assert_true(str(session_world_view.get_atmosphere_state().get("background_key", "")).is_empty() == false, "World view selects a themed background layer for live map rendering")
@@ -913,12 +983,12 @@ func _test_ui_panels() -> void:
 	var session_instance = session_scene.instantiate()
 	root.add_child(session_instance)
 	await process_frame
-	var modal_host = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar")
-	var sidebar_nav = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarNav")
-	var sidebar_tabs = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs")
-	var initial_defend_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/SettlementPanel/SettlementMargin/SettlementVBox/QuickActions/DefendButton")
-	var map_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/ShellFrame/ShellMargin/ShellVBox/PanelRowOne/MapButton")
-	var menu_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/ShellFrame/ShellMargin/ShellVBox/PanelRowTwo/MenuButton")
+	var modal_host = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost")
+	var sidebar_nav = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalNav")
+	var sidebar_tabs = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack")
+	var initial_defend_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/SettlementPanel/SettlementMargin/SettlementVBox/QuickActions/DefendButton")
+	var map_button = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/MapButton")
+	var menu_button = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/ShellGrid/MenuButton")
 	_assert_true(initial_defend_button.disabled, "Settlement quick actions stay disabled until settlement data is available")
 	_assert_true(not modal_host.visible, "Modal host starts hidden until the rail opens a panel")
 	_assert_true(not sidebar_nav.visible, "Legacy sidebar navigation remains inert and hidden")
@@ -929,8 +999,8 @@ func _test_ui_panels() -> void:
 	map_button.pressed.emit()
 	await process_frame
 	_assert_true(not modal_host.visible, "Pressing the active rail panel button closes the modal host")
-	var minimap_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/SummaryLabel")
-	var minimap_intel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/IntelText")
+	var minimap_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel/MinimapMargin/MinimapVBox/SummaryLabel")
+	var minimap_intel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel/MinimapMargin/MinimapVBox/IntelText")
 	_assert_true(minimap_summary.text.contains("No live survey"), "Minimap panel labels missing map data explicitly")
 	_assert_true(minimap_intel.text.contains("Scene Read"), "Minimap panel reserves visible scene-intel copy even before a map arrives")
 
@@ -1012,12 +1082,12 @@ func _test_ui_panels() -> void:
 	var location_label = session_instance.get_node("MainMargin/MainVBox/StatusBar/StatusRow/LocationLabel")
 	_assert_true(location_label.text.contains("Harbor") and location_label.text.contains("Exploration"), "Status bar reflects the current location and active scene without duplicating encounter noise")
 
-	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
+	var inventory_grid = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/InventoryPanel/InventoryMargin/InventoryVBox/ItemGrid")
 	_assert_true(inventory_grid.get_child_count() >= 2, "Inventory panel populates grid items")
 	var inventory_button = inventory_grid.get_child(0)
 	_assert_true(inventory_button is Button, "Inventory entries render as clickable buttons")
 
-	var minimap_texture = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/MapTexture")
+	var minimap_texture = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel/MinimapMargin/MinimapVBox/MapTexture")
 	_assert_true(minimap_texture.texture != null, "Minimap panel renders a texture from map data")
 	_assert_true(minimap_summary.text.contains("Placeholder map") and minimap_summary.text.contains("locals") and minimap_summary.text.contains("Exploration"), "Minimap panel labels placeholder maps, scene, and local counts explicitly")
 	_assert_true(minimap_intel.text.contains("Harbor Guard") and minimap_intel.text.contains("Rat") and minimap_intel.text.contains("Contacts"), "Minimap panel surfaces scene intel instead of only raw counts")
@@ -1047,10 +1117,10 @@ func _test_ui_panels() -> void:
 	_assert_true(minimap_texture.texture != null, "Minimap panel renders a texture from world graph data")
 	_assert_true(minimap_summary.text.contains("World Graph") and minimap_summary.text.contains("Active"), "Minimap panel promotes the Map tab to a macro world graph summary")
 	_assert_true(minimap_intel.text.contains("Reachable") and minimap_intel.text.contains("Harbor Reach"), "Minimap panel surfaces graph travel options and local survey together")
-	var route_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList")
+	var route_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel/MinimapMargin/MinimapVBox/RoutesList")
 	_assert_true(route_list.get_child_count() >= 1, "Minimap panel renders semantic route buttons for reachable destinations")
 	var travel_requests: Array = []
-	var minimap_panel_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/MinimapPanel")
+	var minimap_panel_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/MinimapPanel")
 	minimap_panel_widget.travel_requested.connect(func(request: Dictionary) -> void:
 		travel_requests.append(request.duplicate(true))
 	)
@@ -1106,7 +1176,7 @@ func _test_ui_panels() -> void:
 	await process_frame
 	_assert_true(route_list.has_node("ContinueTravelButton"), "Minimap renders continue travel controls when can_advance is true")
 
-	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/NarrativePanel")
+	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/NarrativePanel")
 	_assert_true(narrative_widget.narrative_log.autowrap_mode != TextServer.AUTOWRAP_OFF, "Narrative panel wraps long lines instead of clipping them")
 	_assert_true(narrative_widget.get_plain_text().contains("harbor square"), "Narrative panel shows backend narrative")
 	var empty_history: Array[String] = []
@@ -1133,9 +1203,9 @@ func _test_ui_panels() -> void:
 	_assert_true(not narrative_widget.get_plain_text().contains("First beat."), "Narrative panel trims stale blocks instead of letting old paragraphs crowd the viewport")
 	_assert_true(narrative_widget.get_plain_text().contains("Fourth beat."), "Narrative panel keeps the newest block visible after history reload")
 
-	var character_panel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
-	var character_portrait = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/PortraitFrame/Portrait")
-	var character_role = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/RoleLabel")
+	var character_panel = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
+	var character_portrait = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/PortraitFrame/Portrait")
+	var character_role = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/RoleLabel")
 	_assert_true(character_panel.text.contains("MIG"), "Character panel renders visible stat lines")
 	_assert_true(character_panel.text.contains("Skills"), "Character panel condenses stats and skills into a readable short brief")
 	_assert_true(character_panel.text.contains("Equipment") and character_panel.text.contains("Iron Sword"), "Character panel reads canonical equipment_topology without relying on character_sheet.equipment")
@@ -1143,13 +1213,11 @@ func _test_ui_panels() -> void:
 	_assert_true(character_portrait.texture != null, "Character panel renders an authored portrait instead of a text-only header")
 	_assert_true(character_role.text.contains("Warrior") and character_role.text.contains("LG"), "Character panel separates class and alignment into a readable header line")
 
-	var command_bar = session_instance.get_node("MainMargin/MainVBox/CommandBar")
-	var focus_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusLabel")
-	var focus_action_one = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionOne")
-	var focus_action_two = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/FocusActionsRow/FocusActionTwo")
-	var command_prompt = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/PromptLabel")
-	var command_input = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput")
-	var command_send = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SendButton")
+	var command_bar = session_instance.get_node("MainMargin/MainVBox/InstrumentRail")
+	var focus_label = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusLabel")
+	var focus_action_one = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionOne")
+	var focus_action_two = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionTwo")
+	var monitor_log = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/MonitorFrame/MonitorMargin/MonitorVBox/MonitorLog")
 	_assert_true(str(focus_label.text).contains("Focus:"), "Command bar surfaces a persistent focus summary instead of leaving world actions implicit")
 	_assert_true(
 		str(focus_action_one.text) == "Talk"
@@ -1164,22 +1232,55 @@ func _test_ui_panels() -> void:
 	game_state.update_from_response({"dialog_npc": "", "dialog_text": "", "dialog_options": []})
 	await process_frame
 	_assert_true(not command_bar.command_entry_visible(), "Rail command entry stays hidden during exploration while point-and-click remains primary")
+	game_state.update_from_response({"dialog_npc": null, "dialog_text": null, "dialog_options": []})
+	await process_frame
+	_assert_true(not game_state.has_active_dialog(), "GameState does not activate dialog from null dialog fields")
+	_assert_true(game_state.current_dialog_payload().is_empty(), "GameState keeps the current dialog payload empty when dialog fields are null")
+	var narrative_only_dialog = ResponseNormalizer.normalize_dialog({
+		"narrative": "Loaded campaign from campfire.",
+		"scene": "exploration",
+	})
+	_assert_true(narrative_only_dialog.is_empty(), "ResponseNormalizer keeps top-level narrative-only payloads out of dialog state")
+	var exploration_payload_dialog = ResponseNormalizer.normalize_dialog({
+		"narrative": "You move north to (40,31).",
+		"dialog_npc": null,
+		"dialog_text": null,
+		"dialog_options": [],
+		"command_type": "exploration",
+	})
+	_assert_true(exploration_payload_dialog.is_empty(), "ResponseNormalizer keeps null dialog command payloads out of dialog state")
+	var isolated_game_state = load("res://autoloads/game_state.gd").new()
+	isolated_game_state.update_from_response({
+		"campaign_id": "camp_resume",
+		"narrative": "Loaded campaign from campfire.",
+		"campaign": {
+			"scene": "exploration",
+			"player": {"name": "Fallback"},
+			"conversation_state": {
+				"npc_id": null,
+				"npc_name": null,
+				"started_turn": 0,
+				"target_type": "npc",
+			},
+		},
+	})
+	_assert_true(not isolated_game_state.has_active_dialog(), "Loaded campaign snapshots with resume narrative do not open a blank dialog overlay")
 	var requested_panels: Array[String] = []
 	command_bar.panel_requested.connect(func(panel_id: String) -> void:
 		requested_panels.append(panel_id)
 	)
 	menu_button.pressed.emit()
 	await process_frame
-	var pause_menu = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu")
+	var pause_menu = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/PauseMenu")
 	_assert_true(modal_host.has_panel("pause") and pause_menu != null, "Modal host owns the pause intelligence surface")
-	var pause_tabs = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs")
-	var pause_title = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/TitleLabel")
-	var ask_dm_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ActionRow/AskDmButton")
-	var ask_dm_answer = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/AskDmPanel/AskMargin/AskVBox/AnswerText")
-	var ask_dm_submit = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/AskDmPanel/AskMargin/AskVBox/InputRow/SubmitButton")
-	var think_facts = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/ThinkPanel/ThinkMargin/ThinkVBox/Columns/FactsPanel/FactsMargin/FactsText")
-	var think_rumors = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ContentTabs/ThinkPanel/ThinkMargin/ThinkVBox/Columns/RumorsPanel/RumorsMargin/RumorsText")
-	var think_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/PauseMenu/PauseMargin/PauseVBox/ActionRow/ThinkButton")
+	var pause_tabs = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/PauseMenu/PauseMargin/PauseVBox/ContentTabs")
+	var pause_title = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/PauseMenu/PauseMargin/PauseVBox/TitleLabel")
+	var ask_dm_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/PauseMenu/PauseMargin/PauseVBox/ActionRow/AskDmButton")
+	var ask_dm_answer = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/PauseMenu/PauseMargin/PauseVBox/ContentTabs/AskDmPanel/AskMargin/AskVBox/AnswerText")
+	var ask_dm_submit = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/PauseMenu/PauseMargin/PauseVBox/ContentTabs/AskDmPanel/AskMargin/AskVBox/InputRow/SubmitButton")
+	var think_facts = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/PauseMenu/PauseMargin/PauseVBox/ContentTabs/ThinkPanel/ThinkMargin/ThinkVBox/Columns/FactsPanel/FactsMargin/FactsText")
+	var think_rumors = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/PauseMenu/PauseMargin/PauseVBox/ContentTabs/ThinkPanel/ThinkMargin/ThinkVBox/Columns/RumorsPanel/RumorsMargin/RumorsText")
+	var think_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/PauseMenu/PauseMargin/PauseVBox/ActionRow/ThinkButton")
 	_assert_true(not pause_tabs.tabs_visible, "Pause menu keeps Ask DM and Think under a single owned surface")
 	_assert_true(pause_title.text == "Pause Counsel" and ask_dm_button.text == "Consult Fate" and ask_dm_submit.text == "Consult Fate", "Pause counsel relabels Ask DM to Consult Fate without changing the backend route")
 	_assert_true(ask_dm_answer.text.contains("guard seems cautious"), "Ask DM renders only the live advisor_view answer lines")
@@ -1216,7 +1317,7 @@ func _test_ui_panels() -> void:
 	})
 	await process_frame
 	_assert_true(dialog_overlay.visible, "Dialog overlay becomes visible when dialog payload is shown")
-	_assert_true(command_bar.command_entry_visible(), "Rail command entry only appears once a live dialog context is active")
+	_assert_true(not command_bar.command_entry_visible(), "Rail keeps parser input out of the active player path even during dialog")
 	var dialog_option = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/OptionsScroll/OptionsContainer/OptionButton0")
 	var ask_about_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/ActionRow/AskAboutButton")
 	var transcript_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/ActionRow/TranscriptButton")
@@ -1241,6 +1342,7 @@ func _test_ui_panels() -> void:
 	dialog_overlay.show_dialog("Harbor Guard", "State your business.", [
 		{"text": "Ask about work", "command": "ask about work", "available": true},
 		{"text": "Probe for rumors", "command": "ask about rumors", "check": "INS 12", "available": false},
+		{"text": "Maybe later.", "command": "dialog leave_bard", "available": true, "transition_id": "leave_bard"},
 	])
 	await process_frame
 	_assert_true(trade_button.visible and not trade_button.disabled, "Dialog overlay exposes Trade once a verified live store route exists")
@@ -1253,40 +1355,69 @@ func _test_ui_panels() -> void:
 	_assert_true(ask_about_request.get("shortcut", "") == "dialog", "Ask About emits the structured dialog shortcut")
 	_assert_true(ask_about_request.get("args", {}).get("action_id", "") == "ask_about", "Ask About emits dialog.ask_about")
 	_assert_true(ask_about_request.get("args", {}).get("topic_id", "") == "rumor.harbor_work", "Ask About keeps the selected canonical topic id")
-	var history_label = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel")
+	var submitted_commands: Array[String] = []
+	command_bar.command_submitted.connect(func(command_text: String) -> void:
+		submitted_commands.append(command_text)
+	)
+	var trade_requests: Array[String] = []
+	dialog_overlay.trade_requested.connect(func(store_id: String) -> void:
+		trade_requests.append(store_id)
+	)
+	var dialog_commands: Array[String] = []
+	dialog_overlay.command_requested.connect(func(command_text: String) -> void:
+		dialog_commands.append(command_text)
+	)
 	trade_button.pressed.emit()
 	await process_frame
-	_assert_true(history_label.text.contains("trade harbor guard"), "Dialog overlay routes Trade through the existing raw trade command path")
+	_assert_true("guard_trade_pack" in trade_requests, "Dialog overlay routes Trade through the verified live store route")
+	var close_button = session_instance.get_node("MainMargin/MainVBox/ContentSplit/WorldPane/DialogOverlay/DialogVBox/CloseButton")
+	close_button.pressed.emit()
+	await process_frame
+	_assert_true("dialog leave_bard" in dialog_commands, "Dialog close routes through the backend leave transition when one exists")
 	dialog_overlay.hide_dialog()
 	await process_frame
 	_assert_true(not dialog_overlay.visible, "Dialog overlay hides cleanly after close")
 	game_state.update_from_response({"dialog_npc": "", "dialog_text": "", "dialog_options": []})
 	await process_frame
 	_assert_true(not command_bar.command_entry_visible(), "Rail command entry hides again once the live dialog context ends")
+	game_state.conversation_state = {
+		"npc_id": "guard_1",
+		"npc_name": "Harbor Guard",
+		"transcript": [
+			{"speaker": null, "text": null},
+			{"speaker": "Harbor Guard", "text": "All clear."},
+		],
+	}
+	dialog_overlay.show_dialog("", "", [])
+	await process_frame
+	transcript_button.pressed.emit()
+	await process_frame
+	var transcript_text = dialog_overlay.find_child("TranscriptText", true, false)
+	_assert_true(not transcript_text.text.contains("<null>"), "Dialog transcript drops null transcript entries instead of rendering placeholder null text")
+	dialog_overlay.hide_dialog()
+	await process_frame
 	var live_inventory_button = inventory_grid.get_child(0)
+	var inventory_commands: Array[String] = []
+	var inventory_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/InventoryPanel")
+	inventory_widget.command_requested.connect(func(command_text: String) -> void:
+		inventory_commands.append(command_text)
+	)
 	if live_inventory_button is Button:
 		live_inventory_button.pressed.emit()
 	await process_frame
-	_assert_true(history_label.text.contains("examine bread"), "Inventory buttons route commands through the command bar")
+	_assert_true("examine bread" in inventory_commands, "Inventory buttons route commands through the canonical inventory surface")
 	command_bar.submit_command("inventory")
 	await process_frame
-	_assert_true(history_label.text.contains("inventory"), "Command bar tracks recent commands")
+	_assert_true("inventory" in submitted_commands, "Instrument rail still exposes an internal command adapter for existing UI surfaces")
+	game_state.narrative_history.clear()
 	command_bar.remember_command("move to 7,4")
 	await process_frame
-	_assert_true(history_label.text.contains("move to 7,4"), "Command bar can record non-textbox commands without duplication")
-	_assert_true(history_label.text.contains("Recent Orders"), "Command bar uses the stronger recent-orders shell copy")
-	var quick_save_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/QuickSaveButton")
-	var saves_button = session_instance.get_node("MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SavesButton")
-	_assert_true(quick_save_button != null and saves_button != null, "Command bar exposes save controls")
-	command_bar.focus_input()
-	await process_frame
-	_assert_true(not session_instance._should_focus_command_bar_on_enter(), "GameSession does not swallow Enter when the command bar already has focus")
-	var focus_probe := Button.new()
-	focus_probe.focus_mode = Control.FOCUS_ALL
-	session_instance.add_child(focus_probe)
-	focus_probe.grab_focus()
-	await process_frame
-	focus_probe.queue_free()
+	_assert_true(monitor_log.text.contains("move to 7,4"), "Instrument rail can surface non-textbox commands through the field notes monitor")
+	_assert_true(monitor_log.text.contains("Last action:"), "Instrument rail replaced recent-orders shell copy with the field notes monitor")
+	var quick_save_button = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/QuickSaveButton")
+	var saves_button = session_instance.get_node("MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/SavesButton")
+	_assert_true(quick_save_button != null and saves_button != null, "Instrument rail exposes save controls without a parser row")
+	_assert_true(not command_bar.has_input_focus(), "Instrument rail has no visible text-entry focus path")
 
 	game_state.update_from_response({
 		"scene": "combat",
@@ -1342,11 +1473,11 @@ func _test_ui_panels() -> void:
 	_assert_true(combat_attack_button.disabled, "Combat attack disables when it is not the player's turn")
 	_assert_true(not modal_host.visible, "Modal host stays closed while combat is active")
 
-	var active_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/ActiveList")
-	var offer_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/OfferList")
+	var active_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/ActiveList")
+	var offer_list = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/QuestPanel/QuestMargin/QuestVBox/QuestScroll/QuestLists/OfferList")
 	_assert_true(active_list.get_child_count() >= 1 and offer_list.get_child_count() >= 1, "Quest panel renders active and available quest entries")
 
-	var settlement_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
+	var settlement_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
 	_assert_true(settlement_summary.text.contains("Dragon Eyrie"), "Settlement panel reflects campaign settlement data")
 
 	# Phase 2A: Character panel fallback with missing stats key
@@ -1355,9 +1486,9 @@ func _test_ui_panels() -> void:
 	game_state.state_updated.emit()
 	await process_frame
 	await process_frame
-	var character_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/SummaryLabel")
+	var character_summary = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/CharacterPanel/CharacterMargin/CharacterVBox/HeaderRow/HeaderVBox/SummaryLabel")
 	_assert_true(character_summary.text.contains("Fallback"), "Character panel fallback renders player name when character_sheet is empty")
-	var character_stats_text = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
+	var character_stats_text = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/CharacterPanel/CharacterMargin/CharacterVBox/StatsText")
 	_assert_true(character_stats_text.text.contains("MIG"), "Character panel fallback renders default stats when stats key is missing")
 
 	# Phase 2C: Empty-state assertions for quest and settlement panels
@@ -1365,7 +1496,7 @@ func _test_ui_panels() -> void:
 	game_state.state_updated.emit()
 	await process_frame
 	await process_frame
-	var empty_settlement = session_instance.get_node("MainMargin/MainVBox/ContentSplit/Sidebar/SidebarTabs/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
+	var empty_settlement = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/SettlementPanel/SettlementMargin/SettlementVBox/SummaryLabel")
 	_assert_true(empty_settlement.text.contains("No") or empty_settlement.text.contains("settlement"), "Settlement panel shows empty state when no settlement data")
 
 	var save_load_panel = session_instance.get_node("OverlayCanvas/SaveLoadPanel")
@@ -1391,6 +1522,7 @@ func _test_asset_bootstrap() -> void:
 func _test_generated_asset_resolution() -> void:
 	DirAccess.make_dir_recursive_absolute("user://assets/generated/sprites")
 	DirAccess.make_dir_recursive_absolute("user://assets/generated/tiles")
+	DirAccess.make_dir_recursive_absolute("user://assets/generated/items")
 
 	var sprite_image = Image.create(4, 4, false, Image.FORMAT_RGBA8)
 	sprite_image.fill(Color(0.9, 0.2, 0.2))
@@ -1400,6 +1532,10 @@ func _test_generated_asset_resolution() -> void:
 	tile_image.fill(Color(0.2, 0.8, 0.2))
 	tile_image.save_png("user://assets/generated/tiles/cache_tile.png")
 
+	var item_image = Image.create(4, 4, false, Image.FORMAT_RGBA8)
+	item_image.fill(Color(0.3, 0.2, 0.9))
+	item_image.save_png("user://assets/generated/items/table.png")
+
 	var manifest_file = FileAccess.open("user://assets/generated/manifest.json", FileAccess.WRITE)
 	manifest_file.store_string(JSON.stringify({
 		"sprites": {
@@ -1408,12 +1544,22 @@ func _test_generated_asset_resolution() -> void:
 		"tiles": {
 			"cache_tile": {"relative_path": "tiles/cache_tile.png"},
 		},
+		"items": {
+			"table": {"relative_path": "items/table.png"},
+		},
 	}))
 	manifest_file.close()
 
 	_assert_true(AssetBootstrap.resolve_generated_asset("sprites/cache_test.png").begins_with("user://"), "AssetBootstrap prefers user-generated sprite assets")
 	_assert_true(AssetManifest.resolve_relative_path("sprites", "cache_test") == "sprites/cache_test.png", "AssetManifest reads generated sprite manifest entries")
 	_assert_true(EntitySpriteCatalog.resolve_texture("cache_test") != null, "EntitySpriteCatalog resolves generated textures through manifest data")
+	_assert_true(EntitySpriteCatalog.resolve_texture("table") != null, "EntitySpriteCatalog resolves prop textures from generated item assets")
+	_assert_true(EntitySpriteCatalog.resolve_texture("anvil") != null, "EntitySpriteCatalog resolves anvil prop textures from generated assets")
+	_assert_true(EntitySpriteCatalog.resolve_texture("altar") != null, "EntitySpriteCatalog resolves altar prop textures from generated assets")
+	_assert_true(EntitySpriteCatalog.resolve_texture("pew") != null, "EntitySpriteCatalog resolves pew prop textures from generated assets")
+	_assert_true(EntitySpriteCatalog.resolve_texture("workbench") != null, "EntitySpriteCatalog resolves workbench prop textures from generated assets")
+	_assert_true(EntitySpriteCatalog.resolve_texture("desk") != null, "EntitySpriteCatalog resolves desk prop textures through table assets")
+	_assert_true(EntitySpriteCatalog.resolve_texture("abyssal_blade") != null, "EntitySpriteCatalog resolves world item visuals from generated item assets")
 
 
 func _cleanup_test_nodes() -> void:
@@ -1444,3 +1590,6 @@ func _restore_profile_values(profile_path: String, keys: PackedStringArray, valu
 		elif profile.has_section_key("profile", key):
 			profile.erase_section_key("profile", key)
 	profile.save(profile_path)
+
+
+

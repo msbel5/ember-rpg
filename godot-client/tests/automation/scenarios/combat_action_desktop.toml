@@ -17,14 +17,14 @@ expected = "title screen is visible in a desktop window"
 [[steps]]
 id = "wait_for_continue_button"
 action = "wait_for_node_visible"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 duration_ms = 4000
 expected = "continue button is ready"
 
 [[steps]]
 id = "open_continue"
 action = "activate_node"
-node_path = "TitleMenu/Shell/RootVBox/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
+node_path = "TitleMenu/FrontDoor/RootSplit/MenuColumn/MenuPanel/MenuMargin/MenuVBox/ContinueButton"
 wait_ms = 1200
 capture_os = true
 capture_viewport = true
@@ -63,44 +63,20 @@ expected = "gameplay scene loads"
 expect_note_contains = "GameSession"
 
 [[steps]]
-id = "wait_for_command_input"
+id = "wait_for_attack_verb"
 action = "wait_for_node_visible"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
-duration_ms = 3000
-expected = "command bar is ready"
-
-[[steps]]
-id = "wait_for_shell_unlock"
-action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
-text = "Recent Orders"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionTwo"
 duration_ms = 6000
-expected = "gameplay shell is no longer locked after loading the save"
-
-[[steps]]
-id = "prepare_attack"
-action = "set_text_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
-text = "attack wolf"
-wait_ms = 100
-expected = "combat proof primes a known combat trigger command"
+expected = "attack verb is available from the instrument rail"
 
 [[steps]]
 id = "enter_combat"
 action = "activate_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/SendButton"
+node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionTwo"
 wait_ms = 1000
 capture_os = true
 capture_viewport = true
 expected = "combat trigger command is submitted"
-
-[[steps]]
-id = "wait_for_attack_history"
-action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
-text = "attack wolf"
-duration_ms = 20000
-expected = "combat trigger command is remembered by the shell"
 
 [[steps]]
 id = "wait_for_combat_panel"
@@ -126,10 +102,6 @@ capture_os = true
 capture_viewport = true
 expected = "combat overlay submits an end-turn action"
 
-[[steps]]
-id = "wait_for_end_turn_history"
-action = "wait_for_node_text"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/HistoryLabel"
-text = "end_turn"
-duration_ms = 20000
-expected = "end-turn action is remembered by the shell"
+
+
+

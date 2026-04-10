@@ -1,10 +1,12 @@
 extends Node
 
 const BACKEND_ENV := "EMBER_RPG_BACKEND_URL"
+const PYTHON_ENV := "EMBER_RPG_PYTHON"
 const BACKEND_SETTING := "ember_rpg/backend_url"
 const DEFAULT_BACKEND_URL := "http://127.0.0.1:8741"
 const PREFERRED_PORTS := [8741, 8765]
 const DEV_SERVER_PATH := "res://../frp-backend/dev_server.py"
+const REPO_VENV_PYTHON := "res://../.venv/Scripts/python.exe"
 
 signal status_changed(message: String)
 signal bootstrap_finished(success: bool)
@@ -34,22 +36,34 @@ func reset_state() -> void:
 
 
 func _run_bootstrap() -> void:
-	status_changed.emit("Starting campaign backend...")
-	# In debug builds, launch backend process immediately while also probing
-	if OS.is_debug_build():
-		_spawn_backend_process(8741)
 	status_changed.emit("Connecting to campaign backend...")
-	# Probe all candidates (the one we just launched will be ready soon)
 	var candidates = _candidate_urls()
-	for attempt in range(3):
+	for candidate in candidates:
+		var payload = await _probe_backend(candidate)
+		if _health_is_ready(payload):
+			_commit_backend(candidate, payload)
+			return
+	if OS.is_debug_build() and not _has_explicit_backend_override():
+		status_changed.emit("Launching repo-managed campaign backend...")
+		var managed = await _launch_managed_backend(true)
+		if _health_is_ready(managed.get("payload", {})):
+			_commit_backend(str(managed.get("url", "")), managed.get("payload", {}))
+			return
+	# Backend not found — try launching in debug builds
+	if OS.is_debug_build():
+		status_changed.emit("Launching campaign backend...")
+		var pid = _spawn_backend_process(8741)
+		if pid > 0:
+			_managed_backend_pid = pid
+	# Retry loop with shorter waits
+	for attempt in range(5):
+		status_changed.emit("Waiting for backend... (attempt %d/5)" % [attempt + 1])
+		await get_tree().create_timer(1.0).timeout
 		for candidate in candidates:
 			var payload = await _probe_backend(candidate)
 			if _health_is_ready(payload):
 				_commit_backend(candidate, payload)
 				return
-		# Wait briefly between retries for backend to finish starting
-		status_changed.emit("Waiting for backend to start... (attempt %d/3)" % [attempt + 1])
-		await get_tree().create_timer(1.5).timeout
 	# Final attempt: try launching managed backend on alternate port
 	if OS.is_debug_build():
 		var launched = await _launch_managed_backend()
@@ -63,12 +77,14 @@ func _run_bootstrap() -> void:
 
 
 func _commit_backend(url: String, payload: Dictionary) -> void:
+	print("[BackendRuntime] _commit_backend called, url=%s" % url)
 	backend_ready = true
 	last_error = ""
 	resolved_url = url
 	health_payload = payload.duplicate(true)
 	Backend.set_base_url(url)
 	status_changed.emit("Connected to campaign backend at %s." % url)
+	print("[BackendRuntime] Emitting bootstrap_finished(true)")
 	bootstrap_finished.emit(true)
 
 
@@ -89,6 +105,17 @@ func _candidate_urls() -> Array[String]:
 	if urls.is_empty():
 		urls.append(DEFAULT_BACKEND_URL)
 	return urls
+
+
+func _has_explicit_backend_override() -> bool:
+	var env_url = OS.get_environment(BACKEND_ENV).strip_edges()
+	if not env_url.is_empty():
+		return true
+	if ProjectSettings.has_setting(BACKEND_SETTING):
+		var configured = str(ProjectSettings.get_setting(BACKEND_SETTING)).strip_edges()
+		if not configured.is_empty():
+			return true
+	return false
 
 
 func _probe_backend(base_url: String) -> Dictionary:
@@ -116,13 +143,14 @@ func _health_is_ready(payload: Dictionary) -> bool:
 		and bool(payload.get("campaign_save_load", false))
 
 
-func _launch_managed_backend() -> Dictionary:
+func _launch_managed_backend(prefer_spawn: bool = false) -> Dictionary:
 	status_changed.emit("Launching a managed campaign backend...")
-	for port in PREFERRED_PORTS:
-		var candidate = "http://127.0.0.1:%d" % port
-		var payload = await _probe_backend(candidate)
-		if _health_is_ready(payload):
-			return {"url": candidate, "payload": payload}
+	if not prefer_spawn:
+		for port in PREFERRED_PORTS:
+			var candidate = "http://127.0.0.1:%d" % port
+			var payload = await _probe_backend(candidate)
+			if _health_is_ready(payload):
+				return {"url": candidate, "payload": payload}
 	for port in range(8765, 8775):
 		var pid = _spawn_backend_process(port)
 		if pid <= 0:
@@ -136,15 +164,36 @@ func _launch_managed_backend() -> Dictionary:
 
 
 func _spawn_backend_process(port: int) -> int:
-	var python = OS.get_environment("EMBER_RPG_PYTHON").strip_edges()
-	if python.is_empty():
-		python = "python"
 	var backend_script = ProjectSettings.globalize_path(DEV_SERVER_PATH)
 	if not FileAccess.file_exists(backend_script):
 		last_error = "Backend dev server script is missing: %s" % backend_script
+		status_changed.emit(last_error)
 		return -1
-	var args = PackedStringArray([backend_script, "--host", "127.0.0.1", "--port", str(port)])
-	return OS.create_process(python, args, false)
+	var launch = _resolve_python_launch()
+	var python = str(launch.get("binary", "")).strip_edges()
+	if python.is_empty():
+		last_error = "No usable Python runtime was found for the campaign backend."
+		status_changed.emit(last_error)
+		return -1
+	var args: PackedStringArray = launch.get("args", PackedStringArray())
+	args.append_array(PackedStringArray([backend_script, "--host", "127.0.0.1", "--port", str(port)]))
+	var pid = OS.create_process(python, args, false)
+	if pid <= 0:
+		last_error = "Failed to launch the campaign backend with %s." % python
+		status_changed.emit(last_error)
+	return pid
+
+
+func _resolve_python_launch() -> Dictionary:
+	var env_python = OS.get_environment(PYTHON_ENV).strip_edges()
+	if not env_python.is_empty():
+		return {"binary": env_python, "args": PackedStringArray()}
+	var repo_python = ProjectSettings.globalize_path(REPO_VENV_PYTHON)
+	if FileAccess.file_exists(repo_python):
+		return {"binary": repo_python, "args": PackedStringArray()}
+	if OS.get_name() == "Windows":
+		return {"binary": "py", "args": PackedStringArray(["-3"])}
+	return {"binary": "python", "args": PackedStringArray()}
 
 
 func _wait_for_backend(base_url: String, timeout_seconds: float) -> Dictionary:

@@ -5,8 +5,8 @@ class_name WorldFocus
 
 
 static func default_summary(location: String, entities: Dictionary) -> String:
-	var contact_name := _first_entity_name(entities, "npcs")
-	var threat_name := _first_entity_name(entities, "enemies")
+	var contact_name := _preferred_entity_name(entities, "npcs")
+	var threat_name := _preferred_entity_name(entities, "enemies")
 	var parts: Array[String] = ["Focus: %s" % location]
 	if not contact_name.is_empty():
 		parts.append("Contact: %s" % contact_name)
@@ -32,25 +32,27 @@ static func tile_summary(tile_name: String, tile_position: Vector2i, entity: Dic
 
 static func default_actions(entities: Dictionary) -> Array:
 	var actions: Array = []
-	var contact := _first_entity(entities, "npcs")
+	var contact := _preferred_entity(entities, "npcs")
 	if not contact.is_empty():
 		actions.append({
 			"verb": "talk",
 			"label": "Talk to %s" % _short_label(WorldInteraction.display_entity_name(contact)),
 			"command": "talk %s" % str(contact.get("name", "contact")).strip_edges().to_lower(),
 		})
-	var threat := _first_entity(entities, "enemies")
-	if not threat.is_empty():
+	var threat := _preferred_entity(entities, "enemies")
+	if not threat.is_empty() and GameState.is_in_combat():
 		actions.append({
 			"verb": "attack",
 			"label": "Attack %s" % _short_label(WorldInteraction.display_entity_name(threat)),
 			"command": "attack %s" % str(threat.get("name", "threat")).strip_edges().to_lower(),
 		})
-	var loot := _first_entity(entities, "items")
+	var loot := _preferred_entity(entities, "items")
 	if not loot.is_empty():
 		actions.append(_named_action_for_entity(loot))
-	elif not _first_entity(entities, "furniture").is_empty():
-		actions.append(_named_action_for_entity(_first_entity(entities, "furniture")))
+	else:
+		var furnishing := _preferred_entity(entities, "furniture")
+		if not furnishing.is_empty():
+			actions.append(_named_action_for_entity(furnishing))
 	actions.append({"verb": "examine", "label": "Examine the area", "command": "look around"})
 	actions.append({"verb": "rest", "label": "Rest and recover", "command": "rest"})
 	return _dedupe_actions(actions)
@@ -119,8 +121,34 @@ static func _first_entity_name(entities: Dictionary, bucket: String) -> String:
 	return WorldInteraction.display_entity_name(entry)
 
 
+static func _preferred_entity_name(entities: Dictionary, bucket: String) -> String:
+	var entry := _preferred_entity(entities, bucket)
+	if entry.is_empty():
+		return ""
+	return WorldInteraction.display_entity_name(entry)
+
+
 static func _bucket_size(entities: Dictionary, bucket: String) -> int:
 	return entities.get(bucket, []).size()
+
+
+static func _preferred_entity(entities: Dictionary, bucket: String) -> Dictionary:
+	var entries: Array = entities.get(bucket, [])
+	var player_tile := GameState.player_map_pos if GameState != null else Vector2i.ZERO
+	var best_entry: Dictionary = {}
+	var best_distance := 1_000_000
+	for entry in entries:
+		if not (entry is Dictionary):
+			continue
+		var pos = entry.get("position", [])
+		var tile := Vector2i.ZERO
+		if pos is Array and pos.size() >= 2:
+			tile = Vector2i(int(pos[0]), int(pos[1]))
+		var distance: int = abs(tile.x - player_tile.x) + abs(tile.y - player_tile.y)
+		if best_entry.is_empty() or distance < best_distance:
+			best_entry = entry
+			best_distance = distance
+	return best_entry
 
 
 static func _short_label(label: String) -> String:

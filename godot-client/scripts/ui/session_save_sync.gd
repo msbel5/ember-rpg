@@ -32,7 +32,8 @@ func save_session(slot_name: String, keep_panel_open: bool) -> void:
 
 func save_campaign(slot_name: String, keep_panel_open: bool) -> void:
 	if GameState.campaign_id.is_empty():
-		_owner.narrative_panel.append_system_text("[color=red]No active campaign to save.[/color]")
+		if _owner != null and _owner.has_method("_append_narrative_system_text"):
+			_owner._append_narrative_system_text("[color=red]No active campaign to save.[/color]")
 		return
 	var normalized_slot := slot_name.strip_edges()
 	if normalized_slot.is_empty():
@@ -51,7 +52,8 @@ func on_save_completed(data, keep_panel_open: bool) -> void:
 	GameState.last_save_slot = slot_name
 	_owner.save_load_panel.set_default_slot(slot_name)
 	_owner.save_load_panel.set_status("Saved %s." % slot_name)
-	_owner.narrative_panel.append_system_text("[color=green]Saved to %s.[/color]" % slot_name)
+	if _owner != null and _owner.has_method("_append_narrative_system_text"):
+		_owner._append_narrative_system_text("[color=green]Saved to %s.[/color]" % slot_name)
 	remember_player_id()
 	remember_resume_player_id()
 	remember_save_slot(slot_name)
@@ -106,7 +108,8 @@ func on_delete_save_completed(data, save_id: String) -> void:
 
 
 func on_save_load_closed() -> void:
-	_owner.command_bar.focus_input()
+	if _owner != null and _owner.has_method("_sync_shell_state"):
+		_owner._sync_shell_state()
 
 
 func remember_player_id() -> void:
@@ -133,14 +136,17 @@ func on_campaign_load_completed(data, requested_save_id: String) -> void:
 		_owner._set_waiting(false)
 		return
 	GameState.reset()
-	_owner.narrative_panel.load_history([])
+	if _owner != null and _owner.has_method("_load_narrative_history"):
+		_owner._load_narrative_history([])
 	GameState.update_from_response(data)
 	GameState.seed_campaign_resume_narrative(str(data.get("narrative", "")))
-	_owner.narrative_panel.load_history(GameState.narrative_history)
+	if _owner != null and _owner.has_method("_load_narrative_history"):
+		_owner._load_narrative_history(GameState.narrative_history)
 	GameState.last_save_slot = requested_save_id
 	remember_player_id()
 	remember_resume_player_id()
 	remember_save_slot(requested_save_id)
 	_owner.save_load_panel.close_panel()
-	_owner.narrative_panel.append_system_text("[color=green]Loaded %s.[/color]" % GameState.last_save_slot)
+	if _owner != null and _owner.has_method("_append_narrative_system_text"):
+		_owner._append_narrative_system_text("[color=green]Loaded %s.[/color]" % GameState.last_save_slot)
 	_owner._set_waiting(false)

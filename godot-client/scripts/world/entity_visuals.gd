@@ -32,11 +32,11 @@ static func adapter_bucket_tint(bucket: String, adapter_id: String) -> Color:
 
 static func display_size(bucket: String) -> int:
 	match bucket.strip_edges().to_lower():
-		"player": return 44
-		"enemy": return 36
-		"npc": return 32
-		"furniture": return 24
-		"item": return 18
+		"player": return 56
+		"enemy": return 44
+		"npc": return 40
+		"furniture": return 28
+		"item": return 20
 		_: return 24
 
 
@@ -63,8 +63,8 @@ static func shadow_alpha(bucket: String) -> float:
 
 static func shadow_scale(bucket: String) -> float:
 	match bucket.strip_edges().to_lower():
-		"player": return 1.42
-		"enemy", "npc": return 1.16
+		"player": return 1.58
+		"enemy", "npc": return 1.24
 		"furniture": return 1.15
 		"item": return 0.70
 		_: return 0.95

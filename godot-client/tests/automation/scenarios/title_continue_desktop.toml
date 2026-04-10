@@ -37,3 +37,6 @@ wait_ms = 2200
 capture_os = true
 capture_viewport = true
 expected = "continue browser opens with campaign saves"
+
+
+

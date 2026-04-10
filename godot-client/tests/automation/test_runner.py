@@ -359,7 +359,7 @@ duration_ms = 50
 [[steps]]
 id = "wait_node"
 action = "wait_for_node"
-node_path = "MainMargin/MainVBox/CommandBar/CommandVBox/InputRow/TextInput"
+        node_path = "MainMargin/MainVBox/InstrumentRail/RailMargin/RailVBox/FocusActionsRow/FocusActionThree"
 duration_ms = 50
 """.strip().replace("__RUN_ROOT__", str(tmp_path / "out").replace("\\", "\\\\")),
         encoding="utf-8",
@@ -548,3 +548,5 @@ action = "activate_window"
     assert result.report.success is True
     assert requests[0].startswith("http://127.0.0.1:8765/")
     assert any("did not satisfy the campaign contract" in note for note in result.report.notes)
+
+

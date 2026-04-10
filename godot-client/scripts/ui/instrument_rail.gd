@@ -6,28 +6,24 @@ signal quick_save_requested
 signal saves_requested
 signal panel_requested(panel_id: String)
 
-@onready var _monitor_title: Label = $MonitorFrame/MonitorMargin/MonitorVBox/MonitorTitle
-@onready var _monitor_log: RichTextLabel = $MonitorFrame/MonitorMargin/MonitorVBox/MonitorLog
-@onready var history_label: Label = $CommandVBox/HistoryLabel
-@onready var focus_label: Label = $CommandVBox/FocusLabel
-@onready var focus_action_one: Button = $CommandVBox/FocusActionsRow/FocusActionOne
-@onready var focus_action_two: Button = $CommandVBox/FocusActionsRow/FocusActionTwo
-@onready var focus_action_three: Button = $CommandVBox/FocusActionsRow/FocusActionThree
-@onready var focus_action_four: Button = $CommandVBox/FocusActionsRow/FocusActionFour
-@onready var focus_action_five: Button = $CommandVBox/FocusActionsRow/FocusActionFive
-@onready var prompt_label: Label = $CommandVBox/InputRow/PromptLabel
-@onready var text_input: LineEdit = $CommandVBox/InputRow/TextInput
-@onready var send_btn: Button = $CommandVBox/InputRow/SendButton
-@onready var quick_save_btn: Button = $CommandVBox/InputRow/QuickSaveButton
-@onready var saves_btn: Button = $CommandVBox/InputRow/SavesButton
-@onready var _mode_label: Label = $ShellFrame/ShellMargin/ShellVBox/ModeLabel
-@onready var _state_label: Label = $ShellFrame/ShellMargin/ShellVBox/StateLabel
-@onready var _hero_button: Button = $ShellFrame/ShellMargin/ShellVBox/PanelRowOne/HeroButton
-@onready var _items_button: Button = $ShellFrame/ShellMargin/ShellVBox/PanelRowOne/ItemsButton
-@onready var _map_button: Button = $ShellFrame/ShellMargin/ShellVBox/PanelRowOne/MapButton
-@onready var _quests_button: Button = $ShellFrame/ShellMargin/ShellVBox/PanelRowTwo/QuestsButton
-@onready var _town_button: Button = $ShellFrame/ShellMargin/ShellVBox/PanelRowTwo/TownButton
-@onready var _menu_button: Button = $ShellFrame/ShellMargin/ShellVBox/PanelRowTwo/MenuButton
+@onready var _monitor_title: Label = $RailMargin/RailVBox/IntelRow/MonitorFrame/MonitorMargin/MonitorVBox/MonitorTitle
+@onready var _monitor_log: RichTextLabel = $RailMargin/RailVBox/IntelRow/MonitorFrame/MonitorMargin/MonitorVBox/MonitorLog
+@onready var focus_label: Label = $RailMargin/RailVBox/FocusLabel
+@onready var focus_action_one: Button = $RailMargin/RailVBox/FocusActionsRow/FocusActionOne
+@onready var focus_action_two: Button = $RailMargin/RailVBox/FocusActionsRow/FocusActionTwo
+@onready var focus_action_three: Button = $RailMargin/RailVBox/FocusActionsRow/FocusActionThree
+@onready var focus_action_four: Button = $RailMargin/RailVBox/FocusActionsRow/FocusActionFour
+@onready var focus_action_five: Button = $RailMargin/RailVBox/FocusActionsRow/FocusActionFive
+@onready var quick_save_btn: Button = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/QuickSaveButton
+@onready var saves_btn: Button = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/SavesButton
+@onready var _mode_label: Label = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/ModeLabel
+@onready var _state_label: Label = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/StateLabel
+@onready var _hero_button: Button = $RailMargin/RailVBox/ShellGrid/HeroButton
+@onready var _items_button: Button = $RailMargin/RailVBox/ShellGrid/ItemsButton
+@onready var _map_button: Button = $RailMargin/RailVBox/ShellGrid/MapButton
+@onready var _quests_button: Button = $RailMargin/RailVBox/ShellGrid/QuestsButton
+@onready var _town_button: Button = $RailMargin/RailVBox/ShellGrid/TownButton
+@onready var _menu_button: Button = $RailMargin/RailVBox/ShellGrid/MenuButton
 
 const VERB_ORDER := ["talk", "attack", "examine", "use", "rest"]
 const VERB_LABELS := {
@@ -45,14 +41,11 @@ const PANEL_LABELS := {
 	"town": "Town",
 	"pause": "Menu",
 }
-const COMMAND_CONTEXT_HIDDEN := "hidden"
-const COMMAND_CONTEXT_DIALOG := "dialog"
 
 var _history: Array[String] = []
 var _action_buttons: Dictionary = {}
 var _panel_buttons: Dictionary = {}
 var _panel_group: ButtonGroup = ButtonGroup.new()
-var _command_entry_context: String = COMMAND_CONTEXT_HIDDEN
 var _is_waiting: bool = false
 
 
@@ -72,8 +65,6 @@ func _ready() -> void:
 		"town": _town_button,
 		"pause": _menu_button,
 	}
-	text_input.text_submitted.connect(_on_text_submitted)
-	send_btn.pressed.connect(_on_send_pressed)
 	quick_save_btn.pressed.connect(func() -> void:
 		quick_save_requested.emit()
 	)
@@ -88,61 +79,36 @@ func _ready() -> void:
 		panel_button.toggle_mode = true
 		panel_button.button_group = _panel_group
 		panel_button.pressed.connect(_on_panel_button_pressed.bind(panel_id))
-	text_input.placeholder_text = "What do you do?"
-	send_btn.text = "Act"
-	quick_save_btn.text = "Save"
-	saves_btn.text = "Loads"
 	if get_node_or_null("/root/GameState") != null:
 		GameState.state_updated.connect(_refresh_monitor)
 	set_focus_summary("")
 	set_focus_actions([])
 	set_panel_actions({}, "")
-	set_command_entry_context(COMMAND_CONTEXT_HIDDEN)
-	_refresh_history()
 	_refresh_monitor()
 
 
 func focus_input() -> void:
-	if command_entry_visible():
-		text_input.grab_focus()
+	return
 
 
 func clear_input() -> void:
-	text_input.text = ""
+	return
 
 
 func has_input_focus() -> bool:
-	return text_input.has_focus()
+	return false
 
 
 func command_entry_visible() -> bool:
-	return text_input.visible and send_btn.visible
+	return false
 
 
-func set_command_entry_context(context: String) -> void:
-	var normalized := context.strip_edges().to_lower()
-	if normalized != COMMAND_CONTEXT_DIALOG:
-		normalized = COMMAND_CONTEXT_HIDDEN
-	_command_entry_context = normalized
-	var entry_visible := _command_entry_context == COMMAND_CONTEXT_DIALOG
-	history_label.visible = entry_visible
-	prompt_label.visible = entry_visible
-	text_input.visible = entry_visible
-	send_btn.visible = entry_visible
-	text_input.placeholder_text = "Ask about a known topic or speak plainly..." if entry_visible else "Point-and-click to act"
-	send_btn.text = "Speak" if entry_visible else "Act"
-	if not entry_visible:
-		text_input.release_focus()
-		text_input.text = ""
-	text_input.editable = not _is_waiting and entry_visible
-	send_btn.disabled = _is_waiting or not entry_visible
-	_refresh_history()
+func set_command_entry_context(_context: String) -> void:
+	return
 
 
 func set_waiting(waiting: bool) -> void:
 	_is_waiting = waiting
-	text_input.editable = not waiting and command_entry_visible()
-	send_btn.disabled = waiting or not command_entry_visible()
 	quick_save_btn.disabled = waiting
 	saves_btn.disabled = waiting
 	for button in _action_buttons.values():
@@ -150,17 +116,12 @@ func set_waiting(waiting: bool) -> void:
 	if waiting:
 		for panel_button in _panel_buttons.values():
 			panel_button.disabled = true
-	if waiting:
-		if history_label.visible:
-			history_label.text = "Prompts locked while the world catches up..."
-	else:
-		_refresh_history()
 
 
 func set_focus_summary(summary: String) -> void:
 	var next_summary = summary.strip_edges()
 	if next_summary.is_empty():
-		next_summary = "Focus: choose a person, threat, or landmark to reveal the next useful verb."
+		next_summary = "Select a person, threat, or landmark, then right-click to move or act."
 	focus_label.text = next_summary
 
 
@@ -175,8 +136,6 @@ func set_focus_actions(actions: Array) -> void:
 		by_verb[verb] = action
 	if not by_verb.has("examine"):
 		by_verb["examine"] = {"verb": "examine", "label": "Examine area", "command": "look around"}
-	if not by_verb.has("rest"):
-		by_verb["rest"] = {"verb": "rest", "label": "Rest and recover", "command": "rest"}
 	for verb in VERB_ORDER:
 		_apply_focus_action_button(_action_buttons[verb], by_verb.get(verb, {}), verb)
 
@@ -203,53 +162,27 @@ func set_panel_actions(panel_states: Dictionary, active_panel_id: String = "") -
 
 
 func submit_command(text: String) -> void:
-	_emit_command(text)
-	clear_input()
+	var normalized = text.strip_edges()
+	if normalized.is_empty():
+		return
+	command_submitted.emit(normalized)
 
 
 func remember_command(text: String) -> void:
-	text = text.strip_edges()
-	if text.is_empty():
+	var normalized = text.strip_edges()
+	if normalized.is_empty():
 		return
-	if not _history.is_empty() and _history[_history.size() - 1] == text:
+	if not _history.is_empty() and _history[_history.size() - 1] == normalized:
 		return
-	_history.append(text)
-	if _history.size() > 6:
+	_history.append(normalized)
+	if _history.size() > 4:
 		_history.pop_front()
-	_refresh_history()
-
-
-func _on_text_submitted(text: String) -> void:
-	if not command_entry_visible():
-		return
-	_emit_command(text)
-
-
-func _on_send_pressed() -> void:
-	if not command_entry_visible():
-		return
-	_emit_command(text_input.text)
-
-
-func _emit_command(text: String) -> void:
-	text = text.strip_edges()
-	if text.is_empty():
-		return
-	remember_command(text)
-	command_submitted.emit(text)
-
-
-func _refresh_history() -> void:
-	var prefix := "Recent Prompts" if _command_entry_context == COMMAND_CONTEXT_DIALOG else "Recent Orders"
-	if _history.is_empty():
-		history_label.text = "%s: none yet" % prefix
-		return
-	history_label.text = "%s: %s" % [prefix, " | ".join(_history.slice(maxi(_history.size() - 3, 0), _history.size()))]
+	_refresh_monitor()
 
 
 func _refresh_monitor() -> void:
 	if get_node_or_null("/root/GameState") == null:
-		_monitor_title.text = "Field Monitor"
+		_monitor_title.text = "Field Notes"
 		_monitor_log.text = "Awaiting a live campaign feed."
 		_mode_label.text = "Mode: offline"
 		_state_label.text = "No live world state."
@@ -257,12 +190,14 @@ func _refresh_monitor() -> void:
 	var shell_mode := str(GameState.current_shell_mode()).replace("_", " ").capitalize()
 	_mode_label.text = "Mode: %s" % shell_mode
 	var monitor_lines: Array[String] = []
-	for line in GameState.narrative_history.slice(maxi(GameState.narrative_history.size() - 3, 0), GameState.narrative_history.size()):
+	for line in GameState.narrative_history.slice(maxi(GameState.narrative_history.size() - 2, 0), GameState.narrative_history.size()):
 		var normalized := str(line).strip_edges()
 		if normalized.is_empty():
 			continue
 		monitor_lines.append(normalized)
-	_monitor_title.text = "Field Monitor"
+	if monitor_lines.is_empty() and not _history.is_empty():
+		monitor_lines.append("Last action: %s" % _history[_history.size() - 1])
+	_monitor_title.text = "Field Notes"
 	_monitor_log.text = "\n\n".join(monitor_lines) if not monitor_lines.is_empty() else "No recent field notes."
 	_state_label.text = _build_state_summary()
 
@@ -288,7 +223,7 @@ func _apply_focus_action_button(button: Button, action: Dictionary, verb: String
 	var command = str(action.get("command", "")).strip_edges()
 	button.text = str(VERB_LABELS.get(verb, label))
 	button.visible = not command.is_empty()
-	button.disabled = command.is_empty()
+	button.disabled = command.is_empty() or _is_waiting
 	button.set_meta("command", command)
 	button.tooltip_text = label if not label.is_empty() else ""
 

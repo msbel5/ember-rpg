@@ -10,11 +10,12 @@ def test_world_tick_advances_runtime_state_and_emits_events():
     world = _runtime_world()
     region_id = world.simulation_snapshot.active_region_id
     before = world.simulation_snapshot.region_states[region_id]
+    hour_before = world.simulation_snapshot.current_hour
 
     result = tick_global(world, 14)
     after = result.new_snapshot.region_states[region_id]
 
-    assert result.new_snapshot.current_hour == 14
+    assert result.new_snapshot.current_hour == hour_before + 14
     assert result.new_snapshot.current_day == 1
     assert any(event["event_type"] == "active_region_update" for event in result.generated_events)
     assert after["weather"]
@@ -24,4 +25,3 @@ def test_world_tick_advances_runtime_state_and_emits_events():
         (left["x"], left["y"], left["activity"]) != (right["x"], right["y"], right["activity"])
         for left, right in zip(before["npcs"], after["npcs"])
     )
-
