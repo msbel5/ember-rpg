@@ -1636,9 +1636,17 @@ def main() -> None:
         return
 
     if args.generate:
-        jobs = build_jobs(args.generate, limit=args.limit, views=args.views, variants=max(1, args.variants))
+        # Build the full job list first, then apply name filter, then apply limit.
+        # This order lets `--names abyssal_blade --limit 1` correctly select "Abyssal Blade"
+        # instead of silently dropping all jobs when the alphabetical first item doesn't match.
+        build_limit = None if (args.names or args.names_file) else args.limit
+        jobs = build_jobs(args.generate, limit=build_limit, views=args.views, variants=max(1, args.variants))
         wanted = load_name_filters(args.names, args.names_file)
         jobs = filter_jobs_by_name(jobs, wanted)
+        if args.limit and (args.names or args.names_file):
+            jobs = jobs[: args.limit]
+        if not jobs:
+            print(f"[WARN] no jobs to generate after filter (names={args.names}, limit={args.limit})")
         # Use default painted CRPG stack unless user explicitly opts out or supplies a single override.
         lora_stack: list[tuple[str, str, float]] | None = None if (args.no_lora_stack or args.lora_path) else DEFAULT_LORA_STACK
         use_lcm: bool = not args.no_lcm
