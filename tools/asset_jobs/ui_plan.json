@@ -1,0 +1,31 @@
+{
+  "kind": "ui_plan",
+  "generated_at": "2026-04-11",
+  "count": 24,
+  "jobs": [
+    {"id": "instrument_rail_panel", "category": "panel", "size": [1024, 256], "prompt_hint": "long narrow painted wood-and-parchment instrument rail panel with readable inset sections", "variants": 1},
+    {"id": "modal_host_frame", "category": "panel", "size": [1280, 960], "prompt_hint": "painted modal frame with dark lacquered wood, parchment body, and restrained gold trim", "variants": 1},
+    {"id": "tooltip_background", "category": "panel", "size": [384, 160], "prompt_hint": "small painted tooltip backing with parchment texture and soft shadow edge", "variants": 1},
+    {"id": "dialogue_box_frame", "category": "panel", "size": [1280, 320], "prompt_hint": "wide painted dialogue box frame with parchment center and worn gilded border", "variants": 1},
+    {"id": "inventory_slot", "category": "panel", "size": [96, 96], "prompt_hint": "painted inventory slot frame with beveled metal rim and dark cloth insert", "variants": 1},
+    {"id": "status_bar_frame", "category": "panel", "size": [512, 96], "prompt_hint": "painted HUD status bar frame with carved trim and empty inset for bar fill", "variants": 1},
+    {"id": "button_flat_idle", "category": "button", "size": [256, 80], "prompt_hint": "painted flat CRPG button idle state, parchment face, subtle worn edge, no text", "variants": 1},
+    {"id": "button_flat_hover", "category": "button", "size": [256, 80], "prompt_hint": "painted flat CRPG button hover state, parchment face with warm gold highlight, no text", "variants": 1},
+    {"id": "button_flat_pressed", "category": "button", "size": [256, 80], "prompt_hint": "painted flat CRPG button pressed state, slightly darker inset parchment face, no text", "variants": 1},
+    {"id": "button_raised_idle", "category": "button", "size": [256, 80], "prompt_hint": "painted raised CRPG button idle state with ornate rim and deep shadow, no text", "variants": 1},
+    {"id": "button_raised_hover", "category": "button", "size": [256, 80], "prompt_hint": "painted raised CRPG button hover state with brighter gilded trim and readable silhouette, no text", "variants": 1},
+    {"id": "button_raised_pressed", "category": "button", "size": [256, 80], "prompt_hint": "painted raised CRPG button pressed state with compressed lighting and darkened lower edge, no text", "variants": 1},
+    {"id": "icon_menu", "category": "icon", "size": [128, 128], "prompt_hint": "painted UI icon for menu, readable knotwork sigil over parchment medallion", "variants": 1},
+    {"id": "icon_options", "category": "icon", "size": [128, 128], "prompt_hint": "painted UI icon for options, gear-like alchemical dial with readable silhouette", "variants": 1},
+    {"id": "icon_save", "category": "icon", "size": [128, 128], "prompt_hint": "painted UI icon for save, ink bottle and quill over wax seal, readable at small size", "variants": 1},
+    {"id": "icon_load", "category": "icon", "size": [128, 128], "prompt_hint": "painted UI icon for load, open tome with returning glow, readable at small size", "variants": 1},
+    {"id": "icon_quit", "category": "icon", "size": [128, 128], "prompt_hint": "painted UI icon for quit, door arch with fading lantern light, readable at small size", "variants": 1},
+    {"id": "icon_map", "category": "icon", "size": [128, 128], "prompt_hint": "painted UI icon for map, folded parchment chart with compass rose, readable at small size", "variants": 1},
+    {"id": "icon_journal", "category": "icon", "size": [128, 128], "prompt_hint": "painted UI icon for journal, bound diary with ribbon and worn cover, readable at small size", "variants": 1},
+    {"id": "icon_inventory", "category": "icon", "size": [128, 128], "prompt_hint": "painted UI icon for inventory, leather satchel with clasp, readable at small size", "variants": 1},
+    {"id": "icon_spellbook", "category": "icon", "size": [128, 128], "prompt_hint": "painted UI icon for spellbook, arcane grimoire with glowing sigil, readable at small size", "variants": 1},
+    {"id": "portrait_player_placeholder", "category": "portrait", "size": [512, 768], "prompt_hint": "painted player portrait placeholder silhouette, neutral heroic bust framed for CRPG sheet", "variants": 1},
+    {"id": "portrait_npc_placeholder", "category": "portrait", "size": [512, 768], "prompt_hint": "painted NPC portrait placeholder silhouette, neutral conversational bust framed for CRPG dialogue", "variants": 1},
+    {"id": "portrait_frame_gilded", "category": "portrait", "size": [640, 896], "prompt_hint": "painted gilded portrait frame with age-worn metal and subtle jewel accents", "variants": 1}
+  ]
+}
