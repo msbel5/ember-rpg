@@ -18,6 +18,13 @@ signal panel_requested(panel_id: String)
 @onready var saves_btn: Button = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/SaveRow/SavesButton
 @onready var _mode_label: Label = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/ModeLabel
 @onready var _state_label: Label = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/StateLabel
+@onready var _combat_strip: VBoxContainer = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip
+@onready var _combat_initiative_label: Label = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatTopRow/CombatInitiativeLabel
+@onready var _action_badge: Label = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatTopRow/ActionBadge
+@onready var _bonus_badge: Label = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatTopRow/BonusBadge
+@onready var _reaction_badge: Label = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatTopRow/ReactionBadge
+@onready var _movement_label: Label = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatMoveRow/MovementLabel
+@onready var _movement_bar: ProgressBar = $RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatMoveRow/MovementBar
 @onready var _hero_button: Button = $RailMargin/RailVBox/ShellGrid/HeroButton
 @onready var _items_button: Button = $RailMargin/RailVBox/ShellGrid/ItemsButton
 @onready var _map_button: Button = $RailMargin/RailVBox/ShellGrid/MapButton
@@ -79,8 +86,9 @@ func _ready() -> void:
 		panel_button.toggle_mode = true
 		panel_button.button_group = _panel_group
 		panel_button.pressed.connect(_on_panel_button_pressed.bind(panel_id))
-	if get_node_or_null("/root/GameState") != null:
-		GameState.state_updated.connect(_refresh_monitor)
+	var game_state = _game_state()
+	if game_state != null:
+		game_state.state_updated.connect(_refresh_monitor)
 	set_focus_summary("")
 	set_focus_actions([])
 	set_panel_actions({}, "")
@@ -161,16 +169,18 @@ func remember_command(text: String) -> void:
 
 
 func _refresh_monitor() -> void:
-	if get_node_or_null("/root/GameState") == null:
+	var game_state = _game_state()
+	if game_state == null:
 		_monitor_title.text = "Field Notes"
 		_monitor_log.text = "Awaiting a live campaign feed."
 		_mode_label.text = "Mode: offline"
 		_state_label.text = "No live world state."
+		_combat_strip.visible = false
 		return
-	var shell_mode := str(GameState.current_shell_mode()).replace("_", " ").capitalize()
+	var shell_mode := str(game_state.current_shell_mode()).replace("_", " ").capitalize()
 	_mode_label.text = "Mode: %s" % shell_mode
 	var monitor_lines: Array[String] = []
-	for line in GameState.narrative_history.slice(maxi(GameState.narrative_history.size() - 2, 0), GameState.narrative_history.size()):
+	for line in game_state.narrative_history.slice(maxi(game_state.narrative_history.size() - 2, 0), game_state.narrative_history.size()):
 		var normalized := str(line).strip_edges()
 		if normalized.is_empty():
 			continue
@@ -180,22 +190,84 @@ func _refresh_monitor() -> void:
 	_monitor_title.text = "Field Notes"
 	_monitor_log.text = "\n\n".join(monitor_lines) if not monitor_lines.is_empty() else "No recent field notes."
 	_state_label.text = _build_state_summary()
+	_refresh_combat_strip()
 
 
 func _build_state_summary() -> String:
+	var game_state = _game_state()
+	if game_state == null:
+		return "No live world state."
 	var summary_chunks: Array[String] = []
-	if GameState.has_active_travel():
-		var destination_name := str(GameState.travel_state.get("destination_name", GameState.travel_state.get("destination_region_id", "Unknown"))).strip_edges()
-		summary_chunks.append("Travel: %s (%sh left)" % [destination_name, int(GameState.travel_state.get("travel_hours_remaining", 0))])
-	elif not GameState.location.is_empty():
-		summary_chunks.append("Site: %s" % GameState.get_display_location())
-	if not GameState.crime_state.is_empty() and bool(GameState.crime_state.get("wanted", false)):
-		summary_chunks.append("Wanted · bounty %d" % int(GameState.crime_state.get("active_bounty", 0)))
-	elif GameState.scene == "combat":
+	if game_state.has_active_travel():
+		var destination_name := str(game_state.travel_state.get("destination_name", game_state.travel_state.get("destination_region_id", "Unknown"))).strip_edges()
+		summary_chunks.append("Travel: %s (%sh left)" % [destination_name, int(game_state.travel_state.get("travel_hours_remaining", 0))])
+	elif not game_state.location.is_empty():
+		summary_chunks.append("Site: %s" % game_state.get_display_location())
+	if not game_state.crime_state.is_empty() and bool(game_state.crime_state.get("wanted", false)):
+		summary_chunks.append("Wanted · bounty %d" % int(game_state.crime_state.get("active_bounty", 0)))
+	elif game_state.scene == "combat":
 		summary_chunks.append("Combat pressure rising")
 	if summary_chunks.is_empty():
 		summary_chunks.append("No urgent field pressure.")
 	return "\n".join(summary_chunks)
+
+
+func _refresh_combat_strip() -> void:
+	var game_state = _game_state()
+	if game_state == null or str(game_state.current_shell_mode()) != "combat":
+		_combat_strip.visible = false
+		return
+	var combatant := _player_combatant(game_state.combat_state)
+	if combatant.is_empty():
+		_combat_strip.visible = false
+		return
+	var combat_info := _combat_info_for(combatant)
+	var turn_resources := _turn_resources_for(combatant)
+	var movement_remaining := int(combat_info.get("movement_remaining", turn_resources.get("movement_remaining", 0)))
+	var movement_speed := int(turn_resources.get("speed", max(1, movement_remaining)))
+	movement_speed = max(1, movement_speed)
+	_combat_strip.visible = true
+	_combat_initiative_label.text = "Initiative %d" % int(combat_info.get("initiative", combatant.get("initiative", 0)))
+	_action_badge.text = _badge_text("Action", bool(combat_info.get("action_available", turn_resources.get("action_available", false))))
+	_bonus_badge.text = _badge_text("Bonus", bool(combat_info.get("bonus_action_available", turn_resources.get("bonus_action_available", false))))
+	_reaction_badge.text = _badge_text("Reaction", bool(combat_info.get("reaction_available", turn_resources.get("reaction_available", false))))
+	_movement_label.text = "Movement %d/%d" % [movement_remaining, movement_speed]
+	_movement_bar.max_value = float(movement_speed)
+	_movement_bar.value = float(clampi(movement_remaining, 0, movement_speed))
+
+
+func _player_combatant(combat_state: Dictionary) -> Dictionary:
+	for combatant in combat_state.get("combatants", []):
+		if combatant is Dictionary and bool(combatant.get("is_player", false)):
+			return combatant
+	return {}
+
+
+func _combat_info_for(combatant: Dictionary) -> Dictionary:
+	var info = combatant.get("combat_info", {})
+	if info is Dictionary and not info.is_empty():
+		return info
+	var turn_resources := _turn_resources_for(combatant)
+	return {
+		"initiative": int(combatant.get("initiative", 0)),
+		"action_available": bool(turn_resources.get("action_available", false)),
+		"bonus_action_available": bool(turn_resources.get("bonus_action_available", false)),
+		"reaction_available": bool(turn_resources.get("reaction_available", false)),
+		"movement_remaining": int(turn_resources.get("movement_remaining", 0)),
+	}
+
+
+func _turn_resources_for(combatant: Dictionary) -> Dictionary:
+	var turn_resources = combatant.get("turn_resources", {})
+	return turn_resources if turn_resources is Dictionary else {}
+
+
+func _badge_text(label: String, available: bool) -> String:
+	return "%s %s" % [label, "ready" if available else "spent"]
+
+
+func _game_state():
+	return get_node_or_null("/root/GameState")
 
 
 func _apply_focus_action_button(button: Button, action: Dictionary, verb: String) -> void:

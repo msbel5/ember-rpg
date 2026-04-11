@@ -48,6 +48,7 @@ def _compact_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         "scene",
         "location",
         "combat",
+        "actors",
         "conversation_state",
         "knowledge",
         "stores",

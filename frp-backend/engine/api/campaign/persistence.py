@@ -138,7 +138,7 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
                 player_payload["stats"] = normalized_stats
     player_payload["turn_resources"] = current_player_turn_resources(context)
     player_payload["spellcasting"] = build_actor_spell_payload(context.player)
-    return _sanitize_campaign_snapshot_payload({
+    payload = {
         "world": {
             "seed": context.world.seed,
             "profile_id": context.world.profile_id,
@@ -177,7 +177,9 @@ def campaign_payload(context: "CampaignContext") -> dict[str, Any]:
         "settlement": copy.deepcopy(context.settlement_state),
         "character_sheet": build_character_sheet(context, context.settlement_state),
         "recent_event_log": copy.deepcopy(context.recent_event_log[-12:]),
-    })
+    }
+    _annotate_actor_combat_info(payload)
+    return _sanitize_campaign_snapshot_payload(payload)
 
 
 def persist_campaign_state(context: "CampaignContext") -> None:
@@ -286,6 +288,7 @@ def _enrich_combat_payload(context: "CampaignContext", combat_state: dict[str, A
         actor = actors.get(actor_id)
         if actor is None:
             continue
+        entry["combat_info"] = _combat_info_from_combatant(entry)
         record = context.entities.get(actor_id) if isinstance(getattr(context, "entities", None), dict) else None
         position = getattr(actor, "position", None)
         if position is not None:
@@ -391,6 +394,48 @@ def _active_site_id(context: "CampaignContext") -> str:
 def _payload_active_region_id(kernel_payload: dict[str, Any], context: "CampaignContext") -> str:
     path_authority = dict(kernel_payload.get("path_authority", {}))
     return str(path_authority.get("active_region_id") or context.region_snapshot.region_id)
+
+
+def _combat_info_from_combatant(entry: dict[str, Any]) -> dict[str, Any]:
+    turn_resources = dict(entry.get("turn_resources") or {})
+    return {
+        "in_combat": True,
+        "initiative": int(entry.get("initiative", 0) or 0),
+        "action_available": bool(turn_resources.get("action_available", turn_resources.get("action", True))),
+        "bonus_action_available": bool(turn_resources.get("bonus_action_available", turn_resources.get("bonus_action", True))),
+        "reaction_available": bool(turn_resources.get("reaction_available", turn_resources.get("reaction", True))),
+        "movement_remaining": int(turn_resources.get("movement_remaining", turn_resources.get("movement", 0)) or 0),
+    }
+
+
+def _actor_payload_id(entry: dict[str, Any]) -> str:
+    identity = entry.get("identity")
+    if isinstance(identity, dict):
+        return str(identity.get("actor_id", "")).strip()
+    return str(entry.get("actor_id", "")).strip()
+
+
+def _annotate_actor_combat_info(payload: dict[str, Any]) -> None:
+    actors = payload.get("actors")
+    if not isinstance(actors, list):
+        return
+    combat = payload.get("combat")
+    combatants = []
+    if isinstance(combat, dict):
+        combatants = [entry for entry in combat.get("combatants", []) if isinstance(entry, dict)]
+    combat_info_by_actor = {
+        str(entry.get("actor_id", "")).strip(): _combat_info_from_combatant(entry)
+        for entry in combatants
+        if str(entry.get("actor_id", "")).strip()
+    }
+    for actor in actors:
+        if not isinstance(actor, dict):
+            continue
+        actor_id = _actor_payload_id(actor)
+        actor["combat_info"] = copy.deepcopy(combat_info_by_actor.get(actor_id, {}))
+    player_payload = payload.get("player")
+    if isinstance(player_payload, dict):
+        player_payload["combat_info"] = copy.deepcopy(combat_info_by_actor.get("player", {}))
 
 
 __all__ = ["build_kernel_payload", "campaign_payload", "persist_campaign_state"]

@@ -89,6 +89,45 @@ layout_mode = 2
 autowrap_mode = 3
 text = "No urgent field pressure."
 
+[node name="CombatStrip" type="VBoxContainer" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CombatTopRow" type="HBoxContainer" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CombatInitiativeLabel" type="Label" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatTopRow"]
+layout_mode = 2
+text = "Initiative 0"
+
+[node name="ActionBadge" type="Label" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatTopRow"]
+layout_mode = 2
+text = "Action ready"
+
+[node name="BonusBadge" type="Label" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatTopRow"]
+layout_mode = 2
+text = "Bonus ready"
+
+[node name="ReactionBadge" type="Label" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatTopRow"]
+layout_mode = 2
+text = "Reaction ready"
+
+[node name="CombatMoveRow" type="HBoxContainer" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MovementLabel" type="Label" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatMoveRow"]
+layout_mode = 2
+text = "Movement 0/0"
+
+[node name="MovementBar" type="ProgressBar" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox/CombatStrip/CombatMoveRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 6.0
+value = 0.0
+
 [node name="SaveRow" type="HBoxContainer" parent="RailMargin/RailVBox/IntelRow/StateFrame/StateMargin/StateVBox"]
 layout_mode = 2
 theme_override_constants/separation = 6
