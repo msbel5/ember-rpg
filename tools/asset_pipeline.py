@@ -37,6 +37,7 @@ ITEMS_FILE = DATA_ROOT / "items.json"
 
 RAW_DIR = PROJECT_ROOT / "tools" / "asset_raw"
 PLAN_DIR = PROJECT_ROOT / "tools" / "asset_jobs"
+ADAPTER_PROMPTS_FILE = PROJECT_ROOT / "tools" / "asset_jobs" / "adapter_prompts.json"
 
 LEGACY_SPRITE_DIR = PROJECT_ROOT / "godot-client" / "assets" / "sprites"
 LEGACY_TILE_DIR = PROJECT_ROOT / "godot-client" / "assets" / "tiles"
@@ -671,12 +672,16 @@ class Job:
     metadata: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
+        adapter_negative_prompt = trim_spaces(str(self.metadata.get("adapter_negative_prompt", "")))
+        negative_prompt = negative_prompt_for_kind(self.kind)
+        if self.kind == "items" and adapter_negative_prompt:
+            negative_prompt = negative_prompt + ", " + adapter_negative_prompt
         return {
             "key": self.key,
             "kind": self.kind,
             "name": self.name,
             "prompt": self.prompt,
-            "negative_prompt": NEGATIVE_PROMPT,
+            "negative_prompt": negative_prompt,
             "seed": self.seed,
             "output_relative_path": self.output_relative_path,
             "raw_relative_path": self.raw_relative_path,
@@ -690,6 +695,28 @@ def get_hf_token() -> str:
 
 def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_adapter_prompts() -> dict[str, dict[str, Any]]:
+    """Returns the full adapter prompts map, or {} if the file is missing."""
+    if not ADAPTER_PROMPTS_FILE.exists():
+        return {}
+    payload = json.loads(ADAPTER_PROMPTS_FILE.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        return {}
+    normalized: dict[str, dict[str, Any]] = {}
+    for adapter_id, entry in payload.items():
+        if isinstance(entry, dict):
+            normalized[str(adapter_id)] = entry
+    return normalized
+
+
+def resolve_adapter(adapter_id: str | None) -> dict[str, Any]:
+    """Returns the adapter entry, or {} if not set / unknown."""
+    normalized_id = str(adapter_id or "").strip()
+    if not normalized_id:
+        return {}
+    return dict(load_adapter_prompts().get(normalized_id, {}))
 
 
 def slugify(text: str) -> str:
@@ -829,7 +856,7 @@ def infer_item_subject(item: dict[str, Any]) -> str:
     return item_style_descriptor(item)
 
 
-def build_item_prompt(item: dict[str, Any], view: str = "topdown") -> str:
+def build_item_prompt(item: dict[str, Any], view: str = "topdown", style_prefix: str = ITEM_STYLE_PREFIX) -> str:
     item_type = str(item.get("type", "equipment")).upper()
     rarity = str(item.get("rarity", "COMMON")).upper()
     name = trim_spaces(str(item.get("name", item.get("id", "Unnamed Item"))))
@@ -846,9 +873,50 @@ def build_item_prompt(item: dict[str, Any], view: str = "topdown") -> str:
     detail_text = ", ".join(bit for bit in detail_bits if bit)
     view_text = VIEW_SUFFIX[normalize_view(view)]
     return compress_prompt(
-        f"{ITEM_STYLE_PREFIX}{style}, {rarity_hint}, {view_text}, {name}, {item_type.lower()} item, "
+        f"{style_prefix}{style}, {rarity_hint}, {view_text}, {name}, {item_type.lower()} item, "
         f"{detail_text}"
     )
+
+
+def item_style_prefix_for_adapter(adapter: dict[str, Any] | None = None) -> str:
+    adapter = adapter or {}
+    prompt_prefix = trim_spaces(str(adapter.get("prompt_prefix", "")))
+    if not prompt_prefix:
+        return ITEM_STYLE_PREFIX
+    return f"{prompt_prefix}, {ITEM_STYLE_PREFIX}"
+
+
+def item_negative_prompt_for_adapter(adapter: dict[str, Any] | None = None) -> str:
+    adapter = adapter or {}
+    parts = [NEGATIVE_PROMPT]
+    extra = trim_spaces(_KIND_NEGATIVES.get("items", ""))
+    adapter_negative = trim_spaces(str(adapter.get("negative_prompt", "")))
+    if extra:
+        parts.append(extra)
+    if adapter_negative:
+        parts.append(adapter_negative)
+    return ", ".join(parts)
+
+
+def item_seed_offset_for_adapter(adapter: dict[str, Any] | None = None) -> int:
+    adapter = adapter or {}
+    return int(adapter.get("seed_offset", 0) or 0)
+
+
+def resolve_lora_adapter_weights(
+    adapter_names: list[str],
+    adapter_weights: list[float],
+    lora_weight_overrides: dict[str, Any] | None = None,
+) -> list[float]:
+    overrides = lora_weight_overrides or {}
+    resolved: list[float] = []
+    for index, adapter_name in enumerate(adapter_names):
+        base_weight = float(adapter_weights[index])
+        if adapter_name in overrides:
+            resolved.append(float(overrides[adapter_name]))
+        else:
+            resolved.append(base_weight)
+    return resolved
 
 
 def build_sprite_prompt(_name: str, description: str) -> str:
@@ -1248,6 +1316,7 @@ def build_item_jobs(
     limit: int | None = None,
     views: list[str] | None = None,
     variants: int = 1,
+    adapter: dict[str, Any] | None = None,
 ) -> list[Job]:
     payload = load_json(ITEMS_FILE)
     items = payload.get("items", [])
@@ -1255,6 +1324,11 @@ def build_item_jobs(
         return []
 
     normalized_views = [normalize_view(v) for v in (views or ["topdown"])]
+    resolved_adapter = adapter or {}
+    style_prefix = item_style_prefix_for_adapter(resolved_adapter)
+    seed_offset = item_seed_offset_for_adapter(resolved_adapter)
+    adapter_negative_prompt = trim_spaces(str(resolved_adapter.get("negative_prompt", "")))
+    adapter_id = trim_spaces(str(resolved_adapter.get("id", "")))
     jobs: list[Job] = []
     for item in items:
         if not isinstance(item, dict):
@@ -1273,8 +1347,8 @@ def build_item_jobs(
                         key=key,
                         kind="items",
                         name=item_name,
-                        prompt=build_item_prompt(item, view=view),
-                        seed=stable_seed(key),
+                        prompt=build_item_prompt(item, view=view, style_prefix=style_prefix),
+                        seed=stable_seed(key) + seed_offset,
                         output_relative_path=f"items/{slugify(item_id)}{view_suffix}{variant_suffix}.png",
                         raw_relative_path=f"asset_raw/{key}_raw.png",
                         metadata={
@@ -1285,6 +1359,8 @@ def build_item_jobs(
                             "damage_type": str(item.get("damage_type", "")),
                             "view": view,
                             "variant": variant_index + 1,
+                            "adapter_id": adapter_id,
+                            "adapter_negative_prompt": adapter_negative_prompt,
                         },
                     )
                 )
@@ -1517,7 +1593,9 @@ _KIND_NEGATIVES: dict[str, str] = {
 }
 
 
-def negative_prompt_for_kind(kind: str) -> str:
+def negative_prompt_for_kind(kind: str, adapter: dict[str, Any] | None = None) -> str:
+    if kind == "items":
+        return item_negative_prompt_for_adapter(adapter)
     extra = _KIND_NEGATIVES.get(kind, "")
     if extra:
         return NEGATIVE_PROMPT + ", " + extra
@@ -1568,9 +1646,10 @@ def build_jobs(
     limit: int | None = None,
     views: list[str] | None = None,
     variants: int = 1,
+    adapter: dict[str, Any] | None = None,
 ) -> list[Job]:
     if kind == "items":
-        return build_item_jobs(limit=limit, views=views, variants=variants)
+        return build_item_jobs(limit=limit, views=views, variants=variants, adapter=adapter)
     if kind == "sprites":
         return build_sprite_jobs(limit=limit, variants=variants)
     if kind == "tiles":
@@ -1593,7 +1672,7 @@ def build_jobs(
         jobs: list[Job] = []
         jobs.extend(build_sprite_jobs(variants=variants))
         jobs.extend(build_tile_jobs(variants=variants))
-        jobs.extend(build_item_jobs(views=views, variants=variants))
+        jobs.extend(build_item_jobs(views=views, variants=variants, adapter=adapter))
         jobs.extend(build_spell_jobs(variants=variants))
         jobs.extend(build_portrait_jobs(variants=variants))
         jobs.extend(build_status_icon_jobs(variants=variants))
@@ -1659,6 +1738,7 @@ class LocalSDXLGenerator:
         lora_stack: list[tuple[str, str, float]] | None = None,
         single_lora_path: str | None = None,
         single_lora_scale: float = 0.8,
+        lora_weight_overrides: dict[str, Any] | None = None,
         ip_adapter_repo: str = DEFAULT_IP_ADAPTER_REPO,
         ip_adapter_weight: str = DEFAULT_IP_ADAPTER_WEIGHT,
         ip_adapter_scale: float = 0.7,
@@ -1738,8 +1818,13 @@ class LocalSDXLGenerator:
 
         if loaded_adapters:
             try:
-                self.pipeline.set_adapters(loaded_adapters, adapter_weights=loaded_weights)
-                print(f"[LoRA] stack active: {loaded_adapters} weights={loaded_weights}")
+                resolved_weights = resolve_lora_adapter_weights(
+                    loaded_adapters,
+                    loaded_weights,
+                    lora_weight_overrides,
+                )
+                self.pipeline.set_adapters(loaded_adapters, adapter_weights=resolved_weights)
+                print(f"[LoRA] stack active: {loaded_adapters} weights={resolved_weights}")
             except Exception as exc:  # pragma: no cover
                 print(f"[WARN] set_adapters failed: {exc}")
 
@@ -2040,10 +2125,12 @@ def generate_jobs(
     single_lora_path: str | None,
     single_lora_scale: float,
     use_lcm: bool,
+    adapter: dict[str, Any] | None = None,
 ) -> None:
     ensure_output_dirs()
     cache = load_cache()
     style_ref = choose_style_ref(style_ref_path)
+    resolved_adapter = adapter or {}
 
     local_backend = None
     if backend == "local_sdxl":
@@ -2053,6 +2140,7 @@ def generate_jobs(
             lora_stack=lora_stack,
             single_lora_path=single_lora_path,
             single_lora_scale=single_lora_scale,
+            lora_weight_overrides=(resolved_adapter.get("lora_weight_overrides", {}) if resolved_adapter else {}),
             use_lcm=use_lcm,
         )
 
@@ -2079,7 +2167,7 @@ def generate_jobs(
             raw_img = local_backend.generate(
                 prompt=job.prompt,
                 seed=job.seed,
-                negative_prompt=negative_prompt_for_kind(job.kind),
+                negative_prompt=negative_prompt_for_kind(job.kind, adapter=resolved_adapter),
                 width=job_width,
                 height=job_height,
                 steps=steps,
@@ -2186,7 +2274,7 @@ def generate_jobs(
             ),
         }
         save_cache(cache)
-        write_manifest(cache)
+        write_manifest(cache, jobs)
         del raw_img
         del final_img
         del generated_img
@@ -2251,6 +2339,7 @@ def list_assets() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Ember RPG asset pipeline")
+    _adapter_choices = [""] + sorted(load_adapter_prompts().keys())
     _kind_choices = [
         "sprites",
         "tiles",
@@ -2266,6 +2355,7 @@ def main() -> None:
     ]
     parser.add_argument("--plan", choices=_kind_choices, help="Write deterministic job plan")
     parser.add_argument("--generate", choices=_kind_choices, help="Generate assets")
+    parser.add_argument("--adapter", choices=_adapter_choices, default="", help="Universe adapter for item generation")
     parser.add_argument(
         "--backend",
         choices=["local_sdxl", "hf_api_flux", "template_32rogues", "deterministic_pack"],
@@ -2301,7 +2391,16 @@ def main() -> None:
         return
 
     if args.plan:
-        jobs = build_jobs(args.plan, limit=args.limit, views=args.views, variants=max(1, args.variants))
+        resolved_adapter = resolve_adapter(args.adapter)
+        if resolved_adapter and args.adapter:
+            resolved_adapter["id"] = args.adapter
+        jobs = build_jobs(
+            args.plan,
+            limit=args.limit,
+            views=args.views,
+            variants=max(1, args.variants),
+            adapter=resolved_adapter,
+        )
         wanted = load_name_filters(args.names, args.names_file)
         jobs = filter_jobs_by_name(jobs, wanted)
         path = write_plan(args.plan, jobs)
@@ -2309,11 +2408,20 @@ def main() -> None:
         return
 
     if args.generate:
+        resolved_adapter = resolve_adapter(args.adapter)
+        if resolved_adapter and args.adapter:
+            resolved_adapter["id"] = args.adapter
         # Build the full job list first, then apply name filter, then apply limit.
         # This order lets `--names abyssal_blade --limit 1` correctly select "Abyssal Blade"
         # instead of silently dropping all jobs when the alphabetical first item doesn't match.
         build_limit = None if (args.names or args.names_file) else args.limit
-        jobs = build_jobs(args.generate, limit=build_limit, views=args.views, variants=max(1, args.variants))
+        jobs = build_jobs(
+            args.generate,
+            limit=build_limit,
+            views=args.views,
+            variants=max(1, args.variants),
+            adapter=resolved_adapter,
+        )
         wanted = load_name_filters(args.names, args.names_file)
         jobs = filter_jobs_by_name(jobs, wanted)
         if args.limit and (args.names or args.names_file):
@@ -2339,6 +2447,7 @@ def main() -> None:
             single_lora_path=args.lora_path,
             single_lora_scale=args.lora_scale,
             use_lcm=use_lcm,
+            adapter=resolved_adapter,
         )
         return
 
