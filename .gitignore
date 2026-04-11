@@ -38,3 +38,9 @@ build/
 
 # Runtime state
 frp-backend/saves/
+tools/asset_raw/
+tools/asset_cache.json
+godot-client/assets/generated/
+tools/asset_jobs/*_plan.json
+tools/overnight_log.txt
+tools/overnight_status.json
