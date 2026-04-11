@@ -206,6 +206,51 @@ def test_save_file_model_fields(manager):
     assert sf.schema_version == "4.0"
 
 
+def test_load_rejects_unsupported_schema_version(manager, tmp_saves_dir):
+    """Unsupported schema versions are rejected on load with a clear error."""
+    legacy_path = tmp_saves_dir / "player_001_legacy.json"
+    legacy_path.write_text(
+        json.dumps(
+            {
+                "save_id": "legacy",
+                "player_id": "player_001",
+                "session_data": SAMPLE_SESSION_DATA,
+                "timestamp": "2026-04-03T12:00:00",
+                "schema_version": "3.0",
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match=r"schema version|4\.0|3\.0"):
+        manager.load("legacy")
+
+
+def test_list_saves_skips_unsupported_schema_versions(manager, tmp_saves_dir):
+    """Listing only returns saves that match the active schema."""
+    manager.save(player_id="player_001", session_data=SAMPLE_SESSION_DATA)
+    legacy_path = tmp_saves_dir / "player_001_legacy.json"
+    legacy_path.write_text(
+        json.dumps(
+            {
+                "save_id": "legacy",
+                "player_id": "player_001",
+                "session_data": SAMPLE_SESSION_DATA,
+                "timestamp": "2026-04-03T12:00:00",
+                "schema_version": "3.0",
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    saves = manager.list_saves("player_001")
+
+    assert len(saves) == 1
+    assert all(save.schema_version == "4.0" for save in saves)
+
+
 # ---------------------------------------------------------------------------
 # Bonus: Delete non-existent save raises SaveNotFoundError
 # ---------------------------------------------------------------------------

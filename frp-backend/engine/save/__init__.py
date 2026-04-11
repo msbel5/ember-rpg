@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any
 
-from engine.save.save_models import SaveFile, CURRENT_SCHEMA_VERSION
+from engine.save.save_models import SaveFile, CURRENT_SCHEMA_VERSION, validate_schema_version
 
 
 class SaveNotFoundError(Exception):
@@ -123,6 +123,7 @@ class SaveManager:
         except json.JSONDecodeError as e:
             raise CorruptSaveError(f"Save file is corrupt: {filepath.name} — {e}") from e
 
+        validate_schema_version(data)
         return SaveFile.from_dict(data)
 
     def list_saves(self, player_id: str) -> List[SaveFile]:
@@ -132,8 +133,9 @@ class SaveManager:
         for f in self.saves_dir.glob(f"{player_id}_*.json"):
             try:
                 data = json.loads(f.read_text(encoding="utf-8"))
+                validate_schema_version(data)
                 result.append(SaveFile.from_dict(data))
-            except (json.JSONDecodeError, KeyError):
+            except (json.JSONDecodeError, KeyError, ValueError):
                 pass  # Skip corrupt files silently during listing
         return result
 

@@ -54,6 +54,7 @@ class SaveFile:
 
     @classmethod
     def from_dict(cls, data: dict) -> "SaveFile":
+        validate_schema_version(data)
         return cls(
             save_id=data["save_id"],
             player_id=data["player_id"],

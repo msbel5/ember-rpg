@@ -1,5 +1,7 @@
 """Targeted tests for the campaign-first API."""
 
+import json
+
 import pytest
 from pathlib import Path
 
@@ -521,6 +523,39 @@ def test_campaign_save_and_load_round_trip():
     assert loaded_payload["campaign"]["actors"]
     assert loaded_payload["campaign"]["systems"]["temperature_state"]["ambient_band"]
     assert loaded_payload["campaign"]["settlement"]["name"]
+
+
+def test_campaign_api_rejects_unsupported_save_schema_and_filters_it_from_player_listing(tmp_path: Path):
+    runtime = campaign_routes.campaign_runtime
+    original_save_dir = runtime.save_system.save_dir
+    runtime.save_system.save_dir = tmp_path / "campaign_saves"
+    runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        payload = _create_campaign()
+        campaign_id = payload["campaign_id"]
+        saved = client.post(
+            f"/game/campaigns/{campaign_id}/save",
+            json={"player_id": "CampaignTester", "slot_name": "legacy_api_slot"},
+        )
+        assert saved.status_code == 200
+
+        save_data = runtime.save_system.read_save("legacy_api_slot")
+        assert save_data is not None
+        save_data["schema_version"] = "3.0"
+        save_path = runtime.save_system.save_dir / "legacy_api_slot.json"
+        save_path.write_text(json.dumps(save_data, indent=2), encoding="utf-8")
+
+        listed = client.get("/game/campaigns/saves/player/CampaignTester")
+        assert listed.status_code == 200
+        assert listed.json() == []
+
+        loaded = client.post("/game/campaigns/load/legacy_api_slot")
+        assert loaded.status_code == 422
+        detail = str(loaded.json().get("detail", ""))
+        assert "4.0" in detail
+        assert "3.0" in detail or "unsupported" in detail.lower()
+    finally:
+        runtime.save_system.save_dir = original_save_dir
 
 
 def test_report_quest_marks_completion_and_applies_rewards_once():

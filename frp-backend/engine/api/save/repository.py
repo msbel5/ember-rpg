@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from engine.save.save_models import CURRENT_SCHEMA_VERSION
+from engine.save.save_models import CURRENT_SCHEMA_VERSION, validate_schema_version
 
 
 class SaveRepositoryMixin:
@@ -58,6 +58,14 @@ class SaveRepositoryMixin:
             return campaign_root
         return None
 
+    @staticmethod
+    def _schema_error(save_data: Dict[str, Any]) -> str:
+        try:
+            validate_schema_version(save_data)
+        except ValueError as exc:
+            return str(exc)
+        return ""
+
     def read_save(self, slot_name: str) -> Optional[Dict[str, Any]]:
         filepath = self.save_dir / f"{slot_name}.json"
         if not filepath.exists():
@@ -72,6 +80,7 @@ class SaveRepositoryMixin:
         if save_data is None:
             return None
         campaign_root = self._campaign_state_root(save_data)
+        schema_error = self._schema_error(save_data)
         return {
             "slot_name": save_data.get("slot_name", slot_name),
             "player_name": save_data.get("player_name", "Unknown"),
@@ -80,8 +89,9 @@ class SaveRepositoryMixin:
             "timestamp": save_data.get("timestamp", ""),
             "game_time": save_data.get("game_time_display", ""),
             "schema_version": save_data.get("schema_version", ""),
-            "campaign_compatible": campaign_root is not None,
+            "campaign_compatible": campaign_root is not None and schema_error == "",
             "campaign_id": str(campaign_root.get("campaign_id", "")) if campaign_root else "",
+            "load_error": schema_error,
         }
 
     def find_slot_by_campaign_id(self, campaign_id: str) -> Optional[str]:
@@ -97,6 +107,7 @@ class SaveRepositoryMixin:
                 if strict:
                     raise FileNotFoundError(slot_name)
                 return None
+            validate_schema_version(save_data)
             state = save_data.get("campaign_context", {})
             if not state or "player" not in state:
                 if strict:
@@ -114,6 +125,7 @@ class SaveRepositoryMixin:
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
                 campaign_root = self._campaign_state_root(data)
+                schema_error = self._schema_error(data)
                 entry = {
                     "slot_name": data.get("slot_name", path.stem),
                     "player_name": data.get("player_name", "Unknown"),
@@ -122,8 +134,9 @@ class SaveRepositoryMixin:
                     "timestamp": data.get("timestamp", ""),
                     "game_time": data.get("game_time_display", ""),
                     "schema_version": data.get("schema_version", ""),
-                    "campaign_compatible": campaign_root is not None,
+                    "campaign_compatible": campaign_root is not None and schema_error == "",
                     "campaign_id": str(campaign_root.get("campaign_id", "")) if campaign_root else "",
+                    "load_error": schema_error,
                 }
                 if player_name and entry["player_name"] != player_name:
                     continue

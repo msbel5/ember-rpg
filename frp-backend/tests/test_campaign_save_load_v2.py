@@ -111,3 +111,40 @@ def test_campaign_load_rejects_invalid_kernel_world_state(tmp_path: Path):
 
     with pytest.raises((KeyError, TypeError, ValueError)):
         runtime.load_campaign("broken_kernel_world")
+
+
+def test_campaign_load_rejects_unsupported_save_schema(tmp_path: Path):
+    runtime = CampaignRuntime()
+    runtime.save_system.save_dir = tmp_path / "campaign_saves"
+    runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
+
+    context = runtime.create_campaign("Saver", "warrior", "fantasy_ember", "standard", 42)
+    runtime.save_campaign(context.campaign_id, "legacy_schema_slot", "Saver")
+    save_data = runtime.save_system.read_save("legacy_schema_slot")
+    assert save_data is not None
+    save_data["schema_version"] = "3.0"
+    save_path = runtime.save_system.save_dir / "legacy_schema_slot.json"
+    save_path.write_text(json.dumps(save_data, indent=2), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=r"schema version|4\.0|3\.0"):
+        runtime.load_campaign("legacy_schema_slot")
+
+
+def test_campaign_player_save_listing_excludes_unsupported_schema(tmp_path: Path):
+    runtime = CampaignRuntime()
+    runtime.save_system.save_dir = tmp_path / "campaign_saves"
+    runtime.save_system.save_dir.mkdir(parents=True, exist_ok=True)
+
+    context = runtime.create_campaign("Saver", "warrior", "fantasy_ember", "standard", 42)
+    runtime.save_campaign(context.campaign_id, "supported_slot", "Saver")
+    runtime.save_campaign(context.campaign_id, "legacy_slot", "Saver")
+    legacy_data = runtime.save_system.read_save("legacy_slot")
+    assert legacy_data is not None
+    legacy_data["schema_version"] = "3.0"
+    legacy_path = runtime.save_system.save_dir / "legacy_slot.json"
+    legacy_path.write_text(json.dumps(legacy_data, indent=2), encoding="utf-8")
+
+    listed = runtime.list_player_campaign_saves("Saver")
+
+    assert [entry["slot_name"] for entry in listed] == ["supported_slot"]
+    assert all(entry["schema_version"] == "4.0" for entry in listed)
