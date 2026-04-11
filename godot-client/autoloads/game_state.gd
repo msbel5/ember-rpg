@@ -318,6 +318,9 @@ func apply_visual_delta(payload: Dictionary) -> void:
 	if not changed:
 		return
 	entities = _group_world_entities(world_entities)
+	for actor in actors:
+		if actor is Dictionary:
+			_merge_grouped_visual_delta_actor(str(actor.get("id", "")).strip_edges(), actor)
 	entities_loaded.emit(entities)
 	state_updated.emit()
 
@@ -392,7 +395,7 @@ func _merge_visual_delta_actor(actor_id: String, actor_delta: Dictionary) -> boo
 			continue
 		if str(entry.get("id", "")).strip_edges() != actor_id:
 			continue
-		var updated := entry.duplicate(true)
+		var updated: Dictionary = entry.duplicate(true)
 		updated["position"] = actor_delta.get("position", updated.get("position", [0, 0]))
 		updated["facing"] = str(actor_delta.get("facing", updated.get("facing", "south")))
 		updated["state"] = str(actor_delta.get("state", updated.get("state", "stand")))
@@ -409,7 +412,7 @@ func _merge_visual_delta_actor(actor_id: String, actor_delta: Dictionary) -> boo
 				continue
 			if str(entry.get("id", "")).strip_edges() != actor_id:
 				continue
-			var updated := entry.duplicate(true)
+			var updated: Dictionary = entry.duplicate(true)
 			updated["position"] = actor_delta.get("position", updated.get("position", [0, 0]))
 			updated["facing"] = str(actor_delta.get("facing", updated.get("facing", "south")))
 			updated["state"] = str(actor_delta.get("state", updated.get("state", "stand")))
@@ -418,6 +421,26 @@ func _merge_visual_delta_actor(actor_id: String, actor_delta: Dictionary) -> boo
 			changed = true
 			break
 	return changed
+
+
+func _merge_grouped_visual_delta_actor(actor_id: String, actor_delta: Dictionary) -> void:
+	for bucket_name in ["npcs", "enemies", "items", "furniture"]:
+		var bucket = entities.get(bucket_name, [])
+		if not (bucket is Array):
+			continue
+		for index in range(bucket.size()):
+			var entry = bucket[index]
+			if not (entry is Dictionary):
+				continue
+			if str(entry.get("id", "")).strip_edges() != actor_id:
+				continue
+			var updated: Dictionary = entry.duplicate(true)
+			updated["facing"] = str(actor_delta.get("facing", updated.get("facing", "south")))
+			updated["state"] = str(actor_delta.get("state", updated.get("state", "stand")))
+			updated["position"] = actor_delta.get("position", updated.get("position", [0, 0]))
+			bucket[index] = updated
+			entities[bucket_name] = bucket
+			return
 
 func is_in_combat() -> bool:
 	return (scene == "combat" or (not combat_state.is_empty() and not bool(combat_state.get("ended", false)))) and not combat_state.is_empty()
