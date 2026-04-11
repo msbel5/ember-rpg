@@ -1,0 +1,427 @@
+{
+  "kind": "status_icons",
+  "generated_at": "2026-04-11 02:57:23",
+  "count": 30,
+  "jobs": [
+    {
+      "key": "statusicon_bless_v01",
+      "kind": "status_icons",
+      "name": "bless",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, radiant golden cross sigil, divine light rays",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1004623750,
+      "output_relative_path": "status_icons/bless.png",
+      "raw_relative_path": "asset_raw/statusicon_bless_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_haste_v01",
+      "kind": "status_icons",
+      "name": "haste",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, winged boot silhouette, yellow motion streaks",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 4282414432,
+      "output_relative_path": "status_icons/haste.png",
+      "raw_relative_path": "asset_raw/statusicon_haste_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_shield_of_faith_v01",
+      "kind": "status_icons",
+      "name": "shield_of_faith",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, glowing shield outline sigil, silver-blue ward",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 140889170,
+      "output_relative_path": "status_icons/shield_of_faith.png",
+      "raw_relative_path": "asset_raw/statusicon_shield_of_faith_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_heroism_v01",
+      "kind": "status_icons",
+      "name": "heroism",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, rising clenched fist silhouette, crimson valor glow",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1011074101,
+      "output_relative_path": "status_icons/heroism.png",
+      "raw_relative_path": "asset_raw/statusicon_heroism_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_stoneskin_v01",
+      "kind": "status_icons",
+      "name": "stoneskin",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, rough stone orb texture, earthy brown toughness",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3003918274,
+      "output_relative_path": "status_icons/stoneskin.png",
+      "raw_relative_path": "asset_raw/statusicon_stoneskin_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_mage_armor_buff_v01",
+      "kind": "status_icons",
+      "name": "mage_armor_buff",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, shimmering robe weave sigil, silver-blue layered wards",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1703702128,
+      "output_relative_path": "status_icons/mage_armor_buff.png",
+      "raw_relative_path": "asset_raw/statusicon_mage_armor_buff_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_regeneration_v01",
+      "kind": "status_icons",
+      "name": "regeneration",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, green leaf sigil with pulse, life renewal glow",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2785763258,
+      "output_relative_path": "status_icons/regeneration.png",
+      "raw_relative_path": "asset_raw/statusicon_regeneration_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_true_sight_v01",
+      "kind": "status_icons",
+      "name": "true_sight",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, glowing silver eye sigil, all-seeing aura",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3290155438,
+      "output_relative_path": "status_icons/true_sight.png",
+      "raw_relative_path": "asset_raw/statusicon_true_sight_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_poisoned_v01",
+      "kind": "status_icons",
+      "name": "poisoned",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, dripping green skull sigil, toxic sludge",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 527502903,
+      "output_relative_path": "status_icons/poisoned.png",
+      "raw_relative_path": "asset_raw/statusicon_poisoned_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_burning_v01",
+      "kind": "status_icons",
+      "name": "burning",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, orange flame droplet sigil, fire aura",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3495253254,
+      "output_relative_path": "status_icons/burning.png",
+      "raw_relative_path": "asset_raw/statusicon_burning_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_frozen_v01",
+      "kind": "status_icons",
+      "name": "frozen",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, ice cube with chains sigil, pale blue crystals",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 4240923972,
+      "output_relative_path": "status_icons/frozen.png",
+      "raw_relative_path": "asset_raw/statusicon_frozen_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_shocked_v01",
+      "kind": "status_icons",
+      "name": "shocked",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, lightning spark sigil, electric blue arcs",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 562327415,
+      "output_relative_path": "status_icons/shocked.png",
+      "raw_relative_path": "asset_raw/statusicon_shocked_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_cursed_v01",
+      "kind": "status_icons",
+      "name": "cursed",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, cracked purple skull sigil, dark hex aura",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3798150465,
+      "output_relative_path": "status_icons/cursed.png",
+      "raw_relative_path": "asset_raw/statusicon_cursed_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_bleeding_v01",
+      "kind": "status_icons",
+      "name": "bleeding",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, crimson blood droplet sigil, wound pulse",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 784144364,
+      "output_relative_path": "status_icons/bleeding.png",
+      "raw_relative_path": "asset_raw/statusicon_bleeding_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_stunned_v01",
+      "kind": "status_icons",
+      "name": "stunned",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, spinning stars around dazed eye sigil, yellow daze",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2997743150,
+      "output_relative_path": "status_icons/stunned.png",
+      "raw_relative_path": "asset_raw/statusicon_stunned_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_slowed_v01",
+      "kind": "status_icons",
+      "name": "slowed",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, hourglass with gray sand sigil, muted drag",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3607016389,
+      "output_relative_path": "status_icons/slowed.png",
+      "raw_relative_path": "asset_raw/statusicon_slowed_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_weakened_v01",
+      "kind": "status_icons",
+      "name": "weakened",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, broken arm silhouette sigil, faded gray feebleness",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2550597489,
+      "output_relative_path": "status_icons/weakened.png",
+      "raw_relative_path": "asset_raw/statusicon_weakened_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_silenced_v01",
+      "kind": "status_icons",
+      "name": "silenced",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, mouth with X mark sigil, muted purple hush",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 394517279,
+      "output_relative_path": "status_icons/silenced.png",
+      "raw_relative_path": "asset_raw/statusicon_silenced_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_charmed_v01",
+      "kind": "status_icons",
+      "name": "charmed",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, pink heart with hypnotic swirl sigil, love bewilderment",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2959438707,
+      "output_relative_path": "status_icons/charmed.png",
+      "raw_relative_path": "asset_raw/statusicon_charmed_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_feared_v01",
+      "kind": "status_icons",
+      "name": "feared",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, screaming face silhouette sigil, sickly green terror",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 746318833,
+      "output_relative_path": "status_icons/feared.png",
+      "raw_relative_path": "asset_raw/statusicon_feared_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_diseased_v01",
+      "kind": "status_icons",
+      "name": "diseased",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, rotting hand sigil, green-brown decay",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1284915377,
+      "output_relative_path": "status_icons/diseased.png",
+      "raw_relative_path": "asset_raw/statusicon_diseased_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_blinded_v01",
+      "kind": "status_icons",
+      "name": "blinded",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, closed eye with X sigil, dark gray blindness",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 669558453,
+      "output_relative_path": "status_icons/blinded.png",
+      "raw_relative_path": "asset_raw/statusicon_blinded_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_exhausted_v01",
+      "kind": "status_icons",
+      "name": "exhausted",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, drooping figure silhouette sigil, slate gray fatigue",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2413265050,
+      "output_relative_path": "status_icons/exhausted.png",
+      "raw_relative_path": "asset_raw/statusicon_exhausted_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_prone_v01",
+      "kind": "status_icons",
+      "name": "prone",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, fallen figure silhouette sigil, brown knockdown",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 736418721,
+      "output_relative_path": "status_icons/prone.png",
+      "raw_relative_path": "asset_raw/statusicon_prone_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_tracking_v01",
+      "kind": "status_icons",
+      "name": "tracking",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, footprint trail sigil, earthy brown pursuit",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2362264295,
+      "output_relative_path": "status_icons/tracking.png",
+      "raw_relative_path": "asset_raw/statusicon_tracking_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_hidden_v01",
+      "kind": "status_icons",
+      "name": "hidden",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, cloak silhouette fading sigil, dark gray concealment",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3097824518,
+      "output_relative_path": "status_icons/hidden.png",
+      "raw_relative_path": "asset_raw/statusicon_hidden_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_resting_v01",
+      "kind": "status_icons",
+      "name": "resting",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, small campfire flame sigil, warm orange recuperation",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 799374971,
+      "output_relative_path": "status_icons/resting.png",
+      "raw_relative_path": "asset_raw/statusicon_resting_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_well_fed_v01",
+      "kind": "status_icons",
+      "name": "well_fed",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, apple with glow sigil, rosy red nourishment",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1644017387,
+      "output_relative_path": "status_icons/well_fed.png",
+      "raw_relative_path": "asset_raw/statusicon_well_fed_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_rallied_v01",
+      "kind": "status_icons",
+      "name": "rallied",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, raised banner silhouette sigil, crimson and gold morale",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3854771262,
+      "output_relative_path": "status_icons/rallied.png",
+      "raw_relative_path": "asset_raw/statusicon_rallied_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusicon_concentrating_v01",
+      "kind": "status_icons",
+      "name": "concentrating",
+      "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, focused eye with glow sigil, silver concentration",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3212777678,
+      "output_relative_path": "status_icons/concentrating.png",
+      "raw_relative_path": "asset_raw/statusicon_concentrating_v01_raw.png",
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    }
+  ]
+}

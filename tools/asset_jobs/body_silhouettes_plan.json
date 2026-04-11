@@ -1,0 +1,91 @@
+{
+  "kind": "body_silhouettes",
+  "generated_at": "2026-04-11 02:57:24",
+  "count": 6,
+  "jobs": [
+    {
+      "key": "bodysilhouette_humanoid_male_v01",
+      "kind": "body_silhouettes",
+      "name": "humanoid_male",
+      "prompt": "painted anatomical reference silhouette, single figure centered, clear anatomical hit zones, Gerald Brom style, dark fantasy oil painting, neutral backdrop, no text, no frame, production game targeting reference, painterly brushwork, male humanoid figure, front-facing 3/4 view, clear head torso arms",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 36836550,
+      "output_relative_path": "body_silhouettes/humanoid_male.png",
+      "raw_relative_path": "asset_raw/bodysilhouette_humanoid_male_v01_raw.png",
+      "metadata": {
+        "family": "body_silhouettes",
+        "variant": 1
+      }
+    },
+    {
+      "key": "bodysilhouette_humanoid_female_v01",
+      "kind": "body_silhouettes",
+      "name": "humanoid_female",
+      "prompt": "painted anatomical reference silhouette, single figure centered, clear anatomical hit zones, Gerald Brom style, dark fantasy oil painting, neutral backdrop, no text, no frame, production game targeting reference, painterly brushwork, female humanoid figure, front-facing 3/4 view, clear head torso arms",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3795250352,
+      "output_relative_path": "body_silhouettes/humanoid_female.png",
+      "raw_relative_path": "asset_raw/bodysilhouette_humanoid_female_v01_raw.png",
+      "metadata": {
+        "family": "body_silhouettes",
+        "variant": 1
+      }
+    },
+    {
+      "key": "bodysilhouette_beast_quadruped_v01",
+      "kind": "body_silhouettes",
+      "name": "beast_quadruped",
+      "prompt": "painted anatomical reference silhouette, single figure centered, clear anatomical hit zones, Gerald Brom style, dark fantasy oil painting, neutral backdrop, no text, no frame, production game targeting reference, painterly brushwork, large quadruped beast, side 3/4 view, clear head torso legs",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 200616244,
+      "output_relative_path": "body_silhouettes/beast_quadruped.png",
+      "raw_relative_path": "asset_raw/bodysilhouette_beast_quadruped_v01_raw.png",
+      "metadata": {
+        "family": "body_silhouettes",
+        "variant": 1
+      }
+    },
+    {
+      "key": "bodysilhouette_construct_v01",
+      "kind": "body_silhouettes",
+      "name": "construct",
+      "prompt": "painted anatomical reference silhouette, single figure centered, clear anatomical hit zones, Gerald Brom style, dark fantasy oil painting, neutral backdrop, no text, no frame, production game targeting reference, painterly brushwork, stone and metal construct, front-facing 3/4 view, clear head chest",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1868846154,
+      "output_relative_path": "body_silhouettes/construct.png",
+      "raw_relative_path": "asset_raw/bodysilhouette_construct_v01_raw.png",
+      "metadata": {
+        "family": "body_silhouettes",
+        "variant": 1
+      }
+    },
+    {
+      "key": "bodysilhouette_undead_humanoid_v01",
+      "kind": "body_silhouettes",
+      "name": "undead_humanoid",
+      "prompt": "painted anatomical reference silhouette, single figure centered, clear anatomical hit zones, Gerald Brom style, dark fantasy oil painting, neutral backdrop, no text, no frame, production game targeting reference, painterly brushwork, skeletal humanoid undead figure, front-facing 3/4 view, clear head torso",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 395734346,
+      "output_relative_path": "body_silhouettes/undead_humanoid.png",
+      "raw_relative_path": "asset_raw/bodysilhouette_undead_humanoid_v01_raw.png",
+      "metadata": {
+        "family": "body_silhouettes",
+        "variant": 1
+      }
+    },
+    {
+      "key": "bodysilhouette_aberration_v01",
+      "kind": "body_silhouettes",
+      "name": "aberration",
+      "prompt": "painted anatomical reference silhouette, single figure centered, clear anatomical hit zones, Gerald Brom style, dark fantasy oil painting, neutral backdrop, no text, no frame, production game targeting reference, painterly brushwork, eldritch aberration with central mass and grasping tentacles, front-facing 3/4",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1138450762,
+      "output_relative_path": "body_silhouettes/aberration.png",
+      "raw_relative_path": "asset_raw/bodysilhouette_aberration_v01_raw.png",
+      "metadata": {
+        "family": "body_silhouettes",
+        "variant": 1
+      }
+    }
+  ]
+}

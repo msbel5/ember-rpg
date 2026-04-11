@@ -1,0 +1,175 @@
+{
+  "kind": "combat_ui",
+  "generated_at": "2026-04-11 02:57:24",
+  "count": 12,
+  "jobs": [
+    {
+      "key": "combatui_badge_action_available_v01",
+      "kind": "combat_ui",
+      "name": "badge_action_available",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, glowing sword silhouette badge with ornate golden rim, ready state, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1117052044,
+      "output_relative_path": "combat_ui/badge_action_available.png",
+      "raw_relative_path": "asset_raw/combatui_badge_action_available_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_badge_action_used_v01",
+      "kind": "combat_ui",
+      "name": "badge_action_used",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, dimmed sword silhouette badge with gray rim, spent state, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 642210519,
+      "output_relative_path": "combat_ui/badge_action_used.png",
+      "raw_relative_path": "asset_raw/combatui_badge_action_used_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_badge_bonus_available_v01",
+      "kind": "combat_ui",
+      "name": "badge_bonus_available",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, glowing dagger silhouette badge with silver rim, ready state, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2263933101,
+      "output_relative_path": "combat_ui/badge_bonus_available.png",
+      "raw_relative_path": "asset_raw/combatui_badge_bonus_available_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_badge_bonus_used_v01",
+      "kind": "combat_ui",
+      "name": "badge_bonus_used",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, dimmed dagger silhouette badge with gray rim, spent state, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 212837094,
+      "output_relative_path": "combat_ui/badge_bonus_used.png",
+      "raw_relative_path": "asset_raw/combatui_badge_bonus_used_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_badge_reaction_available_v01",
+      "kind": "combat_ui",
+      "name": "badge_reaction_available",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, glowing shield silhouette badge with bronze rim, ready state, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1786754227,
+      "output_relative_path": "combat_ui/badge_reaction_available.png",
+      "raw_relative_path": "asset_raw/combatui_badge_reaction_available_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_badge_reaction_used_v01",
+      "kind": "combat_ui",
+      "name": "badge_reaction_used",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, dimmed shield silhouette badge with gray rim, spent state, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 4019407606,
+      "output_relative_path": "combat_ui/badge_reaction_used.png",
+      "raw_relative_path": "asset_raw/combatui_badge_reaction_used_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_reticle_attack_v01",
+      "kind": "combat_ui",
+      "name": "reticle_attack",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, targeting reticle, crosshair with corner brackets, crimson glow, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 353794670,
+      "output_relative_path": "combat_ui/reticle_attack.png",
+      "raw_relative_path": "asset_raw/combatui_reticle_attack_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_reticle_move_v01",
+      "kind": "combat_ui",
+      "name": "reticle_move",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, movement reticle, footprint inside circle, amber glow, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1573122891,
+      "output_relative_path": "combat_ui/reticle_move.png",
+      "raw_relative_path": "asset_raw/combatui_reticle_move_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_reticle_spell_v01",
+      "kind": "combat_ui",
+      "name": "reticle_spell",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, spell targeting reticle, arcane circle with runes, violet glow, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 606565519,
+      "output_relative_path": "combat_ui/reticle_spell.png",
+      "raw_relative_path": "asset_raw/combatui_reticle_spell_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_move_tile_highlight_v01",
+      "kind": "combat_ui",
+      "name": "move_tile_highlight",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, tile highlight overlay, semi-translucent amber glow, soft edges, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 426820540,
+      "output_relative_path": "combat_ui/move_tile_highlight.png",
+      "raw_relative_path": "asset_raw/combatui_move_tile_highlight_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_initiative_frame_v01",
+      "kind": "combat_ui",
+      "name": "initiative_frame",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, ornate painted round portrait frame for initiative list, golden trim, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2853459655,
+      "output_relative_path": "combat_ui/initiative_frame.png",
+      "raw_relative_path": "asset_raw/combatui_initiative_frame_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    },
+    {
+      "key": "combatui_turn_indicator_v01",
+      "kind": "combat_ui",
+      "name": "turn_indicator",
+      "prompt": "painted CRPG combat UI element, single element centered, dark fantasy oil painting, transparent background, no text, no frame, painterly brushwork, ornate but readable, production game HUD asset, glowing gold arrow pointing down, ornate painted trim, alpha transparent",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 4267711528,
+      "output_relative_path": "combat_ui/turn_indicator.png",
+      "raw_relative_path": "asset_raw/combatui_turn_indicator_v01_raw.png",
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    }
+  ]
+}

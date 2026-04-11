@@ -1,0 +1,119 @@
+{
+  "kind": "status_bars",
+  "generated_at": "2026-04-11 02:57:25",
+  "count": 8,
+  "jobs": [
+    {
+      "key": "statusbar_hp_frame_empty_v01",
+      "kind": "status_bars",
+      "name": "hp_frame_empty",
+      "prompt": "painted CRPG status bar asset, horizontal orientation, ornate painted frame or fill, dark fantasy oil painting, no text, painterly brushwork, production game HUD asset, empty crimson-and-gold horizontal bar container frame, ornate painted border, no fill inside",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 4294685133,
+      "output_relative_path": "status_bars/hp_frame_empty.png",
+      "raw_relative_path": "asset_raw/statusbar_hp_frame_empty_v01_raw.png",
+      "metadata": {
+        "family": "status_bars",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusbar_hp_fill_full_v01",
+      "kind": "status_bars",
+      "name": "hp_fill_full",
+      "prompt": "painted CRPG status bar asset, horizontal orientation, ornate painted frame or fill, dark fantasy oil painting, no text, painterly brushwork, production game HUD asset, horizontal crimson liquid bar fill texture, blood-like gradient, no frame",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3957230012,
+      "output_relative_path": "status_bars/hp_fill_full.png",
+      "raw_relative_path": "asset_raw/statusbar_hp_fill_full_v01_raw.png",
+      "metadata": {
+        "family": "status_bars",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusbar_mp_frame_empty_v01",
+      "kind": "status_bars",
+      "name": "mp_frame_empty",
+      "prompt": "painted CRPG status bar asset, horizontal orientation, ornate painted frame or fill, dark fantasy oil painting, no text, painterly brushwork, production game HUD asset, empty sapphire-and-silver horizontal bar container frame, ornate painted border, no fill inside",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 703722803,
+      "output_relative_path": "status_bars/mp_frame_empty.png",
+      "raw_relative_path": "asset_raw/statusbar_mp_frame_empty_v01_raw.png",
+      "metadata": {
+        "family": "status_bars",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusbar_mp_fill_full_v01",
+      "kind": "status_bars",
+      "name": "mp_fill_full",
+      "prompt": "painted CRPG status bar asset, horizontal orientation, ornate painted frame or fill, dark fantasy oil painting, no text, painterly brushwork, production game HUD asset, horizontal arcane blue energy bar fill texture, glowing mana, no frame",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1401710432,
+      "output_relative_path": "status_bars/mp_fill_full.png",
+      "raw_relative_path": "asset_raw/statusbar_mp_fill_full_v01_raw.png",
+      "metadata": {
+        "family": "status_bars",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusbar_sp_frame_empty_v01",
+      "kind": "status_bars",
+      "name": "sp_frame_empty",
+      "prompt": "painted CRPG status bar asset, horizontal orientation, ornate painted frame or fill, dark fantasy oil painting, no text, painterly brushwork, production game HUD asset, empty emerald-and-bronze horizontal bar container frame, ornate painted border, no fill inside",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3115892082,
+      "output_relative_path": "status_bars/sp_frame_empty.png",
+      "raw_relative_path": "asset_raw/statusbar_sp_frame_empty_v01_raw.png",
+      "metadata": {
+        "family": "status_bars",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusbar_sp_fill_full_v01",
+      "kind": "status_bars",
+      "name": "sp_fill_full",
+      "prompt": "painted CRPG status bar asset, horizontal orientation, ornate painted frame or fill, dark fantasy oil painting, no text, painterly brushwork, production game HUD asset, horizontal green stamina energy bar fill texture, vital pulse, no frame",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1364213136,
+      "output_relative_path": "status_bars/sp_fill_full.png",
+      "raw_relative_path": "asset_raw/statusbar_sp_fill_full_v01_raw.png",
+      "metadata": {
+        "family": "status_bars",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusbar_xp_frame_empty_v01",
+      "kind": "status_bars",
+      "name": "xp_frame_empty",
+      "prompt": "painted CRPG status bar asset, horizontal orientation, ornate painted frame or fill, dark fantasy oil painting, no text, painterly brushwork, production game HUD asset, empty amber-and-brass horizontal bar container frame, ornate painted border, no fill inside",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2673683073,
+      "output_relative_path": "status_bars/xp_frame_empty.png",
+      "raw_relative_path": "asset_raw/statusbar_xp_frame_empty_v01_raw.png",
+      "metadata": {
+        "family": "status_bars",
+        "variant": 1
+      }
+    },
+    {
+      "key": "statusbar_ac_badge_shield_v01",
+      "kind": "status_bars",
+      "name": "ac_badge_shield",
+      "prompt": "painted CRPG status bar asset, horizontal orientation, ornate painted frame or fill, dark fantasy oil painting, no text, painterly brushwork, production game HUD asset, round silver shield badge with embossed center plate for AC number, ornate painted trim",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2565760120,
+      "output_relative_path": "status_bars/ac_badge_shield.png",
+      "raw_relative_path": "asset_raw/statusbar_ac_badge_shield_v01_raw.png",
+      "metadata": {
+        "family": "status_bars",
+        "variant": 1
+      }
+    }
+  ]
+}

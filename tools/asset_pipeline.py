@@ -44,6 +44,13 @@ GENERATED_DIR = PROJECT_ROOT / "godot-client" / "assets" / "generated"
 GENERATED_SPRITE_DIR = GENERATED_DIR / "sprites"
 GENERATED_TILE_DIR = GENERATED_DIR / "tiles"
 GENERATED_ITEM_DIR = GENERATED_DIR / "items"
+GENERATED_SPELL_DIR = GENERATED_DIR / "spells"
+GENERATED_PORTRAIT_DIR = GENERATED_DIR / "portraits"
+GENERATED_STATUS_ICON_DIR = GENERATED_DIR / "status_icons"
+GENERATED_BODY_SILHOUETTE_DIR = GENERATED_DIR / "body_silhouettes"
+GENERATED_COMBAT_UI_DIR = GENERATED_DIR / "combat_ui"
+GENERATED_STATUS_BAR_DIR = GENERATED_DIR / "status_bars"
+GENERATED_UI_BANNER_DIR = GENERATED_DIR / "ui_banners"
 MANIFEST_FILE = GENERATED_DIR / "manifest.json"
 CACHE_FILE = PROJECT_ROOT / "tools" / "asset_cache.json"
 
@@ -111,6 +118,59 @@ ITEM_STYLE_PREFIX = (
 TILE_STYLE_PREFIX = (
     "painted CRPG terrain tile, seamless tileable texture, top-down, "
     "consistent dark fantasy painterly palette, hand-painted brushwork, high detail, no text, "
+)
+
+SPELL_STYLE_PREFIX = (
+    "painted CRPG spell icon, single magical sigil centered, "
+    "dark fantasy oil painting, Gerald Brom painterly palette, transparent background, "
+    "no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, "
+)
+PORTRAIT_STYLE_PREFIX = (
+    "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, "
+    "fully clothed with visible gear and armor, "
+    "dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, "
+    "painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, "
+    "expressive face, production game portrait, "
+)
+PORTRAIT_NEGATIVE = (
+    "shirtless, bare chest, topless, nude, muscular savage, loincloth, "
+    "missing armor, missing clothes, "
+)
+BODY_SILHOUETTE_NEGATIVE = (
+    "dark silhouette, shadow figure, bronze statue, black figure, backlit, "
+    "face in shadow, darkness, shadowy, underlit, "
+)
+STATUS_ICON_STYLE_PREFIX = (
+    "painted CRPG status effect icon, single small emblem centered, "
+    "dark fantasy oil painting, transparent background, no text, no frame, "
+    "bold readable silhouette at small display size, painterly iconography, "
+)
+BODY_SILHOUETTE_STYLE_PREFIX = (
+    "painted full-body anatomical reference figure, standing upright T-pose with arms outstretched, "
+    "single figure centered head to feet, clear distinct separation of head torso arms hands legs feet, "
+    "visible painted musculature, clearly visible facial features with eyes nose mouth, "
+    "anatomical clarity, bright high-key studio lighting from the front, pale skin catching the light, "
+    "well-lit from the front, visible daylight on the whole figure, Gerald Brom painterly brushwork, "
+    "pale neutral gray studio backdrop for clean cutout, "
+    "no weapons, no armor, minimal reference garment only, "
+    "no text, no frame, high detail, production game targeting reference, "
+)
+COMBAT_UI_STYLE_PREFIX = (
+    "painted CRPG combat HUD badge, small round medallion with raised rim, "
+    "single tiny silhouette emblem centered inside the medallion, "
+    "dark fantasy oil painting, transparent background outside the medallion, "
+    "no text, painterly brushwork, production game HUD asset, "
+)
+STATUS_BAR_STYLE_PREFIX = (
+    "painted CRPG status bar asset, horizontal orientation, "
+    "ornate painted frame or fill, dark fantasy oil painting, no text, "
+    "painterly brushwork, production game HUD asset, "
+)
+UI_BANNER_STYLE_PREFIX = (
+    "painted CRPG horizontal banner overlay, wide aspect, "
+    "ornate painted border, dark fantasy oil painting, transparent outside banner region, "
+    "no text inside banner (left blank for Godot overlay), painterly brushwork, "
+    "production game HUD asset, "
 )
 
 NEGATIVE_PROMPT = (
@@ -318,6 +378,219 @@ TILE_DEFS = {
     "brick": "red brick wall, mortar lines, slightly weathered",
     "cave": "natural cave floor, rough brown stone, stalactite shadows",
     "bridge": "wooden bridge planks, rope sides, creaking",
+}
+
+# Painted CRPG spell icons — grouped by school for coherent prompt shaping.
+# Every descriptor is a single painted emblem suitable for a spellbook slot or hotbar.
+SPELL_DEFS = {
+    # Evocation
+    "magic_missile": "three glowing arcane arrows rune, violet-blue energy, clean iconography",
+    "fireball": "swirling flame orb rune, orange and crimson, glowing embers",
+    "lightning_bolt": "jagged electric arc rune, blue-white, crackling sparks",
+    "ice_shard": "crystalline blue spike rune, frost mist, cold glow",
+    "acid_splash": "green corrosive droplets rune, toxic bubbles, sickly glow",
+    "thunder_strike": "shockwave ring rune, slate blue kinetic force, concussive glyph",
+    "chain_lightning": "branching lightning fork rune, electric arcs, ionic blue",
+    "cone_of_cold": "expanding frost cone rune, pale white crystals, frozen breath",
+    # Abjuration
+    "shield": "translucent barrier rune, golden arc of light, protective glyph",
+    "counterspell": "broken arcane sigil rune, gray dispel energy, fractured glow",
+    "mage_armor": "shimmering protective weave rune, silver-blue, layered wards",
+    "dispel_magic": "cancelled sigil rune, crossed out arcane mark, neutral gray",
+    # Conjuration
+    "summon_elemental": "swirling vortex rune, multi-colored elemental aura, binding glyph",
+    "teleport": "portal rune with arrow passing through, violet depth, displacement glyph",
+    "conjure_familiar": "small glowing animal silhouette rune, warm summoning aura",
+    "fog_cloud": "billowing pale vapor rune, muted white, obscuring mist",
+    # Necromancy
+    "raise_dead": "skull with rising wisps rune, dark purple necrotic energy",
+    "drain_life": "crimson siphon rune, blood mist spiral, leeching glyph",
+    "bone_wall": "skeletal barrier rune, bleached white ribs, defensive glyph",
+    "false_life": "heartbeat rune with pale aura, sickly green vitality",
+    # Illusion
+    "invisibility": "fading figure rune, translucent blue silhouette, vanishing glyph",
+    "mirror_image": "three overlapping silhouettes rune, silver reflections, duplicity glyph",
+    "minor_illusion": "shimmering wavering outline rune, pale amber, trickery glyph",
+    # Transmutation
+    "polymorph": "animal transformation rune, swirling green metamorphosis glyph",
+    "haste": "winged boot rune, motion blur lines, yellow acceleration",
+    "slow": "hourglass rune with frozen sand, pale blue deceleration",
+    "enlarge": "expanding outline rune, bold brown growth glyph",
+    # Divination
+    "detect_magic": "glowing eye rune, arcane sight, silver third eye",
+    "scrying": "crystal ball rune with faint image, violet far-sight",
+    "augury": "bone dice rune with arcane glow, prescient amber",
+    # Enchantment
+    "charm_person": "heart sigil with arcane lines, rose gold enchantment",
+    "sleep": "crescent moon rune, drowsy sparkles, indigo slumber",
+    "fear": "wailing mask sigil rune, sickly green terror glyph",
+    "command": "outstretched hand rune, imperative white glow",
+    # Cleric / holy
+    "cure_wounds": "golden cross rune with light rays, warm healing glow",
+    "bless": "radiant sun sigil rune, pure white divine light",
+    "turn_undead": "holy symbol rune with repelling aura, radiant gold",
+    "divine_smite": "sword of light rune, radiant burst, holy wrath",
+    "spirit_guardians": "circling spectral warriors rune, pale azure",
+    # Druid
+    "entangle": "thorny vines rune, forest green grasp glyph",
+    "call_lightning": "storm cloud with bolt rune, stormy blue thundercall",
+    "animal_messenger": "bird silhouette with scroll rune, earthy brown",
+    "barkskin": "wooden armor rune, gnarled bark texture, earthy brown",
+    "moonbeam": "descending silver beam rune, lunar radiance",
+    # Warlock / eldritch
+    "eldritch_blast": "dark violet energy beam rune, otherworldly pulse",
+    "hex": "cursed rune with skeletal finger, dark hex glyph",
+    "hunger_of_hadar": "black void sphere rune, consuming dark, cosmic dread",
+    "arms_of_hadar": "tentacle lash rune, oily black, grasping glyph",
+}
+
+# Painted CRPG portraits — class/race/role matrix. Painted backgrounds kept intact in postprocess.
+PORTRAIT_DEFS = {
+    # Player classes
+    "human_fighter_male": "male human fighter, stern scarred face, steel plate pauldrons, determined gaze, dim tavern backdrop",
+    "human_fighter_female": "female human fighter, strong jaw, battle-hardened eyes, plate pauldrons, dim tavern backdrop",
+    "human_mage_male": "male human mage, thoughtful expression, long beard, arcane hood with silver trim, shadowed study backdrop",
+    "human_mage_female": "female human mage, intelligent piercing eyes, dark robe with silver trim, candlelit study backdrop",
+    "human_rogue_male": "male human rogue, sly smirk, hood partially shadowing face, leather collar, alley gloom backdrop",
+    "human_rogue_female": "female human rogue, sharp features, hood down, leather collar, alley gloom backdrop",
+    "human_cleric_male": "male human cleric, serene expression, holy symbol at neck, white and gold robes, chapel backdrop",
+    "human_cleric_female": "female human cleric, kind wise eyes, holy symbol, white robes, chapel backdrop",
+    "elf_ranger_male": "male elf ranger, pointed ears, keen eyes, forest-green cloak, deep woods backdrop",
+    "elf_ranger_female": "female elf ranger, long hair, pointed ears, leather hood, deep woods backdrop",
+    "dwarf_warrior_male": "male dwarf warrior, thick braided beard, scarred face, steel helm with runes, forge backdrop",
+    "dwarf_warrior_female": "female dwarf warrior, braided hair, determined face, steel helm, forge backdrop",
+    "halfling_rogue_male": "male halfling rogue, curly hair, mischievous grin, leather vest, tavern backdrop",
+    "halfling_rogue_female": "female halfling rogue, short wavy hair, knowing smirk, leather vest, tavern backdrop",
+    # NPCs
+    "npc_innkeeper": "older innkeeper, warm weathered face, apron collar visible, kind eyes, tavern backdrop",
+    "npc_blacksmith": "burly blacksmith, soot-streaked face, leather apron, forge backdrop",
+    "npc_merchant": "sharp-eyed merchant, fine cloak collar, gold chain visible, calculating gaze, shop backdrop",
+    "npc_guard": "town guard, helmet with chinstrap, stern face, chain mail at neckline, city gate backdrop",
+    "npc_elder": "village elder, wrinkled wise face, gray hair, simple cloak, hearth backdrop",
+    "npc_stranger": "mysterious hooded stranger, face half-shadowed, piercing eyes, tavern corner backdrop",
+    "npc_priest": "robed priest with ritual scars, holy symbol, pale face, temple backdrop",
+    "npc_bandit_leader": "scarred bandit captain, cruel smile, leather armor, campfire backdrop",
+}
+
+# Painted CRPG status effect icons — buffs, debuffs, and neutral states. Transparent background.
+STATUS_ICON_DEFS = {
+    # Buffs
+    "bless": "radiant golden cross sigil, divine light rays",
+    "haste": "winged boot silhouette, yellow motion streaks",
+    "shield_of_faith": "glowing shield outline sigil, silver-blue ward",
+    "heroism": "rising clenched fist silhouette, crimson valor glow",
+    "stoneskin": "rough stone orb texture, earthy brown toughness",
+    "mage_armor_buff": "shimmering robe weave sigil, silver-blue layered wards",
+    "regeneration": "green leaf sigil with pulse, life renewal glow",
+    "true_sight": "glowing silver eye sigil, all-seeing aura",
+    # Debuffs
+    "poisoned": "dripping green skull sigil, toxic sludge",
+    "burning": "orange flame droplet sigil, fire aura",
+    "frozen": "ice cube with chains sigil, pale blue crystals",
+    "shocked": "lightning spark sigil, electric blue arcs",
+    "cursed": "cracked purple skull sigil, dark hex aura",
+    "bleeding": "crimson blood droplet sigil, wound pulse",
+    "stunned": "spinning stars around dazed eye sigil, yellow daze",
+    "slowed": "hourglass with gray sand sigil, muted drag",
+    "weakened": "broken arm silhouette sigil, faded gray feebleness",
+    "silenced": "mouth with X mark sigil, muted purple hush",
+    "charmed": "pink heart with hypnotic swirl sigil, love bewilderment",
+    "feared": "screaming face silhouette sigil, sickly green terror",
+    "diseased": "rotting hand sigil, green-brown decay",
+    "blinded": "closed eye with X sigil, dark gray blindness",
+    "exhausted": "drooping figure silhouette sigil, slate gray fatigue",
+    "prone": "fallen figure silhouette sigil, brown knockdown",
+    # Neutral status
+    "tracking": "footprint trail sigil, earthy brown pursuit",
+    "hidden": "cloak silhouette fading sigil, dark gray concealment",
+    "resting": "small campfire flame sigil, warm orange recuperation",
+    "well_fed": "apple with glow sigil, rosy red nourishment",
+    "rallied": "raised banner silhouette sigil, crimson and gold morale",
+    "concentrating": "focused eye with glow sigil, silver concentration",
+}
+
+# Painted CRPG body silhouettes — V.A.T.S.-style anatomical reference. One per archetype.
+# Generated at portrait aspect (832x1216) to match tall humanoid pose. Background removed.
+# Each prompt emphasises visible painted detail and T-pose clarity so hit zones map cleanly
+# to Godot-space rectangles. Prompt is aggressive about "no armor / no weapons" so the LoRA
+# stack does not pull the figure toward a fully kitted-out combatant.
+BODY_SILHOUETTE_DEFS = {
+    "humanoid_male": (
+        "male humanoid adult standing upright T-pose arms straight out, "
+        "full body head to bare feet visible, "
+        "muscular athletic proportions, painted skin tones, visible abdominal and arm muscles, "
+        "neutral stern face, short hair, wearing only a dark loincloth reference garment, "
+        "pale gray studio backdrop"
+    ),
+    "humanoid_female": (
+        "female humanoid adult standing upright T-pose arms straight out, "
+        "full body head to bare feet visible, "
+        "athletic proportions, painted skin tones, visible musculature, "
+        "neutral stern face, long hair tied back, wearing a dark band reference garment, "
+        "pale gray studio backdrop"
+    ),
+    "beast_quadruped": (
+        "large quadruped beast standing broadside in clear reference pose, "
+        "full body visible head to tail, distinct head neck torso four muscular legs clawed paws, "
+        "painted fur texture with visible brushwork, alert wary expression, "
+        "pale gray studio backdrop"
+    ),
+    "construct": (
+        "stone and metal humanoid construct standing upright T-pose arms straight out, "
+        "full body visible, distinct blocky head broad chest arms large hands legs feet, "
+        "painted chipped stone and tarnished metal texture, glowing rune accents, "
+        "imposing stoic figure, pale gray studio backdrop"
+    ),
+    "undead_humanoid": (
+        "skeletal humanoid undead figure standing upright T-pose arms straight out, "
+        "full body visible, distinct skull ribcage spine arms skeletal hands legs feet, "
+        "painted bone texture with cracks, tattered shroud wisps, empty eye sockets glowing faintly, "
+        "pale gray studio backdrop"
+    ),
+    "aberration": (
+        "eldritch aberration standing in reference pose, "
+        "distinct central body mass with eye cluster, four main grasping tentacle arms extended, "
+        "two thick base appendages supporting the mass, painted otherworldly flesh with veins, "
+        "unsettling unnatural form, pale gray studio backdrop"
+    ),
+}
+
+# Painted CRPG combat UI elements — action badges, reticles, tile highlights. Transparent background.
+COMBAT_UI_DEFS = {
+    "badge_action_available": "glowing sword silhouette badge with ornate golden rim, ready state, alpha transparent",
+    "badge_action_used": "dimmed sword silhouette badge with gray rim, spent state, alpha transparent",
+    "badge_bonus_available": "glowing dagger silhouette badge with silver rim, ready state, alpha transparent",
+    "badge_bonus_used": "dimmed dagger silhouette badge with gray rim, spent state, alpha transparent",
+    "badge_reaction_available": "glowing shield silhouette badge with bronze rim, ready state, alpha transparent",
+    "badge_reaction_used": "dimmed shield silhouette badge with gray rim, spent state, alpha transparent",
+    "reticle_attack": "targeting reticle, crosshair with corner brackets, crimson glow, alpha transparent",
+    "reticle_move": "movement reticle, footprint inside circle, amber glow, alpha transparent",
+    "reticle_spell": "spell targeting reticle, arcane circle with runes, violet glow, alpha transparent",
+    "move_tile_highlight": "tile highlight overlay, semi-translucent amber glow, soft edges, alpha transparent",
+    "initiative_frame": "ornate painted round portrait frame for initiative list, golden trim, alpha transparent",
+    "turn_indicator": "glowing gold arrow pointing down, ornate painted trim, alpha transparent",
+}
+
+# Painted CRPG status bar assets — HP/MP/SP/AC/XP frames and fills. Landscape aspect. Background kept.
+STATUS_BAR_DEFS = {
+    "hp_frame_empty": "empty crimson-and-gold horizontal bar container frame, ornate painted border, no fill inside",
+    "hp_fill_full": "horizontal crimson liquid bar fill texture, blood-like gradient, no frame",
+    "mp_frame_empty": "empty sapphire-and-silver horizontal bar container frame, ornate painted border, no fill inside",
+    "mp_fill_full": "horizontal arcane blue energy bar fill texture, glowing mana, no frame",
+    "sp_frame_empty": "empty emerald-and-bronze horizontal bar container frame, ornate painted border, no fill inside",
+    "sp_fill_full": "horizontal green stamina energy bar fill texture, vital pulse, no frame",
+    "xp_frame_empty": "empty amber-and-brass horizontal bar container frame, ornate painted border, no fill inside",
+    "ac_badge_shield": "round silver shield badge with embossed center plate for AC number, ornate painted trim",
+}
+
+# Painted CRPG UI banners — horizontal overlay ribbons. Wide aspect (1536x640). Transparent outside banner.
+UI_BANNER_DEFS = {
+    "banner_paused": "horizontal banner ribbon, painted parchment with gold trim, center left blank for text overlay, tavern sign aesthetic",
+    "banner_victory": "horizontal banner ribbon, golden laurel wreath flanking a blank center, celebratory radiant glow",
+    "banner_defeat": "horizontal banner ribbon, torn black and red cloth, skull motif at center, somber mood",
+    "banner_level_up": "horizontal banner ribbon, glowing arcane runes at blank center, golden radiance, ascension glow",
+    "banner_new_area": "horizontal banner ribbon, parchment scroll with ornate border, blank center, discovery tone",
+    "banner_quest_complete": "horizontal banner ribbon, laurel and quill motif, warm parchment, blank center",
 }
 
 SPRITE_PACK_MAP: dict[str, list[tuple[str, str]]] = {
@@ -1058,6 +1331,210 @@ def build_tile_jobs(limit: int | None = None, variants: int = 1) -> list[Job]:
     return jobs
 
 
+def build_spell_prompt(_name: str, description: str) -> str:
+    return compress_prompt(SPELL_STYLE_PREFIX + description)
+
+
+def build_portrait_prompt(_name: str, description: str) -> str:
+    return compress_prompt(PORTRAIT_STYLE_PREFIX + description)
+
+
+def build_status_icon_prompt(_name: str, description: str) -> str:
+    return compress_prompt(STATUS_ICON_STYLE_PREFIX + description)
+
+
+def build_body_silhouette_prompt(_name: str, description: str) -> str:
+    return compress_prompt(BODY_SILHOUETTE_STYLE_PREFIX + description)
+
+
+def build_combat_ui_prompt(_name: str, description: str) -> str:
+    return compress_prompt(COMBAT_UI_STYLE_PREFIX + description)
+
+
+def build_status_bar_prompt(_name: str, description: str) -> str:
+    return compress_prompt(STATUS_BAR_STYLE_PREFIX + description)
+
+
+def build_ui_banner_prompt(_name: str, description: str) -> str:
+    return compress_prompt(UI_BANNER_STYLE_PREFIX + description)
+
+
+def _build_simple_jobs(
+    kind: str,
+    key_prefix: str,
+    dir_name: str,
+    defs: dict[str, str],
+    prompt_fn,
+    limit: int | None = None,
+    variants: int = 1,
+) -> list[Job]:
+    jobs: list[Job] = []
+    count = 0
+    for name, description in defs.items():
+        for variant_index in range(variants):
+            key = f"{key_prefix}_{name}_v{variant_index + 1:02d}"
+            variant_suffix = "" if variants == 1 else f"_v{variant_index + 1:02d}"
+            jobs.append(
+                Job(
+                    key=key,
+                    kind=kind,
+                    name=name,
+                    prompt=prompt_fn(name, description),
+                    seed=stable_seed(key),
+                    output_relative_path=f"{dir_name}/{name}{variant_suffix}.png",
+                    raw_relative_path=f"asset_raw/{key}_raw.png",
+                    metadata={"family": kind, "variant": variant_index + 1},
+                )
+            )
+            count += 1
+            if limit is not None and count >= limit:
+                return jobs
+    return jobs
+
+
+def build_spell_jobs(limit: int | None = None, variants: int = 1) -> list[Job]:
+    return _build_simple_jobs(
+        kind="spells",
+        key_prefix="spell",
+        dir_name="spells",
+        defs=SPELL_DEFS,
+        prompt_fn=build_spell_prompt,
+        limit=limit,
+        variants=variants,
+    )
+
+
+def build_portrait_jobs(limit: int | None = None, variants: int = 1) -> list[Job]:
+    return _build_simple_jobs(
+        kind="portraits",
+        key_prefix="portrait",
+        dir_name="portraits",
+        defs=PORTRAIT_DEFS,
+        prompt_fn=build_portrait_prompt,
+        limit=limit,
+        variants=variants,
+    )
+
+
+def build_status_icon_jobs(limit: int | None = None, variants: int = 1) -> list[Job]:
+    return _build_simple_jobs(
+        kind="status_icons",
+        key_prefix="statusicon",
+        dir_name="status_icons",
+        defs=STATUS_ICON_DEFS,
+        prompt_fn=build_status_icon_prompt,
+        limit=limit,
+        variants=variants,
+    )
+
+
+def build_body_silhouette_jobs(limit: int | None = None, variants: int = 1) -> list[Job]:
+    return _build_simple_jobs(
+        kind="body_silhouettes",
+        key_prefix="bodysilhouette",
+        dir_name="body_silhouettes",
+        defs=BODY_SILHOUETTE_DEFS,
+        prompt_fn=build_body_silhouette_prompt,
+        limit=limit,
+        variants=variants,
+    )
+
+
+def build_combat_ui_jobs(limit: int | None = None, variants: int = 1) -> list[Job]:
+    return _build_simple_jobs(
+        kind="combat_ui",
+        key_prefix="combatui",
+        dir_name="combat_ui",
+        defs=COMBAT_UI_DEFS,
+        prompt_fn=build_combat_ui_prompt,
+        limit=limit,
+        variants=variants,
+    )
+
+
+def build_status_bar_jobs(limit: int | None = None, variants: int = 1) -> list[Job]:
+    return _build_simple_jobs(
+        kind="status_bars",
+        key_prefix="statusbar",
+        dir_name="status_bars",
+        defs=STATUS_BAR_DEFS,
+        prompt_fn=build_status_bar_prompt,
+        limit=limit,
+        variants=variants,
+    )
+
+
+def build_ui_banner_jobs(limit: int | None = None, variants: int = 1) -> list[Job]:
+    return _build_simple_jobs(
+        kind="ui_banners",
+        key_prefix="uibanner",
+        dir_name="ui_banners",
+        defs=UI_BANNER_DEFS,
+        prompt_fn=build_ui_banner_prompt,
+        limit=limit,
+        variants=variants,
+    )
+
+
+# Per-kind SDXL-native dimensions. Falls back to 1024x1024 for unknown kinds.
+# Aspect ratios are 64-aligned so SDXL tile scheduling stays clean.
+_KIND_SIZES: dict[str, tuple[int, int]] = {
+    "sprites": (1024, 1024),
+    "tiles": (1024, 1024),
+    "items": (1024, 1024),
+    "spells": (1024, 1024),
+    "portraits": (1024, 1024),
+    "status_icons": (1024, 1024),
+    "body_silhouettes": (832, 1216),
+    "combat_ui": (1024, 1024),
+    "status_bars": (1344, 768),
+    "ui_banners": (1536, 640),
+}
+
+
+def size_for_kind(kind: str) -> tuple[int, int]:
+    return _KIND_SIZES.get(kind, (1024, 1024))
+
+
+# Per-kind negative prompt additions. Concatenated onto the base NEGATIVE_PROMPT
+# at generation time. Kinds not listed here use the base negative only.
+_KIND_NEGATIVES: dict[str, str] = {
+    "portraits": PORTRAIT_NEGATIVE,
+    "body_silhouettes": BODY_SILHOUETTE_NEGATIVE,
+}
+
+
+def negative_prompt_for_kind(kind: str) -> str:
+    extra = _KIND_NEGATIVES.get(kind, "")
+    if extra:
+        return NEGATIVE_PROMPT + ", " + extra
+    return NEGATIVE_PROMPT
+
+
+# Kinds whose final PNG should have a transparent background via rembg.
+# Portraits keep their painted backdrop; status bars are the bar itself;
+# ui_banners live on a rectangular painted strip (isnet was aggressively
+# erasing the banner body because it's lighter than the centerpiece). Everything
+# else is an overlay asset that needs alpha isolation.
+_TRANSPARENT_KINDS: set[str] = {
+    "sprites",
+    "items",
+    "spells",
+    "status_icons",
+    "body_silhouettes",
+    "combat_ui",
+}
+
+
+def postprocess_for_kind(raw_img: Image.Image, kind: str, final_size: tuple[int, int]) -> Image.Image:
+    if kind in _TRANSPARENT_KINDS:
+        img = remove_background(raw_img)
+    else:
+        img = raw_img.convert("RGBA")
+    img = _maybe_resize(img, final_size)
+    return img.convert("RGBA")
+
+
 def build_jobs(
     kind: str,
     limit: int | None = None,
@@ -1070,11 +1547,32 @@ def build_jobs(
         return build_sprite_jobs(limit=limit, variants=variants)
     if kind == "tiles":
         return build_tile_jobs(limit=limit, variants=variants)
+    if kind == "spells":
+        return build_spell_jobs(limit=limit, variants=variants)
+    if kind == "portraits":
+        return build_portrait_jobs(limit=limit, variants=variants)
+    if kind == "status_icons":
+        return build_status_icon_jobs(limit=limit, variants=variants)
+    if kind == "body_silhouettes":
+        return build_body_silhouette_jobs(limit=limit, variants=variants)
+    if kind == "combat_ui":
+        return build_combat_ui_jobs(limit=limit, variants=variants)
+    if kind == "status_bars":
+        return build_status_bar_jobs(limit=limit, variants=variants)
+    if kind == "ui_banners":
+        return build_ui_banner_jobs(limit=limit, variants=variants)
     if kind == "all":
         jobs: list[Job] = []
         jobs.extend(build_sprite_jobs(variants=variants))
         jobs.extend(build_tile_jobs(variants=variants))
         jobs.extend(build_item_jobs(views=views, variants=variants))
+        jobs.extend(build_spell_jobs(variants=variants))
+        jobs.extend(build_portrait_jobs(variants=variants))
+        jobs.extend(build_status_icon_jobs(variants=variants))
+        jobs.extend(build_body_silhouette_jobs(variants=variants))
+        jobs.extend(build_combat_ui_jobs(variants=variants))
+        jobs.extend(build_status_bar_jobs(variants=variants))
+        jobs.extend(build_ui_banner_jobs(variants=variants))
         return jobs[:limit] if limit is not None else jobs
     raise ValueError("Unsupported kind: %s" % kind)
 
@@ -1375,6 +1873,13 @@ def write_manifest(cache: dict[str, Any], jobs: list[Job] | None = None) -> None
         "tiles": {},
         "sprites": {},
         "items": {},
+        "spells": {},
+        "portraits": {},
+        "status_icons": {},
+        "body_silhouettes": {},
+        "combat_ui": {},
+        "status_bars": {},
+        "ui_banners": {},
     }
 
     jobs_to_emit = jobs or build_jobs("all", views=["topdown"], variants=1)
@@ -1402,6 +1907,20 @@ def write_manifest(cache: dict[str, Any], jobs: list[Job] | None = None) -> None
             if variant > 1:
                 key = f"{key}_v{variant:02d}"
             manifest["items"][key] = _manifest_entry(job, cache, ITEM_SIZE)
+        elif job.kind in {
+            "spells",
+            "portraits",
+            "status_icons",
+            "body_silhouettes",
+            "combat_ui",
+            "status_bars",
+            "ui_banners",
+        }:
+            variant = int(job.metadata.get("variant", 1))
+            key = slugify(job.name or job.key)
+            if variant > 1:
+                key = f"{key}_v{variant:02d}"
+            manifest[job.kind][key] = _manifest_entry(job, cache, size_for_kind(job.kind))
 
     MANIFEST_FILE.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
@@ -1413,6 +1932,13 @@ def ensure_output_dirs() -> None:
     GENERATED_SPRITE_DIR.mkdir(parents=True, exist_ok=True)
     GENERATED_TILE_DIR.mkdir(parents=True, exist_ok=True)
     GENERATED_ITEM_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_SPELL_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_PORTRAIT_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_STATUS_ICON_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_BODY_SILHOUETTE_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_COMBAT_UI_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_STATUS_BAR_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_UI_BANNER_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def output_paths_for_job(job: Job) -> tuple[Path, Path]:
@@ -1473,15 +1999,22 @@ def generate_jobs(
             continue
 
         print(f"[{index}/{total}] Generating {job.key}...")
+        # Resolve per-kind SDXL-native dimensions. CLI --width/--height become defaults
+        # that are overridden for aspect-specific kinds (body_silhouettes / status_bars / ui_banners).
+        job_width, job_height = size_for_kind(job.kind)
+        if job.kind in {"sprites", "tiles", "items", "spells", "portraits", "status_icons", "combat_ui"}:
+            # Square kinds: honor CLI --width/--height if the user explicitly set them.
+            if (width, height) != (RAW_SIZE[0], RAW_SIZE[1]):
+                job_width, job_height = width, height
         if backend == "hf_api_flux":
             raw_img = generate_image_hf_api(job.prompt)
         elif backend == "local_sdxl":
             raw_img = local_backend.generate(
                 prompt=job.prompt,
                 seed=job.seed,
-                negative_prompt=NEGATIVE_PROMPT,
-                width=width,
-                height=height,
+                negative_prompt=negative_prompt_for_kind(job.kind),
+                width=job_width,
+                height=job_height,
                 steps=steps,
                 guidance_scale=guidance_scale,
             )
@@ -1544,8 +2077,14 @@ def generate_jobs(
         elif job.kind == "tiles" and backend == "deterministic_pack":
             final_img = raw_img.convert("RGBA").resize(SPRITE_SIZE, Image.NEAREST)
             generated_img = final_img.resize(GENERATED_SIZE, Image.NEAREST)
-        else:
+        elif job.kind == "items":
             final_img = postprocess_item(raw_img, ITEM_SIZE)
+            generated_img = final_img
+        else:
+            # New category kinds: spells, portraits, status_icons, body_silhouettes,
+            # combat_ui, status_bars, ui_banners. Resolve per-kind policy.
+            kind_size = size_for_kind(job.kind)
+            final_img = postprocess_for_kind(raw_img, job.kind, kind_size)
             generated_img = final_img
 
         if job.kind in {"sprites", "items"} and not has_visible_pixels(generated_img):
@@ -1614,9 +2153,16 @@ def reprocess_all() -> None:
 
 def list_assets() -> None:
     print("=== DATA-DRIVEN JOB COUNTS ===")
-    print("sprites:", len(build_sprite_jobs()))
-    print("tiles  :", len(build_tile_jobs()))
-    print("items  :", len(build_item_jobs()))
+    print("sprites         :", len(build_sprite_jobs()))
+    print("tiles           :", len(build_tile_jobs()))
+    print("items           :", len(build_item_jobs()))
+    print("spells          :", len(build_spell_jobs()))
+    print("portraits       :", len(build_portrait_jobs()))
+    print("status_icons    :", len(build_status_icon_jobs()))
+    print("body_silhouettes:", len(build_body_silhouette_jobs()))
+    print("combat_ui       :", len(build_combat_ui_jobs()))
+    print("status_bars     :", len(build_status_bar_jobs()))
+    print("ui_banners      :", len(build_ui_banner_jobs()))
     print("")
     print("=== GENERATED STATUS ===")
     for label, path in [
@@ -1624,14 +2170,34 @@ def list_assets() -> None:
         ("generated sprites", GENERATED_SPRITE_DIR),
         ("generated tiles", GENERATED_TILE_DIR),
         ("generated items", GENERATED_ITEM_DIR),
+        ("generated spells", GENERATED_SPELL_DIR),
+        ("generated portraits", GENERATED_PORTRAIT_DIR),
+        ("generated status_icons", GENERATED_STATUS_ICON_DIR),
+        ("generated body_silhouettes", GENERATED_BODY_SILHOUETTE_DIR),
+        ("generated combat_ui", GENERATED_COMBAT_UI_DIR),
+        ("generated status_bars", GENERATED_STATUS_BAR_DIR),
+        ("generated ui_banners", GENERATED_UI_BANNER_DIR),
     ]:
-        print(f"{label:18s} {'OK' if path.exists() else 'MISSING'}")
+        print(f"{label:26s} {'OK' if path.exists() else 'MISSING'}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Ember RPG asset pipeline")
-    parser.add_argument("--plan", choices=["sprites", "tiles", "items", "all"], help="Write deterministic job plan")
-    parser.add_argument("--generate", choices=["sprites", "tiles", "items", "all"], help="Generate assets")
+    _kind_choices = [
+        "sprites",
+        "tiles",
+        "items",
+        "spells",
+        "portraits",
+        "status_icons",
+        "body_silhouettes",
+        "combat_ui",
+        "status_bars",
+        "ui_banners",
+        "all",
+    ]
+    parser.add_argument("--plan", choices=_kind_choices, help="Write deterministic job plan")
+    parser.add_argument("--generate", choices=_kind_choices, help="Generate assets")
     parser.add_argument(
         "--backend",
         choices=["local_sdxl", "hf_api_flux", "template_32rogues", "deterministic_pack"],

@@ -1,0 +1,315 @@
+{
+  "kind": "portraits",
+  "generated_at": "2026-04-11 02:57:23",
+  "count": 22,
+  "jobs": [
+    {
+      "key": "portrait_human_fighter_male_v01",
+      "kind": "portraits",
+      "name": "human_fighter_male",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, male human fighter, stern scarred face,",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1899351682,
+      "output_relative_path": "portraits/human_fighter_male.png",
+      "raw_relative_path": "asset_raw/portrait_human_fighter_male_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_human_fighter_female_v01",
+      "kind": "portraits",
+      "name": "human_fighter_female",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, female human fighter, strong jaw, battle-hardened",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3349138769,
+      "output_relative_path": "portraits/human_fighter_female.png",
+      "raw_relative_path": "asset_raw/portrait_human_fighter_female_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_human_mage_male_v01",
+      "kind": "portraits",
+      "name": "human_mage_male",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, male human mage, thoughtful expression, long",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1843206402,
+      "output_relative_path": "portraits/human_mage_male.png",
+      "raw_relative_path": "asset_raw/portrait_human_mage_male_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_human_mage_female_v01",
+      "kind": "portraits",
+      "name": "human_mage_female",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, female human mage, intelligent piercing eyes,",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3982249837,
+      "output_relative_path": "portraits/human_mage_female.png",
+      "raw_relative_path": "asset_raw/portrait_human_mage_female_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_human_rogue_male_v01",
+      "kind": "portraits",
+      "name": "human_rogue_male",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, male human rogue, sly smirk, hood",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 307763762,
+      "output_relative_path": "portraits/human_rogue_male.png",
+      "raw_relative_path": "asset_raw/portrait_human_rogue_male_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_human_rogue_female_v01",
+      "kind": "portraits",
+      "name": "human_rogue_female",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, female human rogue, sharp features, hood",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1450692696,
+      "output_relative_path": "portraits/human_rogue_female.png",
+      "raw_relative_path": "asset_raw/portrait_human_rogue_female_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_human_cleric_male_v01",
+      "kind": "portraits",
+      "name": "human_cleric_male",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, male human cleric, serene expression, holy",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1439034994,
+      "output_relative_path": "portraits/human_cleric_male.png",
+      "raw_relative_path": "asset_raw/portrait_human_cleric_male_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_human_cleric_female_v01",
+      "kind": "portraits",
+      "name": "human_cleric_female",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, female human cleric, kind wise eyes,",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 786496495,
+      "output_relative_path": "portraits/human_cleric_female.png",
+      "raw_relative_path": "asset_raw/portrait_human_cleric_female_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_elf_ranger_male_v01",
+      "kind": "portraits",
+      "name": "elf_ranger_male",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, male elf ranger, pointed ears, keen",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 710824909,
+      "output_relative_path": "portraits/elf_ranger_male.png",
+      "raw_relative_path": "asset_raw/portrait_elf_ranger_male_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_elf_ranger_female_v01",
+      "kind": "portraits",
+      "name": "elf_ranger_female",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, female elf ranger, long hair, pointed",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3034144033,
+      "output_relative_path": "portraits/elf_ranger_female.png",
+      "raw_relative_path": "asset_raw/portrait_elf_ranger_female_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_dwarf_warrior_male_v01",
+      "kind": "portraits",
+      "name": "dwarf_warrior_male",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, male dwarf warrior, thick braided beard,",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 921096496,
+      "output_relative_path": "portraits/dwarf_warrior_male.png",
+      "raw_relative_path": "asset_raw/portrait_dwarf_warrior_male_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_dwarf_warrior_female_v01",
+      "kind": "portraits",
+      "name": "dwarf_warrior_female",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, female dwarf warrior, braided hair, determined",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 226421804,
+      "output_relative_path": "portraits/dwarf_warrior_female.png",
+      "raw_relative_path": "asset_raw/portrait_dwarf_warrior_female_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_halfling_rogue_male_v01",
+      "kind": "portraits",
+      "name": "halfling_rogue_male",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, male halfling rogue, curly hair, mischievous",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1452316616,
+      "output_relative_path": "portraits/halfling_rogue_male.png",
+      "raw_relative_path": "asset_raw/portrait_halfling_rogue_male_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_halfling_rogue_female_v01",
+      "kind": "portraits",
+      "name": "halfling_rogue_female",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, female halfling rogue, short wavy hair,",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3242106355,
+      "output_relative_path": "portraits/halfling_rogue_female.png",
+      "raw_relative_path": "asset_raw/portrait_halfling_rogue_female_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_npc_innkeeper_v01",
+      "kind": "portraits",
+      "name": "npc_innkeeper",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, older innkeeper, warm weathered face, apron",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2713635433,
+      "output_relative_path": "portraits/npc_innkeeper.png",
+      "raw_relative_path": "asset_raw/portrait_npc_innkeeper_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_npc_blacksmith_v01",
+      "kind": "portraits",
+      "name": "npc_blacksmith",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, burly blacksmith, soot-streaked face, leather apron,",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2187174,
+      "output_relative_path": "portraits/npc_blacksmith.png",
+      "raw_relative_path": "asset_raw/portrait_npc_blacksmith_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_npc_merchant_v01",
+      "kind": "portraits",
+      "name": "npc_merchant",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, sharp-eyed merchant, fine cloak collar, gold",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1729568646,
+      "output_relative_path": "portraits/npc_merchant.png",
+      "raw_relative_path": "asset_raw/portrait_npc_merchant_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_npc_guard_v01",
+      "kind": "portraits",
+      "name": "npc_guard",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, town guard, helmet with chinstrap, stern",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 587868628,
+      "output_relative_path": "portraits/npc_guard.png",
+      "raw_relative_path": "asset_raw/portrait_npc_guard_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_npc_elder_v01",
+      "kind": "portraits",
+      "name": "npc_elder",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, village elder, wrinkled wise face, gray",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1912300844,
+      "output_relative_path": "portraits/npc_elder.png",
+      "raw_relative_path": "asset_raw/portrait_npc_elder_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_npc_stranger_v01",
+      "kind": "portraits",
+      "name": "npc_stranger",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, mysterious hooded stranger, face half-shadowed, piercing",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1389073190,
+      "output_relative_path": "portraits/npc_stranger.png",
+      "raw_relative_path": "asset_raw/portrait_npc_stranger_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_npc_priest_v01",
+      "kind": "portraits",
+      "name": "npc_priest",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, robed priest with ritual scars, holy",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2878501194,
+      "output_relative_path": "portraits/npc_priest.png",
+      "raw_relative_path": "asset_raw/portrait_npc_priest_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    },
+    {
+      "key": "portrait_npc_bandit_leader_v01",
+      "kind": "portraits",
+      "name": "npc_bandit_leader",
+      "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lighting, muted tavern backdrop, expressive face, production game portrait, scarred bandit captain, cruel smile, leather",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3860407035,
+      "output_relative_path": "portraits/npc_bandit_leader.png",
+      "raw_relative_path": "asset_raw/portrait_npc_bandit_leader_v01_raw.png",
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    }
+  ]
+}

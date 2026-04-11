@@ -1,0 +1,679 @@
+{
+  "kind": "spells",
+  "generated_at": "2026-04-11 02:57:22",
+  "count": 48,
+  "jobs": [
+    {
+      "key": "spell_magic_missile_v01",
+      "kind": "spells",
+      "name": "magic_missile",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, three glowing arcane arrows rune, violet-blue energy, clean iconography",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3225739373,
+      "output_relative_path": "spells/magic_missile.png",
+      "raw_relative_path": "asset_raw/spell_magic_missile_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_fireball_v01",
+      "kind": "spells",
+      "name": "fireball",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, swirling flame orb rune, orange and crimson, glowing embers",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2272380934,
+      "output_relative_path": "spells/fireball.png",
+      "raw_relative_path": "asset_raw/spell_fireball_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_lightning_bolt_v01",
+      "kind": "spells",
+      "name": "lightning_bolt",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, jagged electric arc rune, blue-white, crackling sparks",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3824030817,
+      "output_relative_path": "spells/lightning_bolt.png",
+      "raw_relative_path": "asset_raw/spell_lightning_bolt_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_ice_shard_v01",
+      "kind": "spells",
+      "name": "ice_shard",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, crystalline blue spike rune, frost mist, cold glow",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3741600209,
+      "output_relative_path": "spells/ice_shard.png",
+      "raw_relative_path": "asset_raw/spell_ice_shard_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_acid_splash_v01",
+      "kind": "spells",
+      "name": "acid_splash",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, green corrosive droplets rune, toxic bubbles, sickly glow",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 60285619,
+      "output_relative_path": "spells/acid_splash.png",
+      "raw_relative_path": "asset_raw/spell_acid_splash_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_thunder_strike_v01",
+      "kind": "spells",
+      "name": "thunder_strike",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, shockwave ring rune, slate blue kinetic force, concussive glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 498525698,
+      "output_relative_path": "spells/thunder_strike.png",
+      "raw_relative_path": "asset_raw/spell_thunder_strike_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_chain_lightning_v01",
+      "kind": "spells",
+      "name": "chain_lightning",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, branching lightning fork rune, electric arcs, ionic blue",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 709270401,
+      "output_relative_path": "spells/chain_lightning.png",
+      "raw_relative_path": "asset_raw/spell_chain_lightning_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_cone_of_cold_v01",
+      "kind": "spells",
+      "name": "cone_of_cold",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, expanding frost cone rune, pale white crystals, frozen breath",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2828074104,
+      "output_relative_path": "spells/cone_of_cold.png",
+      "raw_relative_path": "asset_raw/spell_cone_of_cold_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_shield_v01",
+      "kind": "spells",
+      "name": "shield",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, translucent barrier rune, golden arc of light, protective glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 620617126,
+      "output_relative_path": "spells/shield.png",
+      "raw_relative_path": "asset_raw/spell_shield_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_counterspell_v01",
+      "kind": "spells",
+      "name": "counterspell",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, broken arcane sigil rune, gray dispel energy, fractured glow",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1328689819,
+      "output_relative_path": "spells/counterspell.png",
+      "raw_relative_path": "asset_raw/spell_counterspell_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_mage_armor_v01",
+      "kind": "spells",
+      "name": "mage_armor",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, shimmering protective weave rune, silver-blue, layered wards",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3865056773,
+      "output_relative_path": "spells/mage_armor.png",
+      "raw_relative_path": "asset_raw/spell_mage_armor_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_dispel_magic_v01",
+      "kind": "spells",
+      "name": "dispel_magic",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, cancelled sigil rune, crossed out arcane mark, neutral gray",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3609673492,
+      "output_relative_path": "spells/dispel_magic.png",
+      "raw_relative_path": "asset_raw/spell_dispel_magic_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_summon_elemental_v01",
+      "kind": "spells",
+      "name": "summon_elemental",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, swirling vortex rune, multi-colored elemental aura, binding glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 905206732,
+      "output_relative_path": "spells/summon_elemental.png",
+      "raw_relative_path": "asset_raw/spell_summon_elemental_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_teleport_v01",
+      "kind": "spells",
+      "name": "teleport",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, portal rune with arrow passing through, violet depth, displacement glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3752253885,
+      "output_relative_path": "spells/teleport.png",
+      "raw_relative_path": "asset_raw/spell_teleport_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_conjure_familiar_v01",
+      "kind": "spells",
+      "name": "conjure_familiar",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, small glowing animal silhouette rune, warm summoning aura",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3248450467,
+      "output_relative_path": "spells/conjure_familiar.png",
+      "raw_relative_path": "asset_raw/spell_conjure_familiar_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_fog_cloud_v01",
+      "kind": "spells",
+      "name": "fog_cloud",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, billowing pale vapor rune, muted white, obscuring mist",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 508614626,
+      "output_relative_path": "spells/fog_cloud.png",
+      "raw_relative_path": "asset_raw/spell_fog_cloud_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_raise_dead_v01",
+      "kind": "spells",
+      "name": "raise_dead",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, skull with rising wisps rune, dark purple necrotic energy",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3330752088,
+      "output_relative_path": "spells/raise_dead.png",
+      "raw_relative_path": "asset_raw/spell_raise_dead_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_drain_life_v01",
+      "kind": "spells",
+      "name": "drain_life",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, crimson siphon rune, blood mist spiral, leeching glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 94072550,
+      "output_relative_path": "spells/drain_life.png",
+      "raw_relative_path": "asset_raw/spell_drain_life_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_bone_wall_v01",
+      "kind": "spells",
+      "name": "bone_wall",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, skeletal barrier rune, bleached white ribs, defensive glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 892666071,
+      "output_relative_path": "spells/bone_wall.png",
+      "raw_relative_path": "asset_raw/spell_bone_wall_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_false_life_v01",
+      "kind": "spells",
+      "name": "false_life",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, heartbeat rune with pale aura, sickly green vitality",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 133218494,
+      "output_relative_path": "spells/false_life.png",
+      "raw_relative_path": "asset_raw/spell_false_life_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_invisibility_v01",
+      "kind": "spells",
+      "name": "invisibility",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, fading figure rune, translucent blue silhouette, vanishing glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 675009515,
+      "output_relative_path": "spells/invisibility.png",
+      "raw_relative_path": "asset_raw/spell_invisibility_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_mirror_image_v01",
+      "kind": "spells",
+      "name": "mirror_image",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, three overlapping silhouettes rune, silver reflections, duplicity glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 462451647,
+      "output_relative_path": "spells/mirror_image.png",
+      "raw_relative_path": "asset_raw/spell_mirror_image_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_minor_illusion_v01",
+      "kind": "spells",
+      "name": "minor_illusion",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, shimmering wavering outline rune, pale amber, trickery glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 4237993828,
+      "output_relative_path": "spells/minor_illusion.png",
+      "raw_relative_path": "asset_raw/spell_minor_illusion_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_polymorph_v01",
+      "kind": "spells",
+      "name": "polymorph",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, animal transformation rune, swirling green metamorphosis glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 4141045157,
+      "output_relative_path": "spells/polymorph.png",
+      "raw_relative_path": "asset_raw/spell_polymorph_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_haste_v01",
+      "kind": "spells",
+      "name": "haste",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, winged boot rune, motion blur lines, yellow acceleration",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2298307785,
+      "output_relative_path": "spells/haste.png",
+      "raw_relative_path": "asset_raw/spell_haste_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_slow_v01",
+      "kind": "spells",
+      "name": "slow",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, hourglass rune with frozen sand, pale blue deceleration",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3162141806,
+      "output_relative_path": "spells/slow.png",
+      "raw_relative_path": "asset_raw/spell_slow_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_enlarge_v01",
+      "kind": "spells",
+      "name": "enlarge",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, expanding outline rune, bold brown growth glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3352786584,
+      "output_relative_path": "spells/enlarge.png",
+      "raw_relative_path": "asset_raw/spell_enlarge_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_detect_magic_v01",
+      "kind": "spells",
+      "name": "detect_magic",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, glowing eye rune, arcane sight, silver third eye",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1215160668,
+      "output_relative_path": "spells/detect_magic.png",
+      "raw_relative_path": "asset_raw/spell_detect_magic_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_scrying_v01",
+      "kind": "spells",
+      "name": "scrying",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, crystal ball rune with faint image, violet far-sight",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3977340927,
+      "output_relative_path": "spells/scrying.png",
+      "raw_relative_path": "asset_raw/spell_scrying_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_augury_v01",
+      "kind": "spells",
+      "name": "augury",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, bone dice rune with arcane glow, prescient amber",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3473039637,
+      "output_relative_path": "spells/augury.png",
+      "raw_relative_path": "asset_raw/spell_augury_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_charm_person_v01",
+      "kind": "spells",
+      "name": "charm_person",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, heart sigil with arcane lines, rose gold enchantment",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 4037403250,
+      "output_relative_path": "spells/charm_person.png",
+      "raw_relative_path": "asset_raw/spell_charm_person_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_sleep_v01",
+      "kind": "spells",
+      "name": "sleep",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, crescent moon rune, drowsy sparkles, indigo slumber",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2245487929,
+      "output_relative_path": "spells/sleep.png",
+      "raw_relative_path": "asset_raw/spell_sleep_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_fear_v01",
+      "kind": "spells",
+      "name": "fear",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, wailing mask sigil rune, sickly green terror glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1418429217,
+      "output_relative_path": "spells/fear.png",
+      "raw_relative_path": "asset_raw/spell_fear_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_command_v01",
+      "kind": "spells",
+      "name": "command",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, outstretched hand rune, imperative white glow",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1918692901,
+      "output_relative_path": "spells/command.png",
+      "raw_relative_path": "asset_raw/spell_command_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_cure_wounds_v01",
+      "kind": "spells",
+      "name": "cure_wounds",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, golden cross rune with light rays, warm healing glow",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1930909337,
+      "output_relative_path": "spells/cure_wounds.png",
+      "raw_relative_path": "asset_raw/spell_cure_wounds_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_bless_v01",
+      "kind": "spells",
+      "name": "bless",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, radiant sun sigil rune, pure white divine light",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 4103796733,
+      "output_relative_path": "spells/bless.png",
+      "raw_relative_path": "asset_raw/spell_bless_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_turn_undead_v01",
+      "kind": "spells",
+      "name": "turn_undead",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, holy symbol rune with repelling aura, radiant gold",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1163353644,
+      "output_relative_path": "spells/turn_undead.png",
+      "raw_relative_path": "asset_raw/spell_turn_undead_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_divine_smite_v01",
+      "kind": "spells",
+      "name": "divine_smite",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, sword of light rune, radiant burst, holy wrath",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3919078961,
+      "output_relative_path": "spells/divine_smite.png",
+      "raw_relative_path": "asset_raw/spell_divine_smite_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_spirit_guardians_v01",
+      "kind": "spells",
+      "name": "spirit_guardians",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, circling spectral warriors rune, pale azure",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 440180425,
+      "output_relative_path": "spells/spirit_guardians.png",
+      "raw_relative_path": "asset_raw/spell_spirit_guardians_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_entangle_v01",
+      "kind": "spells",
+      "name": "entangle",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, thorny vines rune, forest green grasp glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2075877232,
+      "output_relative_path": "spells/entangle.png",
+      "raw_relative_path": "asset_raw/spell_entangle_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_call_lightning_v01",
+      "kind": "spells",
+      "name": "call_lightning",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, storm cloud with bolt rune, stormy blue thundercall",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2590194079,
+      "output_relative_path": "spells/call_lightning.png",
+      "raw_relative_path": "asset_raw/spell_call_lightning_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_animal_messenger_v01",
+      "kind": "spells",
+      "name": "animal_messenger",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, bird silhouette with scroll rune, earthy brown",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3834844831,
+      "output_relative_path": "spells/animal_messenger.png",
+      "raw_relative_path": "asset_raw/spell_animal_messenger_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_barkskin_v01",
+      "kind": "spells",
+      "name": "barkskin",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, wooden armor rune, gnarled bark texture, earthy brown",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3749688604,
+      "output_relative_path": "spells/barkskin.png",
+      "raw_relative_path": "asset_raw/spell_barkskin_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_moonbeam_v01",
+      "kind": "spells",
+      "name": "moonbeam",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, descending silver beam rune, lunar radiance",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2050936847,
+      "output_relative_path": "spells/moonbeam.png",
+      "raw_relative_path": "asset_raw/spell_moonbeam_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_eldritch_blast_v01",
+      "kind": "spells",
+      "name": "eldritch_blast",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, dark violet energy beam rune, otherworldly pulse",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 288925608,
+      "output_relative_path": "spells/eldritch_blast.png",
+      "raw_relative_path": "asset_raw/spell_eldritch_blast_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_hex_v01",
+      "kind": "spells",
+      "name": "hex",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, cursed rune with skeletal finger, dark hex glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3099818875,
+      "output_relative_path": "spells/hex.png",
+      "raw_relative_path": "asset_raw/spell_hex_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_hunger_of_hadar_v01",
+      "kind": "spells",
+      "name": "hunger_of_hadar",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, black void sphere rune, consuming dark, cosmic dread",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2853885243,
+      "output_relative_path": "spells/hunger_of_hadar.png",
+      "raw_relative_path": "asset_raw/spell_hunger_of_hadar_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    },
+    {
+      "key": "spell_arms_of_hadar_v01",
+      "kind": "spells",
+      "name": "arms_of_hadar",
+      "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, tentacle lash rune, oily black, grasping glyph",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 1556214789,
+      "output_relative_path": "spells/arms_of_hadar.png",
+      "raw_relative_path": "asset_raw/spell_arms_of_hadar_v01_raw.png",
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    }
+  ]
+}

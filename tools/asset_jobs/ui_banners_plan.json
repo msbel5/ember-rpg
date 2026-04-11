@@ -1,0 +1,91 @@
+{
+  "kind": "ui_banners",
+  "generated_at": "2026-04-11 02:57:25",
+  "count": 6,
+  "jobs": [
+    {
+      "key": "uibanner_banner_paused_v01",
+      "kind": "ui_banners",
+      "name": "banner_paused",
+      "prompt": "painted CRPG horizontal banner overlay, wide aspect, ornate painted border, dark fantasy oil painting, transparent outside banner region, no text inside banner (left blank for Godot overlay), painterly brushwork, production game HUD asset, horizontal banner ribbon, painted parchment with gold",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 249891759,
+      "output_relative_path": "ui_banners/banner_paused.png",
+      "raw_relative_path": "asset_raw/uibanner_banner_paused_v01_raw.png",
+      "metadata": {
+        "family": "ui_banners",
+        "variant": 1
+      }
+    },
+    {
+      "key": "uibanner_banner_victory_v01",
+      "kind": "ui_banners",
+      "name": "banner_victory",
+      "prompt": "painted CRPG horizontal banner overlay, wide aspect, ornate painted border, dark fantasy oil painting, transparent outside banner region, no text inside banner (left blank for Godot overlay), painterly brushwork, production game HUD asset, horizontal banner ribbon, golden laurel wreath flanking",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2763799760,
+      "output_relative_path": "ui_banners/banner_victory.png",
+      "raw_relative_path": "asset_raw/uibanner_banner_victory_v01_raw.png",
+      "metadata": {
+        "family": "ui_banners",
+        "variant": 1
+      }
+    },
+    {
+      "key": "uibanner_banner_defeat_v01",
+      "kind": "ui_banners",
+      "name": "banner_defeat",
+      "prompt": "painted CRPG horizontal banner overlay, wide aspect, ornate painted border, dark fantasy oil painting, transparent outside banner region, no text inside banner (left blank for Godot overlay), painterly brushwork, production game HUD asset, horizontal banner ribbon, torn black and red",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2372191910,
+      "output_relative_path": "ui_banners/banner_defeat.png",
+      "raw_relative_path": "asset_raw/uibanner_banner_defeat_v01_raw.png",
+      "metadata": {
+        "family": "ui_banners",
+        "variant": 1
+      }
+    },
+    {
+      "key": "uibanner_banner_level_up_v01",
+      "kind": "ui_banners",
+      "name": "banner_level_up",
+      "prompt": "painted CRPG horizontal banner overlay, wide aspect, ornate painted border, dark fantasy oil painting, transparent outside banner region, no text inside banner (left blank for Godot overlay), painterly brushwork, production game HUD asset, horizontal banner ribbon, glowing arcane runes at",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 310007431,
+      "output_relative_path": "ui_banners/banner_level_up.png",
+      "raw_relative_path": "asset_raw/uibanner_banner_level_up_v01_raw.png",
+      "metadata": {
+        "family": "ui_banners",
+        "variant": 1
+      }
+    },
+    {
+      "key": "uibanner_banner_new_area_v01",
+      "kind": "ui_banners",
+      "name": "banner_new_area",
+      "prompt": "painted CRPG horizontal banner overlay, wide aspect, ornate painted border, dark fantasy oil painting, transparent outside banner region, no text inside banner (left blank for Godot overlay), painterly brushwork, production game HUD asset, horizontal banner ribbon, parchment scroll with ornate",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 2421485776,
+      "output_relative_path": "ui_banners/banner_new_area.png",
+      "raw_relative_path": "asset_raw/uibanner_banner_new_area_v01_raw.png",
+      "metadata": {
+        "family": "ui_banners",
+        "variant": 1
+      }
+    },
+    {
+      "key": "uibanner_banner_quest_complete_v01",
+      "kind": "ui_banners",
+      "name": "banner_quest_complete",
+      "prompt": "painted CRPG horizontal banner overlay, wide aspect, ornate painted border, dark fantasy oil painting, transparent outside banner region, no text inside banner (left blank for Godot overlay), painterly brushwork, production game HUD asset, horizontal banner ribbon, laurel and quill motif,",
+      "negative_prompt": "text, watermark, label, logo, blurry, low contrast, photorealistic, deformed, noisy, cluttered background, frame, border, poster layout",
+      "seed": 3025020056,
+      "output_relative_path": "ui_banners/banner_quest_complete.png",
+      "raw_relative_path": "asset_raw/uibanner_banner_quest_complete_v01_raw.png",
+      "metadata": {
+        "family": "ui_banners",
+        "variant": 1
+      }
+    }
+  ]
+}
