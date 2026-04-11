@@ -139,6 +139,9 @@ PORTRAIT_NEGATIVE = (
 BODY_SILHOUETTE_NEGATIVE = (
     "dark silhouette, shadow figure, bronze statue, black figure, backlit, "
     "face in shadow, darkness, shadowy, underlit, "
+    "four arms, extra limbs, multiple arms, extra arms, extra hands, extra legs, "
+    "two poses overlaid, double figure, duplicate figure, duplicated body, "
+    "vitruvian man, da vinci diagram, "
 )
 STATUS_ICON_STYLE_PREFIX = (
     "painted CRPG status effect icon, single small emblem centered, "
@@ -146,14 +149,14 @@ STATUS_ICON_STYLE_PREFIX = (
     "bold readable silhouette at small display size, painterly iconography, "
 )
 BODY_SILHOUETTE_STYLE_PREFIX = (
-    "painted full-body anatomical reference figure, standing upright T-pose with arms outstretched, "
-    "single figure centered head to feet, clear distinct separation of head torso arms hands legs feet, "
-    "visible painted musculature, clearly visible facial features with eyes nose mouth, "
-    "anatomical clarity, bright high-key studio lighting from the front, pale skin catching the light, "
-    "well-lit from the front, visible daylight on the whole figure, Gerald Brom painterly brushwork, "
-    "pale neutral gray studio backdrop for clean cutout, "
-    "no weapons, no armor, minimal reference garment only, "
-    "no text, no frame, high detail, production game targeting reference, "
+    "painted proportional reference figure drawn inside a circle with a square around it, "
+    "single figure centered, standing upright facing forward, "
+    "exactly one head, exactly two arms outstretched horizontally, exactly two legs standing straight, "
+    "clear distinct separation of head torso arms hands legs feet, "
+    "simple ink and wash painted lines over aged parchment backdrop, "
+    "Gerald Brom painterly brushwork, clean reference diagram aesthetic, "
+    "no weapons, no heavy armor, minimal reference garment only, "
+    "no text, no labels, high detail, production game targeting reference, "
 )
 COMBAT_UI_STYLE_PREFIX = (
     "painted CRPG combat HUD badge, small round medallion with raised rim, "
@@ -509,49 +512,47 @@ STATUS_ICON_DEFS = {
     "concentrating": "focused eye with glow sigil, silver concentration",
 }
 
-# Painted CRPG body silhouettes — V.A.T.S.-style anatomical reference. One per archetype.
-# Generated at portrait aspect (832x1216) to match tall humanoid pose. Background removed.
-# Each prompt emphasises visible painted detail and T-pose clarity so hit zones map cleanly
-# to Godot-space rectangles. Prompt is aggressive about "no armor / no weapons" so the LoRA
-# stack does not pull the figure toward a fully kitted-out combatant.
+# Painted CRPG body silhouettes — proportional reference figures drawn inside a circle-and-square
+# geometric frame on aged parchment. Multi-universe compatible as a "targeting diagram":
+# fantasy wizard codex, sci-fi bio-scan, Fallout Pip-Boy anatomy, weird fiction occult diagram.
+# Each figure is EXPLICIT about "one head two arms two legs" so the LoRA stack does not pull
+# toward the 4-armed Vitruvian overlay variant. Background removed by rembg with alpha_matting.
 BODY_SILHOUETTE_DEFS = {
     "humanoid_male": (
-        "male humanoid adult standing upright T-pose arms straight out, "
-        "full body head to bare feet visible, "
-        "muscular athletic proportions, painted skin tones, visible abdominal and arm muscles, "
-        "neutral stern face, short hair, wearing only a dark loincloth reference garment, "
-        "pale gray studio backdrop"
+        "one adult male human figure drawn inside a circle with a square around it on parchment, "
+        "standing upright facing forward, exactly one head exactly two arms outstretched horizontally exactly two legs standing straight, "
+        "full body head to feet visible, clear separation of head torso arms hands legs feet, "
+        "wearing only a simple minimal reference garment, single pose single figure"
     ),
     "humanoid_female": (
-        "female humanoid adult standing upright T-pose arms straight out, "
-        "full body head to bare feet visible, "
-        "athletic proportions, painted skin tones, visible musculature, "
-        "neutral stern face, long hair tied back, wearing a dark band reference garment, "
-        "pale gray studio backdrop"
+        "one adult female human figure drawn inside a circle with a square around it on parchment, "
+        "standing upright facing forward, exactly one head exactly two arms outstretched horizontally exactly two legs standing straight, "
+        "full body head to feet visible, clear separation of head torso arms hands legs feet, "
+        "wearing a simple minimal reference garment, single pose single figure"
     ),
     "beast_quadruped": (
-        "large quadruped beast standing broadside in clear reference pose, "
-        "full body visible head to tail, distinct head neck torso four muscular legs clawed paws, "
-        "painted fur texture with visible brushwork, alert wary expression, "
-        "pale gray studio backdrop"
+        "one large quadruped beast drawn inside a circle with a square around it on parchment, "
+        "standing broadside facing the viewer, full body visible head to tail, "
+        "exactly one head exactly four legs exactly one tail, "
+        "clear separation of head neck torso legs tail, single pose single figure"
     ),
     "construct": (
-        "stone and metal humanoid construct standing upright T-pose arms straight out, "
-        "full body visible, distinct blocky head broad chest arms large hands legs feet, "
-        "painted chipped stone and tarnished metal texture, glowing rune accents, "
-        "imposing stoic figure, pale gray studio backdrop"
+        "one stone and metal humanoid construct drawn inside a circle with a square around it on parchment, "
+        "standing upright facing forward, exactly one head exactly two arms outstretched horizontally exactly two legs standing straight, "
+        "full body visible, clear blocky head chest arms hands legs feet, "
+        "single pose single figure"
     ),
     "undead_humanoid": (
-        "skeletal humanoid undead figure standing upright T-pose arms straight out, "
-        "full body visible, distinct skull ribcage spine arms skeletal hands legs feet, "
-        "painted bone texture with cracks, tattered shroud wisps, empty eye sockets glowing faintly, "
-        "pale gray studio backdrop"
+        "one skeletal humanoid undead figure drawn inside a circle with a square around it on parchment, "
+        "standing upright facing forward, exactly one skull exactly two arms outstretched horizontally exactly two legs standing straight, "
+        "full body visible, clear skull ribcage arms skeletal hands legs feet, tattered shroud wisps, "
+        "single pose single figure"
     ),
     "aberration": (
-        "eldritch aberration standing in reference pose, "
-        "distinct central body mass with eye cluster, four main grasping tentacle arms extended, "
-        "two thick base appendages supporting the mass, painted otherworldly flesh with veins, "
-        "unsettling unnatural form, pale gray studio backdrop"
+        "one eldritch aberration creature drawn inside a circle with a square around it on parchment, "
+        "central body mass with grasping tentacle limbs extended outward, "
+        "clear distinct core and appendages, otherworldly anatomy, "
+        "single creature single pose"
     ),
 }
 
@@ -1764,23 +1765,40 @@ class LocalSDXLGenerator:
 
 
 _REMBG_SESSION: Any = None
-_REMBG_MODEL_NAME = "isnet-general-use"  # far better hard-edge preservation than default u2net
-                                         # (handles dark blade tips, fine hair wisps, etc.)
+_REMBG_MODEL_NAME = ""
+# Fallback chain: try SOTA birefnet-general first (best fine-detail preservation,
+# keeps sword tips, dagger hilts, finger extensions, hair wisps) then isnet-general-use
+# (very good hard-edge preservation) then default u2net.
+_REMBG_MODEL_CANDIDATES: list[str] = [
+    "birefnet-general",
+    "isnet-general-use",
+    "u2net",
+]
 
 
 def _get_rembg_session() -> Any:
-    global _REMBG_SESSION
+    global _REMBG_SESSION, _REMBG_MODEL_NAME
     if _REMBG_SESSION is not None:
         return _REMBG_SESSION if _REMBG_SESSION is not False else None
     try:
         from rembg import new_session  # type: ignore
-        _REMBG_SESSION = new_session(_REMBG_MODEL_NAME)
-        print(f"[rembg] session ready: {_REMBG_MODEL_NAME}")
-        return _REMBG_SESSION
     except Exception as exc:  # pragma: no cover - depends on local environment
-        print(f"[rembg] could not init {_REMBG_MODEL_NAME}, falling back to default: {exc}")
+        print(f"[rembg] could not import rembg: {exc}")
         _REMBG_SESSION = False
         return None
+    last_err: Exception | None = None
+    for model_name in _REMBG_MODEL_CANDIDATES:
+        try:
+            _REMBG_SESSION = new_session(model_name)
+            _REMBG_MODEL_NAME = model_name
+            print(f"[rembg] session ready: {model_name}")
+            return _REMBG_SESSION
+        except Exception as exc:  # pragma: no cover - depends on local environment
+            last_err = exc
+            print(f"[rembg] {model_name} unavailable: {exc}")
+    print(f"[rembg] all candidates failed; last error: {last_err}")
+    _REMBG_SESSION = False
+    return None
 
 
 def remove_background(img: Image.Image) -> Image.Image:
@@ -1792,7 +1810,22 @@ def remove_background(img: Image.Image) -> Image.Image:
         buf.seek(0)
         session = _get_rembg_session()
         if session is not None:
-            result = remove(buf.read(), session=session)
+            # alpha_matting dramatically improves fine-detail edge preservation
+            # (sword tips, dagger hilts, finger extensions, wisps of hair). Slower
+            # (~2x per call) but catches hand/grip/hilt detail that the default
+            # segmentation misses.
+            # Tuned thresholds: lower foreground threshold (240 -> 200) so more
+            # near-edge pixels count as definitely foreground, higher background
+            # threshold (10 -> 20) to be more permissive, small erode size (10 -> 3)
+            # to preserve thin protrusions like blade tips and finger tips.
+            result = remove(
+                buf.read(),
+                session=session,
+                alpha_matting=True,
+                alpha_matting_foreground_threshold=200,
+                alpha_matting_background_threshold=20,
+                alpha_matting_erode_size=3,
+            )
         else:
             result = remove(buf.read())
         return Image.open(BytesIO(result)).convert("RGBA")
