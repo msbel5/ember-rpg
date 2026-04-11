@@ -38,6 +38,7 @@ ITEMS_FILE = DATA_ROOT / "items.json"
 RAW_DIR = PROJECT_ROOT / "tools" / "asset_raw"
 PLAN_DIR = PROJECT_ROOT / "tools" / "asset_jobs"
 ADAPTER_PROMPTS_FILE = PROJECT_ROOT / "tools" / "asset_jobs" / "adapter_prompts.json"
+UI_PLAN_FILE = PROJECT_ROOT / "tools" / "asset_jobs" / "ui_plan.json"
 
 LEGACY_SPRITE_DIR = PROJECT_ROOT / "godot-client" / "assets" / "sprites"
 LEGACY_TILE_DIR = PROJECT_ROOT / "godot-client" / "assets" / "tiles"
@@ -52,6 +53,7 @@ GENERATED_BODY_SILHOUETTE_DIR = GENERATED_DIR / "body_silhouettes"
 GENERATED_COMBAT_UI_DIR = GENERATED_DIR / "combat_ui"
 GENERATED_STATUS_BAR_DIR = GENERATED_DIR / "status_bars"
 GENERATED_UI_BANNER_DIR = GENERATED_DIR / "ui_banners"
+GENERATED_UI_PLAN_DIR = GENERATED_DIR / "ui_plan"
 MANIFEST_FILE = GENERATED_DIR / "manifest.json"
 CACHE_FILE = PROJECT_ROOT / "tools" / "asset_cache.json"
 
@@ -1447,6 +1449,13 @@ def build_ui_banner_prompt(_name: str, description: str) -> str:
     return compress_prompt(UI_BANNER_STYLE_PREFIX + description)
 
 
+def build_ui_plan_prompt(category: str, prompt_hint: str) -> str:
+    return compress_prompt(
+        "A painted CRPG %s UI element for a BG1 style production game, %s, clean game HUD asset, transparent background, painterly brushwork"
+        % (category, prompt_hint)
+    )
+
+
 def _build_simple_jobs(
     kind: str,
     key_prefix: str,
@@ -1564,6 +1573,55 @@ def build_ui_banner_jobs(limit: int | None = None, variants: int = 1) -> list[Jo
     )
 
 
+def build_ui_plan_jobs(limit: int | None = None, variants: int = 1) -> list[Job]:
+    payload = load_json(UI_PLAN_FILE)
+    entries = payload.get("jobs", [])
+    if not isinstance(entries, list):
+        return []
+
+    jobs: list[Job] = []
+    count = 0
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        entry_id = trim_spaces(str(entry.get("id", "")))
+        if not entry_id:
+            continue
+        category = trim_spaces(str(entry.get("category", "panel"))) or "panel"
+        prompt_hint = trim_spaces(str(entry.get("prompt_hint", "")))
+        size = entry.get("size", [1024, 1024])
+        if not isinstance(size, list) or len(size) < 2:
+            size = [1024, 1024]
+        width = int(size[0]) if int(size[0]) > 0 else 1024
+        height = int(size[1]) if int(size[1]) > 0 else 1024
+        entry_variants = max(1, int(entry.get("variants", variants) or variants))
+        for variant_index in range(entry_variants):
+            key = f"ui_plan_{entry_id}_v{variant_index + 1:02d}"
+            variant_suffix = "" if entry_variants == 1 else f"_v{variant_index + 1:02d}"
+            jobs.append(
+                Job(
+                    key=key,
+                    kind="ui_plan",
+                    name=entry_id,
+                    prompt=build_ui_plan_prompt(category, prompt_hint),
+                    seed=stable_seed(key),
+                    output_relative_path=f"ui_plan/{entry_id}{variant_suffix}.png",
+                    raw_relative_path=f"asset_raw/{key}_raw.png",
+                    metadata={
+                        "id": entry_id,
+                        "category": category,
+                        "prompt_hint": prompt_hint,
+                        "size": [width, height],
+                        "variant": variant_index + 1,
+                    },
+                )
+            )
+            count += 1
+            if limit is not None and count >= limit:
+                return jobs
+    return jobs
+
+
 # Per-kind SDXL-native dimensions. Falls back to 1024x1024 for unknown kinds.
 # Aspect ratios are 64-aligned so SDXL tile scheduling stays clean.
 _KIND_SIZES: dict[str, tuple[int, int]] = {
@@ -1577,11 +1635,22 @@ _KIND_SIZES: dict[str, tuple[int, int]] = {
     "combat_ui": (1024, 1024),
     "status_bars": (1344, 768),
     "ui_banners": (1536, 640),
+    "ui_plan": (1024, 1024),
 }
 
 
 def size_for_kind(kind: str) -> tuple[int, int]:
     return _KIND_SIZES.get(kind, (1024, 1024))
+
+
+def final_size_for_job(job: Job) -> tuple[int, int]:
+    if job.kind == "ui_plan":
+        metadata_size = job.metadata.get("size", [1024, 1024])
+        if isinstance(metadata_size, list) and len(metadata_size) >= 2:
+            width = int(metadata_size[0]) if int(metadata_size[0]) > 0 else 1024
+            height = int(metadata_size[1]) if int(metadata_size[1]) > 0 else 1024
+            return (width, height)
+    return size_for_kind(job.kind)
 
 
 # Per-kind negative prompt additions. Concatenated onto the base NEGATIVE_PROMPT
@@ -1629,6 +1698,7 @@ _TRANSPARENT_KINDS: set[str] = {
     "status_icons",
     "body_silhouettes",
     "combat_ui",
+    "ui_plan",
 }
 
 
@@ -1668,6 +1738,8 @@ def build_jobs(
         return build_status_bar_jobs(limit=limit, variants=variants)
     if kind == "ui_banners":
         return build_ui_banner_jobs(limit=limit, variants=variants)
+    if kind == "ui_plan":
+        return build_ui_plan_jobs(limit=limit, variants=variants)
     if kind == "all":
         jobs: list[Job] = []
         jobs.extend(build_sprite_jobs(variants=variants))
@@ -1680,6 +1752,7 @@ def build_jobs(
         jobs.extend(build_combat_ui_jobs(variants=variants))
         jobs.extend(build_status_bar_jobs(variants=variants))
         jobs.extend(build_ui_banner_jobs(variants=variants))
+        jobs.extend(build_ui_plan_jobs(variants=variants))
         return jobs[:limit] if limit is not None else jobs
     raise ValueError("Unsupported kind: %s" % kind)
 
@@ -2032,6 +2105,7 @@ def write_manifest(cache: dict[str, Any], jobs: list[Job] | None = None) -> None
         "combat_ui": {},
         "status_bars": {},
         "ui_banners": {},
+        "ui_plan": {},
     }
 
     jobs_to_emit = jobs or build_jobs("all", views=["topdown"], variants=1)
@@ -2067,12 +2141,13 @@ def write_manifest(cache: dict[str, Any], jobs: list[Job] | None = None) -> None
             "combat_ui",
             "status_bars",
             "ui_banners",
+            "ui_plan",
         }:
             variant = int(job.metadata.get("variant", 1))
             key = slugify(job.name or job.key)
             if variant > 1:
                 key = f"{key}_v{variant:02d}"
-            manifest[job.kind][key] = _manifest_entry(job, cache, size_for_kind(job.kind))
+            manifest[job.kind][key] = _manifest_entry(job, cache, final_size_for_job(job))
 
     MANIFEST_FILE.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
@@ -2091,6 +2166,7 @@ def ensure_output_dirs() -> None:
     GENERATED_COMBAT_UI_DIR.mkdir(parents=True, exist_ok=True)
     GENERATED_STATUS_BAR_DIR.mkdir(parents=True, exist_ok=True)
     GENERATED_UI_BANNER_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_UI_PLAN_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def output_paths_for_job(job: Job) -> tuple[Path, Path]:
@@ -2238,8 +2314,8 @@ def generate_jobs(
             generated_img = final_img
         else:
             # New category kinds: spells, portraits, status_icons, body_silhouettes,
-            # combat_ui, status_bars, ui_banners. Resolve per-kind policy.
-            kind_size = size_for_kind(job.kind)
+            # combat_ui, status_bars, ui_banners, ui_plan. Resolve per-kind policy.
+            kind_size = final_size_for_job(job)
             final_img = postprocess_for_kind(raw_img, job.kind, kind_size)
             generated_img = final_img
 
@@ -2319,6 +2395,7 @@ def list_assets() -> None:
     print("combat_ui       :", len(build_combat_ui_jobs()))
     print("status_bars     :", len(build_status_bar_jobs()))
     print("ui_banners      :", len(build_ui_banner_jobs()))
+    print("ui_plan         :", len(build_ui_plan_jobs()))
     print("")
     print("=== GENERATED STATUS ===")
     for label, path in [
@@ -2333,6 +2410,7 @@ def list_assets() -> None:
         ("generated combat_ui", GENERATED_COMBAT_UI_DIR),
         ("generated status_bars", GENERATED_STATUS_BAR_DIR),
         ("generated ui_banners", GENERATED_UI_BANNER_DIR),
+        ("generated ui_plan", GENERATED_UI_PLAN_DIR),
     ]:
         print(f"{label:26s} {'OK' if path.exists() else 'MISSING'}")
 
@@ -2351,6 +2429,7 @@ def main() -> None:
         "combat_ui",
         "status_bars",
         "ui_banners",
+        "ui_plan",
         "all",
     ]
     parser.add_argument("--plan", choices=_kind_choices, help="Write deterministic job plan")
