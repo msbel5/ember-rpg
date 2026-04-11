@@ -139,9 +139,11 @@ PORTRAIT_NEGATIVE = (
 BODY_SILHOUETTE_NEGATIVE = (
     "dark silhouette, shadow figure, bronze statue, black figure, backlit, "
     "face in shadow, darkness, shadowy, underlit, "
-    "four arms, extra limbs, multiple arms, extra arms, extra hands, extra legs, "
+    "four arms, six arms, eight arms, extra limbs, multiple arms, extra arms, extra hands, "
+    "third arm, additional arms, more than two arms, more than 1 pair of arms, "
+    "extra legs, kali, shiva, multi-armed deity, demonic multi-armed figure, "
     "two poses overlaid, double figure, duplicate figure, duplicated body, "
-    "vitruvian man, da vinci diagram, "
+    "vitruvian man, da vinci diagram, brom style multi-armed, "
 )
 STATUS_ICON_STYLE_PREFIX = (
     "painted CRPG status effect icon, single small emblem centered, "
@@ -149,10 +151,11 @@ STATUS_ICON_STYLE_PREFIX = (
     "bold readable silhouette at small display size, painterly iconography, "
 )
 BODY_SILHOUETTE_STYLE_PREFIX = (
-    "A painted CRPG V.A.T.S. targeting diagram on aged parchment, one proportional figure drawn "
-    "inside a visible ink circle with a square around it, exactly one head with clear face features, "
-    "exactly two arms outstretched horizontally with five-finger hands, exactly two legs with "
-    "defined feet, Gerald Brom painted brushwork, "
+    "A clean medical anatomical illustration for a production CRPG targeting overlay, one single "
+    "figure drawn on aged parchment inside a visible ink circle with a square around it, "
+    "absolutely only 1 pair of arms outstretched horizontally, absolutely only 1 pair of legs "
+    "standing straight, exactly 1 head with clear face features, five-finger hands two feet, "
+    "clean reference diagram ink and wash, no stylized demonic figure, "
 )
 COMBAT_UI_STYLE_PREFIX = (
     "painted CRPG combat HUD badge, small round medallion with raised rim, "
@@ -179,8 +182,10 @@ NEGATIVE_PROMPT = (
 )
 
 ITEM_NEGATIVE = (
-    "multiple items, two items, three items, duplicate items, variant display, "
+    "multiple items, two items, three items, pair of items, duplicate items, variant display, "
     "side by side items, item collection, item catalog, multiple weapons, "
+    "two weapons, two swords, two daggers, two axes, weapon pair, weapon comparison, "
+    "weapon set, matching pair, symmetric display, "
 )
 
 RARITY_STYLE = {
@@ -1519,6 +1524,21 @@ def negative_prompt_for_kind(kind: str) -> str:
     return NEGATIVE_PROMPT
 
 
+# Per-kind LoRA weight scale factor. Applied via cross_attention_kwargs={"scale": X}
+# on the pipeline __call__. Scales ALL active LoRA contributions for that single call.
+# body_silhouettes: 0.15 to tame the Brom LoRA's strong multi-armed demonic figure bias
+#   (Brom is famous for Planescape Kali-style 4+ armed figures; at full 0.7 weight the stack
+#   dominates any prompt asking for a human reference figure with outstretched arms).
+# Default (not in the map): 1.0 (full LoRA strength).
+_KIND_LORA_SCALE: dict[str, float] = {
+    "body_silhouettes": 0.15,
+}
+
+
+def lora_scale_for_kind(kind: str) -> float:
+    return float(_KIND_LORA_SCALE.get(kind, 1.0))
+
+
 # Kinds whose final PNG should have a transparent background via rembg.
 # Portraits keep their painted backdrop; status bars are the bar itself;
 # ui_banners live on a rectangular painted strip (isnet was aggressively
@@ -1747,6 +1767,7 @@ class LocalSDXLGenerator:
         height: int,
         steps: int,
         guidance_scale: float,
+        lora_scale: float = 1.0,
     ) -> Image.Image:
         # LCM override — 8 steps with CFG ~1.5 is the canonical sweet spot.
         if self._effective_lcm:
@@ -1762,6 +1783,12 @@ class LocalSDXLGenerator:
             "width": width,
             "generator": generator,
         }
+        # Per-kind LoRA scale override. Scales all active LoRA contributions
+        # for this single pipeline call via cross_attention_kwargs. Used to tame
+        # the Brom stack for body_silhouettes where the painted multi-armed bias
+        # overwhelms the "exactly 2 arms" prompt directive.
+        if abs(lora_scale - 1.0) > 1e-6:
+            kwargs["cross_attention_kwargs"] = {"scale": lora_scale}
         if self.style_image is not None:
             kwargs["ip_adapter_image"] = self.style_image
         return self.pipeline(**kwargs).images[0]
@@ -2057,6 +2084,7 @@ def generate_jobs(
                 height=job_height,
                 steps=steps,
                 guidance_scale=guidance_scale,
+                lora_scale=lora_scale_for_kind(job.kind),
             )
         elif backend == "template_32rogues":
             item_payload = {
