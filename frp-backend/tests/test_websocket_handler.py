@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from main import app
-from engine.api.ws_campaign import set_runtime
+from engine.api.ws_campaign import _compact_snapshot, set_runtime
 
 
 # ── Mock runtime for testing ─────────────────────────────────────────
@@ -172,6 +172,31 @@ def test_runtime_mode_pause_resume(monkeypatch):
         resumed = ws.receive_json()
         assert resumed["type"] == "state"
         assert dummy_loop.paused is False
+
+
+def test_compact_snapshot_preserves_world_graph_for_region_transitions():
+    compact = _compact_snapshot({
+        "campaign_id": "test_campaign",
+        "campaign": {
+            "scene": "exploration",
+            "world": {"active_region_id": "region_006"},
+            "world_graph": {
+                "active_region_id": "region_006",
+                "nodes": [
+                    {"id": "node_region_001_00", "region_id": "region_001", "name": "Dragon Eyrie"},
+                    {"id": "node_region_006_01", "region_id": "region_006", "name": "Harbor Reach"},
+                ],
+            },
+            "current_region_summary": {
+                "region_id": "region_006",
+                "settlement_node_id": "node_region_006_01",
+            },
+            "travel_options": [],
+        },
+    })
+
+    assert compact["campaign"]["world_graph"]["active_region_id"] == "region_006"
+    assert compact["campaign"]["current_region_summary"]["settlement_node_id"] == "node_region_006_01"
 
 
 # ── HTTP still works alongside WebSocket ─────────────────────────────

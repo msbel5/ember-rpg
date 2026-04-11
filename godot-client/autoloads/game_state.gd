@@ -190,6 +190,8 @@ func update_from_response(data: Dictionary) -> void:
 		travel_options = data["travel_options"]
 	if data.has("current_region_summary") and data["current_region_summary"] is Dictionary:
 		current_region_summary = data["current_region_summary"]
+		if not data.has("selected_world_node"):
+			selected_world_node = str(current_region_summary.get("settlement_node_id", ""))
 	if data.has("selected_world_node"):
 		selected_world_node = str(data["selected_world_node"])
 	if data.has("settlement_state") and data["settlement_state"] is Dictionary:

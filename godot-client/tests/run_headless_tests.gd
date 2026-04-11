@@ -363,6 +363,10 @@ func _test_game_state_normalization() -> void:
 	_assert_true(game_state.runtime_mode == "tactical_pause", "GameState stores the explicit runtime mode from campaign snapshots")
 	_assert_true(game_state.current_shell_mode() == "travel", "GameState surfaces travel as the active shell mode when travel is in progress")
 	_assert_true(game_state._clean_narrative("resume_campaign_ok.") == "You step back into the campaign.", "GameState humanizes token-like narrative text with concise seeded copy")
+	game_state.update_from_response({
+		"current_region_summary": {"region_id": "region_006", "settlement_node_id": "node_region_006_01"},
+	})
+	_assert_true(game_state.selected_world_node == "node_region_006_01", "GameState re-anchors selected_world_node from current region summary when no explicit selection arrives")
 	game_state.seed_campaign_resume_narrative("Loaded campaign from resume_campaign_ok.")
 	_assert_true(
 		game_state.narrative_history.size() == 1
@@ -1176,6 +1180,33 @@ func _test_ui_panels() -> void:
 	})
 	await process_frame
 	_assert_true(route_list.has_node("ContinueTravelButton"), "Minimap renders continue travel controls when can_advance is true")
+	game_state.update_from_response({
+		"travel_state": {},
+		"world_graph": {
+			"active_region_id": "region_006",
+			"dimensions": {"columns": 8, "rows": 6},
+			"regions": [
+				{"id": "region_001", "grid_position": [1, 0], "biome_id": "plains", "settlement_node_id": "node_region_001_00"},
+				{"id": "region_006", "grid_position": [2, 1], "biome_id": "coast", "settlement_node_id": "node_region_006_01"},
+			],
+			"nodes": [
+				{"id": "node_region_001_00", "region_id": "region_001", "name": "Dragon Eyrie", "grid_position": [1, 0], "biome_id": "plains"},
+				{"id": "node_region_006_01", "region_id": "region_006", "name": "Harbor Reach", "grid_position": [2, 1], "biome_id": "coast"},
+			],
+			"edges": [
+				{"id": "edge_0", "from_settlement_id": "node_region_001_00", "to_settlement_id": "node_region_006_01", "from_region_id": "region_001", "to_region_id": "region_006", "travel_hours": 4},
+			],
+		},
+		"travel_options": [
+			{"route_id": "edge_0", "destination_region_id": "region_001", "destination_settlement_id": "node_region_001_00", "destination_name": "Dragon Eyrie", "travel_hours": 4},
+		],
+		"current_region_summary": {"region_id": "region_006", "settlement_node_id": "node_region_006_01"},
+	})
+	await process_frame
+	_assert_true(not route_list.has_node("ContinueTravelButton"), "Minimap clears active travel controls after arrival")
+	_assert_true(minimap_summary.text.contains("Harbor Reach") and minimap_summary.text.contains("region_006"), "Minimap promotes the destination region as the new active world graph node after arrival")
+	_assert_true(minimap_intel.text.contains("Dragon Eyrie") and not minimap_intel.text.contains("Encounter resolution required"), "Minimap rehydrates destination travel intel instead of stale in-transit blockers after arrival")
+	_assert_true(game_state.selected_world_node == "node_region_006_01", "Arrival updates the selected world node to the destination settlement when no explicit selection is sent")
 
 	var narrative_widget = session_instance.get_node("MainMargin/MainVBox/ContentSplit/ModalHost/ModalStack/NarrativePanel")
 	_assert_true(narrative_widget.narrative_log.autowrap_mode != TextServer.AUTOWRAP_OFF, "Narrative panel wraps long lines instead of clipping them")

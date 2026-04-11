@@ -18,8 +18,10 @@ var _graph_texture_size: Vector2i = Vector2i.ZERO
 func _ready() -> void:
 	map_texture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	map_texture.gui_input.connect(_on_map_texture_gui_input)
-	GameState.state_updated.connect(_refresh)
-	GameState.map_loaded.connect(_refresh_from_map)
+	var game_state = _game_state()
+	if game_state != null:
+		game_state.state_updated.connect(_refresh)
+		game_state.map_loaded.connect(_refresh_from_map)
 	_refresh()
 
 
@@ -28,7 +30,10 @@ func _refresh_from_map(_map_data: Dictionary) -> void:
 
 
 func _refresh() -> void:
-	var world_graph = GameState.world_graph
+	var game_state = _game_state()
+	if game_state == null:
+		return
+	var world_graph = game_state.world_graph
 	if world_graph is Dictionary and not world_graph.is_empty() and (world_graph.get("nodes", []) is Array) and not world_graph.get("nodes", []).is_empty():
 		_refresh_world_graph(world_graph)
 		return
@@ -76,10 +81,13 @@ func _refresh_world_graph(world_graph: Dictionary) -> void:
 
 	_graph_nodes.clear()
 	var reachable_regions: Dictionary = {}
-	for option in GameState.travel_options:
+	var game_state = _game_state()
+	if game_state == null:
+		return
+	for option in game_state.travel_options:
 		if option is Dictionary:
 			reachable_regions[str(option.get("destination_region_id", ""))] = true
-	var selected_node_id = GameState.selected_world_node if not GameState.selected_world_node.is_empty() else str(GameState.current_region_summary.get("settlement_node_id", ""))
+	var selected_node_id = game_state.selected_world_node if not game_state.selected_world_node.is_empty() else str(game_state.current_region_summary.get("settlement_node_id", ""))
 	for node in world_graph.get("nodes", []):
 		if not (node is Dictionary):
 			continue
@@ -104,7 +112,7 @@ func _refresh_world_graph(world_graph: Dictionary) -> void:
 	map_texture.texture = ImageTexture.create_from_image(image)
 	_graph_texture_size = Vector2i(image_width, image_height)
 	_refresh_route_buttons()
-	if GameState.has_active_travel():
+	if game_state.has_active_travel():
 		summary_label.text = _active_travel_summary_text()
 		intel_text.text = _build_active_travel_intel(world_graph)
 	else:
@@ -119,10 +127,16 @@ func _refresh_local_map() -> void:
 	_graph_nodes.clear()
 	_graph_texture_size = Vector2i.ZERO
 	_refresh_route_buttons()
-	var map_data = GameState.map_data
+	var game_state = _game_state()
+	if game_state == null:
+		map_texture.texture = null
+		summary_label.text = "No live survey. Map feed is offline."
+		intel_text.text = "[b]Scene Read[/b]  Awaiting a live terrain feed."
+		return
+	var map_data = game_state.map_data
 	if map_data.is_empty():
 		map_texture.texture = null
-		if GameState.has_active_travel():
+		if game_state.has_active_travel():
 			summary_label.text = _active_travel_summary_text()
 			intel_text.text = _build_active_travel_intel({})
 		else:
@@ -146,36 +160,37 @@ func _refresh_local_map() -> void:
 		for x in range(row.size()):
 			image.set_pixel(x, y, _color_for_tile(TileCatalog.resolve_tile_name(row[x])))
 
-	_plot_entities(image, GameState.entities.get("furniture", []), Color(0.72, 0.54, 0.30))
-	_plot_entities(image, GameState.entities.get("npcs", []), Color(0.96, 0.84, 0.44))
-	_plot_entities(image, GameState.entities.get("enemies", []), Color(0.96, 0.34, 0.30))
-	_plot_entities(image, GameState.entities.get("items", []), Color(0.62, 0.94, 0.62))
+	_plot_entities(image, game_state.entities.get("furniture", []), Color(0.72, 0.54, 0.30))
+	_plot_entities(image, game_state.entities.get("npcs", []), Color(0.96, 0.84, 0.44))
+	_plot_entities(image, game_state.entities.get("enemies", []), Color(0.96, 0.34, 0.30))
+	_plot_entities(image, game_state.entities.get("items", []), Color(0.62, 0.94, 0.62))
 
-	var player_pos = GameState.player_map_pos
+	var player_pos = game_state.player_map_pos
 	if player_pos.x >= 0 and player_pos.x < width and player_pos.y >= 0 and player_pos.y < height:
 		image.set_pixel(player_pos.x, player_pos.y, Color(0.95, 0.28, 0.20))
 
 	map_texture.texture = ImageTexture.create_from_image(image)
-	var npc_count = GameState.entities.get("npcs", []).size()
-	var enemy_count = GameState.entities.get("enemies", []).size()
-	var item_count = GameState.entities.get("items", []).size()
-	var scene_label = GameState.scene.capitalize()
+	var npc_count = game_state.entities.get("npcs", []).size()
+	var enemy_count = game_state.entities.get("enemies", []).size()
+	var item_count = game_state.entities.get("items", []).size()
+	var scene_label = game_state.scene.capitalize()
 	var scene_read = _scene_read(map_data)
-	if GameState.has_active_travel():
+	if game_state.has_active_travel():
 		summary_label.text = _active_travel_summary_text()
 		intel_text.text = _build_active_travel_intel({})
 	elif bool(map_data.get("placeholder", false)):
 		summary_label.text = "Placeholder map  %dx%d  |  %s\n%s  |  %d locals  %d threats  %d loot" % [width, height, scene_label, scene_read, npc_count, enemy_count, item_count]
 		intel_text.text = _build_intel_text(map_data)
 	else:
-		summary_label.text = "%s  |  %s\nLocals %d  |  Threats %d  |  Loot %d" % [GameState.get_display_location(), scene_label, npc_count, enemy_count, item_count]
+		summary_label.text = "%s  |  %s\nLocals %d  |  Threats %d  |  Loot %d" % [game_state.get_display_location(), scene_label, npc_count, enemy_count, item_count]
 		intel_text.text = _build_intel_text(map_data)
 
 
 func _refresh_route_buttons() -> void:
 	for child in routes_list.get_children():
 		child.queue_free()
-	if GameState.has_active_travel():
+	var game_state = _game_state()
+	if game_state != null and game_state.has_active_travel():
 		_refresh_active_travel_buttons()
 		return
 	var travel_options := _canonical_travel_options()
@@ -199,7 +214,10 @@ func _refresh_active_travel_buttons() -> void:
 	routes_label.text = "Active Travel"
 	routes_label.visible = true
 	routes_list.visible = true
-	var active_travel: Dictionary = GameState.travel_state
+	var game_state = _game_state()
+	if game_state == null:
+		return
+	var active_travel: Dictionary = game_state.travel_state
 	if bool(active_travel.get("requires_resolution", false)):
 		var resolve_button := Button.new()
 		resolve_button.name = "ResolveEncounterButton"
@@ -229,7 +247,8 @@ func _refresh_active_travel_buttons() -> void:
 
 
 func _on_map_texture_gui_input(event: InputEvent) -> void:
-	if GameState.has_active_travel():
+	var game_state = _game_state()
+	if game_state == null or game_state.has_active_travel():
 		return
 	if _graph_nodes.is_empty():
 		return
@@ -238,8 +257,8 @@ func _on_map_texture_gui_input(event: InputEvent) -> void:
 	var node = _node_at_event_position(event.position)
 	if node.is_empty():
 		return
-	GameState.selected_world_node = str(node.get("id", ""))
-	if bool(node.get("reachable", false)) and str(node.get("region_id", "")) != str(GameState.world_graph.get("active_region_id", "")):
+	game_state.selected_world_node = str(node.get("id", ""))
+	if bool(node.get("reachable", false)) and str(node.get("region_id", "")) != str(game_state.world_graph.get("active_region_id", "")):
 		var option := _travel_option_for_node(node)
 		if not option.is_empty():
 			travel_requested.emit(_travel_start_request(option))
@@ -249,7 +268,10 @@ func _on_map_texture_gui_input(event: InputEvent) -> void:
 
 func _canonical_travel_options() -> Array:
 	var canonical_options: Array = []
-	for option in GameState.travel_options:
+	var game_state = _game_state()
+	if game_state == null:
+		return canonical_options
+	for option in game_state.travel_options:
 		if option is Dictionary and not str(option.get("route_id", "")).strip_edges().is_empty():
 			canonical_options.append(option)
 	return canonical_options
@@ -280,7 +302,10 @@ func _travel_start_request(option: Dictionary) -> Dictionary:
 
 
 func _active_travel_summary_text() -> String:
-	var active_travel: Dictionary = GameState.travel_state
+	var game_state = _game_state()
+	if game_state == null:
+		return "Travel status unavailable"
+	var active_travel: Dictionary = game_state.travel_state
 	var destination_name := str(active_travel.get("destination_name", active_travel.get("destination_region_id", "Unknown"))).strip_edges()
 	return "Traveling to %s\n%d / %dh remaining" % [
 		destination_name,
@@ -290,7 +315,10 @@ func _active_travel_summary_text() -> String:
 
 
 func _build_active_travel_intel(world_graph: Dictionary) -> String:
-	var active_travel: Dictionary = GameState.travel_state
+	var game_state = _game_state()
+	if game_state == null:
+		return "[b]Travel[/b]  Status unavailable"
+	var active_travel: Dictionary = game_state.travel_state
 	var lines: Array[String] = [
 		"[b]Travel[/b]  %s" % str(active_travel.get("status", "traveling")).replace("_", " ").capitalize(),
 		"[b]Route[/b]  %s" % str(active_travel.get("route_id", "unknown")),
@@ -391,14 +419,17 @@ func _draw_rect_outline(image: Image, rect: Rect2i, color: Color) -> void:
 
 
 func _build_world_graph_intel(world_graph: Dictionary) -> String:
-	var current_summary = GameState.current_region_summary
+	var game_state = _game_state()
+	if game_state == null:
+		return "[b]World Graph[/b]  No active macro state."
+	var current_summary = game_state.current_region_summary
 	var region_label = _current_region_label(world_graph)
 	var alerts: Array[String] = []
 	for raw_alert in current_summary.get("alerts", []):
 		alerts.append(str(raw_alert))
 		if alerts.size() >= 3:
 			break
-	var selected = _find_node(world_graph, GameState.selected_world_node)
+	var selected = _find_node(world_graph, game_state.selected_world_node)
 	var selected_text = ""
 	if not selected.is_empty():
 		selected_text = "\n[b]Selected[/b]  %s  |  %s" % [
@@ -406,7 +437,7 @@ func _build_world_graph_intel(world_graph: Dictionary) -> String:
 			str(selected.get("region_id", "")),
 		]
 	var reachable: Array[String] = []
-	for option in GameState.travel_options:
+	for option in game_state.travel_options:
 		if option is Dictionary:
 			reachable.append("%s (%sh)" % [
 				str(option.get("destination_name", "Unknown")),
@@ -416,7 +447,7 @@ func _build_world_graph_intel(world_graph: Dictionary) -> String:
 	return "[b]World Graph[/b]  Active %s\n[b]Reachable[/b]  %s\n[b]Scene Read[/b]  %s%s%s" % [
 		region_label,
 		reachable_text,
-		_scene_read(GameState.map_data) if not GameState.map_data.is_empty() else "No active local survey.",
+		_scene_read(game_state.map_data) if not game_state.map_data.is_empty() else "No active local survey.",
 		"\n[b]Alerts[/b]  %s" % ", ".join(alerts) if not alerts.is_empty() else "",
 		selected_text,
 	]
@@ -483,11 +514,14 @@ func _plot_entities(image: Image, entries: Array, color: Color) -> void:
 
 
 func _build_intel_text(map_data: Dictionary) -> String:
+	var game_state = _game_state()
+	if game_state == null:
+		return "[b]Scene Read[/b]  Awaiting a live terrain feed."
 	var scene_read = _scene_read(map_data)
-	var contact_text = _entity_digest(GameState.entities.get("npcs", []), "Talk", 3)
-	var threat_text = _entity_digest(GameState.entities.get("enemies", []), "Attack", 2)
-	var loot_text = _entity_digest(GameState.entities.get("items", []), "Take", 2)
-	var landmark_text = _entity_digest(GameState.entities.get("furniture", []), "Inspect", 3)
+	var contact_text = _entity_digest(game_state.entities.get("npcs", []), "Talk", 3)
+	var threat_text = _entity_digest(game_state.entities.get("enemies", []), "Attack", 2)
+	var loot_text = _entity_digest(game_state.entities.get("items", []), "Take", 2)
+	var landmark_text = _entity_digest(game_state.entities.get("furniture", []), "Inspect", 3)
 	return "[b]Scene Read[/b]  %s\n[b]Contacts[/b]  %s\n[b]Pressure[/b]  %s%s" % [
 		scene_read,
 		contact_text if not contact_text.is_empty() else "No named contacts on the current survey.",
@@ -499,6 +533,7 @@ func _build_intel_text(map_data: Dictionary) -> String:
 func _scene_read(map_data: Dictionary) -> String:
 	if bool(map_data.get("placeholder", false)):
 		return "Placeholder survey with a fallback plaza silhouette."
+	var game_state = _game_state()
 	var tiles = map_data.get("tiles", [])
 	var water_tiles := 0
 	var built_tiles := 0
@@ -521,7 +556,7 @@ func _scene_read(map_data: Dictionary) -> String:
 					green_tiles += 1
 			if tile_name in ["cobblestone", "marble", "brick"]:
 				plaza_tiles += 1
-	for furniture in GameState.entities.get("furniture", []):
+	for furniture in [] if game_state == null else game_state.entities.get("furniture", []):
 		if furniture is Dictionary:
 			var name = str(furniture.get("name", "")).strip_edges().to_lower()
 			if not name.is_empty():
@@ -571,3 +606,10 @@ func _clean_label(label: String) -> String:
 	if words.size() == 2 and str(words[0]).to_lower() == str(words[1]).to_lower():
 		return str(words[0])
 	return trimmed
+
+
+func _game_state():
+	var loop = Engine.get_main_loop()
+	if loop is SceneTree:
+		return loop.root.get_node_or_null("GameState")
+	return null

@@ -65,6 +65,7 @@ def _compact_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         "world_entities",
         "map_data",
         "world",
+        "world_graph",
         "travel_options",
         "current_region_summary",
         "path_authority",
