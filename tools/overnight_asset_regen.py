@@ -50,7 +50,8 @@ STATUS_FILE = Path(__file__).parent / "overnight_status.json"
 LOG_FILE = Path(__file__).parent / "overnight_log.txt"
 
 # Order: cheap families first (sprites + tiles fix EntitySpriteCatalog tests),
-# then the new 132-asset catalog additions, then the big 894-item run last.
+# then the new 132-asset catalog additions, then Copilot's ui_plan C2 wave,
+# then the big 894-item run last.
 PHASE_ORDER: list[str] = [
     "sprites",
     "tiles",
@@ -61,6 +62,7 @@ PHASE_ORDER: list[str] = [
     "combat_ui",
     "status_bars",
     "ui_banners",
+    "ui_plan",
     "items",
 ]
 

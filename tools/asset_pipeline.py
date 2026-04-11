@@ -1978,13 +1978,28 @@ def _get_rembg_session() -> Any:
         print(f"[rembg] could not import rembg: {exc}")
         _REMBG_SESSION = False
         return None
+    # Force rembg onto CPU execution. SDXL already maxes RTX 3070 8GB VRAM at 1024
+    # with the LoRA stack; giving rembg its own GPU context (birefnet-general is ~1 GB)
+    # pushes us into CPU-offload thrashing territory where each SDXL step balloons from
+    # 2s to 30+s. CPU rembg adds ~1.5s per job (acceptable) and preserves VRAM headroom.
+    cpu_providers = ["CPUExecutionProvider"]
     last_err: Exception | None = None
     for model_name in _REMBG_MODEL_CANDIDATES:
         try:
-            _REMBG_SESSION = new_session(model_name)
+            _REMBG_SESSION = new_session(model_name, providers=cpu_providers)
             _REMBG_MODEL_NAME = model_name
-            print(f"[rembg] session ready: {model_name}")
+            print(f"[rembg] session ready: {model_name} (CPU)")
             return _REMBG_SESSION
+        except TypeError:
+            # Older rembg versions don't accept `providers=`; fall back to default
+            try:
+                _REMBG_SESSION = new_session(model_name)
+                _REMBG_MODEL_NAME = model_name
+                print(f"[rembg] session ready: {model_name} (default provider)")
+                return _REMBG_SESSION
+            except Exception as exc:  # pragma: no cover
+                last_err = exc
+                print(f"[rembg] {model_name} fallback unavailable: {exc}")
         except Exception as exc:  # pragma: no cover - depends on local environment
             last_err = exc
             print(f"[rembg] {model_name} unavailable: {exc}")
