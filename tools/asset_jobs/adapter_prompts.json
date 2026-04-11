@@ -1,0 +1,26 @@
+{
+  "fantasy_ember": {
+    "prompt_prefix": "painted dark fantasy item concept art, Gerald Brom + Planescape: Torment aesthetic, oil illustration, parchment-worn tone",
+    "negative_prompt": "pixel art, blurry, low quality, watermark, logo, photorealistic, noisy background, frame, border, poster layout",
+    "seed_offset": 0,
+    "lora_weight_overrides": {}
+  },
+  "scifi_frontier": {
+    "prompt_prefix": "painted sci-fi equipment concept art, Syd Mead + Chris Foss aesthetic, frontier-industrial matte painting, readable inventory silhouette",
+    "negative_prompt": "pixel art, blurry, low quality, watermark, logo, photorealistic, noisy background, frame, border, poster layout",
+    "seed_offset": 1000,
+    "lora_weight_overrides": {}
+  },
+  "post_apocalypse": {
+    "prompt_prefix": "painted post-apocalyptic gear concept art, Brom meets Fallout 1, rusted brutalism, dust-worn oil canvas mood",
+    "negative_prompt": "pixel art, blurry, low quality, watermark, logo, photorealistic, noisy background, frame, border, poster layout",
+    "seed_offset": 2000,
+    "lora_weight_overrides": {}
+  },
+  "weird_fiction": {
+    "prompt_prefix": "painted weird-fiction occult item art, King in Yellow tone, ink-and-wash over muted oils, uncanny readable silhouette",
+    "negative_prompt": "pixel art, blurry, low quality, watermark, logo, photorealistic, noisy background, frame, border, poster layout",
+    "seed_offset": 3000,
+    "lora_weight_overrides": {}
+  }
+}
