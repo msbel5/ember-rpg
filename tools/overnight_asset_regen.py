@@ -99,10 +99,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Overnight ember-rpg full asset regen")
     parser.add_argument("--force", action="store_true", help="Ignore asset_cache.json and regenerate everything")
     parser.add_argument("--phases", nargs="+", choices=PHASE_ORDER, help="Restrict to specific phases")
+    parser.add_argument("--skip-items", action="store_true", help="Skip the 891-item items phase (useful for overnight; run items separately during the day)")
+    parser.add_argument("--items-only", action="store_true", help="Only run the items phase (inverse of --skip-items)")
     parser.add_argument("--dry-run", action="store_true", help="Print the plan but do not generate")
     args = parser.parse_args()
 
-    phases = args.phases or PHASE_ORDER
+    if args.items_only:
+        phases = ["items"]
+    elif args.skip_items:
+        phases = [p for p in (args.phases or PHASE_ORDER) if p != "items"]
+    else:
+        phases = args.phases or PHASE_ORDER
 
     ap.ensure_output_dirs()
     cache = ap.load_cache()
@@ -146,6 +153,11 @@ def main() -> int:
     })
 
     # Warm-load SDXL + LoRA stack + LCM scheduler ONCE. Reused across all jobs.
+    # cpu_offload=True is required for RTX 3070 8 GB: the full 5-LoRA stack + SDXL
+    # fp16 UNet + text encoders + LCM scheduler is about 7.5 GB of model weights,
+    # and with CUDA kernel caches + attention buffers on top we hit 97% VRAM and
+    # the allocator thrashes to 0 throughput. cpu_offload lets modules swap in/out
+    # of GPU on demand, steady-state ~1 job/min at 1024.
     try:
         backend = ap.LocalSDXLGenerator(
             model_id=ap.DEFAULT_LOCAL_MODEL_ID,
