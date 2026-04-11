@@ -186,6 +186,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			if _ask_about_button.visible and not _ask_about_button.disabled:
 				_on_ask_about_pressed()
 				get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_F4:
+			if _ask_about_button.visible and not _ask_about_button.disabled:
+				_on_ask_about_pressed()
+				get_viewport().set_input_as_handled()
 
 
 ## Show dialog overlay with NPC text and player response options.
@@ -311,8 +315,7 @@ func _refresh_side_actions() -> void:
 func _on_ask_about_pressed() -> void:
 	if _topic_modal == null:
 		return
-	_topic_modal.set_topics(DialogOverlayState.topic_entries_from_state(), DialogOverlayState.selected_topic_id_from_state())
-	_topic_modal.show_modal()
+	_topic_modal.open_for_current_dialog(DialogOverlayState.selected_topic_id_from_state())
 
 
 func _on_topic_modal_closed() -> void:
@@ -340,7 +343,8 @@ func _on_trade_pressed() -> void:
 		return
 	var store_id := str(trade_context.get("store_id", "")).strip_edges()
 	trade_requested.emit(store_id)
-	var conversation: Dictionary = GameState.conversation_state if GameState.conversation_state is Dictionary else {}
+	var game_state = _game_state()
+	var conversation: Dictionary = game_state.conversation_state if game_state != null and game_state.conversation_state is Dictionary else {}
 	var npc_name := str(conversation.get("npc_name", _npc_name_label.text)).strip_edges().to_lower()
 	_emit_command("trade %s" % npc_name if not npc_name.is_empty() else "trade")
 
@@ -351,6 +355,10 @@ func _forward_structured_action(shortcut: String, args: Dictionary, history_text
 
 func _emit_command(command_text: String) -> void:
 	command_requested.emit(command_text)
+
+
+func _game_state():
+	return get_node_or_null("/root/GameState")
 
 
 func _has_structured_connections() -> bool:
