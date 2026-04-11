@@ -111,9 +111,9 @@ SPRITE_STYLE_PREFIX = (
     "Gerald Brom painterly palette, hand-painted infinity engine sprite, high detail, painterly masterpiece, production game asset, "
 )
 ITEM_STYLE_PREFIX = (
-    "painted CRPG inventory icon, top-down item render, single item centered, "
-    "transparent background, dark fantasy oil painting, crisp readable silhouette, "
-    "no text, no frame, painterly game-ready icon, Baldur's Gate style, high detail, hand-painted masterpiece, "
+    "A 1024 square painted BG1 CRPG inventory icon, exactly one item centered on pure white "
+    "background that will be removed by automated segmentation, rich ornate detail with visible "
+    "engraving and chiaroscuro lighting, painterly Brom oil brushwork, single item only: "
 )
 TILE_STYLE_PREFIX = (
     "painted CRPG terrain tile, seamless tileable texture, top-down, "
@@ -149,14 +149,10 @@ STATUS_ICON_STYLE_PREFIX = (
     "bold readable silhouette at small display size, painterly iconography, "
 )
 BODY_SILHOUETTE_STYLE_PREFIX = (
-    "painted proportional reference figure drawn inside a circle with a square around it, "
-    "single figure centered, standing upright facing forward, "
-    "exactly one head, exactly two arms outstretched horizontally, exactly two legs standing straight, "
-    "clear distinct separation of head torso arms hands legs feet, "
-    "simple ink and wash painted lines over aged parchment backdrop, "
-    "Gerald Brom painterly brushwork, clean reference diagram aesthetic, "
-    "no weapons, no heavy armor, minimal reference garment only, "
-    "no text, no labels, high detail, production game targeting reference, "
+    "A painted CRPG V.A.T.S. targeting diagram on aged parchment, one proportional figure drawn "
+    "inside a visible ink circle with a square around it, exactly one head with clear face features, "
+    "exactly two arms outstretched horizontally with five-finger hands, exactly two legs with "
+    "defined feet, Gerald Brom painted brushwork, "
 )
 COMBAT_UI_STYLE_PREFIX = (
     "painted CRPG combat HUD badge, small round medallion with raised rim, "
@@ -177,8 +173,14 @@ UI_BANNER_STYLE_PREFIX = (
 )
 
 NEGATIVE_PROMPT = (
-    "text, watermark, label, logo, blurry, low contrast, photorealistic, "
-    "deformed, noisy, cluttered background, frame, border, poster layout"
+    "text, typography, letters, watermark, label, logo, blurry, low contrast, photorealistic, "
+    "deformed, noisy, cluttered background, frame, border, poster layout, "
+    "jpeg artifacts, lowres, pixel art, anime, cel shaded, 3d render, unreal engine"
+)
+
+ITEM_NEGATIVE = (
+    "multiple items, two items, three items, duplicate items, variant display, "
+    "side by side items, item collection, item catalog, multiple weapons, "
 )
 
 RARITY_STYLE = {
@@ -704,7 +706,11 @@ def trim_spaces(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def compress_prompt(text: str, max_words: int = 40) -> str:
+def compress_prompt(text: str, max_words: int = 65) -> str:
+    """Cap prompt at a word budget so SDXL's 77-token CLIP limit is respected.
+    65 words ~ 85 tokens which is slightly over; SDXL truncates gracefully and
+    the tail is usually detail_text (least critical). Front-load style + subject
+    in the caller so the most important tokens survive compression."""
     words = trim_spaces(text).split(" ")
     if len(words) <= max_words:
         return " ".join(words)
@@ -1500,6 +1506,7 @@ def size_for_kind(kind: str) -> tuple[int, int]:
 # Per-kind negative prompt additions. Concatenated onto the base NEGATIVE_PROMPT
 # at generation time. Kinds not listed here use the base negative only.
 _KIND_NEGATIVES: dict[str, str] = {
+    "items": ITEM_NEGATIVE,
     "portraits": PORTRAIT_NEGATIVE,
     "body_silhouettes": BODY_SILHOUETTE_NEGATIVE,
 }

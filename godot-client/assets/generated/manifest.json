@@ -1,0 +1,175 @@
+{
+  "version": 2,
+  "generated_at": "2026-04-11 04:54",
+  "sprite_size": [
+    1024,
+    1024
+  ],
+  "item_size": [
+    1024,
+    1024
+  ],
+  "tiles": {},
+  "sprites": {},
+  "items": {
+    "abyssal_blade": {
+      "relative_path": "items/abyssal_blade.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "cached_at": "2026-04-11 04:40",
+      "seed": 3624652593,
+      "metadata": {
+        "id": "abyssal_blade",
+        "type": "weapon",
+        "rarity": "LEGENDARY",
+        "description": "A sword forged in the Abyss, dripping with hellfire.",
+        "damage_type": "fire",
+        "view": "topdown",
+        "variant": 1
+      }
+    },
+    "adamantine_longsword": {
+      "relative_path": "items/adamantine_longsword.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "cached_at": "2026-04-11 04:44",
+      "seed": 1788482672,
+      "metadata": {
+        "id": "adamantine_longsword",
+        "type": "weapon",
+        "rarity": "EPIC",
+        "description": "An indestructible adamantine longsword that can cleave through any material.",
+        "damage_type": "slashing",
+        "view": "topdown",
+        "variant": 1
+      }
+    },
+    "adamantine_dagger": {
+      "relative_path": "items/adamantine_dagger.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "cached_at": "2026-04-11 04:50",
+      "seed": 1210806631,
+      "metadata": {
+        "id": "adamantine_dagger",
+        "type": "weapon",
+        "rarity": "EPIC",
+        "description": "An adamantine dagger that can pierce any armor.",
+        "damage_type": "piercing",
+        "view": "topdown",
+        "variant": 1
+      }
+    }
+  },
+  "spells": {
+    "magic_missile": {
+      "relative_path": "spells/magic_missile.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "cached_at": "2026-04-11 03:00",
+      "seed": 3225739373,
+      "metadata": {
+        "family": "spells",
+        "variant": 1
+      }
+    }
+  },
+  "portraits": {
+    "human_fighter_male": {
+      "relative_path": "portraits/human_fighter_male.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "cached_at": "2026-04-11 03:10",
+      "seed": 1899351682,
+      "metadata": {
+        "family": "portraits",
+        "variant": 1
+      }
+    }
+  },
+  "status_icons": {
+    "poisoned": {
+      "relative_path": "status_icons/poisoned.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "cached_at": "2026-04-11 03:03",
+      "seed": 527502903,
+      "metadata": {
+        "family": "status_icons",
+        "variant": 1
+      }
+    }
+  },
+  "body_silhouettes": {
+    "humanoid_male": {
+      "relative_path": "body_silhouettes/humanoid_male.png",
+      "size": [
+        832,
+        1216
+      ],
+      "cached_at": "2026-04-11 04:54",
+      "seed": 36836550,
+      "metadata": {
+        "family": "body_silhouettes",
+        "variant": 1
+      }
+    }
+  },
+  "combat_ui": {
+    "badge_action_available": {
+      "relative_path": "combat_ui/badge_action_available.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "cached_at": "2026-04-11 03:10",
+      "seed": 1117052044,
+      "metadata": {
+        "family": "combat_ui",
+        "variant": 1
+      }
+    }
+  },
+  "status_bars": {
+    "hp_frame_empty": {
+      "relative_path": "status_bars/hp_frame_empty.png",
+      "size": [
+        1344,
+        768
+      ],
+      "cached_at": "2026-04-11 03:05",
+      "seed": 4294685133,
+      "metadata": {
+        "family": "status_bars",
+        "variant": 1
+      }
+    }
+  },
+  "ui_banners": {
+    "banner_paused": {
+      "relative_path": "ui_banners/banner_paused.png",
+      "size": [
+        1536,
+        640
+      ],
+      "cached_at": "2026-04-11 03:10",
+      "seed": 249891759,
+      "metadata": {
+        "family": "ui_banners",
+        "variant": 1
+      }
+    }
+  }
+}

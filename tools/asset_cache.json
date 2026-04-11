@@ -266,8 +266,8 @@
     "prompt": "pixel art RPG tile texture, seamless tileable, top-down view, 16-bit SNES era style, 32x32 tile, woo"
   },
   "item_abyssal_blade_topdown_v01": {
-    "cached_at": "2026-04-09 18:47",
-    "prompt": "pixel art CRPG inventory icon, top-down item render, single item centered, transparent background, dark fantasy palette, crisp readable silhouette, no text, no frame, game-ready icon, long sword icon with readable blade and guard, mythic ce",
+    "cached_at": "2026-04-11 04:40",
+    "prompt": "A 1024 square painted BG1 CRPG inventory icon, exactly one item centered on pure white background that will be removed by automated segmentation, rich ornate detail with visible engraving and chiaroscuro lighting, painterly Brom oil brushwo",
     "seed": 3624652593,
     "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\item_abyssal_blade_topdown_v01_raw.png",
     "final": "",
@@ -281,8 +281,8 @@
       "view": "topdown",
       "variant": 1
     },
-    "backend": "deterministic_pack",
-    "model_id": "deterministic_pack"
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
   },
   "item_acidbite_spear_topdown_v01": {
     "cached_at": "2026-04-09 18:47",
@@ -8265,8 +8265,8 @@
     "model_id": "deterministic_pack"
   },
   "item_adamantine_longsword_topdown_v01": {
-    "cached_at": "2026-04-09 18:48",
-    "prompt": "pixel art CRPG inventory icon, top-down item render, single item centered, transparent background, dark fantasy palette, crisp readable silhouette, no text, no frame, game-ready icon, long sword icon with readable blade and guard, heroic de",
+    "cached_at": "2026-04-11 04:44",
+    "prompt": "A 1024 square painted BG1 CRPG inventory icon, exactly one item centered on pure white background that will be removed by automated segmentation, rich ornate detail with visible engraving and chiaroscuro lighting, painterly Brom oil brushwo",
     "seed": 1788482672,
     "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\item_adamantine_longsword_topdown_v01_raw.png",
     "final": "",
@@ -8280,8 +8280,8 @@
       "view": "topdown",
       "variant": 1
     },
-    "backend": "deterministic_pack",
-    "model_id": "deterministic_pack"
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
   },
   "item_adamantine_battleaxe_topdown_v01": {
     "cached_at": "2026-04-09 18:48",
@@ -13414,8 +13414,8 @@
     "model_id": "deterministic_pack"
   },
   "item_adamantine_dagger_topdown_v01": {
-    "cached_at": "2026-04-09 18:48",
-    "prompt": "pixel art CRPG inventory icon, top-down item render, single item centered, transparent background, dark fantasy palette, crisp readable silhouette, no text, no frame, game-ready icon, dagger icon with short stabbing blade, heroic detailing,",
+    "cached_at": "2026-04-11 04:50",
+    "prompt": "A 1024 square painted BG1 CRPG inventory icon, exactly one item centered on pure white background that will be removed by automated segmentation, rich ornate detail with visible engraving and chiaroscuro lighting, painterly Brom oil brushwo",
     "seed": 1210806631,
     "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\item_adamantine_dagger_topdown_v01_raw.png",
     "final": "",
@@ -13429,8 +13429,8 @@
       "view": "topdown",
       "variant": 1
     },
-    "backend": "deterministic_pack",
-    "model_id": "deterministic_pack"
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
   },
   "item_cursed_greatbow_topdown_v01": {
     "cached_at": "2026-04-09 18:48",
@@ -51936,5 +51936,117 @@
     },
     "backend": "deterministic_pack",
     "model_id": "deterministic_pack"
+  },
+  "spell_magic_missile_v01": {
+    "cached_at": "2026-04-11 03:00",
+    "prompt": "painted CRPG spell icon, single magical sigil centered, dark fantasy oil painting, Gerald Brom painterly palette, transparent background, no text, no frame, crisp readable silhouette, iconographic clarity, painterly game-ready icon, three g",
+    "seed": 3225739373,
+    "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\spell_magic_missile_v01_raw.png",
+    "final": "",
+    "generated_path": "C:\\Users\\msbel\\projects\\ember-rpg\\godot-client\\assets\\generated\\spells\\magic_missile.png",
+    "metadata": {
+      "family": "spells",
+      "variant": 1
+    },
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
+  },
+  "portrait_human_fighter_male_v01": {
+    "cached_at": "2026-04-11 03:10",
+    "prompt": "painted CRPG character portrait, 3/4 view shoulders up, single subject centered, fully clothed with visible gear and armor, dark fantasy oil painting, Gerald Brom + Planescape Torment aesthetic, painterly brushwork, dramatic chiaroscuro lig",
+    "seed": 1899351682,
+    "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\portrait_human_fighter_male_v01_raw.png",
+    "final": "",
+    "generated_path": "C:\\Users\\msbel\\projects\\ember-rpg\\godot-client\\assets\\generated\\portraits\\human_fighter_male.png",
+    "metadata": {
+      "family": "portraits",
+      "variant": 1
+    },
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
+  },
+  "statusicon_poisoned_v01": {
+    "cached_at": "2026-04-11 03:03",
+    "prompt": "painted CRPG status effect icon, single small emblem centered, dark fantasy oil painting, transparent background, no text, no frame, bold readable silhouette at small display size, painterly iconography, dripping green skull sigil, toxic sl",
+    "seed": 527502903,
+    "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\statusicon_poisoned_v01_raw.png",
+    "final": "",
+    "generated_path": "C:\\Users\\msbel\\projects\\ember-rpg\\godot-client\\assets\\generated\\status_icons\\poisoned.png",
+    "metadata": {
+      "family": "status_icons",
+      "variant": 1
+    },
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
+  },
+  "bodysilhouette_humanoid_male_v01": {
+    "cached_at": "2026-04-11 04:54",
+    "prompt": "A painted CRPG V.A.T.S. targeting diagram on aged parchment, one proportional figure drawn inside a visible ink circle with a square around it, exactly one head with clear face features, exactly two arms outstretched horizontally with five-",
+    "seed": 36836550,
+    "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\bodysilhouette_humanoid_male_v01_raw.png",
+    "final": "",
+    "generated_path": "C:\\Users\\msbel\\projects\\ember-rpg\\godot-client\\assets\\generated\\body_silhouettes\\humanoid_male.png",
+    "metadata": {
+      "family": "body_silhouettes",
+      "variant": 1
+    },
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
+  },
+  "combatui_badge_action_available_v01": {
+    "cached_at": "2026-04-11 03:10",
+    "prompt": "painted CRPG combat HUD badge, small round medallion with raised rim, single tiny silhouette emblem centered inside the medallion, dark fantasy oil painting, transparent background outside the medallion, no text, painterly brushwork, produc",
+    "seed": 1117052044,
+    "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\combatui_badge_action_available_v01_raw.png",
+    "final": "",
+    "generated_path": "C:\\Users\\msbel\\projects\\ember-rpg\\godot-client\\assets\\generated\\combat_ui\\badge_action_available.png",
+    "metadata": {
+      "family": "combat_ui",
+      "variant": 1
+    },
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
+  },
+  "statusbar_hp_frame_empty_v01": {
+    "cached_at": "2026-04-11 03:05",
+    "prompt": "painted CRPG status bar asset, horizontal orientation, ornate painted frame or fill, dark fantasy oil painting, no text, painterly brushwork, production game HUD asset, empty crimson-and-gold horizontal bar container frame, ornate painted b",
+    "seed": 4294685133,
+    "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\statusbar_hp_frame_empty_v01_raw.png",
+    "final": "",
+    "generated_path": "C:\\Users\\msbel\\projects\\ember-rpg\\godot-client\\assets\\generated\\status_bars\\hp_frame_empty.png",
+    "metadata": {
+      "family": "status_bars",
+      "variant": 1
+    },
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
+  },
+  "uibanner_banner_paused_v01": {
+    "cached_at": "2026-04-11 03:10",
+    "prompt": "painted CRPG horizontal banner overlay, wide aspect, ornate painted border, dark fantasy oil painting, transparent outside banner region, no text inside banner (left blank for Godot overlay), painterly brushwork, production game HUD asset, ",
+    "seed": 249891759,
+    "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\uibanner_banner_paused_v01_raw.png",
+    "final": "",
+    "generated_path": "C:\\Users\\msbel\\projects\\ember-rpg\\godot-client\\assets\\generated\\ui_banners\\banner_paused.png",
+    "metadata": {
+      "family": "ui_banners",
+      "variant": 1
+    },
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
+  },
+  "bodysilhouette_humanoid_female_v01": {
+    "cached_at": "2026-04-11 04:19",
+    "prompt": "painted proportional reference figure drawn inside a circle with a square around it, single figure centered, standing upright facing forward, exactly one head, exactly two arms outstretched horizontally, exactly two legs standing straight, ",
+    "seed": 3795250352,
+    "raw": "C:\\Users\\msbel\\projects\\ember-rpg\\tools\\asset_raw\\bodysilhouette_humanoid_female_v01_raw.png",
+    "final": "",
+    "generated_path": "C:\\Users\\msbel\\projects\\ember-rpg\\godot-client\\assets\\generated\\body_silhouettes\\humanoid_female.png",
+    "metadata": {
+      "family": "body_silhouettes",
+      "variant": 1
+    },
+    "backend": "local_sdxl",
+    "model_id": "stabilityai/stable-diffusion-xl-base-1.0"
   }
 }
