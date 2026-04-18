@@ -1,6 +1,11 @@
 # Ember RPG
 
 Ember RPG is a Godot-first colony-command RPG built on a deterministic Python backend. The shipped player surface is the Godot client; terminal-first and legacy compatibility paths are deprecated.
+Ember is created by fully ai and this cause some problems, wordl tick and automation control tick syncs and everything correctly placed and moves but world stutters on every tick. Because ai can comprehend every tile and every object it passes every visual check but humans cannot percive or recall this much information.
+
+
+https://github.com/user-attachments/assets/758a38c6-ffbb-43d0-b9ff-7b897a933017
+
 
 ## Current Product Surface
 
