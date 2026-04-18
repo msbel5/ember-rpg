@@ -22,6 +22,7 @@ GameState="*res://autoloads/game_state.gd"
 Backend="*res://autoloads/backend.gd"
 BackendRuntime="*res://autoloads/backend_runtime.gd"
 RuntimeAutomationBridge="*res://autoloads/runtime_automation_bridge.gd"
+PythonBridge="*res://autoloads/python_bridge.gd"
 
 [display]
 
