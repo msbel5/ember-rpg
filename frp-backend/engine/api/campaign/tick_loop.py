@@ -20,9 +20,14 @@ from .runtime_commands import advance_world_tick
 
 logger = logging.getLogger(__name__)
 
-# Default: one game-hour every 5 real seconds so the live shell visibly flows
-# during the rescue-gate acceptance window.
-DEFAULT_TICK_INTERVAL = 5.0
+# Default: one game-hour every 15 real seconds. Increased from 5s because:
+# - 5s full snapshots caused mouse-freeze stutter on the client (entire map + all
+#   entities re-rendered every tick)
+# - NPC behavior trees at 30fps conflicted with stale snapshot positions every 5s,
+#   causing visible teleport-back artifacts
+# - 15s gives the visual tick loop (30fps ambient) enough runway to complete NPC
+#   movement paths before the next full snapshot overwrites positions
+DEFAULT_TICK_INTERVAL = 15.0
 DEFAULT_TICK_HOURS = 1
 
 _scheduler_loop: Optional[asyncio.AbstractEventLoop] = None

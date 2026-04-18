@@ -298,8 +298,7 @@ def maybe_handle_move_command(
         sync_player_position(context, new_x, new_y)
         if hasattr(context, "refresh_fog_state"):
             context.refresh_fog_state()
-        return (f"You move from ({old_x},{old_y}) to ({new_x},{new_y}).",
-                "exploration", 0)
+        return ("", "exploration", 0)  # silent move — player sees the movement on the map
     # "move <direction>"
     m = _MOVE_DIR_RE.match(text)
     if m:
@@ -313,7 +312,7 @@ def maybe_handle_move_command(
         sync_player_position(context, new_x, new_y)
         if hasattr(context, "refresh_fog_state"):
             context.refresh_fog_state()
-        return (f"You move {d} to ({new_x},{new_y}).", "exploration", 0)
+        return ("", "exploration", 0)  # silent move
     # "go to <location>"
     m = _MOVE_TO_PLACE_RE.match(text)
     if m:

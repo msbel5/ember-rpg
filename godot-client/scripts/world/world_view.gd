@@ -28,6 +28,7 @@ const EDGE_SCROLL_SPEED := 200.0
 
 var _context_menu: PopupMenu
 var _context_menu_commands: Dictionary = {}
+var _last_camera_player_tile: Vector2i = Vector2i(-9999, -9999)
 
 var _walker := WorldWalk.new()
 func _ready() -> void:
@@ -46,12 +47,30 @@ func _ready() -> void:
 	add_child(_placeholder_banner)
 	if get_node_or_null("/root/GameState") != null:
 		GameState.map_loaded.connect(_refresh_from_state)
-		GameState.entities_loaded.connect(_refresh_from_state)
+		GameState.entities_loaded.connect(_refresh_entities_only)
 		GameState.state_updated.connect(_refresh_from_state)
 	call_deferred("_sync_viewport_size")
 	_refresh_from_state()
 func refresh_from_state() -> void:
 	_refresh_from_state()
+
+## Light-weight entity-only refresh for visual_delta updates (~30fps).
+## Does NOT re-render the tile map, atmosphere, or attention layers — those only
+## change on full snapshots (every 5s via state_updated / map_loaded). This
+## eliminates the mouse-freeze stutter that occurred when the full _refresh_from_state
+## ran at 30fps, re-rendering the entire map each visual_delta frame.
+func _refresh_entities_only(_payload = null) -> void:
+	var player_tile := GameState.player_map_pos
+	if player_tile == Vector2i.ZERO:
+		var mp: Dictionary = GameState.map_data if not GameState.map_data.is_empty() else {}
+		if mp.has("spawn_point"):
+			var sp = mp.get("spawn_point", [])
+			if sp is Array and sp.size() >= 2:
+				player_tile = Vector2i(int(sp[0]), int(sp[1]))
+	entity_layer.render_entities(player_tile, GameState.entities, _resolve_player_template())
+	if player_tile != _last_camera_player_tile:
+		_last_camera_player_tile = player_tile
+		world_camera.focus_on_tiles(WorldViewPlanner.camera_focus_tiles(player_tile, GameState.entities), TileCatalog.TILE_SIZE)
 
 func get_atmosphere_state() -> Dictionary:
 	return {"mote_count": _atmosphere_motes.size(), "placeholder": _is_placeholder(), "background_key": _background_key}
@@ -286,7 +305,13 @@ func _refresh_from_state(_payload = null) -> void:
 		if sp is Array and sp.size() >= 2:
 			player_tile = Vector2i(int(sp[0]), int(sp[1]))
 	entity_layer.render_entities(player_tile, GameState.entities, _resolve_player_template())
-	world_camera.focus_on_tiles(WorldViewPlanner.camera_focus_tiles(player_tile, GameState.entities), TileCatalog.TILE_SIZE)
+	# Only refocus camera when the player's tile position actually changed.
+	# Before this guard, focus_on_tiles was called on every state_updated signal
+	# (30fps from visual_delta), constantly interrupting the camera's own
+	# position_smoothing and producing the jitter/snap-back bug.
+	if player_tile != _last_camera_player_tile:
+		_last_camera_player_tile = player_tile
+		world_camera.focus_on_tiles(WorldViewPlanner.camera_focus_tiles(player_tile, GameState.entities), TileCatalog.TILE_SIZE)
 	if selection_layer.has_method("set_selected_tile") and player_tile != Vector2i.ZERO:
 		selection_layer.set_selected_tile(player_tile)
 	_set_focus_summary(WorldFocus.default_summary(GameState.get_display_location(), GameState.entities))

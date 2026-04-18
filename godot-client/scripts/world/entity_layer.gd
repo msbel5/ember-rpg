@@ -162,9 +162,11 @@ func _update_actor(actor: Node2D, entry: Dictionary, tile_pos: Vector2i) -> void
 	_apply_visual(actor, entry, delta)
 	if old_tile == tile_pos:
 		return
-	# If NPC moved more than 1 tile, reconstruct path and animate step-by-step
+	# If any entity moved more than 1 tile, reconstruct path and animate step-by-step.
+	# Previously this excluded the player (bucket != "player") which caused the player
+	# to teleport instead of walking. Now all entities get path animation.
 	var tile_dist: float = Vector2(old_tile).distance_to(Vector2(tile_pos))
-	if tile_dist > 1.5 and bucket != "player":
+	if tile_dist > 1.5:
 		var path: Array[Vector2i] = _path_walker.compute_path(old_tile, tile_pos, _current_map_data())
 		if path.size() > 1:
 			_animate_path(actor, path, bucket)
@@ -205,6 +207,12 @@ func _apply_visual(actor: Node2D, entry: Dictionary, movement: Vector2) -> void:
 func _animate_path(actor: Node2D, path: Array[Vector2i], bucket: String) -> void:
 	var prev = actor.get_meta("move_tween") if actor.has_meta("move_tween") else null
 	if prev is Tween and is_instance_valid(prev):
+		# Only kill previous tween for large jumps (>3 tiles). For small corrections,
+		# let the current animation finish — killing it at 30fps visual_delta rate
+		# was causing constant jitter/teleport for all entities.
+		var final_target := _tile_to_world(path[path.size() - 1])
+		if actor.position.distance_to(final_target) <= TileCatalog.TILE_SIZE * 3:
+			return  # let current tween finish
 		prev.kill()
 	var tween := create_tween()
 	for tile in path:
@@ -222,6 +230,10 @@ func _animate_path(actor: Node2D, path: Array[Vector2i], bucket: String) -> void
 func _move_to(actor: Node2D, target: Vector2) -> void:
 	var prev = actor.get_meta("move_tween") if actor.has_meta("move_tween") else null
 	if prev is Tween and is_instance_valid(prev):
+		# Don't kill active tween for small corrections — let it finish smoothly.
+		# Only interrupt for genuine teleports (>3 tiles distance).
+		if actor.position.distance_to(target) <= TileCatalog.TILE_SIZE * 3:
+			return
 		prev.kill()
 	if actor.position.distance_to(target) <= 0.05:
 		actor.position = target

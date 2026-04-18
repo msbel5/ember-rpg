@@ -19,7 +19,7 @@ static func resolve_generated_asset(relative_path: String) -> String:
 		return user_path
 
 	var res_path := "res://%s/%s" % [GENERATED_ROOT, relative_path]
-	if ResourceLoader.exists(res_path):
+	if FileAccess.file_exists(res_path):
 		return res_path
 
 	return ""
