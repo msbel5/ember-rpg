@@ -150,6 +150,16 @@ class EmbeddedBridge:
             delta = ctx._bridge_vtl.tick(ctx)
             return {"type": "visual_delta", "actors": delta.get("actors", []) if delta else []}
 
+        # --- URL-based dispatch (Backend.gd sends HTTP paths directly) ---
+        if method.startswith("/game/"):
+            http_method = args.pop("_http_method", "GET")
+            if http_method == "GET":
+                return self._get(method)
+            elif http_method == "DELETE":
+                return self._delete(method)
+            else:
+                return self._post(method, args)
+
         return {"error": f"unknown method: {method}"}
 
     def _get(self, path: str) -> Any:

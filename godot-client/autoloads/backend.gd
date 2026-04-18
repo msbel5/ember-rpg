@@ -42,6 +42,17 @@ func get_base_url() -> String:
 
 
 func ensure_runtime_socket(campaign_id: String, explicit_ws_url: String = "", explicit_ws_path: String = "") -> void:
+	# Bridge path: no WebSocket needed, PythonBridge polls ticks directly
+	if _use_bridge():
+		var pb = get_node_or_null("/root/PythonBridge")
+		pb.set_active_campaign(campaign_id)
+		# Emit connected signal so game_session proceeds normally
+		if not _runtime_connected:
+			_runtime_connected = true
+			_runtime_campaign_id = campaign_id
+			runtime_socket_connected.emit(campaign_id)
+		return
+
 	var normalized_campaign := campaign_id.strip_edges()
 	if normalized_campaign.is_empty():
 		return
@@ -96,6 +107,17 @@ func _cleanup_pending_http_requests() -> void:
 
 
 func runtime_submit_command(campaign_id: String, input_text: String, shortcut: String = "", args: Dictionary = {}) -> bool:
+	# Bridge path: direct engine call, no WebSocket
+	if _use_bridge():
+		var pb = get_node_or_null("/root/PythonBridge")
+		var cmd_args := {"campaign_id": campaign_id, "input": input_text, "args": args}
+		if not shortcut.strip_edges().is_empty():
+			cmd_args["shortcut"] = shortcut.strip_edges().to_lower()
+		var result = pb.call_engine("run_command", cmd_args)
+		# Emit the response as a runtime message so existing handlers process it
+		runtime_message_received.emit({"type": "state", "payload": result})
+		return true
+
 	if not _runtime_socket_ready(campaign_id):
 		return false
 	var payload := {
@@ -109,6 +131,12 @@ func runtime_submit_command(campaign_id: String, input_text: String, shortcut: S
 
 
 func set_runtime_mode(campaign_id: String, mode: String) -> bool:
+	# Bridge path
+	if _use_bridge():
+		var pb = get_node_or_null("/root/PythonBridge")
+		pb.call_engine("set_runtime_mode", {"campaign_id": campaign_id, "mode": mode})
+		return true
+
 	if not _runtime_socket_ready(campaign_id):
 		return false
 	var normalized_mode := mode.strip_edges().to_lower()
@@ -121,6 +149,8 @@ func set_runtime_mode(campaign_id: String, mode: String) -> bool:
 
 
 func runtime_connected_for(campaign_id: String) -> bool:
+	if _use_bridge():
+		return true  # Bridge is always "connected"
 	return _runtime_connected and campaign_id.strip_edges() == _runtime_campaign_id
 
 # --- API Methods ---
@@ -322,7 +352,35 @@ func _poll_runtime_socket() -> void:
 		else:
 			request_error.emit("Runtime socket delivered invalid JSON.")
 
+## Check if PythonBridge is available and connected.
+func _use_bridge() -> bool:
+	var pb = get_node_or_null("/root/PythonBridge")
+	return pb != null and pb.backend_ready
+
+
+## Route an HTTP-like call through PythonBridge (in-process, ~0.1ms).
+## Falls back to real HTTP if bridge is not available.
+func _bridge_call(path: String, body_dict: Dictionary, http_method: String, callback: Callable) -> void:
+	var pb = get_node_or_null("/root/PythonBridge")
+	if pb == null:
+		return
+	body_dict["_http_method"] = http_method
+	var result = pb.call_engine(path, body_dict)
+	if callback.is_valid():
+		callback.call(result)
+	request_finished.emit()
+
+
 func _post(path: String, body: String, callback: Callable) -> void:
+	# Bridge path: in-process call, no HTTP, ~0.1ms
+	if _use_bridge():
+		var body_dict = JSON.parse_string(body) if not body.is_empty() else {}
+		if body_dict == null:
+			body_dict = {}
+		_bridge_call(path, body_dict, "POST", callback)
+		return
+
+	# HTTP fallback
 	if not _ensure_base_url(callback):
 		return
 	var http = HTTPRequest.new()
@@ -339,6 +397,12 @@ func _post(path: String, body: String, callback: Callable) -> void:
 		http.queue_free()
 
 func _http_get(path: String, callback: Callable) -> void:
+	# Bridge path
+	if _use_bridge():
+		_bridge_call(path, {}, "GET", callback)
+		return
+
+	# HTTP fallback
 	if not _ensure_base_url(callback):
 		return
 	var http = HTTPRequest.new()
@@ -352,6 +416,12 @@ func _http_get(path: String, callback: Callable) -> void:
 		http.queue_free()
 
 func _http_delete(path: String, callback: Callable) -> void:
+	# Bridge path
+	if _use_bridge():
+		_bridge_call(path, {}, "DELETE", callback)
+		return
+
+	# HTTP fallback
 	if not _ensure_base_url(callback):
 		return
 	var http = HTTPRequest.new()
