@@ -67,6 +67,11 @@ class NeedSatisfactionEngine:
             self._handle_sustenance(npc_needs, npc_location, location_stock)
         )
 
+        # --- Rest ------------------------------------------------------
+        actions.extend(
+            self._handle_rest(npc_needs, npc_location, location_stock)
+        )
+
         # --- Social ----------------------------------------------------
         actions.extend(
             self._handle_social(npc_needs, nearby_npcs)
@@ -120,6 +125,47 @@ class NeedSatisfactionEngine:
                     need_addressed="sustenance",
                     description="Ordered a meal at the tavern.",
                     side_effects={"stock_food": -1, "sustenance_gain": 40},
+                )
+            )
+
+        return actions
+
+    @staticmethod
+    def _handle_rest(
+        needs: NPCNeeds,
+        location: str,
+        stock: dict[str, Any],
+    ) -> list[SatisfactionAction]:
+        """Handle rest/sleep behaviour.
+
+        - If fatigue < 15 and not at a sleeping location -> deviate to sleep place.
+        - If fatigue < 30 and at a sleeping location -> sleep and regain fatigue.
+        """
+        actions: list[SatisfactionAction] = []
+        loc = location.lower() if isinstance(location, str) else ""
+        is_sleep_place = any(k in loc for k in ("inn", "tavern", "barracks", "home", "campfire"))
+
+        # exhausted anywhere -> move towards sleeping place
+        if getattr(needs, "fatigue", 100.0) < 15 and not is_sleep_place:
+            actions.append(
+                SatisfactionAction(
+                    action_type="deviate_to_sleep_place",
+                    need_addressed="fatigue",
+                    description="Exhausted; heading to the nearest sleeping place.",
+                    side_effects={"destination": "sleeping_place"},
+                )
+            )
+            return actions
+
+        # at sleep place and tired -> sleep
+        if getattr(needs, "fatigue", 100.0) < 30 and is_sleep_place:
+            needs.satisfy("fatigue", 60)
+            actions.append(
+                SatisfactionAction(
+                    action_type="sleep",
+                    need_addressed="fatigue",
+                    description="Took a long rest and recovered energy.",
+                    side_effects={"fatigue_gain": 60},
                 )
             )
 

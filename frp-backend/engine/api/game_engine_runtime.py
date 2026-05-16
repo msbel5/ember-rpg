@@ -16,6 +16,7 @@ from engine.core.character_creation import (
 from engine.core.dm_agent import DMContext, SceneType
 from engine.data_loader import get_class_default_hp, get_class_default_spell_points, get_class_default_stats
 from engine.world.behavior_tree import BehaviorContext, create_npc_behavior_tree
+from engine.world.need_satisfaction import NeedSatisfactionEngine
 from engine.world.economy import LocationStock
 from engine.world.entity import EntityType
 from engine.world.ethics import FACTION_ETHICS, get_faction_context
@@ -213,6 +214,55 @@ class GameEngineRuntimeMixin:
                                     "destination": destination,
                                 }
                             )
+
+                    # --- Needs & satisfaction (eat / sleep / social / duty / safety)
+                    try:
+                        engine = NeedSatisfactionEngine()
+                        # determine logical location string for the npc
+                        loc = None
+                        if npc.id in session.entities:
+                            loc = session.entities[npc.id].get("scheduled_location") or session.entities[npc.id].get("location")
+                        loc = loc or (getattr(npc, "job", None) or "")
+                        # synthesize a minimal stock dict expected by the engine
+                        stock = {
+                            "food": session.location_stock.get_stock("food") if getattr(session, "location_stock", None) else 0,
+                            "guarded": False,
+                        }
+                        loc_lower = loc.lower() if isinstance(loc, str) else ""
+                        stock["guarded"] = ("barracks" in loc_lower) or ("gate" in loc_lower) or (getattr(npc, "job", None) == "guard")
+
+                        # nearby npcs by simple session.entities distance scan
+                        nearby_npcs = []
+                        for ent_id, ent_rec in session.entities.items():
+                            if ent_id == npc.id:
+                                continue
+                            if ent_rec.get("entity_type") != "npc":
+                                continue
+                            pos = ent_rec.get("position") or [0, 0]
+                            try:
+                                dist = max(abs(pos[0] - npc.position[0]), abs(pos[1] - npc.position[1]))
+                            except Exception:
+                                dist = 999
+                            if dist <= 3:
+                                nearby_npcs.append(ent_id)
+
+                        actions = engine.check_and_satisfy(npc.needs, loc or "unknown", stock, nearby_npcs)
+                        for a in actions:
+                            events.append(
+                                {
+                                    "type": "npc_need_action",
+                                    "npc_id": npc.id,
+                                    "npc_name": npc.name,
+                                    "action_type": a.action_type,
+                                    "need_addressed": a.need_addressed,
+                                    "description": a.description,
+                                    "side_effects": a.side_effects,
+                                }
+                            )
+                        if npc.id in session.entities:
+                            session.sync_entity_record(npc.id, npc)
+                    except Exception as exc:
+                        events.append({"type": "need_satisfaction_error", "npc_id": npc.id, "error": str(exc)})
 
             crossed_hours = list(range(int(before_hour) + 1, int(after_hour) + 1))
             for hour_marker in crossed_hours:

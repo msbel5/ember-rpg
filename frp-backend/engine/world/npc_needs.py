@@ -17,13 +17,14 @@ DECAY_RATES: dict[str, float] = {
     "social": 1.0,
     "sustenance": 2.0,
     "duty": 1.0,
+    "fatigue": 1.5,
 }
 
 
 @dataclass
 class NPCNeeds:
     """
-    Five-axis need model for a single NPC.
+    Six-axis need model for a single NPC.
 
     All values are clamped to [0, 100].
     """
@@ -33,6 +34,8 @@ class NPCNeeds:
     social: float = 80.0
     sustenance: float = 80.0
     duty: float = 80.0
+    # New: how rested/energetic the NPC feels (lower -> more tired)
+    fatigue: float = 80.0
 
     # ------------------------------------------------------------------
     # helpers
@@ -95,7 +98,7 @@ class NPCNeeds:
             return "terrified"
 
         all_values = [self.safety, self.commerce, self.social,
-                      self.sustenance, self.duty]
+                      self.sustenance, self.duty, self.fatigue]
 
         if any(v < 10 for v in all_values):
             return "desperate"
@@ -143,6 +146,7 @@ class NPCNeeds:
             "social": self.social,
             "sustenance": self.sustenance,
             "duty": self.duty,
+            "fatigue": self.fatigue,
         }
 
     @classmethod
@@ -153,4 +157,5 @@ class NPCNeeds:
             social=data.get("social", 80.0),
             sustenance=data.get("sustenance", 80.0),
             duty=data.get("duty", 80.0),
+            fatigue=data.get("fatigue", 80.0),
         )
